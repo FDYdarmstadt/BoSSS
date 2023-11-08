@@ -27,7 +27,7 @@ namespace IntersectingLevelSetTest {
         /// <param name="levelSetDegree"></param>
         /// <param name="quadOrder"></param>
         /// <returns></returns>
-        public static (double edge, double volume, double surface) Evaluate2D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
+        public static (double intersection, double edge, double volume, double surface) Evaluate2D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
             LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize(), beta.Vectorize(), resolution, levelSetDegree, 2);
             return Evaluate(LsTrk, quadOrder);
         }
@@ -42,7 +42,7 @@ namespace IntersectingLevelSetTest {
         /// <param name="levelSetDegree"></param>
         /// <param name="quadOrder"></param>
         /// <returns></returns>
-        public static (double edge, double volume, double surface) Evaluate3D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
+        public static (double intersection, double edge, double volume, double surface) Evaluate3D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
             LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize(), beta.Vectorize(), resolution, levelSetDegree, 3);
             return Evaluate(LsTrk, quadOrder);
         }
@@ -76,7 +76,7 @@ namespace IntersectingLevelSetTest {
             return tracker;
         }
 
-        static (double edge, double volume, double surface) Evaluate(LevelSetTracker LsTrk, int quadOrder) {
+        static (double intersection, double edge, double volume, double surface) Evaluate(LevelSetTracker LsTrk, int quadOrder) {
             //var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
             SpeciesId id = LsTrk.GetSpeciesId("B");
             var schemes = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), quadOrder, 1).XQuadSchemeHelper;
@@ -84,7 +84,8 @@ namespace IntersectingLevelSetTest {
             double edge = EvaluateEdges(LsTrk.GridDat, quadOrder, schemes, id);
             double volume = EvaluateVolume(LsTrk.GridDat, quadOrder, schemes, id);
             double surface = EvaluateSurface(LsTrk, quadOrder, schemes, id);
-            return (edge, volume, surface);
+            double intersection = EvaluateIntersection(LsTrk, quadOrder, schemes, id);
+            return (intersection, edge, volume, surface);
         }
 
         static double EvaluateEdges(GridData gridData, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
@@ -147,6 +148,16 @@ namespace IntersectingLevelSetTest {
             double integral = 0;
             for (int i = 0; i < lsTrkr.NoOfLevelSets; ++i) {
                 CellQuadratureScheme surfScheme = schemes.GetLevelSetquadScheme(i, id, lsTrkr.Regions.GetCutCellMask4LevSet(i));
+                var surf = CellQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
+                integral += surf.Sum();
+            }
+            return integral;
+        }
+
+        static double EvaluateIntersection(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
+            double integral = 0;
+            for (int i = 0; i < lsTrkr.NoOfLevelSets; ++i) {
+                CellQuadratureScheme surfScheme = schemes.GetContactLineQuadScheme( id, i);
                 var surf = CellQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
                 integral += surf.Sum();
             }

@@ -34,26 +34,30 @@ namespace IntersectingLevelSetTest {
 
     internal class IntegrationTests {
 
+        //Only works for resolution = 1, scaling required in eval method 
         [Test]
         public static void SquareTest([Values(1, 2, 3)]int resolution) {
             BoSSS.Solution.Application.InitMPI();
             Func<Vector, double> alpha = x => x.x;
             Func<Vector, double> beta = x => -x.y;
-            (double edge, double volume, double surface) = Integrals.Evaluate2D(alpha, beta, resolution, 1, 1);
+            (double intersection, double edge, double volume, double surface) = Integrals.Evaluate2D(alpha, beta, resolution, 1, 1);
             Assert.That(edge, Is.EqualTo(1).Within(1e-8));
             Assert.That(volume, Is.EqualTo(0.25).Within(1e-8));
             Assert.That(surface, Is.EqualTo(1).Within(1e-8));
+            Assert.That(intersection, Is.EqualTo(2).Within(1e-8));
         }
 
+        //Only works for resolution = 1, scaling required in eval method 
         [Test]
         public static void CubeTest([Values(1,2,3)]int resolution) {
             BoSSS.Solution.Application.InitMPI();
             Func<Vector, double> alpha = x => x.x;
             Func<Vector, double> beta = x => -x.y;
-            (double edge, double volume, double surface) = Integrals.Evaluate3D(alpha, beta, resolution, 1, 1);
+            (double intersection, double edge, double volume, double surface) = Integrals.Evaluate3D(alpha, beta, resolution, 1, 1);
             Assert.That(edge, Is.EqualTo(1.5).Within(1e-8));
             Assert.That(volume, Is.EqualTo(0.25).Within(1e-8));
             Assert.That(surface, Is.EqualTo(1).Within(1e-8));
+            Assert.That(intersection, Is.EqualTo(1).Within(1e-8));
         }
     }
 }

@@ -266,8 +266,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             double Det(int cell) {
-                MultidimensionalArray inverseJacobian = grid.JacobianDeterminat.GetValue_Cell(Square.Instance.Center, cell, 1);
-                double g = 1 / inverseJacobian[0, 0];
+                MultidimensionalArray jacobianDeterminant = grid.JacobianDeterminat.GetValue_Cell(Square.Instance.Center, cell, 1);
+                double g = 1 / jacobianDeterminant[0, 0];
                 return g;
             }
 

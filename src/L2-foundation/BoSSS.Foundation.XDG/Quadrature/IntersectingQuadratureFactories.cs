@@ -119,6 +119,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             foreach (Chunk chunk in mask) {
                 for (int j = chunk.i0; j < chunk.JE; ++j) {
                     QuadRule rule = GetQuadRule(j, order);
+                    if (rule.NoOfNodes == 0) {
+                        rule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                        rule.Nodes.LockForever();
+                    }
                     rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));
                 }
             }
@@ -244,7 +248,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             double jacobianDeterminant = t.Matrix.Determinant();
             for (int i = 0; i < rule.Count; ++i) {
-                q.Weights[i] = rule[i].Weight / jacobianDeterminant;
+                q.Weights[i] = rule[i].Weight * jacobianDeterminant;
             }
             q.Nodes.LockForever();
             return q;
@@ -254,8 +258,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             AffineTrafo t = new AffineTrafo(Domain.SpatialDimension);
             HyperRectangle codomain = Codomain(jEdge);
             for (int i = 0; i < Domain.SpatialDimension; ++i) {
-                t.Affine[i] = -codomain.Center[i] * codomain.Diameters[i] / 2;
-                t.Matrix[i, i] = codomain.Diameters[i] / 2;
+                t.Affine[i] = -codomain.Center[i] * 2.0 / codomain.Diameters[i];
+                t.Matrix[i, i] = 2.0 / codomain.Diameters[i];
             }
             return t;
         }
