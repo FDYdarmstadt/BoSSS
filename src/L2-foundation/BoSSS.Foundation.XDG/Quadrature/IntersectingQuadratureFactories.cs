@@ -241,12 +241,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     globalNodes[i, d] = rule[i].Point[d];
                 }
             }
-
+            
             AffineTrafo t = FromCodomainToDomain(jEdge);
             QuadRule q = QuadRule.CreateEmpty(Domain, rule.Count, Domain.SpatialDimension);
             t.Transform(globalNodes, q.Nodes);
 
-            double jacobianDeterminant = t.Matrix.Determinant();
+            double jacobianDeterminant = Math.Abs(t.Matrix.Determinant());
             for (int i = 0; i < rule.Count; ++i) {
                 q.Weights[i] = rule[i].Weight * jacobianDeterminant;
             }
@@ -255,11 +255,22 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
         
         AffineTrafo FromCodomainToDomain(int jEdge) {
+            
+            byte iFace = grid.Edges.FaceIndices[jEdge, 0];
+            NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
+            int emptyDim = EmptyDim(faceCenter);
+            Selection edgeToCell = new Selection(emptyDim);
+
+            AffineTrafo T = grid.Edges.Edge2CellTrafos[grid.Edges.Edge2CellTrafoIndex[jEdge, 0]];
             AffineTrafo t = new AffineTrafo(Domain.SpatialDimension);
             HyperRectangle codomain = Codomain(jEdge);
+
             for (int i = 0; i < Domain.SpatialDimension; ++i) {
-                t.Affine[i] = -codomain.Center[i] * 2.0 / codomain.Diameters[i];
-                t.Matrix[i, i] = 2.0 / codomain.Diameters[i];
+                int k = edgeToCell.FromSubIndexToIndex(i);
+                for (int j = 0; j < Domain.SpatialDimension; ++j) {
+                    t.Affine[i] += T.Matrix[k,j] *  -codomain.Center[j] * 2.0 / codomain.Diameters[j];
+                    t.Matrix[i, j] += T.Matrix[k, j] * 2.0 / codomain.Diameters[j];
+                }
             }
             return t;
         }
