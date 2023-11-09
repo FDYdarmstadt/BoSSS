@@ -31,6 +31,8 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         private double m_partRadius = -1.0;
         [DataMember]
+        private double m_rateOfRadius = 0.0;
+        [DataMember]
         private int m_SpaceDim = 0;
         [DataMember]
         private double m_ringRadius = -1.0;
@@ -65,12 +67,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
-        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0) {
+        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0, double rateOfRadius = 0.0) {
             m_pos = pos;
             m_angleVelocity = angleVelocity;
             m_partRadius = majorRadius;
             m_SpaceDim = SpaceDim;
             m_ringRadius = minorRadius;
+            m_rateOfRadius = rateOfRadius;
         }
 
         public void SpecifyShape(Shape shape) {
@@ -147,6 +150,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
             var RotationCenter = m_RotationCenter;
             var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("Sphere");
@@ -155,6 +159,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double[] RotationArm = new double[SpaceDim];
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
+                double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1+rateOfRadius*t)* particleRad,0.0);
                 Vector rotAxis;
                 switch (RotationAxis) {
                     case "x":
@@ -185,11 +190,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 switch (SpaceDim) {
                     case 2:
                     // circle
-                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) + particleRad * particleRad;
+                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) + dynamicRadius * dynamicRadius;
 
                     case 3:
                     // sphere
-                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) - (X[2] - pos[2]) * (X[2] - rotated_pos[2]) + particleRad * particleRad;
+                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) - (X[2] - pos[2]) * (X[2] - rotated_pos[2]) + dynamicRadius * dynamicRadius;
 
                     default:
                     throw new NotImplementedException();
@@ -298,6 +303,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
             var ringRad = m_ringRadius;
             var tiltVector = m_tiltVector;
             var tiltDegree = m_tiltDegree;
@@ -310,6 +316,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Vector TiltVector = new Vector(tiltVector);
 
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
+                double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1 + rateOfRadius * t) * particleRad, 0.0);
 
                 Vector rotAxis;
 
@@ -345,7 +352,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 X = affineTrafoFinal.Transform(X);
 
-                var TorusObject = new BoSSS.Solution.LevelSetTools.TestCases.Torus(particleRad, ringRad);
+                var TorusObject = new BoSSS.Solution.LevelSetTools.TestCases.Torus(dynamicRadius, ringRad);
                 switch (SpaceDim) {
                     case 2:
                         return -TorusObject.SignedDistance2D(X);
