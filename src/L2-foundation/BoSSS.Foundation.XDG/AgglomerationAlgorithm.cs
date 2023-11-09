@@ -1749,7 +1749,7 @@ namespace BoSSS.Foundation.XDG {
                 m_failCells = new List<int>();
                 m_CellsNeedChainAgglomeration = new List<int>();
 
-                // First check if a target can be found among neighbors
+                // First check if a target can be found among immediate neighbors
                 SearchDirectAgglomeration_Mk3(AgglomSourceCellsList, AggCandidates, AggSourcesWithExternalCell);
 
                 // If there are remaining cells, try to create agg. chains
@@ -2225,7 +2225,13 @@ namespace BoSSS.Foundation.XDG {
 
                             // check neighbors if they can be both agg. source
                             for (int e = 0; e < NoOfEdges_4_jCell; e++) {
-                                if (AggSourcesWithExternalCell[(int)neighbors[e, 0]]) {
+                                int jCellNeigh = (int)neighbors[e, 0];
+
+                                //Exclude boundary cells
+                                if (jCellNeigh < 0)
+                                    continue;
+
+                                if (AggSourcesWithExternalCell[jCellNeigh]) {
                                     isAggChainPossible = true; // there is a possibility to form a chain, which means that the neighbor cell could be carrying element to the final target)
                                     break;
                                 }
@@ -2234,7 +2240,7 @@ namespace BoSSS.Foundation.XDG {
                             if (isAggChainPossible) {
                                 CellsNeedChainAgglomeration.Add(jCell);
                             } else {
-                                failCells.Add(jCell); // jcell has no possible targets to be agglomerated
+                                failCells.Add(jCell); // jcell has no possible targets to be agglomerated (it is a single isolated cell)
                             }
 
                         } else {
