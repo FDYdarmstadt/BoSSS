@@ -579,7 +579,7 @@ namespace BoSSS.Solution.LevelSetTools {
                     var X0_glb = this.X0_global.ExtractSubArrayShallow(new int[] { I[jSub], 0 }, new int[] { I[jSub + 1] - 1, D - 1 });
                     //var _X0_glb = MultidimensionalArray.Create(I[jSub + 1] - I[jSub], D); 
 
-                    bool Cont = X0_glb.IsContinious;
+                    bool Cont = X0_glb.IsContinuous;
                     var X_glb = X_global.ExtractSubArrayShallow(jSub, -1, -1);
 
 

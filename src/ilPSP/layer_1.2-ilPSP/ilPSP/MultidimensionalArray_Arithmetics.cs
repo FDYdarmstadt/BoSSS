@@ -148,7 +148,7 @@ namespace ilPSP {
             }
 
             // Optimized accumulation for continuous pieces of memory
-            if (this.IsContinious && other.IsContinious) {
+            if (this.IsContinuous && other.IsContinuous) {
                 int[] index = new int[Dimension];
                 int thisOffset = this.Index(index);
                 int otherOffset = other.Index(index);
@@ -316,7 +316,7 @@ namespace ilPSP {
             if(m_LockedForever)
                 throw new ApplicationException("illegal call - object is locked.");
 
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 // optimized branch 
                 int L = this.Length;
                 int i0 = this.m_Offset;
@@ -355,7 +355,7 @@ namespace ilPSP {
         /// applies the action <paramref name="op"/> to all entries of this array
         /// </summary>
         public void ApplyAll(Action<double> op) {
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 // optimized branch
                 int L = this.Length;
                 int i0 = this.m_Offset;
@@ -399,7 +399,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="alpha"></param>
         public void Scale(double alpha) {
-            if(this.IsContinious) {
+            if(this.IsContinuous) {
                 unsafe {
                     fixed(double* pStorage = this.m_Storage) {
                         BLAS.dscal(this.Length, alpha, pStorage + this.m_Offset, 1);
@@ -426,7 +426,7 @@ namespace ilPSP {
                     throw new ArgumentException("mismatch in dimension " + k);
             }
 
-            if(this.IsContinious && other.IsContinious) {
+            if(this.IsContinuous && other.IsContinuous) {
                 unsafe {
                     fixed(double* pStorageThis = this.m_Storage, pStorageOther = other.m_Storage) {
                         return BLAS.ddot(this.Length, pStorageThis, 1, pStorageOther, 1);

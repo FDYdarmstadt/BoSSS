@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -681,7 +681,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, bool calculateStencils = true, bool calculateMassMatrix = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
@@ -698,6 +698,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             foreach (int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
 
+                //check if expensive stencilCondNumbers are required
+                if (plotStencilCondNumViz == true || calculateStencils == true) {
+                    ana.CalculateStencils = true;
+                } else {
+                    ana.CalculateStencils = false;
+                }
 
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
@@ -706,6 +712,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (!Ret.ContainsKey(kv.Key)) {
                         Ret.Add(kv.Key, kv.Value);
                     }
+                }
+
+                if (calculateMassMatrix) {
+                    var condNoMassMtx = ana.CondMassMatrix();
+                    Ret.Add("MassMtxCondNo", condNoMassMtx);
                 }
 
                 if (plotStencilCondNumViz) {
@@ -724,7 +735,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             if (StencilCondNoVizS.Count > 0) {
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), "stencilCond", 0.0, 1);
+                var LevelSets = m_LsTrk.LevelSetHistories;
+
+                foreach (var levelSet in LevelSets) {
+                    StencilCondNoVizS.Add((LevelSet)levelSet.Current);
+                }
+                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 0);
             }
 
             return Ret;

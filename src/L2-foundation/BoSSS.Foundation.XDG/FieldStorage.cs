@@ -415,6 +415,8 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        public MatrixStructure StructureType { get; set; } = MatrixStructure.General;
+
         #endregion
     }
 }

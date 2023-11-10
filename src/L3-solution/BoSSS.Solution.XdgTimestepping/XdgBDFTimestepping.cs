@@ -536,7 +536,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ----------------------
             if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
                 m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, Config_AgglomerationThreshold,
-                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
+                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true, Tag: "InitTimestepping");
 
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
@@ -806,7 +806,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         __AgglomerationTreshold: base.Config_AgglomerationThreshold,
                         AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
                         ExceptionOnFailedAgglomeration: true,
-                        oldTs__AgglomerationTreshold: oldAggTrsh);
+                        oldTs__AgglomerationTreshold: oldAggTrsh, Tag: "DataRestoreAfterBalancing");
 
                 }
 
@@ -935,7 +935,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         updateAgglom = true;
                     } else {
                         if (m_CurrentAgglomeration == null)
-                            throw new ApplicationException();
+                            Console.WriteLine("throw new ApplicationException();");
+                            //throw new ApplicationException();
                     }
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
@@ -952,7 +953,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         Debug.Assert(m_IterationCounter == 0);
                         m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold,
-                            AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
+                            AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true, Tag: "AssembleMatrixCallback");
 
                     } else {
                         // Agglomeration update in the case of a moving interface - consider previous time-steps
@@ -971,7 +972,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                             __AgglomerationTreshold: base.Config_AgglomerationThreshold,
                             AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
                             ExceptionOnFailedAgglomeration: true,
-                            oldTs__AgglomerationTreshold: oldAggTrsh);
+                            oldTs__AgglomerationTreshold: oldAggTrsh,
+                            Tag: "AssembleMatrixCallback");
                     }
 
 
@@ -1215,7 +1217,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ---------------------
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, Affine, CurrentStateMapping, CurrentStateMapping);
-                
+
                 if(Linearization) {
                     m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
                     m_LsTrk.CheckMatrixZeroInEmptyCutCells(System, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
@@ -1483,7 +1485,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(m_LsTrk.HistoryLength >= 1);
                     var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                         __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
-                        oldTs__AgglomerationTreshold: new double[] { 0.0 });
+                        oldTs__AgglomerationTreshold: new double[] { 0.0 }, Tag: "SolveIncrement");
                     for (int i = 0; i < this.m_Stack_u.Length; i++)
                         SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
 
@@ -1688,6 +1690,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.NextIteration(true);
                 }
 
+                bool calculateCondNumbers = false;
+                
+                if (calculateCondNumbers) {
+                    var table = base.OperatorAnalysis(plotStencilCondNumViz: false, calculateStencils: false, calculateMassMatrix: true);
+                    table.SaveToTextFileDebugUnsteady("CondEst", ".txt");
+                }
+
                 int newLsTrkPushCount = m_LsTrk.PushCount;
                 if (newLsTrkPushCount != oldLsTrkPushCount)
                     throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
@@ -1726,7 +1735,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(m_LsTrk.HistoryLength >= 1);
                     var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                         __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
-                        oldTs__AgglomerationTreshold: new double[] { 0.0 });
+                        oldTs__AgglomerationTreshold: new double[] { 0.0 }, Tag: "SolveIncrement");
                     for (int i = 0; i < this.m_Stack_u.Length; i++)
                         SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
 
