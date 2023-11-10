@@ -6420,8 +6420,14 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
+        public static XNSE_Control VanishingRotatingCircle() {
+            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
+            var C = RotatingTiltedXRigid(1, 20, 2, false, shape: Shape.Sphere,  RotAxis: "z", SolverOn: true, rateOfRadius: -4);
+            C.NoOfTimesteps = 100;
+            return C;
+        }
 
-        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true) {
+        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true, double rateOfRadius = 0.0) {
             XNSE_Control C = new XNSE_Control();
 
             // Simulation Settings
@@ -6504,7 +6510,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //Set xRigid 
             double ringRad = partRad / 2;
-            C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim, ringRad);
+            C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim, ringRad, rateOfRadius);
             C.Rigidbody.SpecifyShape(shape);
             C.Rigidbody.SetRotationAxis(rotAxis);
 
