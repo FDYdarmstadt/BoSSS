@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static XSpatialOperatorMk2 XOperator(this IEquationComponent c, IEnumerable<string> species, int DegreeOfNonlinearity = 1) {
+        public static XDifferentialOperatorMk2 XOperator(this IEquationComponent c, IEnumerable<string> species, int DegreeOfNonlinearity = 1) {
             return XOperator(c, species, QuadOrderFunc.NonLinear(DegreeOfNonlinearity));
         }
 
@@ -37,13 +37,13 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static XSpatialOperatorMk2 XOperator(this IEquationComponent c, IEnumerable<string> species, Func<int[], int[], int[], int> quadOrderFunc) {
+        public static XDifferentialOperatorMk2 XOperator(this IEquationComponent c, IEnumerable<string> species, Func<int[], int[], int[], int> quadOrderFunc) {
 
             string[] Codomain = new string[] { "v1" };
             string[] Domain = c.ArgumentOrdering.ToArray();
             string[] Param = (c.ParameterOrdering != null) ? c.ParameterOrdering.ToArray() : new string[0];
 
-            XSpatialOperatorMk2 ret = new XSpatialOperatorMk2(Domain, Param, Codomain, quadOrderFunc, species);
+            XDifferentialOperatorMk2 ret = new XDifferentialOperatorMk2(Domain, Param, Codomain, quadOrderFunc, species);
             ret.EquationComponents[Codomain[0]].Add(c);
             ret.Commit();
 

@@ -28,7 +28,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Constructor for DG solvers
         /// </summary>
-        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, ISpatialOperator abstractOperator) 
+        public OpAnalysisBase(BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, IDifferentialOperator abstractOperator) 
             : this(null, Mtx, RHS, Mapping, null, null, OpConfig, abstractOperator) //
         {
 
@@ -40,7 +40,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Constructor for XDG solvers
         /// </summary>
-        public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, ISpatialOperator abstractOperator) {
+        public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, IDifferentialOperator abstractOperator) {
 
 
             //int RHSlen = Mapping.TotalLength;
@@ -600,7 +600,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
         /// <summary>
         /// The operator matrix after compactification (i.e. elimination of un-used DOFs),
-        /// application of reference points (<see cref="ISpatialOperator.FreeMeanValue"/>),
+        /// application of reference points (<see cref="IDifferentialOperator.FreeMeanValue"/>),
         /// and block-preconditioning.
         /// </summary>
         public BlockMsrMatrix PrecondOpMatrix {

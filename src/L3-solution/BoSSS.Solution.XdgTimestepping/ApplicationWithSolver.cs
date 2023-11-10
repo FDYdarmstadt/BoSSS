@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
@@ -181,6 +182,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
             Parameters = new List<DGField>();
             // Console.WriteLine(parameterFields.Count()); [Toprak]: I noticed that this is unnecessary, therefore I made it comment.
+
             foreach (var f in parameterFields) {
                 this.Parameters.Add(f);
                 if(f != null) 
@@ -225,7 +227,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Main spatial operator
         /// </summary>
-        public abstract ISpatialOperator Operator {
+        public abstract IDifferentialOperator Operator {
             get;
         }
 
@@ -480,7 +482,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
+            using (new FuncTrace()) {
+                Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
+            }
         }
 
         /// <summary>
@@ -512,11 +516,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override IEnumerable<DGField> InstantiateSolutionFields() {
             var DomNames = this.Operator.DomainVar;
             var ret = new DGField[DomNames.Count];
-            for(int i = 0; i < DomNames.Count; i++) {
+            for (int i = 0; i < DomNames.Count; i++) {
                 string Name = DomNames[i];
 
                 var fopts = this.Control.FieldOptions.Where(kv => kv.Key.WildcardMatch(Name)).SingleOrDefault().Value;
-                if(fopts.Degree < 0) {
+                if (fopts.Degree < 0) {
                     throw new ApplicationException($"Missing specification of DG degree for field {Name} in control object.");
                 }
 
@@ -567,12 +571,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         /// <returns></returns>
         /// <param name="D">spatial dimension</param>
-        abstract protected XSpatialOperatorMk2 GetOperatorInstance(int D);
+        abstract protected XDifferentialOperatorMk2 GetOperatorInstance(int D);
 
         /// <summary>
         /// 
         /// </summary>
-        public override ISpatialOperator Operator {
+        public override IDifferentialOperator Operator {
             get {
                 return XOperator;
             }
@@ -590,10 +594,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateTracker() {
             var trk = InstantiateTracker();
             //var test = this.Operator;
-            if(base.LsTrk == null) {
+            if (base.LsTrk == null) {
                 base.LsTrk = trk;
             } else {
-                if(!object.ReferenceEquals(trk, base.LsTrk))
+                if (!object.ReferenceEquals(trk, base.LsTrk))
                     throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
             }
 
@@ -605,19 +609,19 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-        private XSpatialOperatorMk2 m_XOperator { 
-            get; 
-            set; 
+        private XDifferentialOperatorMk2 m_XOperator {
+            get;
+            set;
         }
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
         /// </summary>
-        virtual public XSpatialOperatorMk2 XOperator {
+        virtual public XDifferentialOperatorMk2 XOperator {
             get {
-                if(m_XOperator == null) {
+                if (m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
-                    if(!m_XOperator.IsCommitted)
+                    if (!m_XOperator.IsCommitted)
                         throw new ApplicationException("Operator must be committed by user.");
                 }
                 return m_XOperator;
@@ -634,7 +638,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// instantiation of <see cref="ApplicationWithSolver{T}.Timestepping"/>
         /// </summary>
         protected override void InitSolver() {
-            if(base.Timestepping != null)
+            if (base.Timestepping != null)
                 return;
 
             XdgTimestepping solver = new XdgTimestepping(
@@ -645,7 +649,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 this.GetLevelSetUpdater,
                 LevelSetHandling,
                 MultigridOperatorConfig,
-                MultigridSequence,
                 Control.AgglomerationThreshold,
                 Control.LinearSolver, Control.NonLinearSolver,
                 this.LsTrk,
@@ -671,118 +674,120 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-
-            // Cells Numbers - Local
-            var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
-            if (CellNumbers == null) {
-                CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
-                this.RegisterField(CellNumbers);
-            }
-            CellNumbers.Clear();
-            CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = j0 + j;
-                    }
+            using (new FuncTrace()) {
+                // Cells Numbers - Local
+                var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
+                if (CellNumbers == null) {
+                    CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
+                    this.RegisterField(CellNumbers);
                 }
-            }, new CellQuadratureScheme());
-
-            // Cells Numbers - Global
-            var CellNumbersGlob = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbersGlobal").SingleOrDefault();
-            if (CellNumbersGlob == null) {
-                CellNumbersGlob = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbersGlobal");
-                this.RegisterField(CellNumbersGlob);
-            }
-            CellNumbersGlob.Clear();
-            CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    long gidx = this.GridData.CellPartitioning.i0 + j0 + j;
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = gidx;
-                    }
-                }
-            }, new CellQuadratureScheme());
-
-
-            // GlobalID
-            var GlobalID = this.m_RegisteredFields.Where(s => s.Identification == "GlobalID").SingleOrDefault();
-            if (GlobalID == null) {
-                GlobalID = new SinglePhaseField(new Basis(this.GridData, 0), "GlobalID");
-                this.RegisterField(GlobalID);
-            }
-            GlobalID.Clear();
-            GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    long gid = this.GridData.iLogicalCells.GetGlobalID(j + j0); ;
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = gid;
-                    }
-                }
-            }, new CellQuadratureScheme());
-
-            // MPI_rank
-            int my_rank = ilPSP.Environment.MPIEnv.MPI_Rank;
-            var MPI_rank = this.m_RegisteredFields.Where(s => s.Identification == "MPI_rank").SingleOrDefault();
-            if (MPI_rank == null) {
-                MPI_rank = new SinglePhaseField(new Basis(this.GridData, 0), "MPI_rank");
-                this.RegisterField(MPI_rank);
-            }
-            MPI_rank.Clear();
-            MPI_rank.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = my_rank;
-                    }
-                }
-            }, new CellQuadratureScheme());
-
-
-            // CutCell
-            var XNSE_classifier = new CutStateClassifier();
-            var classifiedCells = XNSE_classifier.ClassifyCells(this);
-
-            var cutCellClass = this.m_RegisteredFields.Where(s => s.Identification == "cutCellClass").SingleOrDefault();
-            if (cutCellClass == null) {
-                cutCellClass = new SinglePhaseField(new Basis(this.GridData, 0), "cutCellClass");
-                this.RegisterField(cutCellClass);
-            }
-            cutCellClass.Clear();
-
-            int J = cutCellClass.Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int j = 0; j < J; j++) {
-                cutCellClass.SetMeanValue(j, (double)classifiedCells[j]);
-            }
-
-            // LvSetDist
-            var LvSetDist = this.m_RegisteredFields.Where(s => s.Identification == "LvSetDist").SingleOrDefault();
-            if (LvSetDist == null) {
-                LvSetDist = new SinglePhaseField(new Basis(this.GridData, 0), "LvSetDist");
-                this.RegisterField(LvSetDist);
-            }
-            LvSetDist.Clear();
-            LvSetDist.AccLevelSetDist(1, this.LsTrk, 1);
-
-
-            if (PlotShadowfields) {
-                List<DGField> Fields2Plot = new List<DGField>();
-                foreach (var field in this.m_RegisteredFields) {
-                    if (field is XDGField xField) {
-                        foreach (var spc in xField.Basis.Tracker.SpeciesNames) {
-                            Fields2Plot.Add(xField.GetSpeciesShadowField(spc));
+                CellNumbers.Clear();
+                CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = j0 + j;
                         }
-                    } else {
-                        Fields2Plot.Add(field);
                     }
+                }, new CellQuadratureScheme());
+
+                // Cells Numbers - Global
+                var CellNumbersGlob = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbersGlobal").SingleOrDefault();
+                if (CellNumbersGlob == null) {
+                    CellNumbersGlob = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbersGlobal");
+                    this.RegisterField(CellNumbersGlob);
                 }
-                Tecplot.Tecplot.PlotFields(Fields2Plot, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
-            } else {
-                base.PlotCurrentState(physTime, timestepNo, superSampling);
+                CellNumbersGlob.Clear();
+                CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        long gidx = this.GridData.CellPartitioning.i0 + j0 + j;
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = gidx;
+                        }
+                    }
+                }, new CellQuadratureScheme());
+
+
+                // GlobalID
+                var GlobalID = this.m_RegisteredFields.Where(s => s.Identification == "GlobalID").SingleOrDefault();
+                if (GlobalID == null) {
+                    GlobalID = new SinglePhaseField(new Basis(this.GridData, 0), "GlobalID");
+                    this.RegisterField(GlobalID);
+                }
+                GlobalID.Clear();
+                GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        long gid = this.GridData.iLogicalCells.GetGlobalID(j + j0); ;
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = gid;
+                        }
+                    }
+                }, new CellQuadratureScheme());
+
+                // MPI_rank
+                int my_rank = ilPSP.Environment.MPIEnv.MPI_Rank;
+                var MPI_rank = this.m_RegisteredFields.Where(s => s.Identification == "MPI_rank").SingleOrDefault();
+                if (MPI_rank == null) {
+                    MPI_rank = new SinglePhaseField(new Basis(this.GridData, 0), "MPI_rank");
+                    this.RegisterField(MPI_rank);
+                }
+                MPI_rank.Clear();
+                MPI_rank.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = my_rank;
+                        }
+                    }
+                }, new CellQuadratureScheme());
+
+
+                // CutCell
+                var XNSE_classifier = new CutStateClassifier();
+                var classifiedCells = XNSE_classifier.ClassifyCells(this);
+
+                var cutCellClass = this.m_RegisteredFields.Where(s => s.Identification == "cutCellClass").SingleOrDefault();
+                if (cutCellClass == null) {
+                    cutCellClass = new SinglePhaseField(new Basis(this.GridData, 0), "cutCellClass");
+                    this.RegisterField(cutCellClass);
+                }
+                cutCellClass.Clear();
+
+                int J = cutCellClass.Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                for (int j = 0; j < J; j++) {
+                    cutCellClass.SetMeanValue(j, (double)classifiedCells[j]);
+                }
+
+                // LvSetDist
+                var LvSetDist = this.m_RegisteredFields.Where(s => s.Identification == "LvSetDist").SingleOrDefault();
+                if (LvSetDist == null) {
+                    LvSetDist = new SinglePhaseField(new Basis(this.GridData, 0), "LvSetDist");
+                    this.RegisterField(LvSetDist);
+                }
+                LvSetDist.Clear();
+                LvSetDist.AccLevelSetDist(1, this.LsTrk, 1);
+
+
+                if (PlotShadowfields) {
+                    List<DGField> Fields2Plot = new List<DGField>();
+                    foreach (var field in this.m_RegisteredFields) {
+                        if (field is XDGField xField) {
+                            foreach (var spc in xField.Basis.Tracker.SpeciesNames) {
+                                Fields2Plot.Add(xField.GetSpeciesShadowField(spc));
+                            }
+                        } else {
+                            Fields2Plot.Add(field);
+                        }
+                    }
+                    Tecplot.Tecplot.PlotFields(Fields2Plot, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
+                } else {
+                    base.PlotCurrentState(physTime, timestepNo, superSampling);
+                }
             }
         }
+
     }
 
 
@@ -818,7 +823,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// initialization of the main spatial operator
         /// </summary>
         /// <param name="D">spatial dimension</param>
-        abstract protected SpatialOperator GetOperatorInstance(int D);
+        abstract protected DifferentialOperator GetOperatorInstance(int D);
 
         /// <summary>
         /// empty in the DG case
@@ -843,19 +848,19 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        public override ISpatialOperator Operator {
+        public override IDifferentialOperator Operator {
             get {
                 return SOperator;
             }
         }
 
 
-        SpatialOperator m_SOperator;
+        DifferentialOperator m_SOperator;
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
         /// </summary>
-        virtual public SpatialOperator SOperator {
+        virtual public DifferentialOperator SOperator {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
@@ -887,7 +892,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
-                MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver,
                 Parameters,
                 this.QueryHandler);

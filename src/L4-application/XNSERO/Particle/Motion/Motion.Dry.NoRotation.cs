@@ -30,26 +30,28 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionDryNoRotation(double density) : base(density) {
-            IncludeRotation = false;
+        public MotionDryNoRotation(double density) : base(density) { }
+
+        public override bool IncludeRotation() {
+            return false;
         }
 
         /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected override double CalculateParticleAngle(double dt) {
+        public override double CalculateParticleAngle(double dt) {
             double l_Angle = GetAngle(1);
             Aux.TestArithmeticException(l_Angle, "particle angle");
             return l_Angle;
         }
-        
+
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt) {
+        public override double CalculateAngularVelocity(double dt) {
             double l_RotationalVelocity = 0;
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
             return l_RotationalVelocity;
@@ -59,14 +61,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        protected override double CalculateRotationalAcceleration(double dt) {
+        public override double CalculateRotationalAcceleration(double dt) {
             return 0;
         }
 
         public override object Clone() {
-            Motion clonedMotion = new MotionDryNoRotation(Density);
-            clonedMotion.SetVolume(Volume);
-            clonedMotion.SetMomentOfInertia(MomentOfInertia);
+            MotionDryNoRotation clonedMotion = new MotionDryNoRotation(Density);
+            clonedMotion.Volume = this.Volume;
+            clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
         }
     }

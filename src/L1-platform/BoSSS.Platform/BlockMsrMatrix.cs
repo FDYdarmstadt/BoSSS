@@ -38,13 +38,24 @@ namespace ilPSP.LinSolvers {
             where V1 : IList<long>
             where V3 : IList<long> //
         {
+            return GetSubMatrix(OrgMtx, RowIndicesSource, ColumnIndiceSource, csMPI.Raw._COMM.WORLD);
+        }
 
-            var Blk1 = OrgMtx._RowPartitioning.GetSubBlocking(RowIndicesSource, csMPI.Raw._COMM.WORLD, -1);
-            var Blk2 = OrgMtx._RowPartitioning.GetSubBlocking(ColumnIndiceSource, csMPI.Raw._COMM.WORLD, -1);
+
+        /// <summary>
+        /// Driver routine for <see cref="BlockMsrMatrix.AccSubMatrixTo{V1, V2, V3, V4}(double, IMutableMatrixEx, V1, V2, V3, V4)"/>
+        /// </summary>
+        static public BlockMsrMatrix GetSubMatrix<V1, V3>(this BlockMsrMatrix OrgMtx, V1 RowIndicesSource, V3 ColumnIndiceSource, MPI_Comm destComm)
+            where V1 : IList<long>
+            where V3 : IList<long> //
+        {
+
+            var Blk1 = OrgMtx._RowPartitioning.GetSubBlocking(RowIndicesSource, destComm, -1);
+            var Blk2 = OrgMtx._ColPartitioning.GetSubBlocking(ColumnIndiceSource, destComm, -1);
 
             long[] Tlist1 = default(long[]);
-            long[] Tlist2 = default(long[]); 
- 
+            long[] Tlist2 = default(long[]);
+
 
             BlockMsrMatrix SUB = new BlockMsrMatrix(Blk1, Blk2);
             OrgMtx.AccSubMatrixTo(1.0, SUB, RowIndicesSource, Tlist1, ColumnIndiceSource, Tlist2);
@@ -2559,7 +2570,7 @@ namespace ilPSP.LinSolvers {
                     throw new ArgumentException("Mismatch in number of columns.");
                 if(acc.Count != this._RowPartitioning.LocalLength)
                     throw new ArgumentException("Mismatch in number of rows.");
-                if(object.ReferenceEquals(acc, _a))
+                if(object.ReferenceEquals(acc, _a) && (acc.Count > 0 || _a.Count > 0))
                     throw new ArgumentException("In-Place computation is not supported.", "acc");
 
                 double[] a;
@@ -2722,7 +2733,12 @@ namespace ilPSP.LinSolvers {
                                                             int iRowLoc = _iRowLoc; // local row index
                                                             int iRowBlockLoc = _iRowBlockLoc; // row index within block
 
-                                                            if(CJ != 1 || I * J < 40) {
+                                                            if(CJ != 1 || I * J < 40) { 
+                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                                                // local multiplication branch:
+                                                                // either the block is very small (less than 40 entries), or
+                                                                // the fast rotating index has a skips some bytes
+                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                                                                 for(int i = 0; i < I; i++) { // loop over sub-block rows...
 
@@ -2746,6 +2762,9 @@ namespace ilPSP.LinSolvers {
                                                                     iRowBlockLoc++;
                                                                 }
                                                             } else {
+                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                                                                // default branch: try to use BLAS function DGEMV
+                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++
                                                                 SPMV_inner.Start();
                                                                 BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
                                                                     pVecAccu + _iRowBlockLoc,
@@ -3197,7 +3216,8 @@ namespace ilPSP.LinSolvers {
 
                     IEnumerator<long> EnuColTarget = ColIndicesTarget != null ? ColIndicesTarget.GetEnumerator() : null;
                     int Counter = -1;
-                    foreach(int iColSource in ColumnIndicesSource) {
+                    foreach(long iColSource in ColumnIndicesSource) {
+                        m_ColPartitioning.TestIfInLocalRange(iColSource);
                         Counter++;
                         long iColTarget;
                         if(EnuColTarget != null) {

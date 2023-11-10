@@ -607,7 +607,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             string[] ParamNames = ArrayTools.Cat(VariableNames.LevelSetGradient(D), VariableNames.ExtensionVelocity(D));
             string[] varNames = ArrayTools.Cat(new string[] { "Phi" }, ParamNames, "c1");
-            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), varNames);
+            DifferentialOperator TimeEvoOp = new DifferentialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), varNames);
             TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector(D));
             //TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source());
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm(D));
@@ -1141,7 +1141,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 else
                     InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker.GridDat.SpatialDimension);
 
-                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
+                XDifferentialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
 
                 var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 , InterfaceFlux, Tracker, subMask.GetBitMaskWithExternal());
 
@@ -1194,7 +1194,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //    time: 0,
                     //    MPIParameterExchange:false,
                     //    whichSpc:Tracker.GetSpeciesId("A"));
-                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
+                    XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
 
                     MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.1, Tag: "NarrowMarchingBand"); //which throws an agglomeration error [Toprak]
                     //mtxBuilder.SpeciesOperatorCoefficients[Tracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[Tracker.GetSpeciesId("A")];

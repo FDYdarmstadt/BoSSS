@@ -9,12 +9,12 @@ using ilPSP.Utils;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// Utility to define parameter variables for Jacobian operators (<see cref="SpatialOperator.GetJacobiOperator"/>)
+    /// Utility to define parameter variables for Jacobian operators (<see cref="DifferentialOperator.GetJacobiOperator"/>)
     /// </summary>
     public class JacobianParamUpdate {
 
         /// <summary>
-        /// Not intended for direct user interaction, but for use by <see cref="SpatialOperator.GetJacobiOperator"/>
+        /// Not intended for direct user interaction, but for use by <see cref="DifferentialOperator.GetJacobiOperator"/>
         /// </summary>
         public JacobianParamUpdate(IEnumerable<string> __DomainVar, IEnumerable<string> __ParamterVar, List<IEquationComponent> comps, Func<IEquationComponent,TermActivationFlags> extractTaf, int SpatialDimension) {
             Components.AddRange(comps);
