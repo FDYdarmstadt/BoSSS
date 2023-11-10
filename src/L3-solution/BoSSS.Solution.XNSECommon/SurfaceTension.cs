@@ -262,7 +262,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     }
 
     /// <summary>
-    /// Implementation of <see cref="CurvatureBasedSurfaceTension"/> for use in <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
+    /// Implementation of <see cref="CurvatureBasedSurfaceTension"/> for use in <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
     /// </summary>
     public class CurvatureBasedSurfaceTension_SurfaceOperator : IVolumeForm, ISupportsJacobianComponent {
 

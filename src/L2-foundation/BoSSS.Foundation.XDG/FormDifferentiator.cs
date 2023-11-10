@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.XDG {
 
     /// <summary>
-    /// Base-Functionality for utilities for computation of Spatial Operator Jacobians, (<see cref="SpatialOperator.GetJacobiOperator"/>,
+    /// Base-Functionality for utilities for computation of Spatial Operator Jacobians, (<see cref="DifferentialOperator.GetJacobiOperator"/>,
     /// i.e. approximate differentiation of equation components.
     /// </summary>
     abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking, IEquationComponentCoefficient, IParameterHandling, ISpeciesFilter, IEquationComponentSpeciesNotification, ILevelSetEquationComponentCoefficient {
@@ -246,7 +246,7 @@ namespace BoSSS.Foundation.XDG {
 
 
     /// <summary>
-    /// Differentiation of a volume form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// Differentiation of a volume form, used e.g.to obtain a Jacobian of an operator, see <see cref="DifferentialOperator.GetJacobiOperator"/>.
     /// </summary>
     public class VolumeFormDifferentiator : FormDifferentiatorCommon, IVolumeForm {
 
@@ -380,7 +380,7 @@ namespace BoSSS.Foundation.XDG {
 
 
     /// <summary>
-    /// Differentiation of a edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// Differentiation of a edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="DifferentialOperator.GetJacobiOperator"/>.
     /// </summary>
     public class EdgeFormDifferentiator : FormDifferentiatorCommon, IEdgeForm {
 
@@ -621,7 +621,7 @@ namespace BoSSS.Foundation.XDG {
     }
 
     /// <summary>
-    /// Differentiation of an edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// Differentiation of an edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="DifferentialOperator.GetJacobiOperator"/>.
     /// In principal the same as <see cref="EdgeFormDifferentiator"/>, but using <see cref="ILevelSetForm"/>
     /// </summary>
     public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm, ILevelSetEquationComponentCoefficient {

@@ -705,9 +705,9 @@ namespace BoSSS.Application.XNSEC {
                     var solver = new XNSEC();
                     solvers[k] = solver;
                     {
-                        Console.WriteLine("Warning! - enabled immediate plotting");
-                        C.ImmediatePlotPeriod = 1;
-                        C.SuperSampling = 3;
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
 
                         solver.Init(C);
                         solver.RunSolverMode();

@@ -647,7 +647,7 @@ namespace BoSSS.Application.XNSEC {
         public MaterialLaw_MultipleSpecies EoS_A;
         public MaterialLaw_MultipleSpecies EoS_B;
 
-        private XSpatialOperatorMk2 XOP;
+        private XDifferentialOperatorMk2 XOP;
         /// <summary>
         /// Low-Mach system of equations definition
         /// </summary>
@@ -655,7 +655,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="opFactory"></param>
         /// <param name="lsUpdater"></param>
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
             OperatorFactory opFactory = new OperatorFactory();
 
             DefineSystem(D, opFactory, levelSetUpdater);
@@ -688,7 +688,7 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Using low Mach temporal operator");
                 OperatorFactory temporalOperatorFactory = new OperatorFactory();
                 DefineTemporalTerm(D, temporalOperatorFactory);
-                XSpatialOperatorMk2 temporalXOP = temporalOperatorFactory.GetSpatialOperator(QuadOrder());
+                XDifferentialOperatorMk2 temporalXOP = temporalOperatorFactory.GetSpatialOperator(QuadOrder());
                 temporalXOP.Commit();
 
                 var DependentTemporalOp = new DependentXTemporalOperator(XOP);

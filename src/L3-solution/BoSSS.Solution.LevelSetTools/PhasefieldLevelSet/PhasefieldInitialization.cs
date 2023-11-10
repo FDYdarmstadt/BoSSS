@@ -57,7 +57,6 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
-                MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver, 
                 queryHandler:this.QueryHandler);
 

@@ -299,9 +299,6 @@ namespace BoSSS.Application.BoSSSpad {
                     return (JobStatus.InProgress, null);
 
                     case JobState.Finished:
-                    //var retCode = (intStatus.exitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, intStatus.exitCode);
-                    //if (retCode.Item1 != JobStatus.FinishedSuccessful)
-                    //    Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate + ", Exit code = " + ExitCode);
                     if (intStatus.exitCode != null && intStatus.exitCode == 0)
                         return (JobStatus.FinishedSuccessful, 0);
                     else
@@ -358,13 +355,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                         case JobState.Finished:
                         var retCode = (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
-                        if(retCode.Item1 != JobStatus.FinishedSuccessful)
-                            Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate + ", Exit code = " + ExitCode);
                         return retCode;
 
                         case JobState.Failed:
                         case JobState.Canceled:
-                        Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate);
                         return (JobStatus.FailedOrCanceled, ExitCode);
 
                         default:

@@ -84,56 +84,61 @@ namespace BoSSS.Solution.Tecplot {
 
             int dimension = base.gridData.SpatialDimension;
 
-            StringWriter stw = new StringWriter();
-            if (dimension == 1) {
-                stw.Write("x ");
-            } else if (dimension == 2) {
-                stw.Write("x y ");
-            } else if (dimension == 3) {
-                stw.Write("x y z ");
-            } else {
-                throw new ApplicationException("No Tecplot for more than 3 dimensions.");
-            }
-
-            int unknowncnt = 1;
-            List<string> writtenIDs = new List<string>();
-            foreach (string _id in fieldNames) {
-                var id = _id;
-                if (id == null || id.Length <= 0) {
-                    // write a name for field without identification
-                    stw.Write("unknown_" + unknowncnt);
-                    unknowncnt++;
-                } else if (id.Contains(" ") || id.Contains("(") || id.Contains(")")) {
-                    throw new Exception("A field identification contains white space or parentheses, please change the name of this field");
-                } else if (id.Contains("\t") || id.Contains("\n") || id.Contains("\r")) {
-                    // remove whitespaces
-                    //string[] subStrg = id.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    string[] subStrg = id.Split(new char[] { '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    string idNew = "";
-                    for (int __i = 0; __i < subStrg.Length; __i++) {
-                        idNew = idNew + subStrg[__i];
-                        if (__i < subStrg.Length - 1)
-                            idNew += "_";
-                    }
-                    id = idNew;
+            string Variables;
+            using (StringWriter stw = new StringWriter()) {
+                if (dimension == 1) {
+                    stw.Write("x ");
+                } else if (dimension == 2) {
+                    stw.Write("x y ");
+                } else if (dimension == 3) {
+                    stw.Write("x y z ");
+                } else {
+                    throw new ApplicationException("No Tecplot for more than 3 dimensions.");
                 }
 
-                if (writtenIDs.Contains(id))
-                    // ensure that name is unique
-                    id = "_" + id;
 
-                writtenIDs.Add(id);
+                int unknowncnt = 1;
+                List<string> writtenIDs = new List<string>();
+                foreach (string _id in fieldNames) {
+                    var id = _id;
+                    if (id == null || id.Length <= 0) {
+                        // write a name for field without identification
+                        stw.Write("unknown_" + unknowncnt);
+                        unknowncnt++;
+                    } else if (id.Contains(" ") || id.Contains("(") || id.Contains(")")) {
+                        throw new Exception("A field identification contains white space or parentheses, please change the name of this field");
+                    } else if (id.Contains("\t") || id.Contains("\n") || id.Contains("\r")) {
+                        // remove whitespaces
+                        //string[] subStrg = id.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
-                stw.Write(id);
-                stw.Write(" ");
+                        string[] subStrg = id.Split(new char[] { '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        string idNew = "";
+                        for (int __i = 0; __i < subStrg.Length; __i++) {
+                            idNew = idNew + subStrg[__i];
+                            if (__i < subStrg.Length - 1)
+                                idNew += "_";
+                        }
+                        id = idNew;
+                    }
+
+                    if (writtenIDs.Contains(id))
+                        // ensure that name is unique
+                        id = "_" + id;
+
+                    writtenIDs.Add(id);
+
+                    stw.Write(id);
+                    stw.Write(" ");
+                }
+
+                Variables = stw.ToString();
             }
 
             int Debug = 0;
             int VIsDouble = 1;
             string ScratchDir = path != null ? path : ".";
-            string Variables = stw.ToString();
+            //string Variables = stw.ToString();
             string filenameWithPath = path != null ? Path.Combine(path, filename) : filename;
 
             IntPtr ptrTitle, ptrVariables, ptrFName, ptrScratchDir;

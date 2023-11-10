@@ -389,7 +389,7 @@ namespace BoSSS.Solution.Utils {
 //        }
 
         /// <summary>
-        /// Vectorized function (<see cref="ScalarFunction"/>) from a scala
+        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar
         /// implementation
         /// </summary>
         /// <param name="f">calling sequence: f(x,y,z,t)</param>
@@ -410,7 +410,7 @@ namespace BoSSS.Solution.Utils {
         }
 
         /// <summary>
-        /// Vectorized function (<see cref="ScalarFunction"/>) from a scala
+        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar
         /// implementation
         /// </summary>
         /// <param name="f">calling sequence: f(x,y,z,t)</param>

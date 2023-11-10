@@ -42,6 +42,7 @@ namespace IntersectingLevelSetTest {
         int resolution;
         int dimension;
         double errorThreshold;
+        public double errorBack;
         Func<double, double, double, double> levelSet0;
         Func<double, double, double, double> levelSet1;
         Func<double, double, double, double, double> levelSet3D_0;
@@ -96,8 +97,10 @@ namespace IntersectingLevelSetTest {
         private SinglePhaseField Cmarker;
 
         protected override void CreateFields() {
-            Phi0 = new LevelSet(new Basis(this.GridData, 3), "Phi_0");
-            Phi1 = new LevelSet(new Basis(this.GridData, 3), "Phi_1");
+            //Phi0 = new LevelSet(new Basis(this.GridData, 3), "Phi_0");
+            //Phi1 = new LevelSet(new Basis(this.GridData, 3), "Phi_1");
+            Phi0 = new LevelSet(new Basis(this.GridData, DEGREE), "Phi_0");
+            Phi1 = new LevelSet(new Basis(this.GridData, DEGREE), "Phi_1");
 
             string[,] speciesTable = new string[2, 2];
             speciesTable[0, 0] = "B"; // Liquid
@@ -132,7 +135,7 @@ namespace IntersectingLevelSetTest {
         /// <summary>
         /// DG polynomial degree
         /// </summary>
-        internal int DEGREE = 2;
+        internal int DEGREE;
 
         private void LsUpdate(double t) {
             Console.WriteLine("LSUpdate t = " + t);
@@ -186,8 +189,18 @@ namespace IntersectingLevelSetTest {
             this.LsUpdate(t);
 
             if (dimension == 2) {
-                u.ProjectField((x, y) => x * x);
-                du_dx_Exact.ProjectField((x, y) => 2 * x);
+                //u.ProjectField((x, y) => x * x);
+                //du_dx_Exact.ProjectField((x, y) => 2 * x);
+                //u.ProjectField((x, y) => y * y);
+                //du_dx_Exact.ProjectField((x, y) => 0);
+                //u.ProjectField((x, y) => Math.Sin(x));
+                //du_dx_Exact.ProjectField((x, y) => Math.Cos(x));
+                u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y));
+                du_dx_Exact.ProjectField((x, y) => Math.Cos(x) * Math.Cos(y));
+                //u.ProjectField((x, y) => x * x * y);
+                //du_dx_Exact.ProjectField((x, y) => 2 * x * y);
+                //u.ProjectField((x, y) => 1);
+                //du_dx_Exact.ProjectField((x, y) => 0);
             }
             else if (dimension == 3) {
                 u.ProjectField((x, y, z) => x * x);
@@ -195,16 +208,17 @@ namespace IntersectingLevelSetTest {
             }
         }
 
-        private XSpatialOperatorMk2 Op;
+        private XDifferentialOperatorMk2 Op;
 
         private int QuadOrder {
             get {
-                return this.DEGREE * 2 + 2;
+                return this.DEGREE * 2 + Math.Max(Phi0.Basis.Degree,Phi1.Basis.Degree); 
+                // degree of ansatz function + degree of test function + Max level set degree. 
             }
         }
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1,
+            Op = new XDifferentialOperatorMk2(1, 0, 1,
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new[] { "B" },
                 __varnames: new[] { "u", "c1" });
@@ -236,7 +250,7 @@ namespace IntersectingLevelSetTest {
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, map, null, map);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, map, null, map);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
 
@@ -287,15 +301,18 @@ namespace IntersectingLevelSetTest {
             bool IsPassed = (L2Err <= ErrorThreshold || xL2Err <= ErrorThreshold);
             if (IsPassed) {
                 Console.WriteLine("Test PASSED");
+                //PlotCurrentState(phystime, TimestepNo, 4);
             }
             else {
                 Console.WriteLine("Test FAILED: check errors.");
-                //PlotCurrentState(phystime, TimestepNo, 3);
+                //PlotCurrentState(phystime, TimestepNo, 4);
             }
 
-            if (TimestepNo > 1) {
-                //Assert.LessOrEqual(xL2Err, ErrorThreshold, "XDG L2 error of computing du_dx");
+            if (TimestepNo > 0) {
+                Assert.LessOrEqual(xL2Err, ErrorThreshold, "XDG L2 error of computing du_dx");
             }
+
+            errorBack = xL2Err;
 
             // return/Ende
             //base.NoOfTimesteps = timeStep;

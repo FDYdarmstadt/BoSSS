@@ -29,6 +29,7 @@ using CNS.Source;
 using ilPSP;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace CNS {
@@ -260,6 +261,7 @@ namespace CNS {
         /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've
         /// covered all cases
+        /// fk,26sep23: No Björn, you have not!
         /// </summary>
         /// <returns></returns>
         public override object Clone() {
@@ -278,9 +280,9 @@ namespace CNS {
             clone.CustomEnergySources = new List<Func<ISpeciesMap, INonlinearSource>>();
             clone.CustomEnergySources.AddRange(this.CustomEnergySources);
 
-            clone.DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
-            clone.DynamicLoadBalancing_CellCostEstimators.AddRange(this.DynamicLoadBalancing_CellCostEstimators.Select(e => e.CloneAs()));
-            
+            clone.m_DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
+            clone.DynamicLoadBalancing_CellCostEstimators.AddRange(
+                this.DynamicLoadBalancing_CellCostEstimators.Select(e => e.CloneAs()));
             
             return clone;
         }

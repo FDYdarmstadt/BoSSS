@@ -734,7 +734,7 @@ namespace BoSSS.Foundation.Grid {
             if (OmmitPeriodic && g.iLogicalEdges.EdgeToParts != null)
                 throw new NotImplementedException("todo"); // problem: edge tags have geometric index.
 
-            for (int k = 0; k < K; k++) {
+            for (int k = 0; k < K; k++) { // loop over edges
                 int q = Cell2Edges_jCell[k];
                 int iEdge = Math.Abs(q) - 1;
                 int iOther = q >= 0 ? 1 : 0;

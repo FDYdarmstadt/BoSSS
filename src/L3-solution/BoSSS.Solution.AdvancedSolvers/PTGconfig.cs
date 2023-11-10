@@ -1,7 +1,9 @@
 ﻿using ilPSP;
 using ilPSP.Tracing;
+using log4net.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -11,7 +13,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// GMRES with p-two-grid preconditioner (<see cref="LevelPmg"/>).
     /// 
-    /// Should work well for intermediate-size-systems, where the embedded low-order system on the finest mesh is sufficiently small for the 
+    /// Should work well for intermediate-size-systems, 
+    /// where the embedded low-order system on the finest mesh is sufficiently small for the 
     /// direct solver.
     /// </summary>
     [Serializable]
@@ -60,11 +63,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            var precond = new LevelPmg();
-            precond.config.UseHiOrderSmoothing = this.UseHiOrderSmoothing;
-            precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
-            precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
-            precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
+
+            //var precond = CreatePrecond_alt(level);
+            var precond = CreatePrecond();
 
             var templinearSolve = new SoftGMRES() {
                 MaxKrylovDim = MaxKrylovDim,
@@ -75,6 +76,65 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             templinearSolve.Init(level);
             return templinearSolve;
+        }
+
+
+        private ISolverSmootherTemplate CreatePrecond() {
+            var precond = new LevelPmg();
+            precond.config.UseHiOrderSmoothing = this.UseHiOrderSmoothing;
+            precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
+            precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
+            precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
+            return precond;
+        }
+
+        int[] GetLoOrderDegrees(MultigridOperator level) {
+            int[] Degrees = level.Degrees;
+            int DegDecrease = Math.Max(Degrees.Max() - this.pMaxOfCoarseSolver, 0);
+            int[] loDegrees = Degrees.Select(deg => Math.Max(deg - DegDecrease, 0)).ToArray();
+            return loDegrees;
+        }
+
+        private ISolverSmootherTemplate CreatePrecond_alt(MultigridOperator level) {
+
+            var lowSolver = new DirectSolver();
+            lowSolver.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
+            lowSolver.config.UseDoublePrecision = false;
+            lowSolver.config.TestSolution = false;
+            lowSolver.ActivateCaching = (int NoIter, int MgLevel) => true;
+
+            var coarseSolver = new GridAndDegRestriction() {
+                RestrictedDeg = GetLoOrderDegrees(level),
+                LowerPSolver = lowSolver
+            };
+
+            /*
+            var postSmoother = new BlockJacobi() {
+                NoOfIterations = 1,
+            };
+            //*/
+
+            var postSmoother = new Schwarz() {
+                FixedNoOfIterations = 1,
+                m_BlockingStrategy = new Schwarz.MultigridBlocks() { 
+                    Depth = 0
+                }
+            };
+            postSmoother.config.EnableOverlapScaling = true;
+            postSmoother.config.Overlap = 1;
+            postSmoother.config.UsePMGinBlocks = false;
+            //*/
+            //Debugger.Launch();
+
+            var precond = new ClassicMultigrid();
+            precond.PreSmoother = coarseSolver;
+            precond.PostSmoother = postSmoother;
+            precond.config.m_omega = 1;
+            precond.TerminationCriterion = (iter, R0_l2, R_l2) => (iter <= 1, false);
+
+
+
+            return precond;
         }
 
     }

@@ -38,7 +38,7 @@ namespace BoSSS.Solution.TimeStepping {
         /// <param name="spatialOp"></param>
         /// <param name="Fieldsmap"></param>
         /// <param name="Parameters"></param>
-        public static void VerifyInput(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters) {
+        public static void VerifyInput(DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters) {
             if (!spatialOp.ContainsNonlinear && !(spatialOp.ContainsLinear()))
                 throw new ArgumentException("spatial differential operator seems to contain no components.", "spatialOp");
             if (spatialOp.DomainVar.Count != spatialOp.CodomainVar.Count)

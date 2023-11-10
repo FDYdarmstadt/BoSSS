@@ -1335,6 +1335,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                     {
+
                         if (jCellNeigh_max < 0) { //is(not) it a proper target?
                             bool isAggChainPossible = false;
 

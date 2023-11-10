@@ -45,7 +45,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// ctor.
         /// </summary>
-        public ROCK4(SpatialOperator op, CoordinateVector V, CoordinateMapping ParamFields) {
+        public ROCK4(DifferentialOperator op, CoordinateVector V, CoordinateMapping ParamFields) {
             this.CurrentState = V;
             this.OpEv = op.GetEvaluatorEx(this.Mapping, 
                 ParamFields != null ? ParamFields.Fields : new DGField[0], 

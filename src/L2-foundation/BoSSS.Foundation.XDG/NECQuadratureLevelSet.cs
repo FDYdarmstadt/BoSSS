@@ -121,7 +121,7 @@ namespace BoSSS.Foundation.XDG {
         /// ctor.
         /// </summary>
         internal NECQuadratureLevelSet(IGridData context,
-                                     XSpatialOperatorMk2 DiffOp,
+                                     XDifferentialOperatorMk2 DiffOp,
                                      V __ResultVector,
                                      IList<DGField> __DomainFields,
                                      IList<DGField> __Parameters,

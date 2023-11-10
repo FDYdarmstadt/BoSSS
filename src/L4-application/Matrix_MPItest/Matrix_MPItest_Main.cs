@@ -145,13 +145,13 @@ namespace BoSSS.Application.Matrix_MPItest {
 
         }
 
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
         int m_quadOrder;
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_quadOrder = u1.Basis.Degree * 2;
 
-            Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
+            Op = new XDifferentialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
             
             Op.EquationComponents["c1"].Add(new DxFlux("u1", -3.0)); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx( "u1", -3.0));
@@ -197,7 +197,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             //    OperatorMatrix, Affine, false, 0.0, true,
             //    Agg.CellLengthScales, null, null,
             //    LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, ProblemMapping, null, ProblemMapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, ProblemMapping, null, ProblemMapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);

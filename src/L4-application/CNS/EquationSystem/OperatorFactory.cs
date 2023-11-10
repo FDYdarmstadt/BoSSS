@@ -30,7 +30,7 @@ using System.Collections.Generic;
 namespace CNS.EquationSystem {
 
     /// <summary>
-    /// Constructs the <see cref="SpatialOperator"/>s for derivatives of the
+    /// Constructs the <see cref="DifferentialOperator"/>s for derivatives of the
     /// Navier-Stokes equation in primitive variable formulation. The operators
     /// consist of convective terms (depending first derivatives only),
     /// diffusive terms (depending on first and second derivatives) and generic
@@ -144,7 +144,7 @@ namespace CNS.EquationSystem {
         /// Constructs the convective operator of the equation system.
         /// </summary>
         /// <returns>
-        /// A new <see cref="SpatialOperator"/> with all fluxes
+        /// A new <see cref="DifferentialOperator"/> with all fluxes
         /// defined by <see cref="convectiveFluxBuilder"/>.
         /// </returns>
         public virtual Operator GetConvectiveOperator() {
@@ -168,7 +168,7 @@ namespace CNS.EquationSystem {
         /// Constructs the diffusive operator of the equation system.
         /// </summary>
         /// <returns>
-        /// A new <see cref="SpatialOperator"/> with all fluxes
+        /// A new <see cref="DifferentialOperator"/> with all fluxes
         /// defined by <see cref="diffusiveFluxBuilder"/>.
         /// </returns>
         public virtual Operator GetDiffusiveOperator() {

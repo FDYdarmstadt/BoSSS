@@ -43,7 +43,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddSpeciesConstitutive_component(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int d, int D, int stressDegree, string spcName, SpeciesId spcId,
+        public static void AddSpeciesConstitutive_component(XDifferentialOperatorMk2 XOp, IRheology_Configuration config, int d, int D, int stressDegree, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
@@ -139,7 +139,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddSpeciesConstitutive(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int D, int stressDegree, string spcName, SpeciesId spcId,
+        public static void AddSpeciesConstitutive(XDifferentialOperatorMk2 XOp, IRheology_Configuration config, int D, int stressDegree, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             if (D > 2) {
@@ -163,7 +163,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name="D"></param>
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceConstitutive_component(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int d, int D,
+        public static void AddInterfaceConstitutive_component(XDifferentialOperatorMk2 XOp, IRheology_Configuration config, int d, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
@@ -227,7 +227,7 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <param name = "BcMap" ></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddInterfaceConstitutive(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int D,
+        public static void AddInterfaceConstitutive(XDifferentialOperatorMk2 XOp, IRheology_Configuration config, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             U0meanrequired = false;

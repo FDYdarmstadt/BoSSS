@@ -1,0 +1,184 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ilPSP.LinSolvers.ILU</name>
+    </assembly>
+    <members>
+        <member name="T:ilPSP.LinSolvers.ILU.ILUSolver">
+            <summary>
+            Object-oriented wrapper for loading the ILU pre-conditioner from the Intel MKL libraries,
+            see https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/sparse-solver-routines/precondition-based-on-incomplete-lu-factorization.html
+            
+            Note: since the ILU is only an incomplete factorization, this does not actually computes a solution, only a crude approximation.
+            This can only be used as a pre-conditioner for some other solver.
+            </summary>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.ILUSolver.DefineMatrix(ilPSP.LinSolvers.IMutableMatrixEx)">
+            <summary>
+            <see cref="M:ilPSP.LinSolvers.ISparseSolver.DefineMatrix(ilPSP.LinSolvers.IMutableMatrixEx)"/>
+            </summary>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.ILUSolver.Solve``2(``0,``1)">
+            <summary>
+            Performs one solution of the ILU system.
+            Note: since the ILU is only an incomplete factorization, this does not actually computes a solution, only a crude approximation.
+            This can only be used as a pre-conditioner for some other solver.
+            </summary>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.ILUSolver.ForwardSubstitution(System.Double[])">
+             <summary>
+            solve for the lower triangular part of the ILU decomposition
+             </summary>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.ILUSolver.BackwardSubstitution(System.Double[])">
+            <summary>
+            solve for the upper triangular part of the ILU decomposition
+            </summary>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.ILUSolver.Dispose">
+            <summary>
+            release of internal data structures
+            </summary>
+        </member>
+        <member name="P:ilPSP.LinSolvers.ILU.ILUSolver.GetILUFactorization">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL">
+            <summary>
+            raw function wrapper for loading the ILU pre-conditioner from the Intel MKL libraries,
+            see https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/sparse-solver-routines/precondition-based-on-incomplete-lu-factorization.html
+            </summary>
+            <remarks>
+            Licensing: despite being closed software, Intel MKL can be redistributed.
+            </remarks>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.Wrapper_MKL.SelectLibrary(ilPSP.LinSolvers.Parallelism)">
+            <summary>
+            Read from Environment which type of parallel library should be used.
+            Returns a list of libraries in specific order to search for.
+            </summary>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.Wrapper_MKL.#ctor">
+            <summary>
+            ctor
+            </summary>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL._dcsrilu0">
+            <summary>
+            
+            </summary>
+            <param name="n">matrix size</param>
+            <param name="a"></param>
+            <param name="ia"></param>
+            <param name="ja"></param>
+            <param name="bilu0"></param>
+            <param name="ipar"></param>
+            <param name="dpar"></param>
+            <param name="ierr"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL._dcsrilut">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <param name="a"></param>
+            <param name="ia"></param>
+            <param name="ja"></param>
+            <param name="bilut"></param>
+            <param name="ibilut"></param>
+            <param name="jbilut"></param>
+            <param name="tol"></param>
+            <param name="maxfil"></param>
+            <param name="ipar"></param>
+            <param name="dpar"></param>
+            <param name="ierr"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL._d_trsv">
+            <summary>
+            
+            </summary>
+            <param name="operation">
+            SPARSE_OPERATION_NON_TRANSPOSE      = 10,
+            SPARSE_OPERATION_TRANSPOSE          = 11,
+            SPARSE_OPERATION_CONJUGATE_TRANSPOSE= 12
+            </param>
+            <param name="alpha"></param>
+            <param name="A"></param>
+            <param name="descr"></param>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL._d_crcsr">
+            <summary>
+            
+            </summary>
+            <param name="A">output, CSR (compressed sparse row) format handle</param>
+            <param name="indexing">c-style 0, fortran-style 1</param>
+            <param name="rows">number of rows</param>
+            <param name="cols">number of columns</param>
+            <param name="rows_start">pointerB</param>
+            <param name="rows_end">pointerE</param>
+            <param name="col_indx">column indices</param>
+            <param name="values">matrix entries</param>
+            <returns></returns>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL._export">
+            <summary>
+            For debugging
+            </summary>
+            <param name="source"></param>
+            <param name="indexing"></param>
+            <param name="rows"></param>
+            <param name="cols"></param>
+            <param name="rows_start"></param>
+            <param name="rows_end"></param>
+            <param name="col_indx"></param>
+            <param name="values"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL._destroy">
+            <summary>
+            destroys MKL internal CSR format matrix
+            </summary>
+            <param name="A"></param>
+            <returns></returns>
+        </member>
+        <member name="T:ilPSP.LinSolvers.ILU.Wrapper_MKL._optimize">
+            <summary>
+            optimizes MKL internal CSR format matrix
+            </summary>
+            <param name="A"></param>
+            <returns></returns>
+        </member>
+        <member name="P:ilPSP.LinSolvers.ILU.Wrapper_MKL.ILU0">
+            <summary>
+            PARDISO interface
+            </summary>
+        </member>
+        <member name="P:ilPSP.LinSolvers.ILU.Wrapper_MKL.ILUT">
+            <summary>
+            PARDISO interface
+            </summary>
+        </member>
+        <member name="P:ilPSP.LinSolvers.ILU.Wrapper_MKL.Substitute">
+            <summary>
+            Enables performant back and forward substitution.
+            </summary>
+        </member>
+        <member name="P:ilPSP.LinSolvers.ILU.Wrapper_MKL.CreateCSRMatrix">
+            <summary>
+            Internal MKL matrix format. Needed for the substitution routine.
+            </summary>
+        </member>
+        <member name="M:ilPSP.LinSolvers.ILU.Wrapper_MKL.ILUerror2string(System.Int32)">
+            <summary>
+            converts PARDISO error code to an hopefully more-explaning error string (taken from the manual)
+            </summary>
+        </member>
+    </members>
+</doc>

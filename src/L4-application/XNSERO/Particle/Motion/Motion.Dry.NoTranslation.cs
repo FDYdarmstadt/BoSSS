@@ -31,8 +31,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionDryNoTranslation(double density) : base(density) {
-            IncludeTranslation = false;
+        public MotionDryNoTranslation(double density) : base(density) { }
+
+        public override bool IncludeTranslation() {
+            return false;
         }
 
         /// <summary>
@@ -43,7 +45,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override Vector CalculateParticlePosition(double dt) {
+        public override Vector CalculateParticlePosition(double dt) {
             Vector l_Position = GetPosition(1);
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
@@ -53,7 +55,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override Vector CalculateTranslationalVelocity(double dt) {
+        public override Vector CalculateTranslationalVelocity(double dt) {
             Vector l_TranslationalVelocity = new Vector(SpatialDim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
@@ -63,7 +65,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculates the new translational acceleration.
         /// </summary>
         /// <param name="dt"></param>
-        protected override Vector CalculateTranslationalAcceleration(double dt) {
+        public override Vector CalculateTranslationalAcceleration(double dt) {
             return new Vector(SpatialDim);
         }
 
@@ -77,9 +79,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         //}
 
         public override object Clone() {
-            Motion clonedMotion = new MotionDryNoTranslation(Density);
-            clonedMotion.SetVolume(Volume);
-            clonedMotion.SetMomentOfInertia(MomentOfInertia);
+            MotionDryNoTranslation clonedMotion = new MotionDryNoTranslation(Density);
+            clonedMotion.Volume = this.Volume;
+            clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
         }
 
@@ -88,7 +90,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        public override Vector GetGravityForces(Vector Gravity) {
+        public override Vector GravityForce(Vector Gravity) {
             return new Vector(0, 0);
         }
     }

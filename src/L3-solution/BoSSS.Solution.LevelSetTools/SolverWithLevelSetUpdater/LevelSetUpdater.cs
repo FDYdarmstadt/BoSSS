@@ -275,10 +275,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
                 PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
+
+
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
                 preTracker.Dispose();
             }
-
 
             public void UpdateParameters(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,

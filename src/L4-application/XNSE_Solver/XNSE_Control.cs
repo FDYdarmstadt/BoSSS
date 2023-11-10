@@ -66,11 +66,14 @@ namespace BoSSS.Application.XNSE_Solver {
             base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
 
-
+            // fk, 20mar23: Dynamic load balancing: for XNSE, turn on by default
             base.DynamicLoadBalancing_CellCostEstimators.Clear();
             base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
+            base.DynamicLoadBalancing_On = true;
+            base.DynamicLoadBalancing_RedistributeAtStartup = true;
 
         }
+
 
         /// <summary>
         /// Activation of second level-set (fluid/solid boundary)

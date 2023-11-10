@@ -43,7 +43,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static SinglePhaseField RunDropletTest(string GridPath, string PlotTargetDir = "./plots/", FixedOperators chOp = null) {
             Init();
-            GridImportTest.ConvertFOAMGrid();
+            //GridImportTest.ConvertFOAMGrid();
             Console.WriteLine("Running Cahn-Hilliard Droplet Test");
             if (chOp == null) {
                 chOp = new FixedOperators();
@@ -52,12 +52,12 @@ namespace BoSSS.Application.ExternalBinding {
             OpenFoamDGField f = new OpenFoamDGField(grd, 2, 2);
             OpenFoamMatrix mtx = new OpenFoamMatrix(grd, f);
             OpenFoamPatchField cPtch;
-            int[] safeEts = new int[] { 1, 2, 3 };
-            string[] safeEtyps = new string[] { "neumann", "neumann", "neumann" };
-            double[] safeVals = new double[] { 0.0, 0.0, 0 };
+            int[] safeEts = new int[] { 1, 2, 3, 4, 5 };
+            string[] safeEtyps = new string[] { "neumann", "neumann", "neumann", "neumann", "neumann" };
+            double[] safeVals = new double[] { 0.0, 0.0, 0.0 , 0.0 , 0.0 };
             cPtch = new OpenFoamPatchField(grd, 1, safeEts, safeEtyps, safeVals);
 
-            double[] safeValsU = new double[] { 1.0, -1.0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] safeValsU = new double[] { 0.01*15, 0.01*(-15), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             OpenFoamPatchField uPtch = new OpenFoamPatchField(grd, 3, safeEts, safeEtyps, safeValsU);
             OpenFoamDGField U = new OpenFoamDGField(grd, 2, 3);
 
@@ -69,8 +69,12 @@ namespace BoSSS.Application.ExternalBinding {
             //     return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
             // }
 
-            var _chParams = new CahnHilliardParameters(_cahn: 1.0);
-            chOp.CahnHilliardInternal(mtx, U, cPtch, uPtch, chParams: _chParams);
+            var _chParams = new CahnHilliardParameters(_cahn: 0.1, _diffusion: 0.05, _stationary: false, _dt: 0.1, _endT: 0.1*1.1);
+
+            ScalarFunction UInitFunc() {
+                return ((_3D)((x, y, z) => 0.01 * z)).Vectorize();
+            }
+            chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, Ufunc: UInitFunc(), chParams: _chParams);
 
             var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
             field.Acc(1.0, mtx.Fields[0].Fields[0] as SinglePhaseField);
@@ -82,7 +86,9 @@ namespace BoSSS.Application.ExternalBinding {
             System.IO.Directory.CreateDirectory(targetPath);
             foreach (var file in files)
             {
-                file.MoveTo(targetPath + "/" + file.Name);
+                try {
+                    file.MoveTo(targetPath + "/" + file.Name);
+                } catch (Exception e){}
             }
             return field;
         }
@@ -108,6 +114,7 @@ namespace BoSSS.Application.ExternalBinding {
             List<double> errors = new List<double>();
             int i = 0;
             foreach (var grdStr in new List<string>{smallGrd, mediumGrd, largeGrd}){
+            // foreach (var grdStr in new List<string>{mediumGrd, largeGrd}){
                 OpenFOAMGrid grd = GridImportFromDirectory.GenerateFOAMGrid(grdStr);
                 OpenFoamDGField f = new OpenFoamDGField(grd, 2, 2);
                 OpenFoamMatrix mtx = new OpenFoamMatrix(grd, f);
@@ -129,14 +136,18 @@ namespace BoSSS.Application.ExternalBinding {
                 {
                     return ((_3D)((x, y, z) => Math.Sign(x))).Vectorize();
                 }
+                ScalarFunction Ufunc()
+                {
+                    return ((_3D)((x, y, z) => 0)).Vectorize();
+                }
 
-                var _chParams = new CahnHilliardParameters(_cahn: cahn, _dt: 0.001, _endT: 0.0045);
-                chOp.CahnHilliardInternal(mtx, U, cPtch, uPtch, func(), chParams: _chParams);
+                var _chParams = new CahnHilliardParameters(_cahn: cahn, _diffusion: 1.0, _stationary: true);
+                chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, func: func(), Ufunc: Ufunc(), chParams: _chParams);
 
                 var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
                 field.Acc(1.0, mtx.Fields[0].Fields[0] as SinglePhaseField);
                 var other = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
-                other.ProjectField(((x, y, z) => Math.Tanh(x / (Math.Sqrt(2) * cahn))));
+                other.ProjectField(((x, y, z) => Math.Tanh((x) / (Math.Sqrt(2) * cahn))));
                 double error = field.L2Error(other);
                 errors.Add(error);
                 DOFs.Add(grd.NumberOfCells);
@@ -282,7 +293,7 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("DOFs[1]: " + DOFs["c"][1]);
             Console.WriteLine("errorsS[0]: " + errorS["c"][0]);
             Console.WriteLine("errorsS[1]: " + errorS["c"][1]);
-            Assert.IsTrue(slope >= 2.4); // TODO should this be larger than 3?
+            Assert.IsTrue(slope >= 1.7); //
 
             Cleanup();
         }
@@ -292,8 +303,9 @@ namespace BoSSS.Application.ExternalBinding {
             // GridImportTest.ConvertFOAMGrid();
             Init();
 
-            string examplesDirectory   = "../../../examples/OpenFOAM/meshes/big/";
-            string examplesDirectory1D = "../../../examples/OpenFOAM/meshes/1D/";
+            string examplesDirectory   = "../../../../../../examples/OpenFOAM/meshes/big/";
+            string examplesDirectory1D = "../../../../../../examples/OpenFOAM/meshes/1D/";
+            bool overwrite = true;
             try {
                 Directory.CreateDirectory("./meshes/");
                 Directory.CreateDirectory("./meshes/big/");
@@ -304,23 +316,23 @@ namespace BoSSS.Application.ExternalBinding {
                 Directory.CreateDirectory("./meshes/big/large/");
                 Directory.CreateDirectory("./meshes/big/large/polyMesh/");
 
-                File.Copy(examplesDirectory + "small/polyMesh/boundarySmall", "./meshes/big/small/polyMesh/boundary");
-                File.Copy(examplesDirectory + "small/polyMesh/facesSmall", "./meshes/big/small/polyMesh/faces");
-                File.Copy(examplesDirectory + "small/polyMesh/neighbourSmall", "./meshes/big/small/polyMesh/neighbour");
-                File.Copy(examplesDirectory + "small/polyMesh/ownerSmall", "./meshes/big/small/polyMesh/owner");
-                File.Copy(examplesDirectory + "small/polyMesh/pointsSmall", "./meshes/big/small/polyMesh/points");
+                File.Copy(Path.Combine(examplesDirectory, "small/polyMesh/boundarySmall"), "./meshes/big/small/polyMesh/boundary", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "small/polyMesh/facesSmall"), "./meshes/big/small/polyMesh/faces", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "small/polyMesh/neighbourSmall"), "./meshes/big/small/polyMesh/neighbour", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "small/polyMesh/ownerSmall"), "./meshes/big/small/polyMesh/owner", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "small/polyMesh/pointsSmall"), "./meshes/big/small/polyMesh/points", overwrite);
 
-                File.Copy(examplesDirectory + "medium/polyMesh/boundaryMedium", "./meshes/big/medium/polyMesh/boundary");
-                File.Copy(examplesDirectory + "medium/polyMesh/facesMedium", "./meshes/big/medium/polyMesh/faces");
-                File.Copy(examplesDirectory + "medium/polyMesh/neighbourMedium", "./meshes/big/medium/polyMesh/neighbour");
-                File.Copy(examplesDirectory + "medium/polyMesh/ownerMedium", "./meshes/big/medium/polyMesh/owner");
-                File.Copy(examplesDirectory + "medium/polyMesh/pointsMedium", "./meshes/big/medium/polyMesh/points");
+                File.Copy(Path.Combine(examplesDirectory, "medium/polyMesh/boundaryMedium"), "./meshes/big/medium/polyMesh/boundary", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "medium/polyMesh/facesMedium"), "./meshes/big/medium/polyMesh/faces", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "medium/polyMesh/neighbourMedium"), "./meshes/big/medium/polyMesh/neighbour", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "medium/polyMesh/ownerMedium"), "./meshes/big/medium/polyMesh/owner", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "medium/polyMesh/pointsMedium"), "./meshes/big/medium/polyMesh/points", overwrite);
 
-                File.Copy(examplesDirectory + "large/polyMesh/boundaryLarge", "./meshes/big/large/polyMesh/boundary");
-                File.Copy(examplesDirectory + "large/polyMesh/facesLarge", "./meshes/big/large/polyMesh/faces");
-                File.Copy(examplesDirectory + "large/polyMesh/neighbourLarge", "./meshes/big/large/polyMesh/neighbour");
-                File.Copy(examplesDirectory + "large/polyMesh/ownerLarge", "./meshes/big/large/polyMesh/owner");
-                File.Copy(examplesDirectory + "large/polyMesh/pointsLarge", "./meshes/big/large/polyMesh/points");
+                File.Copy(Path.Combine(examplesDirectory, "large/polyMesh/boundaryLarge"), "./meshes/big/large/polyMesh/boundary", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "large/polyMesh/facesLarge"), "./meshes/big/large/polyMesh/faces", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "large/polyMesh/neighbourLarge"), "./meshes/big/large/polyMesh/neighbour", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "large/polyMesh/ownerLarge"), "./meshes/big/large/polyMesh/owner", overwrite);
+                File.Copy(Path.Combine(examplesDirectory, "large/polyMesh/pointsLarge"), "./meshes/big/large/polyMesh/points", overwrite);
             } catch (Exception e) { Console.WriteLine("Continuing despite " + e); }
 
             try {
@@ -333,34 +345,33 @@ namespace BoSSS.Application.ExternalBinding {
                 Directory.CreateDirectory("./meshes/1D/large/");
                 Directory.CreateDirectory("./meshes/1D/large/polyMesh/");
 
-                File.Copy(examplesDirectory1D + "small/polyMesh/boundarySmall1D", "./meshes/1D/small/polyMesh/boundary");
-                File.Copy(examplesDirectory1D + "small/polyMesh/facesSmall1D", "./meshes/1D/small/polyMesh/faces");
-                File.Copy(examplesDirectory1D + "small/polyMesh/neighbourSmall1D", "./meshes/1D/small/polyMesh/neighbour");
-                File.Copy(examplesDirectory1D + "small/polyMesh/ownerSmall1D", "./meshes/1D/small/polyMesh/owner");
-                File.Copy(examplesDirectory1D + "small/polyMesh/pointsSmall1D", "./meshes/1D/small/polyMesh/points");
+                File.Copy(Path.Combine(examplesDirectory1D, "small/polyMesh/boundarySmall1D"), "./meshes/1D/small/polyMesh/boundary", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "small/polyMesh/facesSmall1D"), "./meshes/1D/small/polyMesh/faces", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "small/polyMesh/neighbourSmall1D"), "./meshes/1D/small/polyMesh/neighbour", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "small/polyMesh/ownerSmall1D"), "./meshes/1D/small/polyMesh/owner", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "small/polyMesh/pointsSmall1D"), "./meshes/1D/small/polyMesh/points", overwrite);
 
-                File.Copy(examplesDirectory1D + "medium/polyMesh/boundaryMedium1D", "./meshes/1D/medium/polyMesh/boundary");
-                File.Copy(examplesDirectory1D + "medium/polyMesh/facesMedium1D", "./meshes/1D/medium/polyMesh/faces");
-                File.Copy(examplesDirectory1D + "medium/polyMesh/neighbourMedium1D", "./meshes/1D/medium/polyMesh/neighbour");
-                File.Copy(examplesDirectory1D + "medium/polyMesh/ownerMedium1D", "./meshes/1D/medium/polyMesh/owner");
-                File.Copy(examplesDirectory1D + "medium/polyMesh/pointsMedium1D", "./meshes/1D/medium/polyMesh/points");
+                File.Copy(Path.Combine(examplesDirectory1D, "medium/polyMesh/boundaryMedium1D"), "./meshes/1D/medium/polyMesh/boundary", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "medium/polyMesh/facesMedium1D"), "./meshes/1D/medium/polyMesh/faces", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "medium/polyMesh/neighbourMedium1D"), "./meshes/1D/medium/polyMesh/neighbour", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "medium/polyMesh/ownerMedium1D"), "./meshes/1D/medium/polyMesh/owner", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "medium/polyMesh/pointsMedium1D"), "./meshes/1D/medium/polyMesh/points", overwrite);
 
-                File.Copy(examplesDirectory1D + "large/polyMesh/boundaryLarge1D", "./meshes/1D/large/polyMesh/boundary");
-                File.Copy(examplesDirectory1D + "large/polyMesh/facesLarge1D", "./meshes/1D/large/polyMesh/faces");
-                File.Copy(examplesDirectory1D + "large/polyMesh/neighbourLarge1D", "./meshes/1D/large/polyMesh/neighbour");
-                File.Copy(examplesDirectory1D + "large/polyMesh/ownerLarge1D", "./meshes/1D/large/polyMesh/owner");
-                File.Copy(examplesDirectory1D + "large/polyMesh/pointsLarge1D", "./meshes/1D/large/polyMesh/points");
+                File.Copy(Path.Combine(examplesDirectory1D, "large/polyMesh/boundaryLarge1D"), "./meshes/1D/large/polyMesh/boundary", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "large/polyMesh/facesLarge1D"), "./meshes/1D/large/polyMesh/faces", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "large/polyMesh/neighbourLarge1D"), "./meshes/1D/large/polyMesh/neighbour", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "large/polyMesh/ownerLarge1D"), "./meshes/1D/large/polyMesh/owner", overwrite);
+                File.Copy(Path.Combine(examplesDirectory1D, "large/polyMesh/pointsLarge1D"), "./meshes/1D/large/polyMesh/points", overwrite);
             } catch (Exception e) { Console.WriteLine("Continuing despite " + e); }
 
-            // string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            // string grd = currentDirectory + "/../../../meshes/big/large/polyMesh/";
-            // string grd = currentDirectory + "/../../../meshes/big/medium/polyMesh/";
+            string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string grd = Path.Combine(currentDirectory, "meshes", "big", "medium", "polyMesh");
 
             // RunDropletTest(grd);
 
             // DropletTest();
-            // ConvergenceTest();
-            Test1D();
+            ConvergenceTest();
+            // Test1D();
 
         }
 

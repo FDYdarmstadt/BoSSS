@@ -290,9 +290,18 @@ namespace ilPSP.Tracing {
             if(!Tracer.InstrumentationSwitch)
                 return 0;
 
+            
             // expensive: 
             switch (Tracer.MemoryInstrumentationLevel) {
                 case MemoryInstrumentationLevel.GcAndPrivateMemory:
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine("WARNING: `Tracer.MemoryInstrumentationLevel` set to " + MemoryInstrumentationLevel.GcAndPrivateMemory);
+                    Console.WriteLine("This gives the most accurate memory allocation report, but it is a");
+                    Console.WriteLine("very expensive instrumentation option, slows down the application by a factor of two to three!!!");
+                    Console.WriteLine("Should not be used for production runs, but in order to identify memory problems.");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     var p = Process.GetCurrentProcess(); // process object must be fresh, otherwise old data
                     return p.WorkingSet64;
 
@@ -702,7 +711,7 @@ namespace ilPSP.Tracing {
                 return;
 
             string _name;
-            Type callingType = null;
+            Type callingType;
             {
                 StackFrame fr = new StackFrame(1, true);
 
@@ -792,7 +801,7 @@ namespace ilPSP.Tracing {
     /// </summary>
     public class BlockTrace : Tmeas {
 
-        FuncTrace _f;
+        readonly FuncTrace _f;
 
         /// <summary>
         /// ctor
@@ -809,6 +818,7 @@ namespace ilPSP.Tracing {
         public BlockTrace(string Title, FuncTrace f, bool timeToCout = false) {
             if(!Tracer.InstrumentationSwitch)
                 return;
+            base.DoLogging = f.DoLogging;
             string _name = Title;
             _f = f;
             m_Logger = _f.m_Logger;
@@ -816,7 +826,7 @@ namespace ilPSP.Tracing {
             base.EnterMessage("BLKENTER ", _name);
         }
 
-        bool m_timeToCout = false;
+        readonly bool m_timeToCout = false;
 
         /*
         /// <summary>

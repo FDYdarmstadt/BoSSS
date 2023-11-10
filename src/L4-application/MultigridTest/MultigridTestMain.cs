@@ -52,9 +52,12 @@ namespace BoSSS.Application.MultigridTest {
         /// <param name="args"></param>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
-            //TestProgramCurvedMG.Init();
+            TestProgramCurvedMG.Init();
             TestProgramLinearMG.Init();
-            BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_Norm(0, 0.1, 1, MultigridOperator.Mode.SymPart_DiagBlockEquilib);
+
+            BoSSS.Application.MultigridTest.TestProgramCurvedMG.RestrictionOfSystemOpTest();
+            //BoSSS.Application.MultigridTest.TestProgramLinearMG.RestrictionOfSystemOpTest();
+            //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_Norm(0, 0.1, 1, MultigridOperator.Mode.SymPart_DiagBlockEquilib);
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest_2(0, 0.3d);
             //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(1, 0.0d, 1);
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_ProlongationTest(3, 0.0d, 1, MultigridOperator.Mode.IdMass);

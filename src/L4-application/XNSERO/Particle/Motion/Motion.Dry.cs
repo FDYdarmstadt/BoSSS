@@ -38,7 +38,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new translational velocity of the particle
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override Vector CalculateTranslationalVelocity(double dt) {
+        public override Vector CalculateTranslationalVelocity(double dt) {
             Vector l_TranslationalVelocity = GetTranslationalVelocity(1) + GetTranslationalAcceleration(0) * dt;
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt) {
+        public override double CalculateAngularVelocity(double dt) {
             double l_RotationalVelocity = GetRotationalVelocity(1);
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
             return l_RotationalVelocity;
@@ -59,7 +59,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        protected override double CalculateRotationalAcceleration(double dt) {
+        public override double CalculateRotationalAcceleration(double dt) {
             double l_Acceleration = 0;
             Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
             return l_Acceleration;
@@ -76,9 +76,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         //}
 
         public override object Clone() {
-            Motion clonedMotion = new MotionDry(Density);
-            clonedMotion.SetVolume(Volume);
-            clonedMotion.SetMomentOfInertia(MomentOfInertia);
+            MotionDry clonedMotion = new MotionDry(Density);
+            clonedMotion.Volume = this.Volume;
+            clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
         }
     }

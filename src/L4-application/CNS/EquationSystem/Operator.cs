@@ -25,7 +25,7 @@ namespace CNS.EquationSystem {
 
     /// <summary>
     /// A generic operator that helps with the construction of a
-    /// <see cref="SpatialOperator"/>. The main purpose of this class is the
+    /// <see cref="DifferentialOperator"/>. The main purpose of this class is the
     /// simplification of the process of error-prone merging different
     /// operators (like the convective and the diffusive operator)
     /// </summary>
@@ -136,12 +136,12 @@ namespace CNS.EquationSystem {
         }
 
         /// <summary>
-        /// Creates a <see cref="SpatialOperator"/> with the equation
+        /// Creates a <see cref="DifferentialOperator"/> with the equation
         /// components that have been assigned to this operator.
         /// </summary>
         /// <returns></returns>
-        public SpatialOperator ToSpatialOperator(CNSFieldSet fieldSet) {
-            SpatialOperator spatialOp = new SpatialOperator(
+        public DifferentialOperator ToSpatialOperator(CNSFieldSet fieldSet) {
+            DifferentialOperator spatialOp = new DifferentialOperator(
                 CompressibleEnvironment.PrimalArgumentOrdering,
                 GetParameterOrdering(fieldSet),
                 CompressibleEnvironment.PrimalArgumentOrdering,
@@ -160,7 +160,7 @@ namespace CNS.EquationSystem {
         /// The operator onto which the components of
         /// <paramref name="op"/> should be mapped.
         /// </param>
-        private void MapComponents(SpatialOperator op) {
+        private void MapComponents(DifferentialOperator op) {
             DensityComponents.ForEach(component =>
                 op.EquationComponents[CompressibleVariables.Density].Add(component));
 

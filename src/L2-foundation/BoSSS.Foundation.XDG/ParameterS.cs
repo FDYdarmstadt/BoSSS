@@ -4,7 +4,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     
     
     /// <summary>
-    /// A parameter (for a spatial operator) is some field data (<see cref="ISpatialOperator.ParameterVar"/>),
+    /// A parameter (for a spatial operator) is some field data (<see cref="IDifferentialOperator.ParameterVar"/>),
     /// upon which the PDE depends on; It is neither a residual nor some field to solve for.
     /// A typical example would be a non-constant diffusion coefficient.
     /// 
@@ -19,7 +19,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         
         /// <summary>
         /// To correlate the parameters handled by this class
-        /// with the entire parameter list of the spatial operator (<see cref="ISpatialOperator.ParameterVar"/>)
+        /// with the entire parameter list of the spatial operator (<see cref="IDifferentialOperator.ParameterVar"/>)
         /// </summary>
         public abstract IList<string> ParameterNames { get; }
 

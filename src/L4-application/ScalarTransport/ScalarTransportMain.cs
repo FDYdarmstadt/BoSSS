@@ -127,13 +127,13 @@ namespace BoSSS.Application.ScalarTransport {
 
         ExplicitEuler Timestepper;
 
-        SpatialOperator diffOp;
+        DifferentialOperator diffOp;
         
         /// <summary>
         /// 
         /// </summary>
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            diffOp = new SpatialOperator(new string[] { "u" },
+            diffOp = new DifferentialOperator(new string[] { "u" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.GridData.SpatialDimension),
                 new string[] { "codom1" },
                 QuadOrderFunc.Linear());

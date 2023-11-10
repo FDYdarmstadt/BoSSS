@@ -329,7 +329,7 @@ namespace BoSSS.Foundation {
             for (int k = 0; k < K; k++)
                 args[k] = "_" + k;
 
-            SpatialOperator powOp = new SpatialOperator(args, new string[] { "res" }, QuadOrderFunc.SumOfMaxDegrees());
+            DifferentialOperator powOp = new DifferentialOperator(args, new string[] { "res" }, QuadOrderFunc.SumOfMaxDegrees());
             powOp.EquationComponents["res"].Add(new AbsSource(args));
 
             powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat));
@@ -433,7 +433,7 @@ namespace BoSSS.Foundation {
             if (!object.ReferenceEquals(f.Basis.GridDat, this.Basis.GridDat))
                 throw new ArgumentException("field is associated to another context.", "a");
 
-            SpatialOperator powOp = new SpatialOperator(new string[] { "f" },
+            DifferentialOperator powOp = new DifferentialOperator(new string[] { "f" },
                                                         new string[] { "res" },
                                                         QuadOrderFunc.SumOfMaxDegrees());
             powOp.EquationComponents["res"].Add(new PowSource(pow));
@@ -624,7 +624,7 @@ namespace BoSSS.Foundation {
 
             string[] Cod = new string[] { "res" };
 
-            SpatialOperator src = new SpatialOperator(Dom, Cod, QuadOrderFunc.NonLinear(3));
+            DifferentialOperator src = new DifferentialOperator(Dom, Cod, QuadOrderFunc.NonLinear(3));
             src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(Dom, f));
             src.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.Basis.GridDat));
             src.VolumeQuadraturSchemeProvider = g => cqs;
@@ -709,7 +709,7 @@ namespace BoSSS.Foundation {
                 this.Clear();
             }
 
-            SpatialOperator multOp = new SpatialOperator(new string[] { "a", "b" },
+            DifferentialOperator multOp = new DifferentialOperator(new string[] { "a", "b" },
                                                           new string[] { "res" },
                                                           QuadOrderFunc.NonLinear(2));
             multOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
@@ -823,7 +823,7 @@ namespace BoSSS.Foundation {
                 this.Clear();
             }
 
-            SpatialOperator fracOp = new SpatialOperator(new string[] { "a", "b" },
+            DifferentialOperator fracOp = new DifferentialOperator(new string[] { "a", "b" },
                                                           new string[] { "res" },
                                                           QuadOrderFunc.Linear());
                                                           //QuadOrderFunc.NonLinear(2));

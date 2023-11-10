@@ -142,6 +142,17 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("HeatEquationSolver/HeatEquationSolver.ipynb")]
+        [Test]
+        static public void Run__HeatEquationSolver() {
+            RunWorksheet("HeatEquationSolver/HeatEquationSolver.ipynb");
+        }
+#endif
+
+
+
+#if !DEBUG
+        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
         [Test]
         static public void Run__ue6ScalarConvStability() {
@@ -273,8 +284,10 @@ namespace BoSSS.Application.TutorialTests {
             string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
             string WorksheetName;
             if (!File.Exists(TexFileName)) {
+                Console.WriteLine($"Must search for file {TexFileName} ({NotebookPartialPath})");
                 WorksheetName = LocateFile(NotebookPartialPath).Single();
             } else {
+                Console.WriteLine($"Found File {TexFileName} ({NotebookPartialPath}) in current directory.");
                 WorksheetName = TexFileName;
             }
 
@@ -306,7 +319,7 @@ namespace BoSSS.Application.TutorialTests {
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
                 if(!allowErrors)
                     Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
-                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
+                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.)."); // fail only on negative numbers (file-not-found, something completely off)
             } finally {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
@@ -327,6 +340,8 @@ namespace BoSSS.Application.TutorialTests {
                 repoRoot = new DirectoryInfo(DirectoryOffset);
             else
                 repoRoot = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+            Console.WriteLine($"Root directory of repository set as: {repoRoot.FullName} (DirectoryOffset = {DirectoryOffset ?? "NULL"})");
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);

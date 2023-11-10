@@ -81,9 +81,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         EllipticReInitAlgoControl Control;
 
         private LevelSetTracker LevelSetTracker;
-        SpatialOperator Operator_bulk;
-        XSpatialOperatorMk2 Operator_interface;
-        SpatialOperator Operator_RHS;
+        DifferentialOperator Operator_bulk;
+        XDifferentialOperatorMk2 Operator_interface;
+        DifferentialOperator Operator_RHS;
         SinglePhaseField Phi;
 
         SinglePhaseField Residual;
@@ -266,7 +266,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 //    subGrid:Restriction,
                 //    whichSpc: LevelSetTracker.GetSpeciesId("A")
                 //    );
-                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, Phi.Mapping, null, Phi.Mapping);
+                XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, Phi.Mapping, null, Phi.Mapping);
 
                 MultiphaseCellAgglomerator dummy = LevelSetTracker.GetAgglomerator(LevelSetTracker.SpeciesIdS.ToArray(), Phi.Basis.Degree * 2 + 2, 0.0);
                 //mtxBuilder.SpeciesOperatorCoefficients[LevelSetTracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")];

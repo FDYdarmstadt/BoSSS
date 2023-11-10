@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
-using static BoSSS.Foundation.SpatialOperator;
+using static BoSSS.Foundation.DifferentialOperator;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
     /// it can have components which couple the phases.
     /// Mk2: enables the definition of different equation components for each phase 
     /// </summary>
-    partial class XSpatialOperatorMk2 {
+    partial class XDifferentialOperatorMk2 {
 
         /// <summary>
         /// Assembly of matrices for linear (or linearized) XDG operators
@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// ctor
             /// </summary>
-            internal XEvaluatorLinear(XSpatialOperatorMk2 ownr,
+            internal XEvaluatorLinear(XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory) :
@@ -227,7 +227,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var builder = SpeciesBuilder[SpeciesId];
                                     //builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
-                                    NotifySpecies((SpatialOperator)(builder.Owner), this.m_lsTrk, SpeciesId);
+                                    NotifySpecies((DifferentialOperator)(builder.Owner), this.m_lsTrk, SpeciesId);
 
                                     if(trx != null) {
                                         trx.TransceiveFinish();
@@ -345,7 +345,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-            internal XEvaluatorNonlin(XSpatialOperatorMk2 ownr,
+            internal XEvaluatorNonlin(XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 CoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory) :
@@ -417,7 +417,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var eval = SpeciesEval[SpeciesId];
                                     //eval.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
-                                    NotifySpecies((SpatialOperator)(eval.Owner), this.m_lsTrk, SpeciesId);
+                                    NotifySpecies((DifferentialOperator)(eval.Owner), this.m_lsTrk, SpeciesId);
 
                                     if (trx != null) {
                                         trx.TransceiveFinish();
@@ -438,6 +438,7 @@ namespace BoSSS.Foundation.XDG {
 
                     using (new BlockTrace("surface_integration", tr)) {
                         if (DoEdge) {
+                            // TODO: are the quadrature rules non-empty?
 #if DEBUG
                             {
                                 // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
@@ -598,12 +599,12 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// equal to <see cref="Owner"/>
             /// </summary>
-            internal XSpatialOperatorMk2 m_Owner;
+            internal XDifferentialOperatorMk2 m_Owner;
 
             /// <summary>
             /// the operator used to construct this object
             /// </summary>
-            public ISpatialOperator Owner {
+            public IDifferentialOperator Owner {
                 get {
                     return m_Owner;
                 }
@@ -641,7 +642,7 @@ namespace BoSSS.Foundation.XDG {
             /// ctor
             /// </summary>
             protected internal XEvaluatorBase(
-                XSpatialOperatorMk2 ownr,
+                XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 UnsetteledCoordinateMapping DomainVarMap, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int __TrackerHistoryIndex) //
@@ -925,17 +926,17 @@ namespace BoSSS.Foundation.XDG {
             abstract protected void ctorSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperatorMk2.GhostEdgesOperator"/>
+            /// Create integrator for <see cref="XDifferentialOperatorMk2.GhostEdgesOperator"/>
             /// </summary>
             abstract protected void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
+            /// Create integrator for <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
             /// </summary>
             abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
-            /// Create Integrator for <see cref="XSpatialOperatorMk2.ContactLineOperator_Ls0"/>
+            /// Create Integrator for <see cref="XDifferentialOperatorMk2.ContactLineOperator_Ls0"/>
             /// </summary>
             abstract protected void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
@@ -945,7 +946,7 @@ namespace BoSSS.Foundation.XDG {
             abstract protected void ctorLevSetFormIntegrator(int iLevSet, SpeciesId SpeciesA, SpeciesId SpeciesB, ICompositeQuadRule<QuadRule> rule);
 
             /// <summary>
-            /// all species to integrate, defined through <see cref="XSpatialOperatorMk2.Species"/>
+            /// all species to integrate, defined through <see cref="XDifferentialOperatorMk2.Species"/>
             /// </summary>
             protected SpeciesId[] ReqSpecies;
 
@@ -957,7 +958,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// the spatial operator
             /// </summary>
-            protected XSpatialOperatorMk2 m_Xowner;
+            protected XDifferentialOperatorMk2 m_Xowner;
 
             /// <summary>
             /// Parameter fields for each species, for <see cref="XDGField"/>s the species shadow, see <see cref="XDGField.GetSpeciesShadowField(SpeciesId)"/>
@@ -1055,7 +1056,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// calls all <see cref="IEquationComponentSpeciesNotification.SetParameter"/> methods
             /// </summary>
-            protected static void NotifySpecies(SpatialOperator Owner, LevelSetTracker lsTrk, SpeciesId id) {
+            protected static void NotifySpecies(DifferentialOperator Owner, LevelSetTracker lsTrk, SpeciesId id) {
                 string sNmn = lsTrk.GetSpeciesName(id);
 
                 string[] CodNames = Owner.CodomainVar.ToArray();

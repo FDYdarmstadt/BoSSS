@@ -30,6 +30,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using ilPSP.Tracing;
+using System.Collections.ObjectModel;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -82,47 +83,56 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        internal static Stopwatch getKeys = new Stopwatch();
+
         /// <summary>
         /// Correlation of session, job and control object is done by name
         /// </summary>
         public void SetNameBasedSessionJobControlCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
+                //using (var tr = new FuncTrace("NameBasedSessionInfoJobControlCorrelation")) {
                 try {
+                    var kaq = new Dictionary<string, object>(sinf.KeysAndQueries); // caching for IO acceleration
+                    
                     // compare project name
-                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                    if (!kaq.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
                         return false;
 
-                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(this.CurrentProject))
+                    if (!Convert.ToString(kaq[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(this.CurrentProject))
                         return false;
 
                     // compare session name
-                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                    if (!kaq.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
                         return false;
 
-                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name))
+                    if (!Convert.ToString(kaq[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name))
                         return false;
-                    
+
                     // fall tests passed
                     return true;
-                } catch(Exception) {
+                } catch (Exception) {
                     return false;
                 }
+                //}
 
             };
             SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
                 try {
+
+                    var kaq = new Dictionary<string, object>(sinf.KeysAndQueries); // for IO acceleration
+
                     // compare project name
-                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                    if (!kaq.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
                         return false;
 
-                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(ctrl.ProjectName))
+                    if(!Convert.ToString(kaq[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(ctrl.ProjectName))
                         return false;
 
                     // compare session name
-                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                    if(!kaq.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
                         return false;
 
-                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName))
+                    if(!Convert.ToString(kaq[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName))
                         return false;
 
                     // fall tests passed
@@ -152,6 +162,7 @@ namespace BoSSS.Application.BoSSSpad {
         public void SetEqualityBasedSessionJobControlCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
                 var c_job = job.GetControl();
+                
                 try {
                     var c_sinf = sinf.GetControl();
                     if(c_sinf != null)
@@ -186,65 +197,29 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how session in the project correlate to jobs.
+        /// Defines, globally for the entire workflow management, how session in the project correlate to jobs.
         /// </summary>
         public Func<ISessionInfo, Job, bool> SessionInfoJobCorrelation;
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how session in the project correlate to control objects.
+        /// Defines, globally for the entire workflow management, how session in the project correlate to control objects.
         /// </summary>
         public Func<ISessionInfo, AppControl, bool> SessionInfoAppControlCorrelation;
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how jobs in the project correlate to control objects.
+        /// Defines, globally for the entire workflow management, how jobs in the project correlate to control objects.
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
-        /*
-        /// <summary>
-        /// deletes old job deployments and databases
-        /// </summary>
-        public void Reset() {
-            if(CurrentProject.IsEmptyOrWhite()) {
-                Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
-                return;
-            }
-
-            // delete old databases
-            // ====================
-            foreach(var q in BoSSSshell.ExecutionQueues) {
-                //var dirsToDelete = new HashSet<DirectoryInfo>();
-                //bool delete = false;
-                foreach(var allowedPath in q.AllowedDatabasesPaths) {
-                    var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
-
-                    var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
-                    foreach(var db in dbDirs) {
-                        if(db.Exists) {
-                            Console.WriteLine("Deleting database: " + db.FullName);
-                            db.Delete(true);
-                        }
-                    }
-                }
-            }
-
-            // delete old deployment
-            // =====================
-
-            {
-                var deplDirs = (new DirectoryInfo(q.DeploymentBaseDirectory)).GetDirectories(DeployMents, SearchOption.TopDirectoryOnly);
-                foreach(var d in deplDirs) {
-                    
-
-                    if(d.Exists) {
-                        Console.WriteLine("Deleting deployment dir: " + d.FullName);
-                        d.Delete(true);
-                    }
-                }
+        internal bool RunWorkflowFromBackup {
+            get {
+                //string runfromBackup = System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP");
+                //return runfromBackup.IsEmptyOrWhite() == false;
+                return File.Exists("BOSSS_RUNTESTFROMBACKUP.txt");
+                
             }
         }
-        */
-       
+
 
         /// <summary>
         /// Defines the name of the current project; also creates a default database
@@ -262,12 +237,89 @@ namespace BoSSS.Application.BoSSSpad {
 
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
-            try {
-                DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
-            } catch (Exception e) {
-                Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
+
+            if (RunWorkflowFromBackup == false) {
+                try {
+                    DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
+                }
+            } else {
+                Console.WriteLine("trying to run from backup database...");
+                var pp = ExecutionQueue.AllowedDatabasesPaths[0];
+                var baseDir = new DirectoryInfo(pp.LocalMountPath);
+
+                if (!Path.IsPathRooted(pp.LocalMountPath))
+                    throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+
+                var bkupDbs = baseDir.GetDirectories("bkup*." + ProjectName);
+                Console.WriteLine("   Bkup Database dirs: " + bkupDbs.ToConcatString("", ", ", ";"));
+
+                if (bkupDbs.Length <= 0) {
+                    Console.Error.WriteLine("No Backups found; unable to run worksheet from backup database.");
+
+                } else {
+
+                    var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
+                    Console.WriteLine("Selecting newest available backup: " + dbDir);
+
+
+                    IDatabaseInfo dbi = BoSSSshell.OpenDatabase(dbDir.FullName);
+
+                    if (!pp.PathAtRemote.IsEmptyOrWhite()) {
+                        string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
+                        string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
+                        fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
+                        DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
+                    }
+
+                    DefaultDatabase = dbi;
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// Removes any pre-existing results regarding this project; use with extreme care!
+        /// </summary>
+        public void ResetProject(bool ResetJobs = true, bool deleteDeployments = false, bool deleteSessions = false, bool deleteGrids = false) {
+            if (deleteSessions) {
+                Console.WriteLine("Deleting Sessions in projects...");
+                foreach(var s in this.Sessions) {
+                    s.Delete(true);
+                }
+            } else {
+                Console.WriteLine("Not deleting any sessions, because not specified (`deleteSessions:false`).");
+            }
+
+            if (deleteGrids) {
+                Console.WriteLine("Deleting Grids in projects...");
+                foreach (var g in this.Grids) {
+                    g.Delete(true);
+                }
+            } else {
+                Console.WriteLine("Not deleting any grids, because not specified (`deleteGrids:false`).");
+            }
+
+            if (deleteDeployments) {
+                Console.WriteLine("Deleting Job deployments in projects...");
+                foreach (var j in this.AllJobs) {
+                    j.Value.DeleteOldDeploymentsAndSessions(deleteSessions);
+                }
+
+            } else {
+                Console.WriteLine("Not deleting any grids, because not specified (`deleteDeployments:false`).");
+            }
+
+            if (ResetJobs) {
+                Console.WriteLine("Forgetting all Jobs defined in this notebook so far...");
+                this.m_AllJobs.Clear();
+            } else {
+                Console.WriteLine("Job objects defined so far remain valid (`ResetJobs:true`). ");
             }
         }
+
+
 
         IDatabaseInfo m_DefaultDatabase;
 
@@ -296,59 +348,62 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IReadOnlyList<IDatabaseInfo> AllDatabases {
             get {
+                if (RunWorkflowFromBackup == false) {
+                    if (m_AllDatabases == null || ((DateTime.Now - m_AllDatabases_CacheTime) > UpdatePeriod)) {
 
-                if(m_AllDatabases == null || ((DateTime.Now - m_AllDatabases_CacheTime) > UpdatePeriod)) {
+                        var allDBs = new List<IDatabaseInfo>();
 
-                    var allDBs = new List<IDatabaseInfo>();
-
-                    foreach(var q in BoSSSshell.ExecutionQueues) {
-                        int cnt = 0;
-                        foreach(var dbPath in q.AllowedDatabasesPaths) {
-                            IDatabaseInfo dbi = null;
-                            string db_path = Path.Combine(dbPath.LocalMountPath, this.CurrentProject);
-                            if(cnt == 0) {
-                                try {
-                                    dbi = BoSSSshell.OpenOrCreateDatabase(db_path);
-                                } catch(Exception e) {
-                                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of database: {e.Message}.");
+                        foreach (var q in BoSSSshell.ExecutionQueues) {
+                            int cnt = 0;
+                            foreach (var dbPath in q.AllowedDatabasesPaths) {
+                                IDatabaseInfo dbi = null;
+                                string db_path = Path.Combine(dbPath.LocalMountPath, this.CurrentProject);
+                                if (cnt == 0) {
+                                    try {
+                                        dbi = BoSSSshell.OpenOrCreateDatabase(db_path);
+                                    } catch (Exception e) {
+                                        Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of database: {e.Message}.");
+                                    }
+                                } else {
+                                    try {
+                                        dbi = BoSSSshell.OpenDatabase(db_path);
+                                    } catch (Exception) {
+                                        dbi = null;
+                                    }
                                 }
+                                if (dbi != null)
+                                    allDBs.Add(dbi);
+                                cnt++;
+                            }
+                        }
+
+                        if (m_DefaultDatabase != null) {
+                            int DefaultDbMatch = -1;
+                            int cnt = 0;
+                            foreach (var dbi in allDBs) {
+                                if (Object.ReferenceEquals(m_DefaultDatabase, dbi) || dbi.PathMatch(m_DefaultDatabase.Path)) {
+                                    DefaultDbMatch = cnt;
+                                    break;
+                                }
+                                cnt++;
+                            }
+
+                            if (DefaultDbMatch >= 0) {
+                                allDBs.RemoveAt(DefaultDbMatch);
+                                allDBs.Insert(0, m_DefaultDatabase);
                             } else {
-                                try {
-                                    dbi = BoSSSshell.OpenDatabase(db_path);
-                                } catch(Exception) {
-                                    dbi = null;
-                                }
+                                allDBs.Insert(0, m_DefaultDatabase);
                             }
-                            if(dbi != null)
-                                allDBs.Add(dbi);
-                            cnt++;
                         }
+
+                        m_AllDatabases_CacheTime = DateTime.Now;
+                        m_AllDatabases = allDBs;
                     }
 
-                    if(m_DefaultDatabase != null) {
-                        int DefaultDbMatch = -1;
-                        int cnt = 0;
-                        foreach(var dbi in allDBs) {
-                            if(Object.ReferenceEquals(m_DefaultDatabase, dbi) || dbi.PathMatch(m_DefaultDatabase.Path)) {
-                                DefaultDbMatch = cnt;
-                                break;
-                            }
-                            cnt++;
-                        }
-
-                        if(DefaultDbMatch >= 0) {
-                            allDBs.RemoveAt(DefaultDbMatch);
-                            allDBs.Insert(0, m_DefaultDatabase);
-                        } else {
-                            allDBs.Insert(0, m_DefaultDatabase);
-                        }
-                    }
-
-                    m_AllDatabases_CacheTime = DateTime.Now;
-                    m_AllDatabases = allDBs;
+                    return m_AllDatabases.AsReadOnly();
+                } else {
+                    return (new List<IDatabaseInfo>(new[] { DefaultDatabase })).AsReadOnly();
                 }
-                
-                return m_AllDatabases.AsReadOnly();
             }
         }
 
@@ -356,8 +411,9 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-        DateTime m_Sessions_CacheTime;
+        
         ISessionInfo[] m_Sessions;
+        List<SessionAtomic> m_Atomics = new List<SessionAtomic>();
 
         /// <summary>
         /// Clears the cache for <see cref="Sessions"/> and enforces to re-read the database.
@@ -366,50 +422,85 @@ namespace BoSSS.Application.BoSSSpad {
             m_Sessions = null;
         }
 
+        /// <summary>
+        /// Prevents changes (through IO) in <see cref="Sessions"/> as long the atomic is in use;   with the exception of <see cref="ResetSessionsCache"/>
+        /// This also helps IO performance;
+        /// </summary>
+        public class SessionAtomic : IDisposable {
+            
+            internal SessionAtomic(WorkflowMgm owner) {
+                m_owner = owner;
+            }
+
+            internal readonly WorkflowMgm m_owner;
+
+            /// <summary>
+            /// releases the atomic
+            /// </summary>
+            public void Dispose() {
+                m_owner.m_Atomics.Remove(this);
+                if (m_owner.m_Atomics.Count >= 0)
+                    m_owner.ResetSessionsCache();
+            }
+        }
+
+        /// <summary>
+        /// <see cref="SessionAtomic"/>
+        /// </summary>
+        public SessionAtomic EnterSessionAtomic() {
+            m_Atomics.Add(new SessionAtomic(this));
+            return m_Atomics.Last();
+        }
+
 
         /// <summary>
         /// A list of all sessions in the current project.
         /// </summary>
         public ISessionInfo[] Sessions {
             get {
-                if (CurrentProject.IsEmptyOrWhite()) {
-                    Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
-                    return new ISessionInfo[0];
-                }
-
-                //if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
-                //Console.WriteLine("Updatting Sessions...");
-                DateTime st = DateTime.Now;
-                {
-                    List<ISessionInfo> ret = new List<ISessionInfo>();
-
-                    if (BoSSSshell.databases != null) {
-                        foreach (var db in BoSSSshell.databases) {
-                            var SS = db.Sessions.Where(delegate( ISessionInfo si) {
-                                //#if DEBUG 
-                                //                                return si.ProjectName.Equals(this.CurrentProject);
-                                //#else
-                                Guid g = Guid.Empty;
-                                try {
-                                    g = si.ID;
-                                    return si.ProjectName.Equals(this.CurrentProject);
-                                } catch(Exception e) {
-                                    Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
-                                    return false;
-                                }
-                                //#endif
-                            });
-                            ret.AddRange(SS);
-                        }
+                using (new FuncTrace()) {
+                    if (CurrentProject.IsEmptyOrWhite()) {
+                        Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
+                        return new ISessionInfo[0];
                     }
 
-                    m_Sessions = ret.ToArray();
-                    m_Sessions_CacheTime = DateTime.Now;
-                }
-                //TimeSpan duration = DateTime.Now - st;
-                //Console.WriteLine("done. (took " + duration + ")");
+                    if(m_Atomics.Count > 0 && m_Sessions != null) {
+                        return m_Sessions;
+                    } else { 
 
-                return m_Sessions;
+                    
+                        List<ISessionInfo> ret = new List<ISessionInfo>();
+
+                        if (BoSSSshell.databases != null) {
+                            foreach (var db in BoSSSshell.databases) {
+                                var SS = db.Sessions.Where(delegate (ISessionInfo si) {
+                                    //#if DEBUG 
+                                    //                                return si.ProjectName.Equals(this.CurrentProject);
+                                    //#else
+                                    Guid g = Guid.Empty;
+                                    try {
+                                        g = si.ID;
+                                        return si.ProjectName.Equals(this.CurrentProject);
+                                    } catch (Exception e) {
+                                        Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
+                                        return false;
+                                    }
+                                    //#endif
+                                });
+                                ret.AddRange(SS);
+                            }
+                        }
+
+                        if (m_Atomics.Count > 0)
+                            m_Sessions = ret.ToArray();
+                        else
+                            m_Sessions = null;
+                        
+
+                        return ret.ToArray();
+                    }
+
+                }
             }
         }
 
@@ -610,16 +701,16 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-        Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
+        internal Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
 
         /// <summary>
         /// Lists all compute jobs which are currently known by the work flow management system.
         /// - key: job name
         /// - item 
         /// </summary>
-        public IDictionary<string, Job> AllJobs {
+        public ReadOnlyDictionary<string, Job> AllJobs {
             get {
-                return m_AllJobs;
+                return new ReadOnlyDictionary<string, Job>(m_AllJobs);
             }
         }
 

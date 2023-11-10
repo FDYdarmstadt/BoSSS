@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// vectorizer option: translate some equation component to another one
         /// </param>
         /// <param name="op"></param>
-        static public EquationComponentArgMapping<T>[] GetArgMapping(ISpatialOperator op, bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) {
+        static public EquationComponentArgMapping<T>[] GetArgMapping(IDifferentialOperator op, bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) {
 //             public EquationComponentArgMapping<T>[] GetArgMapping<T>(                  bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
 
             if(!op.IsCommitted)
@@ -78,7 +78,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// </summary>
         /// <param name="DiffOp"></param>
         /// <param name="CoDomVarName">
-        /// the name of the variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>-member
+        /// the name of the variable in the codomain (<see cref="DifferentialOperator.CodomainVar"/>-member
         /// of <paramref name="DiffOp"/>, for which this object should be defined;
         /// </param>
         /// <param name="_fieldList">
@@ -93,7 +93,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// <param name="vectorizer">
         /// Function for the vectorization of the evaluation of <paramref name="F"/>
         /// </param>
-        public EquationComponentArgMapping(ISpatialOperator DiffOp, string CoDomVarName,
+        public EquationComponentArgMapping(IDifferentialOperator DiffOp, string CoDomVarName,
             IList<string> _fieldList, IList<string> _fieldList2, Func<T, bool> F, Func<IEquationComponent, IEquationComponent> vectorizer) {
             m_CoDomVarName = CoDomVarName;
             //m_DomainFields = DomainMapping.Fields;
