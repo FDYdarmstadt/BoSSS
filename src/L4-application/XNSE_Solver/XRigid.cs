@@ -17,7 +17,8 @@ namespace BoSSS.Application.XNSE_Solver {
         None = 0,
         Sphere = 1,
         Cube = 2,
-        Torus = 3
+        Torus = 3,
+        CollidingSpheres = 4 //a temporary test case (highly experimental) TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
     }
 
     [DataContract]
@@ -139,6 +140,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 case Shape.Torus:
                     DefineTorus();
                     break;
+                case Shape.CollidingSpheres:
+                    DefineCollidingSpheres();
+                    break;
                 default:
                     throw new NotSupportedException();
             }
@@ -159,7 +163,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double[] RotationArm = new double[SpaceDim];
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
-                double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1+rateOfRadius*t)* particleRad,0.0);
+                double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1 + rateOfRadius * t) * particleRad, 0.0);
                 Vector rotAxis;
                 switch (RotationAxis) {
                     case "x":
@@ -185,17 +189,57 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 double[] rotated_arm = affineTrafoFinal.Transform(RotationArm);
-                double[] rotated_pos = RotationCenter.Zip(rotated_arm, (RC,rA) => RC + rA).ToArray(); // sum: RotationCenter + affineTrafoFinal.Transform(RotationArm) 
+                double[] rotated_pos = RotationCenter.Zip(rotated_arm, (RC, rA) => RC + rA).ToArray(); // sum: RotationCenter + affineTrafoFinal.Transform(RotationArm) 
 
                 switch (SpaceDim) {
                     case 2:
-                    // circle
-                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) + dynamicRadius * dynamicRadius;
+                        // circle
+                        return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) + dynamicRadius * dynamicRadius;
 
                     case 3:
-                    // sphere
-                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) - (X[2] - pos[2]) * (X[2] - rotated_pos[2]) + dynamicRadius * dynamicRadius;
+                        // sphere
+                        return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) - (X[2] - pos[2]) * (X[2] - rotated_pos[2]) + dynamicRadius * dynamicRadius;
 
+                    default:
+                        throw new NotImplementedException();
+                }
+            };
+            SetPhi(PhiFunc);
+        }
+
+
+        private void DefineCollidingSpheres() {
+            //var pos = m_pos;
+            //var anglevelocity = m_angleVelocity;
+            var SpaceDim = m_SpaceDim;
+            var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
+            //var RotationCenter = m_RotationCenter;
+            //var RotationAxis = m_RotationAxis;
+            m_ctrl.Tags.Add("CollidingSphere");
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double[] posL = new double[SpaceDim];
+                posL[0] = - 1.5 * particleRad  + (rateOfRadius * t) * particleRad; // (initial pos + change)
+
+                double[] posR = new double[SpaceDim];
+                posR[0] = 1.5 * particleRad - (rateOfRadius * t) * particleRad;
+                double L, R;
+
+                switch (SpaceDim) {
+                    case 2:
+                        // circle
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) + particleRad * particleRad;
+                        R = -(X[0] - posR[0]) * (X[0] - posR[0]) - (X[1] - posR[1]) * (X[1] - posR[1]) + particleRad * particleRad;
+
+                        return Math.Max(L, R);
+                    case 3:
+                        // sphere
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) - (X[2] - posL[2]) * (X[2] - posL[2]) + particleRad * particleRad;
+                        R = -(X[0] - posR[0]) * (X[0] - posR[0]) - (X[1] - posR[1]) * (X[1] - posR[1]) - (X[2] - posR[2]) * (X[2] - posR[2]) + particleRad * particleRad;
+
+                        return Math.Max(L, R);
                     default:
                     throw new NotImplementedException();
                 }
