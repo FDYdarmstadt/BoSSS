@@ -695,7 +695,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
                 double AvgCells = NoOfCellsTot / (double)this.MPISize;
                 double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
-                double RelCutCellsInbalance = (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
+                double RelCutCellsInbalance = NoOfCutCells_Max == 0 ? 0 : (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
 
                 Console.WriteLine($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
                 Console.WriteLine($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");

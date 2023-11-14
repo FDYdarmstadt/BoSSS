@@ -74,7 +74,7 @@ namespace BoSSS.Foundation {
                 MultidimensionalArray trfCoördinates = TempBuffer.GetTempMultidimensionalarray(out iBuf, L, N);
                 TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
 
-                if(ResultAcc.IsContinious && trfCoördinates.IsContinious && BasisValues.IsContinious) {
+                if(ResultAcc.IsContinuous && trfCoördinates.IsContinuous && BasisValues.IsContinuous) {
                     unsafe {
                         fixed(double* _pResultAcc = ResultAcc.Storage, _ptrfCoördinates = trfCoördinates.Storage, _pBasisValues = BasisValues.Storage) {
                             double* pResultAcc = _pResultAcc + ResultAcc.Index(0,0);

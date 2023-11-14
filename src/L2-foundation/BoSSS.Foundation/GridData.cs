@@ -811,7 +811,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             Debug.Assert(Jacobian.GetLength(3) == D);
 
             unsafe {
-                if(!Jacobian.IsContinious)
+                if(!Jacobian.IsContinuous)
                     throw new NotSupportedException();
 
                 fixed(double *pJacobian = Jacobian.Storage) {
