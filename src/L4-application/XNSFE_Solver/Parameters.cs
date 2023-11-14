@@ -63,7 +63,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
                        MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
                        MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
-
+                       todo / optimize
                        for (int dd = 0; dd < D; dd++) {
                            ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                            ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
