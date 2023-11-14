@@ -570,7 +570,7 @@ namespace BoSSS.Foundation.Quadrature {
                                     var scalings = GetScalingsForLinearElements(j0, Bulksize);
                                     Debug.Assert(scalings.Dimension == 1);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
-                                    Debug.Assert(currentRuleWeights.IsContinious);
+                                    Debug.Assert(currentRuleWeights.IsContinuous);
                                     Debug.Assert(currentRuleWeights.Dimension == 1);
 
 
@@ -604,7 +604,7 @@ namespace BoSSS.Foundation.Quadrature {
                                     Debug.Assert(scalings.Dimension == 2);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
                                     Debug.Assert(scalings.GetLength(1) == currentRuleWeights.GetLength(0));
-                                    Debug.Assert(currentRuleWeights.IsContinious);
+                                    Debug.Assert(currentRuleWeights.IsContinuous);
                                     Debug.Assert(currentRuleWeights.Dimension == 1);
 
                                     // loop over quadrature items (cells or edges)...
@@ -635,7 +635,7 @@ namespace BoSSS.Foundation.Quadrature {
                 }
 
                 case CoordinateSystem.Reference: {
-                    Debug.Assert(currentRuleWeights.IsContinious);
+                    Debug.Assert(currentRuleWeights.IsContinuous);
                     Debug.Assert(currentRuleWeights.Dimension == 1);
 
                     unsafe {

@@ -133,8 +133,8 @@ namespace BoSSS.Foundation.Quadrature {
                             MultidimensionalArray scalings = GetScalingsForLinearElements(j0, Bulksize);
                             Debug.Assert(scalings.Dimension == 1);
                             Debug.Assert(scalings.Lengths.Length == 1);
-                            Debug.Assert(scalings.IsContinious);
-                            Debug.Assert(quadRule.Weights.IsContinious);
+                            Debug.Assert(scalings.IsContinuous);
+                            Debug.Assert(quadRule.Weights.IsContinuous);
                             Debug.Assert(quadRule.Weights.Dimension == 1);
 
                             for (int jj = 0; jj < Bulksize; jj++) {
@@ -168,7 +168,7 @@ namespace BoSSS.Foundation.Quadrature {
                             Debug.Assert(scalings.Dimension == 2);
                             Debug.Assert(scalings.GetLength(0) == Bulksize);
                             Debug.Assert(scalings.GetLength(1) == currentRuleWeights.GetLength(0));
-                            Debug.Assert(quadRule.Weights.IsContinious);
+                            Debug.Assert(quadRule.Weights.IsContinuous);
                             Debug.Assert(quadRule.Weights.Dimension == 1);
 
                             for (int jj = 0; jj < Bulksize; jj++) {
@@ -206,7 +206,7 @@ namespace BoSSS.Foundation.Quadrature {
                 }
 
                 case CoordinateSystem.Reference:
-                Debug.Assert(quadRule.Weights.IsContinious);
+                Debug.Assert(quadRule.Weights.IsContinuous);
                 Debug.Assert(quadRule.Weights.Dimension == 1);
 
                 for (int jj = 0; jj < _Bulksize; jj++) {

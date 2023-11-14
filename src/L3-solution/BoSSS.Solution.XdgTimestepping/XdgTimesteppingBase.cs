@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -676,13 +676,82 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected BlockMsrMatrix m_PrecondMassMatrix;
 
-        
 
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, bool calculateStencils = true, bool calculateMassMatrix = false) {
+            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
+
+            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
+
+            if (VarGroups == null) {
+                int NoOfVar = this.CurrentStateMapping.Fields.Count;
+                VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
+            }
+
+            var StencilCondNoVizS = new List<DGField>();
+
+            var Ret = new Dictionary<string, double>();
+            //int k = 0;
+            foreach (int[] varGroup in VarGroups) {
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
+
+                //check if expensive stencilCondNumbers are required
+                if (plotStencilCondNumViz == true || calculateStencils == true) {
+                    ana.CalculateStencils = true;
+                } else {
+                    ana.CalculateStencils = false;
+                }
+
+                ana.VarGroup = varGroup;
+                var Table = ana.GetNamedProperties();
+
+                foreach (var kv in Table) {
+                    if (!Ret.ContainsKey(kv.Key)) {
+                        Ret.Add(kv.Key, kv.Value);
+                    }
+                }
+
+                if (calculateMassMatrix) {
+                    var condNoMassMtx = ana.CondMassMatrix();
+                    Ret.Add("MassMtxCondNo", condNoMassMtx);
+                }
+
+                if (plotStencilCondNumViz) {
+                    StencilCondNoVizS.Add(ana.StencilCondNumbersV());
+                }
+
+                /*
+                {
+                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
+                    var bla = ana.MinimalEigen();
+                    Console.WriteLine("done: " + bla.lambdaMin);
+                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                }*/
+                //k++;
+            }
+
+            if (StencilCondNoVizS.Count > 0) {
+                var LevelSets = m_LsTrk.LevelSetHistories;
+
+                foreach (var levelSet in LevelSets) {
+                    StencilCondNoVizS.Add((LevelSet)levelSet.Current);
+                }
+                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 0);
+            }
+
+            return Ret;
+        }
+
+
+        /// <summary>
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability,
+        /// <see cref="IApplication.OperatorAnalysisAk"/>.
+        /// </summary>
+        public IDictionary<string, double> OperatorAnalysisAk(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, string nameOfStencil = null) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
@@ -724,8 +793,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //k++;
             }
 
+
             if(StencilCondNoVizS.Count > 0) {
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), "stencilCond", 0.0, 1);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), nameOfStencil, 0.0, 1);
             }
 
             return Ret;

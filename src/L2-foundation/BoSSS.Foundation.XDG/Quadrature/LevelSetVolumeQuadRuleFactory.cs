@@ -572,7 +572,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
                 
                 double[] matrix;
-                if (basisValues.IsContinious) {
+                if (basisValues.IsContinuous) {
                     matrix = basisValues.Storage;
                 } else {
                     matrix = new double[basisValues.Length];

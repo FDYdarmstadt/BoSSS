@@ -38,16 +38,16 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         /// returns the weight for the individual cell type
         /// </summary>
         public int FindWeightFor(CutStateClassifier.CellTypeFlags CellType) {
-            return TypeToWgt.Where(p => p.Item1 == CellType).First().Item2;
+            return TypeToWgt.Where(p => p.CellType == CellType).First().Weight;
         }
 
-        (CutStateClassifier.CellTypeFlags, int)[] typeToWgt;
+        (CutStateClassifier.CellTypeFlags CellType, int Weight)[] typeToWgt;
 
         /// <summary>
         /// returns tuple array for cell-weights for a multi-constrained optimization
         /// Manually set
         /// </summary>
-        public (CutStateClassifier.CellTypeFlags, int)[] TypeToWgt {
+        public (CutStateClassifier.CellTypeFlags CellType, int Weight)[] TypeToWgt {
             get {
                 typeToWgt = typeToWgt ?? new[] {
                 //(CutStateClassifier.CellTypeFlags.Void, 0), As void does not impact weights, it is unnecessary to include it in calculations.
