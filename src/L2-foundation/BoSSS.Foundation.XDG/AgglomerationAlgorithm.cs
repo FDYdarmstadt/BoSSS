@@ -2267,6 +2267,9 @@ namespace BoSSS.Foundation.XDG {
                 }
                 #endregion
 
+                if (AgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
+                    AgglomerationPairs.SaveToTextFileDebugUnsteady("DirectAgglomerationPairs" + Tag, ".txt");
+
             }
         }
 
