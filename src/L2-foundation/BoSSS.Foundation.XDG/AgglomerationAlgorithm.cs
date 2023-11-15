@@ -1795,7 +1795,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // Debugging info
                 if (m_aggGroups.Any() && PlotAgglomeration)
-                    m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag,".txt");
+                    m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(),".txt");
 
                 // add groups into the pairs list
                 foreach (var group in  m_aggGroups) {
@@ -2086,7 +2086,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             if (ChainAgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
-                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("ChainAgglomerationPairs" + Tag, ".txt");
+                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("ChainAgglomerationPairs" + Tag + spId.ToString(), ".txt");
 
         }
 
@@ -2268,7 +2268,7 @@ namespace BoSSS.Foundation.XDG {
                 #endregion
 
                 if (AgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
-                    AgglomerationPairs.SaveToTextFileDebugUnsteady("DirectAgglomerationPairs" + Tag, ".txt");
+                    AgglomerationPairs.SaveToTextFileDebugUnsteady("DirectAgglomerationPairs" + Tag +  spId.ToString(), ".txt");
 
             }
         }
