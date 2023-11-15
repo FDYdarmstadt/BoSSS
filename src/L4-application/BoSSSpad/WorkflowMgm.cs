@@ -257,6 +257,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (bkupDbs.Length <= 0) {
                     Console.Error.WriteLine("No Backups found; unable to run worksheet from backup database.");
+                    Console.WriteLine("Trying to create/open default database.");
+
+                    try {
+                        DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
+                    } catch (Exception e) {
+                        Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
+                    }
 
                 } else {
 

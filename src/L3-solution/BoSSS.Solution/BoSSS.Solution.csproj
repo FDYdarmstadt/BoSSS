@@ -60,7 +60,7 @@
     <Exec Command="$(ProjectDir)update_commit_hash.bat" Condition="'$(OS)' == 'Windows_NT'" />
 
     <!-- For Unix-like systems (Linux/macOS) -->
-    <Exec Command="sh $(ProjectDir)update_commit_hash.sh" Condition="'$(OS)' != 'Windows_NT'" />
+    <Exec Command="bash $(ProjectDir)update_commit_hash.sh" Condition="'$(OS)' != 'Windows_NT'" />
   </Target>
   
   

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Check if git is available
 if ! command -v git &> /dev/null; then
@@ -14,10 +14,15 @@ fi
 CURRENT_HASH=""
 if [ -f "commit_hash.txt" ]; then
     CURRENT_HASH=$(cat commit_hash.txt)
+    echo "curent hash: " $CURRENT_HASH
 fi
 
 NEW_HASH=$(git rev-parse HEAD)
+echo "new hash: " $NEW_HASH
 
 if [ "$CURRENT_HASH" != "$NEW_HASH" ]; then
     echo $NEW_HASH > commit_hash.txt
+    echo "new written"
+else
+    echo "no commit hash update"
 fi

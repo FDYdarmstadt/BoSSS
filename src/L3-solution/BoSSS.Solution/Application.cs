@@ -402,13 +402,13 @@ namespace BoSSS.Solution {
 
         public static string GitCommitHash {
             get {
-
                 Assembly assembly = Assembly.GetExecutingAssembly();
                 using (Stream stream = assembly.GetManifestResourceStream("BoSSS.Solution.commit_hash.txt")) {
                     if (stream == null)
                         return "unkonwn";
                     using (StreamReader reader = new StreamReader(stream)) {
-                        string commitHash = reader.ReadToEnd().Trim();
+                        string commitHash = reader.ReadToEnd();
+			commitHash = commitHash.Trim();
                         return commitHash;
                     }
                 }
