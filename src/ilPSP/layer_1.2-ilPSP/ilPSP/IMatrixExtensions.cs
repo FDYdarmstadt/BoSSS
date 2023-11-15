@@ -16,6 +16,7 @@ limitations under the License.
 
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,6 +24,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace ilPSP {
 
@@ -54,7 +57,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// writes this matrix into a text file;
+        /// writes this matrix into a single text file;
         /// </summary>
         /// <param name="name">path to the text file</param>
         /// <param name="M">matrix</param>
@@ -67,6 +70,29 @@ namespace ilPSP {
                 txt.Flush();
             }
         }
+
+        /// <summary>
+        /// writes this matrix into a text file for each call;
+        /// </summary>
+        /// <param name="name">path to the text file</param>
+        /// <param name="M">matrix</param>
+        /// <param name="fm">file creation mode</param>
+        static public void SaveToTextFileUnsteady(this IMatrix M, string filename, FileMode fm = FileMode.Create) {
+            int Rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
+            string ext = ".txt";
+
+            int c = 0;
+            string fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+
+            while (File.Exists(fullfilename)) {
+                c++;
+                fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+            }
+
+            M.SaveToTextFile(fullfilename, fm);
+        }
+
 
         /// <summary>
         /// Writes this matrix to a stream, in text format.
@@ -1406,46 +1432,65 @@ namespace ilPSP {
                     }
                 }
             }
+
+            // If it is L type, convert it to U or vice versa
+            target.SwitchStructure();
+
         }
 
-        /*
-        /// <summary>
-        /// standard gemm: 
-        /// <paramref name="C"/> = <paramref name="beta"/>*<paramref name="C"/>
-        /// + <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/>;
-        /// </summary>
-        /// <param name="A"></param>
-        /// <param name="alpha"></param>
-        /// <param name="B"></param>
-        /// <param name="C"></param>
-        /// <param name="beta"></param>
-        static public void Gemm(IMatrix A, double alpha, IMatrix B, IMatrix C, double beta) {
-            if (A.NoOfCols != B.NoOfRows)
-                throw new ArgumentException("Matrix size mismatch.");
-            if (A.NoOfRows != C.NoOfRows)
-                throw new ArgumentException("Matrix size mismatch.");
-            if (B.NoOfCols != C.NoOfCols)
-                throw new ArgumentException("Matrix size mismatch.");
+            static public void SwitchStructure<M1>(this M1 source) where M1 : IMatrix {
 
-            int M = A.NoOfRows, N = A.NoOfCols, K = B.NoOfCols;
-
-            for (int i = 0; i < M; i++) {
-                for (int j = 0; j < K; j++) {
-                    double r = 0;
-
-                    for (int k = 0; k < N; k++)
-                        r += A[i, k] * B[k, j];
-
-                    C[i, j] = C[i, j] * beta + r * alpha;
+                switch (source.StructureType) {
+                case MatrixStructure.LowerTriangular:
+                    source.StructureType = MatrixStructure.UpperTriangular;
+                    break;
+                case MatrixStructure.UpperTriangular:
+                    source.StructureType = MatrixStructure.LowerTriangular;
+                    break;
                 }
-            }
-        }*/
 
-        /// <summary>
-        /// only supported for 1x1, 2x2, 3x3 and 4x4 - matrices;
-        /// </summary>
-        /// <returns></returns>
-        static public double Determinant<T>(this T M) where T : IMatrix {
+
+            }
+
+
+                /*
+                /// <summary>
+                /// standard gemm: 
+                /// <paramref name="C"/> = <paramref name="beta"/>*<paramref name="C"/>
+                /// + <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/>;
+                /// </summary>
+                /// <param name="A"></param>
+                /// <param name="alpha"></param>
+                /// <param name="B"></param>
+                /// <param name="C"></param>
+                /// <param name="beta"></param>
+                static public void Gemm(IMatrix A, double alpha, IMatrix B, IMatrix C, double beta) {
+                    if (A.NoOfCols != B.NoOfRows)
+                        throw new ArgumentException("Matrix size mismatch.");
+                    if (A.NoOfRows != C.NoOfRows)
+                        throw new ArgumentException("Matrix size mismatch.");
+                    if (B.NoOfCols != C.NoOfCols)
+                        throw new ArgumentException("Matrix size mismatch.");
+
+                    int M = A.NoOfRows, N = A.NoOfCols, K = B.NoOfCols;
+
+                    for (int i = 0; i < M; i++) {
+                        for (int j = 0; j < K; j++) {
+                            double r = 0;
+
+                            for (int k = 0; k < N; k++)
+                                r += A[i, k] * B[k, j];
+
+                            C[i, j] = C[i, j] * beta + r * alpha;
+                        }
+                    }
+                }*/
+
+                /// <summary>
+                /// only supported for 1x1, 2x2, 3x3 and 4x4 - matrices;
+                /// </summary>
+                /// <returns></returns>
+                static public double Determinant<T>(this T M) where T : IMatrix {
             int m_NoOfCols = M.NoOfCols, m_NoOfRows = M.NoOfRows;
             if (m_NoOfCols != m_NoOfRows)
                 throw new NotSupportedException("Determinate only defined for quadratic matrices.");
@@ -2690,7 +2735,7 @@ namespace ilPSP {
 
                 //double[] _this_Entries;
                 //int BufOffset;
-                //if (M is MultidimensionalArray Mda && Mda.IsContinious) {
+                //if (M is MultidimensionalArray Mda && Mda.IsContinuous) {
                 //    _this_Entries = Mda.Storage; // fk, 06apr22: does not work, because MultidimensionalArray is in C-order
                 //    iBuf = -1;
                 //    BufOffset = Mda.Index(0, 0);

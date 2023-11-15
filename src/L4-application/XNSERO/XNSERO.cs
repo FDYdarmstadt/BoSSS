@@ -46,7 +46,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow_Phoretic();
             //Assert.IsFalse(true, "remove me");
-            void KatastrophenPlot(DGField[] dGFields) {
+            
+            void KatastrophenPlot(DGField[] dGFields,string Tag) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
             AgglomerationAlgorithm.Katastrophenplot = KatastrophenPlot;
