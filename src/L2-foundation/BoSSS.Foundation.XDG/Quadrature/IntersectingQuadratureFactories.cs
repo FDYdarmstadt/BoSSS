@@ -79,10 +79,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         public static IQuadRuleFactory<QuadRule> EdgePoint(LevelSetData levSet0, LevelSetData levSet1, JumpTypes jmp1) {
             IntersectingRuleFactory factory = new IntersectingRuleFactory(
                 new GlobalEdgeMapping(levSet0.GridDat),
-                levSet0,
-                Symbol.Zero,
                 levSet1,
-                ToSymbol(jmp1)
+                ToSymbol(jmp1),
+                levSet0,
+                Symbol.Zero
             );
             return factory;
         }
@@ -134,13 +134,21 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             IScalarFunction a = map.MapFromDomainToCodomain( alpha, j);
             IScalarFunction b = map.MapFromDomainToCodomain( beta, j);
             (int nodeCount, int subdivisions) = Convert(order);
-            QuadratureRule ruleQ = finder.FindRule(a, signAlpha, b, signBeta, domain, nodeCount, subdivisions);
+
+            QuadratureRule ruleQ;
+            try {
+                ruleQ = finder.FindRule(a, signAlpha, b, signBeta, domain, nodeCount, subdivisions);
+            } catch(Exception e) {
+                Console.WriteLine(e);
+                throw new Exception($"IntersectingQuadrature failed for input nodeCount={nodeCount}, subdivisions={subdivisions}, map={map} ");
+            }
+
             QuadRule q = map.MapFromCodomainToDomain(ruleQ, j);
             return q;
         }
 
         static (int nodeCount, int subdivisions) Convert(int order) {
-            return (Math.Min(32, order), order/32);
+            return (Math.Min(32, Math.Max(1, order)), order/32);
         }
     }
 
@@ -278,12 +286,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         public IScalarFunction MapFromDomainToCodomain(LevelSetData levelSet, int jEdge) {
             int jCell = grid.Edges.CellIndices[jEdge, 0];
             IScalarFunction globalLevelSet = new GlobalCellFunction(levelSet, jCell);
-            IVectorFunction T = FromDomainToEmbeddedCodomain(jEdge);
+            IVectorFunction T = FromCodomainToEmbeddedCodomain(jEdge);
             IScalarFunction alpha = new ScalarComposition(globalLevelSet, T);
             return alpha;
         }
 
-        IVectorFunction FromDomainToEmbeddedCodomain(int jEdge) {
+        IVectorFunction FromCodomainToEmbeddedCodomain(int jEdge) {
             int jCell = grid.Edges.CellIndices[jEdge, 0];
             byte iFace = grid.Edges.FaceIndices[jEdge, 0];
             NodeSet faceCenter = CellDomain.GetFaceCenter(iFace);
@@ -291,15 +299,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             grid.TransformLocal2Global(faceCenter, center, jCell);
             Selection edgeToCell = new Selection(emptyDim);
-
-            Tensor1 affine = Tensor1.Zeros(CellDomain.SpatialDimension);
+            
             Tensor2 m = Tensor2.Zeros(CellDomain.SpatialDimension, Domain.SpatialDimension);
-
             for (int i = 0; i < Domain.SpatialDimension; ++i) {
                 int j = edgeToCell.FromSubIndexToIndex(i);
-                affine[j] = center[0, j];
-                m[j, i] = grid.Cells.Transformation[jCell, j, j] * 2;
+                m[j, i] = 1.0;
             }
+
+            Tensor1 affine = Tensor1.Zeros(CellDomain.SpatialDimension);
             affine[emptyDim] = center[0, emptyDim];
 
             LinearVectorPolynomial t = new LinearVectorPolynomial(affine, m);
