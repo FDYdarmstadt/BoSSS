@@ -391,12 +391,13 @@ namespace BoSSS.Foundation.Quadrature {
                 // compute partitioning across threads
                 // ===================================
 
-
+                
                 int NumThreads = ilPSP.Environment.NumThreads;
+                NumThreads = 2;
                 //int[] ItemLimits = new int[NumThreads + 1];
                 int NoOfItems = 0;
                 ICompositeQuadRule<TQuadRule>[] _compositeRule;
-                if (NumThreads <= 1) {
+                if (ExecuteParallel == false || NumThreads <= 1) {
                     // ++++++++++++++++
                     // serial execution
                     // ++++++++++++++++
