@@ -133,7 +133,7 @@ namespace ilPSP {
 
             // init MPI enviroment
             // ===================
-            m_MpiEnv = new MPIEnviroment();
+            m_MpiEnv = new MPIEnvironment();
             //System.Threading.Thread.Sleep(10000);
             //Console.WriteLine("StdoutOnlyOnRank0 set to false");
             StdoutOnlyOnRank0 = true;
@@ -165,6 +165,13 @@ namespace ilPSP {
         public static DuplicatingTextWriter StdErr {
             get;
             private set;
+        }
+
+
+        public static int NumThreads {
+            get {
+                return 4;
+            }
         }
 
         static bool m_StdoutOnlyOnRank0 = false;
@@ -200,12 +207,12 @@ namespace ilPSP {
             return exists;
         }
 
-        static MPIEnviroment m_MpiEnv;
+        static MPIEnvironment m_MpiEnv;
 
         /// <summary>
         /// environment of the world communicator
         /// </summary>
-        public static MPIEnviroment MPIEnv {
+        public static MPIEnvironment MPIEnv {
             get {
                 return m_MpiEnv;
             }
