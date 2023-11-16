@@ -40,8 +40,68 @@ using BoSSS.Solution.Statistic;
 using System.IO;
 using BoSSS.Platform.Utils.Geom;
 using System.Threading;
+using ilPSP.LinSolvers.PARDISO;
+using System.Runtime.InteropServices;
 
 namespace BoSSS.Application.SipPoisson {
+    static public class ThreadBLAS {
+
+
+        [DllImport("libiomp5md.dll")]
+        static unsafe public extern void OMP_SET_NUM_THREADS(int* n);
+
+        static public void OMP_SET_NUM_THREADS(int n) {
+            unsafe {
+                OMP_SET_NUM_THREADS(&n);
+            }
+        }
+
+        [DllImport(@"PARDISO_omp.dll", EntryPoint = "dgemm_")]
+        unsafe public static extern void _DGEMM(ref int TRANSA, ref int TRANSB,
+                                           ref int M, ref int N, ref int K,
+                                           ref double ALPHA,
+                                           double* A, ref int LDA,
+                                           double* B, ref int LDB,
+                                           ref double BETA,
+                                           double* C, ref int LDC);
+        
+        //[DllImport(@"C:\Program Files (x86)\IntelSWTools\compilers_and_libraries_2019.1.144\windows\redist\intel64_win\mkl\mkl_intel_thread.dll", EntryPoint = "mkl_blas_dgemm")]
+        //unsafe public static extern void cDGEMM(int layout, int TRANSA, int TRANSB,
+        //                                   int M, int N, int K,
+        //                                   ref double ALPHA,
+        //                                   double* A, int LDA,
+        //                                   double* B, int LDB,
+        //                                   double BETA,
+        //                                   double* C, int LDC);
+
+        static public void DGEMM(int TRANSA, int TRANSB,
+                                 int M, int N, int K,
+                                 double ALPHA,
+                                 double[] A, int LDA,
+                                 double[] B, int LDB,
+                                 double BETA,
+                                 double[] C, int LDC) {
+            unsafe {
+                fixed (double* pA = A, pB = B, pC = C) {
+                    _DGEMM(ref TRANSA, ref TRANSB,
+                                 ref M, ref N, ref K,
+                                 ref ALPHA,
+                                 pA, ref LDA,
+                                 pB, ref LDB,
+                                 ref BETA,
+                                 pC, ref LDC);
+                    //cDGEMM(101, 111, 111,
+                    //              M, N, K,
+                    //             ref ALPHA,
+                    //             pA, LDA,
+                    //             pB, LDB,
+                    //              BETA,
+                    //             pC, LDC);
+                }
+            }
+        }
+    }
+
 
     /// <summary>
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
@@ -53,6 +113,49 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            /*
+            InitMPI(args);
+
+            int N = 10000;
+            double[] A = new double[N * N];
+            double[] B = new double[N * N];
+            double[] C = new double[N * N];
+            A.FillRandom();
+            B.FillRandom();
+
+            int iRun = 1;
+
+            var start = DateTime.Now;
+            foreach (int numThreads in new int[] { 4, 2, 1, 16, 4 }) {
+                var _start = DateTime.Now;
+                Console.WriteLine("DGEMM with " + numThreads + " threads...");
+
+                //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", numThreads.ToString());
+                //System.Environment.SetEnvironmentVariable("MKL_NUM_THREADS", numThreads.ToString());
+                //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
+
+                unsafe {
+                    ThreadBLAS.OMP_SET_NUM_THREADS(&numThreads);
+                }
+
+                Console.Write($"run #{iRun}, Product of {N}x{N}... ");
+                while (DateTime.Now - start < new TimeSpan(hours: 0, minutes: 0, seconds: 59)) {
+
+                    ThreadBLAS.DGEMM('t', 't', N, N, N, 1.0, A, N, B, N, 0.0, C, N);
+                    //unsafe {
+                    //    fixed (double* pA = A, pB = B, pC = C) {
+                    //        BLAS.dgemm('t', 't', N, N, N, 1.0, pA, N, pB, N, 0.0, pC, N);
+                    //    }
+                    //}
+                    iRun++;
+                    Console.WriteLine($" done in {DateTime.Now - start}");
+                }
+                start = DateTime.Now;
+            }
+
+            FinalizeMPI();*/
+            
+
             
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
@@ -349,9 +452,66 @@ namespace BoSSS.Application.SipPoisson {
                 //LastMatrix.SaveToTextFileSparse($"LaplaceMtx-J{J}.txt");
                 //double condNo = LastMatrix.condest();
                 //Console.WriteLine($"Matlab condition number estimate {J} cells: " + condNo);
-                
-               
-     
+
+                /*Stuff for testing OpenMP
+                {
+                    var mgOp = this.LapaceIp.GetMultigridOperator(T.Mapping, MgConfig: this.MgConfig);
+                    var rhs = new double[T.Mapping.LocalLength];
+                    rhs.FillRandom();
+
+
+                    var slvrs = new List<(int num,PARDISOSolver s)>();
+
+
+                    foreach (int numThreads in new int[] { 8, 2, 4, 8, 16, 4 }) {
+                        var _start = DateTime.Now;
+                        Console.WriteLine("First solve with " + numThreads + " threads...");
+                        var mtx = mgOp.OperatorMatrix;
+
+                        //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", numThreads.ToString());
+                        //System.Environment.SetEnvironmentVariable("MKL_NUM_THREADS", numThreads.ToString());
+                        //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
+
+                        ThreadBLAS.OMP_SET_NUM_THREADS(numThreads);
+
+                        var pardiso = new PARDISOSolver();
+                        pardiso.Parallelism = Parallelism.OMP;
+                        pardiso.CacheFactorization = false;
+                        pardiso.DefineMatrix(mtx);
+                        pardiso.Solve(new double[rhs.Length], rhs);
+
+
+                        slvrs.Add((numThreads, pardiso));
+
+                        Console.WriteLine($"done. (took {DateTime.Now - _start})");
+                    }
+
+
+                    var start = DateTime.Now;
+                    foreach(var kv in slvrs) {
+                        Console.WriteLine($"Now solving with {kv.num} threads:");
+                        ThreadBLAS.OMP_SET_NUM_THREADS(kv.num);
+
+                        int cnt = 0;
+                        while(DateTime.Now - start < new TimeSpan(hours:0, minutes:0, seconds:59)) {
+                            Console.Write($"Do run #{cnt} ... ");
+                            kv.s.Solve(new double[rhs.Length], rhs);
+                            Console.WriteLine($" done. {(DateTime.Now - start)} passed.");
+                        }
+
+                        start = DateTime.Now;
+                    }
+
+
+
+
+                    foreach (var s in slvrs)
+                        s.s.Dispose();
+                }
+                */
+
+
+
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);

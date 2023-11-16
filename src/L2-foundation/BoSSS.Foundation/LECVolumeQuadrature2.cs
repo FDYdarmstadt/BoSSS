@@ -173,6 +173,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
                 _AllocateBuffers:this.AllocateBuffers);
+            q.ExecuteParallel = true;
 
             q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
             q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECvol", "ParametersAndNormals", "Flux-Trafo" };
