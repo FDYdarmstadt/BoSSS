@@ -99,6 +99,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
 
                 ParameterizedLevelSet ls = (ParameterizedLevelSet)levelSet.DGLevelSet;
                 if (!object.ReferenceEquals(ls, m_ls)) {
@@ -112,12 +113,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 var quadScheme = levelSet.Tracker.GetXDGSpaceMetrics(levelSet.Tracker.SpeciesIdS, this.m_HMForder).XQuadSchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
 
-                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter, levelSet.CGLevelSet.GridDat, quadScheme, m_HMForder);
+                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter, levelSet.CGLevelSet.GridDat, quadScheme, m_HMForder);
 
 
-                ls.xSemiAxis = Param1.xSemi1;
-                ls.ySemiAxis = Param1.ySemi1;
-                ls.yCenter = Param1.yCenter1;
+                ls.xSemiAxis = Param1[0];
+                ls.ySemiAxis = Param1[1];
+                ls.yCenter = Param1[2];
                 ((ParameterizedLevelSet)levelSet.DGLevelSet).Project();
             }
         }

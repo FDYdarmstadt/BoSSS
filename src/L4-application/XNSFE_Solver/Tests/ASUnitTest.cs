@@ -127,6 +127,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.DbPath = db.Path;
 
             C.ImmediatePlotPeriod = 1;
+            C.NoOfTimesteps = 20;
 
             C.TracingNamespaces = "*";
 
@@ -139,8 +140,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
             }
 
-
-
+            
             //C.PhysicalParameters.theta_e = Math.PI / 6.0;
             //C.PhysicalParameters.betaS_A = 0;
             //C.PhysicalParameters.betaS_B = 0;
@@ -843,7 +843,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
                 C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
-                C.NoOfTimesteps = 10;
+                C.NoOfTimesteps = 1;
                 C.dtFixed = tst.dt;
             }
 

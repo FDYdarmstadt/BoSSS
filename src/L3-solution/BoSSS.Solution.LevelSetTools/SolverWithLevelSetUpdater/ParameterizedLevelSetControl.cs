@@ -14,21 +14,21 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
     public class ParameterizedLevelSetControl : ILevSetControl {
 
         /// <summary>
-        /// planar (x,y) or cylindric (r, phi) representation of the Fourier coeff
+        /// 
         /// </summary>
         public double  xSemiAxis;
         /// <summary>
-        /// planar (x,y) or cylindric (r, phi) representation of the Fourier coeff
+        /// 
         /// </summary>
         public double ySemiAxis;
 
         /// <summary>
-        /// planar (x,y) or cylindric (r, phi) representation of the Fourier coeff
+        /// 
         /// </summary>
         public double yCenter;
 
         /// <summary>
-        /// See <see cref="FourierLevelSet_Timestepper"/>
+        /// See <see cref="Parameterized_Timestepper"/>
         /// </summary>
         public Parameterized_Timestepper Timestepper = Parameterized_Timestepper.ExplicitEuler;
 
@@ -48,15 +48,13 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
         public static ParameterizedLevelSetTimeStepper Build_Timestepper(ParameterizedLevelSetControl Control) {
 
-            RungeKuttaScheme RKscheme;
             switch (Control.Timestepper) {
                 case Parameterized_Timestepper.ExplicitEuler:
-                    RKscheme = RungeKuttaScheme.ExplicitEuler;
                     break;
                 default:
                     throw new ArgumentException();
             }
-            return new ParameterizedLevelSetTimeStepper(Control, RKscheme);
+            return new ParameterizedLevelSetTimeStepper(Control);
 
         }
 
