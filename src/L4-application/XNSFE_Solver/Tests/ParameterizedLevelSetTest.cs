@@ -39,18 +39,20 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         const double Twall = 37.5;
 
 
-        public double xSemiAxis0 {
-            get {
-                return 2 * DomainLength / (3.0).Sqrt();
-            }
-        }
+        public double xSemiAxis0 => (2 * DomainLength / (3.0).Sqrt());
+      
         public double ySemiAxis0 => (2 * DomainLength / (3.0).Sqrt());
             
-        public double yCenter0 => 3e-04; 
+        public double yCenter0 => 3e-04;
 
+        public double k_x0 => 0.0;
+       
+        public double k_y0 => 0.0;
+
+        public double k_yc0 => 0.0;
 
         public Func<double[], double, double> GetPhi() {
-            return (X, t) => X[1] - yCenter0 + ySemiAxis0 * (1 - (X[0] / xSemiAxis0).Pow2()).Sqrt();
+            return (X, t) => X[1] - (k_yc0 * t + yCenter0) + (k_y0 * t + ySemiAxis0) * (1 - (X[0] / (k_x0 * t + xSemiAxis0)).Pow2()).Sqrt();
         }
 
         public GridCommons CreateGrid(int Resolution) {
@@ -92,7 +94,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             config["Velocity_Inlet_ConstantTemperature"].Evaluators.Add("Temperature#A", (X, t) => Twall);
             config["Velocity_Inlet_ConstantTemperature"].Evaluators.Add("VelocityX#A", (X, t) => 0.0);
-            config["Velocity_Inlet_ConstantTemperature"].Evaluators.Add("VelocityY#A", (X, t) => 0.1 - 0.1 * X[0].Pow2() / DomainLength.Pow2());
+            config["Velocity_Inlet_ConstantTemperature"].Evaluators.Add("VelocityY#A", (X, t) => 1 - 1 * X[0].Pow2() / DomainLength.Pow2()) ;
 
             return config;
         }
@@ -109,7 +111,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public Func<double[], double, double> GetU(string species, int d) {
             switch (species) {
-                case "A": { return (X, t) => d == 0 ? 0.0 : d == 1 ? 0.1 - 0.1 * X[0].Pow2() / DomainLength.Pow2() : throw new ArgumentException(); }
+                case "A": { return (X, t) => d == 0 ? 0.0 : d == 1 ?  1 - 1 * X[0].Pow2() / DomainLength.Pow2() : throw new ArgumentException(); } 
                 case "B": { return (X, t) => 0.0; }
                 default: { throw new ArgumentException(); }
             }
@@ -160,7 +162,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public bool steady => false;
 
-        public double dt => 1e-4;
+        public double dt => 1e-2;
+
 
         public bool IncludeConvection => true;
 

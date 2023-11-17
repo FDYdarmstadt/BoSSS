@@ -292,8 +292,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         }
                     case LevelSetEvolution.ParameterizedLevelSet: {
                             ParameterizedLevelSet ls = (ParameterizedLevelSet)DGlevelSets[iLevSet];
-
                             var paramEvolver = new ParameterizedLevelSetEvolver(LevelSetCG, ls, this.Control.ParameterizedLevelSetControl, QuadOrder(), ls.GridDat.SpatialDimension);
+                            lsUpdater.AddEvolver(LevelSetCG, paramEvolver);
                             break;
                         }
 
