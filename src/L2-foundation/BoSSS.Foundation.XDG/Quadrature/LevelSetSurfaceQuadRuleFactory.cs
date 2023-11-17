@@ -992,6 +992,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 NoOfItemsLocally = mask.NoOfItemsLocally;
             }
 
+            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization() {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); 
+            }
+
             /// <summary>
             /// Results of the last integration
             /// <list type="bullet">

@@ -117,6 +117,21 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            return new NECQuadratureLevelSet<V>(
+                this.gridData, m_DiffOp,
+                this.ResultVector,
+                m_DomainAndParamFieldsA.Take(DELTA).ToArray(), new DGField[m_DiffOp.ParameterVar.Count], m_CodomainMap,
+                this.m_lsTrk, this.m_LevSetIdx, this.m_LsTrkHistoryIndex,
+                this.m_SpeciesPair,
+                base.m_compositeRule) {
+                m_DomainAndParamFieldsA = this.m_DomainAndParamFieldsA,
+                m_DomainAndParamFieldsB = this.m_DomainAndParamFieldsB
+            };
+        }
+
+        XDifferentialOperatorMk2 m_DiffOp;
+
         /// <summary>
         /// ctor.
         /// </summary>
@@ -139,6 +154,7 @@ namespace BoSSS.Foundation.XDG {
             // set members / check ctor parameters
             // -----------------------------------
             m_lsTrk = lsTrk;
+            m_DiffOp = DiffOp;
             m_LsTrkHistoryIndex = TrackerHistoryHindex;
             this.m_LevSetIdx = _iLevSet;
             this.m_SpeciesPair = SpeciesPair;

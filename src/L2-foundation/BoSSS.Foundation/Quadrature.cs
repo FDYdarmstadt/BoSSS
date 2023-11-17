@@ -51,6 +51,14 @@ namespace BoSSS.Foundation.Quadrature {
 
 
         /// <summary>
+        /// In order to support multi-thread parallelization, this methods must provide clones with separate thread-local memory,
+        /// see e.g., <see cref="AllocateBuffers(int, NodeSet)"/>
+        /// </summary>
+        /// <returns></returns>
+        public abstract Quadrature<TQuadRule, TDomain> CloneForThreadParallelization();
+
+
+        /// <summary>
         /// activate multi-thread-parallelization (quasi OpenMP)
         /// </summary>
         public bool ExecuteParallel {

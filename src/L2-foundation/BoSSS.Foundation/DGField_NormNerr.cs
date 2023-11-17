@@ -77,6 +77,9 @@ namespace BoSSS.Foundation {
             DGField m_FieldA;
             DGField m_FieldB;
 
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+                return new InnerProductQuadrature(m_FieldA, m_FieldB, null, 1); // quad rule will be set anyway 
+            }
 
 
             protected override void AllocateBuffers(int NoOfItems, NodeSet ruleNodes) {
@@ -761,6 +764,21 @@ namespace BoSSS.Foundation {
                 m_Map = Map;
             }
 
+            protected LxNormQuadrature(IGridData g) 
+                : base(new int[] { 1 }, g, (new CellQuadratureScheme(true, CellMask.GetEmptyMask(g)).SaveCompile(g, 1))) //
+            {
+            }
+
+
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+                return new LxNormQuadrature(this.GridDat) {
+                    m_func = this.m_func,
+                    m_Owner = this.m_Owner,
+                    m_Map = this.m_Map,
+                    m_funcEx = this.m_funcEx
+                };
+            }
+
             DGField m_Owner;
 
             ScalarFunction m_func;
@@ -865,6 +883,7 @@ namespace BoSSS.Foundation {
                     m_L2pow2 += ResultsOfIntegration[j, 0];
                 }
             }
+
         }
 
         /// <summary>
@@ -877,6 +896,8 @@ namespace BoSSS.Foundation {
                 : base(owner, func, Map, rule) {
                 m_localLxNorms = new double[rule.NumberOfItems];
             }
+
+
 
             public override void Execute() {
                 m_localLxNorms.Clear();
@@ -947,6 +968,9 @@ namespace BoSSS.Foundation {
                 m_fields = fields;
                 m_f = f;
             }
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+                return new IntegralOverExQuadrature(this.GridDat, m_fields, this.m_compositeRule, m_f);
+            }
 
             DGField[] m_fields;
 
@@ -1002,6 +1026,7 @@ namespace BoSSS.Foundation {
                 for (int i = 0; i < Length; i++)
                     result += ResultsOfIntegration[i, 0];
             }
+
         }
 
         /// <summary>
