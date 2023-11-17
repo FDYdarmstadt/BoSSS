@@ -108,9 +108,20 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            return new LECQuadratureLevelSet<M, V>(
+                this.gridData, m_DiffOp,
+                this.OperatorMatrix, this.OperatorAffine,
+                m_RowMap, m_ParametersA, m_ColMap,
+                this.m_lsTrk, this.m_LevSetIdx, this.m_LsTrkHistoryIndex,
+                this.m_SpeciesPair,
+                base.m_compositeRule) {
+                m_ParametersA = this.m_ParametersA,
+                m_ParametersB = this.m_ParametersB
+            };
+        }
 
-                
+        XDifferentialOperatorMk2 m_DiffOp;
         /// <summary>
         /// ctor.
         /// </summary>
@@ -139,7 +150,7 @@ namespace BoSSS.Foundation.XDG {
             // -----------------------------------
             // set members / check ctor parameters
             // -----------------------------------
-
+            m_DiffOp = DiffOp;
             m_RowMap = RowMap;
             m_ColMap = ColMap;
 
@@ -1041,5 +1052,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
         }
+
+        
     }
 }

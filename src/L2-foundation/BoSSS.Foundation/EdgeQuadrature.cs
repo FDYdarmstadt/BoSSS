@@ -138,6 +138,14 @@ namespace BoSSS.Foundation.Quadrature {
                 : base(noOfIntegralsPerCell, context, domNrule, cs) {
             }
 
+            public override Quadrature<QuadRule, EdgeMask> CloneForThreadParallelization() {
+                return new EdgeQuadratureImpl(
+                    this.IntegralCompDim, this.GridDat, this.m_compositeRule, this.CoordinateSystem) {
+                    m_AllocateBuffers = this.m_AllocateBuffers,
+                    m_SaveIntegrationResults = this.m_SaveIntegrationResults,
+                    m_quadNodesChanged = this.m_quadNodesChanged
+                };
+            }
         }
 
 

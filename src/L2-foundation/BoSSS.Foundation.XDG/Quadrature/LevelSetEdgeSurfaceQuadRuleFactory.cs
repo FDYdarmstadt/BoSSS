@@ -476,6 +476,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     throw new NotSupportedException();
             }
 
+            public override Quadrature<CellEdgeBoundaryQuadRule, CellMask> CloneForThreadParallelization() {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); // 
+            }
+
             public override void Execute() {
                 Results = new double[gridData.iGeomCells.RefElements[0].NoOfFaces, IntegralCompDim[0]];
                 base.Execute();

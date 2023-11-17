@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="domNrule">quadrature rule and domain</param>
         /// <param name="cs">Physical or reference coordinate system?</param>
         public DoubleEdgeQuadrature(
-            int[] noOfIntegralsPerCell, Grid.Classic.GridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs = Quadrature.CoordinateSystem.Physical)
+            int[] noOfIntegralsPerCell, IGridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs = Quadrature.CoordinateSystem.Physical)
             : base(noOfIntegralsPerCell, context, domNrule, cs) //
         {
             foreach(IChunkRulePair<QuadRule> crp in domNrule) {
@@ -293,10 +293,19 @@ namespace BoSSS.Foundation.Quadrature {
         private class DoubleEdgeQuadratureImpl : DoubleEdgeQuadrature {
 
             public DoubleEdgeQuadratureImpl(
-                int[] noOfIntegralsPerCell, Grid.Classic.GridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs)
+                int[] noOfIntegralsPerCell, IGridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs)
                 : base(noOfIntegralsPerCell, context, domNrule, cs) {
             }
 
+            public override Quadrature<DoubleEdgeQuadRule, EdgeMask> CloneForThreadParallelization() {
+                return new DoubleEdgeQuadratureImpl(
+                    this.IntegralCompDim, this.GridDat, this.m_compositeRule, this.CoordinateSystem) {
+                    m_AllocateBuffers = this.m_AllocateBuffers,
+                    m_SaveIntegrationResults = this.m_SaveIntegrationResults,
+                    m_quadNodesChanged = this.m_quadNodesChanged,
+                    m_ExEvaluate = this.m_Evaluate
+                };
+            }
         }
 
     }

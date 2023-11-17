@@ -29,8 +29,7 @@ using BoSSS.Foundation.Grid.Classic;
 namespace NSE_SIMPLE {
 
     /// <summary>
-    /// Matrix representation of a DG Field
-    /// or of a function of this Field.
+    /// Mass-Matrix representation of a DG Field or of a function of this Field.
     /// </summary>
     public class QuadratureMatrix : CellQuadrature {
 
@@ -43,6 +42,9 @@ namespace NSE_SIMPLE {
         public BlockDiagonalMatrix Matrix {
             get {
                 return m_Matrix;
+            }
+            protected set {
+                m_Matrix = value;
             }
         }
 
@@ -64,6 +66,13 @@ namespace NSE_SIMPLE {
             m_Matrix = new BlockDiagonalMatrix(map.LocalLength, Basis.MaximalLength);
 
             FieldVals = new MultidimensionalArray[Fields.Length];
+        }
+        
+        
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            return new QuadratureMatrix(m_Basis, GridDat, m_Fields) {
+                m_Matrix = this.m_Matrix
+            };
         }
 
         MultidimensionalArray BasisValues;
@@ -145,5 +154,6 @@ namespace NSE_SIMPLE {
         public void Update() {
             this.Execute();
         }
+
     }
 }
