@@ -487,30 +487,35 @@ namespace BoSSS.Foundation.Quadrature {
                         }
                     }
 
-//#if DEBUG
-                    var itemInInOrgRule = new List<(int iItem, TQuadRule QR)>();
-                    var itemInInSplitRule = new List<(int iItem, TQuadRule QR)>();
+                    //#if DEBUG
+                    if (NoOfItems > 1) {
+                        var itemInInOrgRule = new List<(int iItem, TQuadRule QR)>();
+                        var itemInInSplitRule = new List<(int iItem, TQuadRule QR)>();
 
-                    void appendRuleToCheckList(ICompositeQuadRule<TQuadRule> CR, List<(int, TQuadRule)> list) {
-                        foreach (var chunkRulePair in CR) {
-                            for (int i = chunkRulePair.Chunk.i0; i < chunkRulePair.Chunk.JE; i++) {
-                                list.Add((i, chunkRulePair.Rule));
+                        void appendRuleToCheckList(ICompositeQuadRule<TQuadRule> CR, List<(int, TQuadRule)> list) {
+                            foreach (var chunkRulePair in CR) {
+                                for (int i = chunkRulePair.Chunk.i0; i < chunkRulePair.Chunk.JE; i++) {
+                                    list.Add((i, chunkRulePair.Rule));
+                                }
                             }
                         }
+
+                        appendRuleToCheckList(m_compositeRule, itemInInOrgRule);
+
+                        for (int iRnk = 0; iRnk < NumThreads; iRnk++) {
+                            appendRuleToCheckList(_compositeRule[iRnk], itemInInSplitRule);
+                        }
+
+                        if (!itemInInOrgRule.ListEquals(itemInInSplitRule, (A, B) => A.iItem == B.iItem && object.ReferenceEquals(A.QR, B.QR))) {
+                            throw new ApplicationException("implementation error in split-up of composite quadrature rule for multi-threading.");
+                        }
+                    } else {
+                        if (_compositeRule.Length != 1)
+                            throw new ApplicationException($"internal error; for {NoOfItems} quadrature item(s), the splitting of the composite rule must be deactivated.");
+
                     }
+                    //#endif
 
-                    appendRuleToCheckList(m_compositeRule, itemInInOrgRule);
-
-                    for(int iRnk = 0; iRnk < NumThreads; iRnk++) {
-                        appendRuleToCheckList(_compositeRule[iRnk], itemInInSplitRule);
-                    }
-
-                    if(!itemInInOrgRule.ListEquals(itemInInSplitRule, (A,B) => A.iItem == B.iItem && object.ReferenceEquals(A.QR, B.QR))) {
-                        throw new ApplicationException("implementation error in split-up of composite quadrature rule for multi-threading.");
-                    }
-
-//#endif
-                    
                 }
                 
                 
