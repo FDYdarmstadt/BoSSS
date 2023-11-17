@@ -23,6 +23,7 @@ using System.Collections;
 using System.Linq;
 using System.Runtime.InteropServices;
 using ilPSP.Connectors;
+using System.Threading;
 
 namespace ilPSP.LinSolvers {
 
@@ -1013,16 +1014,21 @@ namespace ilPSP.LinSolvers {
                 // which could be expensive.
                 // Maybe, we add some de-allocation routine for this.
 
-                GetSetAlloc(value != 0.0, i, j, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ);
-                if(Storage == null && value != 0.0)
+                var lockObject = GetSetAlloc(value != 0.0, i, j, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ);
+                if (Storage == null && value != 0.0) {
+                    if(lockObject != null)
+                        Monitor.Exit(lockObject);
                     throw new ArgumentException("Can not save non-zero entry in void-region.");
-
+                }
                 Debug.Assert(Storage != null || value == 0.0);
 
                 if(Storage != null) {
                     int StorageIdx = Offset + (iSblk) * CI + (jSblk) * CJ;
                     Storage[StorageIdx] = value;
                 }
+
+                if (lockObject != null)
+                    Monitor.Exit(lockObject);
             }
             get {
                 int iSblk, jSblk; //   row/col index within sub-block, which correspond to (i,j)
@@ -1030,19 +1036,26 @@ namespace ilPSP.LinSolvers {
                 double[] Storage; //   sub-block memory: where the result should be accumulated
                 int Offset, CI, CJ; // offset pointer and i,j cycles into 'Storage'
 
-                GetSetAlloc(false, i, j, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ);
+                var lockObject = GetSetAlloc(false, i, j, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ);
 
                 if(Storage == null) {
+                    if (lockObject != null)
+                        Monitor.Exit(lockObject);
                     return 0.0;
                 } else {
                     int StorageIdx = Offset + (iSblk) * CI + (jSblk) * CJ;
-                    return Storage[StorageIdx];
+                    double retval =  Storage[StorageIdx];
+                    if (lockObject != null)
+                        Monitor.Exit(lockObject);
+                    return retval;
                 }
+
+
 
             }
         }
 
-        void GetSetAlloc(bool bAlloc,
+        object GetSetAlloc(bool bAlloc,
             long i, long j, //                         global row/column index 
             out int iSblk, out int jSblk, //           row/col index within sub-block, which correspond to i,j
             out int ISblk, out int JSblk, //           sub-block size
@@ -1051,16 +1064,16 @@ namespace ilPSP.LinSolvers {
             ) {
             int MembnkIdx, InMembnk, rowSblkIdx, colSblkIdx;
             long iBlk, jBlk;
-            GetSetAlloc(bAlloc,
-                        i, j,
-                        out iBlk, out jBlk,
-                        out rowSblkIdx, out colSblkIdx,
-                        out iSblk, out jSblk,
-                        out ISblk, out JSblk,
-                        out Storage,
-                        out Offset, out CI, out CJ,
-                        out MembnkIdx, out InMembnk
-                        );
+            var lockObject = GetSetAlloc(bAlloc,
+                             i, j,
+                             out iBlk, out jBlk,
+                             out rowSblkIdx, out colSblkIdx,
+                             out iSblk, out jSblk,
+                             out ISblk, out JSblk,
+                             out Storage,
+                             out Offset, out CI, out CJ,
+                             out MembnkIdx, out InMembnk
+                             );
 #if DEBUG_EXTENDED
             Debug.Assert((Storage != null) == (MembnkIdx >= 0 && InMembnk >= 0));
             if (Storage != null) {
@@ -1073,9 +1086,11 @@ namespace ilPSP.LinSolvers {
                 }
             }
 #endif
+
+            return lockObject;
         }
 
-        void GetSetAlloc(bool bAlloc,
+        object GetSetAlloc(bool bAlloc,
             long i, long j, //                         global row/column index 
             out long BlkRow, out long BlkCol, //       block row and block column index
             out int rowSblkIdx, out int colSblkIdx, // sub-block row and sub-block column index
@@ -1116,7 +1131,7 @@ namespace ilPSP.LinSolvers {
                 InMembnk = -4;
                 BlkCol = -12323;
                 colSblkIdx = -676;
-                return;
+                return null;
                 //}
             }
             iSblk = (int)(i - i0 - i0_Sblk);
@@ -1134,12 +1149,17 @@ namespace ilPSP.LinSolvers {
                     InMembnk = -4;
                     BlkCol = -12323;
                     colSblkIdx = -676;
-                    return;
+                    return null;
                 } else {
-                    this.m_BlockRows[iBlkLoc] = new SortedDictionary<long, BlockEntry>();
-                    BlockRows = this.m_BlockRows[iBlkLoc];
+                    lock (this) {
+                        this.m_BlockRows[iBlkLoc] = new SortedDictionary<long, BlockEntry>();
+                        BlockRows = this.m_BlockRows[iBlkLoc];
+                    }
                 }
             }
+            var lockObject = this.m_BlockRows[iBlkLoc];
+            Monitor.Enter(lockObject);
+
 
             {
 
@@ -1155,7 +1175,7 @@ namespace ilPSP.LinSolvers {
                     JSblk = RemVoidCols;
                     MembnkIdx = -3;
                     InMembnk = -4;
-                    return;
+                    return lockObject;
                 }
 
                 jSblk = (int)(j - j0 - j0_Sblk);
@@ -1174,7 +1194,7 @@ namespace ilPSP.LinSolvers {
                         //JSblk = int.MinValue;
                         MembnkIdx = -3;
                         InMembnk = -4;
-                        return;
+                        return lockObject;
                     } else {
                         // mem alloc necessary 
                         BE = new BlockEntry();
@@ -1204,7 +1224,7 @@ namespace ilPSP.LinSolvers {
                     if(!bAlloc) {
                         //jSblk = int.MinValue;
                         //JSblk = int.MinValue;
-                        return;
+                        return lockObject;
                     } else {
                         // mem alloc necessary 
                         AllocSblk(out B, out MembnkIdx, out InMembnk, ISblk, JSblk);
@@ -1240,7 +1260,7 @@ namespace ilPSP.LinSolvers {
                 bool isDense;
 
                 B.GetFastBlockAccessInfo(out Storage, out Offset, out CI, out CJ, out isDense, InMembnk);
-
+                return lockObject;
             }
         }
 
@@ -1435,7 +1455,7 @@ namespace ilPSP.LinSolvers {
                     double[] Storage; //   sub-block memory: where the result should be accumulated
                     int Offset, CI, CJ; // offset pointer and i,j cycles into 'Storage'
 
-                    GetSetAlloc(true, i + i0, j + j0, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ);
+                    var lockObject = GetSetAlloc(true, i + i0, j + j0, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ);
 
                     //this.ColPartition.MpiRank
 
@@ -1471,6 +1491,9 @@ namespace ilPSP.LinSolvers {
                             }
                         }
                     }
+
+                    if (lockObject != null)
+                        Monitor.Exit(lockObject);
 
                     j += JWrt;
                     Debug.Assert(JWrt > 0);
@@ -1527,7 +1550,7 @@ namespace ilPSP.LinSolvers {
                     double[] Storage; //   sub-block memory: where the result should be accumulated
                     int Offset, CI, CJ; // offset pointer and i,j cycles into 'Storage'
 
-                    GetSetAlloc(false, i + i0, j + j0, out iSblk, out jSblk, out ISblk, out JSblk,
+                    var lockObject = GetSetAlloc(false, i + i0, j + j0, out iSblk, out jSblk, out ISblk, out JSblk,
                         out Storage, out Offset, out CI, out CJ);
 
                     Debug.Assert(I - i > 0);
@@ -1580,6 +1603,9 @@ namespace ilPSP.LinSolvers {
                             }
                         }
                     }
+
+                    if (lockObject != null)
+                        Monitor.Exit(lockObject);
 
                     Debug.Assert(JWrt >= 0);
                     j += JWrt;
@@ -1639,7 +1665,7 @@ namespace ilPSP.LinSolvers {
                     int Offset, CI, CJ; //         offset pointer and i,j cycles into 'Storage'
                     int MembnkIdx, InMembnk; //    which bank, which index within bank
 
-                    GetSetAlloc(false, i + i0, j + j0, out BlockRow, out BlockCol, out rowSblkIdx, out colSblkIdx, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ, out MembnkIdx, out InMembnk);
+                    var lockObject = GetSetAlloc(false, i + i0, j + j0, out BlockRow, out BlockCol, out rowSblkIdx, out colSblkIdx, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ, out MembnkIdx, out InMembnk);
                     Debug.Assert((Storage != null) == (MembnkIdx >= 0 && InMembnk >= 0));
 
                     int IWrt = Math.Min(I - i, ISblk - iSblk); // number of rows to write
@@ -1721,6 +1747,9 @@ namespace ilPSP.LinSolvers {
                             }
 #endif
                     }
+
+                    if (lockObject != null)
+                        Monitor.Exit(lockObject);
 
                     Debug.Assert(JWrt > 0);
                     j += JWrt;
@@ -3823,7 +3852,7 @@ namespace ilPSP.LinSolvers {
             } else {
                 if(a == 1.0)
                     return;
-                foreach(var Membnk in this.m_Membanks) {
+                foreach (var Membnk in this.m_Membanks) {
                     Membnk.Mem.Scale(a);
                 }
             }
