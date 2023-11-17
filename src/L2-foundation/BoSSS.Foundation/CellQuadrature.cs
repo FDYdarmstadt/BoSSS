@@ -143,7 +143,8 @@ namespace BoSSS.Foundation.Quadrature {
                     m_AllocateBuffers = this.m_AllocateBuffers,
                     m_SaveIntegrationResults = this.m_SaveIntegrationResults,
                     m_quadNodesChanged = this.m_quadNodesChanged,
-                    m_ExEvaluate = this.m_Evaluate
+                    m_ExEvaluate = this.m_ExEvaluate,
+                    m_Evaluate = this.m_Evaluate,
                 };
             }
 

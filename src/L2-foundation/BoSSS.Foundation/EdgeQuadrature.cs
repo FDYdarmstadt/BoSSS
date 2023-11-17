@@ -143,7 +143,9 @@ namespace BoSSS.Foundation.Quadrature {
                     this.IntegralCompDim, this.GridDat, this.m_compositeRule, this.CoordinateSystem) {
                     m_AllocateBuffers = this.m_AllocateBuffers,
                     m_SaveIntegrationResults = this.m_SaveIntegrationResults,
-                    m_quadNodesChanged = this.m_quadNodesChanged
+                    m_quadNodesChanged = this.m_quadNodesChanged,
+                    m_Evaluate = this.m_Evaluate,
+                    m_ExEvaluate = this.m_ExEvaluate
                 };
             }
         }
