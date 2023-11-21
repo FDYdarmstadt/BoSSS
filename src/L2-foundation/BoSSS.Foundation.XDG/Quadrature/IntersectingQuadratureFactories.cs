@@ -97,7 +97,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         readonly LevelSetData beta;
         readonly Symbol signBeta;
 
-        readonly Quadrater finder;
+        readonly IQuadrater finder;
 
         public RefElement RefElement => map.Domain;
 
@@ -107,7 +107,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             this.signAlpha = signAlpha;
             this.beta = beta;
             this.signBeta = signBeta;
-            finder = new Quadrater();
+            finder = IntersectingQuadrature.Methods.Create(5);
         }
 
         public int[] GetCachedRuleOrders() {
