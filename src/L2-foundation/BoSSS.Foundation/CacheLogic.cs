@@ -462,45 +462,47 @@ namespace BoSSS.Foundation.Caching {
         /// calling <see cref="m_ComputeValues"/>.
         /// </remarks>
         public MultidimensionalArray GetValue_Cell(NodeSet NS, int j0, int Len, int Degree) {
-            if(j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
-            if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
-            if((j0 + Len) > this.GridData.iGeomCells.Count)
-                throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of local cells");
-            if(NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.CellCoord)
-                throw new ArgumentException("Expecting a node set in local cell coordinate system");
+            lock (this) {
+                if (j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
+                if (Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
+                if ((j0 + Len) > this.GridData.iGeomCells.Count)
+                    throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of local cells");
+                if (NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.CellCoord)
+                    throw new ArgumentException("Expecting a node set in local cell coordinate system");
 #if DEBUG
-            int iKref = NS.GetVolumeRefElementIndex(this.GridData);
-            if(iKref < 0)
-                throw new ArgumentException("not a volume node set");
-            for(int j = 0; j < Len; j++) {
-                if(GridData.iGeomCells.GetRefElementIndex(j + j0) != iKref)
-                    throw new ArgumentException("node set ref. element/cell mismatch");
-            }
-            Debug.Assert(NS.SpatialDimension == this.GridData.SpatialDimension,
-                "Mismatch between number of spatial directions in node set and reference element.");
+                int iKref = NS.GetVolumeRefElementIndex(this.GridData);
+                if (iKref < 0)
+                    throw new ArgumentException("not a volume node set");
+                for (int j = 0; j < Len; j++) {
+                    if (GridData.iGeomCells.GetRefElementIndex(j + j0) != iKref)
+                        throw new ArgumentException("node set ref. element/cell mismatch");
+                }
+                Debug.Assert(NS.SpatialDimension == this.GridData.SpatialDimension,
+                    "Mismatch between number of spatial directions in node set and reference element.");
 #endif
 
-            MultidimensionalArray R = null;
-            if(NS.Reference != 0 && lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
-                R = (MultidimensionalArray)Cache.GetItem(lastCell_CashRef);
-                Debug.Assert((R == null) || (R.GetLength(0) == Len));
-                Debug.Assert((R == null) || (R.GetLength(1) == NS.NoOfNodes));
-            }
+                MultidimensionalArray R = null;
+                if (NS.Reference != 0 && lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
+                    R = (MultidimensionalArray)Cache.GetItem(lastCell_CashRef);
+                    Debug.Assert((R == null) || (R.GetLength(0) == Len));
+                    Debug.Assert((R == null) || (R.GetLength(1) == NS.NoOfNodes));
+                }
 
-            lastCell_j0 = j0;
-            lastCell_Len = Len;
-            lastCell_Degree = Degree;
-            lastCell_NSref = NS.Reference;
+                lastCell_j0 = j0;
+                lastCell_Len = Len;
+                lastCell_Degree = Degree;
+                lastCell_NSref = NS.Reference;
 
-            if(R == null) {
-                R = this.m_alloc(j0, Len, Degree, NS);
-                this.m_ComputeValues(NS, j0, Len, Degree, R);
-                Debug.Assert(R.GetLength(0) == Len);
-                Debug.Assert(R.GetLength(1) == NS.NoOfNodes);
-                if(NS.Reference != 0)
-                    lastCell_CashRef = Cache.CacheItem(R, R.Length * sizeof(double));
+                if (R == null) {
+                    R = this.m_alloc(j0, Len, Degree, NS);
+                    this.m_ComputeValues(NS, j0, Len, Degree, R);
+                    Debug.Assert(R.GetLength(0) == Len);
+                    Debug.Assert(R.GetLength(1) == NS.NoOfNodes);
+                    if (NS.Reference != 0)
+                        lastCell_CashRef = Cache.CacheItem(R, R.Length * sizeof(double));
+                }
+                return R;
             }
-            return R;
         }
 
         public MultidimensionalArray GetValue_EdgeSV(NodeSet NS, int e0, int Len, int Degree) {

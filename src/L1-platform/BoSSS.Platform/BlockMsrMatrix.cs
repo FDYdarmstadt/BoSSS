@@ -1999,15 +1999,16 @@ namespace ilPSP.LinSolvers {
         /// i.e. first index into <see cref="Membank.Mem"/>, see <see cref="BlockEntry.InMembnk"/>.
         /// </param>
         void AllocSblk(out Membank B, out int MembnkIdx, out int InMembnk, int ISblk, int JSblk) {
-            int NoOfMembnk = m_Membanks.Count;
-            for(int iMbnk = 0; iMbnk < NoOfMembnk; iMbnk++) { // loop over memory banks, trying to find a suitable one..
-                B = m_Membanks[iMbnk];
-                if(B.NextFree >= 0 && B.Mem.GetLength(1) == ISblk && B.Mem.GetLength(2) == JSblk) {
-                    // found a memory bank which has still available space and 
-                    // is of the correct size
+            lock (m_Membanks) {
+                int NoOfMembnk = m_Membanks.Count;
+                for (int iMbnk = 0; iMbnk < NoOfMembnk; iMbnk++) { // loop over memory banks, trying to find a suitable one..
+                    B = m_Membanks[iMbnk];
+                    if (B.NextFree >= 0 && B.Mem.GetLength(1) == ISblk && B.Mem.GetLength(2) == JSblk) {
+                        // found a memory bank which has still available space and 
+                        // is of the correct size
 
-                    MembnkIdx = iMbnk;
-                    InMembnk = B.NextFree;
+                        MembnkIdx = iMbnk;
+                        InMembnk = B.NextFree;
 
 #if DEBUG_EXTENDED
                     // check that there are no invalid entries left
@@ -2022,33 +2023,34 @@ namespace ilPSP.LinSolvers {
                         }
                     }
 #endif
-                    // find next free block (i.e. ensure that 'B.NextFree' is valid)
-                    B.Occupied[InMembnk] = true;
-                    int L = B.Occupied.Count;
-                    Debug.Assert(B.Occupied.Count == B.Mem.GetLength(0));
-                    B.NextFree = int.MinValue;
-                    for(int i = InMembnk + 1; i < L; i++) {
-                        if(B.Occupied[i] == false) {
-                            B.NextFree = i;
-                            break;
+                        // find next free block (i.e. ensure that 'B.NextFree' is valid)
+                        B.Occupied[InMembnk] = true;
+                        int L = B.Occupied.Count;
+                        Debug.Assert(B.Occupied.Count == B.Mem.GetLength(0));
+                        B.NextFree = int.MinValue;
+                        for (int i = InMembnk + 1; i < L; i++) {
+                            if (B.Occupied[i] == false) {
+                                B.NextFree = i;
+                                break;
+                            }
                         }
+
+                        // work done
+                        return;
                     }
-
-                    // work done
-                    return;
                 }
-            }
 
-            // found nothing so far - must allocate new memory bank.
-            B = new Membank(this.m_RowPartitioning.LocalNoOfBlocks, ISblk, JSblk);
-            InMembnk = 0;
-            MembnkIdx = m_Membanks.Count;
-            m_Membanks.Add(B);
-            B.Occupied[0] = true;
-            if(B.Occupied.Count > 1) {
-                B.NextFree++;
-            } else {
-                B.NextFree = int.MinValue;
+                // found nothing so far - must allocate new memory bank.
+                B = new Membank(this.m_RowPartitioning.LocalNoOfBlocks, ISblk, JSblk);
+                InMembnk = 0;
+                MembnkIdx = m_Membanks.Count;
+                m_Membanks.Add(B);
+                B.Occupied[0] = true;
+                if (B.Occupied.Count > 1) {
+                    B.NextFree++;
+                } else {
+                    B.NextFree = int.MinValue;
+                }
             }
         }
 
@@ -2056,23 +2058,25 @@ namespace ilPSP.LinSolvers {
         /// Releases a sub-block.
         /// </summary>
         void FreeSblk(int MembnkIdx, int InMembnk) {
-            // find mem bank
-            Membank B = m_Membanks[MembnkIdx];
+            lock (m_Membanks) {
+                // find mem bank
+                Membank B = m_Membanks[MembnkIdx];
 
-            // reset memory state
-            double[] RawMem;
-            int Offset, CI, CJ, ISblk = B.Mem.GetLength(1), JSblk = B.Mem.GetLength(2);
-            bool isDense;
-            B.GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
-            for(int i = 0; i < ISblk; i++) {
-                for(int j = 0; j < JSblk; j++) {
-                    RawMem[Offset + i * CI + j * CJ] = 0;
+                // reset memory state
+                double[] RawMem;
+                int Offset, CI, CJ, ISblk = B.Mem.GetLength(1), JSblk = B.Mem.GetLength(2);
+                bool isDense;
+                B.GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+                for (int i = 0; i < ISblk; i++) {
+                    for (int j = 0; j < JSblk; j++) {
+                        RawMem[Offset + i * CI + j * CJ] = 0;
+                    }
                 }
-            }
 
-            // release block
-            B.Occupied[InMembnk] = false;
-            B.NextFree = Math.Min(B.NextFree, InMembnk);
+                // release block
+                B.Occupied[InMembnk] = false;
+                B.NextFree = Math.Min(B.NextFree, InMembnk);
+            }
         }
 
         /// <summary>
