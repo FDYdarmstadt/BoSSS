@@ -934,15 +934,13 @@ namespace BoSSS.Foundation.Quadrature {
         public delegate void Del_QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads);
 
         /// <summary>
-        /// 
+        /// might be used with multithread-parallelization to init thread-local variables, e.g. <see cref="IQuadrature.CustomTimers"/>
         /// </summary>
-        /// <param name="iThread"></param>
-        /// <param name="NumThreads"></param>
         public delegate void Del_OnCloneForThreadParallelization(IQuadrature owner, int iThread, int NumThreads);
 
 
         internal Del_Evaluate m_Evaluate;
-        internal Del_EvaluateEx m_ExEvaluate; // expert evaluate/ the user is responsible for multiplying with quad weigths
+        internal Del_EvaluateEx m_ExEvaluate; // expert evaluate/ the user is responsible for multiplying with quad weights
         internal Del_SaveIntegrationResults m_SaveIntegrationResults;
         internal Del_AllocateBuffersEx m_AllocateBuffers;
         internal Del_QuadNodesChanged m_quadNodesChanged;
