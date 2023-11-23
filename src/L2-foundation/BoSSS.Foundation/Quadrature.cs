@@ -55,7 +55,12 @@ namespace BoSSS.Foundation.Quadrature {
         /// see e.g., <see cref="AllocateBuffers(int, NodeSet)"/>
         /// </summary>
         /// <returns></returns>
-        public abstract Quadrature<TQuadRule, TDomain> CloneForThreadParallelization();
+        public abstract Quadrature<TQuadRule, TDomain> CloneForThreadParallelization(int iThread, int NumThreads);
+
+        /// <summary>
+        /// called on some object after <see cref="CloneForThreadParallelization(int, int)"/> to initialize thread-locals
+        /// </summary>
+        protected Del_OnCloneForThreadParallelization m_OnCloneForThreadParallelization = null;
 
 
         /// <summary>
@@ -238,7 +243,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         /// <param name="NoOfItems">number of edges or cells to integrate</param>
         /// <param name="ruleNodes">quadrature rule nodes</param>
-        protected virtual void AllocateBuffersInternal(int NoOfItems, NodeSet ruleNodes) {
+        /// <param name="iThread">should be used to allocate thread-local resources when multi-thread parallelization is used</param>
+        /// <param name="NumThreads">should be used to allocate thread-local resources when multi-thread parallelization is used</param>
+        protected virtual void AllocateBuffersInternal(int NoOfItems, NodeSet ruleNodes, int iThread, int NumThreads) {
             try {
                 Debug.Assert(ruleNodes.Dimension == 2);
                 if (this.m_ExEvaluate == null) {
@@ -259,7 +266,7 @@ namespace BoSSS.Foundation.Quadrature {
                 }
 
                 if (m_AllocateBuffers != null)
-                    m_AllocateBuffers(NoOfItems, ruleNodes);
+                    m_AllocateBuffers(NoOfItems, ruleNodes, iThread, NumThreads);
 
             } catch (OutOfMemoryException oome) {
                 Console.Error.WriteLine($"{oome}: Number of nodes: " + ruleNodes.NoOfNodes);
@@ -276,9 +283,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// This method will be called whenever a new 
         /// node set family was locked, i.e. whenever the set of quadrature nodes is changed.
         /// </summary>
-        protected virtual void QuadNodesChanged(NodeSet newNodes) {
+        protected virtual void QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads) {
             if (m_quadNodesChanged != null)
-                m_quadNodesChanged(newNodes);
+                m_quadNodesChanged(newNodes, iThread, NumThreads);
         }
 
         /// <summary>
@@ -294,7 +301,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// On exit, the result of the integrand evaluation.
         /// Implementers can expect a cleared array, i.e. all entries are 0.0.
         ///  - 1st index: local cell or edge index minus <paramref name="i0"/>;
-        ///  - 2nd index: Node Index;<br/>
+        ///  - 2nd index: Node Index;
         ///  - 3rd to (<see cref="IntegralCompDim"/>.Length + 2)-th index: integral component;
         /// </param>
         protected virtual void Evaluate(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult) {
@@ -383,15 +390,11 @@ namespace BoSSS.Foundation.Quadrature {
                 // Init
                 // ====
 
-                
-
                 // check input ...
                 IGridData grd = gridData;
-
                 
                 // compute partitioning across threads
                 // ===================================
-
                 
                 int NumThreads = ilPSP.Environment.NumThreads;
                 NumThreads = 8;
@@ -405,6 +408,9 @@ namespace BoSSS.Foundation.Quadrature {
                     _compositeRule = new[] { m_compositeRule };
 
                 } else {
+
+                    Console.WriteLine($"Running on {NumThreads} freds.");
+
                     // +++++++++++++++++++++++++++++++++++++++++
                     // split up quad rule for parallel execution
                     // +++++++++++++++++++++++++++++++++++++++++
@@ -525,16 +531,19 @@ namespace BoSSS.Foundation.Quadrature {
                     ThreadPool.SetMaxThreads(NumThreads, 2);
 
                     allThreads[0] = this;
+                    this?.m_OnCloneForThreadParallelization(this, 0, NumThreads);
                     for(int iRnk = 1; iRnk < NumThreads; iRnk++) {
-                        allThreads[iRnk] = this.CloneForThreadParallelization();
+                        allThreads[iRnk] = this.CloneForThreadParallelization(iRnk, NumThreads);
+                        allThreads[iRnk]?.m_OnCloneForThreadParallelization(allThreads[iRnk], iRnk, NumThreads);
                         allThreads[iRnk].m_compositeRule = null; // prevent accidental use
+
                     }
 
-                    //Parallel.For(0, NumThreads, options, (int iThread) => allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRule[iThread]));
+                    Parallel.For(0, NumThreads, options, (int iThread) => allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRule[iThread]));
 
-                    for(int iThread = 0; iThread < NumThreads; iThread++) {
-                        allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRule[iThread]);
-                    }
+                    //for(int iThread = 0; iThread < NumThreads; iThread++) {
+                    //    allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRule[iThread]);
+                    //}
                 } else {
                     NumThreads = 1;
                     this.ExecuteThread(0, NumThreads, _compositeRule[0]);
@@ -556,11 +565,11 @@ namespace BoSSS.Foundation.Quadrature {
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-                    var mcrEval = tr.LogDummyblock(stpwEval.Elapsed.Ticks, "integrand_evaluation");  
-                    tr.LogDummyblock(stpwQuad.Elapsed.Ticks, "quadrature");
-                    tr.LogDummyblock(stpwSaveIntRes.Elapsed.Ticks, "saving_results");
-                    tr.LogDummyblock(stpwNdSet.Elapsed.Ticks, "node_set_management");
-                    tr.LogDummyblock(stpwAlloc.Elapsed.Ticks, "buffer_allocation");
+                    var mcrEval = tr.LogDummyblock(allThreads.Max(th => stpwEval.Elapsed.Ticks), "integrand_evaluation");  
+                    tr.LogDummyblock(allThreads.Max(th => stpwQuad.Elapsed.Ticks), "quadrature");
+                    tr.LogDummyblock(allThreads.Max(th => stpwSaveIntRes.Elapsed.Ticks), "saving_results");
+                    tr.LogDummyblock(allThreads.Max(th => stpwNdSet.Elapsed.Ticks), "node_set_management");
+                    tr.LogDummyblock(allThreads.Max(th => stpwAlloc.Elapsed.Ticks), "buffer_allocation");
 
                     Debug.Assert(m_CustomTimers.Length == m_CustomTimers_Names.Length);
                     Debug.Assert(m_CustomTimers.Length == m_CustomTimers_RootPointer.Length);
@@ -569,10 +578,8 @@ namespace BoSSS.Foundation.Quadrature {
                     for (int iTimer = 0; iTimer < mcrS.Length; iTimer++) {
                         int pt = m_CustomTimers_RootPointer[iTimer];
                         MethodCallRecord OwnerMcr = pt >= 0 ? mcrS[pt] : mcrEval;
-                        mcrS[iTimer] = OwnerMcr.AddSubCall(CustomTimers_Names[iTimer], m_CustomTimers[iTimer].Elapsed.Ticks);
+                        mcrS[iTimer] = OwnerMcr.AddSubCall(CustomTimers_Names[iTimer], allThreads.Max(th => m_CustomTimers[iTimer].Elapsed.Ticks));
                     }
-
-                    
                 }
             }
         }
@@ -601,7 +608,7 @@ namespace BoSSS.Foundation.Quadrature {
                 //// init node set
                 stpwNdSet.Start();
                 if (!object.ReferenceEquals(m_CurrentRule.Nodes, lastQuadRuleNodes)) {
-                    QuadNodesChanged(m_CurrentRule.Nodes);
+                    QuadNodesChanged(m_CurrentRule.Nodes, ThreadRank, NumThreads);
                 }
                 stpwNdSet.Stop();
 
@@ -649,7 +656,7 @@ namespace BoSSS.Foundation.Quadrature {
                     // reallocate buffers if bulksize was changed
                     stpwAlloc.Start();
                     if (ChunkLength != oldBulksize || m_CurrentRule.NoOfNodes != oldNoOfNodes) {
-                        AllocateBuffersInternal(ChunkLength, m_CurrentRule.Nodes);
+                        AllocateBuffersInternal(ChunkLength, m_CurrentRule.Nodes, ThreadRank, NumThreads);
                         AllocateBuffers(ChunkLength, m_CurrentRule.Nodes);
                         oldBulksize = ChunkLength;
                         oldNoOfNodes = m_CurrentRule.NoOfNodes;
@@ -664,7 +671,7 @@ namespace BoSSS.Foundation.Quadrature {
                         stpwEval.Start();
                         m_EvalResults.Clear();
                         if (this.CurrentRule.IsEmpty) {
-                            // this is an empty rule
+                            // this is an empty rule; avoid calling, because the `Evaluate`-Implementation might not handle this correctly.
                             m_EvalResults.Clear();
                         } else {
                             // normal evaluation
@@ -684,11 +691,11 @@ namespace BoSSS.Foundation.Quadrature {
                         // =======================
                         stpwEval.Start();
                         if (this.CurrentRule.IsEmpty) {
-                            // this is an empty rule
-                            m_QuadResults.Clear();
+                            // this is an empty rule; avoid calling, because the `Evaluate`-Implementation might not handle this correctly.
+                            m_QuadResults.Clear(); 
                         } else {
                             // normal evaluation
-                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults);
+                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults, ThreadRank, NumThreads);
                         }
                         stpwEval.Stop();
                     }
@@ -899,7 +906,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public delegate void Del_Evaluate(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult);
 
-        
+        /// <summary>
+        /// evaluation of integrand, multiplication with quadrature weights, and summation, in **a multi-threaded environment**.
+        /// </summary>
+        public delegate void Del_EvaluateEx(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult, int iThread, int NumOfThreads);
 
 
         /// <summary>
@@ -914,19 +924,27 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="EdgeQuadrature.GetQuadrature"/> and
         /// <see cref="CellBoundaryQuadrature{T}.GetQuadrature"/>
         /// </summary>
-        public delegate void Del_AllocateBuffers(int NoOfItems, MultidimensionalArray ruleNodes);
+        public delegate void Del_AllocateBuffersEx(int NoOfItems, MultidimensionalArray ruleNodes, int iThread, int NumThreads);
 
         /// <summary>
         /// used by <see cref="CellQuadrature.GetQuadrature"/>,
         /// <see cref="EdgeQuadrature.GetQuadrature"/> and
         /// <see cref="CellBoundaryQuadrature{T}.GetQuadrature"/>
         /// </summary>
-        public delegate void Del_QuadNodesChanged(NodeSet newNodes);
+        public delegate void Del_QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="iThread"></param>
+        /// <param name="NumThreads"></param>
+        public delegate void Del_OnCloneForThreadParallelization(IQuadrature owner, int iThread, int NumThreads);
+
 
         internal Del_Evaluate m_Evaluate;
-        internal Del_Evaluate m_ExEvaluate; // expert evaluate/ the user is responsible for multiplying with quad weigths
+        internal Del_EvaluateEx m_ExEvaluate; // expert evaluate/ the user is responsible for multiplying with quad weigths
         internal Del_SaveIntegrationResults m_SaveIntegrationResults;
-        internal Del_AllocateBuffers m_AllocateBuffers;
+        internal Del_AllocateBuffersEx m_AllocateBuffers;
         internal Del_QuadNodesChanged m_quadNodesChanged;
     }
 }

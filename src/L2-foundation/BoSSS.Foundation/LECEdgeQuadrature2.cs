@@ -32,8 +32,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         where M : IMutableMatrix
         where V : IList<double> {
 
-
-        
         public LECEdgeQuadrature2(DifferentialOperator op) {
             Operator = op;
 
@@ -84,12 +82,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         EquationComponentArgMapping<IEdgeform_GradUxGradV>[] m_Edgeform_GradUxGradV;
         EquationComponentArgMapping<IEdgeSource_V>[] m_EdgeSourceV;
         EquationComponentArgMapping<IEdgeSource_GradV>[] m_EdgeSourceGradV;
-        Stopwatch[][] m_Edgeform_UxV_Watches;
-        Stopwatch[][] m_Edgeform_GradUxV_Watches;
-        Stopwatch[][] m_Edgeform_UxGradV_Watches;
-        Stopwatch[][] m_Edgeform_GradUxGradV_Watches;
-        Stopwatch[][] m_EdgeSourceV_Watches;
-        Stopwatch[][] m_EdgeSourceGradV_Watches;
+
 
         
 
@@ -164,11 +157,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 }
             }
 
-            var q = EdgeQuadrature.GetQuadrature2(new int[] { 2, 2, m_RowL.Sum(), (LinearRequired ? m_ColL.Sum() : 0) + (AffineRequired ? 1 : 0)}, // the additional column carries the affine part
+            var q = EdgeQuadrature.GetQuadrature2(new int[] { 2, 2, m_RowL.Sum(), (LinearRequired ? m_ColL.Sum() : 0) + (AffineRequired ? 1 : 0) }, // the additional column carries the affine part
                 m_GridDat, domNrule,
                 this.EvaluateEx,
-                this.SaveIntegrationResults,
-                _AllocateBuffers: this.AllocateBuffers);
+                this.SaveIntegrationResults);//,
+                //_AllocateBuffers: this.AllocateBuffers);
 
             q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
             q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECedge", "ParametersAndNormals", "Flux-Trafo" };
@@ -194,12 +187,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         double m_time;
 
-        Stopwatch Flux_Eval;
-        Stopwatch Basis_Eval;
-        Stopwatch Loops;
-        Stopwatch ParametersAndNormals;
-        Stopwatch FluxTrafo;
-
+        
 
         UnsetteledCoordinateMapping m_RowMap;
         UnsetteledCoordinateMapping m_ColMap;
@@ -335,6 +323,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 AllocateSumBuffer(ref m_Trf_GradVSumBuffer, this.m_EdgeSourceGradV, NoOfItems, NoOfNodes, D, 3, true);
             }
         }
+
+        Stopwatch[][] m_Edgeform_UxV_Watches;
+        Stopwatch[][] m_Edgeform_GradUxV_Watches;
+        Stopwatch[][] m_Edgeform_UxGradV_Watches;
+        Stopwatch[][] m_Edgeform_GradUxGradV_Watches;
+        Stopwatch[][] m_EdgeSourceV_Watches;
+        Stopwatch[][] m_EdgeSourceGradV_Watches;
+
+        Stopwatch Flux_Eval;
+        Stopwatch Basis_Eval;
+        Stopwatch Loops;
+        Stopwatch ParametersAndNormals;
+        Stopwatch FluxTrafo;
+
 
         // 1st index (staggered): test variable/component variable
         // 2nd index (staggered): equation component
@@ -487,10 +489,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
         
         /// <summary>
-        /// Quadrature nodes in global coordinates<br/>
-        /// 1st index: edge<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: spatial direction
+        /// Quadrature nodes in global coordinates
+        /// - 1st index: edge
+        /// - 2nd index: quadrature node
+        /// - 3rd index: spatial direction
         /// </summary>
         MultidimensionalArray GlobalNodes = null;
 
@@ -518,7 +520,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             public bool Type;
         }
         
-        protected void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+        protected void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult, int iThread, int NumOfThreads) {
 
             NodeSet NS = QR.Nodes;
             bool AffineEdge = m_GridDat.iGeomEdges.IsEdgeAffineLinear(i0);

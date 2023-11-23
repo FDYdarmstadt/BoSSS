@@ -77,7 +77,7 @@ namespace BoSSS.Foundation {
             DGField m_FieldA;
             DGField m_FieldB;
 
-            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 return new InnerProductQuadrature(m_FieldA, m_FieldB, null, 1); // quad rule will be set anyway 
             }
 
@@ -770,7 +770,7 @@ namespace BoSSS.Foundation {
             }
 
 
-            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 return new LxNormQuadrature(this.GridDat) {
                     m_func = this.m_func,
                     m_Owner = this.m_Owner,
@@ -968,7 +968,7 @@ namespace BoSSS.Foundation {
                 m_fields = fields;
                 m_f = f;
             }
-            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 return new IntegralOverExQuadrature(this.GridDat, m_fields, this.m_compositeRule, m_f);
             }
 

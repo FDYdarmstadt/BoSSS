@@ -476,7 +476,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     throw new NotSupportedException();
             }
 
-            public override Quadrature<CellEdgeBoundaryQuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<CellEdgeBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); // 
             }
 
@@ -518,8 +518,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             NodeSet[] family;
 
-            protected override void QuadNodesChanged(NodeSet newNodes) {
+            protected override void QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads) {
                 Debug.Assert(object.ReferenceEquals(newNodes, this.CurrentRule.Nodes));
+                if(NumThreads > 1)
+                    throw new NotImplementedException("Not Supporting parallel execution");
+
 
                 int noOfRelevantEdges = CurrentRule.NumbersOfNodesPerFace.Count(n => n > 0);
                 family = new NodeSet[1 + noOfRelevantEdges];

@@ -240,7 +240,7 @@ namespace BoSSS.Solution.Utils {
                 this.flux = flux;
             }
 
-            public override Quadrature<QuadRule, EdgeMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, EdgeMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 return new MyEdgeQuadrature(this.GridDat, 1, this.flux, new CoordinateMapping(this.evaluators), 0, null);
             }
 

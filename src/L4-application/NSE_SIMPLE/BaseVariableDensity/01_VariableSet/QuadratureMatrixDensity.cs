@@ -33,7 +33,7 @@ namespace NSE_SIMPLE {
 
         MaterialLaw EoS;
 
-        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
             return new QuadratureMatrix_Rho(m_Basis, GridDat, EoS, m_Scalar) {
                 Matrix = this.Matrix
             };

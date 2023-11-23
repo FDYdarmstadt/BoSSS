@@ -639,7 +639,7 @@ namespace BoSSS.Foundation.XDG {
                 m_gradPhi = new MultidimensionalArray(3);
             }
 
-            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 return new SignedDistanceErrorQuad(m_phi, this.m_compositeRule);
             }
 

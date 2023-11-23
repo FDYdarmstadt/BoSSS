@@ -313,7 +313,7 @@ namespace BoSSS.Foundation.XDG {
                 m_ResultBuffer = new MultidimensionalArray(4);
             }
 
-            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 throw new NotImplementedException("Seems to be used very rarely, multi-thread-parallelization is not implemented");
             }
 
@@ -448,7 +448,7 @@ namespace BoSSS.Foundation.XDG {
                 m_WeightBuffer = new MultidimensionalArray(2);
             }
 
-            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 throw new NotImplementedException("Seems to be used very rarely, multi-thread-parallelization is not implemented");
             }
 

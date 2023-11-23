@@ -423,7 +423,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         /// <param name="NoOfItems">number of edges or cells to integrate</param>
         /// <param name="rule">The quadrature rule applied to each item</param>
-        protected override void AllocateBuffersInternal(int NoOfItems, NodeSet rule) {
+        /// <param name="ThreadRank"></param>
+        /// <param name="iThread"></param>
+        protected override void AllocateBuffersInternal(int NoOfItems, NodeSet rule, int iThread, int ThreadRank) {
             int NoOfNodes = rule.GetLength(0);
             if (m_EvalResults == null)
                 m_EvalResults = new MultidimensionalArray(2 + IntegralCompDim.Length);
@@ -440,7 +442,7 @@ namespace BoSSS.Foundation.Quadrature {
 
 
             if (m_AllocateBuffers != null)
-                m_AllocateBuffers(NoOfItems, rule);
+                m_AllocateBuffers(NoOfItems, rule, iThread, ThreadRank);
         }
 
         /// <summary>
@@ -453,15 +455,15 @@ namespace BoSSS.Foundation.Quadrature {
             ICompositeQuadRule<TQuadRule> domNrule,
             Del_Evaluate _Evaluate,
             Del_SaveIntegrationResults _SaveIntegrationResults,
-            Del_AllocateBuffers _AllocateBuffers = null,
-            Del_QuadNodesChanged _PostLockNodes = null,
+            //Del_AllocateBuffers _AllocateBuffers = null,
+            //Del_QuadNodesChanged _PostLockNodes = null,
             CoordinateSystem cs = CoordinateSystem.Physical) {
 
             var ret = new CellBoundaryQuadratureImpl(noOfIntegralsPerCell, context, domNrule, cs) {
                 m_Evaluate = _Evaluate,
                 m_SaveIntegrationResults = _SaveIntegrationResults,
-                m_AllocateBuffers = _AllocateBuffers,
-                m_quadNodesChanged = _PostLockNodes,
+                //m_AllocateBuffers = _AllocateBuffers,
+                //m_quadNodesChanged = _PostLockNodes,
 
             };
             return ret;
@@ -475,12 +477,14 @@ namespace BoSSS.Foundation.Quadrature {
                 : base(noOfIntegralsPerCell, context, domNrule, cs) {
             }
 
-            public override Quadrature<TQuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<TQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 return new CellBoundaryQuadratureImpl(
                     this.IntegralCompDim, this.GridDat, this.m_compositeRule, this.CoordinateSystem) {
                     m_AllocateBuffers = this.m_AllocateBuffers,
                     m_SaveIntegrationResults = this.m_SaveIntegrationResults,
-                    m_quadNodesChanged = this.m_quadNodesChanged
+                    m_quadNodesChanged = this.m_quadNodesChanged,
+                    m_Evaluate = this.m_Evaluate,
+                    m_ExEvaluate = this.m_ExEvaluate,
                 };
             }
         
