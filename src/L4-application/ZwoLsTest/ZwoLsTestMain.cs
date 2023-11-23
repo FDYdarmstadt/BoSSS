@@ -48,14 +48,16 @@ namespace BoSSS.Application.ZwoLsTest {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            //InitMPI();
+            InitMPI();
+            BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, true);
             //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, true);
-            //Assert.IsTrue(false, "Remove me");
-            
+            Assert.IsTrue(false, "Remove me");
+                        
             BoSSS.Solution.Application._Main(
                 args,
                 true,
                 () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye, DYNAMIC_BALANCE = true });
+            
         }
 
         protected override IGrid CreateOrLoadGrid() {
