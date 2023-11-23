@@ -531,10 +531,10 @@ namespace BoSSS.Foundation.Quadrature {
                     ThreadPool.SetMaxThreads(NumThreads, 2);
 
                     allThreads[0] = this;
-                    this?.m_OnCloneForThreadParallelization(this, 0, NumThreads);
+                    this.m_OnCloneForThreadParallelization?.Invoke(this, 0, NumThreads);
                     for(int iRnk = 1; iRnk < NumThreads; iRnk++) {
                         allThreads[iRnk] = this.CloneForThreadParallelization(iRnk, NumThreads);
-                        allThreads[iRnk]?.m_OnCloneForThreadParallelization(allThreads[iRnk], iRnk, NumThreads);
+                        allThreads[iRnk].m_OnCloneForThreadParallelization?.Invoke(allThreads[iRnk], iRnk, NumThreads);
                         allThreads[iRnk].m_compositeRule = null; // prevent accidental use
 
                     }
@@ -546,6 +546,7 @@ namespace BoSSS.Foundation.Quadrature {
                     //}
                 } else {
                     NumThreads = 1;
+                    this.m_OnCloneForThreadParallelization?.Invoke(this, 0, 1);
                     this.ExecuteThread(0, NumThreads, _compositeRule[0]);
                 }
 

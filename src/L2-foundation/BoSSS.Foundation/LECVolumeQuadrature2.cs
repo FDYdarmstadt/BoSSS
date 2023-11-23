@@ -88,6 +88,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             if (temp.IsNonEmpty == false)
                 return;
 
+            //if(Matrix.ColPartition.MpiRank == 0)
+            //    Debugger.Launch();
+
             m_GridDat = RowMap.GridDat;
 
             if (!object.ReferenceEquals(m_GridDat, ColMap.GridDat))
