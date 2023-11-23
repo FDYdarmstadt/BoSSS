@@ -160,8 +160,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             var q = EdgeQuadrature.GetQuadrature2(new int[] { 2, 2, m_RowL.Sum(), (LinearRequired ? m_ColL.Sum() : 0) + (AffineRequired ? 1 : 0) }, // the additional column carries the affine part
                 m_GridDat, domNrule,
                 this.EvaluateEx,
-                this.SaveIntegrationResults);//,
-                //_AllocateBuffers: this.AllocateBuffers);
+                this.SaveIntegrationResults,
+                _AllocateBuffers: this.AllocateBuffers);
 
             q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
             q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECedge", "ParametersAndNormals", "Flux-Trafo" };
@@ -273,7 +273,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         MultidimensionalArray GradsXquadWgt = new MultidimensionalArray(4);  // test function gradient times quadrature weight
 
 
-        protected void AllocateBuffers(int NoOfItems, MultidimensionalArray rule) {
+        protected void AllocateBuffers(int NoOfItems, MultidimensionalArray rule, int iThread, int NumThreads) {
             int NoOfNodes = rule.GetLength(0);
             int D = m_GridDat.SpatialDimension;
 

@@ -35,12 +35,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         public LECVolumeQuadrature2(DifferentialOperator op) {
             Operator = op;
-            m_VolumeForm_UxV = EquationComponentArgMapping<IVolumeForm_UxV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.UxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeForm_UxGradV = EquationComponentArgMapping<IVolumeForm_UxGradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.UxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeForm_GradUxV = EquationComponentArgMapping<IVolumeForm_GradUxV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.GradUxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeForm_GradUxGradV = EquationComponentArgMapping<IVolumeForm_GradUxGradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.GradUxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeSource_V = EquationComponentArgMapping<IVolumeSource_V>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.V) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
-            m_VolumeSource_GradV = EquationComponentArgMapping<IVolumeSource_GradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.GradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
         }
 
         DifferentialOperator Operator;
@@ -64,51 +58,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
-        /// <summary>
-        /// index: test function/codomain variable
-        /// </summary>
-        EquationComponentArgMapping<IVolumeSource_GradV>[] m_VolumeSource_GradV;
-
-        /// <summary>
-        /// index: test function/codomain variable
-        /// </summary>
-        EquationComponentArgMapping<IVolumeSource_V>[] m_VolumeSource_V;
-
-
-        /// <summary>
-        /// index: test function/codomain variable
-        /// </summary>
-        EquationComponentArgMapping<IVolumeForm_GradUxGradV>[] m_VolumeForm_GradUxGradV;
-
-        /// <summary>
-        /// index: test function/codomain variable
-        /// </summary>
-        EquationComponentArgMapping<IVolumeForm_GradUxV>[] m_VolumeForm_GradUxV;
-
-        /// <summary>
-        /// index: test function/codomain variable
-        /// </summary>
-        EquationComponentArgMapping<IVolumeForm_UxGradV>[] m_VolumeForm_UxGradV;
-
-        /// <summary>
-        /// index: test function/codomain variable
-        /// </summary>
-        EquationComponentArgMapping<IVolumeForm_UxV>[] m_VolumeForm_UxV;
-
-        /// <summary>
-        /// true, if this integrator is responsible for any component
-        /// </summary>
-        bool IsNonEmpty {
-            get {
-                return m_VolumeForm_UxV.IsNonEmpty() ||
-                    m_VolumeForm_GradUxV.IsNonEmpty() ||
-                    m_VolumeForm_UxGradV.IsNonEmpty() ||
-                    m_VolumeForm_GradUxGradV.IsNonEmpty() ||
-                    m_VolumeSource_V.IsNonEmpty() ||
-                    m_VolumeSource_GradV.IsNonEmpty();
-            }
-        }
-
+        
 
         void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
             m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
@@ -134,7 +84,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if (ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
-            if (this.IsNonEmpty == false)
+            var temp = new ThreadLocals(0, this, null);
+            if (temp.IsNonEmpty == false)
                 return;
 
             m_GridDat = RowMap.GridDat;
@@ -166,7 +117,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 }
             }
 
-            var q = CellQuadrature.GetQuadrature2(new int[] { m_RowL.Sum(), (this.LinearRequired ? m_ColL.Sum() : 0) + (this.AffineRequired ? 1 : 0) },
+            var q = CellQuadrature.GetQuadrature2(new int[] { 
+                    m_RowL.Sum(), 
+                    (temp.LinearRequired ? m_ColL.Sum() : 0) + (temp.AffineRequired ? 1 : 0) },
                 m_GridDat, domNrule,
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
@@ -225,43 +178,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         V m_Vector;
 
-        /// <summary>
-        /// true, if integration of <see cref="m_Matrix"/> is required.
-        /// </summary>
-        bool LinearRequired {
-            get {
-                if (m_Matrix == null)
-                    return false;
-                for (int gamma = this.GAMMA - 1; gamma >= 0; gamma--) {
-                    if (m_VolumeForm_UxV[gamma].m_AllComponentsOfMyType.Length > 0)
-                        return true;
-                    if (m_VolumeForm_UxGradV[gamma].m_AllComponentsOfMyType.Length > 0)
-                        return true;
-                    if (m_VolumeForm_GradUxV[gamma].m_AllComponentsOfMyType.Length > 0)
-                        return true;
-                    if (m_VolumeForm_GradUxGradV[gamma].m_AllComponentsOfMyType.Length > 0)
-                        return true;
-                }
-                return false;
-            }
-        }
+        
 
-        /// <summary>
-        /// true, if integration of <see cref="m_Vector"/> is required.
-        /// </summary>
-        bool AffineRequired {
-            get {
-                if (m_Vector == null)
-                    return false;
-                for (int gamma = this.GAMMA - 1; gamma >= 0; gamma--) {
-                    if (m_VolumeSource_V[gamma].m_AllComponentsOfMyType.Length > 0)
-                        return true;
-                    if (m_VolumeSource_GradV[gamma].m_AllComponentsOfMyType.Length > 0)
-                        return true;
-                }
-                return false;
-            }
-        }
+ 
 
         protected void AllocateBuffers(int NoOfItems, MultidimensionalArray rule, int iThread, int NumThreads) {
             m_ThreadLocals[iThread].AllocateBuffers(NoOfItems, rule, iThread, NumThreads);
@@ -288,25 +207,119 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 m_iThread = iThread;
                 m_owner = _owner;
 
-                var CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
-                var CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECvol", "ParametersAndNormals", "Flux-Trafo" };
-                var CustomTimers_RootPointer = new int[CustomTimers_Names.Length];
-                ArrayTools.SetAll(CustomTimers_RootPointer, -1);
-                this.Flux_Eval = CustomTimers[0];
-                this.Basis_Eval = CustomTimers[1];
-                this.Loops = CustomTimers[2];
-                this.ParametersAndNormals = CustomTimers[3];
-                this.FluxTrafo = CustomTimers[4];
+                m_VolumeForm_UxV = EquationComponentArgMapping<IVolumeForm_UxV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.UxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+                m_VolumeForm_UxGradV = EquationComponentArgMapping<IVolumeForm_UxGradV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.UxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+                m_VolumeForm_GradUxV = EquationComponentArgMapping<IVolumeForm_GradUxV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.GradUxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+                m_VolumeForm_GradUxGradV = EquationComponentArgMapping<IVolumeForm_GradUxGradV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.GradUxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+                m_VolumeSource_V = EquationComponentArgMapping<IVolumeSource_V>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.V) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+                m_VolumeSource_GradV = EquationComponentArgMapping<IVolumeSource_GradV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.GradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
+
+                if (q == null)
+                    return;
+
+                q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
+                q.CustomTimers_Names = new string[] { "Flux-Eval", "Basis-Eval", "LoopsLECvol", "ParametersAndNormals", "Flux-Trafo" };
+                q.CustomTimers_RootPointer = new int[q.CustomTimers_Names.Length];
+                ArrayTools.SetAll(q.CustomTimers_RootPointer, -1);
+                this.Flux_Eval = q.CustomTimers[0];
+                this.Basis_Eval = q.CustomTimers[1];
+                this.Loops = q.CustomTimers[2];
+                this.ParametersAndNormals = q.CustomTimers[3];
+                this.FluxTrafo = q.CustomTimers[4];
 
                 Debug.Assert(Array.IndexOf(q.CustomTimers_Names, "Flux-Eval") == 0);
-                this.m_VolumeForm_UxV_Watches = m_owner.m_VolumeForm_UxV.InitStopWatches(0, q);
-                this.m_VolumeForm_UxGradV_Watches = m_owner.m_VolumeForm_UxGradV.InitStopWatches(0, q);
-                this.m_VolumeForm_GradUxV_Watches = m_owner.m_VolumeForm_GradUxV.InitStopWatches(0, q);
-                this.m_VolumeForm_GradUxGradV_Watches = m_owner.m_VolumeForm_GradUxGradV.InitStopWatches(0, q);
+                this.m_VolumeForm_UxV_Watches = m_VolumeForm_UxV.InitStopWatches(0, q);
+                this.m_VolumeForm_UxGradV_Watches = m_VolumeForm_UxGradV.InitStopWatches(0, q);
+                this.m_VolumeForm_GradUxV_Watches = m_VolumeForm_GradUxV.InitStopWatches(0, q);
+                this.m_VolumeForm_GradUxGradV_Watches = m_VolumeForm_GradUxGradV.InitStopWatches(0, q);
 
-                this.m_VolumeSource_V_Watches = m_owner.m_VolumeSource_V.InitStopWatches(0, q);
-                this.m_VolumeSource_GradV_Watches = m_owner.m_VolumeSource_GradV.InitStopWatches(0, q);
+                this.m_VolumeSource_V_Watches = m_VolumeSource_V.InitStopWatches(0, q);
+                this.m_VolumeSource_GradV_Watches = m_VolumeSource_GradV.InitStopWatches(0, q);
             }
+
+            /// <summary>
+            /// index: test function/codomain variable
+            /// </summary>
+            EquationComponentArgMapping<IVolumeSource_GradV>[] m_VolumeSource_GradV;
+
+            /// <summary>
+            /// index: test function/codomain variable
+            /// </summary>
+            EquationComponentArgMapping<IVolumeSource_V>[] m_VolumeSource_V;
+
+
+            /// <summary>
+            /// index: test function/codomain variable
+            /// </summary>
+            EquationComponentArgMapping<IVolumeForm_GradUxGradV>[] m_VolumeForm_GradUxGradV;
+
+            /// <summary>
+            /// index: test function/codomain variable
+            /// </summary>
+            EquationComponentArgMapping<IVolumeForm_GradUxV>[] m_VolumeForm_GradUxV;
+
+            /// <summary>
+            /// index: test function/codomain variable
+            /// </summary>
+            EquationComponentArgMapping<IVolumeForm_UxGradV>[] m_VolumeForm_UxGradV;
+
+            /// <summary>
+            /// index: test function/codomain variable
+            /// </summary>
+            EquationComponentArgMapping<IVolumeForm_UxV>[] m_VolumeForm_UxV;
+
+            /// <summary>
+            /// true, if integration of <see cref="m_Vector"/> is required.
+            /// </summary>
+            public bool AffineRequired {
+                get {
+                    if (m_owner.m_Vector == null)
+                        return false;
+                    for (int gamma = m_owner.GAMMA - 1; gamma >= 0; gamma--) {
+                        if (m_VolumeSource_V[gamma].m_AllComponentsOfMyType.Length > 0)
+                            return true;
+                        if (m_VolumeSource_GradV[gamma].m_AllComponentsOfMyType.Length > 0)
+                            return true;
+                    }
+                    return false;
+                }
+            }
+
+            /// <summary>
+            /// true, if integration of <see cref="m_Matrix"/> is required.
+            /// </summary>
+            public bool LinearRequired {
+                get {
+                    if (m_owner.m_Matrix == null)
+                        return false;
+                    for (int gamma = m_owner.GAMMA - 1; gamma >= 0; gamma--) {
+                        if (m_VolumeForm_UxV[gamma].m_AllComponentsOfMyType.Length > 0)
+                            return true;
+                        if (m_VolumeForm_UxGradV[gamma].m_AllComponentsOfMyType.Length > 0)
+                            return true;
+                        if (m_VolumeForm_GradUxV[gamma].m_AllComponentsOfMyType.Length > 0)
+                            return true;
+                        if (m_VolumeForm_GradUxGradV[gamma].m_AllComponentsOfMyType.Length > 0)
+                            return true;
+                    }
+                    return false;
+                }
+            }
+
+            /// <summary>
+            /// true, if this integrator is responsible for any component
+            /// </summary>
+            public bool IsNonEmpty {
+                get {
+                    return m_VolumeForm_UxV.IsNonEmpty() ||
+                        m_VolumeForm_GradUxV.IsNonEmpty() ||
+                        m_VolumeForm_UxGradV.IsNonEmpty() ||
+                        m_VolumeForm_GradUxGradV.IsNonEmpty() ||
+                        m_VolumeSource_V.IsNonEmpty() ||
+                        m_VolumeSource_GradV.IsNonEmpty();
+                }
+            }
+
 
 
             internal Stopwatch Flux_Eval;
@@ -355,7 +368,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
             public void AllocateBuffers(int NoOfItems, MultidimensionalArray rule, int iThread, int NumThreads) {
-                if (iThread == m_iThread)
+                if (iThread != m_iThread)
                     throw new ApplicationException("thread rank mismatch");
                 int NoOfNodes = rule.GetLength(0);
                 int D = m_owner.m_GridDat.SpatialDimension;
@@ -369,26 +382,26 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         pfv.Allocate(NoOfItems, NoOfNodes);
                 }
 
-                AllocateComponentBuffer(ref m_UxVComponentBuffer, m_owner.m_VolumeForm_UxV, NoOfItems, NoOfNodes, D, 3, false);
-                AllocateComponentBuffer(ref m_UxGradVComponentBuffer, m_owner.m_VolumeForm_UxGradV, NoOfItems, NoOfNodes, D, 4, false);
-                AllocateComponentBuffer(ref m_GradUxVComponentBuffer, m_owner.m_VolumeForm_GradUxV, NoOfItems, NoOfNodes, D, 4, false);
-                AllocateComponentBuffer(ref m_GradUxGradVComponentBuffer, m_owner.m_VolumeForm_GradUxGradV, NoOfItems, NoOfNodes, D, 5, false);
+                AllocateComponentBuffer(ref m_UxVComponentBuffer, m_VolumeForm_UxV, NoOfItems, NoOfNodes, D, 3, false);
+                AllocateComponentBuffer(ref m_UxGradVComponentBuffer, m_VolumeForm_UxGradV, NoOfItems, NoOfNodes, D, 4, false);
+                AllocateComponentBuffer(ref m_GradUxVComponentBuffer, m_VolumeForm_GradUxV, NoOfItems, NoOfNodes, D, 4, false);
+                AllocateComponentBuffer(ref m_GradUxGradVComponentBuffer, m_VolumeForm_GradUxGradV, NoOfItems, NoOfNodes, D, 5, false);
                 //AllocateComponentBuffer(ref m_VComponentBuffer, m_VolumeSource_V, NoOfItems, NoOfNodes, D, 2, true);
                 //AllocateComponentBuffer(ref m_GradVComponentBuffer, m_VolumeSource_GradV, NoOfItems, NoOfNodes, D, 3, true);
 
-                AllocateSumBuffer(ref m_UxVSumBuffer, m_owner.m_VolumeForm_UxV, NoOfItems, NoOfNodes, D, 2, false);
-                AllocateSumBuffer(ref m_UxGradVSumBuffer, m_owner.m_VolumeForm_UxGradV, NoOfItems, NoOfNodes, D, 3, false);
-                AllocateSumBuffer(ref m_GradUxVSumBuffer, m_owner.m_VolumeForm_GradUxV, NoOfItems, NoOfNodes, D, 3, false);
-                AllocateSumBuffer(ref m_GradUxGradVSumBuffer, m_owner.m_VolumeForm_GradUxGradV, NoOfItems, NoOfNodes, D, 4, false);
-                AllocateSumBuffer(ref m_VSumBuffer, m_owner.m_VolumeSource_V, NoOfItems, NoOfNodes, D, 2, true);
-                AllocateSumBuffer(ref m_GradVSumBuffer, m_owner.m_VolumeSource_GradV, NoOfItems, NoOfNodes, D, 3, true);
+                AllocateSumBuffer(ref m_UxVSumBuffer, m_VolumeForm_UxV, NoOfItems, NoOfNodes, D, 2, false);
+                AllocateSumBuffer(ref m_UxGradVSumBuffer, m_VolumeForm_UxGradV, NoOfItems, NoOfNodes, D, 3, false);
+                AllocateSumBuffer(ref m_GradUxVSumBuffer, m_VolumeForm_GradUxV, NoOfItems, NoOfNodes, D, 3, false);
+                AllocateSumBuffer(ref m_GradUxGradVSumBuffer, m_VolumeForm_GradUxGradV, NoOfItems, NoOfNodes, D, 4, false);
+                AllocateSumBuffer(ref m_VSumBuffer, m_VolumeSource_V, NoOfItems, NoOfNodes, D, 2, true);
+                AllocateSumBuffer(ref m_GradVSumBuffer, m_VolumeSource_GradV, NoOfItems, NoOfNodes, D, 3, true);
 
                 m_Trf_UxVSumBuffer = m_UxVSumBuffer;  // no transformation required for UxV-components
-                AllocateSumBuffer(ref m_Trf_UxGradVSumBuffer, m_owner.m_VolumeForm_UxGradV, NoOfItems, NoOfNodes, D, 3, false);
-                AllocateSumBuffer(ref m_Trf_GradUxVSumBuffer, m_owner.m_VolumeForm_GradUxV, NoOfItems, NoOfNodes, D, 3, false);
-                AllocateSumBuffer(ref m_Trf_GradUxGradVSumBuffer, m_owner.m_VolumeForm_GradUxGradV, NoOfItems, NoOfNodes, D, 4, false);
+                AllocateSumBuffer(ref m_Trf_UxGradVSumBuffer, m_VolumeForm_UxGradV, NoOfItems, NoOfNodes, D, 3, false);
+                AllocateSumBuffer(ref m_Trf_GradUxVSumBuffer, m_VolumeForm_GradUxV, NoOfItems, NoOfNodes, D, 3, false);
+                AllocateSumBuffer(ref m_Trf_GradUxGradVSumBuffer, m_VolumeForm_GradUxGradV, NoOfItems, NoOfNodes, D, 4, false);
                 m_Trf_VSumBuffer = m_VSumBuffer;      // no transformation required for V-components
-                AllocateSumBuffer(ref m_Trf_GradVSumBuffer, m_owner.m_VolumeSource_GradV, NoOfItems, NoOfNodes, D, 3, true);
+                AllocateSumBuffer(ref m_Trf_GradVSumBuffer, m_VolumeSource_GradV, NoOfItems, NoOfNodes, D, 3, true);
             }
 
             private void AllocateSumBuffer<Ee>(ref MultidimensionalArray[,] SumBuffer, EquationComponentArgMapping<Ee>[] FormMapping, int NoOfItems, int NoOfNodes, int D, int ArrayDim, bool affine)
@@ -606,7 +619,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                 // intitial checks
                 // ===============
-                if (iThread == m_iThread)
+                if (iThread != m_iThread)
                     throw new ApplicationException("thread rank mismatch");
 
 
@@ -615,8 +628,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 bool Affine;
                 var _GridDat = m_owner.m_GridDat;
                 int D = _GridDat.SpatialDimension;
-                bool bLinearRequired = m_owner.LinearRequired;
-                bool bAffineRequired = m_owner.AffineRequired; // 
+                bool bLinearRequired = LinearRequired;
+                bool bAffineRequired = AffineRequired; // 
                 int[] geom2log = _GridDat.iGeomCells.GeomCell2LogicalCell;
                 int GAMMA = m_owner.GAMMA;
                 int DELTA = m_owner.DELTA;
@@ -766,14 +779,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     vfp.time = m_owner.m_time;
 
                     if (bLinearRequired) {
-                        EvalNSumForm(ref vfp, m_owner.m_VolumeForm_UxV, m_UxVComponentBuffer, m_UxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxV_Watches);
-                        EvalNSumForm(ref vfp, m_owner.m_VolumeForm_UxGradV, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxGradV_Watches);
-                        EvalNSumForm(ref vfp, m_owner.m_VolumeForm_GradUxV, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxV_Watches);
-                        EvalNSumForm(ref vfp, m_owner.m_VolumeForm_GradUxGradV, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxGradV_Watches);
+                        EvalNSumForm(ref vfp, m_VolumeForm_UxV, m_UxVComponentBuffer, m_UxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxV_Watches);
+                        EvalNSumForm(ref vfp, m_VolumeForm_UxGradV, m_UxGradVComponentBuffer, m_UxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_UxGradV_Watches);
+                        EvalNSumForm(ref vfp, m_VolumeForm_GradUxV, m_GradUxVComponentBuffer, m_GradUxVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxV_Watches);
+                        EvalNSumForm(ref vfp, m_VolumeForm_GradUxGradV, m_GradUxGradVComponentBuffer, m_GradUxGradVSumBuffer, (C, M) => C.Form(ref vfp, M), false, this.m_VolumeForm_GradUxGradV_Watches);
                     }
                     if (bAffineRequired) {
-                        EvalNSumForm(ref vfp, m_owner.m_VolumeSource_V, null, m_VSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_V_Watches);
-                        EvalNSumForm(ref vfp, m_owner.m_VolumeSource_GradV, null, m_GradVSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_GradV_Watches);
+                        EvalNSumForm(ref vfp, m_VolumeSource_V, null, m_VSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_V_Watches);
+                        EvalNSumForm(ref vfp, m_VolumeSource_GradV, null, m_GradVSumBuffer, (C, M) => C.Form(ref vfp, M), true, this.m_VolumeSource_GradV_Watches);
                     }
                 }
                 this.Flux_Eval.Stop();
@@ -1056,8 +1069,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         protected void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
 
 
-            bool bLinearRequired = LinearRequired;
-            bool bAffineRequired = AffineRequired;
+            bool bLinearRequired = m_ThreadLocals[0].LinearRequired;
+            bool bAffineRequired = m_ThreadLocals[0].AffineRequired;
             int M = m_RowMap.NoOfCoordinatesPerCell;
             int N = m_ColMap.NoOfCoordinatesPerCell;
             int offset = bLinearRequired ? N : 0;

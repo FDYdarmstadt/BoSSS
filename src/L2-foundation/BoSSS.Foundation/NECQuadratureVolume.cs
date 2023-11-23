@@ -66,9 +66,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.NoOfCoordinatesPerCell }, context, domNrule,
                 this.EvaluateEx,
-                this.SaveIntegrationResults);
-                //this.AllocateBuffers);
-
+                this.SaveIntegrationResults,
+                this.AllocateBuffers);
             int Gamma = _DomainFields.Count;
 
             // ------------------------
@@ -282,7 +281,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         MultidimensionalArray[] m_SourceValues;
 
-        protected void AllocateBuffers(int NoOfItems, MultidimensionalArray rule) {
+        protected void AllocateBuffers(int NoOfItems, MultidimensionalArray rule, int iThread, int NumThreads) {
             
             int D = this.GridDat.SpatialDimension;
             int NoOfNodes = rule.GetLength(0);

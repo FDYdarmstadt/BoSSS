@@ -31,7 +31,7 @@ namespace ilPSP {
     /// </summary>
     public static class TempBuffer {
 
-        const int MAX_BUFFERS = 8;
+        const int MAX_BUFFERS = 8*8;
 
         static WeakReference[] BigBuf = new WeakReference[MAX_BUFFERS];
         static bool[] BufLok = new bool[MAX_BUFFERS];

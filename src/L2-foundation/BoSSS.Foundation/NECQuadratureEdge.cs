@@ -115,8 +115,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             m_Quad = EdgeQuadrature.GetQuadrature2(new int[] { CodomainMapping.BasisS.Sum(x => x.Length), 2 }, context, domNrule,
                 this.EvaluateEx,
-                this.SaveIntegrationResults);
-                //this.AllocateBuffers);
+                this.SaveIntegrationResults,
+                this.AllocateBuffers);
            
             // ------------------------
             // sort equation components
@@ -572,7 +572,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         int[] m_InnerEdgesI0s;
         int[] m_InnerEdgesIEs;
 
-        protected void AllocateBuffers(int NoOfItems, MultidimensionalArray rule) {
+        protected void AllocateBuffers(int NoOfItems, MultidimensionalArray rule, int iThread, int NumThreads) {
 
             int NoOfNodes = rule.GetLength(0);
             int D = this.GridDat.SpatialDimension;
