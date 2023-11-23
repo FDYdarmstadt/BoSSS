@@ -66,8 +66,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.NoOfCoordinatesPerCell }, context, domNrule,
                 this.EvaluateEx,
-                this.SaveIntegrationResults,
-                this.AllocateBuffers);
+                this.SaveIntegrationResults);
+                //this.AllocateBuffers);
 
             int Gamma = _DomainFields.Count;
 
@@ -325,7 +325,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// 
         /// </summary>
-        protected void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult) {
+        protected void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
             NodeSet NodesUntransformed = QR.Nodes;
             IGridData grid = this.GridDat;
             int D = grid.SpatialDimension;

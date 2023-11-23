@@ -93,14 +93,14 @@ namespace BoSSS.Foundation.Quadrature {
                               ICompositeQuadRule<QuadRule> domNrule,
                               Del_Evaluate _Evaluate,
                               Del_SaveIntegrationResults _SaveIntegrationResults,
-                              Del_AllocateBuffers _AllocateBuffers = null,
-                              Del_QuadNodesChanged _PostLockNodes = null,
+                              //Del_AllocateBuffers _AllocateBuffers = null,
+                              //Del_QuadNodesChanged _PostLockNodes = null,
                               CoordinateSystem cs = CoordinateSystem.Physical) {
             var ret = new EdgeQuadratureImpl(noOfIntegralsPerCell, context, domNrule, cs) {
                 m_Evaluate = _Evaluate,
                 m_SaveIntegrationResults = _SaveIntegrationResults,
-                m_AllocateBuffers = _AllocateBuffers,
-                m_quadNodesChanged = _PostLockNodes,
+                //m_AllocateBuffers = _AllocateBuffers,
+                //m_quadNodesChanged = _PostLockNodes,
 
             };
             return ret;
@@ -113,17 +113,18 @@ namespace BoSSS.Foundation.Quadrature {
         static public EdgeQuadrature GetQuadrature2(int[] noOfIntegralsPerEdge,
                               IGridData context,
                               ICompositeQuadRule<QuadRule> domNrule,
-                              Del_Evaluate _EvaluateEx,
+                              Del_EvaluateEx _EvaluateEx,
                               Del_SaveIntegrationResults _SaveIntegrationResults,
-                              Del_AllocateBuffers _AllocateBuffers = null,
+                              Del_AllocateBuffersEx _AllocateBuffers = null,
                               Del_QuadNodesChanged _PostLockNodes = null,
+                              Del_OnCloneForThreadParallelization _OnCloneForThreadParallelization = null,
                               CoordinateSystem cs = CoordinateSystem.Physical) {
             var ret = new EdgeQuadratureImpl(noOfIntegralsPerEdge, context, domNrule, cs) {
                 m_ExEvaluate = _EvaluateEx,
                 m_SaveIntegrationResults = _SaveIntegrationResults,
                 m_AllocateBuffers = _AllocateBuffers,
                 m_quadNodesChanged = _PostLockNodes,
-
+                m_OnCloneForThreadParallelization = _OnCloneForThreadParallelization
             };
             return ret;
         }
@@ -138,14 +139,15 @@ namespace BoSSS.Foundation.Quadrature {
                 : base(noOfIntegralsPerCell, context, domNrule, cs) {
             }
 
-            public override Quadrature<QuadRule, EdgeMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, EdgeMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 return new EdgeQuadratureImpl(
                     this.IntegralCompDim, this.GridDat, this.m_compositeRule, this.CoordinateSystem) {
                     m_AllocateBuffers = this.m_AllocateBuffers,
                     m_SaveIntegrationResults = this.m_SaveIntegrationResults,
                     m_quadNodesChanged = this.m_quadNodesChanged,
                     m_Evaluate = this.m_Evaluate,
-                    m_ExEvaluate = this.m_ExEvaluate
+                    m_ExEvaluate = this.m_ExEvaluate,
+                    m_OnCloneForThreadParallelization = this.m_OnCloneForThreadParallelization
                 };
             }
         }

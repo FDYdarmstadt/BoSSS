@@ -115,8 +115,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             m_Quad = EdgeQuadrature.GetQuadrature2(new int[] { CodomainMapping.BasisS.Sum(x => x.Length), 2 }, context, domNrule,
                 this.EvaluateEx,
-                this.SaveIntegrationResults,
-                this.AllocateBuffers);
+                this.SaveIntegrationResults);
+                //this.AllocateBuffers);
            
             // ------------------------
             // sort equation components
@@ -639,7 +639,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// Integrand evaluation.
         /// </summary>
-        protected void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult) {
+        protected void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
 
             NodeSet qrNodes = QR.Nodes;
             IGridData grid = GridDat;

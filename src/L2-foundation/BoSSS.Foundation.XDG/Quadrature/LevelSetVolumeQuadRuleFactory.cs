@@ -807,7 +807,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 NoOfItemsLocally = mask.NoOfItemsLocally;
             }
 
-            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel.");
             }
 
@@ -928,7 +928,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 NoOfItemsLocally = mask.NoOfItemsLocally;
             }
 
-            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
                 throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel.");
             }
 

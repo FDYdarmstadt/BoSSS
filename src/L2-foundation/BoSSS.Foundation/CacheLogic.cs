@@ -23,6 +23,7 @@ using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
+using System.Collections.Concurrent;
 
 namespace BoSSS.Foundation.Caching {
 
@@ -109,7 +110,9 @@ namespace BoSSS.Foundation.Caching {
     }
     
     /// <summary>
-    /// Cache-Logic for values which depend on <see cref="NodeSet"/> and polynomial degree.
+    /// Cache-Logic for values which depend on
+    /// - <see cref="NodeSet"/> and (`Ns`)
+    /// - polynomial degree (`P`).
     /// </summary>
     public abstract class CacheLogic_NsP {
 
@@ -132,92 +135,94 @@ namespace BoSSS.Foundation.Caching {
         /// Returns the (hopefully) cached value.
         /// </summary>
         public virtual MultidimensionalArray GetValues(NodeSet NS, int Degree) {
-
-            if(NS.Reference == 0) { 
-                return this.Evaluate(NS, Degree);
-            }
-            
-            // lookup table garbage collection, if necessary
-            // ---------------------------------------------
-            if(CacheLookup.Count > Cache.NoOfUsedBanks) {
-                // definitely to many items in the lockup-table
-
-                List<int> ToRemove = new List<int>();
-                foreach(var kv in this.CacheLookup) {
-                    if(!Cache.IsAlive(kv.Value.CacheRef))
-                        ToRemove.Add(kv.Key);
+            lock (this) {
+                if (NS.Reference == 0) {
+                    // evaluation without cache-lookup
+                    return this.Evaluate(NS, Degree);
                 }
 
-                foreach(int nsr in ToRemove) {
-                    CacheLookup.Remove(nsr);
-                    if(nsr == lastNodesetRef)
-                        lastNodesetRef = -1;
+                // lookup table garbage collection, if necessary
+                // ---------------------------------------------
+                if (CacheLookup.Count > Cache.NoOfUsedBanks) {
+                    // definitely to many items in the lockup-table
+
+                    List<int> ToRemove = new List<int>();
+                    foreach (var kv in this.CacheLookup) {
+                        if (!Cache.IsAlive(kv.Value.CacheRef))
+                            ToRemove.Add(kv.Key);
+                    }
+
+                    foreach (int nsr in ToRemove) {
+                        CacheLookup.Remove(nsr);
+                        if (nsr == lastNodesetRef)
+                            lastNodesetRef = -1;
+                    }
                 }
-            }
 
-            // transform node-set reference into cache reference
-            // -------------------------------------------------
-            Stuple CacheRef;
-            bool present = false;
-            if(this.lastNodesetRef == NS.Reference) {
-                // lucky punch: we don't need to ask the dict
-                CacheRef = this.lastCacheRef;
-                present = true;
-                Debug.Assert(CacheLookup.ContainsKey(lastNodesetRef));
-            } else {
-                present = this.CacheLookup.TryGetValue(NS.Reference, out CacheRef);
-                if(!present) {
-                    CacheRef.CacheRef = 0;
-                    CacheRef.Degree = -1;
-                }
-            }
-
-
-            // try to get value from cache
-            // ---------------------------
-            MultidimensionalArray vals;
-            if(CacheRef.CacheRef <= 0) {
-                // value not present in cache -> recompute
-                vals = null;
-            } else {
-                vals = (MultidimensionalArray) Cache.GetItem(CacheRef.CacheRef);
-            }
-
-            // check the degree
-            // ----------------
-            bool reCache = false;
-            if(CacheRef.Degree < Degree) {
-                // unfortunately, insufficient degree
-                reCache = true;
-                vals = null;
-            }
-            
-            // return
-            // ------
-
-            if(vals != null) {
-                //return vals;
-            } else {
-                Debug.Assert(vals == null || Degree >= CacheRef.Degree);
-                vals = this.Evaluate(NS, Degree);
-                if(reCache) {
-                    CacheRef.CacheRef = Cache.ReCacheItem(vals, vals.Length*sizeof(double), CacheRef.CacheRef);
+                // transform node-set reference into cache reference
+                // -------------------------------------------------
+                Stuple CacheRef;
+                bool present = false;
+                if (this.lastNodesetRef == NS.Reference) {
+                    // lucky punch: we don't need to ask the dict
+                    CacheRef = this.lastCacheRef;
+                    present = true;
+                    Debug.Assert(CacheLookup.ContainsKey(lastNodesetRef));
                 } else {
-                    CacheRef.CacheRef = Cache.CacheItem(vals, vals.Length * sizeof(double));
+                    present = this.CacheLookup.TryGetValue(NS.Reference, out CacheRef);
+                    if (!present) {
+                        CacheRef.CacheRef = 0;
+                        CacheRef.Degree = -1;
+                    }
                 }
-                CacheRef.Degree = Degree;
-                
-                if(present)
-                    CacheLookup[NS.Reference] = CacheRef;
-                else
-                    CacheLookup.Add(NS.Reference, CacheRef);
+
+
+                // try to get value from cache
+                // ---------------------------
+                MultidimensionalArray vals;
+                if (CacheRef.CacheRef <= 0) {
+                    // value not present in cache -> recompute
+                    vals = null;
+                } else {
+                    vals = (MultidimensionalArray)Cache.GetItem(CacheRef.CacheRef);
+                }
+
+                // check the degree
+                // ----------------
+                bool reCache = false;
+                if (CacheRef.Degree < Degree) {
+                    // unfortunately, insufficient degree
+                    reCache = true;
+                    vals = null;
+                }
+
+                // return
+                // ------
+
+                if (vals != null) {
+                    //return vals;
+                } else {
+                    Debug.Assert(vals == null || Degree >= CacheRef.Degree);
+                    vals = this.Evaluate(NS, Degree);
+                    if (reCache) {
+                        CacheRef.CacheRef = Cache.ReCacheItem(vals, vals.Length*sizeof(double), CacheRef.CacheRef);
+                    } else {
+                        CacheRef.CacheRef = Cache.CacheItem(vals, vals.Length * sizeof(double));
+                    }
+                    CacheRef.Degree = Degree;
+
+                    if (present)
+                        CacheLookup[NS.Reference] = CacheRef;
+                    else
+                        CacheLookup.Add(NS.Reference, CacheRef);
+                }
+
+                this.lastNodesetRef = NS.Reference;
+                this.lastCacheRef = CacheRef;
+                Debug.Assert(object.ReferenceEquals(vals, Cache.GetItem(CacheRef.CacheRef)));
+
+                return vals;
             }
-
-            this.lastNodesetRef = NS.Reference;
-            this.lastCacheRef = CacheRef;
-            Debug.Assert(object.ReferenceEquals(vals, Cache.GetItem(CacheRef.CacheRef)));
-
-            return vals;
         }
 
         int lastNodesetRef = -1;
@@ -230,7 +235,8 @@ namespace BoSSS.Foundation.Caching {
         }
 
         Dictionary<int,Stuple> CacheLookup = new Dictionary<int, Stuple>();
-       
+        //ConcurrentDictionary<int, Stuple> CacheLookup = new ConcurrentDictionary<int, Stuple>();
+
     }
 
     /// <summary>
@@ -261,7 +267,7 @@ namespace BoSSS.Foundation.Caching {
     }
 
     /// <summary>
-    /// Cache-Logic for values which depend on <see cref="NodeSet"/>.
+    /// Cache-Logic for values which depend on <see cref="NodeSet"/> (`Ns`).
     /// </summary>
     public abstract class CacheLogic_Ns {
 
@@ -388,7 +394,10 @@ namespace BoSSS.Foundation.Caching {
     }
 
     /// <summary>
-    /// Cache-logic for data which depends on cell, <see cref="NodeSet"/> and polynomial degree
+    /// Cache-logic for data which depends 
+    /// - on cell (`C`), 
+    /// - on <see cref="NodeSet"/> (`Ns`)
+    /// - and polynomial degree (`P`)
     /// </summary>
     public class CacheLogicImpl_CNsP  {
 
@@ -694,7 +703,9 @@ namespace BoSSS.Foundation.Caching {
     
 
     /// <summary>
-    /// Cache-logic for data which depends on cell and <see cref="NodeSet"/>.
+    /// Cache-logic for data which depends 
+    /// - on cell (`C`) and 
+    /// - on <see cref="NodeSet"/> (`Ns`).
     /// </summary>
     public abstract class CacheLogic_CNs {
 
@@ -853,6 +864,9 @@ namespace BoSSS.Foundation.Caching {
         int NoOfCachedCells = 0;
         int NoOfChunks = 0;
 
+        /// <summary>
+        /// index: local cell index
+        /// </summary>
         CChunk[] cells2cchunk = null;
 
 
@@ -860,6 +874,8 @@ namespace BoSSS.Foundation.Caching {
             int JE = this.m_JE;
 
             if(cells2cchunk == null) {
+                // initialize 
+
 
                 MultidimensionalArray R = m_ComputeValues(j0, Len, degree);
                 ulong cacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
@@ -889,7 +905,7 @@ namespace BoSSS.Foundation.Caching {
 
             CChunk fstCC = cells2cchunk[j0];
             if(fstCC != null && fstCC.i0 <= j0 && fstCC.iE >= (j0 + Len - 1)) {
-                // desired result is maybe completly contained in first chunk
+                // desired result is maybe completely contained in first chunk
 
                 MultidimensionalArray R;
                 if(fstCC.Degree >= degree) {
@@ -1043,31 +1059,32 @@ namespace BoSSS.Foundation.Caching {
 
 
         /// <summary>
-        /// Removes cache refences to objects that were disposed from the <see cref="Cache"/>.
+        /// Removes cache references to objects that were disposed from the <see cref="Cache"/>.
         /// </summary>
         /// <returns>
         /// True if nothing is in the cache anymore;
         /// </returns>
         public bool GarbageCollect() {
+            lock (this) {
+                int JE = cells2cchunk.Length;
 
-            int JE = cells2cchunk.Length;
+                for (int j = 0; j < JE; j++) {
+                    CChunk cc = cells2cchunk[j];
+                    if (cc != null) {
+                        if (!Cache.IsAlive(cc.CacheRef)) {
+                            // chunk is not present in cache anymore
 
-            for(int j = 0; j < JE; j++) {
-                CChunk cc = cells2cchunk[j];
-                if(cc != null) {
-                    if(!Cache.IsAlive(cc.CacheRef)) {
-                        // chunk is not present in cache anymore
-
-                        KillChunk(cc);
+                            KillChunk(cc);
+                        }
+                        j = cc.iE;
                     }
-                    j = cc.iE;
                 }
+
+                if (NoOfChunks == 0)
+                    cells2cchunk = null;
+
+                return (NoOfChunks == 0);
             }
-
-            if(NoOfChunks == 0)
-                cells2cchunk = null;
-
-            return (NoOfChunks == 0);
         }
 
         private void KillChunk(CChunk cc) {
@@ -1414,10 +1431,11 @@ namespace BoSSS.Foundation.Caching {
             public bool[] ValueAvail;
         }
 
-        Dictionary<int,CacheEntry> m_LinkToCache = new Dictionary<int, CacheEntry>();
+        Dictionary<int, CacheEntry> m_LinkToCache = new Dictionary<int, CacheEntry>();
+        //ConcurrentDictionary<int,CacheEntry> m_LinkToCache = new ConcurrentDictionary<int, CacheEntry>();
 
         /// <summary>
-        /// Evaluation of basis values for all ege-to-cell transformation within a specific range of edges
+        /// Evaluation of basis values for all edge-to-cell transformation within a specific range of edges
         /// </summary>
         /// <param name="NS">Node-Set</param>
         /// <param name="e0">start of edge-range to consider</param>

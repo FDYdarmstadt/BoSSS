@@ -69,7 +69,7 @@ namespace NSE_SIMPLE {
         }
         
         
-        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
             return new QuadratureMatrix(m_Basis, GridDat, m_Fields) {
                 m_Matrix = this.m_Matrix
             };
@@ -77,7 +77,7 @@ namespace NSE_SIMPLE {
 
         MultidimensionalArray BasisValues;
 
-        protected override void QuadNodesChanged(NodeSet newNodes) {
+        protected override void QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads) {
             BasisValues = m_Basis.Evaluate(newNodes);
         }
 

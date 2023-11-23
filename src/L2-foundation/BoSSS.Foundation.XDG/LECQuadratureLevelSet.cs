@@ -108,7 +108,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization() {
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
             return new LECQuadratureLevelSet<M, V>(
                 this.gridData, m_DiffOp,
                 this.OperatorMatrix, this.OperatorAffine,
