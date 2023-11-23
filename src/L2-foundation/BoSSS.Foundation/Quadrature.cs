@@ -397,7 +397,7 @@ namespace BoSSS.Foundation.Quadrature {
                 // ===================================
                 
                 int NumThreads = ilPSP.Environment.NumThreads;
-                NumThreads = 8;
+                //NumThreads = 8;
                 //int[] ItemLimits = new int[NumThreads + 1];
                 int NoOfItems = 0;
                 ICompositeQuadRule<TQuadRule>[] _compositeRule;

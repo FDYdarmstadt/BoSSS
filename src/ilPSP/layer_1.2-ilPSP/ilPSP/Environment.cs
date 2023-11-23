@@ -167,12 +167,13 @@ namespace ilPSP {
             private set;
         }
 
-
+        /// <summary>
+        /// Number of threads used in multi-thread-parallelization
+        /// </summary>
         public static int NumThreads {
-            get {
-                return 4;
-            }
-        }
+            get;
+            set;
+        } = 8;
 
         static bool m_StdoutOnlyOnRank0 = false;
 
