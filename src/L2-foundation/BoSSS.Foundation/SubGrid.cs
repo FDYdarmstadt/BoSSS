@@ -469,16 +469,18 @@ namespace BoSSS.Foundation.Grid {
         /// Tests if a matrix (associated with some operator) depends only on values in this sub-grid,
         /// or not.
         /// </summary>
-        /// <param name="_Mtx">some operator matrix</param>
-        /// <param name="RowMap">row-/co-domain mapping for matrix <paramref name="_Mtx"/></param>
-        /// <param name="ColMap">column/domain mapping for matrix <paramref name="_Mtx"/></param>
+        /// <param name="__Mtx">some operator matrix</param>
+        /// <param name="RowMap">row-/co-domain mapping for matrix <paramref name="__Mtx"/></param>
+        /// <param name="ColMap">column/domain mapping for matrix <paramref name="__Mtx"/></param>
         /// <param name="NoOfTests"></param>
         /// <returns>
-        /// 0.0 if there is no dependency of the matrix <paramref name="_Mtx"/>
+        /// 0.0 if there is no dependency of the matrix <paramref name="__Mtx"/>
         /// on values outside of this subgrid.
         /// </returns>
-        public double TestMatrixDependency(MsrMatrix _Mtx, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap, int NoOfTests = 10) {
+        public double TestMatrixDependency(IMutableMatrixEx __Mtx, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap, int NoOfTests = 10) {
             Random RND = new Random();
+
+            MsrMatrix _Mtx = __Mtx.ToMsrMatrix();
 
             if (!_Mtx.RowPartitioning.Equals(RowMap))
                 throw new ArgumentException();
