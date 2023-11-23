@@ -50,39 +50,40 @@ namespace BoSSS.Foundation.Caching {
         /// Basic checks on the correctness of the data structure.
         /// </summary>
         public static void Verify(out long ArraySize, out long LLsize ) {
-
-            ArraySize = 0;
-            for(int i = 0; i < Banks.Count; i++) {
-                var b = Banks[i];
-                if(b != null) { 
-                    ArraySize += b.MemSize;
-                    if(b.iBank != i)
-                        throw new ApplicationException();
+            lock (padlock) {
+                ArraySize = 0;
+                for (int i = 0; i < Banks.Count; i++) {
+                    var b = Banks[i];
+                    if (b != null) {
+                        ArraySize += b.MemSize;
+                        if (b.iBank != i)
+                            throw new ApplicationException();
+                    }
                 }
-            }
 
-            int NoOfBanks = 0;
-            LLsize = 0;
-            var bank = Head.next;
-            while(bank.next != null) {
-                LLsize += bank.MemSize;
+                int NoOfBanks = 0;
+                LLsize = 0;
+                var bank = Head.next;
+                while (bank.next != null) {
+                    LLsize += bank.MemSize;
 
-                if(!object.ReferenceEquals(bank.next.prev, bank))
+                    if (!object.ReferenceEquals(bank.next.prev, bank))
+                        throw new ApplicationException();
+
+                    if (!object.ReferenceEquals(bank, Banks[bank.iBank]))
+                        throw new ApplicationException();
+
+                    bank = bank.next;
+
+                    NoOfBanks++;
+                }
+
+                if (!object.ReferenceEquals(bank, Tail))
                     throw new ApplicationException();
-                
-                if(!object.ReferenceEquals(bank, Banks[bank.iBank]))
-                    throw new ApplicationException();
 
-                bank = bank.next;
-
-                NoOfBanks++;
+                if (NoOfBanks != Banks.Count)
+                    throw new ApplicationException($"Number of banks in List is {NoOfBanks}, but bank-array has {Banks.Count} entries.");
             }
-
-            if(!object.ReferenceEquals(bank, Tail))
-                throw new ApplicationException();
-
-            if(NoOfBanks != Banks.Count)
-                throw new ApplicationException($"Number of banks in List is {NoOfBanks}, but bank-array has {Banks.Count} entries.");
         }
 
 
@@ -140,7 +141,9 @@ namespace BoSSS.Foundation.Caching {
         /// </summary>
         static public long OverheadMem {
             get {
-                return Banks.Count * CacheBank.AssumedSize + emptyBanks.Count * sizeof(int);
+                lock (padlock) {
+                    return Banks.Count * CacheBank.AssumedSize + emptyBanks.Count * sizeof(int);
+                }
             }
         }
 
@@ -148,39 +151,43 @@ namespace BoSSS.Foundation.Caching {
         /// Empties the cache, resets statistics.
         /// </summary>
         static void ResetCache() {
-            Tail = new CacheBank() {
-                iBank = int.MinValue
-            };
-            Head = new CacheBank() {
-                iBank = int.MinValue
-            };
+            lock (padlock) {
+                Tail = new CacheBank() {
+                    iBank = int.MinValue
+                };
+                Head = new CacheBank() {
+                    iBank = int.MinValue
+                };
 
-            Tail.prev = Head;
-            Head.next = Tail;
+                Tail.prev = Head;
+                Head.next = Tail;
 
-            emptyBanks = new List<int>();
-            Banks = new List<CacheBank>();
-            CurrentSize = 0;
-            m_NoOfUsedBanks = 0;
+                emptyBanks = new List<int>();
+                Banks = new List<CacheBank>();
+                CurrentSize = 0;
+                m_NoOfUsedBanks = 0;
 
-            Hits = 0;
-            Misses = 0;
+                Hits = 0;
+                Misses = 0;
+            }
         }
 
+        static object padlock = new object();
 
         /// <summary>
         /// Empties the cache, resets statistics.
         /// </summary>
         public static void ClearCache() {
-            
-            while(RemoveAtTail()) {
-                // nop
-            }
-            
-            Hits = 0;
-            Misses = 0;
+            lock (padlock) {
+                while (RemoveAtTail()) {
+                    // nop
+                }
 
-            Debug.Assert(CurrentSize == 0);
+                Hits = 0;
+                Misses = 0;
+
+                Debug.Assert(CurrentSize == 0);
+            }
         }
 
 
@@ -210,14 +217,16 @@ namespace BoSSS.Foundation.Caching {
             int iBank = (int)(Reference & 0x00000000FFFFFFFF);
             int iref = (int)((Reference & 0xFFFFFFFF00000000) >> 32);
 
-            CacheBank cb = Banks[iBank];
-            if(cb != null && iref == cb.Reference) {
-                Access(iBank);
-                Hits++;
-                return cb.Item;
-            } else {
-                Misses++;
-                return null;
+            lock (padlock) {
+                CacheBank cb = Banks[iBank];
+                if (cb != null && iref == cb.Reference) {
+                    Access(iBank);
+                    Hits++;
+                    return cb.Item;
+                } else {
+                    Misses++;
+                    return null;
+                }
             }
         }
 
@@ -229,9 +238,10 @@ namespace BoSSS.Foundation.Caching {
         public static bool IsAlive(ulong Reference) {
             int iBank = (int)(Reference & 0x00000000FFFFFFFF);
             int iref = (int)((Reference & 0xFFFFFFFF00000000) >> 32);
-
-            CacheBank cb = Banks[iBank];
-            return (cb != null && iref == cb.Reference);
+            lock (padlock) {
+                CacheBank cb = Banks[iBank];
+                return (cb != null && iref == cb.Reference);
+            }
         }
 
         /// <summary>
@@ -244,7 +254,6 @@ namespace BoSSS.Foundation.Caching {
         /// </returns>
         public static ulong CacheItem(object Item, int HonestItemSizeInBytes) {
             RefCounter++;
-
             Debug.Assert((!(Item is MultidimensionalArray)) || (((MultidimensionalArray)Item).Length * sizeof(double) == HonestItemSizeInBytes));
 
             CacheBank cb = new CacheBank() {
@@ -254,18 +263,20 @@ namespace BoSSS.Foundation.Caching {
                 Reference = RefCounter
             };
 
-            while(CurrentSize + cb.MemSize > MaxMem) {
-                if(!RemoveAtTail())
-                    break;
+            lock (padlock) {
+                while (CurrentSize + cb.MemSize > MaxMem) {
+                    if (!RemoveAtTail())
+                        break;
+                }
+
+                int iBank = Insert(cb);
+                Debug.Assert(object.ReferenceEquals(Banks[iBank], cb));
+                Debug.Assert(cb.iBank == iBank);
+
+                ulong R = ((ulong)iBank);
+                R |= (((ulong)cb.Reference) << 32);
+                return R;
             }
-
-            int iBank = Insert(cb);
-            Debug.Assert(object.ReferenceEquals(Banks[iBank], cb));
-            Debug.Assert(cb.iBank == iBank);
-
-            ulong R = ((ulong)iBank);
-            R |= (((ulong)cb.Reference) << 32);
-            return R;
         }
 
         /// <summary>
@@ -275,12 +286,14 @@ namespace BoSSS.Foundation.Caching {
             int iBank = (int)(Reference & 0x00000000FFFFFFFF);
             int iref = (int)((Reference & 0xFFFFFFFF00000000) >> 32);
 
-            CacheBank cb = Banks[iBank];
-            if((cb != null && iref == cb.Reference)) {
-                // object is still in cache, so there is something to forget.
-                Remove(iBank);
-            }
+            lock (padlock) {
+                CacheBank cb = Banks[iBank];
+                if ((cb != null && iref == cb.Reference)) {
+                    // object is still in cache, so there is something to forget.
+                    Remove(iBank);
+                }
 
+            }
         }
 
         /// <summary>
