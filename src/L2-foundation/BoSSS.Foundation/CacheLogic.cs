@@ -219,7 +219,7 @@ namespace BoSSS.Foundation.Caching {
 
                 this.lastNodesetRef = NS.Reference;
                 this.lastCacheRef = CacheRef;
-                Debug.Assert(object.ReferenceEquals(vals, Cache.GetItem(CacheRef.CacheRef)));
+                //Debug.Assert(object.ReferenceEquals(vals, Cache.GetItem(CacheRef.CacheRef))); in a multi-thread-app this might not be true all the time; the cached object might have been removed already
 
                 return vals;
             }
@@ -867,63 +867,129 @@ namespace BoSSS.Foundation.Caching {
         int NoOfChunks = 0;
 
         /// <summary>
-        /// index: local cell index
+        /// mapping from local cell index to computed chunk
+        /// - index: local cell index
+        /// - content: chunk which should contain the respective cell
         /// </summary>
         CChunk[] cells2cchunk = null;
 
 
         public MultidimensionalArray GetValue(int j0, int Len, int degree) {
             int JE = this.m_JE;
+            lock (this) {
 
-            if(cells2cchunk == null) {
-                // initialize 
+                if (cells2cchunk == null) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // first-fime-init; initialize: cells-to-chunk mapping
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-                MultidimensionalArray R = m_ComputeValues(j0, Len, degree);
-                ulong cacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
+                    MultidimensionalArray R = m_ComputeValues(j0, Len, degree);
+                    ulong cacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
 
-                cells2cchunk = new CChunk[JE];
-                CChunk cc = new CChunk() {
-                    i0 = j0,
-                    iE = j0 + Len - 1,
-                    Degree = degree,
-                    CacheRef = cacheRef
-                };
+                    cells2cchunk = new CChunk[JE];
+                    CChunk cc = new CChunk() {
+                        i0 = j0,
+                        iE = j0 + Len - 1,
+                        Degree = degree,
+                        CacheRef = cacheRef
+                    };
 
-                for(int j = cc.i0; j <= cc.iE; j++) {
-                    cells2cchunk[j] = cc;
+                    for (int j = cc.i0; j <= cc.iE; j++) {
+                        cells2cchunk[j] = cc; // store chunk for all cells
+                    }
+
+                    Debug.Assert(NoOfChunks == 0);
+                    Debug.Assert(NoOfCachedCells == 0);
+                    NoOfCachedCells = Len;
+                    NoOfChunks = 1;
+
+                    Verify();
+                    return R;
                 }
-
-                Debug.Assert(NoOfChunks == 0);
-                Debug.Assert(NoOfCachedCells == 0);
-                NoOfCachedCells = Len;
-                NoOfChunks = 1;
 
                 Verify();
-                return R;
-            }
 
-            Verify();
+                CChunk fstCC = cells2cchunk[j0];
+                if (fstCC != null && fstCC.i0 <= j0 && fstCC.iE >= (j0 + Len - 1)) {
+                    // desired result is maybe completely contained in first chunk
 
-            CChunk fstCC = cells2cchunk[j0];
-            if(fstCC != null && fstCC.i0 <= j0 && fstCC.iE >= (j0 + Len - 1)) {
-                // desired result is maybe completely contained in first chunk
+                    MultidimensionalArray R;
+                    if (fstCC.Degree >= degree) {
+                        R = (MultidimensionalArray)Cache.GetItem(fstCC.CacheRef);
+                        Debug.Assert((R == null) || (R.GetLength(0) == fstCC.Len));
+                    } else {
+                        R = m_ComputeValues(fstCC.i0, fstCC.Len, degree);
+                        Debug.Assert(R.GetLength(0) == fstCC.Len);
+                        fstCC.CacheRef = Cache.ReCacheItem(R, R.Length * sizeof(double), fstCC.CacheRef);
+                        fstCC.Degree = degree;
+                    }
 
-                MultidimensionalArray R;
-                if(fstCC.Degree >= degree) {
-                    R = (MultidimensionalArray)Cache.GetItem(fstCC.CacheRef);
-                    Debug.Assert((R == null) || (R.GetLength(0) == fstCC.Len));
-                } else {
-                    R = m_ComputeValues(fstCC.i0, fstCC.Len, degree);
-                    Debug.Assert(R.GetLength(0) == fstCC.Len);
-                    fstCC.CacheRef = Cache.ReCacheItem(R, R.Length * sizeof(double), fstCC.CacheRef);
-                    fstCC.Degree = degree;
+                    if (R == null) {
+                        KillChunk(fstCC);
+
+                        R = m_ComputeValues(j0, Len, degree);
+                        CChunk cc = new CChunk() {
+                            i0 = j0,
+                            iE = j0 + Len - 1,
+                            Degree = degree
+                        };
+                        cc.CacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
+
+                        NoOfChunks += 1;
+                        NoOfCachedCells += cc.Len;
+
+                        for (int j = cc.i0; j <= cc.iE; j++) {
+                            cells2cchunk[j] = cc;
+                        }
+                        Verify();
+                        return R;
+
+                    } else {
+                        if (fstCC.i0 == j0 && fstCC.Len == Len) {
+                            Verify();
+                            return R;
+                        } else {
+                            int[] _i0 = new int[R.Dimension];
+                            _i0[0] = j0 - fstCC.i0;
+                            int[] _iE = R.Lengths;
+                            for (int i = _iE.Length - 1; i > 0; i--) {
+                                _iE[i]--;
+                            }
+                            _iE[0] = Len - 1 + _i0[0];
+
+                            Verify();
+                            return R.ExtractSubArrayShallow(_i0, _iE);
+                        }
+
+                    }
                 }
 
-                if(R == null) {
-                    KillChunk(fstCC);
+                int iE = j0 + Len - 1;
+                List<int> foundchunks = null;
+                int maxDegree = degree;
+                for (int j = j0; j < JE; j++) {
+                    CChunk cc = cells2cchunk[j];
+                    if (cc != null) {
+                        if (Cache.IsAlive(cc.CacheRef)) {
+                            if (foundchunks == null)
+                                foundchunks = new List<int>();
+                            foundchunks.Add(j);
+                            j = cc.iE;
+                            maxDegree = Math.Max(maxDegree, cc.Degree);
+                        } else {
+                            Verify();
+                            KillChunk(cc);
+                        }
+                    }
+                }
 
-                    R = m_ComputeValues(j0, Len, degree);
+                if (foundchunks == null) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // nothing found, compute new values and put them into cache
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    MultidimensionalArray R = m_ComputeValues(j0, Len, degree);
                     CChunk cc = new CChunk() {
                         i0 = j0,
                         iE = j0 + Len - 1,
@@ -931,24 +997,44 @@ namespace BoSSS.Foundation.Caching {
                     };
                     cc.CacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
 
+                    for (int j = cc.i0; j <= cc.iE; j++) {
+                        cells2cchunk[j] = cc;
+                    }
+
+                    NoOfChunks += 1;
+                    NoOfCachedCells += cc.Len;
+                    Verify();
+                    return R;
+                } else {
+                    CChunk cc = new CChunk() {
+                        i0 = Math.Min(j0, cells2cchunk[foundchunks[0]].i0),
+                        iE = Math.Max(j0 + Len - 1, cells2cchunk[foundchunks[foundchunks.Count - 1]].iE),
+                        Degree = maxDegree
+                    };
+                    MultidimensionalArray R = m_ComputeValues(cc.i0, cc.Len, maxDegree);
+
+                    foreach (int j in foundchunks) {
+                        CChunk kcc = cells2cchunk[j];
+                        KillChunk(kcc);
+                    }
+
+                    cc.CacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
+
+                    for (int j = cc.i0; j <= cc.iE; j++) {
+                        cells2cchunk[j] = cc;
+                    }
+
                     NoOfChunks += 1;
                     NoOfCachedCells += cc.Len;
 
-                    for(int j = cc.i0; j <= cc.iE; j++) {
-                        cells2cchunk[j] = cc;
-                    }
-                    Verify();
-                    return R;
-
-                } else {
-                    if(fstCC.i0 == j0 && fstCC.Len == Len) {
+                    if (cc.i0 == j0 && cc.Len == Len) {
                         Verify();
                         return R;
                     } else {
                         int[] _i0 = new int[R.Dimension];
-                        _i0[0] = j0 - fstCC.i0;
+                        _i0[0] = j0 - cc.i0;
                         int[] _iE = R.Lengths;
-                        for(int i = _iE.Length - 1; i > 0; i--) {
+                        for (int i = _iE.Length - 1; i > 0; i--) {
                             _iE[i]--;
                         }
                         _iE[0] = Len - 1 + _i0[0];
@@ -956,85 +1042,10 @@ namespace BoSSS.Foundation.Caching {
                         Verify();
                         return R.ExtractSubArrayShallow(_i0, _iE);
                     }
-
-                }
-            }
-
-            int iE = j0 + Len - 1;
-            List<int> foundchunks = null;
-            int maxDegree = degree;
-            for(int j = j0; j < JE; j++) {
-                CChunk cc = cells2cchunk[j];
-                if(cc != null) {
-                    if(Cache.IsAlive(cc.CacheRef)) {
-                        if(foundchunks == null)
-                            foundchunks = new List<int>();
-                        foundchunks.Add(j);
-                        j = cc.iE;
-                        maxDegree = Math.Max(maxDegree, cc.Degree);
-                    } else {
-                        Verify();
-                        KillChunk(cc);
-                    }
-                }
-            }
-
-            if(foundchunks == null) {
-                MultidimensionalArray R = m_ComputeValues(j0, Len, degree);
-                CChunk cc = new CChunk() {
-                    i0 = j0,
-                    iE = j0 + Len - 1,
-                    Degree = degree
-                };
-                cc.CacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
-
-                for(int j = cc.i0; j <= cc.iE; j++) {
-                    cells2cchunk[j] = cc;
-                }
-
-                NoOfChunks += 1;
-                NoOfCachedCells += cc.Len;
-                Verify();
-                return R;
-            } else {
-                CChunk cc = new CChunk() {
-                    i0 = Math.Min(j0, cells2cchunk[foundchunks[0]].i0),
-                    iE = Math.Max(j0 + Len - 1, cells2cchunk[foundchunks[foundchunks.Count - 1]].iE),
-                    Degree = maxDegree
-                };
-                MultidimensionalArray R = m_ComputeValues(cc.i0, cc.Len, maxDegree);
-
-                foreach(int j in foundchunks) {
-                    CChunk kcc = cells2cchunk[j];
-                    KillChunk(kcc);
-                }
-
-                cc.CacheRef = Cache.CacheItem(R, R.Length * sizeof(double));
-
-                for(int j = cc.i0; j <= cc.iE; j++) {
-                    cells2cchunk[j] = cc;
-                }
-
-                NoOfChunks += 1;
-                NoOfCachedCells += cc.Len;
-
-                if(cc.i0 == j0 && cc.Len == Len) {
-                    Verify();
-                    return R;
-                } else {
-                    int[] _i0 = new int[R.Dimension];
-                    _i0[0] = j0 - cc.i0;
-                    int[] _iE = R.Lengths;
-                    for(int i = _iE.Length - 1; i > 0; i--) {
-                        _iE[i]--;
-                    }
-                    _iE[0] = Len - 1 + _i0[0];
-
-                    Verify();
-                    return R.ExtractSubArrayShallow(_i0, _iE);
                 }
             }
         }
+
 
         [Conditional("DEBUG")]
         void Verify() {
@@ -1050,7 +1061,7 @@ namespace BoSSS.Foundation.Caching {
 
 
                     MultidimensionalArray stuff = (MultidimensionalArray)Cache.GetItem(cc.CacheRef);
-                    Debug.Assert((stuff == null) || (stuff.GetLength(0) == cc.Len));
+                    Debug.Assert((stuff == null) || (stuff.GetLength(0) == cc.Len), $"Object returned from cache does not meet expectations: null? {(stuff == null)}, Length {stuff?.GetLength(0)} sc. expected {cc.Len} ");
                 }
 
 
@@ -1089,6 +1100,9 @@ namespace BoSSS.Foundation.Caching {
             }
         }
 
+        /// <summary>
+        /// removes the <paramref name="cc"/> from the internal cells-to-chunk mapping <see cref="cells2cchunk"/>
+        /// </summary>
         private void KillChunk(CChunk cc) {
             int iE = cc.iE;
             for(int i = cc.i0; i <= iE; i++) {
