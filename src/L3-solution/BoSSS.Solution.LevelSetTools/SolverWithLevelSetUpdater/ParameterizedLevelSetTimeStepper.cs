@@ -97,7 +97,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             double denumerator = 0.0;
             double exitCriteria = 0.0;
 
-            for (int i = 1; i < 100; ++i) {
+            for (int i = 1; i < 2000; ++i) {
                 //Update Schema
                 funcOldIter = funcNewIter;
                 for (int d = 0; d < derivOldIter.Length; ++d) {
@@ -275,7 +275,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             //return (EllipseCoeff[0] - 1.0) * x.Pow2() + EllipseCoeff[2];
             //return -2 * EllipseCoeff[2] + 2 * EllipseCoeff[1] * SquareRoot / EllipsePar0[0] + 1.0 + 2 * EllipsePar0[1] * x.Pow2() * EllipseCoeff[0] / (EllipsePar0[0].Pow2() * SquareRoot);
             //return term1 + term2 + term3 + Velocity[0] * Grad[0] + Velocity[1] * Grad[1];
-            return term1 + term2 + term3 + force;
+            return term1 + term2 + term3 + force ;
         }
         /// <summary>
         /// 

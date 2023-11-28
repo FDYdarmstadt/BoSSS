@@ -127,7 +127,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.DbPath = db.Path;
 
             C.ImmediatePlotPeriod = 1;
-            C.NoOfTimesteps = 20;
+            C.SuperSampling = 2;
+            C.NoOfTimesteps = 10;
 
             C.TracingNamespaces = "*";
 
@@ -262,6 +263,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         /// Simple Test for Evaporation of a straight interface, Test Splitting / Moving Mesh
         /// Currently the Test would be run only one timestep, is this even meaningful?
         /// </summary>
+        [Test]
         public static void TransientEvaporationTest(
             [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
             [Values(3)] int deg,
@@ -269,12 +271,24 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
-            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling levelSetHandling) // evaporation currently only implemented with use of newton solver
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) // evaporation currently only implemented with use of newton solver
             {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
 
             var Tst = new TransientEvaporationTest(rawangle * Math.PI / 180.0);
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2, nonlinsolver: nonlinsolver, lsHandling: levelSetHandling);
+            
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 8, nonlinsolver: nonlinsolver, lsHandling: levelSetHandling);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 2;
+            C.NoOfTimesteps = 15;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
+                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
+            }
+            //C.SkipSolveAndEvaluateResidual = true;
             XNSFESolverTest(Tst, C);
         }
 
