@@ -39,7 +39,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         public void Project() {
-            this.ProjectField(Ellipsis);
+            this.ProjectField(1.0, Ellipsis);
         }
     }
 
@@ -90,7 +90,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
             if (control == null)
-                throw new ArgumentNullException("LevelSetEvolution needs and instance of FourierLevSetControl!");
+                throw new ArgumentNullException("LevelSetEvolution needs and instance of ParameterizedLevelSetControl!");
 
             //create specialized parameterized timestepper
             Parameterized_TimeStepper = ParameterizedLevelSetFactory.Build_Timestepper(control);
@@ -154,14 +154,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             LevSetGradient[d].Evaluate(j0, Length, QR.Nodes, LevelSetGradValues.ExtractSubArrayShallow(-1, -1, d));
                         }
 
-                        //var Normals = LsTrk.DataHistories[levelSet.LevelSetIndex][0].GetLevelSetNormals(QR.Nodes, j0, Length);
+                        var Normals = LsTrk.DataHistories[levelSet.LevelSetIndex][0].GetLevelSetNormals(QR.Nodes, j0, Length);
 
                         for (int j = 0; j < Length; j++) { // loop over cells
                             for (int k = 0; k < QR.NoOfNodes; k++) { // loop over nodes
 
                                 double acc = 0;
                                 for (int d = 0; d < D; d++) {
-                                    acc += VelocityValues[j, k, d] * LevelSetGradValues[j, k, d];//Normals[j, k, d];
+                                    acc += VelocityValues[j, k, d] * Normals[j, k, d];//Normals[j, k, d]; LevelSetGradValues[j, k, d]
                                                                                                  //acc1 += LevelSetGradValues[j, k, d];
                                 }
                                 EvalResult[j, k, 0] = acc;
