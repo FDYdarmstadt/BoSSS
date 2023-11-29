@@ -26,6 +26,15 @@ using ilPSP;
 
 namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
 
+    /// <summary>
+    /// Testcode, to be removed; If you find me, delete me and everything which depends on my; I don't deserve to live
+    /// </summary>
+    internal static class Debugi {
+        public static int SkipComp = -1;
+        public static int CompCont = 0;
+        public static bool printInfo = false;
+    }
+
 
     /// <summary>
     /// used by the spatial operator (see <see cref="EquationComponentArgMapping{T}.GetArgMapping"/>)
@@ -34,6 +43,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
     /// </summary>
     public class EquationComponentArgMapping<T> where T : IEquationComponent {
 
+        
 
         /// <summary>
         /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
@@ -57,7 +67,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                 throw new ApplicationException("Commit() has to be called prior to this method.");
 
             int Gamma = op.CodomainVar.Count;
-
+            //Debugi.CompCont = 0;
             var ret = new EquationComponentArgMapping<T>[Gamma];
             for(int i = 0; i < Gamma; i++) {
                 var codName = op.CodomainVar[i];
@@ -121,21 +131,21 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                 T optComp = (eqComp is T) ? (T)eqComp : default; //                    optimized component (user-optimized)
                 T vecComp = (vectorizer != null) ? (T)vectorizer(eqComp) : default; // default vectorization (non-optimized)
 
-                if(eqComp is IBoundaryEdgeForm) {
+                if (eqComp is IBoundaryEdgeForm) {
 
-                    if(eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
+                    if (eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
                         // we are ok
                     } else {
                         throw new NotSupportedException($"{eqComp} implements only {typeof(IBoundaryEdgeForm)}, but neither {typeof(IEdgeForm)} nor ILevelSetForm: this is not supported at the moment;");
                     }
 
                 }
-                if(eqComp is IInnerEdgeForm) {
-                    if(eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
+                if (eqComp is IInnerEdgeForm) {
+                    if (eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
                         // we are ok
                     } else {
                         throw new NotSupportedException($"{eqComp} implements only {typeof(IInnerEdgeForm)}, but neither {typeof(IEdgeForm)} nor ILevelSetForm: this is not supported at the moment;");
-                    }               
+                    }
                 }
 
 
@@ -187,11 +197,29 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                     useOptComp = true;
                 }
 
-                if (useOptComp)
-                    AllComponentsofMyType.Add(optComp);
-                else
-                    AllComponentsofMyType.Add(vecComp);
+                if (Debugi.SkipComp >= 0) {
+                    if (Debugi.CompCont > Debugi.SkipComp) {
+                        // skip
+                    } else {
+                        if(Debugi.printInfo)
+                            Console.Error.WriteLine("using : " + optComp?.ToString() + " // " + vecComp?.ToString());
 
+                        if (useOptComp) {
+                            AllComponentsofMyType.Add(optComp);
+                        } else {
+                            AllComponentsofMyType.Add(vecComp);
+                        }
+                    }
+
+                    Debugi.CompCont++;
+                } else {
+                    if (useOptComp) {
+                        AllComponentsofMyType.Add(optComp);
+                    } else {
+                        AllComponentsofMyType.Add(vecComp);
+                    }
+
+                }
             }
 
             m_AllComponentsOfMyType = AllComponentsofMyType.ToArray();

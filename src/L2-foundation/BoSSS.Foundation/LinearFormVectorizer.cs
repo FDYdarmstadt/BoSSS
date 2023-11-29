@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// Returns name of nested form.
         /// </summary>
         public override string ToString() {
-            return volForm.GetType().FullName;
+            return "LinearVolumeFormVectorizer: " +  volForm.ToString();
         }
 
 
@@ -372,6 +372,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
     class LinearEdgeFormVectorizer : IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeForm_UxV, IEdgeform_GradUxGradV {
 
 
+        /// <summary>
+        /// Returns name of nested form.
+        /// </summary>
+        public override string ToString() {
+            return "LinearEdgeFormVectorizer: " +  edgeForm.ToString();
+        }
+
         public TermActivationFlags BoundaryEdgeTerms {
             get;
             private set;
@@ -394,13 +401,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
         IEdgeForm edgeForm;
 
-        /// <summary>
-        /// Returns name of nested form.
-        /// </summary>
-        public override string ToString() {
-            return edgeForm.GetType().FullName;
-        }
-
+  
 
         /// <summary>
         /// ordering of argument variables
@@ -1038,7 +1039,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return this.edgeForm.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
         }
-
 
     }
 
