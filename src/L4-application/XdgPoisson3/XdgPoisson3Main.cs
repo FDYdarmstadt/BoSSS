@@ -168,11 +168,10 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             Op = new XDifferentialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
             Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
-            //var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
             var lap = new XLaplace_Bulk(penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
             Op.EquationComponents["c1"].Add(lap);      // Bulk form
             Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_multiplyer, this.Control.ViscosityMode));   // coupling form
-            //Op.EquationComponents["c1"].Add(new RHSSource(this.rhs));
+            Op.EquationComponents["c1"].Add(new RHSSource(this.rhs));
             Op.IsLinear = true;
 
             Op.Commit();
