@@ -417,8 +417,58 @@ namespace BoSSS.Application.XNSE_Solver {
             var SpaceDim = m_SpaceDim;
             var tiltVector = m_tiltVector;
             var tiltDegree = m_tiltDegree;
+            var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
+            Func<double[], double, double[]> VelocityAtIB;
 
-            Func<double[], double, double[]> VelocityAtIB = delegate (double[] x, double time) {
+            if (theShape == Shape.CollidingSpheres)
+            {
+
+                VelocityAtIB = delegate (double[] X, double t) {
+                    if (pos.Length != X.Length)
+                        throw new ArgumentException("check dimension of center of mass");
+
+
+                    double[] posL = new double[SpaceDim];
+                    posL[0] = -1.5 * particleRad + (rateOfRadius * t) * particleRad; // (initial pos + change)
+
+                    double[] posR = new double[SpaceDim];
+                    posR[0] = 1.5 * particleRad - (rateOfRadius * t) * particleRad;
+                    double L, R;
+
+                    switch (SpaceDim) {
+                        case 2:
+                            // circle
+                            L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) + particleRad * particleRad;
+                            R = -(X[0] - posR[0]) * (X[0] - posR[0]) - (X[1] - posR[1]) * (X[1] - posR[1]) + particleRad * particleRad;
+                            break;
+                        case 3:
+                            // sphere
+                            L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) - (X[2] - posL[2]) * (X[2] - posL[2]) + particleRad * particleRad;
+                            R = -(X[0] - posR[0]) * (X[0] - posR[0]) - (X[1] - posR[1]) * (X[1] - posR[1]) - (X[2] - posR[2]) * (X[2] - posR[2]) + particleRad * particleRad;
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+
+                    double[] pointVel = new double[SpaceDim];
+                    double tol = -1E-8;
+                    if (L > tol)
+                    {
+                        pointVel[0] += rateOfRadius;
+                    }
+
+                    if (R > tol) {
+                        pointVel[0] -= rateOfRadius;
+                    }
+
+                    Vector pointVelocity = new Vector(pointVel);
+                    return pointVelocity;
+                };
+
+            } else{
+
+            VelocityAtIB = delegate (double[] x, double time) {
                 if (pos.Length != x.Length)
                     throw new ArgumentException("check dimension of center of mass");
                 double[] X = x;
@@ -468,6 +518,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 return pointVelocity;
             };
+            }
+
             Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
             Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
             Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
