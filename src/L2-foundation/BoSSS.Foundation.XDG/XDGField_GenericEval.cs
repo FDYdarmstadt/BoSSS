@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-
+        /*
         /// <summary>
         /// used by <see cref="EvaluateMultiphase"/>
         /// </summary>
@@ -81,7 +81,7 @@ namespace BoSSS.Foundation.XDG {
         /// used by <see cref="EvaluateMultiphase"/>
         /// </summary>
         double[] _levSetSign = new double[4];
-
+        */
         /// <summary>
         /// evaluation of field in cut- or near - cells;
         /// </summary>
@@ -95,6 +95,9 @@ namespace BoSSS.Foundation.XDG {
 
             {
                 //var resultAcc = result.ExtractSubArrayShallow(new int[] { ResultCellindexOffset + j, 0 }, new int[] { ResultCellindexOffset + j, M - 1 });
+
+                MultidimensionalArray[] _levSetVals = new MultidimensionalArray[4];
+                double[] _levSetSign = new double[4];
 
                 ushort RegionCode = trk.Regions.m_LevSetRegions[jCell];
 

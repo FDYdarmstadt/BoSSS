@@ -1815,11 +1815,11 @@ namespace BoSSS.Foundation {
 
                             /*
                             if (Matrix != null && AffineOffset != null) {
-                                for (int i = 0; i < 30; i++) {
+                                for (int i = 0; i < 1; i++) {
                                     Console.WriteLine($"   i = {i}");
 
                                     double afferrNorm = 0, mtxerrNorm = 0;
-                                    for (int k = 0; k < 30; k++) {
+                                    for (int k = 0; k < 1; k++) {
                                         var clMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
                                         var clAffine = new double[AffineOffset.Count];
                                         var mpMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
@@ -1853,7 +1853,7 @@ namespace BoSSS.Foundation {
                                     Console.Write("");
                                 }
                             }
-                            */
+                            //*/
 
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;

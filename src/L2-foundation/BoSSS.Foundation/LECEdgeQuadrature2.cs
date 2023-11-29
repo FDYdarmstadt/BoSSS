@@ -24,6 +24,7 @@ using BoSSS.Platform;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using ilPSP;
+using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.Linear {
 
@@ -101,6 +102,16 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
+        protected void OnCloneForThreadParallelization(IQuadrature q, int iThread, int NumThreads) {
+            //if (m_ThreadLocals == null) {
+            //    m_ThreadLocals = new ThreadLocals[NumThreads];
+            //}
+
+            //m_ThreadLocals[iThread] = new ThreadLocals(iThread, this, q);
+            //throw new NotImplementedException("todo");
+        }
+
+
         /// <summary>
         /// Execution of quadrature
         /// </summary>
@@ -161,6 +172,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 m_GridDat, domNrule,
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
+                _OnCloneForThreadParallelization: this.OnCloneForThreadParallelization,
                 _AllocateBuffers: this.AllocateBuffers);
 
             q.CustomTimers = new Stopwatch[] { new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch(), new Stopwatch() };
