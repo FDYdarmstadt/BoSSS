@@ -210,6 +210,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 m_iThread = iThread;
                 m_owner = _owner;
 
+                Debugi.CompCont = 0;
                 m_VolumeForm_UxV = EquationComponentArgMapping<IVolumeForm_UxV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.UxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
                 m_VolumeForm_UxGradV = EquationComponentArgMapping<IVolumeForm_UxGradV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.UxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
                 m_VolumeForm_GradUxV = EquationComponentArgMapping<IVolumeForm_GradUxV>.GetArgMapping(m_owner.Operator, true, eq => ((eq.VolTerms & TermActivationFlags.GradUxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);

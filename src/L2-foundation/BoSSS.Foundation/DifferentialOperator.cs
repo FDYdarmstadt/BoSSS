@@ -1812,6 +1812,49 @@ namespace BoSSS.Foundation {
                     
                     if(volRule.Any() && DoVolume) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
+
+                            /*
+                            if (Matrix != null && AffineOffset != null) {
+                                for (int i = 0; i < 30; i++) {
+                                    Console.WriteLine($"   i = {i}");
+
+                                    double afferrNorm = 0, mtxerrNorm = 0;
+                                    for (int k = 0; k < 30; k++) {
+                                        var clMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
+                                        var clAffine = new double[AffineOffset.Count];
+                                        var mpMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
+                                        var mpAffine = new double[AffineOffset.Count];
+
+                                        Debugi.SkipComp = -1;
+                                        Debugi.CompCont = 0;
+                                        Debugi.printInfo = k == 0;
+                                        ilPSP.Environment.NumThreads = 1;
+                                        var clmtxBuilder = new LECVolumeQuadrature2<MsrMatrix, double[]>(_Owner);
+                                        clmtxBuilder.m_alpha = alpha;
+                                        clmtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, clMatrix, clAffine, time);
+
+                                        Debugi.SkipComp = -1;
+                                        Debugi.CompCont = 0;
+                                        //Debugi.printInfo = false;
+                                        ilPSP.Environment.NumThreads = 8;
+                                        var mpmtxBuilder = new LECVolumeQuadrature2<MsrMatrix, double[]>(_Owner);
+                                        mpmtxBuilder.m_alpha = alpha;
+                                        mpmtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, mpMatrix, mpAffine, time);
+
+
+                                        var errMtx = clMatrix.CloneAs();
+                                        errMtx.Acc(mpMatrix, -1.0);
+                                        mtxerrNorm += errMtx.InfNorm();
+
+                                        afferrNorm += clAffine.MPI_L2Dist(mpAffine);
+
+                                    }
+                                    Console.WriteLine($"   difference (i = {i}): {mtxerrNorm:0.####e-00}  {mtxerrNorm:0.####e-00}");
+                                    Console.Write("");
+                                }
+                            }
+                            */
+
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);

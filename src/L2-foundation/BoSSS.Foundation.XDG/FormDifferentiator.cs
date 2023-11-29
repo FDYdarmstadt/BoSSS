@@ -62,7 +62,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// required terms for the3 linearization 
+        /// required terms for the linearization 
         /// </summary>
         protected TermActivationFlags Terms;
 
@@ -241,12 +241,16 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        public override string ToString() {
+            return "XDG-" + this.GetType().Name + ": " + m_OrgForm.ToString() + "(" + m_OrgForm.GetType().FullName + ")";
+        }
+
     }
 
 
 
     /// <summary>
-    /// Differentiation of a volume form, used e.g.to obtain a Jacobian of an operator, see <see cref="DifferentialOperator.GetJacobiOperator"/>.
+    /// Differentiation of a volume form, used to obtain a Jacobian of an operator, see <see cref="DifferentialOperator.GetJacobiOperator"/>.
     /// </summary>
     public class VolumeFormDifferentiator : FormDifferentiatorCommon, IVolumeForm {
 
@@ -325,6 +329,22 @@ namespace BoSSS.Foundation.XDG {
 
             // flux eval
             double f1 = m_VolForm.VolumeForm(ref clonedParams, Utmp, GradUtmp, V, GradV);
+
+            /*
+            double[] f1x = new double[100];
+            var cclonedParams = clonedParams;
+            void ParaFlux (int iThread) {
+                f1x[iThread] = m_VolForm.VolumeForm(ref cclonedParams, Utmp, GradUtmp, V, GradV);
+            }
+
+            Parallel.For(0, f1x.Length, ParaFlux);
+
+            double totErr = f1x.Select(f1x_i => (f1x_i - f1).Pow2()).Sum();
+            if(totErr != 0) {
+                throw new ArithmeticException();
+            }
+            */
+
 #if DEBUG
             if (double.IsInfinity(f1))
                 throw new ArithmeticException();
@@ -376,6 +396,11 @@ namespace BoSSS.Foundation.XDG {
             ret -= dU_iVar * PertubVar; // subtract affine contribution
             return ret;
         }
+
+
+        public override string ToString() {
+            return base.ToString();
+        }
     }
 
 
@@ -415,11 +440,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        //static public int SetDir = 0;
-        static public int Dir = 0;
-
-
-
+       
 
         public double InnerEdgeForm(ref CommonParams inp, double[] U_IN, double[] U_OT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double ret = 0.0;
