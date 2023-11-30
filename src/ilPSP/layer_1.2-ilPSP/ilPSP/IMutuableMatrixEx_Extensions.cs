@@ -69,15 +69,15 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// <param name="iRow">local row index</param>
         /// <param name="M">matrix to operate on</param>
-        /// <returns></returns>
-        static public int GetNoOfNonZerosPerRow(this IMutableMatrixEx M, long iRow) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public int GetNoOfNonZerosPerRow(this IMutableMatrixEx M, long iRow, double threshold = 0.0) {
 
             int cnt = 0;
             long[] col = null;
             double[] val = null;
             int L = M.GetRow(iRow, ref col, ref val);
             for (int l = 0; l < L; l++) {
-                if (val[l] != 0.0)
+                if (val[l].Abs() > threshold)
                     cnt++;
             }
 
@@ -91,14 +91,14 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// <param name="iRow">local row index</param>
         /// <param name="M">matrix to operate on</param>
-        /// <returns></returns>
-        static public int GetNoOfUpperTriangualNonZerosPerRow(this IMutableMatrixEx M, long iRow) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public int GetNoOfUpperTriangualNonZerosPerRow(this IMutableMatrixEx M, long iRow, double threshold = 0.0) {
             int cnt = 0;
             long[] col = null;
             double[] val = null;
             int L = M.GetRow(iRow, ref col, ref val);
             for (int l = 0; l < L; l++) {
-                if (col[l] > iRow && val[l] != 0.0)
+                if (col[l] > iRow && val[l].Abs() > threshold)
                     cnt++;
             }
             return cnt;
@@ -109,15 +109,15 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// <param name="iRow">local row index</param>
         /// <param name="M">matrix to operate on</param>
-        /// <returns></returns>
-        static public int GetNoOfOffDiagonalNonZerosPerRow(this IMutableMatrixEx M, long iRow) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public int GetNoOfOffDiagonalNonZerosPerRow(this IMutableMatrixEx M, long iRow, double threshold = 0.0) {
 
             int cnt = 0;
             long[] col = null;
             double[] val = null;
             int L = M.GetRow(iRow, ref col, ref val);
             for (int l = 0; l < L; l++) {
-                if (col[l] != iRow && val[l] != 0.0)
+                if (col[l] != iRow && val[l].Abs() > threshold)
                     cnt++;
             }
             return cnt;
@@ -126,15 +126,15 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// returns the maximum (over all locally stored rows) number of off-diagonal non-zero entries per row
         /// </summary>
-        /// <returns></returns>
-        static public int GetMaxNoOfOffDiagonalNonZerosPerRow(this IMutableMatrixEx M) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public int GetMaxNoOfOffDiagonalNonZerosPerRow(this IMutableMatrixEx M, double threshold = 0.0) {
 
             int r = 0;
             var _RowPartiton = M.RowPartitioning;
 
             int i0 = (int)_RowPartiton.i0;
             for (int i = (int)(_RowPartiton.i0 + _RowPartiton.LocalLength - 1); i >= i0; i--) {
-                r = Math.Max(M.GetNoOfOffDiagonalNonZerosPerRow(i), r);
+                r = Math.Max(M.GetNoOfOffDiagonalNonZerosPerRow(i, threshold), r);
             }
             return r;
         }
@@ -142,14 +142,14 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// returns the maximum (over all locally stored rows) number of off-diagonal non-zero entries per row
         /// </summary>
-        /// <returns></returns>
-        static public int GetMaxNoOfNonZerosPerRow(this IMutableMatrixEx M) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public int GetMaxNoOfNonZerosPerRow(this IMutableMatrixEx M, double threshold = 0.0) {
             int r = 0;
             var _RowPartiton = M.RowPartitioning;
 
             int i0 = (int)_RowPartiton.i0;
             for (int i = (int)(_RowPartiton.i0 + _RowPartiton.LocalLength - 1); i >= i0; i--) {
-                r = Math.Max(M.GetNoOfNonZerosPerRow(i), r);
+                r = Math.Max(M.GetNoOfNonZerosPerRow(i, threshold), r);
             }
             return r;
         }
@@ -158,15 +158,15 @@ namespace ilPSP.LinSolvers {
         /// returns the number of non-zero elements outside the diagonal in all rows
         /// (on the current MPI process);
         /// </summary>
-        /// <returns></returns>
-        static public int GetTotalNoOfOffDiagonalNonZeros(this IMutableMatrixEx M) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public int GetTotalNoOfOffDiagonalNonZeros(this IMutableMatrixEx M, double threshold = 0.0) {
 
             int odnz = 0;
             var rowPart = M.RowPartitioning;
 
             int i0 = (int)rowPart.i0;
             for (int i = (int)(rowPart.i0 + rowPart.LocalLength - 1); i >= i0; i--) {
-                odnz += M.GetNoOfOffDiagonalNonZerosPerRow(i);
+                odnz += M.GetNoOfOffDiagonalNonZerosPerRow(i, threshold);
             }
 
             return odnz;
@@ -177,10 +177,10 @@ namespace ilPSP.LinSolvers {
         /// Returns the number of non-zero elements  
         /// in the upper triangle.
         /// </summary>
-        /// <returns></returns>
-        static public long GetGlobalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public long GetGlobalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M, double threshold = 0.0) {
 
-            long odnz = M.GetLocalNoOfUpperTriangularNonZeros();
+            long odnz = M.GetLocalNoOfUpperTriangularNonZeros(threshold);
 
             odnz = odnz.MPISum(M.MPI_Comm);
 
@@ -193,14 +193,14 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// Number of non-zero elements  
         /// in the upper triangle.
-        /// <returns></returns>
-        static public long GetLocalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public long GetLocalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M, double threshold = 0.0) {
 
             int odnz = 0;
             var rowPart = M.RowPartitioning;
             int i0 = (int)rowPart.i0;
             for (int i = (int)(rowPart.i0 + rowPart.LocalLength - 1); i >= i0; i--) {
-                odnz += M.GetNoOfUpperTriangualNonZerosPerRow(i);
+                odnz += M.GetNoOfUpperTriangualNonZerosPerRow(i, threshold);
             }
 
             return odnz;
@@ -210,15 +210,15 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// returns the number of non-zero elements in the matrix on the current MPI process.
         /// </summary>
-        /// <returns></returns>
-        static public long GetTotalNoOfNonZerosPerProcess(this IMutableMatrixEx M) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public long GetTotalNoOfNonZerosPerProcess(this IMutableMatrixEx M, double threshold = 0.0) {
 
 
             int odnz = 0;
             var rowPart = M.RowPartitioning;
             int i0 = (int)rowPart.i0;
             for (int i = (int)(rowPart.i0 + rowPart.LocalLength - 1); i >= i0; i--) {
-                odnz += M.GetNoOfNonZerosPerRow(i);
+                odnz += M.GetNoOfNonZerosPerRow(i, threshold);
             }
 
             return odnz;
@@ -228,10 +228,10 @@ namespace ilPSP.LinSolvers {
         /// returns the number of non-zero elements in the matrix
         /// (on the current MPI process);
         /// </summary>
-        /// <returns></returns>
-        static public long GetTotalNoOfNonZeros(this IMutableMatrixEx M) {
+        /// <param name="threshold">threshold, up to which values are ignored, i.e., deemed to be zero</param>
+        static public long GetTotalNoOfNonZeros(this IMutableMatrixEx M, double threshold = 0.0) {
             MPICollectiveWatchDog.Watch(M.RowPartitioning.MPI_Comm);
-            long odnz = M.GetTotalNoOfNonZerosPerProcess();
+            long odnz = M.GetTotalNoOfNonZerosPerProcess(threshold);
             long odnz_global = odnz.MPISum(M.MPI_Comm);
             return odnz_global;
         }
@@ -670,7 +670,7 @@ namespace ilPSP.LinSolvers {
 
         /// <summary>
         /// accumulates a dense matrix <paramref name="FullMtx"/> to a sparse matrix
-        /// -- certainly, only adviseable for small matrices.
+        /// -- certainly, only advisable for small matrices.
         /// </summary>
         static public void AccDenseMatrix(this IMutableMatrixEx tis, double alpha, IMatrix FullMtx) {
             if (tis.RowPartitioning.LocalLength != FullMtx.NoOfRows)

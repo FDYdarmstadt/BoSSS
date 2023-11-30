@@ -432,16 +432,19 @@ namespace BoSSS.Foundation.Quadrature {
                         for (int iThread = 0; iThread < NumThreads; iThread++) {
                             if (iThread > 0)
                                 ItemOffset[iThread] = ItemOffset[iThread - 1] + ItemsPerThread[iThread - 1];
-                            allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, true, ItemOffset[iThread]);
+                            allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, true, ItemOffset[iThread], null);
                         }
                     }
 
                     var errorList = new List<(int item, double err, double threshold)>[NumThreads];
                     Parallel.For(0, NumThreads, options, delegate(int iThread) {
-                        errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread]);
+                        errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], allThreads);
                     });
-                    //for (int iThread = 0; iThread < NumThreads; iThread++) {
-                    //    errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread]);
+                    //Random rnd = new Random();
+                    //int offset = rnd.Next(NumThreads);
+                    //for (int _iThread = 0; _iThread < NumThreads; _iThread++) {
+                    //    int iThread = (offset + _iThread)%NumThreads;
+                    //    errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], null);
                     //}
 
 
@@ -474,14 +477,14 @@ namespace BoSSS.Foundation.Quadrature {
                                 throw new Exception("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
                                 //Console.Error.WriteLine("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
                             else
-                                Console.WriteLine("no parallelization error.");
+                                Console.WriteLine($"no parallelization error ({this.GetType()}).");
                         }
                     }
 
                 } else {
                     NumThreads = 1;
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, 1);
-                    this.ExecuteThread(0, NumThreads, _compositeRuleS[0], null, false, 0);
+                    this.ExecuteThread(0, NumThreads, _compositeRuleS[0], null, false, 0, null);
                 }
 
                 //tr.Info("Quadrature performed in " + Bulkcnt + " chunk(s).");
@@ -643,7 +646,7 @@ namespace BoSSS.Foundation.Quadrature {
             return _compositeRule;
         }
 
-        List<(int item, double err, double threshold)> ExecuteThread(int ThreadRank, int NumThreads, ICompositeQuadRule<TQuadRule> _compositeRule, MultidimensionalArray checkResults, bool record4Checking, int ItemThreadOffset) {
+        List<(int item, double err, double threshold)> ExecuteThread(int ThreadRank, int NumThreads, ICompositeQuadRule<TQuadRule> _compositeRule, MultidimensionalArray checkResults, bool record4Checking, int ItemThreadOffset, object syncToken) {
             MultidimensionalArray lastQuadRuleNodes = null;
             int oldBulksize = -1;
             int oldNoOfNodes = -1;
@@ -810,7 +813,19 @@ namespace BoSSS.Foundation.Quadrature {
 
                     if (record4Checking == false) {
                         stpwSaveIntRes.Start();
-                        SaveIntegrationResults(j, ChunkLength, m_QuadResults);
+                        if (syncToken != null) {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // sync required for permanent saving of quadrature results
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            lock (syncToken) {
+                                SaveIntegrationResults(j, ChunkLength, m_QuadResults);
+                            }
+                        } else {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // users responsibility to ensure the saving does not screw things up
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            SaveIntegrationResults(j, ChunkLength, m_QuadResults);
+                        }
                         stpwSaveIntRes.Stop();
                     }
 
