@@ -457,9 +457,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // evaluate Normals, transform Nodes and Parameters
                 // ================================================
                 this.ParametersAndNormals.Start();
+                MultidimensionalArray sqrtGram = null; // integral transformation metric
                 this.GlobalNodes = gDat.GlobalNodes.GetValue_EdgeSV(NS, i0, Length);
                 NormalBuffer = gDat.iGeomEdges.NormalsCache.GetNormals_Edge(NS, i0, Length);
-                MultidimensionalArray sqrtGram = null; // integral transformation metric
                 if (AffineEdge)
                     sqrtGram = gDat.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
                 else
@@ -1310,8 +1310,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 _OnCloneForThreadParallelization: this.OnCloneForThreadParallelization,
                 _AllocateBuffers: this.AllocateBuffers);
 
-            
 
+            q.ExecuteParallel = true;
             q.Execute();
         }
 
