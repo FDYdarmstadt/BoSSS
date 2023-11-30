@@ -774,8 +774,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // =====================
                 #region FLUXEVAL
                 this.Flux_Eval.Start();
-                {
-                    VolumFormParams vfp = default(VolumFormParams);
+                { 
+                    VolumFormParams vfp = default;
                     vfp.j0 = i0;
                     vfp.Len = Length;
                     vfp.GridDat = _GridDat;

@@ -448,20 +448,31 @@ namespace BoSSS.Foundation.Quadrature {
                     if (errorList.Any(l => l != null)) {
                         int errCnt = 0;
                         using (var wrt = new StringWriter()) {
+                            
                             foreach (var checkErrors in errorList) {
+                                bool brk = false;
                                 if (checkErrors != null) {
                                     for (int k = 0; k < checkErrors.Count; k++) {
                                         if (checkErrors[k].err > checkErrors[k].threshold) {
-                                            errCnt++;
+                                            if (errCnt >= 500) {
+                                                brk = true;
+                                                wrt.Write(" ...");
+                                                break;
+                                            } else {
+                                                errCnt++;
 
-                                            wrt.Write($" {checkErrors[k]}");
+                                                wrt.Write($" {checkErrors[k]}");
+                                            }
                                         }
+
                                     }
                                 }
+                                if (brk)
+                                    break;
                             }
                             if (errCnt > 0)
-                                //throw new Exception("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
-                                Console.Error.WriteLine("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
+                                throw new Exception("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
+                                //Console.Error.WriteLine("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
                             else
                                 Console.WriteLine("no parallelization error.");
                         }
@@ -682,10 +693,6 @@ namespace BoSSS.Foundation.Quadrature {
                 if (MaxChunkLength < 1)
                     MaxChunkLength = 1;
 
-
-                //if (OberOasch && Bulkcnt == 0)
-                //    Console.WriteLine("Max Chunk length: " + MaxChunkLength);
-
                 int j = chunk.i0;
                 int ChunkLength = MaxChunkLength;
                 int ChunkEnd = chunk.i0 + chunk.Len;
@@ -758,7 +765,7 @@ namespace BoSSS.Foundation.Quadrature {
                     if(checkResults != null) {
 
                         MultidimensionalArray checkResultsPart;
-                        //{
+                        {
                             int[] i0 = new int[checkResults.Dimension];
                             int[] iE = m_QuadResults.Lengths;
                             i0[0] += ItemCounter;
@@ -769,7 +776,7 @@ namespace BoSSS.Foundation.Quadrature {
                             for (int r = 0; r < iE.Length; r++)
                                 iE[r] -= 1;
                             checkResultsPart = checkResults.ExtractSubArrayShallow(i0, iE);
-                        //}
+                        }
 
                         if (record4Checking) {
                             // ++++++++++++++++++++++++++++++++++ 
@@ -795,9 +802,6 @@ namespace BoSSS.Foundation.Quadrature {
                                 var err_k = ref_k.CloneAs();
                                 err_k.Acc(-1.0, res_k);
                                 double norm_err_k = err_k.L2Norm();
-
-                                if (norm_err_k > 1.0)
-                                    Console.Write("");
 
                                 checkErrors.Add((j + k, norm_err_k, Math.Max(norm_ref_k, norm_res_k)*1.0e-10));
                             }

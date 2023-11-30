@@ -75,7 +75,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
+            
             //ilPSP.Environment.NumThreads = 8;
             //InitMPI();
             //DeleteOldPlotFiles();
