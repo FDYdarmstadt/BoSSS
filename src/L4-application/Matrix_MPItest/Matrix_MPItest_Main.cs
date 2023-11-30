@@ -210,13 +210,13 @@ namespace BoSSS.Application.Matrix_MPItest {
             mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
-
-            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            double threshold = this.OperatorMatrix.InfNorm()*1.0e-14;
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
            
-            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
-            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
+            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
            
             MsrMatrix Comp = AltOperatorMatrix.CloneAs();
             Comp.Acc(-1.0, OperatorMatrix);

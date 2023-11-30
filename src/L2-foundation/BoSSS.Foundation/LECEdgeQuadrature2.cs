@@ -1240,7 +1240,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
         void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
+            
             m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
+            
         }
 
 
@@ -1309,7 +1311,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 this.SaveIntegrationResults,
                 _OnCloneForThreadParallelization: this.OnCloneForThreadParallelization,
                 _AllocateBuffers: this.AllocateBuffers);
-
 
             q.ExecuteParallel = true;
             q.Execute();
