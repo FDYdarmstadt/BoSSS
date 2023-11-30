@@ -128,10 +128,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 this.SaveIntegrationResults,
                 _AllocateBuffers: this.AllocateBuffers,
                 _OnCloneForThreadParallelization: this.OnCloneForThreadParallelization);
+            
             q.ExecuteParallel = true;
-
-           
-
             q.Execute();
 
         }

@@ -506,72 +506,73 @@ namespace BoSSS.Foundation.Caching {
         }
 
         public MultidimensionalArray GetValue_EdgeSV(NodeSet NS, int e0, int Len, int Degree) {
-            if(e0 < 0) throw new ArgumentOutOfRangeException("e0", "must be greater or equal than zero.");
-            if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
-            if((e0 + Len) > this.GridData.iGeomEdges.Count)
+            if (e0 < 0) throw new ArgumentOutOfRangeException("e0", "must be greater or equal than zero.");
+            if (Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
+            if ((e0 + Len) > this.GridData.iGeomEdges.Count)
                 throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of edges");
-            if(NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.EdgeCoord)
+            if (NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.EdgeCoord)
                 throw new ArgumentException("Expecting a node set in edge coordinate system");
+            lock (this) {
 #if DEBUG
-            int iKref = NS.GetEdgeRefElementIndex(this.GridData);
-            if(iKref < 0)
-                throw new ArgumentException("not an edge node set");
-            for(int j = 0; j < Len; j++) {
-                if(this.GridData.iGeomEdges.GetRefElementIndex(j + e0) != iKref)
-                    throw new ArgumentException("node set ref. element/edge missmatch");
-            }
+                int iKref = NS.GetEdgeRefElementIndex(this.GridData);
+                if (iKref < 0)
+                    throw new ArgumentException("not an edge node set");
+                for (int j = 0; j < Len; j++) {
+                    if (this.GridData.iGeomEdges.GetRefElementIndex(j + e0) != iKref)
+                        throw new ArgumentException("node set ref. element/edge missmatch");
+                }
 #endif
 
-            MultidimensionalArray Rin = null;
-            if(NS.Reference != 0 && lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
-                Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
-                
-                Debug.Assert((Rin == null) || (Rin.GetLength(0) == Len));
-                Debug.Assert((Rin == null) || (Rin.GetLength(1) == NS.NoOfNodes));
-            }
-            
-            bool RinReq = Rin == null;
+                MultidimensionalArray Rin = null;
+                if (NS.Reference != 0 && lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
+                    Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
 
-            lastEdge_e0 = e0;
-            lastEdge_Len = Len;
-            lastEdge_Degree = Degree;
-            lastEdge_NSref = NS.Reference;
-            
-            if(RinReq) {
-                Rin = m_alloc(e0, Len, Degree, NS);
-                Debug.Assert(Rin.GetLength(0) == Len);
-                Debug.Assert(Rin.GetLength(1) == NS.NoOfNodes);
-
-            
-                int[] i0 = new int[Rin.Dimension];
-                int[] iE = new int[i0.Length];
-                for(int k = 2; k < i0.Length; k++) {
-                    iE[k] = Rin.GetLength(k) - 1;
-                }
-                iE[1] = NS.NoOfNodes - 1;
-
-                int[,] E2C = this.GridData.iLogicalEdges.CellIndices;
-                int[,] TrIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
-
-                for(int e = 0; e < Len; e++) {
-                    int iEdge = e + e0;
-                    int jCell1, edge1;
-                    jCell1 = E2C[iEdge, 0];
-                    edge1 = TrIdx[iEdge, 0];
-
-                    i0[0] = e;
-                    iE[0] = e;
-
-                    this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                    Debug.Assert((Rin == null) || (Rin.GetLength(0) == Len));
+                    Debug.Assert((Rin == null) || (Rin.GetLength(1) == NS.NoOfNodes));
                 }
 
-                if(NS.Reference != 0)
-                    lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
-            }
+                bool RinReq = Rin == null;
 
-            return Rin;
+                lastEdge_e0 = e0;
+                lastEdge_Len = Len;
+                lastEdge_Degree = Degree;
+                lastEdge_NSref = NS.Reference;
+
+                if (RinReq) {
+                    Rin = m_alloc(e0, Len, Degree, NS);
+                    Debug.Assert(Rin.GetLength(0) == Len);
+                    Debug.Assert(Rin.GetLength(1) == NS.NoOfNodes);
+
+
+                    int[] i0 = new int[Rin.Dimension];
+                    int[] iE = new int[i0.Length];
+                    for (int k = 2; k < i0.Length; k++) {
+                        iE[k] = Rin.GetLength(k) - 1;
+                    }
+                    iE[1] = NS.NoOfNodes - 1;
+
+                    int[,] E2C = this.GridData.iLogicalEdges.CellIndices;
+                    int[,] TrIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
+
+                    for (int e = 0; e < Len; e++) {
+                        int iEdge = e + e0;
+                        int jCell1, edge1;
+                        jCell1 = E2C[iEdge, 0];
+                        edge1 = TrIdx[iEdge, 0];
+
+                        i0[0] = e;
+                        iE[0] = e;
+
+                        this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                    }
+
+                    if (NS.Reference != 0)
+                        lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
+                }
+
+                return Rin;
+            }
         }
-
 
         int lastEdge_e0 = -1;
         int lastEdge_Len = -1;
@@ -1310,17 +1311,19 @@ namespace BoSSS.Foundation.Caching {
                 return normals;
             }
 
-            if(e0 == last_e0 && Len == last_Len && NS.Reference == last_NSref) {
-                // lucky punch successful
-                Debug.Assert(last_Normals.GetLength(0) == Len);
-                Debug.Assert(last_Normals.GetLength(1) == NS.NoOfNodes);
-            } else {
-                EdgeEval(NS, e0, Len, out last_Normals, out last_metrics);
-                last_e0 = e0;
-                last_Len = Len;
-                last_NSref = NS.Reference;
+            lock (this) {
+                if (e0 == last_e0 && Len == last_Len && NS.Reference == last_NSref) {
+                    // lucky punch successful
+                    Debug.Assert(last_Normals.GetLength(0) == Len);
+                    Debug.Assert(last_Normals.GetLength(1) == NS.NoOfNodes);
+                } else {
+                    EdgeEval(NS, e0, Len, out last_Normals, out last_metrics);
+                    last_e0 = e0;
+                    last_Len = Len;
+                    last_NSref = NS.Reference;
+                }
+                return last_Normals;
             }
-            return last_Normals;
         }
 
         private void EdgeEval(NodeSet NS, int e0, int Len, out MultidimensionalArray Normals, out MultidimensionalArray Metrics) {
@@ -1410,17 +1413,19 @@ namespace BoSSS.Foundation.Caching {
                 return metrics;
             }
 
-            if(e0 == last_e0 && Len == last_Len && NS.Reference == last_NSref) {
-                // lucky punch successful
-                Debug.Assert(last_metrics.GetLength(0) == Len);
-                Debug.Assert(last_metrics.GetLength(1) == NS.NoOfNodes);
-            } else {
-                EdgeEval(NS, e0, Len, out last_Normals, out last_metrics);
-                last_e0 = e0;
-                last_Len = Len;
-                last_NSref = NS.Reference;
+            lock (this) {
+                if (e0 == last_e0 && Len == last_Len && NS.Reference == last_NSref) {
+                    // lucky punch successful
+                    Debug.Assert(last_metrics.GetLength(0) == Len);
+                    Debug.Assert(last_metrics.GetLength(1) == NS.NoOfNodes);
+                } else {
+                    EdgeEval(NS, e0, Len, out last_Normals, out last_metrics);
+                    last_e0 = e0;
+                    last_Len = Len;
+                    last_NSref = NS.Reference;
+                }
+                return last_metrics;
             }
-            return last_metrics;
         }
 
  
