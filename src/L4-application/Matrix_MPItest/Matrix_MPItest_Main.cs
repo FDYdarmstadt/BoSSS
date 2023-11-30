@@ -210,6 +210,8 @@ namespace BoSSS.Application.Matrix_MPItest {
             mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
+            // matrix non-zero-pattern seems to be very sensitive to the sequence of summation;
+            // hence, introduce a threshold to mitigate this.
             double threshold = this.OperatorMatrix.InfNorm()*1.0e-14;
             long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);

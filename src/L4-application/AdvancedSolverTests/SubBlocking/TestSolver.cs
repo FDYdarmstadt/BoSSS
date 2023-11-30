@@ -424,6 +424,8 @@ namespace AdvancedSolverTests {
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[1]);
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[0]);
 
+            // matrix non-zero-pattern seems to be very sensitive to the sequence of summation;
+            // hence, introduce a threshold to mitigate this.
             double threshold = this.OperatorMatrix.InfNorm()*1.0e-14;
             long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
