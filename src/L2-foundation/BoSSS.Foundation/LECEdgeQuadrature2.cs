@@ -1312,7 +1312,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 _OnCloneForThreadParallelization: this.OnCloneForThreadParallelization,
                 _AllocateBuffers: this.AllocateBuffers);
 
-            q.ExecuteParallel = true;
+            q.ExecuteParallel = false;
             q.Execute();
         }
 
