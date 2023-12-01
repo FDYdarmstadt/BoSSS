@@ -571,7 +571,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     for (int i = 0; i < ecq.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
 
-                        var comp = ecq.m_AllComponentsOfMyType[i];
+                        EE comp = ecq.m_AllComponentsOfMyType[i];
                         int NoOfArgs = ecq.NoOfArguments[i];
                         Debug.Assert(NoOfArgs == comp.ArgumentOrdering.Count);
                         int NoOfParams = ecq.NoOfParameters[i];
@@ -772,7 +772,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // =====================
                 #region FLUXEVAL
                 this.Flux_Eval.Start();
-                { 
+                lock(m_owner) { 
                     VolumFormParams vfp = default;
                     vfp.j0 = i0;
                     vfp.Len = Length;
