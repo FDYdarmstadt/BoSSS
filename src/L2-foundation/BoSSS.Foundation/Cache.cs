@@ -267,6 +267,8 @@ namespace BoSSS.Foundation.Caching {
                 };
 
                 while (CurrentSize + cb.MemSize > MaxMem) {
+                    if (Banks.Count == 0)
+                        break;
                     if (!RemoveAtTail())
                         break;
                 }
