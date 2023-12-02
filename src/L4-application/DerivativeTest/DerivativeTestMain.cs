@@ -200,6 +200,7 @@ namespace BoSSS.Application.DerivativeTest {
         static void Main(string[] args) {
 
             //BoSSS.Solution.Application.InitMPI(args);
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(10, 1, 1024);
             //ilPSP.Environment.NumThreads = 8;
             //for(int i = 0; i < 1000; i++)
             //    BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(6, 1, 1024);
