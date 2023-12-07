@@ -316,7 +316,7 @@ namespace BoSSS.Foundation.XDG {
             // execute algorithm
 
             var src = FindAgglomerationSources();
-            //FindAgglomerationTargets_Mk3(src.AgglomCellsList, src.AgglomCellsBitmask, src.AggCandidates);
+            //FindAgglomerationTargets_Mk3(src.AgglomCellsList, src.AgglomCellsBitmask, src.aggCandidates);
 
             FindAgglomerationTargets_Mk3(src.AgglomCellsList, src.AgglomCellsBitmask, src.AggCandidates, src.NewbornCellsList, src.VanishingCellsList);
         }
@@ -927,13 +927,13 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
+                    int[] AggTargets = AgglomerationPairs.Select(p => p.jCellTarget).Distinct().ToArray();
 
                     if (NoFailedCells > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
 
-
-                    if (PlotAgglomeration)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
+                        if (PlotAgglomeration)
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
 
                 }
 
@@ -1679,12 +1679,14 @@ namespace BoSSS.Foundation.XDG {
                         k++;
                     }
 
+                    int[] AggTargets = AgglomerationPairs.Select(p => p.jCellTarget).Distinct().ToArray();
+
                     if (NoFailedCells > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, ExceptionOnFailedAgglomeration, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
 
 
                     if (PlotAgglomeration)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
 
                 }
                 #endregion
@@ -1843,12 +1845,14 @@ namespace BoSSS.Foundation.XDG {
                         k++;
                     }
 
+                    int[] AggTargets = AgglomerationPairs.Select(p => p.jCellTarget).Distinct().ToArray();
+
                     if (NoFailedCells > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
 
 
                     if (PlotAgglomeration)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
 
                 }
                 #endregion
@@ -2274,7 +2278,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        private void PlotFail(MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, bool ExceptionOnFailedAgglomeration, List<int> failCells, BitArray AggCandidates, int[] pairIdentification, int[] pairColor, Vector[] aggDirection, double[] volFrac, string Tag = "") {
+        private void PlotFail(bool ExceptionOnFailedAgglomeration, MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, List<int> failCells, BitArray aggCandidates, int[] aggTargets, int[] pairIdentification, int[] pairColor, Vector[] aggDirection, double[] volFrac, string Tag = "") {
             // ++++++++++++++++++++++++++
             // Error handling / reporting
             // ++++++++++++++++++++++++++
@@ -2363,10 +2367,16 @@ namespace BoSSS.Foundation.XDG {
             Identity.Clear();
             Identity.AccConstant(1);
 
-            DGField AggTarget = new SinglePhaseField(b, "AggTarget");
-            AggTarget.Clear();
+            DGField AggCandidates = new SinglePhaseField(b, "aggCandidate");
+            AggCandidates.Clear();
             for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                if (AggCandidates[j]) AggTarget.SetMeanValue(j, 1);
+                if (aggCandidates[j]) AggCandidates.SetMeanValue(j, 1);
+            }
+
+            DGField AggTargets = new SinglePhaseField(b, "aggTarget");
+            AggTargets.Clear();
+            foreach (int jCell in aggTargets) {
+                if(jCell < grdDat.Cells.NoOfLocalUpdatedCells) AggTargets.SetMeanValue(jCell, 1);
             }
 
             DGField PairIdentification = new SinglePhaseField(b, "pairTargetNo");
@@ -2416,7 +2426,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             if (Katastrophenplot != null)
-                Katastrophenplot(CellVolumesViz.Cat(MPIRank,AgglomCellsViz, AggTarget, FailedViz, LevelSets, LvSetDist, CellNumbers, CellNumbersGlob, GlobalID, PairIdentification, PairColor, VolFrac),Tag);
+                Katastrophenplot(CellVolumesViz.Cat(MPIRank,AgglomCellsViz, AggCandidates, AggTargets, FailedViz, LevelSets, LvSetDist, CellNumbers, CellNumbersGlob, GlobalID, PairIdentification, PairColor, VolFrac),Tag);
 
 
             if (failCells.Count.MPISum() > 0) { 
