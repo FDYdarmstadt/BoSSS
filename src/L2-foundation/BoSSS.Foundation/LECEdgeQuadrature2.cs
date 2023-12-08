@@ -78,6 +78,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         class ThreadLocals {
             public ThreadLocals(int iThread, LECEdgeQuadrature2<M, V> owner, IQuadrature q) {
                 m_owner = owner;
+                m_iThread = iThread;
 
                 var op = m_owner.Operator;
                 m_Edgeform_UxV = EquationComponentArgMapping<IEdgeForm_UxV>.GetArgMapping(op, true,
@@ -121,6 +122,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 this.m_EdgeSourceV_Watches = this.m_EdgeSourceV.InitStopWatches(0, q);
                 this.m_EdgeSourceGradV_Watches = this.m_EdgeSourceGradV.InitStopWatches(0, q);
             }
+
+            int m_iThread;
 
             LECEdgeQuadrature2<M, V> m_owner;
 
@@ -508,7 +511,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     bLinearRequired = LinearRequired;
                     bAffineRequired = AffineRequired;
-                    lock (m_owner) {
+                    //lock (m_owner) {
+                    { 
                         if (bLinearRequired) {
                             EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches,
                                 (E, mda) => E.InternalEdge_UxV(ref efp, mda),
@@ -1059,9 +1063,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                 Debug.Assert(SumBuffer.GetLength(3) == (Source ? 1 : 2));
 
-                byte[] EdgeTags = m_owner.m_GridDat.iGeomEdges.EdgeTags;
+                //byte[] EdgeTags = m_owner.m_GridDat.iGeomEdges.EdgeTags;
 
-                for (int gamma = m_owner.GAMMA - 1; gamma >= 0; gamma--) {
+                for (int __gamma = m_owner.GAMMA - 1; __gamma >= 0; __gamma--) {
+                    int gamma = __gamma + this.m_iThread % m_owner.GAMMA; // run through loop differently in each thread to reduce locking
+
                     var ecq = Comps[gamma];
 
                     for (int delta = 0; delta < SumBuffer.GetLength(1); delta++) {
@@ -1075,9 +1081,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     Stopwatch[] watches_gamma = watches[gamma];
 
-                    for (int i = 0; i < ecq.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
+                    for (int _i = 0; _i < ecq.m_AllComponentsOfMyType.Length; _i++) {  // loop over equation components
+                        int i = _i + this.m_iThread % ecq.m_AllComponentsOfMyType.Length; // run through loop differently in each thread to reduce locking
 
-                        var comp = ecq.m_AllComponentsOfMyType[i];
+
+                        EE comp = ecq.m_AllComponentsOfMyType[i];
+                        var bLck = ecq.m_ComponentRequiresLock[i];
                         int NoOfArgs = ecq.NoOfArguments[i];
                         var CompBuf_gamma_i = CompBuffer[gamma][i];
                         CompBuf_gamma_i.Clear();
@@ -1116,7 +1125,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                 // inner edge
                                 //comp.InternalEdge(ref efp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
                                 watches_gamma[i].Start();
-                                InnerEdgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
+                                if(bLck) {
+                                    lock (comp) {
+                                        InnerEdgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
+                                    }
+                                } else {
+                                    InnerEdgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
+                                }
                                 watches_gamma[i].Stop();
                             } else {
                                 // boundary edge
@@ -1133,7 +1148,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                                 //comp.BoundaryEdge(ref efp, null, CompBuf_gamma_i.ExtractSubArrayShallow(I0,IE));
                                 watches_gamma[i].Start();
-                                BoundarydgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
+                                if (bLck) {
+                                    lock (comp) {
+                                        BoundarydgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
+                                    }
+                                } else {
+                                    BoundarydgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
+                                }
                                 watches_gamma[i].Stop();
 
                                 if (!Source) {

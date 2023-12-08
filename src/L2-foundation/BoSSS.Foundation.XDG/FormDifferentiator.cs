@@ -13,7 +13,7 @@ namespace BoSSS.Foundation.XDG {
     /// Base-Functionality for utilities for computation of Spatial Operator Jacobians, (<see cref="DifferentialOperator.GetJacobiOperator"/>,
     /// i.e. approximate differentiation of equation components.
     /// </summary>
-    abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking, IEquationComponentCoefficient, IParameterHandling, ISpeciesFilter, IEquationComponentSpeciesNotification, ILevelSetEquationComponentCoefficient {
+    abstract public class FormDifferentiatorCommon : IEquationComponent, IEquationComponentChecking, IEquationComponentCoefficient, IParameterHandling, ISpeciesFilter, IEquationComponentSpeciesNotification, ILevelSetEquationComponentCoefficient, IMultitreadSafety {
 
 
         /// <summary>
@@ -241,10 +241,57 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+
         public override string ToString() {
             return "XDG-" + this.GetType().Name + ": " + m_OrgForm.ToString() + "(" + m_OrgForm.GetType().FullName + ")";
         }
+        bool m_IsMultithreadSafe;
 
+        public bool IsMultithreadSafe {
+            get {
+                SetupMultithread();
+                return m_IsMultithreadSafe;
+            }
+        }
+
+        bool m_SetupMultithread_executed = false;
+
+        void SetupMultithread() {
+            if (m_SetupMultithread_executed == true)
+                return;
+            m_SetupMultithread_executed = true;
+
+            if (this.m_OrgForm is IMultitreadSafety ms) {
+                if (ms.IsMultithreadSafe) {
+                    // nothing to do
+                    m_IsMultithreadSafe = true;
+                } else {
+                    var clone = ms.CloneForThread();
+                    if (clone != null) {
+                        this.m_OrgForm = clone;
+                        OnFormUpdated(clone);
+                        m_IsMultithreadSafe = true;
+                    } else {
+                        m_IsMultithreadSafe = false;
+                    }
+                }
+
+                m_SetupMultithread_executed = true;
+            } else {
+                // per default we just assume nothing goes wrong.
+                m_IsMultithreadSafe = true;
+            }
+        }
+
+        protected abstract void OnFormUpdated(IEquationComponent orgForm);
+
+        public IEquationComponent CloneForThread() {
+            SetupMultithread();
+            if (this.m_IsMultithreadSafe == true)
+                return this; // it's not necessary to clone the differentiator, since 
+            else
+                return null;
+        }
     }
 
 
@@ -255,6 +302,11 @@ namespace BoSSS.Foundation.XDG {
     public class VolumeFormDifferentiator : FormDifferentiatorCommon, IVolumeForm {
 
         IVolumeForm m_VolForm;
+
+        protected override void OnFormUpdated(IEquationComponent orgForm) {
+            m_VolForm = (IVolumeForm)orgForm;
+        }
+
 
         /// <summary>
         /// %
@@ -410,7 +462,12 @@ namespace BoSSS.Foundation.XDG {
     public class EdgeFormDifferentiator : FormDifferentiatorCommon, IEdgeForm {
 
         IEdgeForm m_EdgForm;
-        
+
+        protected override void OnFormUpdated(IEquationComponent orgForm) {
+            m_EdgForm = (IEdgeForm)orgForm;
+        }
+
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -648,6 +705,10 @@ namespace BoSSS.Foundation.XDG {
     public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         ILevelSetForm m_EdgForm;
+
+        protected override void OnFormUpdated(IEquationComponent orgForm) {
+            m_EdgForm = (ILevelSetForm)orgForm;
+        }
 
         /// <summary>
         /// ctor

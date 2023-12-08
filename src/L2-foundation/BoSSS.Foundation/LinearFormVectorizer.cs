@@ -28,7 +28,7 @@ using BoSSS.Platform.LinAlg;
 namespace BoSSS.Foundation.Quadrature.Linear {
 
 
-    class LinearVolumeFormVectorizer : IVolumeForm_GradUxGradV, IVolumeForm_UxV, IVolumeForm_UxGradV, IVolumeForm_GradUxV, IVolumeSource_V, IVolumeSource_GradV {
+    class LinearVolumeFormVectorizer : IVolumeForm_GradUxGradV, IVolumeForm_UxV, IVolumeForm_UxGradV, IVolumeForm_GradUxV, IVolumeSource_V, IVolumeSource_GradV, IMultitreadSafety {
 
         public TermActivationFlags VolTerms {
             get;
@@ -366,10 +366,55 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 }
             }
         }
+
+        bool m_IsMultithreadSafe;
+
+        public bool IsMultithreadSafe {
+            get {
+                SetupMultithread();
+                return m_IsMultithreadSafe;
+            }
+        }
+
+        bool m_SetupMultithread_executed = false;
+
+        void SetupMultithread() {
+            if (m_SetupMultithread_executed == true)
+                return;
+            m_SetupMultithread_executed = true;
+
+            if (this.volForm is IMultitreadSafety ms) {
+                if (ms.IsMultithreadSafe) {
+                    // nothing to do
+                    m_IsMultithreadSafe = true;
+                } else {
+                    var clone = (IVolumeForm)ms.CloneForThread();
+                    if (clone != null) {
+                        this.volForm = clone;
+                        m_IsMultithreadSafe = true;
+                    } else {
+                        m_IsMultithreadSafe = false;
+                    }
+                }
+
+                m_SetupMultithread_executed = true;
+            } else {
+                // per default we just assume nothing goes wrong.
+                m_IsMultithreadSafe = true;
+            }
+        }
+
+        public IEquationComponent CloneForThread() {
+            SetupMultithread();
+            if (this.m_IsMultithreadSafe == true)
+                return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
+            else
+                return null;
+        }
     }
 
 
-    class LinearEdgeFormVectorizer : IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeForm_UxV, IEdgeform_GradUxGradV {
+    class LinearEdgeFormVectorizer : IEdgeform_GradUxV, IEdgeform_UxGradV, IEdgeSource_V, IEdgeSource_GradV, IEdgeForm_UxV, IEdgeform_GradUxGradV, IMultitreadSafety {
 
 
         /// <summary>
@@ -421,6 +466,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
         }
 
+       
 
         // "global" variables
         double[] uA;
@@ -1040,6 +1086,54 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             return this.edgeForm.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
         }
 
+        bool m_IsMultithreadSafe;
+
+        public bool IsMultithreadSafe {
+            get {
+                SetupMultithread();
+                return m_IsMultithreadSafe;
+            }
+        }
+
+        bool m_SetupMultithread_executed = false;
+
+        void SetupMultithread() {
+            if (m_SetupMultithread_executed == true)
+                return;
+            m_SetupMultithread_executed = true;
+
+            if (this.edgeForm is IMultitreadSafety ms) {
+                if (ms.IsMultithreadSafe) {
+                    // nothing to do
+                    m_IsMultithreadSafe = true;
+                } else {
+                    var clone = (IEdgeForm)ms.CloneForThread();
+                    if (clone != null) {
+                        this.edgeForm = clone;
+                        m_IsMultithreadSafe = true;
+                    } else {
+                        m_IsMultithreadSafe = false;
+                    }
+                }
+
+                m_SetupMultithread_executed = true;
+            } else {
+                // per default we just assume nothing goes wrong.
+                m_IsMultithreadSafe = true;
+            }
+
+
+
+        }
+
+
+        public IEquationComponent CloneForThread() {
+            SetupMultithread();
+            if (this.m_IsMultithreadSafe == true)
+                return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
+            else
+                return null; 
+        }
     }
 
 }
