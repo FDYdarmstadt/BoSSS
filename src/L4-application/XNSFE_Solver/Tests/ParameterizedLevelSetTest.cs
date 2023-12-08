@@ -41,7 +41,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public double xSemiAxis0 => (2 * DomainLength / (3.0).Sqrt());
 
-        public double ySemiAxis0 => (2 * DomainLength / (3.0).Sqrt() );
+        public double ySemiAxis0 => (2 * DomainLength / (3.0).Sqrt() / 4);
             
         public double yCenter0 => 3e-04;
 
@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         public double k_yc0 => 0.0;
 
         public Func<double[], double, double> GetPhi() {
-            return (X, t) => X[1] - (k_yc0 * t + yCenter0) + (k_y0 * t + ySemiAxis0) * (1 - (X[0] / (k_x0 * t + xSemiAxis0)).Pow2()).Sqrt() + 0.1;
+            return (X, t) => X[1] - (k_yc0 * t + yCenter0) + (k_y0 * t + ySemiAxis0) * (1 - (X[0] / (k_x0 * t + xSemiAxis0)).Pow2()).Sqrt();
         }
 
         public GridCommons CreateGrid(int Resolution) {
