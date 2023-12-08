@@ -224,6 +224,33 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
 
             m_AllComponentsOfMyType = AllComponentsofMyType.ToArray();
 
+            // ============================================
+            // check for multi-thread safety, create clones
+            // ============================================
+
+            m_ComponentRequiresLock = new bool[m_AllComponentsOfMyType.Length];
+            for(int iComp = 0; iComp < m_AllComponentsOfMyType.Length; ++iComp) {
+                var w = m_AllComponentsOfMyType[iComp];
+                if(w is IMultitreadSafety ms) {
+                    if (ms.IsMultithreadSafe) {
+                        m_ComponentRequiresLock[iComp] = false;
+                    } else {
+                        T clone = (T) ms.CloneForThread();
+                        if(clone == null) {
+                            // not thread-safe, no clone possible => locking required
+                            m_ComponentRequiresLock[iComp] = true;
+                        } else {
+                            // not thread-safe, but we can obtain some save clone => no locking
+                            m_ComponentRequiresLock[iComp] = false;
+                            m_AllComponentsOfMyType[iComp] = clone;
+                        }
+                    }
+                } else {
+                    m_ComponentRequiresLock[iComp] = false; 
+                }
+            }
+
+
             // ======================
             // build argument mapping
             // ======================
@@ -269,6 +296,13 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// 
         /// </summary>
         public T[] m_AllComponentsOfMyType;
+
+        /// <summary>
+        /// whether the component is thread-save (true) or requires a `lock`-clause (false)
+        /// - index: correlates with <see cref="m_AllComponentsOfMyType"/>
+        /// </summary>
+        public bool[] m_ComponentRequiresLock;
+
 
         /// <summary>
         /// 

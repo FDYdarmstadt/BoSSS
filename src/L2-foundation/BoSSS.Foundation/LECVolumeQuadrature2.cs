@@ -559,7 +559,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     where EE : IEquationComponent //
             {
                 int DELTA = affine ? 1 : m_owner.DELTA;
-                for (int gamma = m_owner.GAMMA - 1; gamma >= 0; gamma--) {
+                for (int __gamma = m_owner.GAMMA - 1; __gamma >= 0; __gamma--) {
+                    int gamma = __gamma + this.m_iThread % m_owner.GAMMA; // run through loop differently in each thread to reduce locking
                     var ecq = Comps[gamma];
 
                     for (int delta = 0; delta < DELTA; delta++) {
@@ -569,9 +570,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     Stopwatch[] watches_gamma = watches[gamma];
 
-                    for (int i = 0; i < ecq.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
+                    for (int _i = 0; _i < ecq.m_AllComponentsOfMyType.Length; _i++) {  // loop over equation components
+                        int i = _i + this.m_iThread % ecq.m_AllComponentsOfMyType.Length; // run through loop differently in each thread to reduce locking
 
                         EE comp = ecq.m_AllComponentsOfMyType[i];
+                        var bLck = ecq.m_ComponentRequiresLock[i];
                         int NoOfArgs = ecq.NoOfArguments[i];
                         Debug.Assert(NoOfArgs == comp.ArgumentOrdering.Count);
                         int NoOfParams = ecq.NoOfParameters[i];
@@ -588,19 +591,31 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         // evaluate component
                         if (affine) {
                             watches_gamma[i].Start();
-                            evalForm(comp, SumBuffer[gamma, 0]);
+                            if (bLck) {
+                                lock (comp) {
+                                    evalForm(comp, SumBuffer[gamma, 0]);
+                                }
+                            } else {
+                                evalForm(comp, SumBuffer[gamma, 0]);
+                            }
                             watches_gamma[i].Stop();
                         } else {
                             var CompBuffer_gamma_i = CompBuffer[gamma][i];
                             CompBuffer_gamma_i.Clear();
                             watches_gamma[i].Start();
-                            evalForm(comp, CompBuffer_gamma_i);
+                            if (bLck) {
+                                lock (comp) {
+                                    evalForm(comp, CompBuffer_gamma_i);
+                                }
+                            } else {
+                                evalForm(comp, CompBuffer_gamma_i);
+                            }
                             watches_gamma[i].Stop();
                         }
 
                         // sum up
                         if (affine) {
-
+                            // result is already accumulated in `SumBuffer`
 
                         } else {
                             var CompBuffer_gamma_i = CompBuffer[gamma][i];
@@ -772,7 +787,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // =====================
                 #region FLUXEVAL
                 this.Flux_Eval.Start();
-                lock(m_owner) { 
+                //lock(m_owner) { 
+                { 
                     VolumFormParams vfp = default;
                     vfp.j0 = i0;
                     vfp.Len = Length;
