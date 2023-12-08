@@ -41,6 +41,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public void Project() {
             this.ProjectField(1.0, Ellipsis);
         }
+
     }
 
     /// <summary>
@@ -101,6 +102,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
 
+                levelSet.DGLevelSet.Clear();
+                levelSet.CGLevelSet.Clear();
+
                 ParameterizedLevelSet ls = (ParameterizedLevelSet)levelSet.DGLevelSet;
                 if (!object.ReferenceEquals(ls, m_ls)) {
                     throw new ApplicationException("level-set mismatch");
@@ -115,11 +119,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter, levelSet.CGLevelSet.GridDat, quadScheme, m_HMForder);
 
-
                 ls.xSemiAxis = Param1[0];
                 ls.ySemiAxis = Param1[1];
                 ls.yCenter = Param1[2];
                 ((ParameterizedLevelSet)levelSet.DGLevelSet).Project();
+
             }
         }
 

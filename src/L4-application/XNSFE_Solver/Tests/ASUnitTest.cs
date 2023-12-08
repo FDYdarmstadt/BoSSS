@@ -127,8 +127,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.DbPath = db.Path;
 
             C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
-            C.NoOfTimesteps = 10;
+            C.SuperSampling = 3;
+            C.NoOfTimesteps = 50;
 
             C.TracingNamespaces = "*";
 
@@ -277,10 +277,10 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             var Tst = new TransientEvaporationTest(rawangle * Math.PI / 180.0);
             
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 8, nonlinsolver: nonlinsolver, lsHandling: levelSetHandling);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 16, nonlinsolver: nonlinsolver, lsHandling: levelSetHandling);
             C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
-            C.NoOfTimesteps = 15;
+            C.SuperSampling = 3;
+            C.NoOfTimesteps = 50;
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
