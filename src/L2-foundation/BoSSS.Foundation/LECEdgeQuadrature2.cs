@@ -1066,7 +1066,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 //byte[] EdgeTags = m_owner.m_GridDat.iGeomEdges.EdgeTags;
 
                 for (int __gamma = m_owner.GAMMA - 1; __gamma >= 0; __gamma--) {
-                    int gamma = __gamma + this.m_iThread % m_owner.GAMMA; // run through loop differently in each thread to reduce locking
+                    int gamma = (__gamma + this.m_iThread) % m_owner.GAMMA; // run through loop differently in each thread to reduce locking
 
                     var ecq = Comps[gamma];
 
@@ -1082,7 +1082,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     Stopwatch[] watches_gamma = watches[gamma];
 
                     for (int _i = 0; _i < ecq.m_AllComponentsOfMyType.Length; _i++) {  // loop over equation components
-                        int i = _i + this.m_iThread % ecq.m_AllComponentsOfMyType.Length; // run through loop differently in each thread to reduce locking
+                        int i = (_i + this.m_iThread) % ecq.m_AllComponentsOfMyType.Length; // run through loop differently in each thread to reduce locking
 
 
                         EE comp = ecq.m_AllComponentsOfMyType[i];
