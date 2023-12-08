@@ -524,7 +524,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #if DEBUG
                     for(int n_row = 0; n_row < NRow; n_row++) { // row loop...
                         for(int n_col = 0; n_col < NCol; n_col++) { // column loop...
-                            Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row ? 1.0 : 0.0)));
+                            Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row && eCol == eRow ? 1.0 : 0.0)));
                         }
                     }
 #endif
