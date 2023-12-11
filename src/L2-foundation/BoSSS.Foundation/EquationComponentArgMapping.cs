@@ -228,25 +228,28 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
             // check for multi-thread safety, create clones
             // ============================================
 
-            m_ComponentRequiresLock = new bool[m_AllComponentsOfMyType.Length];
+            m_LockObjects = new object[m_AllComponentsOfMyType.Length];
             for(int iComp = 0; iComp < m_AllComponentsOfMyType.Length; ++iComp) {
                 var w = m_AllComponentsOfMyType[iComp];
                 if(w is IMultitreadSafety ms) {
                     if (ms.IsMultithreadSafe) {
-                        m_ComponentRequiresLock[iComp] = false;
+                        m_LockObjects[iComp] = null;
                     } else {
                         T clone = (T) ms.CloneForThread();
                         if(clone == null) {
                             // not thread-safe, no clone possible => locking required
-                            m_ComponentRequiresLock[iComp] = true;
+                            m_LockObjects[iComp] = ms.GetPadlock();
+                            if(m_LockObjects[iComp] == null) {
+                                throw new NotSupportedException($"Equation component {w}: requires synchronization, but does not provide a padlock object.");
+                            }
                         } else {
                             // not thread-safe, but we can obtain some save clone => no locking
-                            m_ComponentRequiresLock[iComp] = false;
+                            m_LockObjects[iComp] = null;
                             m_AllComponentsOfMyType[iComp] = clone;
                         }
                     }
                 } else {
-                    m_ComponentRequiresLock[iComp] = false; 
+                    m_LockObjects[iComp] = null; 
                 }
             }
 
@@ -298,10 +301,10 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         public T[] m_AllComponentsOfMyType;
 
         /// <summary>
-        /// whether the component is thread-save (true) or requires a `lock`-clause (false)
+        /// if non-null, a a lock-object for synchronization of flux evaluation
         /// - index: correlates with <see cref="m_AllComponentsOfMyType"/>
         /// </summary>
-        public bool[] m_ComponentRequiresLock;
+        public object[] m_LockObjects;
 
 
         /// <summary>

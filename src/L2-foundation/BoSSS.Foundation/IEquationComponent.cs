@@ -72,6 +72,16 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <returns></returns>
         IEquationComponent CloneForThread();
+
+
+        /// <summary>
+        /// In the case of an equation component which requires thread synchronization, i.e.
+        /// - <see cref="IsMultithreadSafe"/> is false and
+        /// - <see cref="CloneForThread"/> returns null
+        /// this method must return some object which can be used for an exclusive lock to perform the synchronization;
+        /// Typically, this can be the equation component object itself, i.e., the method might return the `this` reference.
+        /// </summary>
+        object GetPadlock();
     }
 
 

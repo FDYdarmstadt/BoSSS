@@ -268,8 +268,6 @@ namespace BoSSS.Foundation.XDG {
                 } else {
                     var clone = ms.CloneForThread();
                     if (clone != null) {
-                        this.m_OrgForm = clone;
-                        OnFormUpdated(clone);
                         m_IsMultithreadSafe = true;
                     } else {
                         m_IsMultithreadSafe = false;
@@ -283,14 +281,22 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        protected abstract void OnFormUpdated(IEquationComponent orgForm);
+        protected abstract FormDifferentiatorCommon Clone();
 
         public IEquationComponent CloneForThread() {
             SetupMultithread();
-            if (this.m_IsMultithreadSafe == true)
-                return this; // it's not necessary to clone the differentiator, since 
+            if((m_OrgForm as IMultitreadSafety)?.CloneForThread() != null) 
+                return Clone();
             else
                 return null;
+        }
+
+        public object GetPadlock() {
+            SetupMultithread();
+            if (this.m_OrgForm is IMultitreadSafety ms)
+                return ms.GetPadlock();
+            else
+                return this.m_OrgForm;
         }
     }
 
@@ -303,8 +309,12 @@ namespace BoSSS.Foundation.XDG {
 
         IVolumeForm m_VolForm;
 
-        protected override void OnFormUpdated(IEquationComponent orgForm) {
-            m_VolForm = (IVolumeForm)orgForm;
+        protected override FormDifferentiatorCommon Clone() {
+            var VolFormClone = (m_VolForm as IMultitreadSafety)?.CloneForThread() as IVolumeForm;
+            if (VolFormClone != null)
+                return new VolumeFormDifferentiator(VolFormClone, m_SpatialDimension);
+            else
+                return null;
         }
 
 
@@ -463,9 +473,14 @@ namespace BoSSS.Foundation.XDG {
 
         IEdgeForm m_EdgForm;
 
-        protected override void OnFormUpdated(IEquationComponent orgForm) {
-            m_EdgForm = (IEdgeForm)orgForm;
+        protected override FormDifferentiatorCommon Clone() {
+            var EdgFormClone = (m_EdgForm as IMultitreadSafety)?.CloneForThread() as IEdgeForm;
+            if (EdgFormClone != null)
+                return new EdgeFormDifferentiator(EdgFormClone, m_SpatialDimension);
+            else
+                return null;
         }
+
 
 
         /// <summary>
@@ -704,10 +719,14 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        ILevelSetForm m_EdgForm;
+        ILevelSetForm m_LvsetForm;
 
-        protected override void OnFormUpdated(IEquationComponent orgForm) {
-            m_EdgForm = (ILevelSetForm)orgForm;
+        protected override FormDifferentiatorCommon Clone() {
+            var LvsetFormClone = (m_LvsetForm as IMultitreadSafety)?.CloneForThread() as ILevelSetForm;
+            if (LvsetFormClone != null)
+                return new LevelSetFormDifferentiator(LvsetFormClone, m_SpatialDimension);
+            else
+                return null;
         }
 
         /// <summary>
@@ -716,7 +735,7 @@ namespace BoSSS.Foundation.XDG {
         public LevelSetFormDifferentiator(ILevelSetForm ef, int SpatialDimension) :
             base(ef, ef.LevelSetTerms, SpatialDimension) //
         {
-            m_EdgForm = ef;
+            m_LvsetForm = ef;
         }
 
         /// <summary>
@@ -733,7 +752,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public int LevelSetIndex {
             get {
-                return m_EdgForm.LevelSetIndex;
+                return m_LvsetForm.LevelSetIndex;
             }
         }
         /// <summary>
@@ -741,7 +760,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public string PositiveSpecies {
             get {
-                return m_EdgForm.PositiveSpecies;
+                return m_LvsetForm.PositiveSpecies;
             }
         }
         /// <summary>
@@ -749,7 +768,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public string NegativeSpecies {
             get {
-                return m_EdgForm.NegativeSpecies;
+                return m_LvsetForm.NegativeSpecies;
             }
         }
 
@@ -760,7 +779,7 @@ namespace BoSSS.Foundation.XDG {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] U_IN, double[] U_OT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double ret = 0.0;
-            int GAMMA = m_EdgForm.ArgumentOrdering.Count;
+            int GAMMA = m_LvsetForm.ArgumentOrdering.Count;
             int D = inp.D;
             Debug.Assert(D == m_SpatialDimension, "spatial dimension mismatch");
 
@@ -776,12 +795,12 @@ namespace BoSSS.Foundation.XDG {
 
             //SetDir = 0;
 
-            double f0 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            double f0 = m_LvsetForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
 
             ret += f0; // affine contribution - contains V and GradV contribution
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
-                if (((m_EdgForm.LevelSetTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
+                if (((m_LvsetForm.LevelSetTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
                     //if (U_IN[iVar] != 0.0) {
                     {
                         //if (U_IN[iVar] != 0.0 && (_vIN != 0 || _vOUT != 0))
@@ -807,7 +826,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                if (((m_EdgForm.LevelSetTerms & (TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV)) != 0)) {
+                if (((m_LvsetForm.LevelSetTerms & (TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV)) != 0)) {
                     for (int d = 0; d < D; d++) {
                         //if (U_IN[iVar] != 0.0) {
                         {
@@ -835,7 +854,7 @@ namespace BoSSS.Foundation.XDG {
         /// passes the coefficients to original form
         /// </summary>
         override public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
-            if (m_EdgForm is ILevelSetEquationComponentCoefficient eqc) {
+            if (m_LvsetForm is ILevelSetEquationComponentCoefficient eqc) {
                 eqc.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
             }
             base.CoefficientUpdate(csA,csB, DomainDGdeg, TestDGdeg);
@@ -854,7 +873,7 @@ namespace BoSSS.Foundation.XDG {
             PertubVar += delta;
 
             // flux eval
-            double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            double f1 = m_LvsetForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
 #if DEBUG
             if (double.IsInfinity(f1))
                 throw new ArithmeticException();
@@ -865,9 +884,9 @@ namespace BoSSS.Foundation.XDG {
             // compute finite difference
             double dU_iVar = (f1 - f0) / delta;
             if (double.IsInfinity(dU_iVar))
-                throw new ArithmeticException("Got INF while differentiation of inner edge part of " + m_EdgForm.GetType().Name);
+                throw new ArithmeticException("Got INF while differentiation of inner edge part of " + m_LvsetForm.GetType().Name);
             if (double.IsNaN(dU_iVar))
-                throw new ArithmeticException("Got NAN while differentiation of inner edge part of " + m_EdgForm.GetType().Name);
+                throw new ArithmeticException("Got NAN while differentiation of inner edge part of " + m_LvsetForm.GetType().Name);
 
             // restore un-perturbed state
             PertubVar = bkup;
