@@ -18,7 +18,8 @@ namespace BoSSS.Application.XNSE_Solver {
         Sphere = 1,
         Cube = 2,
         Torus = 3,
-        CollidingSpheres = 4 //a temporary test case (highly experimental) TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
+        CollidingSpheres = 4, //a temporary test case (highly experimental) TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
+        Popcorn = 5
     }
 
     [DataContract]
@@ -409,6 +410,73 @@ namespace BoSSS.Application.XNSE_Solver {
             };
             SetPhi(PhiFunc);
         }
+
+        private void DefinePopcorn() {
+            var pos = m_pos;
+            var anglevelocity = m_angleVelocity;
+            var SpaceDim = m_SpaceDim;
+            var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
+            var ringRad = m_ringRadius;
+            var tiltVector = m_tiltVector;
+            var tiltDegree = m_tiltDegree;
+            var RotationAxis = m_RotationAxis;
+
+            m_ctrl.Tags.Add("Popcorn");
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                Vector TiltVector = new Vector(tiltVector);
+
+                double angle = -(anglevelocity * t) % (2 * Math.PI);
+                double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1 + rateOfRadius * t) * particleRad, 0.0);
+
+                Vector rotAxis;
+
+                switch (RotationAxis) {
+                    case "x":
+                        rotAxis = new Vector(1, 0, 0);
+                        break;
+                    case "y":
+                        rotAxis = new Vector(0, 1, 0);
+                        break;
+                    case "z":
+                        rotAxis = new Vector(0, 0, 1);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+
+                AffineTrafo affineTrafoTilt;
+                if (tiltDegree == 0.0) {
+                    affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
+                } else {
+                    affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, tiltDegree);
+                }
+
+                var affineTrafoRot = AffineTrafo.Rotation3D(rotAxis, angle);
+                var affineTrafoFinal = affineTrafoRot * affineTrafoTilt;
+
+                double[] X = new double[] { 0, 0, 0 };
+
+                // Update intermediate variable X w.r.t. input x 
+                for (int d = 0; d < x.Length; d++)
+                    X[d] = x[d];
+
+                X = affineTrafoFinal.Transform(X);
+
+                var PopcornObject = new BoSSS.Solution.LevelSetTools.TestCases.Popcorn(dynamicRadius, ringRad);
+                switch (SpaceDim) {
+                    case 3:
+                        return -PopcornObject.SignedDistance(X);
+                    //return Math.Pow(particleRad - Math.Sqrt(X[0].Pow2() + X[1].Pow2()), 2) + X[2] * X[2] - ringRad.Pow2();
+                    default:
+                        throw new NotImplementedException();
+                }
+            };
+            SetPhi(PhiFunc);
+        }
+
 
         private void SetVelocityAtIB() {
             var pos = m_pos;
