@@ -36,8 +36,8 @@ namespace ilPSP {
         /// For large parallel runs and if you are only interested to watch for specific methods.
         /// Will be fired at DEBUG and RELEASE alike.
         /// </summary>
-        public static void WatchAtRelease() {
-            Watch(csMPI.Raw._COMM.WORLD);
+        public static void WatchAtRelease(MPI_Comm comm, double WaitTimeSeconds = 10, bool quitAppIfExpired = false) {
+            WatchInternal(comm, WaitTimeSeconds, quitAppIfExpired);
         }
 
 
@@ -62,7 +62,11 @@ namespace ilPSP {
         /// <param name="comm"></param>
         [Conditional("DEBUG")]
         [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void Watch(MPI_Comm comm) {
+        public static void Watch(MPI_Comm comm, double WaitTimeSeconds = 10, bool quitAppIfExpired = false) {
+            WatchInternal(comm, WaitTimeSeconds, quitAppIfExpired);
+        }
+
+        private static void WatchInternal(MPI_Comm comm, double WaitTimeSeconds, bool quitAppIfExpired) {
             if (!Tracing.Tracer.InstrumentationSwitch)
                 // if tracing is off for performance reasons,
                 // also this method should be turned of.
@@ -89,22 +93,24 @@ namespace ilPSP {
             Thread wDog = (new Thread(delegate() {
                 Stopwatch stw = new Stopwatch();
                 stw.Start();
-                double WaitTime = 10.0;
+
 
                 while (true) {
                     if (Fire == 0) {
                         Fired = 0;
-                        if (stw.Elapsed.TotalSeconds > WaitTime)
+                        if (stw.Elapsed.TotalSeconds > WaitTimeSeconds)
                             Console.WriteLine("Returning from out-of-sync after " + stw.Elapsed.TotalSeconds + " seconds.");
                         return;
-                    } else if (stw.Elapsed.TotalSeconds > WaitTime) {
-                        Console.Error.WriteLine("WARNING: MPI out of sync on rank " + rank + " for more than " + WaitTime + " seconds.");
+                    } else if (stw.Elapsed.TotalSeconds > WaitTimeSeconds) {
+                        Console.Error.WriteLine("WARNING: MPI out of sync on rank " + rank + " for more than " + WaitTimeSeconds + " seconds.");
                         Console.Error.WriteLine("Method '" + m_functionName + "' was called at " + entryTime +  " on process " + rank + " but not on all other processes.");
                         Console.Error.WriteLine("Call stack:");
                         Console.Error.WriteLine(st.ToString());
-                        //System.Environment.Exit(-666);
+
+                        if(quitAppIfExpired)
+                            System.Environment.Exit(-666);
                         // dbg_launch();
-                        WaitTime += 10.0;
+                        WaitTimeSeconds += 10.0;
                     }
                 }
             }));

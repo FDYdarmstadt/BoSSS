@@ -30,6 +30,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using ilPSP.Tracing;
+using System.Collections.ObjectModel;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -196,17 +197,17 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how session in the project correlate to jobs.
+        /// Defines, globally for the entire workflow management, how session in the project correlate to jobs.
         /// </summary>
         public Func<ISessionInfo, Job, bool> SessionInfoJobCorrelation;
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how session in the project correlate to control objects.
+        /// Defines, globally for the entire workflow management, how session in the project correlate to control objects.
         /// </summary>
         public Func<ISessionInfo, AppControl, bool> SessionInfoAppControlCorrelation;
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how jobs in the project correlate to control objects.
+        /// Defines, globally for the entire workflow management, how jobs in the project correlate to control objects.
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
@@ -256,6 +257,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (bkupDbs.Length <= 0) {
                     Console.Error.WriteLine("No Backups found; unable to run worksheet from backup database.");
+                    Console.WriteLine("Trying to create/open default database.");
+
+                    try {
+                        DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
+                    } catch (Exception e) {
+                        Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
+                    }
 
                 } else {
 
@@ -277,6 +285,48 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
         }
+
+        /// <summary>
+        /// Removes any pre-existing results regarding this project; use with extreme care!
+        /// </summary>
+        public void ResetProject(bool ResetJobs = true, bool deleteDeployments = false, bool deleteSessions = false, bool deleteGrids = false) {
+            if (deleteSessions) {
+                Console.WriteLine("Deleting Sessions in projects...");
+                foreach(var s in this.Sessions) {
+                    s.Delete(true);
+                }
+            } else {
+                Console.WriteLine("Not deleting any sessions, because not specified (`deleteSessions:false`).");
+            }
+
+            if (deleteGrids) {
+                Console.WriteLine("Deleting Grids in projects...");
+                foreach (var g in this.Grids) {
+                    g.Delete(true);
+                }
+            } else {
+                Console.WriteLine("Not deleting any grids, because not specified (`deleteGrids:false`).");
+            }
+
+            if (deleteDeployments) {
+                Console.WriteLine("Deleting Job deployments in projects...");
+                foreach (var j in this.AllJobs) {
+                    j.Value.DeleteOldDeploymentsAndSessions(deleteSessions);
+                }
+
+            } else {
+                Console.WriteLine("Not deleting any grids, because not specified (`deleteDeployments:false`).");
+            }
+
+            if (ResetJobs) {
+                Console.WriteLine("Forgetting all Jobs defined in this notebook so far...");
+                this.m_AllJobs.Clear();
+            } else {
+                Console.WriteLine("Job objects defined so far remain valid (`ResetJobs:true`). ");
+            }
+        }
+
+
 
         IDatabaseInfo m_DefaultDatabase;
 
@@ -305,59 +355,62 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IReadOnlyList<IDatabaseInfo> AllDatabases {
             get {
+                if (RunWorkflowFromBackup == false) {
+                    if (m_AllDatabases == null || ((DateTime.Now - m_AllDatabases_CacheTime) > UpdatePeriod)) {
 
-                if(m_AllDatabases == null || ((DateTime.Now - m_AllDatabases_CacheTime) > UpdatePeriod)) {
+                        var allDBs = new List<IDatabaseInfo>();
 
-                    var allDBs = new List<IDatabaseInfo>();
-
-                    foreach(var q in BoSSSshell.ExecutionQueues) {
-                        int cnt = 0;
-                        foreach(var dbPath in q.AllowedDatabasesPaths) {
-                            IDatabaseInfo dbi = null;
-                            string db_path = Path.Combine(dbPath.LocalMountPath, this.CurrentProject);
-                            if(cnt == 0) {
-                                try {
-                                    dbi = BoSSSshell.OpenOrCreateDatabase(db_path);
-                                } catch(Exception e) {
-                                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of database: {e.Message}.");
+                        foreach (var q in BoSSSshell.ExecutionQueues) {
+                            int cnt = 0;
+                            foreach (var dbPath in q.AllowedDatabasesPaths) {
+                                IDatabaseInfo dbi = null;
+                                string db_path = Path.Combine(dbPath.LocalMountPath, this.CurrentProject);
+                                if (cnt == 0) {
+                                    try {
+                                        dbi = BoSSSshell.OpenOrCreateDatabase(db_path);
+                                    } catch (Exception e) {
+                                        Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of database: {e.Message}.");
+                                    }
+                                } else {
+                                    try {
+                                        dbi = BoSSSshell.OpenDatabase(db_path);
+                                    } catch (Exception) {
+                                        dbi = null;
+                                    }
                                 }
+                                if (dbi != null)
+                                    allDBs.Add(dbi);
+                                cnt++;
+                            }
+                        }
+
+                        if (m_DefaultDatabase != null) {
+                            int DefaultDbMatch = -1;
+                            int cnt = 0;
+                            foreach (var dbi in allDBs) {
+                                if (Object.ReferenceEquals(m_DefaultDatabase, dbi) || dbi.PathMatch(m_DefaultDatabase.Path)) {
+                                    DefaultDbMatch = cnt;
+                                    break;
+                                }
+                                cnt++;
+                            }
+
+                            if (DefaultDbMatch >= 0) {
+                                allDBs.RemoveAt(DefaultDbMatch);
+                                allDBs.Insert(0, m_DefaultDatabase);
                             } else {
-                                try {
-                                    dbi = BoSSSshell.OpenDatabase(db_path);
-                                } catch(Exception) {
-                                    dbi = null;
-                                }
+                                allDBs.Insert(0, m_DefaultDatabase);
                             }
-                            if(dbi != null)
-                                allDBs.Add(dbi);
-                            cnt++;
                         }
+
+                        m_AllDatabases_CacheTime = DateTime.Now;
+                        m_AllDatabases = allDBs;
                     }
 
-                    if(m_DefaultDatabase != null) {
-                        int DefaultDbMatch = -1;
-                        int cnt = 0;
-                        foreach(var dbi in allDBs) {
-                            if(Object.ReferenceEquals(m_DefaultDatabase, dbi) || dbi.PathMatch(m_DefaultDatabase.Path)) {
-                                DefaultDbMatch = cnt;
-                                break;
-                            }
-                            cnt++;
-                        }
-
-                        if(DefaultDbMatch >= 0) {
-                            allDBs.RemoveAt(DefaultDbMatch);
-                            allDBs.Insert(0, m_DefaultDatabase);
-                        } else {
-                            allDBs.Insert(0, m_DefaultDatabase);
-                        }
-                    }
-
-                    m_AllDatabases_CacheTime = DateTime.Now;
-                    m_AllDatabases = allDBs;
+                    return m_AllDatabases.AsReadOnly();
+                } else {
+                    return (new List<IDatabaseInfo>(new[] { DefaultDatabase })).AsReadOnly();
                 }
-                
-                return m_AllDatabases.AsReadOnly();
             }
         }
 
@@ -655,16 +708,16 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-        Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
+        internal Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
 
         /// <summary>
         /// Lists all compute jobs which are currently known by the work flow management system.
         /// - key: job name
         /// - item 
         /// </summary>
-        public IDictionary<string, Job> AllJobs {
+        public ReadOnlyDictionary<string, Job> AllJobs {
             get {
-                return m_AllJobs;
+                return new ReadOnlyDictionary<string, Job>(m_AllJobs);
             }
         }
 

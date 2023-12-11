@@ -17,7 +17,8 @@ namespace BoSSS.Application.XNSE_Solver {
         None = 0,
         Sphere = 1,
         Cube = 2,
-        Torus = 3
+        Torus = 3,
+        CollidingSpheres = 4 //a temporary test case (highly experimental) TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
     }
 
     [DataContract]
@@ -27,9 +28,11 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         private double[] m_pos; //center of mass
         [DataMember]
-        private double m_anglevelocity = -1.0;
+        private double m_angleVelocity = -1.0;
         [DataMember]
         private double m_partRadius = -1.0;
+        [DataMember]
+        private double m_rateOfRadius = 0.0;
         [DataMember]
         private int m_SpaceDim = 0;
         [DataMember]
@@ -65,12 +68,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
-        public void SetParameters(double[] pos, double anglevelocity, double partRadius, int SpaceDim, double ringRadius = 0) {
+        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0, double rateOfRadius = 0.0) {
             m_pos = pos;
-            m_anglevelocity = anglevelocity;
-            m_partRadius = partRadius;
+            m_angleVelocity = angleVelocity;
+            m_partRadius = majorRadius;
             m_SpaceDim = SpaceDim;
-            m_ringRadius = ringRadius;
+            m_ringRadius = minorRadius;
+            m_rateOfRadius = rateOfRadius;
         }
 
         public void SpecifyShape(Shape shape) {
@@ -136,6 +140,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 case Shape.Torus:
                     DefineTorus();
                     break;
+                case Shape.CollidingSpheres:
+                    DefineCollidingSpheres();
+                    break;
                 default:
                     throw new NotSupportedException();
             }
@@ -144,9 +151,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void DefineSphere() {
             var pos = m_pos;
-            var anglevelocity = m_anglevelocity;
+            var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
             var RotationCenter = m_RotationCenter;
             var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("Sphere");
@@ -155,6 +163,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double[] RotationArm = new double[SpaceDim];
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
+                double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1 + rateOfRadius * t) * particleRad, 0.0);
                 Vector rotAxis;
                 switch (RotationAxis) {
                     case "x":
@@ -180,17 +189,57 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 double[] rotated_arm = affineTrafoFinal.Transform(RotationArm);
-                double[] rotated_pos = RotationCenter.Zip(rotated_arm, (RC,rA) => RC + rA).ToArray(); // sum: RotationCenter + affineTrafoFinal.Transform(RotationArm) 
+                double[] rotated_pos = RotationCenter.Zip(rotated_arm, (RC, rA) => RC + rA).ToArray(); // sum: RotationCenter + affineTrafoFinal.Transform(RotationArm) 
 
                 switch (SpaceDim) {
                     case 2:
-                    // circle
-                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) + particleRad * particleRad;
+                        // circle
+                        return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) + dynamicRadius * dynamicRadius;
 
                     case 3:
-                    // sphere
-                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) - (X[2] - pos[2]) * (X[2] - rotated_pos[2]) + particleRad * particleRad;
+                        // sphere
+                        return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) - (X[2] - pos[2]) * (X[2] - rotated_pos[2]) + dynamicRadius * dynamicRadius;
 
+                    default:
+                        throw new NotImplementedException();
+                }
+            };
+            SetPhi(PhiFunc);
+        }
+
+
+        private void DefineCollidingSpheres() {
+            //var pos = m_pos;
+            //var anglevelocity = m_angleVelocity;
+            var SpaceDim = m_SpaceDim;
+            var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
+            //var RotationCenter = m_RotationCenter;
+            //var RotationAxis = m_RotationAxis;
+            m_ctrl.Tags.Add("CollidingSphere");
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double[] posL = new double[SpaceDim];
+                posL[0] = - 1.5 * particleRad  + (rateOfRadius * t) * particleRad; // (initial pos + change)
+
+                double[] posR = new double[SpaceDim];
+                posR[0] = 1.5 * particleRad - (rateOfRadius * t) * particleRad;
+                double L, R;
+
+                switch (SpaceDim) {
+                    case 2:
+                        // circle
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) + particleRad * particleRad;
+                        R = -(X[0] - posR[0]) * (X[0] - posR[0]) - (X[1] - posR[1]) * (X[1] - posR[1]) + particleRad * particleRad;
+
+                        return Math.Max(L, R);
+                    case 3:
+                        // sphere
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) - (X[2] - posL[2]) * (X[2] - posL[2]) + particleRad * particleRad;
+                        R = -(X[0] - posR[0]) * (X[0] - posR[0]) - (X[1] - posR[1]) * (X[1] - posR[1]) - (X[2] - posR[2]) * (X[2] - posR[2]) + particleRad * particleRad;
+
+                        return Math.Max(L, R);
                     default:
                     throw new NotImplementedException();
                 }
@@ -200,60 +249,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void DefineCube() {
             var pos = m_pos;
-            var anglevelocity = m_anglevelocity;
+            var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
-            m_ctrl.Tags.Add("Cube");
-            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-                double angle = -(anglevelocity * t) % (2 * Math.PI);
-                switch (SpaceDim) {
-                    case 2:
-                    // Inf-Norm square
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                        + particleRad;
-
-                    case 3:
-                        switch (m_RotationAxis) {
-                        case "x":
-                        return -Math.Max(Math.Abs(X[0] - pos[0]),
-                                    Math.Max(Math.Abs((X[1] - pos[1]) * Math.Cos(angle) - (X[2] - pos[2]) * Math.Sin(angle)),
-                                    Math.Abs((X[1] - pos[1]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
-                                    + particleRad;
-                        case "y":
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) + (X[2] - pos[2]) * Math.Sin(angle)),
-                                    Math.Max(Math.Abs(X[1] - pos[1]),
-                                    Math.Abs(-(X[0] - pos[0]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
-                                    + particleRad;
-                        case "z":
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                    Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                    Math.Abs(X[2] - pos[2])))
-                                    + particleRad;
-                        default:
-                            throw new NotSupportedException();
-                        }
-                        
-                    default:
-                    throw new NotImplementedException();
-                }
-            };
-            SetPhi(PhiFunc);
-        }
-        bool here = true;
-
-        private void DefineTorus() {
-            var pos = m_pos;
-            var anglevelocity = m_anglevelocity;
-            var SpaceDim = m_SpaceDim;
-            var particleRad = m_partRadius;
-            var ringRad = m_ringRadius;
             var tiltVector = m_tiltVector;
             var tiltDegree = m_tiltDegree;
             var RotationAxis = m_RotationAxis;
 
-            m_ctrl.Tags.Add("Torus");
+            m_ctrl.Tags.Add("Cube");
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
@@ -287,16 +290,118 @@ namespace BoSSS.Application.XNSE_Solver {
                 double[] X = new double[] { 0, 0, 0 };
 
                 var affineTrafoRot = AffineTrafo.Rotation3D(rotAxis, angle);
-                var affineTrafoFinal = affineTrafoTilt * affineTrafoRot;
+                var affineTrafoFinal = affineTrafoRot * affineTrafoTilt;
 
                 X = affineTrafoFinal.Transform(x);
 
-                var TorusObject = new BoSSS.Solution.LevelSetTools.TestCases.Torus(particleRad, ringRad);
+                var CubeObject = new BoSSS.Solution.LevelSetTools.TestCases.Cube(particleRad);
                 switch (SpaceDim) {
                     case 2:
-                        return TorusObject.SignedDistance2D(X);
+                        return CubeObject.SignedDistance2D(X);
                     case 3:
-                        return TorusObject.SignedDistance(X);
+                        return CubeObject.SignedDistance(X);
+                    //return Math.Pow(particleRad - Math.Sqrt(X[0].Pow2() + X[1].Pow2()), 2) + X[2] * X[2] - ringRad.Pow2();
+                    default:
+                        throw new NotImplementedException();
+                }
+            };
+            //Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+            //    double angle = -(anglevelocity * t) % (2 * Math.PI);
+            //    switch (SpaceDim) {
+            //        case 2:
+            //        // Inf-Norm square
+            //        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+            //            Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+            //            + particleRad;
+
+            //        case 3:
+            //            switch (m_RotationAxis) {
+            //            case "x":
+            //            return -Math.Max(Math.Abs(X[0] - pos[0]),
+            //                        Math.Max(Math.Abs((X[1] - pos[1]) * Math.Cos(angle) - (X[2] - pos[2]) * Math.Sin(angle)),
+            //                        Math.Abs((X[1] - pos[1]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
+            //                        + particleRad;
+            //            case "y":
+            //            return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) + (X[2] - pos[2]) * Math.Sin(angle)),
+            //                        Math.Max(Math.Abs(X[1] - pos[1]),
+            //                        Math.Abs(-(X[0] - pos[0]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
+            //                        + particleRad;
+            //            case "z":
+            //            return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+            //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+            //                        Math.Abs(X[2] - pos[2])))
+            //                        + particleRad;
+            //            default:
+            //                throw new NotSupportedException();
+            //            }
+
+            //        default:
+            //        throw new NotImplementedException();
+            //    }
+            //};
+            SetPhi(PhiFunc);
+        }
+
+        private void DefineTorus() {
+            var pos = m_pos;
+            var anglevelocity = m_angleVelocity;
+            var SpaceDim = m_SpaceDim;
+            var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
+            var ringRad = m_ringRadius;
+            var tiltVector = m_tiltVector;
+            var tiltDegree = m_tiltDegree;
+            var RotationAxis = m_RotationAxis;
+
+            m_ctrl.Tags.Add("Torus");
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                Vector TiltVector = new Vector(tiltVector);
+
+                double angle = -(anglevelocity * t) % (2 * Math.PI);
+                double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1 + rateOfRadius * t) * particleRad, 0.0);
+
+                Vector rotAxis;
+
+                switch (RotationAxis) {
+                    case "x":
+                        rotAxis = new Vector(1, 0, 0);
+                        break;
+                    case "y":
+                        rotAxis = new Vector(0, 1, 0);
+                        break;
+                    case "z":
+                        rotAxis = new Vector(0, 0, 1);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+
+                AffineTrafo affineTrafoTilt;
+                if (tiltDegree == 0.0) {
+                    affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
+                } else {
+                    affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, tiltDegree);
+                }
+
+                var affineTrafoRot = AffineTrafo.Rotation3D(rotAxis, angle);
+                var affineTrafoFinal = affineTrafoRot * affineTrafoTilt;
+
+                double[] X = new double[] { 0, 0, 0 };
+
+                // Update intermediate variable X w.r.t. input x 
+                for (int d=0; d<x.Length; d++)
+                    X[d] = x[d];
+
+                X = affineTrafoFinal.Transform(X);
+
+                var TorusObject = new BoSSS.Solution.LevelSetTools.TestCases.Torus(dynamicRadius, ringRad);
+                switch (SpaceDim) {
+                    case 2:
+                        return -TorusObject.SignedDistance2D(X);
+                    case 3:
+                        return -TorusObject.SignedDistance(X);
                         //return Math.Pow(particleRad - Math.Sqrt(X[0].Pow2() + X[1].Pow2()), 2) + X[2] * X[2] - ringRad.Pow2();
                     default:
                         throw new NotImplementedException();
@@ -308,7 +413,7 @@ namespace BoSSS.Application.XNSE_Solver {
         private void SetVelocityAtIB() {
             var pos = m_pos;
             var rotCenter = m_RotationCenter;
-            var anglevelocity = m_anglevelocity;
+            var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var tiltVector = m_tiltVector;
             var tiltDegree = m_tiltDegree;
@@ -318,17 +423,17 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ArgumentException("check dimension of center of mass");
                 double[] X = x;
 
-                if (tiltDegree != 0.0 && SpaceDim == 3) {
-                    Vector TiltVector = new Vector(tiltVector);
+                //if (tiltDegree != 0.0 && SpaceDim == 3) {
+                //    Vector TiltVector = new Vector(tiltVector);
 
-                    AffineTrafo affineTrafoTilt;
-                    if (tiltDegree == 0.0) {
-                        affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
-                    } else {
-                        affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, -tiltDegree); //to define the rotation around the original axis of the rigid body, reverse the tilt
-                    }
-                    X = affineTrafoTilt.Transform(x);
-                }
+                //    AffineTrafo affineTrafoTilt;
+                //    if (tiltDegree == 0.0) {
+                //        affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
+                //    } else {
+                //        affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, tiltDegree); //to define the rotation around the original axis of the rigid body, reverse the tilt
+                //    }
+                //    X = affineTrafoTilt.Transform(x);
+                //}
 
                 Vector angVelo = new Vector(new double[] { 0, 0, 0 });
                 switch (m_RotationAxis) {

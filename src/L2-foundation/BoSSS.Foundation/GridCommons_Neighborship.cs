@@ -59,7 +59,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             //public bool EdgeMayBeEmpty;
         }
 
-        
+
         /// <summary>
         /// Helper that wraps a node index with an associated global id of a
         /// cell that uses this particular node.
@@ -82,7 +82,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         class NodeCellIndexPair_ContainerClass {
-            public List<NodeCellIndexPair> list = new List<NodeCellIndexPair> ();
+            public List<NodeCellIndexPair> list = new List<NodeCellIndexPair>();
 
 
             /// <summary>
@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 var R = new List<long>();
                 long L = list.Count;
                 R.Add(L);
-                for(int l = 0; l < L; l++) {
+                for (int l = 0; l < L; l++) {
                     var item_l = list[l];
                     R.Add(item_l.NodeId);
                     R.Add(item_l.GlobalCellIndex);
@@ -148,7 +148,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     long LL = item_l.CellList?.Length ?? 0;
                     R.Add(LL);
-                    for(int ll = 0; ll < LL; ll++) {
+                    for (int ll = 0; ll < LL; ll++) {
                         R.Add(item_l.CellList[ll]);
                     }
                 }
@@ -491,7 +491,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 ErrString = $"error in mesh; cell {GetCell(j)} is neighbor to cell {GetCell(jNeig)}, but not the other way around.";
                             } catch (Exception e) {
                                 ErrString = $"error in mesh; further error in formatting error message for connection between cells {j} and {jNeig}; {e.GetType()} {e.Message}, ";
-                                        }
+                            }
                             tr.Error(ErrString);
                             throw new ArgumentException(ErrString);
                         }
@@ -584,14 +584,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                                                 Neighbour_GlobalIndex = otherNeighbours[w],
                                                 CellFaceTag = _Cell_j.CellFaceTags[w],
                                             };
-                                            
-                                            if(FilterPeriodicDuplicities)
+
+                                            if (FilterPeriodicDuplicities)
                                                 AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
                                             Cell_j_Neighs.Add(nCN);
 
 
                                         } else {
-                                            Console.WriteLine("some duplicate found");
+                                            //Console.WriteLine("some duplicate found"); artifact from debugging
                                         }
                                     }
                                 }
@@ -674,11 +674,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int[,] Face2Vertex = Kref.FaceToVertexIndices;
                         int NoOfFaceVtx = Face2Vertex.GetLength(1);
 
-                        if( j < J) {
-                            for(int iF = 0; iF < NoOfFaces; iF++) {
-                                if(!FaceIsDone[j, iF]) {
-                                    for(int iFaceVtx = 0; iFaceVtx < NoOfFaceVtx; iFaceVtx++) {
-                                        VtxToInclude[Face2Vertex[iF,iFaceVtx]] = true;
+                        if (j < J) {
+                            for (int iF = 0; iF < NoOfFaces; iF++) {
+                                if (!FaceIsDone[j, iF]) {
+                                    for (int iFaceVtx = 0; iFaceVtx < NoOfFaceVtx; iFaceVtx++) {
+                                        VtxToInclude[Face2Vertex[iF, iFaceVtx]] = true;
                                     }
                                 }
                             }
@@ -721,7 +721,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     tr.Info($"r{mpiRank}: min Node {NodeIdMin} -- max Node {NodeIdMax} // Global No Of Nodes: {NodePartitioning.TotalLength}");
 
-                    
+
                     foreach (int targProc in Y.Keys) {
                         var item = Y[targProc];
                         tr.Info($"{mpiRank}to{targProc}: nodecellpair {item.list.Count} ");
@@ -729,7 +729,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     var W = ArrayMessenger<long>.ExchangeData(Y.Keys, rank => Y[rank].Serialize(), csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
-                        var container = NodeCellIndexPair_ContainerClass.Deserialize(wp); 
+                        var container = NodeCellIndexPair_ContainerClass.Deserialize(wp);
 
                         foreach (NodeCellIndexPair Packet in container.list) {
                             Nodes2Cells[Packet.NodeId - k0].Add(Packet.GlobalCellIndex);
@@ -810,7 +810,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     A.NodeId = k_node;
                                     A.CellList = cell_list;
 
-                                    
+
                                     if (!Y.TryGetValue(cell_proc, out var Z)) {
                                         Z = new NodeCellListPair_ContainerClass();
                                         Y.Add(cell_proc, Z);
@@ -843,7 +843,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     foreach (var wp in W.Values) {
                         var container = NodeCellListPair_ContainerClass.Deserialize(wp);
                         foreach (var P in container.list) {
-                            
+
                             long k_node = P.NodeId;
                             long[] cell_list = P.CellList;
 
@@ -941,7 +941,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         nCN.Neighbour_GlobalIndex = NeighIdx;
                                         nCN.CellFaceTag.FaceIndex = _iface;
                                         nCN.CellFaceTag.ConformalNeighborship = true;
-                                                                                
+
                                         Cell_j_Neighs.Add(nCN);
                                     }
                                 }
@@ -961,7 +961,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 if (iFound >= 0) {
                                     Neighbour nCN = Cell_j_Neighs[iFound];
-                                    
+
                                     nCN.CellFaceTag.ConformalNeighborship = true;
                                     Cell_j_Neighs[iFound] = nCN;
 
@@ -978,7 +978,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                         }
-                        
+
                     }
                 }
 
@@ -1064,86 +1064,87 @@ namespace BoSSS.Foundation.Grid.Classic {
         ///  - 2nd index: correlates with the ordering of <see cref="Cell.CellFaceTags"/>.
         /// </returns>
         int[][] GetFaceTagsNeigbourIndices(bool IncludeBcCells) {
+            using (new FuncTrace()) {
+                var GidInv = this.GetInverseGlobalIDPermutation(IncludeBcCells);
+                long GlNoOfCells = this.NumberOfCells_l;
+                List<long> gids = new List<long>();
+                int J = this.NoOfUpdateCells;
+                int J_BC = IncludeBcCells ? this.NoOfBcCells : 0;
+                for (int j = 0; j < J; j++) {
+                    CellFaceTag[] cfts_j = this.Cells[j].CellFaceTags;
 
-            var GidInv = this.GetInverseGlobalIDPermutation(IncludeBcCells);
-            long GlNoOfCells = this.NumberOfCells_l;
-            List<long> gids = new List<long>();
-            int J = this.NoOfUpdateCells;
-            int J_BC = IncludeBcCells ? this.NoOfBcCells : 0;
-            for (int j = 0; j < J; j++) {
-                CellFaceTag[] cfts_j = this.Cells[j].CellFaceTags;
-
-                if (cfts_j != null && cfts_j.Length > 0) {
-                    int K = cfts_j.Length;
-                    for (int k = 0; k < K; k++) {
-                        long neig_gid = cfts_j[k].NeighCell_GlobalID;
-                        if (neig_gid >= 0)
-                            gids.Add(neig_gid);
-                    }
-                }
-            }
-            for (int j = 0; j < J_BC; j++) {
-                long[] NeighGids = this.BcCells[j].NeighCell_GlobalIDs;
-
-                if (NeighGids != null && NeighGids.Length > 0) {
-                    int K = NeighGids.Length;
-
-                    for (int k = 0; k < K; k++) {
-                        long neig_gid = NeighGids[k];
-                        if (neig_gid < 0 || neig_gid >= GlNoOfCells)
-                            throw new ApplicationException("illegal GlobalId for boundary-condition cell.");
-                        gids.Add(neig_gid);
-                    }
-                }
-            }
-
-
-            long[] Gidx = new long[gids.Count];
-            GidInv.EvaluatePermutation(gids, Gidx);
-
-            //List<long> work = new List<long>();
-            var R = new int[J + J_BC][];
-            int cnt = 0;
-            for (int j = 0; j < J; j++) {
-                var cfts_j = this.Cells[j].CellFaceTags;
-
-                if (cfts_j != null && cfts_j.Length > 0) {
-                    int K = cfts_j.Length;
-                    //work.Clear(); 
-                    var Rj = new int[K];
-                    R[j] = Rj;
-                    for (int k = 0; k < K; k++) {
-                        long neig_gid = cfts_j[k].NeighCell_GlobalID;
-                        if (neig_gid >= 0) {
-                            Rj[k] = (int)Gidx[cnt];
-                            cnt++;
-                        } else {
-                            Rj[k] = int.MinValue;
+                    if (cfts_j != null && cfts_j.Length > 0) {
+                        int K = cfts_j.Length;
+                        for (int k = 0; k < K; k++) {
+                            long neig_gid = cfts_j[k].NeighCell_GlobalID;
+                            if (neig_gid >= 0)
+                                gids.Add(neig_gid);
                         }
                     }
-
-                    //if (work.Count > 0)
-                    //    R[j] = work.ToArray();
-                    //else
-                    //    R[j] = null;
-
                 }
-            }
-            for (int j = 0; j < J_BC; j++) {
-                long[] NeighGids = this.BcCells[j].NeighCell_GlobalIDs;
+                for (int j = 0; j < J_BC; j++) {
+                    long[] NeighGids = this.BcCells[j].NeighCell_GlobalIDs;
 
-                if (NeighGids != null && NeighGids.Length > 0) {
-                    int K = NeighGids.Length;
-                    var Rj = new int[K];
-                    R[j + J] = Rj;
-                    for (int k = 0; k < K; k++) {
-                        Rj[k] = (int)Gidx[cnt];
-                        cnt++;
+                    if (NeighGids != null && NeighGids.Length > 0) {
+                        int K = NeighGids.Length;
+
+                        for (int k = 0; k < K; k++) {
+                            long neig_gid = NeighGids[k];
+                            if (neig_gid < 0 || neig_gid >= GlNoOfCells)
+                                throw new ApplicationException("illegal GlobalId for boundary-condition cell.");
+                            gids.Add(neig_gid);
+                        }
                     }
                 }
-            }
 
-            return R;
+
+                long[] Gidx = new long[gids.Count];
+                GidInv.EvaluatePermutation(gids, Gidx);
+
+                //List<long> work = new List<long>();
+                var R = new int[J + J_BC][];
+                int cnt = 0;
+                for (int j = 0; j < J; j++) {
+                    var cfts_j = this.Cells[j].CellFaceTags;
+
+                    if (cfts_j != null && cfts_j.Length > 0) {
+                        int K = cfts_j.Length;
+                        //work.Clear(); 
+                        var Rj = new int[K];
+                        R[j] = Rj;
+                        for (int k = 0; k < K; k++) {
+                            long neig_gid = cfts_j[k].NeighCell_GlobalID;
+                            if (neig_gid >= 0) {
+                                Rj[k] = (int)Gidx[cnt];
+                                cnt++;
+                            } else {
+                                Rj[k] = int.MinValue;
+                            }
+                        }
+
+                        //if (work.Count > 0)
+                        //    R[j] = work.ToArray();
+                        //else
+                        //    R[j] = null;
+
+                    }
+                }
+                for (int j = 0; j < J_BC; j++) {
+                    long[] NeighGids = this.BcCells[j].NeighCell_GlobalIDs;
+
+                    if (NeighGids != null && NeighGids.Length > 0) {
+                        int K = NeighGids.Length;
+                        var Rj = new int[K];
+                        R[j + J] = Rj;
+                        for (int k = 0; k < K; k++) {
+                            Rj[k] = (int)Gidx[cnt];
+                            cnt++;
+                        }
+                    }
+                }
+
+                return R;
+            }
         }
 
     }

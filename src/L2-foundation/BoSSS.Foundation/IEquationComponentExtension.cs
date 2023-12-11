@@ -23,7 +23,7 @@ using BoSSS.Foundation.Quadrature;
 using System.Collections;
 using ilPSP.LinSolvers;
 using BoSSS.Foundation.Grid;
-using static BoSSS.Foundation.SpatialOperator;
+using static BoSSS.Foundation.DifferentialOperator;
 using ilPSP.Tracing;
 
 namespace BoSSS.Foundation {
@@ -36,7 +36,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static SpatialOperator Operator(this IEquationComponent c, int DegreeOfNonlinearity = 1, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null, bool doCommit = true)
+        public static DifferentialOperator Operator(this IEquationComponent c, int DegreeOfNonlinearity = 1, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null, bool doCommit = true)
         {
             return Operator(c, QuadOrderFunc.NonLinear(DegreeOfNonlinearity), edgeSchemeProvider, cellSchemeProvider, doCommit : doCommit);
         }
@@ -45,13 +45,13 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static SpatialOperator Operator(this IEquationComponent c, Func<int[], int[], int[], int> quadOrderFunc, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null, bool doCommit = true) {
+        public static DifferentialOperator Operator(this IEquationComponent c, Func<int[], int[], int[], int> quadOrderFunc, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null, bool doCommit = true) {
 
             string[] Codomain = new string[] { "v1" };
             string[] Domain = c.ArgumentOrdering.ToArray();
             string[] Param = (c.ParameterOrdering != null) ? c.ParameterOrdering.ToArray() : new string[0];
 
-            SpatialOperator ret = new SpatialOperator(Domain, Param, Codomain, quadOrderFunc);
+            DifferentialOperator ret = new DifferentialOperator(Domain, Param, Codomain, quadOrderFunc);
             if(edgeSchemeProvider != null)
                 ret.EdgeQuadraturSchemeProvider = edgeSchemeProvider;
             if(cellSchemeProvider != null)
@@ -78,7 +78,7 @@ namespace BoSSS.Foundation {
         /// The parameter variables (of this differential operator);
         /// The number of elements in the list must match the parameter count
         /// of the differential operator (see
-        /// <see cref="SpatialOperator.ParameterVar"/>);  It is allowed to set
+        /// <see cref="DifferentialOperator.ParameterVar"/>);  It is allowed to set
         /// an entry to 'null', in this case the values of the parameter field
         /// are assumed to be 0.0; If the differential operator contains no
         /// parameters, this argument can be null;
@@ -107,7 +107,7 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <remarks>
         /// The operator assembly must be finalized before by calling
-        /// <see cref="ISpatialOperator.Commit"/> before this method can be called.
+        /// <see cref="IDifferentialOperator.Commit"/> before this method can be called.
         /// </remarks>
         /// <param name="edgeQuadScheme">
         /// Quadrature scheme for edge integration; 
@@ -123,7 +123,7 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="time"></param>
         /// <param name="op"></param>
-        static public void ComputeMatrixEx<M, V>(this SpatialOperator op,
+        static public void ComputeMatrixEx<M, V>(this DifferentialOperator op,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine = false,
             double time = 0.0, 
@@ -157,7 +157,7 @@ namespace BoSSS.Foundation {
         /// another legacy interface
         /// </summary>
         static public void ComputeAffine<V>(
-            this SpatialOperator op,
+            this DifferentialOperator op,
             UnsetteledCoordinateMapping DomainMap,
             IList<DGField> Parameters,
             UnsetteledCoordinateMapping CodomainMap,
@@ -205,14 +205,14 @@ namespace BoSSS.Foundation {
         /// <param name="time"></param>
         /// <param name="DomainMapping">
         /// the domain variables, or "input data" for the operator; the number
-        /// of elements must be equal to the number of elements in the <see cref="ISpatialOperator.DomainVar"/>-list;
+        /// of elements must be equal to the number of elements in the <see cref="IDifferentialOperator.DomainVar"/>-list;
         /// </param>
         /// <param name="Params">
         /// List of parameter fields; May be null
         /// </param>
         /// <param name="CodomainMapping">
         /// the co-domain variables, or "output" for the evaluation of the
-        /// operator; the number of elements must be equal to the number of elements in the <see cref="ISpatialOperator.CodomainVar"/>-list;
+        /// operator; the number of elements must be equal to the number of elements in the <see cref="IDifferentialOperator.CodomainVar"/>-list;
         /// </param>
         /// <param name="alpha">
         /// scaling of the operator 
@@ -244,7 +244,7 @@ namespace BoSSS.Foundation {
         /// operator evaluation.
         /// </remarks>
         static public void Evaluate(
-                             this SpatialOperator op,
+                             this DifferentialOperator op,
                              double alpha, double beta,
                              CoordinateMapping DomainMapping, IList<DGField> Params, CoordinateMapping CodomainMapping,
                              SubGrid sgrd = null,
@@ -314,11 +314,11 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="DomainFields">
         /// the domain variables; the number of elements
-        /// must be equal to the number of elements in the <see cref="ISpatialOperator.DomainVar"/>-list;
+        /// must be equal to the number of elements in the <see cref="IDifferentialOperator.DomainVar"/>-list;
         /// </param>
         /// <param name="CodomainFields">
         /// the codomain variables; the number of elements
-        /// must be equal to the number of elements in the <see cref="ISpatialOperator.CodomainVar"/>-list;
+        /// must be equal to the number of elements in the <see cref="IDifferentialOperator.CodomainVar"/>-list;
         /// </param>
         /// <remarks>
         /// If some of the input field, i.e. some element of <paramref name="DomainFields"/>, is contained in the 
@@ -327,16 +327,16 @@ namespace BoSSS.Foundation {
         /// It is not a good choice to use this 
         /// function if this operator should be evaluated multiple times
         /// and 
-        /// contains linear components (i.e. <see cref="ISpatialOperator.IsLinear"/> returns true);
+        /// contains linear components (i.e. <see cref="IDifferentialOperator.IsLinear"/> returns true);
         /// If the later one is the case, the matrix which represents
         /// the linear components of the operator must be computed first, which is computational- and
         /// memory - intensive;
         /// After execution of this method, the matrix will be lost;
-        /// If multiple evaluation is desired, the <see cref="ISpatialOperator.GetEvaluatorEx"/>-method should be used.
+        /// If multiple evaluation is desired, the <see cref="IDifferentialOperator.GetEvaluatorEx"/>-method should be used.
         /// </remarks>
         /// <param name="op"></param>
         /// <param name="time"></param>
-        static public void Evaluate(this SpatialOperator op, IList<DGField> DomainFields, IList<DGField> CodomainFields, double time = double.NaN) {
+        static public void Evaluate(this DifferentialOperator op, IList<DGField> DomainFields, IList<DGField> CodomainFields, double time = double.NaN) {
             if(DomainFields.Count != op.DomainVar.Count)
                 throw new ArgumentException("wrong number of domain fields", "DomainFields");
             if(CodomainFields.Count != op.CodomainVar.Count)
@@ -351,7 +351,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        static public void Evaluate(this SpatialOperator op, params DGField[] f) {
+        static public void Evaluate(this DifferentialOperator op, params DGField[] f) {
             Evaluate(op, double.NaN, f);
         }
 
@@ -359,14 +359,14 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        static public void Evaluate(this SpatialOperator op, double time, params DGField[] f) {
+        static public void Evaluate(this DifferentialOperator op, double time, params DGField[] f) {
             Evaluate(op, time, null, SubGridBoundaryModes.OpenBoundary, f);
         }
 
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        static public void Evaluate(this SpatialOperator op, double time, SubGrid subGrid = null, SubGridBoundaryModes subGridBoundaryMode = SubGridBoundaryModes.OpenBoundary, params DGField[] f) {
+        static public void Evaluate(this DifferentialOperator op, double time, SubGrid subGrid = null, SubGridBoundaryModes subGridBoundaryMode = SubGridBoundaryModes.OpenBoundary, params DGField[] f) {
             if(op.DomainVar.Count + op.ParameterVar.Count + op.CodomainVar.Count != f.Length)
                 throw new ArgumentException("wrong number of domain/parameter/codomain fields", "f");
 
@@ -381,7 +381,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        static public void Evaluate(this SpatialOperator op, uint NoOfDomainVar, uint NoOfCodomainVar, double time, params DGField[] fields) {
+        static public void Evaluate(this DifferentialOperator op, uint NoOfDomainVar, uint NoOfCodomainVar, double time, params DGField[] fields) {
             if(fields.Length != (NoOfDomainVar + NoOfCodomainVar))
                 throw new ArgumentException("wrong number of fields.", "fields");
 
@@ -398,7 +398,7 @@ namespace BoSSS.Foundation {
         /// simplified version of 
         /// <see cref="ComputeMatrixEx{M,V}"/>;
         /// </summary>
-        static public void ComputeMatrix<M, V>(this SpatialOperator op,
+        static public void ComputeMatrix<M, V>(this DifferentialOperator op,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time = 0.0,
             SubGrid sgrd = null)
@@ -440,7 +440,7 @@ namespace BoSSS.Foundation {
         /// simplified version of 
         /// <see cref="ComputeMatrixEx{M,V}"/>;
         /// </summary>
-        static public BlockMsrMatrix ComputeMatrix(this SpatialOperator op,
+        static public BlockMsrMatrix ComputeMatrix(this DifferentialOperator op,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap, double time = 0.0, SubGrid SubGrid = null) {
 
             //int RowBlkSize = (CodomainMap.MaxTotalNoOfCoordinatesPerCell == CodomainMap.MinTotalNoOfCoordinatesPerCell) ? CodomainMap.MaxTotalNoOfCoordinatesPerCell : 1;
@@ -460,7 +460,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// legacy interface
         /// </summary>
-        static public double[] ComputeAffine(this SpatialOperator op,
+        static public double[] ComputeAffine(this DifferentialOperator op,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap, double time = 0.0) {
             
             int RowBlkSize = (CodomainMap.MaxTotalNoOfCoordinatesPerCell == CodomainMap.MinTotalNoOfCoordinatesPerCell) ? CodomainMap.MaxTotalNoOfCoordinatesPerCell : 1;

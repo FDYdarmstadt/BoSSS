@@ -120,7 +120,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// see <see cref="Rank"/>;
         /// </summary>
-        int m_Rank;
+        readonly int m_Rank;
 
         /// <summary>
         /// rank of the current process within  the MPI communicator <see cref="MPI_comm"/>;
@@ -132,7 +132,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// see <see cref="Size"/>;
         /// </summary>
-        int m_Size;
+        readonly int m_Size;
 
         /// <summary>
         /// size (i.e. number of processors) in the MPI communicator <see cref="MPI_comm"/>;
@@ -471,7 +471,7 @@ namespace ilPSP.Utils {
         /// (otherwise is very likely that MPI is in an undefined state).
         /// After this, the object is ready for another send/receive cycle.
         /// </summary>
-        /// <param name="TargetProc">
+        /// <param name="OriginProc">
         /// process rank which has send <paramref name="o"/> to this process.
         /// </param>
         /// <param name="o">
@@ -482,7 +482,7 @@ namespace ilPSP.Utils {
         /// true, if <paramref name="o"/> contains a received object;<br/>
         /// false if the communication is finished.
         /// </returns>
-        public bool GetNext(out int TargetProc, out T[] o) {
+        public bool GetNext(out int OriginProc, out T[] o) {
 
             int size = m_Size;
 
@@ -554,7 +554,7 @@ namespace ilPSP.Utils {
 
                     // deserialize
                     o = m_ReceiveBuffers[proc];
-                    TargetProc = proc;
+                    OriginProc = proc;
                     return true;
                     
                 } else if (index == csMPI.Raw.MiscConstants.UNDEFINED) {
@@ -570,7 +570,7 @@ namespace ilPSP.Utils {
 
 
                     o = default(T[]);
-                    TargetProc = Int32.MinValue;
+                    OriginProc = Int32.MinValue;
                     return false;
                 } else {
                    

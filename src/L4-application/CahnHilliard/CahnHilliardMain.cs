@@ -263,7 +263,7 @@ namespace BoSSS.Application.CahnHilliard {
             //                        c);
         }
 
-        SpatialOperator CHOp;
+        DifferentialOperator CHOp;
 
         BoundaryCondMap<BoundaryType> m_bcMap;
 
@@ -283,7 +283,7 @@ namespace BoSSS.Application.CahnHilliard {
         //    }
         //}
 
-        protected override SpatialOperator GetOperatorInstance(int D) {
+        protected override DifferentialOperator GetOperatorInstance(int D) {
             double _D = D;
             //double penalty_base = (c.Basis.Degree + 1) * (c.Basis.Degree + _D) / _D;
             double penalty_factor = base.Control.penalty_poisson;// * penalty_base;
@@ -324,7 +324,7 @@ namespace BoSSS.Application.CahnHilliard {
 
             #endregion
 
-            CHOp = new SpatialOperator(
+            CHOp = new DifferentialOperator(
                         domainVar,
                         paramVar,
                         codomainVar,

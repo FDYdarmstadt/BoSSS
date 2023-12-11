@@ -92,7 +92,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         RungeKutta explicitTimeStepper;
 
         private (BDFTimestepper, RungeKutta) InitializeTimeStepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
-            var diffOp = new SpatialOperator(new string[] { "Phi" },
+            var diffOp = new DifferentialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
                 QuadOrderFunc.NonLinear(1));

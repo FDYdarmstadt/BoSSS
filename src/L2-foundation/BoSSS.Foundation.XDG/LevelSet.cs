@@ -732,7 +732,7 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray dst = ((MultidimensionalArray)ret.Coordinates);
             MultidimensionalArray src = ((MultidimensionalArray)base.Coordinates);
 
-            if (dst.IsContinious && src.IsContinious) {
+            if (dst.IsContinuous && src.IsContinuous) {
                 Array.Copy(src.Storage, dst.Storage, dst.Length);
             } else {
                 throw new NotImplementedException("remainder");

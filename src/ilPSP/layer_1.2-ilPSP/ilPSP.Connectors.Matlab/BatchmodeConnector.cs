@@ -124,7 +124,8 @@ namespace ilPSP.Connectors.Matlab {
 
             try {
                 TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex-new");
-            } catch(Exception) {
+            } catch(Exception ee) {
+                Console.Error.WriteLine("BatchmodeConnector, static ctor:" + ee);
                 TempDirMutex = null; 
             }
 

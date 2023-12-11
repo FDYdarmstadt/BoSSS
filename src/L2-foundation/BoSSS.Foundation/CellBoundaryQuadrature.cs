@@ -301,8 +301,8 @@ namespace BoSSS.Foundation.Quadrature {
                                 var scalings = GetScalingsForLinearElements(j0, Bulksize);
 
                                 Debug.Assert(scalings.Dimension == 2);
-                                Debug.Assert(scalings.IsContinious);
-                                Debug.Assert(quadRule.Weights.IsContinious);
+                                Debug.Assert(scalings.IsContinuous);
+                                Debug.Assert(quadRule.Weights.IsContinuous);
                                 Debug.Assert(quadRule.Weights.Dimension == 1);
 
 
@@ -340,8 +340,8 @@ namespace BoSSS.Foundation.Quadrature {
                                 var scalings = GetScalingsForNonlinElements(j0, Bulksize);
 
                                 Debug.Assert(scalings.Dimension == 2);
-                                Debug.Assert(scalings.IsContinious);
-                                Debug.Assert(quadRule.Weights.IsContinious);
+                                Debug.Assert(scalings.IsContinuous);
+                                Debug.Assert(quadRule.Weights.IsContinuous);
                                 Debug.Assert(quadRule.Weights.Dimension == 1);
 
 
@@ -380,7 +380,7 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                 case CoordinateSystem.Reference: {
-                        Debug.Assert(quadRule.Weights.IsContinious);
+                        Debug.Assert(quadRule.Weights.IsContinuous);
                         Debug.Assert(quadRule.Weights.Dimension == 1);
 
                         for (int jj = 0; jj < _Bulksize; jj++) {

@@ -504,22 +504,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 MultidimensionalArray metrics =
                     LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, i0, length);
 
-                if (!phis.IsContinious || !quadResults.IsContinious || !normals.IsContinious || !metrics.IsContinious) {
+                if (!phis.IsContinuous || !quadResults.IsContinuous || !normals.IsContinuous || !metrics.IsContinuous) {
                     throw new NotImplementedException(
                         String.Format(
                             "This method assumes that all input arrays have a continuous memory layout, but we have"
-                                + " phis.IsContinious={0}, quadResults.IsContinious={1}, normals.IsContinious={2}, metrics.IsContinious={3}",
-                            phis.IsContinious,
-                            quadResults.IsContinious,
-                            normals.IsContinious,
-                            metrics.IsContinious));
+                                + " phis.IsContinuous={0}, quadResults.IsContinuous={1}, normals.IsContinuous={2}, metrics.IsContinuous={3}",
+                            phis.IsContinuous,
+                            quadResults.IsContinuous,
+                            normals.IsContinuous,
+                            metrics.IsContinuous));
                 }
 
                 // Additional space required by Fortran routine
                 double[] rhs = new double[Math.Max(noOfNodes, noOfPhis)];
                 var _matrix = MultidimensionalArray.Create(noOfPhis, noOfNodes);
                 double[] matrix = _matrix.Storage;
-                Debug.Assert(_matrix.IsContinious && _matrix.Index(0, 0) == 0);
+                Debug.Assert(_matrix.IsContinuous && _matrix.Index(0, 0) == 0);
                 QuadRule[] optimizedRules = new QuadRule[length];
                 var nodesArray = nodes;
                 var NoOfFaces = this.RefElement.NoOfFaces;
@@ -635,7 +635,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 double[] rhs = new double[Math.Max(noOfNodes, noOfPhis)];
                 var _matrix = MultidimensionalArray.Create(noOfPhis, noOfNodes);
                 double[] matrix = _matrix.Storage;
-                Debug.Assert(_matrix.IsContinious && _matrix.Index(0, 0) == 0);
+                Debug.Assert(_matrix.IsContinuous && _matrix.Index(0, 0) == 0);
                 var nodesArray = nodes;
                 var NoOfFaces = this.RefElement.NoOfFaces;
 

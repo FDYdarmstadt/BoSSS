@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
         
-        public LECEdgeQuadrature2(SpatialOperator op) {
+        public LECEdgeQuadrature2(DifferentialOperator op) {
             Operator = op;
 
             m_Edgeform_UxV = EquationComponentArgMapping<IEdgeForm_UxV>.GetArgMapping(op, true,
@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
         }
 
-        SpatialOperator Operator;
+        DifferentialOperator Operator;
 
 
         /// <summary>
