@@ -336,7 +336,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     double Slope = DoubleExtensions.LogLogRegressionSlope(xVals, yVals);
 
                     Assert.LessOrEqual(Slope, ttt.slopeMax, $"Condition number slope for {ttt.yName} to high; at max. {ttt.slopeMax}");
-                    Assert.LessOrEqual(Slope, ttt.slopeMin, $"Condition number slope for {ttt.yName} to low; at min. {ttt.slopeMin}");
+                    Assert.GreaterOrEqual(Slope, ttt.slopeMin, $"Condition number slope for {ttt.yName} to low; at min. {ttt.slopeMin}");
                 }
             }
 
