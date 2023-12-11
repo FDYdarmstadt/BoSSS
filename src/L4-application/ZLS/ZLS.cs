@@ -120,7 +120,7 @@ namespace ZwoLevelSetSolver {
             
         }
 
-        protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
+        protected override void FinalOperatorSettings(XDifferentialOperatorMk2 XOP, int D) {
             base.FinalOperatorSettings(XOP, D);
             XOP.IsLinear = false;
 

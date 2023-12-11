@@ -142,7 +142,7 @@ namespace BoSSS.Application.Rheology {
 
         /// <summary>
         /// Switches Homotopy solver on/off:
-        /// <see cref="Newton.UseHomotopy"/>, <see cref="BoSSS.Foundation.ISpatialOperator.HomotopyUpdate"/>
+        /// <see cref="Newton.UseHomotopy"/>, <see cref="BoSSS.Foundation.IDifferentialOperator.HomotopyUpdate"/>
         /// </summary>
         [DataMember]
         public bool RaiseWeissenberg = false;

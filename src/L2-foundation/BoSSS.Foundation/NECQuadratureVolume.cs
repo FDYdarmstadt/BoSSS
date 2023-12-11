@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// ctor.
         /// </summary>
         public NECQuadratureVolume(IGridData context,
-                                   SpatialOperator DiffOp,
+                                   DifferentialOperator DiffOp,
                                    IList<DGField> _DomainFields,
                                    IList<DGField> _ParameterFields,
                                    UnsetteledCoordinateMapping CodomainMapping,

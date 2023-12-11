@@ -104,8 +104,8 @@ namespace ApplicationWithIDT {
         }
         #endregion
         #region Operator stuff
-        public XSpatialOperatorMk2 XSpatialOperator { get; set; }
-        public XSpatialOperatorMk2 Op_obj { get; set; }
+        public XDifferentialOperatorMk2 XSpatialOperator { get; set; }
+        public XDifferentialOperatorMk2 Op_obj { get; set; }
         public IEvaluatorNonLin Eval_r { get; set; }
         public IOptProb Oproblem {get;set;}
         public IEvaluatorNonLin Eval_R { get; set; }
@@ -116,8 +116,8 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// The Jacobi operators belonging to r and R, used when Linearization = JacobiOperator
         /// </summary>
-        public ISpatialOperator r_JacobiOperator { get; set; }
-        public ISpatialOperator R_JacobiOperator { get; set; }
+        public IDifferentialOperator r_JacobiOperator { get; set; }
+        public IDifferentialOperator R_JacobiOperator { get; set; }
         public PlotDriver plotDriver { get; set; }
         #endregion
         #region Coordinate Vectors and Mappings
@@ -522,13 +522,13 @@ namespace ApplicationWithIDT {
             SaveStepToField(stepIN, StepOptiLevelSet);
 
             // makes the step continues if SinglePhaseField as OptiLevelSet is used
-            if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
-                // Does a continuity projection (hopefully) of the step
-                MakeLevelSetContinous(StepOptiLevelSet);
-                SaveStepFieldToStep(stepIN, StepOptiLevelSet);
-                var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
-                SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
-            }
+            //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
+            //    // Does a continuity projection (hopefully) of the step
+            //    MakeLevelSetContinous(StepOptiLevelSet);
+            //    SaveStepFieldToStep(stepIN, StepOptiLevelSet);
+            //    var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
+            //    SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
+            //}
 
             var orgStep = stepIN.CloneAs();
             // 
@@ -3270,7 +3270,7 @@ namespace ApplicationWithIDT {
                                 ConVars, residuals,
                                 TimeSteppingScheme.ExplicitEuler,
                                 null, LevelSetHandling.None,
-                                this.MultiGridOperatorConfig, null, this.Control.AgglomerationThreshold,
+                                this.MultiGridOperatorConfig, this.Control.AgglomerationThreshold,
                                 this.Control.LinearSolver, this.Control.NonLinearSolver);
 
             //get a starting Timestepsize
@@ -3372,7 +3372,7 @@ namespace ApplicationWithIDT {
                                 ConVars, residuals,
                                 TimeSteppingScheme.RK_ImplicitEuler,
                                 null, LevelSetHandling.None,
-                                this.MultiGridOperatorConfig, null, this.Control.AgglomerationThreshold,
+                                this.MultiGridOperatorConfig, this.Control.AgglomerationThreshold,
                                 this.Control.LinearSolver, this.Control.NonLinearSolver);
 
             //get a starting Timestepsize

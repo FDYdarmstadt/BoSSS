@@ -55,8 +55,8 @@ namespace BUIDT.Tests {
             };
 
             // Initial Value
-            C.InitialShockPostion = x => 0 * x[0] + 0.5;
-            C.LevelSetPos = x => 0 * x[0] + 0.5;
+            C.LevelSetTwoInitialValue = x => 0 * x[0] + 0.5;
+            C.LevelSetOneInitialValue = x => 0 * x[0] + 0.5;
             C.InitialValueFunctionsPerSpecies = new Dictionary<string, Func<double[], double>>();
 
             var a = 1;
@@ -167,8 +167,8 @@ namespace BUIDT.Tests {
             };
 
             // Initial Value
-            C.InitialShockPostion = x =>  0*x[0] + 0.5;
-            C.LevelSetPos = x => 0 * x[0] + 0.5;
+            C.LevelSetTwoInitialValue = x =>  0*x[0] + 0.5;
+            C.LevelSetOneInitialValue = x => 0 * x[0] + 0.5;
             C.InitialValueFunctionsPerSpecies = new Dictionary<string, Func<double[], double>>();
 
             var a = -0.75;

@@ -2557,8 +2557,8 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// total memory (aka. sum) over all MPI ranks over time
         /// </summary>
-        static public Plot2Ddata GetMPItotalMemory(this ISessionInfo sess) {
-            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+        static public Plot2Ddata GetMPItotalMemory(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
             var ret = ana.GetMPItotalMemory();
 
             ret.Title = "Total memory of session " + sess;
@@ -2570,8 +2570,8 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// minimum, average and maximum memory allocations over all MPI ranks over time
         /// </summary>
-        static public Plot2Ddata GetMinAvgMaxMemory(this ISessionInfo sess) {
-            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+        static public Plot2Ddata GetMinAvgMaxMemory(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
             var ret = ana.GetMinAvgMaxMemPlot();
             ret.Title = "Memory of session " + sess.ID;
             return ret;
@@ -2581,8 +2581,8 @@ namespace BoSSS.Foundation.IO {
         /// Returns the memory instrumentation for a session (if available),
         /// combined from files `memory.mpi_rank.txt` in the session directory
         /// </summary>
-        public static SessionMemtrace GetMemtrace(this ISessionInfo sess) {
-            var ret = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+        public static SessionMemtrace GetMemtrace(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ret = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
             return ret;
         }
 
@@ -2590,8 +2590,8 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Reports the largest memory-allocating routines in descending order
         /// </summary>
-        static public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators(this ISessionInfo sess) {
-            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+        static public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
             return ana.ReportLargestAllocators();
         }
 
@@ -2599,9 +2599,10 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// total memory (aka. sum) over all MPI ranks over time
         /// </summary>
-        static public Plot2Ddata GetMPItotalMemory(this IEnumerable<ISessionInfo> sessS) {
+        static public Plot2Ddata GetMPItotalMemory(this IEnumerable<ISessionInfo> sessS, int LineOffset = 0, int MaxLines = 10000) {
             var ana = new SessionsComparisonMemtrace(
-                sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray());
+                sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray(),
+                LineOffset, MaxLines);
 
             int L = ana.NoOfTimeEntries;
 
@@ -2630,9 +2631,10 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Reports the largest differences in memory allocation between the multiple runs
         /// </summary>
-        static public (int TimelineIndex, double Imbalance, double[] AllocMegs, string Name)[] ReportLargestAllocatorImbalance(this IEnumerable<ISessionInfo> sessS) {
+        static public (int TimelineIndex, double Imbalance, double[] AllocMegs, string Name)[] ReportLargestAllocatorImbalance(this IEnumerable<ISessionInfo> sessS, int LineOffset = 0, int MaxLines = 10000) {
             var ana = new SessionsComparisonMemtrace(
-               sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray());
+               sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray(),
+               LineOffset, MaxLines);
             return ana.ReportLargestAllocatorImbalance();
         }
 

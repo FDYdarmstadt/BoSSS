@@ -190,10 +190,10 @@ namespace XESF {
 
             
             // ### Wedge Level set function ###
-            c.LevelSetPos = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / 0.17632698070846498); };
+            c.LevelSetOneInitialValue = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / 0.17632698070846498); };
 
             //// Shock level set
-            //c.LevelSetPos = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
+            //c.LevelSetOneInitialValue = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
             c.GetLevelSet = shocksetup;
             switch(shocksetup) {
                 case GetLevelSet.FromParams:
@@ -245,10 +245,10 @@ namespace XESF {
             switch (optiLevelSetType)
             {
                 case OptiLevelSetType.SplineLevelSet:
-                    c.InitialShockPostion = Y => 0.5 + Y[1] / LevelSet2Prime;
+                    c.LevelSetTwoInitialValue = Y => 0.5 + Y[1] / LevelSet2Prime;
                     break;
                 default:
-                    c.InitialShockPostion = X => X[0] - 0.5 - (X[1] / LevelSet2Prime);
+                    c.LevelSetTwoInitialValue = X => X[0] - 0.5 - (X[1] / LevelSet2Prime);
                     break;
             }
             #endregion
@@ -585,13 +585,13 @@ namespace XESF {
 
 
             // ### Wedge Level set function ###
-            c.LevelSetPos = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / LevelSet2Prime); };
+            c.LevelSetOneInitialValue = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / LevelSet2Prime); };
 
             //1=X[1]
 
 
             //// Shock level set
-            //c.LevelSetPos = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
+            //c.LevelSetOneInitialValue = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
             c.GetLevelSet = shocksetup;
             switch(shocksetup) {
                 case GetLevelSet.FromParams:
@@ -620,19 +620,19 @@ namespace XESF {
                 case GetLevelSet.FromFunction:
                 switch(optiLevelSetType) {
                     case OptiLevelSetType.SplineLevelSet:
-                    //c.InitialShockPostion = X => 0.0 - (X[1] / LevelSet2Prime);
+                    //c.LevelSetTwoInitialValue = X => 0.0 - (X[1] / LevelSet2Prime);
                     throw new NotImplementedException("Spline Level Set is not supported with rotated Coordinate System");
                     break;
                     default:
                     if(optiLSDegree == 0) {
                         optiLSDegree++;
-                        c.InitialShockPostion = X => X[0] - 0.0 - (X[1] / LevelSet2Prime);
+                        c.LevelSetTwoInitialValue = X => X[0] - 0.0 - (X[1] / LevelSet2Prime);
                     } else if(optiLSDegree == 1) {
-                        c.InitialShockPostion = X => X[0] - 0.0 - (X[1] / LevelSet2Prime);
+                        c.LevelSetTwoInitialValue = X => X[0] - 0.0 - (X[1] / LevelSet2Prime);
                     } else if(optiLSDegree == 2) {
-                        c.InitialShockPostion = X => X[0] - 0.0 - (X[1] / LevelSet2Prime); //+ X[1] * X[1] * 0.2;
+                        c.LevelSetTwoInitialValue = X => X[0] - 0.0 - (X[1] / LevelSet2Prime); //+ X[1] * X[1] * 0.2;
                     } else if((optiLSDegree == 3)) {
-                        c.InitialShockPostion = X => X[0] - 0.0 - (X[1] / LevelSet2Prime);// + X[1] * X[1] * 0.2 - X[1] * X[1] * X[1] * 0.2;
+                        c.LevelSetTwoInitialValue = X => X[0] - 0.0 - (X[1] / LevelSet2Prime);// + X[1] * X[1] * 0.2 - X[1] * X[1] * X[1] * 0.2;
                     } else {
                         throw new NotSupportedException("optiLSDegree:" + optiLSDegree + " not supported!");
                     }
@@ -956,7 +956,7 @@ namespace XESF {
             #endregion
 
             // ### Shock Level set function ###
-            c.LevelSetPos = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
+            c.LevelSetOneInitialValue = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
 
             c.GetLevelSet = shocksetup;
             switch(shocksetup) {
@@ -968,7 +968,7 @@ namespace XESF {
                 c.OptiLevelSet_ParamValues = new List<double>(tmp_LS.m_ParamValues);
                 c.OptiLevelSet_Param_Functions = new List<Func<double[], double, double>>(tmp_LS.m_phi);
                 c.OptiLSIsOrthonormal = true;
-                c.InitialShockPostion = X => X[0] - 0.5 - (X[1] / LevelSet2Prime);
+                c.LevelSetTwoInitialValue = X => X[0] - 0.5 - (X[1] / LevelSet2Prime);
                 break;
                 default:
                      throw new NotSupportedException("Not supported Shock Setup");
@@ -1486,7 +1486,7 @@ namespace XESF {
             }
 
             // ### Level set function of the blunt body###
-            c.LevelSetPos = delegate (double[] X) {
+            c.LevelSetOneInitialValue = delegate (double[] X) {
                 // Circle 1
                 double x0 = 0.0;
                 double y0 = 0.5;
@@ -1823,7 +1823,7 @@ namespace XESF {
             }
 
             // ### Level set function of the blunt body###
-            c.LevelSetPos = delegate (double[] X) {
+            c.LevelSetOneInitialValue = delegate (double[] X) {
                 // Circle 1
                 double x0 = 0.0;
                 double y0 = 0.5;

@@ -53,7 +53,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         int D;
         // Mean Velocity for choosing Flux Direction
         VectorField<SinglePhaseField> MeanVelocity;
-        SpatialOperator AdvectionSpatialOperator;
+        DifferentialOperator AdvectionSpatialOperator;
         DGField divU;
 
         BDFTimestepper myBDFTimestepper;
@@ -131,7 +131,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             myBDFTimestepper = new BDFTimestepper(AdvectionSpatialOperator, new List<DGField>() { LevelSet }, ArrayTools.Cat(VectorExtension, this.MeanVelocity, this.divU), BDForder, Control.solverFactory, false, subGrid);
         }
 
-        SpatialOperator CreateAdvectionSpatialOperator(IncompressibleBoundaryCondMap bcMap) {
+        DifferentialOperator CreateAdvectionSpatialOperator(IncompressibleBoundaryCondMap bcMap) {
 
             Func<int[], int[], int[], int> QuadOrderFunction = QuadOrderFunc.SumOfMaxDegrees();
 
@@ -141,7 +141,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 VariableNames.Velocity0MeanVector(D),
                 "div(U)");
 
-            SpatialOperator SO = new SpatialOperator(new string[] { "LevelSet" },
+            DifferentialOperator SO = new DifferentialOperator(new string[] { "LevelSet" },
                     parameterList,
                     new string[] { "Phi-Evo" },
                     QuadOrderFunc.NonLinear(2));

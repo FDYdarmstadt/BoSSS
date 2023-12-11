@@ -142,6 +142,17 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("HeatEquationSolver/HeatEquationSolver.ipynb")]
+        [Test]
+        static public void Run__HeatEquationSolver() {
+            RunWorksheet("HeatEquationSolver/HeatEquationSolver.ipynb");
+        }
+#endif
+
+
+
+#if !DEBUG
+        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
         [Test]
         static public void Run__ue6ScalarConvStability() {

@@ -64,14 +64,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         /// <param name="ExtensionVelocity"></param>
         /// <param name="e"></param>
         void CreateAdvectionSpatialOperator(SinglePhaseField LevelSet, SinglePhaseField ExtensionVelocity, ExplicitEuler.ChangeRateCallback e, SubGrid subGrid) {
-            SpatialOperator SO;
+            DifferentialOperator SO;
             Func<int[], int[], int[], int> QuadOrderFunction = QuadOrderFunc.Linear();
             int D = LevelSet.GridDat.SpatialDimension;
             //FieldFactory<SinglePhaseField> fac = new FieldFactory<SinglePhaseField>(SinglePhaseField.Factory);
             //VectorField<SinglePhaseField> LevelSetGradient = new VectorField<SinglePhaseField>(D,
             //    LevelSet.Basis,fac);
             
-            SO = new SpatialOperator(1, 1 , 1, QuadOrderFunction, new string[] { "LS", "S", "Result" });
+            SO = new DifferentialOperator(1, 1 , 1, QuadOrderFunction, new string[] { "LS", "S", "Result" });
             double PenaltyBase = ((double)((LevelSet.Basis.Degree + 1) * (LevelSet.Basis.Degree + D))) / ((double)D);
             SO.EquationComponents["Result"].Add(new ScalarVelocityAdvectionFlux(GridDat, PenaltyBase));
             SO.Commit();

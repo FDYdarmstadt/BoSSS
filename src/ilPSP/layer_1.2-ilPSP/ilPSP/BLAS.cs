@@ -815,7 +815,7 @@ namespace ilPSP.Utils {
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        static public bool ContainsForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true)
+        static public bool ContainsNanOrInf<T>(this T v, bool CheckForInf = true, bool CheckForNan = true)
             where T : IEnumerable<double> //
         {
 

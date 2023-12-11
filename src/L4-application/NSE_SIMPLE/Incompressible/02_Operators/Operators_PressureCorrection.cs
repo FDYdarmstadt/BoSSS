@@ -39,7 +39,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// 
         /// </summary>
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             return (new IP1_Flux_PressureCorrection(SolverConf.PenaltyPressureCorrection, SolverConf.BcMap)).Operator();
         }
     }

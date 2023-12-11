@@ -21,7 +21,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="__owner"></param>
         /// <param name="diagonalValue"></param>
-        public ConstantTemporalOperator(SpatialOperator __owner, double diagonalValue = 1.0) 
+        public ConstantTemporalOperator(DifferentialOperator __owner, double diagonalValue = 1.0) 
             : this(__owner, __owner.DomainVar.Select(dv => diagonalValue).ToArray()) { 
             
             owner = __owner;
@@ -39,7 +39,7 @@ namespace BoSSS.Foundation {
         /// Matrix diagonal per variable, i.e. if <paramref name="__owner"/> has 4 domain and 4 codomain variables,
         /// this must have 4 entries too, providing a single factor for the temporal derivative of each equation.
         /// </param>
-        public ConstantTemporalOperator(SpatialOperator __owner, double[] diagonal) {
+        public ConstantTemporalOperator(DifferentialOperator __owner, double[] diagonal) {
             owner = __owner;
             if(owner.DomainVar.Count != owner.CodomainVar.Count) {
                 throw new NotSupportedException("Expecting a square operator.");
@@ -48,7 +48,7 @@ namespace BoSSS.Foundation {
             m_diagonal = diagonal.CloneAs();
         }
 
-        SpatialOperator owner;
+        DifferentialOperator owner;
 
         double[] m_diagonal;
 
@@ -56,7 +56,7 @@ namespace BoSSS.Foundation {
         /// Modifies the diagonal entries.
         /// </summary>
         /// <param name="val">value to set for the diagonal entry</param>
-        /// <param name="eqnName">some codomain name in <see cref="ISpatialOperator.CodomainVar"/></param>
+        /// <param name="eqnName">some codomain name in <see cref="IDifferentialOperator.CodomainVar"/></param>
         public void SetDiagonal(string eqnName, double val) {
             int idx = owner.CodomainVar.IndexOf(eqnName);
             SetDiagonal(idx, val);
@@ -152,7 +152,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// 
             /// </summary>
-            public ISpatialOperator Owner {
+            public IDifferentialOperator Owner {
                 get {
                     return m_Owner.owner;
                 }
@@ -233,15 +233,15 @@ namespace BoSSS.Foundation {
     /// </summary>
     public class DependentTemporalOperator : ITemporalOperator {
 
-        SpatialOperator owner;
+        DifferentialOperator owner;
 
         /// <summary>
         /// ctor-
         /// </summary>
         /// <param name="__owner"></param>
-        public DependentTemporalOperator(SpatialOperator __owner) {
+        public DependentTemporalOperator(DifferentialOperator __owner) {
             owner = __owner;
-            InternalRepresentation = new SpatialOperator(__owner.DomainVar, __owner.ParameterVar, __owner.CodomainVar, __owner.QuadOrderFunction);
+            InternalRepresentation = new DifferentialOperator(__owner.DomainVar, __owner.ParameterVar, __owner.CodomainVar, __owner.QuadOrderFunction);
             InternalRepresentation.LinearizationHint = LinearizationHint.AdHoc;
             InternalRepresentation.m_UserDefinedValues = __owner.m_UserDefinedValues;
         }
@@ -256,7 +256,7 @@ namespace BoSSS.Foundation {
         
         }
 
-        SpatialOperator InternalRepresentation;
+        DifferentialOperator InternalRepresentation;
 
         /// <summary>
         /// locks the configuration of the operator

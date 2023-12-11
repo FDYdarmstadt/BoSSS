@@ -20,6 +20,9 @@ using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
+using BoSSS.Foundation.Quadrature;
+using ilPSP.Tracing;
+using ilPSP;
 
 namespace BoSSS.Foundation {
 
@@ -654,6 +657,239 @@ namespace BoSSS.Foundation {
             }
 
             return Math.Sqrt(acc);
+        }
+
+
+        /// <summary>
+        /// Accumulates the DG projection (with respect to <see cref="Basis"/>)
+        /// times <paramref name="alpha"/> to this field, i.e. <br/>
+        /// this = this + <paramref name="alpha"/>*<paramref name="func"/>;
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="alpha">scaling of <paramref name="func"/></param>
+        /// <param name="scheme"></param>
+        virtual public void ProjectField(double alpha, VectorFunction func, CellQuadratureScheme scheme = null) {
+            using (var tr = new FuncTrace()) {
+                int dgDeg = this.m_Components.Max(f => f.Basis.Degree);
+                int order = dgDeg * 2 + 2;
+                tr.Info($"dg degree {dgDeg}, quad order {order}");
+
+                var rule = scheme.SaveCompile(this.GridDat, order);
+
+
+                //Stopwatch w = new Stopwatch();
+                //w.Start();
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
+                pq.Execute();
+                //w.Stop();
+                //Console.WriteLine("Projection took: " + w.Elapsed.TotalSeconds + " seconds.");
+            }
+        }
+
+        /// <summary>
+        /// Accumulates the DG projection (with respect to <see cref="Basis"/>)
+        /// times <paramref name="alpha"/> to this field, i.e. <br/>
+        /// this = this + <paramref name="alpha"/>*<paramref name="func"/>;
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="alpha">scaling of <paramref name="func"/></param>
+        /// <param name="rule">
+        /// quadrature rule
+        /// </param>
+        virtual public void ProjectField(double alpha, VectorFunction func, ICompositeQuadRule<QuadRule> rule) {
+            using (new FuncTrace()) {
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
+                pq.Execute();
+            }
+        }
+
+        /// <summary>
+        /// Accumulates the DG projection (with respect to <see cref="Basis"/>)
+        /// times <paramref name="alpha"/> to this field, i.e. <br/>
+        /// this = this + <paramref name="alpha"/>*<paramref name="func"/>;
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="alpha">scaling of <paramref name="func"/></param>
+        /// <param name="rule">
+        /// quadrature rule
+        /// </param>
+        public void ProjectField(double alpha, VectorFunctionEx func, ICompositeQuadRule<QuadRule> rule) {
+            using (new FuncTrace()) {
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
+                pq.Execute();
+            }
+        }
+
+        /// <summary>
+        /// Accumulates the DG projection (with respect to <see cref="Basis"/>)
+        /// times <paramref name="alpha"/> to this field, i.e. <br/>
+        /// this = this + <paramref name="alpha"/>*<paramref name="func"/>;
+        /// </summary>
+        /// <param name="func"></param>
+        /// <param name="alpha">scaling of <paramref name="func"/></param>
+        /// <param name="scheme"></param>
+        public void ProjectField(double alpha, VectorFunctionEx func, CellQuadratureScheme scheme = null) {
+            using (var tr = new FuncTrace()) {
+                int dgDeg = this.m_Components.Max(f => f.Basis.Degree);
+                int order = dgDeg * 2 + 2;
+                tr.Info($"dg degree {dgDeg}, quad order {order}");
+                var pq = new ProjectionQuadrature(this, alpha, func, scheme.SaveCompile(this.GridDat, order));
+                pq.Execute();
+            }
+        }
+
+
+        /// <summary>
+        /// projects a vector function onto the DG-space;
+        /// </summary>
+        protected class ProjectionQuadrature : BoSSS.Foundation.Quadrature.CellQuadrature {
+
+            public ProjectionQuadrature(VectorField<T> owner, double alpha, VectorFunction func, ICompositeQuadRule<QuadRule> qr)
+                : base(new int[] { owner.m_Components.Max(f => f.Basis.Length), owner.m_Components.Length }, owner.GridDat, qr) {
+                m_func = func;
+                m_Owner = owner;
+                m_alpha = alpha;
+            }
+
+            public ProjectionQuadrature(VectorField<T> owner, double alpha, VectorFunctionEx func, ICompositeQuadRule<QuadRule> qr)
+                : base(new int[] { owner.m_Components.Max(f => f.Basis.Length), owner.m_Components.Length }, owner.GridDat, qr) {
+                m_func2 = func;
+                m_Owner = owner;
+                m_alpha = alpha;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            protected VectorField<T> m_Owner;
+
+            /// <summary>
+            /// the function to project onto <see cref="m_Owner"/>
+            /// </summary>
+            protected VectorFunction m_func;
+
+            /// <summary>
+            /// the function to project onto <see cref="m_Owner"/>
+            /// </summary>
+            protected VectorFunctionEx m_func2;
+
+            /// <summary>
+            /// a constant to multiply <see cref="m_func"/> or <see cref="m_func2"/> with;
+            /// </summary>
+            protected double m_alpha;
+
+            /// <summary>
+            /// Nodes in global coordinates
+            /// - 1st index: cell index (minus some offset);
+            /// - 2nd index: node index;
+            /// - 3rd index; spatial coordinate;
+            /// </summary>
+            protected MultidimensionalArray m_NodesTransformed = new MultidimensionalArray(3);
+
+            /// <summary>
+            /// results of function evaluation
+            /// - 1st index: cell index (minus some offset);
+            /// - 2nd index: node index;
+            /// </summary>
+            protected MultidimensionalArray m_FunctionValues = new MultidimensionalArray(2);
+
+            /// <summary>
+            /// Allocates memory for the global coordinates and the function values
+            /// </summary>
+            protected override void AllocateBuffers(int NoOfItems, NodeSet rule) {
+                base.AllocateBuffers(NoOfItems, rule);
+                int NoOfNodes = rule.GetLength(0);
+                m_NodesTransformed.Allocate(new int[] { NoOfItems, NoOfNodes, GridDat.SpatialDimension });
+                m_FunctionValues.Allocate(new int[] { NoOfItems, NoOfNodes, m_Owner.m_Components.Length });
+                //Console.WriteLine($"Projection Quadrature: NoOfItems = {NoOfItems}");
+            }
+
+            /// <summary>
+            /// Integrand evaluation.
+            /// </summary>
+            protected override void Evaluate(int i0, int Length, QuadRule rule, MultidimensionalArray EvalResult) {
+                NodeSet NodesUntransformed = rule.Nodes;
+                if (Length != EvalResult.GetLength(0))
+                    throw new ApplicationException();
+                if (Length != m_NodesTransformed.GetLength(0))
+                    throw new ApplicationException();
+
+
+                int N = NodesUntransformed.GetLength(0); // number of nodes per cell
+                int D = NodesUntransformed.GetLength(1); // spatial dimension
+                
+                if (m_func != null) {
+                    // transform nodes
+                    GridDat.TransformLocal2Global(NodesUntransformed, i0, Length, m_NodesTransformed, 0);
+
+                    // evaluate function
+                    m_func(m_NodesTransformed.ResizeShallow(new int[] { N * Length, D }),
+                        m_FunctionValues.ResizeShallow(new int[] { N * Length, m_Owner.m_Components.Length }));
+                } else {
+                    // evaluate function
+                    m_func2(i0, Length, NodesUntransformed, m_FunctionValues);
+                }
+
+                // get basis values
+                MultidimensionalArray[] BasisValues = m_Owner.m_Components.Select(f => f.Basis.CellEval(NodesUntransformed, i0, Length)).ToArray();
+                int NoOfComps = BasisValues.Length;
+
+                // (ScalarField) * (m-th Basis function)                
+                //for (int j = 0; j < Length; j++) {   // loop over cells
+                //    for (int n = 0; n < N; n++) {    // loop over quadrature nodes
+                //        for (int m = 0; m < M; m++) { // loop over coordinates
+                //            EvalResult[j, n, m] = m_FunctionValues[j, n] * BasisValues[j, n, m];
+                //        }
+                //    }
+                //}
+                for(int d = 0; d < NoOfComps; d++) {
+                    int M = BasisValues[d].GetLength(1);
+                    var EvalResult_d = EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, 0, d }, new int[] { Length-1, rule.NoOfNodes - 1, M - 1, d - 1 });
+                    EvalResult_d.Multiply(1.0, m_FunctionValues.ExtractSubArrayShallow(-1, -1, d), BasisValues[d], 0.0, "jnm", "jn", "jnm");
+                }
+
+            }
+
+            /// <summary>
+            /// performs the accumulation (multiplication of
+            /// integration result by <see cref="m_alpha"/> and addition to)
+            /// the DG coordinates of <see cref="m_Owner"/>;
+            /// </summary>
+            /// <param name="i0"></param>
+            /// <param name="Length"></param>
+            /// <param name="ResultsOfIntegration"></param>
+            protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                int[] g2l = GridDat.iGeomCells.GeomCell2LogicalCell;
+
+                var Coords = m_Owner.m_Components.Select(a => a.Coordinates).ToArray();
+                var Basises = m_Owner.m_Components.Select(a => a.Basis).ToArray();
+                int NoOfComp = Coords.Length;
+
+
+                if (g2l == null) {
+                    for (int j = 0; j < Length; j++) {
+                        int jCell = j + i0;
+                        for (int d = 0; d < NoOfComp; d++) {
+                            var coords_d = Coords[d];
+                            int N = Basises.GetLength(jCell);
+                            for (int n = 0; n < N; n++) {
+                                coords_d[jCell, n] += m_alpha * ResultsOfIntegration[j, n, d];
+                            }
+                        }
+                    }
+                } else {
+                    for (int j = 0; j < Length; j++) {
+                        int jCell = g2l[j + i0];
+                        for (int d = 0; d < NoOfComp; d++) {
+                            var coords_d = Coords[d];
+                            int N = Basises.GetLength(jCell);
+                            for (int n = 0; n < N; n++) {
+                                coords_d[jCell, n] += m_alpha * ResultsOfIntegration[j, n, d];
+                            }
+                        }
+                    }
+                }
+            }
         }
 
     }
