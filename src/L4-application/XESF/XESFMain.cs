@@ -574,7 +574,7 @@ namespace XESF
             #region Initialize the LevelSet
             if (Control.IsTwoLevelSetRun)
             {
-                this.LevelSet.ProjectField(1.0, this.Control.LevelSetPos, scheme);
+                this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue, scheme);
                 LsTBO = LevelSetTwo;
             }
             else
@@ -593,7 +593,7 @@ namespace XESF
 
                 case GetLevelSet.FromFunction:
                     LevelSetOpti.AssembleTransMat(LsTBO);
-                    LevelSetOpti.ProjectFromFunction(Control.InitialShockPostion);
+                    LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                     LevelSetOpti.ProjectOntoLevelSet(LsTBO);
                     break;
 

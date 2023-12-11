@@ -26,6 +26,11 @@ namespace ApplicationWithIDT {
             this.NonLinearSolver.MaxSolverIterations = 10;
             this.NonLinearSolver.ConvergenceCriterion = 1e-08;
             this.NonLinearSolver.verbose = false;
+            this.SpeciesTable[0, 0] = "L";
+            this.SpeciesTable[0, 1] = "R";
+            this.SpeciesTable[1, 0] = "A";
+            this.SpeciesTable[1, 1] = "B";
+            //this.QueryHandler.AddQuery("Gamma
             //this.QueryHandler.AddQuery("Gamma", delegate (IApplication<AppControl> app, double time) { return this.gamma; });
             //this.QueryHandler.AddQuery("Alpha", delegate (IApplication<AppControl> app, double time) { return this.alpha; });
             //this.QueryHandler.AddQuery("Mu", delegate (IApplication<AppControl> app, double time) { return this.mu; });
@@ -45,6 +50,10 @@ namespace ApplicationWithIDT {
         /// </summary>
         public int LevelSetDegree { get; set; } = 1;
 
+        /// <summary>
+        /// here one can add a value that will be used to normalized the <field,spc> combination
+        /// </summary>
+        public Dictionary<Tuple<string, string>, double> BaseFlowPerSpeciesAndField { get; set; } = null;
 
         /// <summary>
         /// Function determining the QuadOrderdegree
@@ -107,13 +116,15 @@ namespace ApplicationWithIDT {
 
         #region Level Set Stuff
         public bool IsTwoLevelSetRun { get; set; } = true;
-        public Func<double[], double> InitialShockPostion { get; set; } = x => 0.5 - x[0];
+        public Func<double[], double> LevelSetTwoInitialValue { get; set; } = x => 0.5 - x[0];
         public string[] SpeciesToEvaluate { get; set; } = null;
         public string[,] SpeciesTable { get; set; } = new string[2, 2];
         public string LsOne_NegSpecies { get; set; } = "V";
         public string LsOne_PosSpecies { get; set; } = "L";
         public string LsTwo_NegSpecies { get; set; } = "L";
         public string LsTwo_PosSpecies { get; set; } = "R";
+        public string[,] LsOne_SpeciesPairs { get; set; } = new string[,] { { "L", "R" } };
+        public string[,] LsTwo_SpeciesPairs { get; set; } = new string[,] { { "L", "R" } };
         public bool WriteLSCoordinates { get; set; } = false;
         public Func<IGrid> LevelSetGridFunc { get; set; }
         public bool OptiLSIsOrthonormal { get; set; } = false;
@@ -145,7 +156,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Position of LevelSetOne, only needed when two LevelSets are used
         /// </summary>
-        public Func<double[], double> LevelSetPos { get; set; } = null;
+        public Func<double[], double> LevelSetOneInitialValue { get; set; } = null;
         public string ShockLevelSet_Db { get; set; } = null;
         public Tuple<Guid, TimestepNumber> ShockLevelSet_Info { get; set; } = null;
         public string ShockLevelSet_FieldName { get; set; } = null;
