@@ -511,8 +511,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     bLinearRequired = LinearRequired;
                     bAffineRequired = AffineRequired;
-                    lock (m_owner) {
-                    //{ 
+                    { 
                         if (bLinearRequired) {
                             EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches,
                                 (E, mda) => E.InternalEdge_UxV(ref efp, mda),
