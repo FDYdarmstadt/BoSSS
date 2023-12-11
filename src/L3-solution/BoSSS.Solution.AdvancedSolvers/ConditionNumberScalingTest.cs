@@ -260,6 +260,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// One tuple for maximum value that should be tested
         /// - 1st item: name of y-axis (wildcards accepted)
         /// - 2nd item: maximum for the respective condition number
+        /// </summary>
         public IList<(string yName, double MaxCondNo)> ExpectedMaximum;
 
 
