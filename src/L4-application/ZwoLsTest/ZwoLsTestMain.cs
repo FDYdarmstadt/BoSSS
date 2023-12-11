@@ -201,7 +201,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
         }
 
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
 
 
         int QuadOrder {
@@ -211,7 +211,7 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1,
+            Op = new XDifferentialOperatorMk2(1, 0, 1,
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new [] { "B" },
                 __varnames: new[] { "u", "c1" });
@@ -620,7 +620,7 @@ namespace BoSSS.Application.ZwoLsTest {
             CheckExchange(false);
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
@@ -744,7 +744,7 @@ namespace BoSSS.Application.ZwoLsTest {
             MsrMatrix ConMatrix = new MsrMatrix(new Partitioning(J));
             MsrMatrix ConMatrix2 = new MsrMatrix(new Partitioning(J));
             var map = new UnsetteledCoordinateMapping(new Basis(this.GridData, 0));
-            var FConMatrix = new XSpatialOperatorMk2.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
+            var FConMatrix = new XDifferentialOperatorMk2.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
 
             long jCell0 = this.GridData.CellPartitioning.i0;
 

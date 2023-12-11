@@ -73,8 +73,8 @@ namespace SAIDT {
             
 
             GridData gridData = (GridData)this.GridData;
-            this.XSpatialOperator = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
-            this.Op_obj = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
+            this.XSpatialOperator = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
+            this.Op_obj = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             #endregion
 
             #region add EquationComponents

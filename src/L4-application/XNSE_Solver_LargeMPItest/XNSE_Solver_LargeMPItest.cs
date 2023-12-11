@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         [Test]
         static public void ParallelRotatingSphere() {
-            var C = XNSE_Solver_MPItest.Rotating_Sphere(k:1, Res:20, SpaceDim:3, useAMR:true, useLoadBal: true);
+            var C = XNSE_Solver_MPItest.Rotating_Sphere(k: 1, Res: 20, SpaceDim: 3, useAMR: true, useLoadBal: true);
             //C.TracingNamespaces = "*";
 
             using (var solver = new XNSE()) {
@@ -55,12 +55,33 @@ namespace BoSSS.Application.XNSE_Solver {
             //Assert.IsTrue(false, "this should fail!");
         }
 
+        [Test]
+        public static void ParallelRotatingTilted3DTorus() {
+            var C = HardcodedControl.RotatingTiltedXRigid(k: 1, Res: 20, SpaceDim: 3, AMR: true, AMRLevel: 1, TiltAngle: Math.PI / 4, SolverOn: true);
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        [Test]
+        public static void RotatingTilted3DTorusAgg0() {
+            var C = HardcodedControl.RotatingTilted3DTorusAgg0();
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+        
         /// <summary>
-        /// 
+        /// Initiates all the test cases
         /// </summary>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
             ParallelRotatingSphere();
+            ParallelRotatingTilted3DTorus();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

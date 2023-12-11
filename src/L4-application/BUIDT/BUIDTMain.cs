@@ -77,8 +77,8 @@ namespace BUIDT {
             
 
             GridData gridData = (GridData)this.GridData;
-            this.XSpatialOperator = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
-            this.Op_obj = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
+            this.XSpatialOperator = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
+            this.Op_obj = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             #endregion
             this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.STBurgersUpwindFlux("L", Control.is_nf_smth, Control.s_alpha, Control.DirichletBoundaryMap));
             this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.STBurgersUpwindFlux("R", Control.is_nf_smth, Control.s_alpha, Control.DirichletBoundaryMap));

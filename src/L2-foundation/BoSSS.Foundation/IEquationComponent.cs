@@ -74,7 +74,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Update of parameter fields used by this operator;
-        /// (alternatively, <see cref="ISpatialOperator.ParameterUpdates"/> can be used.) 
+        /// (alternatively, <see cref="IDifferentialOperator.ParameterUpdates"/> can be used.) 
         /// </summary>
         /// <param name="Arguments">
         /// input, the current state of the approximate solution at which the operator should be evaluated or linearized.
@@ -87,7 +87,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Factory for the allocation of storage for storing the parameters for this component
-        /// (alternatively, <see cref="ISpatialOperator.ParameterFactories"/> can be used.)
+        /// (alternatively, <see cref="IDifferentialOperator.ParameterFactories"/> can be used.)
         /// </summary>
         /// <param name="Arguments">
         /// input, the currently used DG fields to store approximate solution.
@@ -180,7 +180,7 @@ namespace BoSSS.Foundation {
     /// <summary>
     /// Interface for components that provide their derivative,
     /// required for Newton solvers
-    /// (see <see cref="SpatialOperator.GetJacobiOperator"/>).
+    /// (see <see cref="DifferentialOperator.GetJacobiOperator"/>).
     /// </summary>
     public interface ISupportsJacobianComponent {
 

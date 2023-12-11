@@ -22,7 +22,7 @@ using System.Collections.Generic;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// see <see cref="ISpatialOperator.EquationComponents"/>
+    /// see <see cref="IDifferentialOperator.EquationComponents"/>
     /// </summary>
     public interface IEquationComponents : IEnumerable<KeyValuePair<string, IEnumerable<IEquationComponent>>> {
 
@@ -31,7 +31,7 @@ namespace BoSSS.Foundation {
         /// codomain
         /// </summary>
         /// <param name="EqnName">
-        /// a variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>)
+        /// a variable in the codomain (<see cref="DifferentialOperator.CodomainVar"/>)
         /// </param>
         /// <returns></returns>
         ICollection<IEquationComponent> this[string EqnName] {
@@ -45,7 +45,7 @@ namespace BoSSS.Foundation {
     public enum LinearizationHint {
 
         /// <summary>
-        /// Employ the <see cref="ISpatialOperator.GetJacobiOperator(int)"/>
+        /// Employ the <see cref="IDifferentialOperator.GetJacobiOperator(int)"/>
         /// </summary>
         GetJacobiOperator = 1,
 
@@ -78,9 +78,9 @@ namespace BoSSS.Foundation {
 
 
     /// <summary>
-    /// Common interface for spatial operators in the DG and the XDG context
+    /// Common interface for differential operators in the DG and the XDG context
     /// </summary>
-    public interface ISpatialOperator {
+    public interface IDifferentialOperator {
 
         /// <summary>
         /// names of (DG-) variables that represent the Co-Domain of this differential operator
@@ -173,7 +173,7 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        ISpatialOperator GetJacobiOperator(int SpatialDimension);
+        IDifferentialOperator GetJacobiOperator(int SpatialDimension);
 
         /// <summary>
         /// A hint for implicit/nonlinear solvers, which linearization of the operator should be used
@@ -202,7 +202,7 @@ namespace BoSSS.Foundation {
         /// <param name="ParameterMap">
         /// The parameter variables (of this differential operator);
         /// The number of elements in the list must match the parameter count of the differential operator
-        /// (see <see cref="SpatialOperator.ParameterVar"/>);
+        /// (see <see cref="DifferentialOperator.ParameterVar"/>);
         /// It is allowed to set an entry to 'null', in this case the values of the parameter field
         /// are assumed to be 0.0;
         /// If the differential operator contains no parameters, this argument can be null;
@@ -319,7 +319,7 @@ namespace BoSSS.Foundation {
     }
 
     /// <summary>
-    /// <see cref="ISpatialOperator.TemporalOperator"/>
+    /// <see cref="IDifferentialOperator.TemporalOperator"/>
     /// </summary>
     public interface ITemporalOperator {
 

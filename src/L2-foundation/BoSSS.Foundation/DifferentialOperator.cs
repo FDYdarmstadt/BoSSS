@@ -78,7 +78,7 @@ namespace BoSSS.Foundation {
     /// from (DG-) variables in the domain, identified and ordered by <see cref="DomainVar"/>
     /// to variables in the co-domain, identified and ordered by <see cref="CodomainVar"/>.
     /// </summary>
-    public class SpatialOperator : ISpatialOperator {
+    public class DifferentialOperator : IDifferentialOperator {
 
 
         bool m_IsLinear;
@@ -98,7 +98,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// <see cref="ISpatialOperator.VectorFieldIndices"/>
+        /// <see cref="IDifferentialOperator.VectorFieldIndices"/>
         /// </summary>
         /// <remarks>
         /// Note: two ore more domain variable names of <see cref="DomainVar"/> are considered to be part of a vector field, 
@@ -115,7 +115,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// <see cref="ISpatialOperator.SolverSafeguard"/>
+        /// <see cref="IDifferentialOperator.SolverSafeguard"/>
         /// </summary>
         public SolverSafeguard SolverSafeguard {
             get;
@@ -308,7 +308,7 @@ namespace BoSSS.Foundation {
         List<DelPartialParameterUpdate> m_ParameterUpdates = new List<DelPartialParameterUpdate>();
 
         /// <summary>
-        /// <see cref="ISpatialOperator.ParameterUpdates"/>
+        /// <see cref="IDifferentialOperator.ParameterUpdates"/>
         /// </summary>
         public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
@@ -323,7 +323,7 @@ namespace BoSSS.Foundation {
         List<DelParameterFactory> m_ParameterFactories = new List<DelParameterFactory>();
 
         /// <summary>
-        /// <see cref="ISpatialOperator.ParameterFactories"/>
+        /// <see cref="IDifferentialOperator.ParameterFactories"/>
         /// </summary>
         public ICollection<DelParameterFactory> ParameterFactories {
             get {
@@ -339,7 +339,7 @@ namespace BoSSS.Foundation {
         List<Action<double>> m_HomotopyUpdate = new List<Action<double>>();
 
         /// <summary>
-        /// <see cref="ISpatialOperator.HomotopyUpdate"/>
+        /// <see cref="IDifferentialOperator.HomotopyUpdate"/>
         /// </summary>
         public ICollection<Action<double>> HomotopyUpdate {
             get {
@@ -388,7 +388,7 @@ namespace BoSSS.Foundation {
         /// followed by the names of the codomain variables
         /// (entries <paramref name="NoOfDomFields"/> to (<paramref name="NoOfDomFields"/>+<paramref name="NoOfCodomFields"/>-1));
         /// </param>
-        public SpatialOperator(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
+        public DifferentialOperator(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
             : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc) {
             if(NoOfCodomFields + NoOfDomFields != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain and codomain fields.");
@@ -405,7 +405,7 @@ namespace BoSSS.Foundation {
         /// names of domain variables, followed by the names of the parameter variables,
         /// followed by the names of the codomain variables;
         /// </param>
-        public SpatialOperator(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
+        public DifferentialOperator(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
             : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc) {
             if(NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain, parameter and codomain fields.");
@@ -416,7 +416,7 @@ namespace BoSSS.Foundation {
         /// Empty constructor; Variable, Parameter, and Codomain/Equation names are specified by the 
         /// order in which equation components are added.
         /// </summary>
-        public SpatialOperator()
+        public DifferentialOperator()
             : this(new string[0], new string[0], new string[0], QuadOrderFunc.NonLinear(2)) {
         }
 
@@ -431,7 +431,7 @@ namespace BoSSS.Foundation {
         /// variable names in the Codomain of the spatial differential operator
         /// </param>
         /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
-        public SpatialOperator(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc)
+        public DifferentialOperator(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc)
             : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc) {
         }
 
@@ -449,7 +449,7 @@ namespace BoSSS.Foundation {
         /// variable names in the Codomain of the spatial differential operator
         /// </param>
         /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
-        public SpatialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc) {
+        public DifferentialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc) {
             m_DomainVar = new string[__DomainVar.Count];
             for(int i = 0; i < m_DomainVar.Length; i++) {
                 if(Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
@@ -496,7 +496,7 @@ namespace BoSSS.Foundation {
         /// if a component has an illegal configuration (e.g. it's arguments
         /// (<see cref="BoSSS.Foundation.IEquationComponent.ArgumentOrdering"/>) are not contained
         /// in the domain variable list (<see cref="DomainVar"/>)), an 
-        /// exception is thrown, if <paramref name="allowVarAddition"/> is set true, see also <see cref="ISpatialOperator.Commit(bool)"/>
+        /// exception is thrown, if <paramref name="allowVarAddition"/> is set true, see also <see cref="IDifferentialOperator.Commit(bool)"/>
         /// </remarks>
         internal protected void Verify(bool allowVarAddition) {
             if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
@@ -675,19 +675,19 @@ namespace BoSSS.Foundation {
         /// </summary>
         public class _EquationComponents : IEquationComponents {
 
-            internal _EquationComponents(SpatialOperator owner) {
+            internal _EquationComponents(DifferentialOperator owner) {
                 m_owner = owner;
             }
 
-            SpatialOperator m_owner;
+            DifferentialOperator m_owner;
 
             /// <summary>
             /// Returns the collection of equation components for one variable in the codomain;
-            /// If the <paramref name="EqnName"/> is not known, and the operator is not committed yet (<see cref="SpatialOperator.Commit"/>) a new 
+            /// If the <paramref name="EqnName"/> is not known, and the operator is not committed yet (<see cref="DifferentialOperator.Commit"/>) a new 
             /// equation/codomain name is appended.
             /// </summary>
             /// <param name="EqnName">
-            /// a variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>)
+            /// a variable in the codomain (<see cref="DifferentialOperator.CodomainVar"/>)
             /// </param>
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
@@ -1005,7 +1005,7 @@ namespace BoSSS.Foundation {
         /// <param name="ParameterMap">
         /// The parameter variables (of this differential operator);
         /// The number of elements in the list must match the parameter count of the differential operator
-        /// (see <see cref="SpatialOperator.ParameterVar"/>);
+        /// (see <see cref="DifferentialOperator.ParameterVar"/>);
         /// It is allowed to set an entry to 'null', in this case the values of the parameter field
         /// are assumed to be 0.0;
         /// If the differential operator contains no parameters, this argument can be null;
@@ -1070,12 +1070,12 @@ namespace BoSSS.Foundation {
         /// </summary>
         abstract public class EvaluatorBase : IEvaluator {
 
-            SpatialOperator m_Owner;
+            DifferentialOperator m_Owner;
 
             /// <summary>
             /// the operator used to construct this object
             /// </summary>
-            public ISpatialOperator Owner {
+            public IDifferentialOperator Owner {
                 get {
                     return m_Owner;
                 }
@@ -1085,7 +1085,7 @@ namespace BoSSS.Foundation {
             /// ctor
             /// </summary>
             protected internal EvaluatorBase(
-                SpatialOperator owner,
+                DifferentialOperator owner,
                 UnsetteledCoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap) //
@@ -1142,7 +1142,7 @@ namespace BoSSS.Foundation {
                 string[] DomNames = m_Owner.DomainVar.ToArray();
                 string[] CodNames = m_Owner.CodomainVar.ToArray();
 
-                var _OperatorCoefficients = ((SpatialOperator)Owner).OperatorCoefficientsProvider(this.GridData, this.time);
+                var _OperatorCoefficients = ((DifferentialOperator)Owner).OperatorCoefficientsProvider(this.GridData, this.time);
 
 
                 Debug.Assert(CodNames.Length == CodDGdeg.Length);
@@ -1404,7 +1404,7 @@ namespace BoSSS.Foundation {
             /// Not for direct user interaction
             /// </summary>
             internal protected EvaluatorNonLin(
-                SpatialOperator owner,
+                DifferentialOperator owner,
                 IList<DGField> DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap,
@@ -1425,7 +1425,7 @@ namespace BoSSS.Foundation {
 
 
                     m_NonlinearEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
-                                                            (SpatialOperator) Owner,
+                                                            (DifferentialOperator) Owner,
                                                             DomainVarMap,
                                                             ParameterMap,
                                                             CodomainVarMap,
@@ -1433,7 +1433,7 @@ namespace BoSSS.Foundation {
 
                     if(owner.RequiresComplicatedPeriodicity(grdDat)) {
                         m_ComplicatedPeriodicEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
-                                                            (SpatialOperator)Owner,
+                                                            (DifferentialOperator)Owner,
                                                             DomainVarMap,
                                                             ParameterMap,
                                                             CodomainVarMap,
@@ -1448,7 +1448,7 @@ namespace BoSSS.Foundation {
 
                 if(owner.RequiresVolumeQuadrature) {
                     m_NonlinearVolume = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume(grdDat,
-                                                                (SpatialOperator) Owner,
+                                                                (DifferentialOperator) Owner,
                                                                 DomainVarMap,
                                                                 ParameterMap,
                                                                 CodomainVarMap,
@@ -1671,7 +1671,7 @@ namespace BoSSS.Foundation {
             /// Not for direct user interaction
             /// </summary>
             internal protected EvaluatorLinear(
-                SpatialOperator owner,
+                DifferentialOperator owner,
                 UnsetteledCoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap,
@@ -1808,7 +1808,7 @@ namespace BoSSS.Foundation {
                     
 
                     
-                    SpatialOperator _Owner = (SpatialOperator)this.Owner;
+                    DifferentialOperator _Owner = (DifferentialOperator)this.Owner;
                     
                     if(volRule.Any() && DoVolume) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
@@ -2007,7 +2007,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// 
             /// </summary>
-            public ISpatialOperator Owner {
+            public IDifferentialOperator Owner {
                 get {
                     return Eval.Owner;
                 }
@@ -2885,7 +2885,7 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public ISpatialOperator GetJacobiOperator(int SpatialDimension) {
+        public IDifferentialOperator GetJacobiOperator(int SpatialDimension) {
             return _GetJacobiOperator(SpatialDimension);
         }
 
@@ -2894,7 +2894,7 @@ namespace BoSSS.Foundation {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public SpatialOperator _GetJacobiOperator(int SpatialDimension) {
+        public DifferentialOperator _GetJacobiOperator(int SpatialDimension) {
             if(!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
@@ -2924,7 +2924,7 @@ namespace BoSSS.Foundation {
             // create derivative operator
             // ==========================
 
-            var JacobianOp = new SpatialOperator(
+            var JacobianOp = new DifferentialOperator(
                    this.DomainVar,
                    h.JacobianParameterVars,
                    this.CodomainVar,
@@ -2979,7 +2979,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// <see cref="IDifferentialOperator.IsValidDomainDegreeCombination"/>
         /// </summary>
         public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
             if (!this.IsCommitted)
@@ -3018,9 +3018,9 @@ namespace BoSSS.Foundation {
         /// </summary>
         class TemporalOperatorContainer : ITemporalOperator {
 
-            SpatialOperator m_newOwner;
+            DifferentialOperator m_newOwner;
             ITemporalOperator m_encapsulatedObj;
-            public TemporalOperatorContainer(SpatialOperator __newOwner, ITemporalOperator __encapsulatedObj) {
+            public TemporalOperatorContainer(DifferentialOperator __newOwner, ITemporalOperator __encapsulatedObj) {
                 m_encapsulatedObj = __encapsulatedObj;
                 m_newOwner = __newOwner;
 
@@ -3085,9 +3085,9 @@ namespace BoSSS.Foundation {
         /// </summary>
         class MyDict : IDictionary<string, bool> {
 
-            SpatialOperator owner;
+            DifferentialOperator owner;
 
-            public MyDict(SpatialOperator __owner) {
+            public MyDict(DifferentialOperator __owner) {
                 owner = __owner;
                 InternalRep = new Dictionary<string, bool>();
                 foreach(string domName in __owner.DomainVar) {
