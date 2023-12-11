@@ -411,6 +411,14 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             else
                 return null;
         }
+
+        public object GetPadlock() {
+            SetupMultithread();
+            if (this.volForm is IMultitreadSafety ms)
+                return ms.GetPadlock();
+            else
+                return this.volForm;
+        }
     }
 
 
@@ -1134,6 +1142,15 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             else
                 return null; 
         }
+
+        public object GetPadlock() {
+            SetupMultithread();
+            if (this.edgeForm is IMultitreadSafety ms)
+                return ms.GetPadlock();
+            else
+                return this.edgeForm;
+        }
+
     }
 
 }

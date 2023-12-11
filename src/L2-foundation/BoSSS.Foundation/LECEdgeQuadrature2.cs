@@ -511,8 +511,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     bLinearRequired = LinearRequired;
                     bAffineRequired = AffineRequired;
-                    //lock (m_owner) {
-                    { 
+                    lock (m_owner) {
+                    //{ 
                         if (bLinearRequired) {
                             EvalNSumForm(ref efp, i0, m_Edgeform_UxV, Edges, m_UxVComponentBuffer, m_UxVSumBuffer, false, NS.NoOfNodes, D, m_Edgeform_UxV_Watches,
                                 (E, mda) => E.InternalEdge_UxV(ref efp, mda),
@@ -1086,7 +1086,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
                         EE comp = ecq.m_AllComponentsOfMyType[i];
-                        var bLck = ecq.m_ComponentRequiresLock[i];
+                        var bLck = ecq.m_LockObjects[i];
                         int NoOfArgs = ecq.NoOfArguments[i];
                         var CompBuf_gamma_i = CompBuffer[gamma][i];
                         CompBuf_gamma_i.Clear();
@@ -1125,8 +1125,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                 // inner edge
                                 //comp.InternalEdge(ref efp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
                                 watches_gamma[i].Start();
-                                if(bLck) {
-                                    lock (comp) {
+                                if(bLck != null) {
+                                    lock (bLck) {
                                         InnerEdgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
                                     }
                                 } else {
@@ -1148,8 +1148,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                                 //comp.BoundaryEdge(ref efp, null, CompBuf_gamma_i.ExtractSubArrayShallow(I0,IE));
                                 watches_gamma[i].Start();
-                                if (bLck) {
-                                    lock (comp) {
+                                if (bLck != null) {
+                                    lock (bLck) {
                                         BoundarydgeForm(comp, CompBuf_gamma_i.ExtractSubArrayShallow(I0, IE));
                                     }
                                 } else {

@@ -574,7 +574,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         int i = (_i + this.m_iThread) % ecq.m_AllComponentsOfMyType.Length; // run through loop differently in each thread to reduce locking
 
                         EE comp = ecq.m_AllComponentsOfMyType[i];
-                        var bLck = ecq.m_ComponentRequiresLock[i];
+                        var bLck = ecq.m_LockObjects[i];
                         int NoOfArgs = ecq.NoOfArguments[i];
                         Debug.Assert(NoOfArgs == comp.ArgumentOrdering.Count);
                         int NoOfParams = ecq.NoOfParameters[i];
@@ -591,26 +591,32 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         // evaluate component
                         if (affine) {
                             watches_gamma[i].Start();
-                            if (bLck) {
-                                lock (comp) {
+                            if (bLck != null) {
+                                lock (bLck) {
                                     evalForm(comp, SumBuffer[gamma, 0]);
                                 }
                             } else {
                                 evalForm(comp, SumBuffer[gamma, 0]);
                             }
                             watches_gamma[i].Stop();
+#if DEBUG
+                            SumBuffer[gamma, 0].CheckForNanOrInf(messageprefix: $"After flux {comp}");
+#endif
                         } else {
                             var CompBuffer_gamma_i = CompBuffer[gamma][i];
                             CompBuffer_gamma_i.Clear();
                             watches_gamma[i].Start();
-                            if (bLck) {
-                                lock (comp) {
+                            if (bLck != null) {
+                                lock (bLck) {
                                     evalForm(comp, CompBuffer_gamma_i);
                                 }
                             } else {
                                 evalForm(comp, CompBuffer_gamma_i);
                             }
                             watches_gamma[i].Stop();
+#if DEBUG
+                            CompBuffer_gamma_i.CheckForNanOrInf(messageprefix: $"After flux {comp}");
+#endif
                         }
 
                         // sum up
