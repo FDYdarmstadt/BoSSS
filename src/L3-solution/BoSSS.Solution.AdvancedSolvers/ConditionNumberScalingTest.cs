@@ -144,7 +144,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         public ConditionNumberScalingTest(string Title) {
             m_title = Title;
 
-            this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double, double>>();
+            this.ExpectedSlopes = new List<(XAxisDesignation, string, double, double)>();
+            this.ExpectedMaximum = new List<(string, double)>();
 
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.4, 1.5));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5, -0.2));
