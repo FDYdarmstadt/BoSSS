@@ -151,6 +151,12 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-*", 0.5, -0.2));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyUncut-*", 0.5, -0.2));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyCut-*", 0.5, -0.2));
+
+            ExpectedMaximum.Add(("TotCondNo-*", 1e13));
+            ExpectedMaximum.Add(("StencilCondNo-innerUncut-*", 1e6));
+            ExpectedMaximum.Add(("StencilCondNo-innerCut-*", 1e6));
+            ExpectedMaximum.Add(("StencilCondNo-bndyUncut-*", 1e6));
+            ExpectedMaximum.Add(("StencilCondNo-bndyCut-*", 1e6));
         }
 
 
@@ -243,10 +249,17 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// One tuple for each slope that should be tested
         /// - 1st item: name of x-axis
         /// - 2nd item: name of y-axis (wildcards accepted)
-        /// - 3rd item expected slope in the log-log-regression
-        /// - 4th item lower bound for expected slope in the log-log-regression
+        /// - 3rd item: expected slope in the log-log-regression
+        /// - 4th item: lower bound for expected slope in the log-log-regression
         /// </summary>
-        public IList<ValueTuple<XAxisDesignation, string, double, double>> ExpectedSlopes;
+        public IList<(XAxisDesignation xDesign, string yName, double slopeMax, double slopeMin)> ExpectedSlopes;
+
+
+        /// <summary>
+        /// One tuple for maximum value that should be tested
+        /// - 1st item: name of y-axis (wildcards accepted)
+        /// - 2nd item: maximum for the respective condition number
+        public IList<(string yName, double MaxCondNo)> ExpectedMaximum;
 
 
         /// <summary>
@@ -264,7 +277,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             foreach (var ttt in ExpectedSlopes) {
                 double[] xVals = data[ttt.Item1.ToString()];
-                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+                string[] allYNames = data.Keys.Where(name => ttt.yName.WildcardMatch(name)).ToArray();
 
                 if (!testData.ContainsKey(ttt.Item1.ToString())) 
                     testData.Add(ttt.Item1.ToString(), xVals);
@@ -275,10 +288,25 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     testData.Add(yName, yVals);
 
-                    string tstPasses = Slope <= ttt.Item3 ? Slope >= ttt.Item4 ? "passed" : $"FAILED (threshold is {ttt.Item4})" : $"FAILED (threshold is {ttt.Item3})";
+                    string tstPasses = Slope <= ttt.slopeMax ? Slope >= ttt.slopeMin ? "passed" : $"FAILED (threshold is {ttt.slopeMin})" : $"FAILED (threshold is {ttt.slopeMax})";
                     tw.WriteLine($"    Slope for {yName}: {Slope:0.###e-00} -- {tstPasses}");
                 }
             }
+
+            foreach (var ttt in ExpectedMaximum) {
+                string[] allYNames = data.Keys.Where(name => ttt.yName.WildcardMatch(name)).ToArray();
+
+                foreach (string yName in allYNames) {
+                    double[] yVals = data[yName];
+
+                    double max = yVals.Max();
+
+                    string tstPasses = max <= ttt.MaxCondNo ? "passed" : $"FAILED (threshold is {ttt.MaxCondNo})";
+                    tw.WriteLine($"    Max. for {yName}: {max:0.###e-00} -- {tstPasses}");
+                }
+            }
+
+
 
             CSVFile.SaveToCSVFile<IEnumerable<double>>(testData, "ConditionNumberScalingTest_dataSet-" + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".txt");
             //Console.WriteLine("warning no output-file - ToDo");
@@ -298,16 +326,30 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
          
             foreach (var ttt in ExpectedSlopes) {
                 double[] xVals = data[ttt.Item1.ToString()];
-                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+                string[] allYNames = data.Keys.Where(name => ttt.yName.WildcardMatch(name)).ToArray();
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
 
                     double Slope = DoubleExtensions.LogLogRegressionSlope(xVals, yVals);
 
-                    Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
+                    Assert.LessOrEqual(Slope, ttt.slopeMax, $"Condition number slope for {ttt.yName} to high; at max. {ttt.slopeMax}");
+                    Assert.LessOrEqual(Slope, ttt.slopeMin, $"Condition number slope for {ttt.yName} to low; at min. {ttt.slopeMin}");
                 }
             }
+
+            foreach (var ttt in ExpectedMaximum) {
+                string[] allYNames = data.Keys.Where(name => ttt.yName.WildcardMatch(name)).ToArray();
+
+                foreach (string yName in allYNames) {
+                    double[] yVals = data[yName];
+
+                    double max = yVals.Max();
+
+                    Assert.LessOrEqual(max, ttt.MaxCondNo, $"Condition number maximum for {ttt.yName} to high; at max. {ttt.MaxCondNo}");
+                }
+            }
+
         }
 
 

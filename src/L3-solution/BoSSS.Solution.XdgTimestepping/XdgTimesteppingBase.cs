@@ -681,7 +681,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, bool calculateStencils = true, bool calculateMassMatrix = false) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, 
+            bool calculateGlobals = true,
+            bool plotStencilCondNumViz = false, 
+            bool calculateStencils = true, 
+            bool calculateMassMatrix = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
@@ -697,6 +701,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             //int k = 0;
             foreach (int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
+
+                ana.CalculateGlobals = calculateGlobals;
 
                 //check if expensive stencilCondNumbers are required
                 if (plotStencilCondNumViz == true || calculateStencils == true) {
@@ -740,13 +746,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                 foreach (var levelSet in LevelSets) {
                     StencilCondNoVizS.Add((LevelSet)levelSet.Current);
                 }
-                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 0);
+                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
             }
 
             return Ret;
         }
 
-
+        /*
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysisAk"/>.
@@ -782,15 +788,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
 
-                /*
-                {
-                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
-                    var bla = ana.MinimalEigen();
-                    Console.WriteLine("done: " + bla.lambdaMin);
-                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
-                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
-                }*/
-                //k++;
+               
             }
 
 
@@ -799,7 +797,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             return Ret;
-        }
+        } //*/
 
         /// <summary>
         /// The time associated with the current solution (<see cref="CurrentState"/>)
