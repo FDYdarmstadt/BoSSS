@@ -179,8 +179,8 @@ namespace XESF
             string[] variables = new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy };
 
 
-            this.XSpatialOperator = new XSpatialOperatorMk2(variables, null, variables, Control.quadOrderFunc, this.SpeciesToEvaluate);
-            this.Op_obj = new XSpatialOperatorMk2(variables, null, variables, Control.quadOrderFunc, this.SpeciesToEvaluate);
+            this.XSpatialOperator = new XDifferentialOperatorMk2(variables, null, variables, Control.quadOrderFunc, this.SpeciesToEvaluate);
+            this.Op_obj = new XDifferentialOperatorMk2(variables, null, variables, Control.quadOrderFunc, this.SpeciesToEvaluate);
             #endregion
 
 
@@ -574,7 +574,7 @@ namespace XESF
             #region Initialize the LevelSet
             if (Control.IsTwoLevelSetRun)
             {
-                this.LevelSet.ProjectField(1.0, this.Control.LevelSetPos, scheme);
+                this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue, scheme);
                 LsTBO = LevelSetTwo;
             }
             else
@@ -593,7 +593,7 @@ namespace XESF
 
                 case GetLevelSet.FromFunction:
                     LevelSetOpti.AssembleTransMat(LsTBO);
-                    LevelSetOpti.ProjectFromFunction(Control.InitialShockPostion);
+                    LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                     LevelSetOpti.ProjectOntoLevelSet(LsTBO);
                     break;
 
@@ -1037,7 +1037,7 @@ namespace XESF
         /// <param name="Control"></param>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        public static XSpatialOperatorMk2 BuildOperatorFrom_Control_LsTrk(XESFControl Control, LevelSetTracker LsTrk)
+        public static XDifferentialOperatorMk2 BuildOperatorFrom_Control_LsTrk(XESFControl Control, LevelSetTracker LsTrk)
         {
             var grid = Control.GridFunc();
             return BuildOperatorFrom_Control_LsTrk_Grid(Control, LsTrk, grid);
@@ -1053,13 +1053,13 @@ namespace XESF
         /// <param name="grid">grid </param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"> gets thrown if for a FluxType there is no implementation</exception>
-        public static XSpatialOperatorMk2 BuildOperatorFrom_Control_LsTrk_Grid(XESFControl Control, LevelSetTracker LsTrk, IGrid grid)
+        public static XDifferentialOperatorMk2 BuildOperatorFrom_Control_LsTrk_Grid(XESFControl Control, LevelSetTracker LsTrk, IGrid grid)
         {
             GridData GridData = (GridData)grid.iGridData;
             Material material = Control.GetMaterial();
             IBoundaryConditionMap boundaryMap = new XDGCompressibleBoundaryCondMap(GridData, Control, material, Control.SpeciesToEvaluate);
             string[] variables = new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy };
-            var XSpatialOperator = new XSpatialOperatorMk2(variables, null, variables, Control.quadOrderFunc, Control.SpeciesToEvaluate);
+            var XSpatialOperator = new XDifferentialOperatorMk2(variables, null, variables, Control.quadOrderFunc, Control.SpeciesToEvaluate);
             CompressibleEnvironment.Initialize(2);
             switch (Control.FluxVersion)
             {

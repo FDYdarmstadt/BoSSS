@@ -30,6 +30,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.AccessControl;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -62,6 +63,10 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        /// <summary>
+        /// If agglomeration plots are demanded. A flag for debugging purposes in the agglomeration algorithm.
+        /// </summary>
+        private static bool plotAgglomeration = false;
 
         /// <summary>
         /// The quadrature order used for computing cell volumes and edge areas.
@@ -141,13 +146,14 @@ namespace BoSSS.Foundation.XDG {
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
         /// this should typically be the same order which is used to evaluate the XDG operator matrix.
         /// </param>
+        /// <param name="Tag"> Tag to pass debug information </param>
         internal MultiphaseCellAgglomerator(
             LevelSetTracker lsTrk,
             SpeciesId[] Spc, int CutCellsQuadOrder,
             double __AgglomerationTreshold,
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true,
             double[] oldTs__AgglomerationTreshold = null,
-            double NewbornAndDecasedThreshold = 1.0e-6
+            double NewbornAndDecasedThreshold = 1.0e-6, string Tag = null
             ) {
             MPICollectiveWatchDog.Watch();
             if (__AgglomerationTreshold < 0.0 || __AgglomerationTreshold >= 1.0)
@@ -155,6 +161,9 @@ namespace BoSSS.Foundation.XDG {
 
             if (NewbornAndDecasedThreshold < 0.0 || NewbornAndDecasedThreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
+
+            if (Tag == null)
+                Tag = "";
 
             this.Tracker = lsTrk;
 
@@ -228,19 +237,19 @@ namespace BoSSS.Foundation.XDG {
                 throw new Exception();
             }
             */
-
             // perform agglomeration
             foreach (var spc in this.SpeciesList) {
-                
-                                
+
+
 
                 var aggAlg = new AgglomerationAlgorithm(this.Tracker, spc, CutCellsQuadOrder,
                     AgglomerationThreshold, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold,
                     AgglomerateNewborn, AgglomerateDecased,
-                    ExceptionOnFailedAgglomeration
+                    ExceptionOnFailedAgglomeration, Tag
                     );
 
-                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
+                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairsWithRanks); // CellAgglomerator v2
+                //var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs); // CellAgglomerator v1
 
                 //int myRank = lsTrk.GridDat.MpiRank;
                 //foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
@@ -251,6 +260,15 @@ namespace BoSSS.Foundation.XDG {
             }
 
             this.TotalNumberOfAgglomerations = this.DictAgglomeration.Values.Sum(agg => agg.TotalNumberOfAgglomerations);
+
+            if (PlotAgglomeration) {
+                string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
+                for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
+                    AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
+                }
+                Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
+                AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
+            }
 
             // compute metrics of AGGLOMERATED cut cells
             this.LengthScaleAgg();
@@ -268,12 +286,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        private Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>> GetFrameMatrices<M>(M Matrix, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
+        private Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>> GetFrameMatrices<M>(M Matrix, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
             where M : IMutableMatrixEx {
-            var ret = new Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>>();
+            var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var mtx_spc = new XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker.Regions, Species, RowMap, ColMap);
+                var mtx_spc = new XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker.Regions, Species, RowMap, ColMap);
                 ret.Add(Species, mtx_spc);
             }
 
@@ -500,12 +518,12 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameVector<T>> GetFrameVectors<T>(T vec, UnsetteledCoordinateMapping Map)
+        Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameVector<T>> GetFrameVectors<T>(T vec, UnsetteledCoordinateMapping Map)
             where T : IList<double> {
-            var ret = new Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameVector<T>>();
+            var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameVector<T>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var vec_spc = new XSpatialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
+                var vec_spc = new XDifferentialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
                 ret.Add(Species, vec_spc);
             }
             return ret;
@@ -719,6 +737,8 @@ namespace BoSSS.Foundation.XDG {
                 return gMaxLevel + 1;
             }
         }
+
+        public static bool PlotAgglomeration { get => plotAgglomeration; set => plotAgglomeration = value; }
 
         /// <summary>
         /// Initializes <see cref="CellLengthScales"/>,

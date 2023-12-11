@@ -587,8 +587,8 @@ namespace BoSSS.Platform.LinAlg {
             if (GenericBlas.L2DistPow2(this.Affine, other.Affine) > tolAffine)
                 return false;
 
-            Debug.Assert(this.Matrix.IsContinious && this.Matrix.Index(0, 0) == 0);
-            Debug.Assert(other.Matrix.IsContinious && other.Matrix.Index(0, 0) == 0);
+            Debug.Assert(this.Matrix.IsContinuous && this.Matrix.Index(0, 0) == 0);
+            Debug.Assert(other.Matrix.IsContinuous && other.Matrix.Index(0, 0) == 0);
             double tolTrafo = GenericBlas.L2NormPow2(this.Matrix.Storage) * RelTol;
             if(GenericBlas.L2DistPow2(other.Matrix.Storage, this.Matrix.Storage) > tolTrafo)
                 return false;

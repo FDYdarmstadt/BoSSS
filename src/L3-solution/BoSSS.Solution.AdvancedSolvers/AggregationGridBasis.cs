@@ -903,8 +903,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //Partitioning RowMap = new Partitioning(JAGG * NR);
             long MpiOffset_row = rest.RowPartitioning.i0;
+
             
-            for(int jagg = 0; jagg < JAGG; jagg++) {
+
+            for (int jagg = 0; jagg < JAGG; jagg++) {
                 int[] agCl = agCls[jagg];
                 int K = agCl.Length;
 
@@ -926,41 +928,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             rest[i0Row + m, i0Col + n] = Block[n, m];
                         }
                     }
-
-                    //if (ag.MgLevel == 1 && N == 10) {
-                    //    //var check = MultidimensionalArray.Create(N, N);
-                    //    var RRt = Block.GEMM(Block.Transpose());
-                    //    var check = RRt.GEMM(RRt);
-
-                    //    check.AccEye(-1.0);
-                    //    var bla = check.InfNorm();
-                    //    Console.WriteLine("Check norm: " + bla);
-                    //}
-
                 }
             }
 
-            if (ag.MgLevel == 1 ) {
-                
-                var result = BlockMsrMatrix.Multiply(rest, rest.Transpose());
-                
-                var resultT = result.Transpose();
-                BlockMsrMatrix ShoudBeId;
-                if(result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
-                    ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
-                else
-                    ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);
 
-                ShoudBeId.AccEyeSp(-1.0);
-
-                double ShouldBeID_Norm = ShoudBeId.InfNorm();
-                Debug.Assert(ShouldBeID_Norm < 1.0e-8);
-                //Console.WriteLine("Id norm {0} \t (lävel {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
-
-            }
+            // fk, 27oct23:
+            // the following check fails **wrongly**, if the `rest`-matrix is created for more then one field;
+            // in such a case, it has 1.0 at the diagonals related to the `iFld`-th field, but something else in other rows;
+            // since the identity-property is anyway checked in MultigridMapping.FromOtherLevelMatrix(...), the following check is deactivated.
+            //
+            //if (ag.MgLevel == 1 ) {
+            //    var result = BlockMsrMatrix.Multiply(rest, rest.Transpose());
+            //               
+            //    var resultT = result.Transpose();
+            //    BlockMsrMatrix ShoudBeId;
+            //    if(result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
+            //        ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
+            //    else
+            //        ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);
+            //
+            //    ShoudBeId.AccEyeSp(-1.0);
+            //
+            //    double ShouldBeID_Norm = ShoudBeId.InfNorm();
+            //    if (ShouldBeID_Norm > 1.0e-8) {
+            //        //throw new ArithmeticException("Expecting an identity matrix");
+            //        Console.WriteLine("Id norm {0} \t (level {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
+            //    }
+            //}
         }
 
-        
+
         public AggregationGridData AggGrid {
             get;
             private set;
@@ -1079,8 +1076,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_CompositeBasis[jAgg];
         }
 
-
-        
+        /// <summary>
+        /// Creates composite basis
+        /// </summary>
         MultidimensionalArray CA(int _jAgg) {
             AggregationGridData ag = this.AggGrid;
             var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];

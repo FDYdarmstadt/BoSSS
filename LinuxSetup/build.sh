@@ -13,8 +13,8 @@ rm -rf ./bin
 rm -rf ./doc
 rm -f *.run
 mkdir bin 
-dotnet publish ../src/L4-application/PublicTestRunner/PublicTestRunner.csproj --configuration=Release --output ./bin/Release/net5.0
-dotnet publish ../src/L4-application/PublicTestRunner/PublicTestRunner.csproj --configuration=Release --output ./bin/Release/net5.0
+dotnet publish ../src/L4-application/PublicTestRunner/PublicTestRunner.csproj --configuration=Release --output ./bin/Release/net6.0
+dotnet publish ../src/L4-application/PublicTestRunner/PublicTestRunner.csproj --configuration=Release --output ./bin/Release/net6.0
 
 mkdir bin/native
 cp -R $BOSSS_INSTALL/bin/native/* ./bin/native

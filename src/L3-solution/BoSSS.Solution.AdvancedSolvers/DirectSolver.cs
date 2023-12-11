@@ -220,14 +220,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         class DenseSolverWrapper : ISparseSolver {
 
-            MultidimensionalArray FullMatrix;
+            MultidimensionalArray LU_FullMatrix;
+
+            int[] ipiv;
 
             public void DefineMatrix(IMutableMatrixEx M) {
-                FullMatrix = M.ToFullMatrixOnProc0();
+                LU_FullMatrix = M.ToFullMatrixOnProc0();
+                ipiv = new int[LU_FullMatrix.NoOfRows];
+                LU_FullMatrix.FactorizeLU(ipiv);
             }
 
             public void Dispose() {
-                FullMatrix = null;
+                LU_FullMatrix = null;
             }
 
             public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
@@ -246,7 +250,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(Int_rhs == null)
                     Int_rhs = rhs.ToArray();
 
-                FullMatrix.Solve(Int_x, Int_rhs);
+                //LU_FullMatrix.Solve(Int_x, Int_rhs);
+                LU_FullMatrix.BacksubsLU(ipiv, Int_x, Int_rhs);
 
                 if(writeBack)
                     x.SetV(Int_x);
@@ -311,7 +316,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return solver;
         }
 
-        BlockMsrMatrix m_Mtx;
+        public BlockMsrMatrix m_Mtx;
         int IterCnt = 1;
 
 

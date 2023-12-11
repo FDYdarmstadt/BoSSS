@@ -27,7 +27,7 @@ namespace BoSSS.Solution.Timestepping {
     /// Base class for linear implicit time stepper (e.g. implicit euler). If
     /// the equation to be solved is denoted by dx/dt + F(x) = 0, this class
     /// provides the decomposition of the (linear)
-    /// <see cref="BoSSS.Foundation.SpatialOperator"/> F(x) =
+    /// <see cref="BoSSS.Foundation.DifferentialOperator"/> F(x) =
     /// <em>M</em>*x + <see cref="m_AffineOffset1"/> which is required for
     /// the execution of the timestep. In this class, x is given by
     /// <see cref="CurrentState"/>
@@ -95,7 +95,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="fields"></param>
         /// <param name="solver">
         /// </param>
-        public ImplicitTimeStepper(ISparseSolverExt solver, bool[] temporalOp, SpatialOperator spatialOp, CoordinateMapping fields) {
+        public ImplicitTimeStepper(ISparseSolverExt solver, bool[] temporalOp, DifferentialOperator spatialOp, CoordinateMapping fields) {
             
             // check operator and arguments
             if (!spatialOp.IsCommitted)
@@ -149,7 +149,7 @@ namespace BoSSS.Solution.Timestepping {
         /// if true, only the <paramref name="affineOffset"/>
         /// is computed and <paramref name="matrix"/> is null on exit.
         /// </param>
-        public static void ComputeMatrix(SpatialOperator spatialOp, CoordinateMapping fields, bool OnlyAffine, out MsrMatrix matrix, out double[] affineOffset) {
+        public static void ComputeMatrix(DifferentialOperator spatialOp, CoordinateMapping fields, bool OnlyAffine, out MsrMatrix matrix, out double[] affineOffset) {
             // Check operator and arguments
             if (!spatialOp.IsCommitted)
                 throw new ArgumentException("operator must be committed first.", "spatialOp");

@@ -36,7 +36,7 @@ namespace CNS.IBM {
 
         private ImmersedSpeciesMap speciesMap;
 
-        private SpatialOperator boundaryOperator;
+        private DifferentialOperator boundaryOperator;
 
         private CoordinateMapping boundaryParameterMap;
 
@@ -47,8 +47,8 @@ namespace CNS.IBM {
         private CellMask cutAndTargetCells;
 
         public IBMAdamsBashforth(
-            SpatialOperator standardOperator,
-            SpatialOperator boundaryOperator,
+            DifferentialOperator standardOperator,
+            DifferentialOperator boundaryOperator,
             CoordinateMapping fieldsMap,
             CoordinateMapping parametersMap,
             ISpeciesMap ibmSpeciesMap,

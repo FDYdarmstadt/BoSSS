@@ -467,6 +467,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return GlobalUniqueIndex(ifld, jCell, n_agg);
         }
 
+        public long GetCellI0(int jCell) {
+            if (jCell < this.LocalNoOfBlocks) {
+                return this.GetBlockI0(jCell + this.FirstBlock);
+            } else {
+                if (this.GetLength(jCell) > 0)
+                    return GlobalUniqueIndex(0, jCell, 0);
+                else
+                    return GlobalUniqueIndex(0, jCell - 1, 0);
+            }
+        }
+
         public long GlobalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
             Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));        
@@ -669,22 +680,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.AggBasis[ifld].GetRestrictionMatrix(RestMtx, this, ifld);  //     ... and restrict to this level          
                 }
                 var result = BlockMsrMatrix.Multiply(RestMtx, PrlgMtx);
-#if DEBUG
-            {
-                var resultT = result.Transpose();
-                BlockMsrMatrix ShoudBeId;
-                if(result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
-                    ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
-                else
-                    ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);
+//#if DEBUG
+                {
+                    var resultT = result.Transpose();
+                    BlockMsrMatrix ShoudBeId;
+                    if (result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
+                        ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
+                    else
+                        ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);
 
-                ShoudBeId.AccEyeSp(-1.0);
+                    ShoudBeId.AccEyeSp(-1.0);
 
-                double ShouldBeID_Norm = ShoudBeId.InfNorm();
-                Debug.Assert(ShouldBeID_Norm < 1.0e-8);
-                //Console.WriteLine("Id norm {0} \t (level {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
-            }
-#endif
+                    double ShouldBeID_Norm = ShoudBeId.InfNorm();
+                    if (ShouldBeID_Norm > 1.0e-8)
+                        throw new ArithmeticException("expecting an identity matrix");
+                    //Console.WriteLine("Id norm {0} \t (level {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
+                }
+//#endif
                 return result;
             }
         }

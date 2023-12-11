@@ -303,7 +303,7 @@ namespace BoSSS.Solution {
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             m_Logger.Info("Bootstrapping.");
-
+            m_Logger.Info("Git commit: " + GitCommitHash);
 
             ilPSP.Environment.Bootstrap(
                 args,
@@ -340,6 +340,8 @@ namespace BoSSS.Solution {
 
                     Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
                     Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
+                    Console.WriteLine($"Current commit hash: {GitCommitHash}");
+
 
                     Console.WriteLine("User: " + System.Environment.UserName);
 
@@ -390,11 +392,28 @@ namespace BoSSS.Solution {
 
             m_Logger.Info("Hello from MPI rank " + rank + " of " + size + "!");
 
+
             ReadBatchModeConnectorConfig();
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             return _MustFinalizeMPI;
+        }
+
+        public static string GitCommitHash {
+            get {
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                using (Stream stream = assembly.GetManifestResourceStream("BoSSS.Solution.commit_hash.txt")) {
+                    if (stream == null)
+                        return "unkonwn";
+                    using (StreamReader reader = new StreamReader(stream)) {
+                        string commitHash = reader.ReadToEnd();
+			commitHash = commitHash.Trim();
+                        return commitHash;
+                    }
+                }
+
+            }
         }
 
         /// <summary>
@@ -1329,20 +1348,25 @@ namespace BoSSS.Solution {
 
                 // kernel setup
                 //====================
-               {
-                    Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+                {
+                    Grid.Redistribute(this.Database, Control.GridPartType, Control.GridPartOptions);
+                    //Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+
                     if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
-                        DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
+                        DatabaseDriver.SaveGrid(this.Grid, this.Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     }
 
 
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                    } else {
-                        this.MultigridSequence = new AggregationGridData[0];
-                    }
+                    
+
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                        (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                            MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                            );
+                    else
+                        (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
                 }
                 
                
@@ -1505,8 +1529,9 @@ namespace BoSSS.Solution {
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
-            get;
-            private set;
+            get {
+                return GridData.MultigridSequence;
+            }
         }
 
         /// <summary>
@@ -1528,16 +1553,22 @@ namespace BoSSS.Solution {
         /// </summary>
         private IDatabaseInfo m_Database;
 
+        public IDatabaseInfo Database {
+            get {
+                if (m_Database == null) {
+                    m_Database = GetDatabase();
+                }
+                return m_Database;
+            }
+        }
+
+
         /// <summary>
         /// interface to the database driver
         /// </summary>
         public IDatabaseDriver DatabaseDriver {
             get {
-                if (m_Database == null) {
-                    return null;
-                } else {
-                    return m_Database.Controller.DBDriver;
-                }
+                return Database?.Controller?.DBDriver;
             }
         }
 
@@ -1547,8 +1578,6 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
-
-                
 
 
                 if (this.Control != null) {
@@ -1926,6 +1955,7 @@ namespace BoSSS.Solution {
         protected virtual void SetInitial(double time) {
             using (var tr = new FuncTrace()) {
 
+                
                 this.QueryResultTable.UpdateKey("Timestep", ((int)0));
 
                 if (this.Control == null) {
@@ -2527,7 +2557,6 @@ namespace BoSSS.Solution {
                 // ===============
                 GridData newGridData;
                 {
-                    this.MultigridSequence = null;
 
                     this.Grid.RedistributeGrid(NewPartition);
                     newGridData = (GridData)this.Grid.iGridData;
@@ -2537,9 +2566,11 @@ namespace BoSSS.Solution {
                     }
 
                     if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                            MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                            );
                     else
-                        this.MultigridSequence = new AggregationGridData[0];
+                        (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
 
                     //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                 }
@@ -2663,8 +2694,7 @@ namespace BoSSS.Solution {
                     // ===============
                     GridData newGridData;
                     {
-                        this.MultigridSequence = null;
-
+                        
                         this.Grid = newGrid;
                         newGridData = (GridData)this.Grid.iGridData;
                         oldGridData.Invalidate();
@@ -2675,10 +2705,11 @@ namespace BoSSS.Solution {
                         oldGridData = null;
 
                         if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                            (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                                );
                         else
-                            this.MultigridSequence = new AggregationGridData[0];
+                            (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
 
                         //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                     }
@@ -3007,6 +3038,7 @@ namespace BoSSS.Solution {
             stw.WriteLine($"User Name  : {System.Environment.UserName}");
             stw.WriteLine($"MPI rank   : {this.MPIRank}");
             stw.WriteLine($"MPI size   : {this.MPISize}");
+            stw.WriteLine($"GIT hash   : {GitCommitHash}");
 
             void TryWrite(string s, Func<object> o) {
                 try {
@@ -3132,6 +3164,7 @@ namespace BoSSS.Solution {
                         } else {
                             Console.WriteLine("Warning: unable to obtain grid resolution");
                         }
+                        nlog.LogValue("GitCommitHash", GitCommitHash);
 #if DEBUG
                     }
 #else

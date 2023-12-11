@@ -19,6 +19,17 @@ using System.Collections.Generic;
 namespace ilPSP.Utils {
 
     /// <summary>
+    /// Array type in terms of matrix structure (General, Lower triangular, Upper triangular and Diagonal)
+    /// </summary>
+    public enum MatrixStructure {
+        General,  //general matrix type    
+        LowerTriangular, //Lower triangular matrix type
+        UpperTriangular, //upper triangular matrix type,
+        Diagonal  //diagonal matrix type
+    }
+
+
+    /// <summary>
     /// minimal interface that a non-distributed (non-parallel) matrix must supply.
     /// </summary>
     public interface IMatrix {
@@ -88,6 +99,11 @@ namespace ilPSP.Utils {
         /// <param name="arrayoffset"></param>
         void CopyTo<T>(T array, bool RowWise, int arrayoffset)
             where T : IList<double>;
+
+        /// <summary>
+        /// Defines the matrix structure e.g. diagonal, triangular or general
+        /// </summary>
+        MatrixStructure StructureType { get; set; }
     }
 
 }

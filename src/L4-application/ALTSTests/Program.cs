@@ -75,7 +75,7 @@ namespace ALTSTests {
         VectorField<SinglePhaseField> Velocity;
         SinglePhaseField viscosity;
         ExplicitEuler timeStepper;
-        SpatialOperator diffOp;
+        DifferentialOperator diffOp;
 
         internal int ABOrder = 1;
         internal int numOfSubgrids = 4;
@@ -107,7 +107,7 @@ namespace ALTSTests {
         }
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            diffOp = new SpatialOperator(
+            diffOp = new DifferentialOperator(
                 new string[] { "c" },
                 new string[] { "viscosity", "VelocityX", "VelocityY" },
                 new string[] { "codom1" },

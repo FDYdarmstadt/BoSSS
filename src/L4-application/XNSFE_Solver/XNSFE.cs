@@ -302,14 +302,14 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
         }
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
 
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator            
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+            XDifferentialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
             var config = new XNSFE_OperatorConfiguration(this.Control);
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;

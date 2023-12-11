@@ -467,7 +467,7 @@ namespace BoSSS.Foundation {
             SinglePhaseField r = new SinglePhaseField(this.m_Basis);
             r.m_Identification = this.Identification; // works also if this.Identification is null!
 
-            if (this.m_Mda_Coordinates.IsContinious && r.m_Mda_Coordinates.IsContinious) {
+            if (this.m_Mda_Coordinates.IsContinuous && r.m_Mda_Coordinates.IsContinuous) {
                 Array.Copy(this.m_Mda_Coordinates.Storage, r.m_Mda_Coordinates.Storage, this.m_Mda_Coordinates.Length);
             } else {
                 throw new NotImplementedException("todo");
@@ -490,7 +490,7 @@ namespace BoSSS.Foundation {
             MultidimensionalArray ContStor = m_Mda_Coordinates;
             int jOffset = 0;
 
-            if (ContStor != null && ContStor.IsContinious) {
+            if (ContStor != null && ContStor.IsContinuous) {
                 // accelerated version (premature opt....)
                 // =======================================
                 double[] storage = ContStor.Storage;
@@ -520,7 +520,7 @@ namespace BoSSS.Foundation {
             MultidimensionalArray ContStor = m_Mda_Coordinates;
             int jOffset = 0;
 
-            if (ContStor != null && ContStor.IsContinious) {
+            if (ContStor != null && ContStor.IsContinuous) {
                 // accelerated version (premature opt....)
                 // =======================================
                 double[] storage = ContStor.Storage;
@@ -639,7 +639,7 @@ namespace BoSSS.Foundation {
                 SinglePhaseField _a = a as SinglePhaseField;
 
                 if (cm == null && _a != null
-                    && this.m_Mda_Coordinates.IsContinious && _a.m_Mda_Coordinates.IsContinious) {
+                    && this.m_Mda_Coordinates.IsContinuous && _a.m_Mda_Coordinates.IsContinuous) {
                     // optimized branch
                     // ++++++++++++++++
                     double[] storThis = this.m_Mda_Coordinates.Storage;

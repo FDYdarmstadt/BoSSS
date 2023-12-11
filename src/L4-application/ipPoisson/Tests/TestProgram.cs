@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
@@ -111,7 +112,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
             [Values(3,4)]int dgDeg,
             [Values(8)]int res,
             [Values(3)]int dim,
-            [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
+            [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz_CoarseMesh, SolverCodes.exp_Kcycle_schwarz_PerProcess)] SolverCodes solver
 #endif
             ) {
 
@@ -120,6 +121,11 @@ namespace BoSSS.Application.SipPoisson.Tests {
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
                 //ctrl.TracingNamespaces = "*";
+
+                if(ctrl.LinearSolver is OrthoMGSchwarzConfig omgsc) {
+                    omgsc.CoarseKickIn = 10000;
+                }
+
                 p.Init(ctrl);
                 p.RunSolverMode();
                 
