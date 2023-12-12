@@ -835,8 +835,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
-            return TimesteppingBase.OperatorAnalysis(VarGroups, true);
+        public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config, IEnumerable<int[]> VarGroups = null) {
+            return TimesteppingBase.OperatorAnalysis(VarGroups, calculateGlobals: config.CalculateGlobalConditionNumbers, calculateStencils:config.CalculateStencilConditionNumbers);
         }
 
         public XdgBDFTimestepping m_BDF_Timestepper;

@@ -40,7 +40,7 @@ namespace BoSSS.Application.SipPoisson {
         protected override string LogFileName => "OpAnalysis";
 
         internal void ComputeFullAnalysis(int TimestepNo) {
-            var dict = (this.SolverMainOverride as SipPoissonMain).OperatorAnalysis();
+            var dict = (this.SolverMainOverride as SipPoissonMain).OperatorAnalysis(new OperatorAnalysisConfig());
             WriteOutStuff(TimestepNo, dict);
         }
 

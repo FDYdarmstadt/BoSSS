@@ -1324,14 +1324,17 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// automatized analysis of condition number 
         /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
+        public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
 
             int[] varGroup_convDiff = new int[] { 0, 1 };
             int[] varGroup_Stokes = new int[] { 0, 1, 2 };
             int[] varGroup_Constitutive = new int[] { 3, 4, 5 };
             int[] varGroup_all = new int[] { 0, 1, 2, 3, 4, 5 };
 
-            var res = m_Timestepper.TimesteppingBase.OperatorAnalysis(new[] {varGroup_convDiff, varGroup_Stokes, varGroup_Constitutive, varGroup_all });
+            var res = m_Timestepper.TimesteppingBase.OperatorAnalysis(new[] {varGroup_convDiff, varGroup_Stokes, varGroup_Constitutive, varGroup_all },
+                calculateGlobals: config.CalculateGlobalConditionNumbers,
+                calculateStencils: config.CalculateStencilConditionNumbers
+                );
 
             // filter only those results that we want;
             // this is a DG app, but it uses the LevelSetTracker; therefore, we want to filter analysis results for cut cells and only return uncut cells resutls

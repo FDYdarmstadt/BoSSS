@@ -473,7 +473,7 @@ namespace BoSSS.Application.XNSEC {
                 }
             }
 
-            ConditionNumberScalingTest.Perform(Controls);
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "XNSEC-TestOperatorScaling2D-p" + dgDeg });
         }
 
         private static void XNSECSolverTest(IXNSECTest Tst, XNSEC_Control C) {
