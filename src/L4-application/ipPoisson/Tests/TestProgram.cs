@@ -255,7 +255,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             }
 
-            ConditionNumberScalingTest.Perform(Controls, true, "CondnumberSlopes");
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "CondnumberSlopes" });
         }
 
 #if !DEBUG
@@ -307,7 +307,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 }
             }
 
-            ConditionNumberScalingTest.Perform(Controls);
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "SIP-TestOperatorScaling3D-p" + dgDeg });
 
         }
 

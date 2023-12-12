@@ -3784,7 +3784,7 @@ namespace BoSSS.Solution {
         /// <returns>
         /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
         /// </returns>
-        virtual public IDictionary<string, double> OperatorAnalysis() {
+        virtual public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
             throw new NotImplementedException();
         }
 

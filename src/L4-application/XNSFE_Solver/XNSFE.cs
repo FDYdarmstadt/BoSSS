@@ -6,6 +6,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
@@ -946,7 +947,7 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// <summary>
         /// automatized analysis of condition number 
         /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
+        public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
 
             int D = this.GridData.SpatialDimension;
 
@@ -957,7 +958,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             //var res = this.Timestepping.OperatorAnalysis(new[] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
 
             int[] varGroup = new int[] { 0, 1, 2, 3};
-            var res = this.Timestepping.OperatorAnalysis(new[] { varGroup });
+            var res = this.Timestepping.OperatorAnalysis(config, new[] { varGroup });
 
             return res;
         }

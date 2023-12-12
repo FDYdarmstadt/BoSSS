@@ -1063,8 +1063,8 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
-            return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, this.MultigridOperatorConfig);
+        public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
+            return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, config, this.MultigridOperatorConfig);
         }
 
 

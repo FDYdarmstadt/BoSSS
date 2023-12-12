@@ -250,8 +250,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        override public IDictionary<string,double> OperatorAnalysis() {
-            return this.Op.OperatorAnalysis(this.u.Mapping, this.OpConfig); 
+        override public IDictionary<string,double> OperatorAnalysis(OperatorAnalysisConfig config) {
+            return this.Op.OperatorAnalysis(this.u.Mapping, config, this.OpConfig); 
         }
                 
 

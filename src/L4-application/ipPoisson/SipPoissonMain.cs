@@ -433,9 +433,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        override public IDictionary<string,double> OperatorAnalysis() {
+        override public IDictionary<string,double> OperatorAnalysis(OperatorAnalysisConfig config) {
             using(new FuncTrace()) {
-                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, this.MgConfig); 
+                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, config, this.MgConfig); 
             }
         }
 
