@@ -144,6 +144,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 case Shape.CollidingSpheres:
                     DefineCollidingSpheres();
                     break;
+                case Shape.Popcorn:
+                    DefinePopcorn();
+                    break;
                 default:
                     throw new NotSupportedException();
             }
@@ -465,7 +468,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 X = affineTrafoFinal.Transform(X);
 
-                var PopcornObject = new BoSSS.Solution.LevelSetTools.TestCases.Popcorn(dynamicRadius, ringRad);
+                var PopcornObject = new BoSSS.Solution.LevelSetTools.TestCases.Popcorn(dynamicRadius);
                 switch (SpaceDim) {
                     case 3:
                         return -PopcornObject.SignedDistance(X);

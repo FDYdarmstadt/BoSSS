@@ -6395,7 +6395,16 @@ namespace BoSSS.Application.XNSE_Solver {
         public static XNSE_Control VanishingRotatingCircle() {
             // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
             var C = RotatingTiltedXRigid(1, 20, 2, false, shape: Shape.Sphere,  RotAxis: "z", SolverOn: true, rateOfRadius: -4);
+            C.PlotAgglomeration = true;
             C.NoOfTimesteps = 100;
+            return C;
+        }
+
+        public static XNSE_Control RotatingPopcorn() {
+            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
+            var C = RotatingTiltedXRigid(1, 30, 3, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: false, rateOfRadius: 0.0, TiltAngle: 0.0);
+            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 3;
             return C;
         }
 
