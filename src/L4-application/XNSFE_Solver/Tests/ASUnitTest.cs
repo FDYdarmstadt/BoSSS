@@ -78,7 +78,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, title: "XSNFEScalingTest-p" + deg+"-Setup" + Setup);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "XSNFEScalingTest-p" + deg+"-Setup" + Setup });
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 CS[i].SkipSolveAndEvaluateResidual = true;
             }
 
-            ConditionNumberScalingTest.Perform(CS);
+            ConditionNumberScalingTest.Perform(CS, new ConditionNumberScalingTest.Config());
         }
 
         /// <summary>

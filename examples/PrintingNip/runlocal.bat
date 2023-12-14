@@ -10,6 +10,6 @@ jupyter.exe nbconvert --execute ./Part2_PrintingNip_ConstantStagnationPoint_Eval
 
 jupyter.exe nbconvert --execute ./Part3_PrintingNip_SimulateExperiment_Run.ipynb --to html --output-dir ./PrintingNip/Output
 jupyter.exe nbconvert --execute ./Part3_PrintingNip_SimulateExperiment_Evaluate.ipynb --to html --output-dir ./PrintingNip/Output
-jupyter.exe nbconvert --execute ./Part3_PrintingNip_SimulateUXMap_Run.ipynb --to html --output-dir ./PrintingNip/Output
+jupyter.exe nbconvert --execute ./Part4_PrintingNip_SimulateUXMap_Run.ipynb --to html --output-dir ./PrintingNip/Output
 
-jupyter.exe nbconvert --execute ./Part4_PrintingNip_TearDown.ipynb --to html --output-dir ./PrintingNip/Output
+jupyter.exe nbconvert --execute ./Part6_PrintingNip_TearDown.ipynb --to html --output-dir ./PrintingNip/Output

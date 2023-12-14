@@ -8,6 +8,7 @@ using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,10 +17,93 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
     
     /// <summary>
     /// Utility class for executing a series of solver runs and studying the condition number slope over mesh resolution;
-    /// Works only for solvers which implemented <see cref="Application{T}.OperatorAnalysis()"/>,
+    /// Works only for solvers which implemented <see cref="Application{T}.OperatorAnalysis"/>,
     /// see also <see cref="OpAnalysisBase.GetNamedProperties"/>
     /// </summary>
     public class ConditionNumberScalingTest {
+
+        /// <summary>
+        /// configuration of test
+        /// </summary>
+        public class Config {
+
+            public const string TotCondNo = "TotCondNo-*";
+            public const string StencilCondNo_innerUncut = "StencilCondNo-innerUncut-*";
+            public const string StencilCondNo_innerCut = "StencilCondNo-innerCut-*";
+            public const string StencilCondNo_bndyUncut = "StencilCondNo-bndyUncut-*";
+            public const string StencilCondNo_bndyCut = "StencilCondNo-bndyCut-*";
+
+
+            public Config() {
+                this.ExpectedSlopes = new Dictionary<string, (XAxisDesignation, double, double)>();
+                this.ExpectedMaximum = new Dictionary<string, double>();
+
+                ExpectedSlopes.Add(TotCondNo, (XAxisDesignation.Grid_1Dres, 2.4, 1.5));
+                ExpectedSlopes.Add(StencilCondNo_innerUncut, (XAxisDesignation.Grid_1Dres, 0.5, -0.2));
+                ExpectedSlopes.Add(StencilCondNo_innerCut, (XAxisDesignation.Grid_1Dres, 0.5, -0.2));
+                ExpectedSlopes.Add(StencilCondNo_bndyUncut, (XAxisDesignation.Grid_1Dres,0.5, -0.2));
+                ExpectedSlopes.Add(StencilCondNo_bndyCut, (XAxisDesignation.Grid_1Dres, 0.5, -0.2));
+
+                ExpectedMaximum.Add(TotCondNo, (1e13));
+                ExpectedMaximum.Add(StencilCondNo_innerUncut, (1e6));
+                ExpectedMaximum.Add(StencilCondNo_innerCut, (1e6));
+                ExpectedMaximum.Add(StencilCondNo_bndyUncut, (1e6));
+                ExpectedMaximum.Add(StencilCondNo_bndyCut, (1e6));
+            }
+
+            /// <summary>
+            /// Gnuplot visualization
+            /// - if false, no visualization
+            /// - if true, and <see cref="title"/> is white/empty/null, an interactive Gnuplot session is opened
+            /// - otherwise, output to a png file
+            /// </summary>
+            public bool plot = false;
+
+            /// <summary>
+            /// Gnuplot title/output filename
+            /// </summary>
+            public string title = "";
+
+            /// <summary>
+            /// assertions are thrown if the slopes of the condition number are too high, c.f. <see cref="ExpectedSlopes"/>;
+            /// should always be true for testing
+            /// </summary>
+            public bool ThrowAssertions = true;
+
+
+            /// <summary>
+            /// One tuple for each slope that should be tested
+            /// - key: name of y-axis (wildcards accepted)
+            /// - value, 1st item: name of x-axis
+            /// - value, 2nd item: expected slope in the log-log-regression
+            /// - value, 3rd item: lower bound for expected slope in the log-log-regression
+            /// </summary>
+            public IDictionary<string, (XAxisDesignation xDesign, double slopeMax, double slopeMin)> ExpectedSlopes;
+
+
+            /// <summary>
+            /// One tuple for maximum value that should be tested
+            /// - key: name of y-axis (wildcards accepted)
+            /// - value: maximum for the respective condition number
+            /// </summary>
+            public IDictionary<string, double> ExpectedMaximum;
+
+
+            /// <summary>
+            /// Stencil condition number: works also for higher resolutions than <see cref="ComputeGlobalCondNo"/>, scales linearly with number of cells.
+            /// <see cref="BoSSS.Solution.OperatorAnalysisConfig.CalculateStencilConditionNumbers"/>
+            /// </summary>
+            public bool ComputeStencilCondNo = true;
+
+
+            /// <summary>
+            /// Global condition number using MATLAB: very expensive, much more than actual solution of the system.
+            /// Only attainable for very small systems, maybe up to 10000 DOFs.
+            /// <seealso cref="BoSSS.Solution.OperatorAnalysisConfig.CalculateGlobalConditionNumbers"/>
+            /// </summary>
+            public bool ComputeGlobalCondNo = true;
+        }
+
 
         /// <summary>
         /// Easy-to-use driver routine
@@ -27,27 +111,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <param name="controls">
         /// a set of control object over which the scaling is investigated
         /// </param>
-        /// <param name="plot">
-        /// if true, an interactive Gnuplot session is opened
+        /// <param name="config">
         /// </param>
-        /// <param name="title">
-        /// Gnuplot title/output filename
-        /// </param>
-        /// <param name="ThrowAssertions">
-        /// assertions are thrown if the slopes of the condition number are too high, c.f. <see cref="ExpectedSlopes"/>;
-        /// should always be true for testing
-        /// </param>
-        /// <returns>
-        /// <see cref="ResultData"/>
-        /// </returns>
-        static public IDictionary<string, double[]> Perform(IEnumerable<AppControl> controls, bool plot = false, string title = "", bool ThrowAssertions = true) {
-            var t = new ConditionNumberScalingTest(title);
+        static public IDictionary<string, double[]> Perform(IEnumerable<AppControl> controls, Config config) {
+            var t = new ConditionNumberScalingTest(config);
             t.SetControls(controls);
             t.RunAndLog();
 
             t.PrintResults(Console.Out);
             
-            if(plot) {
+            if(config.plot) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
 
@@ -58,7 +131,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 using (var gp = t.Plot()) {
 
-                    if(title.IsEmptyOrWhite()) {
+                    if(config.title.IsEmptyOrWhite()) {
                         gp.Execute();
                         Console.WriteLine("plotting in interactive gnuplot session - press any key to continue...");
                         Console.ReadKey();
@@ -70,7 +143,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                         gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
 
                         string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
-                        gp.OutputFile = title + "-" + DateNtime + mpiS + ".png";
+                        gp.OutputFile = config.title + "-" + DateNtime + mpiS + ".png";
 
                         // call gnuplot
                         int exCode = gp.RunAndExit(); // run & close gnuplot
@@ -79,7 +152,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                         }
 
                         // ----------------------------------------
-                        using(var tw = new System.IO.StreamWriter(title + "-" + DateNtime + mpiS + ".txt")) {
+                        using(var tw = new System.IO.StreamWriter(config.title + "-" + DateNtime + mpiS + ".txt")) {
                             t.PrintResults(tw);
                         }
 
@@ -87,7 +160,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 }
             }
 
-            if(ThrowAssertions)
+            if(config.ThrowAssertions)
                 t.CheckResults();
 
             return t.ResultData;
@@ -113,16 +186,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             int Kount = 1;
 
-            foreach (var ttt in ExpectedSlopes) {
-                double[] xVals = data[ttt.Item1.ToString()];
-                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+            foreach (var ttt in m_config.ExpectedSlopes) {
+                double[] xVals = data[ttt.Value.xDesign.ToString()];
+                string[] allYNames = data.Keys.Where(name => ttt.Key.WildcardMatch(name)).ToArray();
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
                     double Slope = xVals.LogLogRegressionSlope(yVals);
 
                     gp.PlotXY(xVals, yVals, logX: true, logY: true, title:yName, format:(fmt.WithLineColor(Kount).WithPointType(Kount)));
-                    gp.SetXLabel(ttt.Item1.ToString());
+                    gp.SetXLabel(ttt.Value.xDesign.ToString());
 
                     Kount++;
                 }
@@ -133,24 +206,15 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return gp;
         }
 
-        string m_title;
+        Config m_config;
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="Title">
-        /// Optional title used for plots, etc.
-        /// </param>
-        public ConditionNumberScalingTest(string Title) {
-            m_title = Title;
+        public ConditionNumberScalingTest(Config config) {
+            m_config = config;
 
-            this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double, double>>();
-
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.4, 1.5));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5, -0.2));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-*", 0.5, -0.2));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyUncut-*", 0.5, -0.2));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyCut-*", 0.5, -0.2));
+            
         }
 
 
@@ -239,15 +303,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
         IEnumerable<AppControl> Controls;
 
-        /// <summary>
-        /// One tuple for each slope that should be tested
-        /// - 1st item: name of x-axis
-        /// - 2nd item: name of y-axis (wildcards accepted)
-        /// - 3rd item expected slope in the log-log-regression
-        /// - 4th item lower bound for expected slope in the log-log-regression
-        /// </summary>
-        public IList<ValueTuple<XAxisDesignation, string, double, double>> ExpectedSlopes;
-
+        
 
         /// <summary>
         /// Phase 2, Examination: prints slope thresholds to console output. 
@@ -262,12 +318,12 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             IDictionary<string, IEnumerable<double>> testData = new Dictionary<string, IEnumerable<double>>();
 
-            foreach (var ttt in ExpectedSlopes) {
-                double[] xVals = data[ttt.Item1.ToString()];
-                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+            foreach (var ttt in m_config.ExpectedSlopes) {
+                double[] xVals = data[ttt.Value.xDesign.ToString()];
+                string[] allYNames = data.Keys.Where(name => ttt.Key.WildcardMatch(name)).ToArray();
 
-                if (!testData.ContainsKey(ttt.Item1.ToString())) 
-                    testData.Add(ttt.Item1.ToString(), xVals);
+                if (!testData.ContainsKey(ttt.Value.xDesign.ToString())) 
+                    testData.Add(ttt.Value.xDesign.ToString(), xVals);
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
@@ -275,10 +331,25 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     testData.Add(yName, yVals);
 
-                    string tstPasses = Slope <= ttt.Item3 ? Slope >= ttt.Item4 ? "passed" : $"FAILED (threshold is {ttt.Item4})" : $"FAILED (threshold is {ttt.Item3})";
+                    string tstPasses = Slope <= ttt.Value.slopeMax ? Slope >= ttt.Value.slopeMin ? "passed" : $"FAILED (threshold is {ttt.Value.slopeMin})" : $"FAILED (threshold is {ttt.Value.slopeMax})";
                     tw.WriteLine($"    Slope for {yName}: {Slope:0.###e-00} -- {tstPasses}");
                 }
             }
+
+            foreach (var ttt in m_config.ExpectedMaximum) {
+                string[] allYNames = data.Keys.Where(name => ttt.Key.WildcardMatch(name)).ToArray();
+
+                foreach (string yName in allYNames) {
+                    double[] yVals = data[yName];
+
+                    double max = yVals.Max();
+
+                    string tstPasses = max <= ttt.Value ? "passed" : $"FAILED (threshold is {ttt.Value})";
+                    tw.WriteLine($"    Max. for {yName}: {max:0.###e-00} -- {tstPasses}");
+                }
+            }
+
+
 
             CSVFile.SaveToCSVFile<IEnumerable<double>>(testData, "ConditionNumberScalingTest_dataSet-" + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".txt");
             //Console.WriteLine("warning no output-file - ToDo");
@@ -296,18 +367,32 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 throw new NotSupportedException("No data available: user must call 'RunAndLog()' first.");
 
          
-            foreach (var ttt in ExpectedSlopes) {
-                double[] xVals = data[ttt.Item1.ToString()];
-                string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
+            foreach (var ttt in m_config.ExpectedSlopes) {
+                double[] xVals = data[ttt.Value.xDesign.ToString()];
+                string[] allYNames = data.Keys.Where(name => ttt.Key.WildcardMatch(name)).ToArray();
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
 
                     double Slope = DoubleExtensions.LogLogRegressionSlope(xVals, yVals);
 
-                    Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
+                    Assert.LessOrEqual(Slope, ttt.Value.slopeMax, $"Condition number slope for {ttt.Key} to high; at max. {ttt.Value.slopeMax}");
+                    Assert.GreaterOrEqual(Slope, ttt.Value.slopeMin, $"Condition number slope for {ttt.Key} to low; at min. {ttt.Value.slopeMin}");
                 }
             }
+
+            foreach (var ttt in m_config.ExpectedMaximum) {
+                string[] allYNames = data.Keys.Where(name => ttt.Key.WildcardMatch(name)).ToArray();
+
+                foreach (string yName in allYNames) {
+                    double[] yVals = data[yName];
+
+                    double max = yVals.Max();
+
+                    Assert.LessOrEqual(max, ttt.Value, $"Condition number maximum for {ttt.Key} to high; at max. {ttt.Value}");
+                }
+            }
+
         }
 
 
@@ -359,7 +444,11 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     int D = Convert.ToInt32(solver.CurrentSessionInfo.KeysAndQueries["Grid:SpatialDimension"]);
                     double J1d = Math.Pow(J, 1.0 / D);
 
-                    var prop = solver.OperatorAnalysis();
+                    var prop = solver.OperatorAnalysis(
+                        new OperatorAnalysisConfig() {
+                            CalculateStencilConditionNumbers = m_config.ComputeStencilCondNo,
+                            CalculateGlobalConditionNumbers = m_config.ComputeGlobalCondNo
+                        });
                     Console.WriteLine("  finished analysis.");
 
 
