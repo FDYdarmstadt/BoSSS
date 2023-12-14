@@ -6401,14 +6401,13 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control RotatingPopcorn() {
-            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
-            var C = RotatingTiltedXRigid(1, 30, 3, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: false, rateOfRadius: 0.0, TiltAngle: 0.0);
+            var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
             C.PlotAgglomeration = true;
-            C.NoOfTimesteps = 3;
+            C.NoOfTimesteps = 10;
             return C;
         }
 
-        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true, double rateOfRadius = 0.0) {
+        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true, double rateOfRadius = 0.0, double partRad = 0.39) {
             XNSE_Control C = new XNSE_Control();
 
             // Simulation Settings
@@ -6444,13 +6443,13 @@ namespace BoSSS.Application.XNSE_Solver {
             const double Re = 1000;
             double muA = 0.01;
 
-            double partRad = 0.39;
+            //double partRad = 0.39;
             double d_hyd = 2 * partRad;
-            double anglev = Re * muA / rhoA / d_hyd;
-            double VelocityIn = Re * muA / rhoA / d_hyd;
+            double VelocityMax = Re * muA / rhoA / d_hyd;
+            double anglev = VelocityMax / partRad; //depending on the shape, the longest arm from the center of rotation.
             double[] pos = new double[SpaceDim];
             double ts = 2 * Math.PI / anglev / NoOfTimeSteps; //   1 revolution around its rot. axis
-            Console.WriteLine("Angular Velocity: {0}", anglev);
+            Console.WriteLine("VelocityMax: {0} Angular Velocity: {1}", VelocityMax, anglev);
 
             C.PhysicalParameters.IncludeConvection = IncludeConvection;
             C.PhysicalParameters.Material = true;

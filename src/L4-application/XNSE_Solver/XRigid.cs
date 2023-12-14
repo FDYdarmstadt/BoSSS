@@ -470,8 +470,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 var PopcornObject = new BoSSS.Solution.LevelSetTools.TestCases.Popcorn(dynamicRadius);
                 switch (SpaceDim) {
+                    case 2:
+                        return -PopcornObject.LevelSetFunction2D(X); // (A<0, I=0, C>0)
                     case 3:
-                        return -PopcornObject.SignedDistance(X);
+                        return -PopcornObject.LevelSetFunction(X); // (A<0, I=0, C>0)
                     //return Math.Pow(particleRad - Math.Sqrt(X[0].Pow2() + X[1].Pow2()), 2) + X[2] * X[2] - ringRad.Pow2();
                     default:
                         throw new NotImplementedException();
