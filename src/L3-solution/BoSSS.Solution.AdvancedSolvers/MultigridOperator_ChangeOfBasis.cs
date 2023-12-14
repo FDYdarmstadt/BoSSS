@@ -457,7 +457,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="_i0s">Offset for each field/variable</param>
         /// <param name="_Lns">Lengths for degrees of freedom for each field/variable</param>
         /// <param name="Sp2Full"></param>
-        /// <param name="MtxSp"></param>
+        /// <param name="MtxSp">
+        /// sparse matrix;
+        /// - if <paramref name="Sp2Full"/>==false, then an input;
+        ///   if NULL, assumed to be an identity matrix
+        /// - if <paramref name="Sp2Full"/>==false, then an output
+        /// </param>
         /// <param name="MtxFl"></param>
         private static void ExtractBlock(
             long[] _i0s, 
@@ -501,19 +506,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     if (Sp2Full) {
+                        // copy: sparse matrix -> full block
+
                         if (MtxSp != null) {
                             MtxSp.ReadBlock(i0Row, i0Col, MtxFl_blk);
                         } else {
-                            MtxFl_blk.AccEye(1.0);
+                            // no sparse matrix given: we assume its the identity
+                            
+                            if(eCol == eRow)
+                                MtxFl_blk.AccEye(1.0);
                         }
 
                     } else {
+                        // copy: full block -> sparse matrix
                         MtxSp.AccBlock(i0Row, i0Col, 1.0, MtxFl_blk, 0.0);
                     }
 #if DEBUG
                     for(int n_row = 0; n_row < NRow; n_row++) { // row loop...
                         for(int n_col = 0; n_col < NCol; n_col++) { // column loop...
-                            Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row ? 1.0 : 0.0)));
+                            Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row && eCol == eRow ? 1.0 : 0.0)));
                         }
                     }
 #endif
