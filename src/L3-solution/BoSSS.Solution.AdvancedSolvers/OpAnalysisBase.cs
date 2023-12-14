@@ -843,7 +843,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 var grd = m_MultigridOp.Mapping.AggGrid;
 
                 double[] BCN = new double[J];
-
+                List<int> emptyBlocks = new List<int>();
                 for(int j = 0; j < J; j++) {
                     try { 
                     var LocBlk = grd.GetCellNeighboursViaEdges(j).Select(t => t.Item1).ToList();
@@ -866,10 +866,13 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     BCN[j] = FullBlock.Cond('I');
                     } catch {
-                        Console.WriteLine($"Empty block detected in stencil for j={j}");
+                        emptyBlocks.Add(j);
                         BCN[j] = -999;
                     }
                 }
+                if (emptyBlocks.Count > 0)
+                    Console.WriteLine($"Empty blocks detected in {emptyBlocks.Count} cell stencils (e.g. j={emptyBlocks[0]}), marked them -999 for cond numbers");
+
                 return BCN;
             }
         }
@@ -1006,10 +1009,31 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 //var maxeig = this.MaximalEigen();
                 //Ret.Add("lambdaMin", mineig.lambdaMin);
                 //Ret.Add("lambdaMax", maxeig.lambdaMax);
-                if (CalculateStencils == true) { 
+                return Ret;
+            }
+        }
+
+
+        /// <summary>
+        /// Stencil condition numbers, organized in a dictionary to create a regression over multiple meshes
+        /// </summary>
+        public IDictionary<string, double> CalculateStencilNumbers(bool plotStencilNumbers = false) {
+            using (new FuncTrace()) {
+                var Ret = new Dictionary<string, double>();
+
+                var grd = m_map.GridDat;
+
+
+                // stencils condition numbers
+                // ========================
+                var stpw = new Stopwatch();
+                stpw.Start();
+
                     // block-wise condition numbers
                     // ============================
                     double[] bcn = this.StencilCondNumbers();
+                stpw.Stop();
+                Console.WriteLine("StencilCondNumbers- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
 
                     CellMask innerUncut, innerCut, bndyUncut, bndyCut;
                     if(m_LsTrk != null) {
@@ -1048,6 +1072,23 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                         Ret.Add("StencilCondNo-innerCut-" + VarNames, innerCut_MaxCondNo);
                         Ret.Add("StencilCondNo-bndyCut-" + VarNames, bndyCut_MaxCondNo);
                     }
+
+                if (plotStencilNumbers) {
+                    var StencilCondNoVizS = new List<DGField>();
+
+                    SinglePhaseField StencilCondNo = new SinglePhaseField(new Basis(grd, 0), "StencilCondNo-" + VarNames);
+                    for (int j = 0; j < bcn.Length; j++)
+                        StencilCondNo.SetMeanValue(j, bcn[j]);
+
+                    StencilCondNoVizS.Add(StencilCondNo);
+
+                    // Add all level sets: Phi (Two-phase flow) and Phi2 (IBM)
+                    var LevelSets = m_LsTrk.LevelSetHistories;
+                    foreach (var levelSet in LevelSets) {
+                        StencilCondNoVizS.Add((LevelSet)levelSet.Current);
+                    }
+
+                    Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 0);
                 }
                 return Ret;
             }
