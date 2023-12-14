@@ -7,6 +7,11 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using ilPSP;
 using System.Diagnostics;
+using ilPSP.Tracing;
+using System.IO;
+using System.Xml.Linq;
+using System.Reflection;
+using BoSSS.Application.XNSE_Solver;
 
 namespace BoSSS.Application.BoSSSpad {
     /// <summary>
@@ -105,8 +110,149 @@ namespace BoSSS.Application.BoSSSpad {
             return RunBatch(ctrl, b);
         }
 
+        /// <summary>
+        /// Runs the solver described by the control objects <paramref name="ctrls"/> on a batch system.
+        /// The method returns immediately.
+        /// </summary>
+        /// <param name="ctrls"></param>
+        /// <param name="BatchSys"></param>
+        /// <param name="DeployAssembliesOnce">If true deploy all necessary native and managed libraries only once</param>
+        /// <returns></returns>
+        public static IEnumerable<Job> RunBatch(this IEnumerable<AppControl> ctrls, BatchProcessorClient BatchSys, bool DeployAssembliesOnce = true) {
+            var jobs = ctrls.Select(ctrl => ctrl.CreateJob()).ToList();
 
-       
+            jobs.Activate(BatchSys, DeployAssembliesOnce);
+
+            return jobs;
+        }
+
+        /// <summary>
+        /// Runs the solver described by the control objects <paramref name="ctrls"/> on a batch system from the currently defined queues (<see cref="BoSSSshell.ExecutionQueues"/>).
+        /// The method returns immediately.
+        /// </summary>
+        /// <param name="ctrls"></param>
+        /// <param name="queueIdx">
+        /// Index int <see cref="BoSSSshell.ExecutionQueues"/>
+        /// </param>
+        /// <param name="DeployAssembliesOnce">If true deploy all necessary native and managed libraries only once</param>
+        public static IEnumerable<Job> RunBatch(this IEnumerable<AppControl> ctrls, int queueIdx, bool DeployAssembliesOnce = true) {
+            var b = BoSSSshell.ExecutionQueues[queueIdx];
+            return RunBatch(ctrls, b, DeployAssembliesOnce);
+        }
+
+
+        /// <summary>
+        /// Runs the solver described by the control objects <paramref name="ctrls"/> 
+        /// on the default batch system 
+        /// The method returns immediately after the job is deployed., i.e. it does not wait for the job to finish.
+        /// </summary>
+        public static IEnumerable<Job> RunBatch(this IEnumerable<AppControl> ctrls, bool DeployAssembliesOnce = true) {
+            var b = BoSSSshell.GetDefaultQueue();
+            return RunBatch(ctrls, b, DeployAssembliesOnce);
+        }
+
+        /// <summary>
+        /// Same functionality as <see cref="Job.Activate()"/>, but for a collection of jobs.
+        /// </summary>
+        /// <param name="jobs"></param>
+        /// <param name="DeployAssembliesOnce">If true deploy all necessary native and managed libraries only once</param>
+        public static void Activate(this IEnumerable<Job> jobs, bool DeployAssembliesOnce = true) {
+            var b = BoSSSshell.GetDefaultQueue();
+            Activate(jobs, b, DeployAssembliesOnce);
+        }
+
+        /// <summary>
+        /// Same functionality as <see cref="Job.Activate()"/>, but for a collection of jobs.
+        /// </summary>
+        /// <param name="jobs"></param>
+        /// <param name="queueIdx"></param>
+        /// <param name="DeployAssembliesOnce">If true deploy all necessary native and managed libraries only once</param>
+        public static void Activate(this IEnumerable<Job> jobs, int queueIdx, bool DeployAssembliesOnce = true) {
+            var b = BoSSSshell.ExecutionQueues[queueIdx];
+            Activate(jobs, b, DeployAssembliesOnce);
+        }
+
+        /// <summary>
+        /// Same functionality as <see cref="Job.Activate()"/>, but for a collection of jobs.
+        /// If activated, native and managed assemblies are copied only once and the directory overrides set to a relative location of the job deployment directory.
+        /// </summary>
+        /// <param name="jobs"></param>
+        /// <param name="BatchSys"></param>
+        /// <param name="DeployAssembliesOnce">If true deploy all necessary native and managed libraries only once</param>
+        public static void Activate(this IEnumerable<Job> jobs, BatchProcessorClient BatchSys, bool DeployAssembliesOnce = true) {
+
+            // business as usual
+            if (!DeployAssembliesOnce) {
+                jobs.ForEach(job => job.Activate(BatchSys));
+                return;
+            }
+
+            Console.WriteLine(" Using the DeployAssembliesOnce option, this is experimental and untested if all necessary files are copied in all cases!");
+
+            // some checks
+            Assembly EntryAssembly = jobs.First().EntryAssembly;
+            foreach (var job in jobs) {
+                if (job.EntryAssembly.FullName != EntryAssembly.FullName) 
+                    throw new ApplicationException("All jobs must use the same solver!");
+            }
+
+
+            string JobDirectoryBaseName() {
+                string Exe = Path.GetFileNameWithoutExtension(EntryAssembly.Location);
+                string Proj = BoSSSshell.WorkflowMgm.CurrentProject;
+
+                return Proj
+                    //+ "-" + Sess 
+                    + "-" + Exe + "-binaries-";
+            }
+
+            string GetNewDeploymentDir() {
+                if (BatchSys == null)
+                    throw new NotSupportedException("Job is not activated yet.");
+
+                if (!Path.IsPathRooted(BatchSys.DeploymentBaseDirectory))
+                    throw new IOException($"Deployment base directory for {BatchSys.ToString()} must be rooted/absolute, but '{BatchSys.DeploymentBaseDirectory}' is not.");
+
+                string ShortName = JobDirectoryBaseName();
+                string DeployDir;
+                int Counter = 0;
+                do {
+                    string Suffix = Counter > 0 ? "-" + Counter : "";
+                    string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
+                    DeployDir = Path.Combine(BatchSys.DeploymentBaseDirectory, ShortName + DateNtime + Suffix);
+                    Counter++;
+                } while (Directory.Exists(DeployDir) == true);
+
+                return DeployDir;
+            }
+
+            // set directory for managed and native assemblies
+            string DeployDirPath = GetNewDeploymentDir();
+            DirectoryInfo  DeployDir = new DirectoryInfo(DeployDirPath);
+            DeployDir.Create();
+
+            // Deploy managed libs ...
+            Console.WriteLine("Deploying executables and additional files ... once");
+            EntryAssembly.DeployAt(DeployDir);
+
+
+            // Deploy native libs ...
+            if (BatchSys.DeployRuntime == true) {
+                string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", BatchSys.RuntimeLocation));
+                MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.FullName, DeployDirPath, null);
+                Console.WriteLine("   copied '" + BatchSys.RuntimeLocation + "' runtime.");
+                // ... but only once
+                BatchSys.DeployRuntime = false;
+            }
+
+            foreach(var job in jobs) {
+                job.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, Path.Combine("..", DeployDir.Name));
+                job.EntryAssemblyRedirection = Path.Combine("..", DeployDir.Name, Path.GetFileName(EntryAssembly.Location));
+                job.Activate(BatchSys);
+            }
+
+        }
 
         /// <summary>
         /// Returns the job correlated to a control object
