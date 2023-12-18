@@ -119,11 +119,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // quadrature object
             // -----------------
 
-            m_Quad = EdgeQuadrature.GetQuadrature2(new int[] { CodomainMapping.BasisS.Sum(x => x.Length), 2 }, context, domNrule,
+            var _Quad = EdgeQuadrature.GetQuadrature2(new int[] { CodomainMapping.BasisS.Sum(x => x.Length), 2 }, context, domNrule,
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
                 this.AllocateBuffers,
                 _OnCloneForThreadParallelization:OnCloneForThreadParallelization);
+            _Quad.ExecuteParallel = false;
+            m_Quad = _Quad;
         }
 
       
