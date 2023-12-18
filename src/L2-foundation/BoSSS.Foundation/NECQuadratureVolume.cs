@@ -47,8 +47,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         public NECQuadratureVolume(IGridData context,
                                    DifferentialOperator DiffOp,
-                                   IList<DGField> _DomainFields,
-                                   IList<DGField> _ParameterFields,
+                                   IEnumerable<DGField> _DomainFields,
+                                   IEnumerable<DGField> _ParameterFields,
                                    UnsetteledCoordinateMapping CodomainMapping,
                                    ICompositeQuadRule<QuadRule> domNrule)
             : base(context, DiffOp, _DomainFields, _ParameterFields, CodomainMapping) {
@@ -59,7 +59,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             var temp = new ThreadLocalsVol(0, this, null);
             base.IsNonEmpty = temp.IsNonEmpty;
 
-            int Gamma = _DomainFields.Count;
+            int Gamma = base.m_DomainFields.Length;
 
             Debug.Assert(m_DomainAndParamFields.Length >= Gamma);
             m_ValueRequired = new bool[m_DomainAndParamFields.Length];
@@ -86,7 +86,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // basis
             // -------------------
 
-            for (int i = 0; i < Gamma; i++) {
+            
+            for (int i = 0; i < m_CodomainBasisS.Length; i++) {
 
                 if (temp.m_NonlinFluxes[i].m_AllComponentsOfMyType.Length > 0
                     || temp.m_NonlinFluxesEx[i].m_AllComponentsOfMyType.Length > 0
@@ -98,7 +99,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
             }
 
-            for (int i = 0; i < Gamma; i++) {
+            for (int i = 0; i < m_CodomainBasisS.Length; i++) {
                 if (temp.m_NonlinSources[i].m_AllComponentsOfMyType.Length > 0
                     || temp.m_NonlinFormV[i].m_AllComponentsOfMyType.Length > 0) {
 
