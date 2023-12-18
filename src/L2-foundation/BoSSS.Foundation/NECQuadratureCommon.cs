@@ -23,6 +23,7 @@ using ilPSP;
 using BoSSS.Platform;
 using ilPSP.Utils;
 using System.Diagnostics;
+using BoSSS.Foundation.Quadrature.Linear;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
@@ -35,9 +36,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// the differential operator
         /// </summary>
-        DifferentialOperator m_DifferentialOperator;
+        readonly protected DifferentialOperator Operator;
 
-        private IGridData m_GrdDat;
+        readonly protected IGridData m_GrdDat;
 
         /// <summary>
         /// the gird on which this quadrature object operates on.
@@ -67,17 +68,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </param>
         protected NECQuadratureCommon(IGridData context,
                                       DifferentialOperator DiffOp,
-                                      IList<DGField> _DomainFields,
-                                      IList<DGField> ParamFields,
+                                      IEnumerable<DGField> _DomainFields,
+                                      IEnumerable<DGField> ParamFields,
                                       UnsetteledCoordinateMapping CodomainMapping) {
             // ---------------
             // check arguments
             // ---------------
             m_GrdDat = context;
             m_CodomainMapping = CodomainMapping;
-            if (ParamFields != null && ParamFields.Count > 0) {
+            this.m_DomainFields = _DomainFields.ToArray();
+            if (ParamFields != null && ParamFields.Count() > 0) {
                 // concatenate parameters to domain mapping
-                IList<DGField> dom = _DomainFields, param = ParamFields;
+                List<DGField> dom = _DomainFields.ToList(), param = ParamFields.ToList();
                 DGField[] fld = new DGField[dom.Count + param.Count];
                 int __i;
                 for (__i = 0; __i < dom.Count; __i++)
@@ -88,13 +90,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
 
             m_CodomainBasisS = m_CodomainMapping.BasisS.ToArray();
-            m_DomainFields = _DomainFields.ToArray();
+            m_DomainAndParamFields = _DomainFields.ToArray();
             
-            _DomainFields = null;
 
-            m_DifferentialOperator = DiffOp;
+            Operator = DiffOp;
 
-            if ((DiffOp.DomainVar.Count + DiffOp.ParameterVar.Count) != m_DomainFields.Length) {
+            if ((DiffOp.DomainVar.Count + DiffOp.ParameterVar.Count) != m_DomainAndParamFields.Length) {
                 string extMsg;
                 extMsg = "[DiffOp domain and parameter vars: ";
                 for (int ii = 0; ii < DiffOp.DomainVar.Count; ii++) {
@@ -110,9 +111,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
                 extMsg += "\n";
                 extMsg += "Domain/Parameter mapping vars: ";
-                for (int ii = 0; ii < m_DomainFields.Length; ii++) {
-                    extMsg += (m_DomainFields[ii].Identification);
-                    if (ii < m_DomainFields.Length - 1)
+                for (int ii = 0; ii < m_DomainAndParamFields.Length; ii++) {
+                    extMsg += (m_DomainAndParamFields[ii].Identification);
+                    if (ii < m_DomainAndParamFields.Length - 1)
                         extMsg += ", ";
                 }
                 extMsg += "]";
@@ -142,45 +143,64 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             //}
 
 
-            // ------------------------
-            // sort equation components
-            // ------------------------
-            m_NonlinFluxes = EquationComponentArgMapping<INonlinearFlux>.GetArgMapping(DiffOp, true);
-            m_NonlinFluxesEx = EquationComponentArgMapping<INonlinearFluxEx>.GetArgMapping(DiffOp, true);
+
         }
 
-        
+
+        protected abstract class ThreadLocals {
+
+            readonly protected NECQuadratureCommon m_owner;
+            protected int m_iThread;
+
+            protected ThreadLocals(int iThread, NECQuadratureCommon _owner, IQuadrature q) {
+                m_iThread = iThread;
+                m_owner = _owner;
 
 
-        /// <summary>
-        /// array index: equation index
-        /// </summary>
-        protected EquationComponentArgMapping<INonlinearFlux>[] m_NonlinFluxes;
+                // ------------------------
+                // sort equation components
+                // ------------------------
+                m_NonlinFluxes = EquationComponentArgMapping<INonlinearFlux>.GetArgMapping(m_owner.Operator, true);
+                m_NonlinFluxesEx = EquationComponentArgMapping<INonlinearFluxEx>.GetArgMapping(m_owner.Operator, true);
 
-        /// <summary>
-        /// array index: equation index
-        /// </summary>
-        protected EquationComponentArgMapping<INonlinearFluxEx>[] m_NonlinFluxesEx;
-        
-        /// <summary>
-        /// true, if this integrator is responsible for any component
-        /// </summary>
-        protected virtual bool IsNonEmpty {
-            get {
-                return m_NonlinFluxes.IsNonEmpty() ||
-                    m_NonlinFluxesEx.IsNonEmpty();
+                if (q == null)
+                    return;
             }
+
+
+
+            /// <summary>
+            /// array index: equation index
+            /// </summary>
+            internal EquationComponentArgMapping<INonlinearFlux>[] m_NonlinFluxes;
+
+            /// <summary>
+            /// array index: equation index
+            /// </summary>
+            internal EquationComponentArgMapping<INonlinearFluxEx>[] m_NonlinFluxesEx;
+
+            /// <summary>
+            /// true, if this integrator is responsible for any component
+            /// </summary>
+            public virtual bool IsNonEmpty {
+                get {
+                    return m_NonlinFluxes.IsNonEmpty() ||
+                        m_NonlinFluxesEx.IsNonEmpty();
+                }
+            }
+
+            /// <summary>
+            /// array index: equation index
+            /// </summary>
+            protected Stopwatch[][] m_NonlinFluxesWatches;
+
+            /// <summary>
+            /// array index: equation index
+            /// </summary>
+            protected Stopwatch[][] m_NonlinFluxesExWatches;
+
         }
 
-        /// <summary>
-        /// array index: equation index
-        /// </summary>
-        protected Stopwatch[][] m_NonlinFluxesWatches;
-
-        /// <summary>
-        /// array index: equation index
-        /// </summary>
-        protected Stopwatch[][] m_NonlinFluxesExWatches;
 
 
         /// <summary>
@@ -204,43 +224,35 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// Index offset for each codomain variable
         /// </summary>
-        protected int[] m_MyMap;
+        readonly protected int[] m_MyMap;
 
-        /*
-        /// <summary>
-        /// internal index mapping;
-        /// </summary>
-        /// <param name="variableIndex">internal field index; <see cref="m_CodomainBasisS"/>;</param>
-        /// <param name="CoordInd">coordinate index, basis function index;</param>
-        /// <returns></returns>
-        protected int MyMap(int variableIndex, int CoordInd) {
-            return m_MyMap[variableIndex] + CoordInd;
-        }
-        */
 
         /// <summary>
         /// DG coordinate mapping for the codomain (output) of this
         /// quadrature object;
         /// index mapping for <see cref="m_Output"/>;
         /// </summary>
-        public UnsetteledCoordinateMapping m_CodomainMapping;
+        readonly public UnsetteledCoordinateMapping m_CodomainMapping;
 
         /// <summary>
         /// The basis of the codomain variables - these are used as test functions;
         /// equal to the <see cref="BoSSS.Foundation.UnsetteledCoordinateMapping.BasisS"/>-member
         /// of <see cref="m_CodomainMapping"/>;
         /// </summary>
-        protected Basis[] m_CodomainBasisS;
+        readonly internal Basis[] m_CodomainBasisS;
 
-        ///// <summary>
-        ///// Largest basis, which includes all other basises found in <see cref="m_CodomainBasisS"/>.
-        ///// </summary>
-        //protected Basis m_MaxCodBasis;
 
         /// <summary>
-        /// domain fields AND parameters (for the evaluation, there is no real difference between a domain field and a parameter)
+        /// domain fields AND parameters (for the evaluation, there is no real difference between a domain field and a parameter),
+        /// i.e., correlates with the concatenation of <see cref="IDifferentialOperator.DomainVar"/> and <see cref="IDifferentialOperator.ParameterVar"/>
         /// </summary>
-        protected DGField[] m_DomainFields;
+        readonly internal DGField[] m_DomainAndParamFields;
+
+        /// <summary>
+        /// domain fields AND parameters (for the evaluation, there is no real difference between a domain field and a parameter),
+        /// i.e., correlates with the concatenation of <see cref="IDifferentialOperator.DomainVar"/>
+        /// </summary>
+        readonly internal DGField[] m_DomainFields;
 
         /// <summary>
         /// Number of test functions;
@@ -268,10 +280,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         protected IQuadrature m_Quad;
 
         /// <summary>
+        /// to be set by ctor of derivative class
+        /// </summary>
+        protected bool IsNonEmpty;
+
+        /// <summary>
         /// executes the quadrature
         /// </summary>
         public void Execute() {
-            if(this.IsNonEmpty == false)
+            if(IsNonEmpty == false)
                 return;
             m_Quad.Execute();
         }
