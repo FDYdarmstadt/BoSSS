@@ -26,14 +26,14 @@ using ilPSP;
 
 namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
 
-    /// <summary>
-    /// Testcode, to be removed; If you find me, delete me and everything which depends on my; I don't deserve to live
-    /// </summary>
-    internal static class Debugi {
-        public static int SkipComp = -1;
-        public static int CompCont = 0;
-        public static bool printInfo = false;
-    }
+    ///// <summary>
+    ///// Testcode, to be removed; If you find me, delete me and everything which depends on my; I don't deserve to live
+    ///// </summary>
+    //internal static class Debugi {
+    //    public static int SkipComp = -1;
+    //    public static int CompCont = 0;
+    //    public static bool printInfo = false;
+    //}
 
 
     /// <summary>
@@ -197,22 +197,23 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                     useOptComp = true;
                 }
 
-                if (Debugi.SkipComp >= 0) {
-                    if (Debugi.CompCont > Debugi.SkipComp) {
-                        // skip
-                    } else {
-                        if(Debugi.printInfo)
-                            Console.Error.WriteLine("using : " + optComp?.ToString() + " // " + vecComp?.ToString());
+                //if (Debugi.SkipComp >= 0) {
+                //    if (Debugi.CompCont > Debugi.SkipComp) {
+                //        // skip
+                //    } else {
+                //        if(Debugi.printInfo)
+                //            Console.Error.WriteLine("using : " + optComp?.ToString() + " // " + vecComp?.ToString());
 
-                        if (useOptComp) {
-                            AllComponentsofMyType.Add(optComp);
-                        } else {
-                            AllComponentsofMyType.Add(vecComp);
-                        }
-                    }
+                //        if (useOptComp) {
+                //            AllComponentsofMyType.Add(optComp);
+                //        } else {
+                //            AllComponentsofMyType.Add(vecComp);
+                //        }
+                //    }
 
-                    Debugi.CompCont++;
-                } else {
+                //    Debugi.CompCont++;
+                //} else 
+                {
                     if (useOptComp) {
                         AllComponentsofMyType.Add(optComp);
                     } else {
