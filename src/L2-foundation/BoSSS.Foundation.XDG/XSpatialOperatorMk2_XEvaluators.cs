@@ -488,6 +488,7 @@ namespace BoSSS.Foundation.XDG {
                             // should prevent waiting for unevenly balanced level sets
                             foreach(var LsEval in necList) {
                                 LsEval.time = time;
+                                LsEval.ExecuteParallel = true;
                                 UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
                                 LsEval.Execute();
 
