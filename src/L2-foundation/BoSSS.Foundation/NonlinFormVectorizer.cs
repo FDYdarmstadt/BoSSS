@@ -805,11 +805,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // per default we just assume nothing goes wrong.
                 m_IsMultithreadSafe = true;
             }
-
-
-
         }
-
 
         public IEquationComponent CloneForThread() {
             SetupMultithread();
