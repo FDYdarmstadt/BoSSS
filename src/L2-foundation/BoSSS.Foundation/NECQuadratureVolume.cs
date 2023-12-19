@@ -669,7 +669,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                     nonlinform.Form(ref vfp, MappedArgs, MappedGradients, this.m_FluxValues[e]);
 
                                     if (m_NonlinFormGradV[e].m_LockObjects[icomp] != null)
-                                        Monitor.Enter(m_NonlinFormGradV[e].m_LockObjects[icomp]);
+                                        Monitor.Exit(m_NonlinFormGradV[e].m_LockObjects[icomp]);
 
                                     m_NonlinFormGradV_watch[e][icomp].Stop();
                                 }
