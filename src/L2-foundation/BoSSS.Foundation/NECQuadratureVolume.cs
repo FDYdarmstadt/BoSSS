@@ -741,10 +741,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 this.Basis_Eval.Start();
 
                 if (m_owner.m_MaxCodBasis != null && QR.NoOfNodes != this.m_TestFuncWeighted.GetLength(0)) {
-                    this.m_TestFuncWeighted.Allocate(QR.NoOfNodes, m_owner.m_MaxCodBasis.GetLength(i0));
+                    
+                    this.m_TestFuncWeighted.Allocate(QR.NoOfNodes, m_owner.m_MaxCodBasis.GetLength(geom2log != null ? geom2log[i0] : i0));
                 }
                 if (m_owner.m_MaxCodBasis_Gradient != null && QR.NoOfNodes != this.m_TestFuncGradWeighted.GetLength(0)) {
-                    this.m_TestFuncGradWeighted.Allocate(QR.NoOfNodes, m_owner.m_MaxCodBasis_Gradient.GetLength(i0), D);
+                    this.m_TestFuncGradWeighted.Allocate(QR.NoOfNodes, m_owner.m_MaxCodBasis_Gradient.GetLength(geom2log != null ? geom2log[i0] : i0), D);
                 }
 
                 if (m_owner.m_MaxCodBasis != null) {
