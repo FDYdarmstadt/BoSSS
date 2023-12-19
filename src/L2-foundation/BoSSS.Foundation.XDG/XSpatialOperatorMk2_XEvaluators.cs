@@ -305,6 +305,7 @@ namespace BoSSS.Foundation.XDG {
                             foreach(var MtxBuilder in allBuilders) {
                                 MtxBuilder.time = time;
                                 UpdateLevelSetCoefficients(MtxBuilder.m_LevSetIdx, MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
+                                MtxBuilder.ExecuteParallel = true;
                                 MtxBuilder.Execute();
 
 #if DEBUG
