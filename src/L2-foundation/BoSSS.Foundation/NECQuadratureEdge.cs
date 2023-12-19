@@ -210,7 +210,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 base.m_NonlinFluxesWatches = base.m_NonlinFluxes.InitStopWatches(0, q);
                 base.m_NonlinFluxesExWatches = base.m_NonlinFluxesEx.InitStopWatches(0, q);
 
-                int Gamma = m_owner.m_DomainFields.Length;
+                int Gamma = m_owner.m_CodomainBasisS.Length;
 
                 for (int i = 0; i < Gamma; i++) {
                     var b = m_owner.m_CodomainBasisS[i];
