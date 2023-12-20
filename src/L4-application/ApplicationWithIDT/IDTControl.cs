@@ -355,7 +355,7 @@ namespace ApplicationWithIDT {
     /// </summary>
     public enum SolverRunType {
         Standard,
-        Staggerd,
+        PContinuation,
         Unsteady
     }
     /// <summary>
