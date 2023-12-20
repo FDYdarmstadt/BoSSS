@@ -25,6 +25,7 @@ using System.IO;
 using System.Globalization;
 using System.Diagnostics;
 using System.Linq;
+using static MPI.Wrappers.Utils.DynLibLoader;
 
 namespace ilPSP.Utils {
 
@@ -1058,34 +1059,64 @@ namespace ilPSP.Utils {
             return Math.Acos(cos_alpha);
         }
     }
+
+    internal class BLAS_LAPACK_Libstuff {
+        // workaround for .NET bug:
+        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
+        public static PlatformID[] GetPlatformID(Parallelism par) {
+            switch (par) {
+                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public static string[] GetLibname(Parallelism par) {
+            switch (par) {
+                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.OMP: return new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
+            switch (par) {
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public static string[][][] GetPrequesiteLibraries(Parallelism par) {
+            return new string[GetLibname(par).Length][][];
+        }
+
+        public static int[] GetPointerSizeFilter(Parallelism par) {
+            var r = new int[GetLibname(par).Length];
+            r.SetAll(-1);
+            return r;
+        }
+    }
+
+
     
     /// <summary>
     /// subset of BLAS
     /// </summary>
     public sealed class UnsafeDBLAS : DynLibLoader {
 		
-		// workaround for .NET bug:
-		// https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
-		static PlatformID[] Helper() {
-			PlatformID[] p = new PlatformID[6];
-			p[0] = PlatformID.Win32NT;
-			p[1] = PlatformID.Unix;
-			p[2] = PlatformID.Unix;
-			p[3] = PlatformID.Unix;
-			p[4] = PlatformID.Unix;
-            p[5] = PlatformID.Unix;
-            return p;
-		}
+		
+
 
         /// <summary>
         /// ctor
         /// </summary>
-        public UnsafeDBLAS() :
-            base(new string[] { "BLAS_LAPACK.dll", "libBoSSSnative_seq.so", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
-                  new string[6][][], 
-                  new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
-                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
-                  new int[] { -1, -1, -1, -1, -1, -1 }) { }
+        public UnsafeDBLAS(Parallelism par) :
+            base(BLAS_LAPACK_Libstuff.GetLibname(par),
+                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
+                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
+                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) { }
 
         
         /// <summary> FORTRAN BLAS routine </summary>
@@ -1231,18 +1262,36 @@ namespace ilPSP.Utils {
             }
         }
 
+        public readonly static UnsafeDBLAS m_seq_BLAS;
+        public readonly static UnsafeDBLAS m_omp_BLAS;
+
         static UnsafeDBLAS m_BLAS;
+
 
         /// <summary>Cos
         /// most native BLAS interface available
         /// </summary>
-        public static UnsafeDBLAS F77_BLAS { get { return m_BLAS; }}
+        public static UnsafeDBLAS F77_BLAS { 
+            get { 
+                return m_BLAS; 
+            }
+        }
+
+        internal static void ActivateOMP() {
+            m_BLAS = m_omp_BLAS;
+        }
+        internal static void ActivateSEQ() {
+            m_BLAS = m_seq_BLAS;
+        }
+
 
         /// <summary>
         /// static ctor
         /// </summary>
         static BLAS() {
-            m_BLAS = new UnsafeDBLAS();
+            m_seq_BLAS = new UnsafeDBLAS(Parallelism.SEQ);
+            m_omp_BLAS = new UnsafeDBLAS(Parallelism.OMP);
+            m_BLAS = m_omp_BLAS;
         }
 
         /// <summary> FORTRAN-Style BLAS routine </summary>

@@ -397,6 +397,7 @@ namespace BoSSS.Solution {
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
+
             return _MustFinalizeMPI;
         }
 
