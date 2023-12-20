@@ -115,7 +115,7 @@ namespace XESF.Tests
                     agg: 0.4,
                     numOfCellsX: xCells,
                     numOfCellsY: yCells,
-                    solverRunType: SolverRunType.Staggerd,
+                    solverRunType: SolverRunType.PContinuation,
                     MinPIter: new int[] { 20, 20, 20, 20, 20, 20 },
                     applyReInit: false,
                     ReInitTols: new double[] { 0, -1e-1, -0.25, -((double)1)/9, -((double)1) / 16 },

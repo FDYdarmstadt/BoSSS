@@ -332,7 +332,7 @@ namespace ApplicationWithIDT {
                 case SolverRunType.Standard:
                     CreateConservativeFields(this.LsTrk, Control.SolDegree);
                 break;
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                     CreateConservativeFields(this.LsTrk, Control.DgDegree_Start); //here we start with the lowest degree
                 break;
                 default:
@@ -407,7 +407,7 @@ namespace ApplicationWithIDT {
                 throw new NotSupportedException($"Control.Alpha_Start length must be between 0 and 1 but is {Control.Alpha_Start}");
             }
             switch(Control.solRunType) {
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                     if(Control.ReiniTMaxIters.Length < maxDeg+1) {
                         throw new NotSupportedException($"Control.ReiniTMaxIters length mus bet at least {maxDeg + 1}");
                     }
@@ -492,7 +492,7 @@ namespace ApplicationWithIDT {
 
             // potentially change basis
             switch(Control.solRunType) {
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                     ChangeOfBasis();
                 break;
             }
@@ -2072,7 +2072,7 @@ namespace ApplicationWithIDT {
             switch(Control.solRunType) {
                 case SolverRunType.Standard:
                     return Control.TerminationMinNs[0];
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                 try {
                     return Control.TerminationMinNs[ConservativeFields[0].Basis.Degree];
                 } catch {
@@ -2086,7 +2086,7 @@ namespace ApplicationWithIDT {
             switch(Control.solRunType) {
                 case SolverRunType.Standard:
                 return Control.tALNRs[0];
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                 try {
                     return Control.tALNRs[ConservativeFields[0].Basis.Degree];
                 } catch {
