@@ -398,8 +398,6 @@ namespace BoSSS.Foundation.Quadrature {
                 // ===================================
 
                 int NumThreads = ilPSP.Environment.NumThreads;
-                //NumThreads = 8;
-                //int[] ItemLimits = new int[NumThreads + 1];
                 ICompositeQuadRule<TQuadRule>[] _compositeRuleS = SplitQuadRuleForMultithread(NumThreads, out int NoOfItems);
 
 
@@ -409,11 +407,7 @@ namespace BoSSS.Foundation.Quadrature {
                 Quadrature<TQuadRule, TDomain>[] allThreads = new Quadrature<TQuadRule, TDomain>[NumThreads];
 
                 if (this.ExecuteParallel && NoOfItems > 1) {
-                    var options = new ParallelOptions {
-                        MaxDegreeOfParallelism = NumThreads,
-                    };
-                    ThreadPool.SetMinThreads(NumThreads, 1);
-                    ThreadPool.SetMaxThreads(NumThreads, 2);
+                   
 
                     allThreads[0] = this;
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, NumThreads);
@@ -437,16 +431,10 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     var errorList = new List<(int item, double err, double threshold)>[NumThreads];
-                    Parallel.For(0, NumThreads, options, delegate(int iThread) {
-                        errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], allThreads);
-                    });
-                    //Random rnd = new Random();
-                    //int offset = rnd.Next(NumThreads);
-                    //for (int _iThread = 0; _iThread < NumThreads; _iThread++) {
-                    //    int iThread = (offset + _iThread)%NumThreads;
-                    //    errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], null);
-                    //}
-
+                    ilPSP.Environment.ParallelFor(0, NumThreads, 
+                        delegate(int iThread) {
+                            errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], allThreads);
+                        });
 
                     if (errorList.Any(l => l != null)) {
                         int errCnt = 0;
