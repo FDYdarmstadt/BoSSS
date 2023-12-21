@@ -181,9 +181,9 @@ namespace ilPSP {
         } = 4;
 
         public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body) {
-            if (InParallelSection)
+            if (InParallelSection) {
                 throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
-            
+            }
             
             var options = new ParallelOptions {
                 MaxDegreeOfParallelism = NumThreads,
@@ -229,6 +229,28 @@ namespace ilPSP {
                     LAPACK.ActivateOMP();
 
                 }
+            }
+        }
+
+        public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally) {
+            if (InParallelSection) {
+                throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
+            }
+
+            var options = new ParallelOptions {
+                MaxDegreeOfParallelism = NumThreads,
+            };
+            ThreadPool.SetMinThreads(NumThreads, 1);
+            ThreadPool.SetMaxThreads(NumThreads, 2);
+
+            try {
+                InParallelSection = true;
+                BLAS.ActivateSEQ();
+
+                return Parallel.For(fromInclusive, toExclusive, options, localInit, body, localFinally);
+            } finally {
+                InParallelSection = false;
+                BLAS.ActivateOMP();
             }
         }
 
