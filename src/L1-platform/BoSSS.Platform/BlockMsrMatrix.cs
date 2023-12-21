@@ -24,6 +24,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using ilPSP.Connectors;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace ilPSP.LinSolvers {
 
@@ -5079,6 +5080,35 @@ namespace ilPSP.LinSolvers {
         public static Stopwatch multiply_core;
 
 
+        class MultiplyTemp : IDisposable {
+
+            public TempBlockRow rc1 = new TempBlockRow();
+            public TempBlockRow rc2 = new TempBlockRow();
+
+            public TempBlockRow rA1 = new TempBlockRow();
+            public TempBlockRow rA2 = new TempBlockRow();
+            public TempBlockRow rA3 = new TempBlockRow();
+            public TempBlockRow bR = new TempBlockRow();
+
+            public IntPtr tempBuf = IntPtr.Zero;
+            public int tempBuf_Length = -1;
+
+            public void Dispose() {
+                rc1.Dispose();
+                rc2.Dispose();
+                rA1.Dispose();
+                rA2.Dispose();
+                rA3.Dispose();
+                bR.Dispose();
+
+                Debug.Assert((tempBuf_Length >= 0) == (tempBuf != IntPtr.Zero), "20");
+                if (tempBuf_Length >= 0) {
+                    Marshal.FreeHGlobal(tempBuf);
+                }
+            }
+        }
+
+
         /// <summary>
         /// Sparse Matrix-Matrix multiplication.
         /// </summary>
@@ -5258,167 +5288,176 @@ namespace ilPSP.LinSolvers {
 
                 long C_iBlk0 = C._RowPartitioning.FirstBlock;
                 int C_NoBlk = C._RowPartitioning.LocalNoOfBlocks;
-                long C_IBlkE = C_iBlk0 + C_NoBlk;
+                //long C_IBlkE = C_iBlk0 + C_NoBlk;
 
                 unsafe {
-                    IntPtr tempBuf = IntPtr.Zero;
-                    int tempBuf_Length = -1;
+                    
 
-                    using(TempBlockRow rc1 = new TempBlockRow(), rc2 = new TempBlockRow(),
-                        rA1 = new TempBlockRow(), rA2 = new TempBlockRow(), rA3 = new TempBlockRow(), bR = new TempBlockRow()) {
-
-                        for(long iBlkRow = C_iBlk0; iBlkRow < C_IBlkE; iBlkRow++) { // loop over the rows of 'C'
-
-                            // extract row from 'C'
-                            long i0 = C._RowPartitioning.GetBlockI0(iBlkRow);
-                            long iE = i0 + C._RowPartitioning.GetBlockLen(iBlkRow);
-                            if(iE == i0)
-                                // empty block row
-                                continue;
-                            TempBlockRow Caccu = rc1, Cnext = rc2;
-                            Caccu.Clear(i0, iE);
-                            Caccu.Init(C, iBlkRow, true);
-
-                            // extract row from 'A'
-                            TempBlockRow Arow = TempBlockRow.Init(A, i0, iE, false, rA1, rA2, rA3);
-                            int NoRows = (int)(Arow.iE - Arow.i0);
-                            Debug.Assert(NoRows == C._RowPartitioning.GetBlockLen(iBlkRow));
-
-                            if(Arow.count > 0) {
-                                //int jBlk = 0;
-                                //while (jBlk < Arow.count) {
-
-                                int NoCols = int.MinValue;
-                                int _BlkCount = 0;
-                                bool _inBlock = false;
-                                long _j0 = long.MinValue, _jE = long.MinValue;
-                                long jPointer = 0;
-                                bool inBlock = false;
-                                long jBlock = long.MinValue, j0 = long.MinValue, jE = long.MinValue;
-                                double* pAij = null;
-                                double AijSum = 0.0;
-                                while(_BlkCount < Arow.count) {
-                                    if(!_inBlock) {
-                                        _j0 = Arow.m_j0S[_BlkCount];
-                                        _jE = Arow.m_JES[_BlkCount];
-                                        _inBlock = true;
-                                        jPointer = _j0;
-
-                                        Debug.Assert(_j0 >= A.ColPartition.i0, "12");
-                                        Debug.Assert(_jE <= A.ColPartition.iE, "13");
-                                        Debug.Assert(_j0 < _jE, "14");
-                                    }
-                                    if(!inBlock) {
-                                        jBlock = B._RowPartitioning.GetBlockIndex(jPointer);
-                                        j0 = B._RowPartitioning.GetBlockI0(jBlock);
-                                        jE = B._RowPartitioning.GetBlockLen(jBlock) + j0;
-                                        NoCols = (int)(jE - j0);
-                                        inBlock = true;
-                                    }
-
-                                    long jNext = Math.Min(jE, _jE);
-
-                                    int RelOffsetSource = (int)(jPointer - _j0);
-                                    int RelOffsetDest = (int)(jPointer - j0);
-                                    int Length = (int)(jNext - jPointer);
-                                    Debug.Assert(Length >= 0, "15");
-                                    Debug.Assert(RelOffsetSource >= 0, "16");
-                                    Debug.Assert(RelOffsetDest >= 0, "17");
-                                    //Console.WriteLine("{0} {1}--{2} off: {3}  ===>  {4} {5}--{6} off: {7}", _BlkCount, j, jNext, RelOffsetSource,
-                                    //    jBlock, j, jNext, RelOffsetDest);
-                                    bool ExMatch = false;
-                                    if(Length > 0) {
-                                        ExMatch = RelOffsetDest == 0 && RelOffsetSource == 0 && Length == (jE - j0);
-                                        Debug.Assert(ExMatch == (pAij == null), "18");
-
-                                        if(ExMatch) {
-                                            int PointerOffset, ANoOfCols;
-                                            Arow.AccessBlock(_BlkCount, out PointerOffset, out ANoOfCols);
-                                            pAij = ((double*)(Arow.m_pMem)) + PointerOffset;
-                                            Debug.Assert(ANoOfCols == NoCols, "19");
-
-                                            double* _pAij = pAij;
-                                            for(int l = NoRows * NoCols; l > 0; l--) {
-                                                AijSum += Math.Abs(*_pAij);
-                                                _pAij++;
-                                                if(AijSum != 0.0)
-                                                    break;
-                                            }
-
-                                        } else {
-                                            if(pAij == null) {
-                                                int ReqSize = NoRows * NoCols;
-                                                if(ReqSize < tempBuf_Length) {
-                                                    if(tempBuf != IntPtr.Zero)
-                                                        Marshal.FreeHGlobal(tempBuf);
-                                                    tempBuf_Length = ReqSize * 2;
-                                                    tempBuf = Marshal.AllocHGlobal(tempBuf_Length * sizeof(double));
-                                                }
-                                                pAij = (double*)tempBuf;
-                                                double* pD = pAij;
-                                                for(int ii = NoCols * NoRows; ii > 0; ii--) {
-                                                    *pD = 0;
-                                                    pD++;
-                                                }
-                                            }
-
-                                            int PointerOffset, C_Ai;
-                                            Arow.AccessBlock(_BlkCount, out PointerOffset, out C_Ai);
-                                            double* pAijSrc = (double*)(Arow.m_pMem);
-                                            pAijSrc += PointerOffset;
-
-                                            for(int i = 0; i < NoRows; i++) {
-                                                for(int j = 0; j < Length; j++) {
-                                                    double vl = pAijSrc[i * C_Ai + j + RelOffsetSource];
-                                                    pAij[i * NoCols + j + RelOffsetDest] = vl;
-                                                    AijSum += Math.Abs(vl);
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if(jNext == jE) {
-                                        // block complete
-                                        //Console.WriteLine("destination block complete");
-                                        if(AijSum != 0) {
-                                            bR.Clear(j0, jE);
-                                            bR.Init(B, jBlock, true);
-                                            Cnext.Clear(Caccu.i0, Caccu.iE);
-                                            multiply_core.Start();
-                                            TempBlockRow.Merge(Cnext, bR, Caccu, pAij, NoRows, NoCols);
-                                            multiply_core.Stop();
-                                            var _Caccu = Caccu;
-                                            Caccu = Cnext;
-                                            Cnext = _Caccu;
-                                        }
-
-                                        inBlock = false;
-                                        pAij = null;
-                                    }
-
-                                    if(jNext == _jE) {
-                                        //Console.WriteLine("source block complete");
-                                        _inBlock = false;
-                                        _BlkCount++;
-                                    }
+                    //using(TempBlockRow rc1 = new TempBlockRow(), rc2 = new TempBlockRow(),
+                    //    rA1 = new TempBlockRow(), rA2 = new TempBlockRow(), rA3 = new TempBlockRow(), bR = new TempBlockRow()) {
 
 
-                                    jPointer = jNext;
+                    //for(long iBlkRow = C_iBlk0; iBlkRow < C_IBlkE; iBlkRow++) { // loop over the rows of 'C'
+                    MultiplyTemp RowMul(int iBlkRow_loc, ParallelLoopState s, MultiplyTemp temp) {
+                        long iBlkRow = iBlkRow_loc + C_iBlk0;
+
+                        // extract row from 'C'
+                        long i0 = C._RowPartitioning.GetBlockI0(iBlkRow);
+                        long iE = i0 + C._RowPartitioning.GetBlockLen(iBlkRow);
+                        if (iE == i0)
+                            // empty block row
+                            return temp;
+                        //continue;
+                        TempBlockRow Caccu = temp.rc1, Cnext = temp.rc2;
+                        Caccu.Clear(i0, iE);
+                        Caccu.Init(C, iBlkRow, true);
+
+                        // extract row from 'A'
+                        TempBlockRow Arow = TempBlockRow.Init(A, i0, iE, false, temp.rA1, temp.rA2, temp.rA3);
+                        int NoRows = (int)(Arow.iE - Arow.i0);
+                        Debug.Assert(NoRows == C._RowPartitioning.GetBlockLen(iBlkRow));
+
+                        if (Arow.count > 0) {
+                            //int jBlk = 0;
+                            //while (jBlk < Arow.count) {
+
+                            int NoCols = int.MinValue;
+                            int _BlkCount = 0;
+                            bool _inBlock = false;
+                            long _j0 = long.MinValue, _jE = long.MinValue;
+                            long jPointer = 0;
+                            bool inBlock = false;
+                            long jBlock = long.MinValue, j0 = long.MinValue, jE = long.MinValue;
+                            double* pAij = null;
+                            double AijSum = 0.0;
+                            while (_BlkCount < Arow.count) {
+                                if (!_inBlock) {
+                                    _j0 = Arow.m_j0S[_BlkCount];
+                                    _jE = Arow.m_JES[_BlkCount];
+                                    _inBlock = true;
+                                    jPointer = _j0;
+
+                                    Debug.Assert(_j0 >= A.ColPartition.i0, "12");
+                                    Debug.Assert(_jE <= A.ColPartition.iE, "13");
+                                    Debug.Assert(_j0 < _jE, "14");
                                 }
-                                //}
+                                if (!inBlock) {
+                                    jBlock = B._RowPartitioning.GetBlockIndex(jPointer);
+                                    j0 = B._RowPartitioning.GetBlockI0(jBlock);
+                                    jE = B._RowPartitioning.GetBlockLen(jBlock) + j0;
+                                    NoCols = (int)(jE - j0);
+                                    inBlock = true;
+                                }
+
+                                long jNext = Math.Min(jE, _jE);
+
+                                int RelOffsetSource = (int)(jPointer - _j0);
+                                int RelOffsetDest = (int)(jPointer - j0);
+                                int Length = (int)(jNext - jPointer);
+                                Debug.Assert(Length >= 0, "15");
+                                Debug.Assert(RelOffsetSource >= 0, "16");
+                                Debug.Assert(RelOffsetDest >= 0, "17");
+                                //Console.WriteLine("{0} {1}--{2} off: {3}  ===>  {4} {5}--{6} off: {7}", _BlkCount, j, jNext, RelOffsetSource,
+                                //    jBlock, j, jNext, RelOffsetDest);
+                                bool ExMatch = false;
+                                if (Length > 0) {
+                                    ExMatch = RelOffsetDest == 0 && RelOffsetSource == 0 && Length == (jE - j0);
+                                    Debug.Assert(ExMatch == (pAij == null), "18");
+
+                                    if (ExMatch) {
+                                        int PointerOffset, ANoOfCols;
+                                        Arow.AccessBlock(_BlkCount, out PointerOffset, out ANoOfCols);
+                                        pAij = ((double*)(Arow.m_pMem)) + PointerOffset;
+                                        Debug.Assert(ANoOfCols == NoCols, "19");
+
+                                        double* _pAij = pAij;
+                                        for (int l = NoRows * NoCols; l > 0; l--) {
+                                            AijSum += Math.Abs(*_pAij);
+                                            _pAij++;
+                                            if (AijSum != 0.0)
+                                                break;
+                                        }
+
+                                    } else {
+                                        if (pAij == null) {
+                                            int ReqSize = NoRows * NoCols;
+                                            if (ReqSize < temp.tempBuf_Length) {
+                                                if (temp.tempBuf != IntPtr.Zero)
+                                                    Marshal.FreeHGlobal(temp.tempBuf);
+                                                temp.tempBuf_Length = ReqSize * 2;
+                                                temp.tempBuf = Marshal.AllocHGlobal(temp.tempBuf_Length * sizeof(double));
+                                            }
+                                            pAij = (double*)temp.tempBuf;
+                                            double* pD = pAij;
+                                            for (int ii = NoCols * NoRows; ii > 0; ii--) {
+                                                *pD = 0;
+                                                pD++;
+                                            }
+                                        }
+
+                                        int PointerOffset, C_Ai;
+                                        Arow.AccessBlock(_BlkCount, out PointerOffset, out C_Ai);
+                                        double* pAijSrc = (double*)(Arow.m_pMem);
+                                        pAijSrc += PointerOffset;
+
+                                        for (int i = 0; i < NoRows; i++) {
+                                            for (int j = 0; j < Length; j++) {
+                                                double vl = pAijSrc[i * C_Ai + j + RelOffsetSource];
+                                                pAij[i * NoCols + j + RelOffsetDest] = vl;
+                                                AijSum += Math.Abs(vl);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (jNext == jE) {
+                                    // block complete
+                                    //Console.WriteLine("destination block complete");
+                                    if (AijSum != 0) {
+                                        temp.bR.Clear(j0, jE);
+                                        temp.bR.Init(B, jBlock, true);
+                                        Cnext.Clear(Caccu.i0, Caccu.iE);
+                                        multiply_core.Start();
+                                        TempBlockRow.Merge(Cnext, temp.bR, Caccu, pAij, NoRows, NoCols);
+                                        multiply_core.Stop();
+                                        var _Caccu = Caccu;
+                                        Caccu = Cnext;
+                                        Cnext = _Caccu;
+                                    }
+
+                                    inBlock = false;
+                                    pAij = null;
+                                }
+
+                                if (jNext == _jE) {
+                                    //Console.WriteLine("source block complete");
+                                    _inBlock = false;
+                                    _BlkCount++;
+                                }
+
+
+                                jPointer = jNext;
                             }
-
-
-                            // save row
-                            C.ClearBlockRow(iBlkRow);
-                            Caccu.Save(C, iBlkRow);
+                            //}
                         }
+
+
+                        // save row
+                        C.ClearBlockRow(iBlkRow);
+                        Caccu.Save(C, iBlkRow);
+
+                        return temp;
                     }
 
-                    Debug.Assert((tempBuf_Length >= 0) == (tempBuf != IntPtr.Zero), "20");
-                    if(tempBuf_Length >= 0) {
-                        Marshal.FreeHGlobal(tempBuf);
-                    }
+                    // end of `RowMul(...)`
+
+                    ilPSP.Environment.ParallelFor(0, C_NoBlk,
+                        () => new MultiplyTemp(),
+                        RowMul,
+                        (MultiplyTemp t) => t.Dispose());
+
+
+                    
                 } // end of local multiplication...
 
                 // receive external blocks & perform multiplication
