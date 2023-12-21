@@ -181,6 +181,10 @@ namespace ilPSP {
         } = 4;
 
         public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body) {
+            if (InParallelSection)
+                throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
+            
+            
             var options = new ParallelOptions {
                 MaxDegreeOfParallelism = NumThreads,
             };
@@ -199,23 +203,32 @@ namespace ilPSP {
         }
 
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body) {
-            var options = new ParallelOptions {
-                MaxDegreeOfParallelism = NumThreads,
-            };
-            ThreadPool.SetMinThreads(NumThreads, 1);
-            ThreadPool.SetMaxThreads(NumThreads, 2);
+            if (InParallelSection == true) {
+                for (int i = 0; i< toExclusive; i++) {
+                    body(i);
+                }
+            } else {
 
-            try {
-                InParallelSection = true;
-                BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                LAPACK.ActivateSEQ(); 
 
-                Parallel.For(fromInclusive, toExclusive, options, body);
-            } finally {
-                InParallelSection = false;
-                BLAS.ActivateOMP(); // restore parallel 
-                LAPACK.ActivateOMP();
 
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = NumThreads,
+                };
+                ThreadPool.SetMinThreads(NumThreads, 1);
+                ThreadPool.SetMaxThreads(NumThreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+                    Parallel.For(fromInclusive, toExclusive, options, body);
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+
+                }
             }
         }
 
