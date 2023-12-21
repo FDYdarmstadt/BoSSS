@@ -406,7 +406,7 @@ namespace BoSSS.Foundation.Quadrature {
 
                 Quadrature<TQuadRule, TDomain>[] allThreads = new Quadrature<TQuadRule, TDomain>[NumThreads];
 
-                if (this.ExecuteParallel && NoOfItems > 1) {
+                if (ilPSP.Environment.InParallelSection == false && this.ExecuteParallel && NoOfItems > 1) {
                    
 
                     allThreads[0] = this;
