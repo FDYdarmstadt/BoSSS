@@ -44,6 +44,8 @@ using ilPSP.LinSolvers.PARDISO;
 using System.Runtime.InteropServices;
 
 namespace BoSSS.Application.SipPoisson {
+
+    /*
     static public class ThreadBLAS {
 
 
@@ -101,7 +103,7 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
     }
-
+    */
 
     /// <summary>
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
@@ -425,6 +427,15 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
+
+                int L = 1000;
+                double[] a = new double[L];
+                int[] a_acc = L.ForLoop(i => i);
+                double[] b = new double[L];
+                int[] b_acc = L.ForLoop(i => i);
+                a.AccV(1.0, b, acc_index: a_acc, b_index: b_acc);
+
+
 
                 if (Control.ExactSolution_provided) {
                     Tex.Clear();
