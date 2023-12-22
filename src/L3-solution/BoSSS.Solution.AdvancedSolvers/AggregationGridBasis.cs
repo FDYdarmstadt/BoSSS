@@ -31,6 +31,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -505,52 +506,56 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray InjectorsBase, bool[] InjectorsBaseReady, 
             int Jagg, int[][] Ag2Pt, int[][] C2F) {
             using(new FuncTrace()) {
-                MultidimensionalArray ortho = MultidimensionalArray.Create(Np, Np);
-
+               
                 MultidimensionalArray[] Injectors_iLevel = new MultidimensionalArray[Jagg];
 
-                ilPSP.Environment.ParallelFor(0, Jagg, delegate (int j) {
-                    //for(int j = 0; j < Jagg; j++) { // loop over aggregate cells
-                    Debug.Assert(ArrayTools.ListEquals(Ag2Pt[j], C2F[j]));
+                ilPSP.Environment.ParallelFor(0, Jagg,
+                    () => MultidimensionalArray.Create(Np, Np),
+                    delegate (int j, ParallelLoopState s, MultidimensionalArray ortho) {
+                        //for(int j = 0; j < Jagg; j++) { // loop over aggregate cells
+                        Debug.Assert(ArrayTools.ListEquals(Ag2Pt[j], C2F[j]));
 
-                    int[] compCell = Ag2Pt[j];
+                        int[] compCell = Ag2Pt[j];
 
-                    int I = compCell.Length;
+                        int I = compCell.Length;
 
-                    Injectors_iLevel[j] = MultidimensionalArray.Create(I, Np, Np);
-                    if (I > 1) {
-                        // compute extrapolation
-                        int[,] CellPairs = new int[I - 1, 2];
-                        for (int i = 0; i < I - 1; i++) {
-                            CellPairs[i, 0] = compCell[0];
-                            CellPairs[i, 1] = compCell[i + 1];
+                        Injectors_iLevel[j] = MultidimensionalArray.Create(I, Np, Np);
+                        if (I > 1) {
+                            // compute extrapolation
+                            int[,] CellPairs = new int[I - 1, 2];
+                            for (int i = 0; i < I - 1; i++) {
+                                CellPairs[i, 0] = compCell[0];
+                                CellPairs[i, 1] = compCell[i + 1];
+                            }
+                            var ExpolMtx = MultidimensionalArray.Create(I, Np, Np);
+                            maxDgBasis.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I - 1, Np - 1, Np - 1 }));
+                            for (int n = 0; n < Np; n++) {
+                                ExpolMtx[0, n, n] = 1.0;
+                            }
+
+                            // Compute intermediate mass matrix
+                            var MMtemp = MultidimensionalArray.Create(Np, Np);
+                            MMtemp.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "nm", "iln", "ilm");
+
+                            // orthonormalize
+                            MMtemp.SymmetricLDLInversion(ortho, null);
+                            Injectors_iLevel[j].Multiply(1.0, ExpolMtx, ortho, 0.0, "inm", "ink", "km");
+                        } else {
+                            Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1).AccEye(1.0);
                         }
-                        var ExpolMtx = MultidimensionalArray.Create(I, Np, Np);
-                        maxDgBasis.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I - 1, Np - 1, Np - 1 }));
-                        for (int n = 0; n < Np; n++) {
-                            ExpolMtx[0, n, n] = 1.0;
+
+                        // base level injector
+                        var injBase = InjectorsBase.ExtractSubArrayShallow(compCell[0], -1, -1);
+                        injBase.Set(Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1));
+                        Debug.Assert(InjectorsBaseReady[compCell[0]]);
+
+                        for (int i = 1; i < I; i++) {
+                            InjectorsBaseReady[compCell[i]] = false;
                         }
 
-                        // Compute intermediate mass matrix
-                        var MMtemp = MultidimensionalArray.Create(Np, Np);
-                        MMtemp.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "nm", "iln", "ilm");
-
-                        // orthonormalize
-                        MMtemp.SymmetricLDLInversion(ortho, null);
-                        Injectors_iLevel[j].Multiply(1.0, ExpolMtx, ortho, 0.0, "inm", "ink", "km");
-                    } else {
-                        Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1).AccEye(1.0);
-                    }
-
-                    // base level injector
-                    var injBase = InjectorsBase.ExtractSubArrayShallow(compCell[0], -1, -1);
-                    injBase.Set(Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1));
-                    Debug.Assert(InjectorsBaseReady[compCell[0]]);
-
-                    for (int i = 1; i < I; i++) {
-                        InjectorsBaseReady[compCell[i]] = false;
-                    }
-                });
+                        return ortho;
+                    },
+                    (MultidimensionalArray o) => { });
 
                 return Injectors_iLevel;
             }
