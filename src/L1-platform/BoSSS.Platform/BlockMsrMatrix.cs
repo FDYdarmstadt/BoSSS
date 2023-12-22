@@ -1244,12 +1244,14 @@ namespace ilPSP.LinSolvers {
                             int OwnerRank = m_ColPartitioning.FindProcess(j);
                             Debug.Assert(OwnerRank != m_ColPartitioning.MpiRank);
                             HashSet<long> BlockIndicesByProcessor;
-                            if(!m_ExternalBlockIndicesByProcessor.TryGetValue(OwnerRank, out BlockIndicesByProcessor)) {
-                                BlockIndicesByProcessor = new HashSet<long>();
-                                m_ExternalBlockIndicesByProcessor.Add(OwnerRank, BlockIndicesByProcessor);
+                            lock (m_ExternalBlockIndicesByProcessor) {
+                                if (!m_ExternalBlockIndicesByProcessor.TryGetValue(OwnerRank, out BlockIndicesByProcessor)) {
+                                    BlockIndicesByProcessor = new HashSet<long>();
+                                    m_ExternalBlockIndicesByProcessor.Add(OwnerRank, BlockIndicesByProcessor);
+                                }
+                                this.ComPatternValid &= !BlockIndicesByProcessor.Add(BlkCol);
+                                this.m_ExternalBlock[iBlkLoc] |= true;
                             }
-                            this.ComPatternValid &= !BlockIndicesByProcessor.Add(BlkCol);
-                            this.m_ExternalBlock[iBlkLoc] |= true;
                         }
 
                     }
@@ -1378,13 +1380,15 @@ namespace ilPSP.LinSolvers {
                         BlockMsrMatrix.GetExternalSubblockIndices(this._ColPartitioning, jBlock, out j0, out jE);
                         int OwnerRank = m_ColPartitioning.FindProcess(j0);
                         Debug.Assert(OwnerRank != m_ColPartitioning.MpiRank);
-                        HashSet<long> BlockIndicesByProcessor;
-                        if(!m_ExternalBlockIndicesByProcessor.TryGetValue(OwnerRank, out BlockIndicesByProcessor)) {
-                            BlockIndicesByProcessor = new HashSet<long>();
-                            m_ExternalBlockIndicesByProcessor.Add(OwnerRank, BlockIndicesByProcessor);
+                        lock (m_ExternalBlockIndicesByProcessor) {
+                            HashSet<long> BlockIndicesByProcessor;
+                            if (!m_ExternalBlockIndicesByProcessor.TryGetValue(OwnerRank, out BlockIndicesByProcessor)) {
+                                BlockIndicesByProcessor = new HashSet<long>();
+                                m_ExternalBlockIndicesByProcessor.Add(OwnerRank, BlockIndicesByProcessor);
+                            }
+                            this.ComPatternValid &= !BlockIndicesByProcessor.Add(jBlock);
+                            this.m_ExternalBlock[iBlockLoc] |= true;
                         }
-                        this.ComPatternValid &= !BlockIndicesByProcessor.Add(jBlock);
-                        this.m_ExternalBlock[iBlockLoc] |= true;
                     }
 
                 }
@@ -2850,7 +2854,8 @@ namespace ilPSP.LinSolvers {
                         ilPSP.Environment.ParallelFor(0, NoOfBlockRows,
                             () => default(double[]),
                             RowMul,
-                            (double[] _) => { });
+                            (double[] _) => { },
+                            enablePar: false);
 
 
                         }
@@ -5165,8 +5170,6 @@ namespace ilPSP.LinSolvers {
                 int A_colNoBlk = A._ColPartitioning.LocalNoOfBlocks;
                 long A_colIBlkE = A_coliBlk0 + A_colNoBlk;
 
-
-
                 // collect list of blocks which have to be sent to other processors
                 // ----------------------------------------------------------------
 
@@ -5472,7 +5475,8 @@ namespace ilPSP.LinSolvers {
                     ilPSP.Environment.ParallelFor(0, C_NoBlk,
                         () => new MultiplyTemp(),
                         RowMul,
-                        (MultiplyTemp t) => t.Dispose());
+                        (MultiplyTemp t) => t.Dispose(),
+                        enablePar:true);
 
 
                     

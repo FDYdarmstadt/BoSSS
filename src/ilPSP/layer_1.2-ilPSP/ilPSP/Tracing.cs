@@ -195,7 +195,7 @@ namespace ilPSP.Tracing {
 
 
         internal static MethodCallRecord LogDummyblock(long ticks, string _name) {
-            Debug.Assert(InstrumentationSwitch == true);
+            Debug.Assert(InstrumentationSwitch == true && ilPSP.Environment.InParallelSection == false);
 
             MethodCallRecord mcr;
             if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
@@ -352,6 +352,11 @@ namespace ilPSP.Tracing {
         /// ctor
         /// </summary>
         protected Tmeas() {
+            if (!Tracer.InstrumentationSwitch)
+                return;
+            if (ilPSP.Environment.InParallelSection)
+                return;
+
             //startTicks = Watch.ElapsedTicks;
             Watch = new Stopwatch();
             Watch.Start();
@@ -370,7 +375,7 @@ namespace ilPSP.Tracing {
         /// logs an 'inclusive' block;
         /// </summary>
         public MethodCallRecord LogDummyblock(long ticks, string name) {
-            if(!Tracer.InstrumentationSwitch)
+            if(Tracer.InstrumentationSwitch == false || ilPSP.Environment.InParallelSection == true)
                 return new MethodCallRecord(null, "dummy");
             else 
                 return Tracer.LogDummyblock(ticks, name);
@@ -553,6 +558,11 @@ namespace ilPSP.Tracing {
         /// Message when the measurement starts.
         /// </summary>
         protected void EnterMessage(string elo, string _name) {
+            if (!Tracer.InstrumentationSwitch)
+                return;
+            if (ilPSP.Environment.InParallelSection)
+                return;
+
             int newDepth = Tracer.Push_MethodCallRecord(_name, out var mcr);
             this._name = _name;
 
@@ -571,6 +581,9 @@ namespace ilPSP.Tracing {
         protected void LeaveLog() {
             if(!Tracer.InstrumentationSwitch)
                 return;
+            if (ilPSP.Environment.InParallelSection)
+                return;
+
 
             int newDepht = Tracer.Pop_MethodCallrecord(this.Duration.Ticks, this.AllocatedMem, this.PeakMem, out var mcr);
 
@@ -680,6 +693,14 @@ namespace ilPSP.Tracing {
         /// stops the measurement
         /// </summary>
         virtual public void Dispose() {
+            if (m_StdoutOnlyOnRank0Bkup != null)
+                ilPSP.Environment.StdoutOnlyOnRank0 = m_StdoutOnlyOnRank0Bkup.Value;
+
+            if (!Tracer.InstrumentationSwitch)
+                return;
+            if (ilPSP.Environment.InParallelSection)
+                return;
+
             //this.DurationTicks = Watch.ElapsedTicks - startTicks;
             Watch.Stop();
             this.Duration = Watch.Elapsed;
@@ -688,8 +709,7 @@ namespace ilPSP.Tracing {
                 PeakWorkingSet_onExit = 0;
             }
 
-            if (m_StdoutOnlyOnRank0Bkup != null)
-                ilPSP.Environment.StdoutOnlyOnRank0 = m_StdoutOnlyOnRank0Bkup.Value;
+            
 
             LeaveLog();
         }
@@ -708,6 +728,8 @@ namespace ilPSP.Tracing {
         /// </summary>
         public FuncTrace() : base() {
             if(!Tracer.InstrumentationSwitch)
+                return;
+            if (ilPSP.Environment.InParallelSection)
                 return;
 
             string _name;
@@ -740,6 +762,8 @@ namespace ilPSP.Tracing {
         /// </summary>
         public FuncTrace(string UserName) : base() {
             if(!Tracer.InstrumentationSwitch)
+                return;
+            if (ilPSP.Environment.InParallelSection)
                 return;
 
             string _name = UserName;
@@ -816,8 +840,11 @@ namespace ilPSP.Tracing {
         /// if true, the time elapsed in the block will be printed to console 
         /// </param>
         public BlockTrace(string Title, FuncTrace f, bool timeToCout = false) {
-            if(!Tracer.InstrumentationSwitch)
+            if (!Tracer.InstrumentationSwitch)
                 return;
+            if (ilPSP.Environment.InParallelSection)
+                return;
+
             base.DoLogging = f.DoLogging;
             string _name = Title;
             _f = f;
@@ -852,7 +879,12 @@ namespace ilPSP.Tracing {
         public override void Dispose() {
             base.Dispose();
 
-            if(m_timeToCout) {
+            if (!Tracer.InstrumentationSwitch)
+                return;
+            if (ilPSP.Environment.InParallelSection)
+                return;
+
+            if (m_timeToCout) {
                 Console.WriteLine(base._name + ": " + base.Watch.Elapsed.TotalSeconds + " sec.");
             }
         }

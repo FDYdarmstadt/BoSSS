@@ -232,16 +232,18 @@ namespace ilPSP {
             }
         }
 
-        public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally) {
+        public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
             if (InParallelSection) {
                 throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
             }
 
+            int __Numthreads = enablePar ? NumThreads : 1;
+
             var options = new ParallelOptions {
-                MaxDegreeOfParallelism = NumThreads,
+                MaxDegreeOfParallelism = __Numthreads,
             };
-            ThreadPool.SetMinThreads(NumThreads, 1);
-            ThreadPool.SetMaxThreads(NumThreads, 2);
+            ThreadPool.SetMinThreads(__Numthreads, 1);
+            ThreadPool.SetMaxThreads(__Numthreads, 2);
 
             try {
                 InParallelSection = true;
