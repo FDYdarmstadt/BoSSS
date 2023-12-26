@@ -465,7 +465,7 @@ namespace BoSSS.Foundation.Quadrature {
                                 throw new Exception("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
                                 //Console.Error.WriteLine("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
                             else
-                                Console.WriteLine($"no parallelization error ({this.GetType()}).");
+                                Console.WriteLine($"no parallelization error ({NumThreads} threads, {this.GetType()}).");
                         }
                     }
 

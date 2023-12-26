@@ -346,16 +346,28 @@ namespace AdvancedSolverTests {
         }
 
         private void Setup() {
+            MPICollectiveWatchDog.Watch(token:349);
+            MPICollectiveWatchDog.Watch(token: 350);
+            MPICollectiveWatchDog.Watch(token: 351);
+
             MgSeq = CoarseningAlgorithms.CreateSequence(m_grid.iGridData);
+            MPICollectiveWatchDog.Watch(token: 354);
+            MPICollectiveWatchDog.Watch(token: 355);
+            MPICollectiveWatchDog.Watch(token: 356);
 
             int p = m_DGorder;
 
             var uMapping = new UnsetteledCoordinateMapping(u1.Basis, u2.Basis);
             //var uMapping = new UnsetteledCoordinateMapping(u1.Basis);
             //var uMapping = new UnsetteledCoordinateMapping(new Basis(m_grid.iGridData, p));
-
+            MPICollectiveWatchDog.Watch(token: 363);
+            MPICollectiveWatchDog.Watch(token: 364);
+            MPICollectiveWatchDog.Watch(token: 365);
             XAggB = AggregationGridBasis.CreateSequence(MgSeq, uMapping.BasisS);
             var bla = LsTrk.SpeciesIdS.ToArray();
+            MPICollectiveWatchDog.Watch(token: 368);
+            MPICollectiveWatchDog.Watch(token: 369);
+            MPICollectiveWatchDog.Watch(token: 370);
             var agg = LsTrk.GetAgglomerator(bla, m_quadOrder, THRESHOLD, AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
             XAggB.UpdateXdgAggregationBasis(agg);
             var VarDegrees=uMapping.BasisS.Count.ForLoop(i=> uMapping.BasisS[i].Degree);

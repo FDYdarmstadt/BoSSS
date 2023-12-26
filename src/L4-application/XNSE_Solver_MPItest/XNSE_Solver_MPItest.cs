@@ -481,7 +481,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
             Debugger.Launch();
-            //ilPSP.Environment.NumThreads = 1;
+            ilPSP.Environment.NumThreads = 1;
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);
