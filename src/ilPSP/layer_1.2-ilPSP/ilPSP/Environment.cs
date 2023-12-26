@@ -180,42 +180,48 @@ namespace ilPSP {
             set;
         } = 4;
 
-        public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body) {
+        public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body, bool enablePar = false) {
             if (InParallelSection) {
                 throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
             }
-            
+
+            int __Numthreads = enablePar ? NumThreads : 1;
+
+
             var options = new ParallelOptions {
-                MaxDegreeOfParallelism = NumThreads,
+                MaxDegreeOfParallelism = __Numthreads,
             };
-            ThreadPool.SetMinThreads(NumThreads, 1);
-            ThreadPool.SetMaxThreads(NumThreads, 2);
+            ThreadPool.SetMinThreads(__Numthreads, 1);
+            ThreadPool.SetMaxThreads(__Numthreads, 2);
 
             try {
                 InParallelSection = true;
                 BLAS.ActivateSEQ();
+                LAPACK.ActivateSEQ();
 
                 return Parallel.For(fromInclusive, toExclusive, options, body);
             } finally { 
                 InParallelSection = false;
-                BLAS.ActivateOMP(); 
+                BLAS.ActivateOMP();
+                LAPACK.ActivateOMP();
             }
         }
 
-        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body) {
+        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = false) {
             if (InParallelSection == true) {
                 for (int i = 0; i< toExclusive; i++) {
                     body(i);
                 }
             } else {
 
+                int __Numthreads = enablePar ? NumThreads : 1;
 
 
                 var options = new ParallelOptions {
-                    MaxDegreeOfParallelism = NumThreads,
+                    MaxDegreeOfParallelism = __Numthreads,
                 };
-                ThreadPool.SetMinThreads(NumThreads, 1);
-                ThreadPool.SetMaxThreads(NumThreads, 2);
+                ThreadPool.SetMinThreads(__Numthreads, 1);
+                ThreadPool.SetMaxThreads(__Numthreads, 2);
 
                 try {
                     InParallelSection = true;
@@ -227,7 +233,6 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-
                 }
             }
         }
@@ -248,11 +253,13 @@ namespace ilPSP {
             try {
                 InParallelSection = true;
                 BLAS.ActivateSEQ();
+                LAPACK.ActivateSEQ();
 
                 return Parallel.For(fromInclusive, toExclusive, options, localInit, body, localFinally);
             } finally {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
+                LAPACK.ActivateOMP();
             }
         }
 
