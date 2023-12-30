@@ -81,7 +81,7 @@ namespace XESF {
             //Globalization Parameters
             c.GlobalizationStrategy = globalization;
             c.MeritFunctionType = meritFunctionType;
-            c.MinPIter = new int[] { 25, 25, 25, 0, 0 };
+            c.minimalSQPIterations = new int[] { 25, 25, 25, 0, 0 };
 
             #endregion
 
@@ -482,7 +482,7 @@ namespace XESF {
             //Globalization Parameters
             c.GlobalizationStrategy = globalization;
             c.MeritFunctionType = meritFunctionType;
-            c.MinPIter = new int[] { 20, 20, 20 };
+            c.minimalSQPIterations = new int[] { 20, 20, 20 };
             #endregion
 
             #region LevelSetStuff
@@ -1358,8 +1358,8 @@ namespace XESF {
             #region Optimization variables
             c.solRunType = solverRunType;
             if(staggeredTS != null)
-                c.staggeredTimeSteps = staggeredTS;
-            c.MinPIter = MinPIter;
+                c.FixedSQPIterations = staggeredTS;
+            c.minimalSQPIterations = MinPIter;
             // Adaptive Regularization
             c.Gamma_Max = gammaMax;
             c.Gamma_Min = gammaMin;
@@ -1686,8 +1686,8 @@ namespace XESF {
             #region Optimization variables
             c.solRunType = solverRunType;
             if(staggeredTS != null)
-                c.staggeredTimeSteps = staggeredTS;
-            c.MinPIter = MinPIter;
+                c.FixedSQPIterations = staggeredTS;
+            c.minimalSQPIterations = MinPIter;
             // Adaptive Regularization
             c.Gamma_Start = 1;
             c.Gamma_Max = gammaMax;
