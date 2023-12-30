@@ -38,7 +38,7 @@ namespace SAIDT.Tests {
                         agg: 0.4,
                         optiLevelSetType: OptiLevelSetType.SplineLevelSet
                         );
-                C.MinPIter = new int[] {40};
+                C.minimalSQPIterations = new int[] {40};
                 p.Init(C);
                 p.RunSolverMode();
                 Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < 1e-09 && p.ResidualVector.MPI_L2Norm() < 1e-09), System.String.Format("the L2 Error is greater than 1e-09 (Residual {0}, Enriched Residual {1}", p.ResidualVector.MPI_L2Norm(), p.obj_f_vec.MPI_L2Norm()));
@@ -117,7 +117,7 @@ namespace SAIDT.Tests {
                     withReInit: true,
                     isFarConfig: true
                     ) ;
-                C.MinPIter = new int[] { 100, 100, 100 }; //we need to ensure enough iterations
+                C.minimalSQPIterations = new int[] { 100, 100, 100 }; //we need to ensure enough iterations
                 C.Gamma_Start = 1e-1;
                 C.Gamma_Min = 1e-2;
                 p.Init(C);

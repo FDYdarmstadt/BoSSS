@@ -362,7 +362,7 @@ namespace ApplicationWithIDT {
             Steps = new List<double[]>();
             Steps.Add(stepIN);
             gamma = Control.Gamma_Start;
-            CurMinIter = Control.MinPIter[0];
+            CurMinIter = Control.minimalSQPIterations[0];
             ReiniTMaxIter = Control.ReiniTMaxIters[0];
             CurrentAgglo = Control.AgglomerationThreshold;
             //chose the Merit Function used in Globalization
@@ -417,7 +417,7 @@ namespace ApplicationWithIDT {
                     if(Control.tALNRs.Length < maxDeg + 1) {
                         throw new NotSupportedException($"Control.tALNRs length must be at least {maxDeg+1}");
                     }
-                    if(Control.MinPIter.Length < maxDeg + 1) {
+                    if(Control.minimalSQPIterations.Length < maxDeg + 1) {
                         throw new NotSupportedException($"Control.MinPIter length must be at least {maxDeg+1}");
                     }
 
@@ -582,7 +582,7 @@ namespace ApplicationWithIDT {
                     
                     //increase Current Minimal iTerations by the respective Minimal iterations wanted for the polynomial degree
 
-                    CurMinIter = CurrentStepNo + Control.MinPIter[CurrentDeg];
+                    CurMinIter = CurrentStepNo + Control.minimalSQPIterations[CurrentDeg];
                     ReiniTMaxIter = CurrentStepNo + Control.ReiniTMaxIters[CurrentDeg];
                     
                     IncreaseDegreeNextTS = false;
@@ -590,7 +590,7 @@ namespace ApplicationWithIDT {
                     Console.Write("OpEval after change:");
                     ComputeAndWriteResiduals();
                     Console.WriteLine("");
-                    Console.WriteLine($" current DGdegree={CurrentDeg}, min It.:{Control.MinPIter[CurrentDeg]}, MaxReInit:{Control.ReiniTMaxIters[CurrentDeg]}, ReInitTol:{Control.reInitTols[CurrentDeg]}," +
+                    Console.WriteLine($" current DGdegree={CurrentDeg}, min It.:{Control.minimalSQPIterations[CurrentDeg]}, MaxReInit:{Control.ReiniTMaxIters[CurrentDeg]}, ReInitTol:{Control.reInitTols[CurrentDeg]}," +
                         $" TermN:{GetCurrentTermN()}, tALNR:{Control.tALNRs[CurrentDeg]} ");
                     Console.WriteLine("");
                     Console.WriteLine("################################################################################################");
@@ -1286,11 +1286,21 @@ namespace ApplicationWithIDT {
 
                 for(int n_param = 0; n_param < nRow; n_param++) {
 
+                    //skip loop if param is non changeable
+                    if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
+                    {
+                        double yMin = splineLS.y.Min(); //lower boundary of space time domain
+                        if (n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                        {
+                            continue;
+                        }
+
+                    }
+
                     //compute distortions
                     x = LevelSetOpti.GetParam(n_param);
                     dx_right = x + eps / 2;
                     dx_left = x - eps / 2;
-
 
                     // apply right distortion
                     LevelSetOpti.SetParam(n_param, dx_right);
@@ -2139,7 +2149,7 @@ namespace ApplicationWithIDT {
                         return true;
                     }
 
-                    if(itc >= Control.MaxIter) {
+                    if(itc >= Control.MaxIterations) {
                         // run out of iterations
                         return true;
                     }
@@ -2243,9 +2253,9 @@ namespace ApplicationWithIDT {
                             //    tr.Info($"minimal build-in convergence criterion NOT reached (current residual is {norm_CurRes}, limit is {_MinConvCrit * fnorminit + _MinConvCrit}) yet.");
                             //}
 
-                            if(itc >= Control.MaxIter) {
+                            if(itc >= Control.MaxIterations) {
                                 // run out of iterations
-                                tr.Info($"Maximum number of iterations reached ({Control.MaxIter}) - terminating.");
+                                tr.Info($"Maximum number of iterations reached ({Control.MaxIterations}) - terminating.");
                                 terminateLoop = true;
                                 TerminationKey = false;
                             }
@@ -2472,9 +2482,28 @@ namespace ApplicationWithIDT {
                 ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += m_alpha * step_t[stepIndex];
             }
 
-            for(int i = 0; i < LevelSetOpti.GetLength(); i++) {
-                LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]);
+
+            /// Level Set Update
+            //special treatment for space time level sets
+            if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
+            {
+                double yMin = splineLS.y.Min(); //lower boundary of space time domain
+                for (int i = 0; i < LevelSetOpti.GetLength(); i++)
+                {
+                    if (i<splineLS.y.Length && Math.Abs(yMin - splineLS.y[i])> 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                    {
+                        LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]); 
+                    }
+                }
             }
+            else
+            {
+                for (int i = 0; i < LevelSetOpti.GetLength(); i++)
+                {
+                    LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]);
+                }
+            }
+
             LevelSetOpti.ProjectOntoLevelSet(LsTBO);
             //var tp = new Tecplot(GridData, 4);
             //tp = new Tecplot(GridData, 4);

@@ -387,9 +387,9 @@ namespace BUIDT
 #endregion
             c.solRunType = solverRunType;
             if(staggeredTS != null)
-                c.staggeredTimeSteps = staggeredTS;
+                c.FixedSQPIterations = staggeredTS;
             c.Gamma_Max = 1;
-            c.MinPIter = new int[] { 20, 15, 10, 10, 10 };
+            c.minimalSQPIterations = new int[] { 20, 15, 10, 10, 10 };
             c.SuperSampling = 4;
             c.AgglomerationThreshold = agg;
             c.Linearization = linearization;
