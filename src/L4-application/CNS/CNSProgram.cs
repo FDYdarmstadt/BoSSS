@@ -53,6 +53,12 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //DeleteOldPlotFiles();
+            
+            //var c = ControlExamples_Supersonic.AcousticWave(MachL:4.0,numOfCellsX:300,numOfCellsY:3);
+            //var pCNS = new CNSProgram();
+            //pCNS.Init(c);
+            //pCNS.RunSolverMode();
+
             //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
 
             //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
@@ -69,6 +75,8 @@ namespace CNS {
             //var pCNS = new CNS.Program<CNS.IBM.IBMControl>();
             //pCNS.Init(cIBMBowShock);
             //pCNS.RunSolverMode();
+
+            //
 
             //Debug.Assert(false, "remove me");
             //return;
