@@ -18,6 +18,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -133,8 +134,7 @@ namespace ilPSP {
                 mpiInitialized = true;
             }
 
-            InitThreading(true, null);
-
+            
 
             // init MPI enviroment
             // ===================
@@ -204,12 +204,13 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
+                MKLservice.SetNumThreads(NumThreads);
             }
         }
 
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = false) {
             if (InParallelSection == true) {
-                for (int i = 0; i< toExclusive; i++) {
+                for (int i = 0; i < toExclusive; i++) {
                     body(i);
                 }
             } else {
@@ -233,6 +234,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
+                    MKLservice.SetNumThreads(NumThreads);
                 }
             }
         }
@@ -260,17 +262,74 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
+                MKLservice.SetNumThreads(NumThreads);
             }
         }
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
 
                 if(NumThreadsOverride != null) {
-                    tr.Info("API override of number of threads: " + NumThreadsOverride.Value);
+                    tr.Info("API override of number of threads: " + NumThreadsOverride.Value + " (ignoring OMP_NUM_THREADS, etc.)");
                     NumThreads = NumThreadsOverride.Value;
+                } else { 
+                    if(LookAtEnvVar) {
+                        int? omp_num_threads = null;
+                        try {
+                            string _omp_num_treads = System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS");
+                            if(_omp_num_treads != null) {
+                                omp_num_threads = Int32.Parse(_omp_num_treads);
+                                tr.Info("OMP_NUM_THREADS = " + omp_num_threads);
+                            } else {
+                                tr.Info("not defined: OMP_NUM_THREADS");
+                            }
+                        } catch (Exception e) {
+                            tr.Error("Exception parsing OMP_NUM_THREADS: " + e);
+                        }
+
+
+
+                        if(omp_num_threads != null) {
+                            NumThreads = omp_num_threads.Value;
+                        } else {
+                            var _num_procs = System.Environment.GetEnvironmentVariable("NUMBER_OF_PROCESSORS");
+                            int? num_procs_per_smp = null;
+                            try {
+                                if (_num_procs != null) {
+                                    int MPIsz = int.MaxValue;
+                                    for (int iSMP = 0; iSMP < MPIEnv.NoOfSMPs; iSMP++) {
+                                        MPIsz = Math.Min(MPIsz, MPIEnv.MPIProcessesPerSMP(iSMP));
+                                    }
+                                    tr.Info("MPI procs per compute node (minimum): " + MPIsz);
+
+                                    if(_num_procs != null) {
+                                        int num_procs = Int32.Parse(_num_procs);
+                                        tr.Info("NUMBER_OF_PROCESSORS = " + num_procs);
+                                        num_procs = Math.Max(1, num_procs - 2); // leave some cores for the system.
+                                        num_procs_per_smp = Math.Max(1, num_procs/MPIsz);
+                                    } else {
+                                        tr.Info("not defined: NUMBER_OF_PROCESSORS");
+                                    }
+
+                                }
+                            } catch (Exception e) {
+                                tr.Error("Exception parsing NUMBER_OF_PROCESSORS: " + e);
+                            }
+
+                            if(num_procs_per_smp != null) {
+                                NumThreads = num_procs_per_smp.Value;
+                            }
+                        }
+                    } else {
+                        tr.Info($"Using default value for number of threads ({NumThreads})");
+                    }
                 }
 
+                tr.Info("Finally, setting number of OpenMP and Parallel Task Library threads to " + NumThreads);
+
+                if(NumThreads <= 0)
+                    throw new NotSupportedException($"Number of threads must be at least 1; set to {NumThreads}");
                 MKLservice.SetNumThreads(NumThreads);
             }
         }

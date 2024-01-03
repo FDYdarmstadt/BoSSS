@@ -344,7 +344,7 @@ namespace ilPSP.Utils {
         /// into account
         /// </param>
         public void DGELSY(int M, int N, double[] A, double[] B, int NRHS, double RCOND) {
-            using (new FuncTrace()) {
+            {
                 Debug.Assert(
                     A.Length == M * N,
                     "A must be a MxN matrix");
@@ -408,7 +408,7 @@ namespace ilPSP.Utils {
         /// into account
         /// </param>
         unsafe internal void DGELSY(int M, int N, double* pA, double* pB, int LDB, int NRHS, double RCOND) {
-            using (new FuncTrace()) {
+            {
                 int RANK;
                 int LWORK = -1;
                 int INFO;
@@ -498,7 +498,7 @@ namespace ilPSP.Utils {
         /// An estimate for the condition number of <paramref name="A"/>.
         /// </returns>
         public unsafe double DGELSS(int M, int N, double[] A, double[] B, int NRHS, double RCOND) {
-            using (new FuncTrace()) {
+            {
                 Debug.Assert(
                     A.Length == M * N,
                     "A must be a MxN matrix");
