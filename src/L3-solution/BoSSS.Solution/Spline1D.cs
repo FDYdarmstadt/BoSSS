@@ -43,7 +43,7 @@ namespace BoSSS.Solution.Control {
     /// </remarks>
     [Serializable]
     [DataContract]
-    public class Spline1D : IBoundaryAndInitialData {
+    public class Spline1D : IBoundaryAndInitialData, ICloneable {
 
         /// <summary>
         /// Empty ctor for de-serialization.
@@ -109,6 +109,19 @@ namespace BoSSS.Solution.Control {
 
         [DataMember]
         private OutOfBoundsBehave m_oobb;
+
+
+        public object Clone() {
+            return new Spline1D() {
+                dim = this.dim,
+                nodes = this.nodes.CloneAs(),
+                values = this.values.CloneAs(),
+                m_oobb = this.m_oobb,
+                M = this.M?.CloneAs(),
+                c = this.c?.CloneAs(),
+                d = this.d?.CloneAs()
+            };
+        }
              
 
         /// <summary>

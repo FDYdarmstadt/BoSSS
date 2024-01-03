@@ -820,6 +820,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
                                 using (new BlockTrace("PARDISO_phase33", tr)) {
                                     Phase_33.Start();
+                                    //Console.WriteLine("OMP_NUM_THREADS before PARDISO: " + System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS"));
+                                    //Console.WriteLine("MKL_NUM_THREADS before PARDISO: " + System.Environment.GetEnvironmentVariable("MKL_NUM_THREADS"));
+                                    //Console.WriteLine("MKL_DYNAMIC     before PARDISO: " + System.Environment.GetEnvironmentVariable("MKL_DYNAMIC"));
+
                                     wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                       &n, a, ia, ja, &idum, &nrhs,
                                                       iparm, &msglvl, b, x, &error, dparam);

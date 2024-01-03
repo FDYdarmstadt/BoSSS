@@ -94,6 +94,7 @@ namespace BoSSS.Application.ipViscosity {
 
             //BoSSS.Solution.Application.InitMPI(new string[0]);
             //BoSSS.Application.ipViscosity._Test.ConsistencyTest(Terms.T1, 0);
+            //return;
 
             BoSSS.Solution.Application._Main(args, true, delegate () {
                 ipViscosityMain p = new ipViscosityMain();

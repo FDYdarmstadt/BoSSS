@@ -59,7 +59,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            //InitMPI();
+            InitMPI();
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6);
             //throw new Exception("remove me");
@@ -168,7 +168,6 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             Op = new XDifferentialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
             Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
-            //var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
             var lap = new XLaplace_Bulk(penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
             Op.EquationComponents["c1"].Add(lap);      // Bulk form
             Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_multiplyer, this.Control.ViscosityMode));   // coupling form
@@ -250,8 +249,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        override public IDictionary<string,double> OperatorAnalysis() {
-            return this.Op.OperatorAnalysis(this.u.Mapping, this.OpConfig); 
+        override public IDictionary<string,double> OperatorAnalysis(OperatorAnalysisConfig config) {
+            return this.Op.OperatorAnalysis(this.u.Mapping, config, this.OpConfig); 
         }
                 
 

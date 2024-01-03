@@ -920,7 +920,21 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             }
         }
 
-        public bool CalculateStencils { get => calculateStencils; set => calculateStencils = value; }
+        /// <summary>
+        /// true, if stencil condition numbers should be computed
+        /// </summary>
+        public bool CalculateStencils {
+            get => calculateStencils;
+            set => calculateStencils = value;
+        }
+
+        /// <summary>
+        /// true, if global condition numbers should be computed
+        /// </summary>
+        public bool CalculateGlobals {
+            get;
+            set;
+        }
 
 
         /// <summary>
@@ -972,15 +986,18 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 // global condition numbers
                 // ========================
-                var stpw = new Stopwatch();
-                stpw.Start();
-                //double CondNo = this.CondNumMUMPS();
-                double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
-                //double CondNo = this.Cond2Matlab();
-                //double CondNo = this.CondLAPACK();
-                Ret.Add("TotCondNo-" + VarNames, CondNo);
-                stpw.Stop();
-                Console.WriteLine("- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
+
+                if (CalculateGlobals) {
+                    var stpw = new Stopwatch();
+                    stpw.Start();
+                    //double CondNo = this.CondNumMUMPS();
+                    double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
+                                                          //double CondNo = this.Cond2Matlab();
+                                                          //double CondNo = this.CondLAPACK();
+                    Ret.Add("TotCondNo-" + VarNames, CondNo);
+                    stpw.Stop();
+                    Console.WriteLine("- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
+                }
 
                 //var pair = this.Eigenval();
                 //Ret.Add("maxEigenvalue", pair.maxEigen);

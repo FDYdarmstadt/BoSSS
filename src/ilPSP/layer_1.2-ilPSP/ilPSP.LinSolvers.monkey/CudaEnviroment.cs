@@ -77,7 +77,7 @@ namespace ilPSP.LinSolvers.monkey.CUDA {
         /// <summary>
         /// ctor
         /// </summary>
-        public CudaEnviroment(MPIEnviroment _MpiEnv) {
+        public CudaEnviroment(MPIEnvironment _MpiEnv) {
             m_MpiEnv = _MpiEnv;
             if (!CudaAvailable)
                 throw new ApplicationException("No CUDA driver on this machine.");
@@ -109,12 +109,12 @@ namespace ilPSP.LinSolvers.monkey.CUDA {
             Logger.Info("Process " + MpiEnv.MPI_Rank + " on " + MpiEnv.Hostname + " using " + name + ".");
         }
 
-        MPIEnviroment m_MpiEnv;
+        MPIEnvironment m_MpiEnv;
 
         /// <summary>
         /// the used MPI environment
         /// </summary>
-        public MPIEnviroment MpiEnv {
+        public MPIEnvironment MpiEnv {
             get { return m_MpiEnv; }
         }
         

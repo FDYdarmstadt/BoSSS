@@ -40,7 +40,7 @@ using BoSSS.Solution.Statistic;
 using System.IO;
 using BoSSS.Platform.Utils.Geom;
 using System.Threading;
-using System.Runtime.InteropServices;
+using ilPSP.LinSolvers.PARDISO;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -55,7 +55,6 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
@@ -324,6 +323,15 @@ namespace BoSSS.Application.SipPoisson {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
 
+                int L = 1000;
+                double[] a = new double[L];
+                int[] a_acc = L.ForLoop(i => i);
+                double[] b = new double[L];
+                int[] b_acc = L.ForLoop(i => i);
+                a.AccV(1.0, b, acc_index: a_acc, b_index: b_acc);
+
+
+
                 if (Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
@@ -350,9 +358,66 @@ namespace BoSSS.Application.SipPoisson {
                 //LastMatrix.SaveToTextFileSparse($"LaplaceMtx-J{J}.txt");
                 //double condNo = LastMatrix.condest();
                 //Console.WriteLine($"Matlab condition number estimate {J} cells: " + condNo);
-                
-               
-     
+
+                /*Stuff for testing OpenMP
+                {
+                    var mgOp = this.LapaceIp.GetMultigridOperator(T.Mapping, MgConfig: this.MgConfig);
+                    var rhs = new double[T.Mapping.LocalLength];
+                    rhs.FillRandom();
+
+
+                    var slvrs = new List<(int num,PARDISOSolver s)>();
+
+
+                    foreach (int numThreads in new int[] { 8, 2, 4, 8, 16, 4 }) {
+                        var _start = DateTime.Now;
+                        Console.WriteLine("First solve with " + numThreads + " threads...");
+                        var mtx = mgOp.OperatorMatrix;
+
+                        //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", numThreads.ToString());
+                        //System.Environment.SetEnvironmentVariable("MKL_NUM_THREADS", numThreads.ToString());
+                        //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
+
+                        ThreadBLAS.OMP_SET_NUM_THREADS(numThreads);
+
+                        var pardiso = new PARDISOSolver();
+                        pardiso.Parallelism = Parallelism.OMP;
+                        pardiso.CacheFactorization = false;
+                        pardiso.DefineMatrix(mtx);
+                        pardiso.Solve(new double[rhs.Length], rhs);
+
+
+                        slvrs.Add((numThreads, pardiso));
+
+                        Console.WriteLine($"done. (took {DateTime.Now - _start})");
+                    }
+
+
+                    var start = DateTime.Now;
+                    foreach(var kv in slvrs) {
+                        Console.WriteLine($"Now solving with {kv.num} threads:");
+                        ThreadBLAS.OMP_SET_NUM_THREADS(kv.num);
+
+                        int cnt = 0;
+                        while(DateTime.Now - start < new TimeSpan(hours:0, minutes:0, seconds:59)) {
+                            Console.Write($"Do run #{cnt} ... ");
+                            kv.s.Solve(new double[rhs.Length], rhs);
+                            Console.WriteLine($" done. {(DateTime.Now - start)} passed.");
+                        }
+
+                        start = DateTime.Now;
+                    }
+
+
+
+
+                    foreach (var s in slvrs)
+                        s.s.Dispose();
+                }
+                */
+
+
+
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);
@@ -434,9 +499,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        override public IDictionary<string,double> OperatorAnalysis() {
+        override public IDictionary<string,double> OperatorAnalysis(OperatorAnalysisConfig config) {
             using(new FuncTrace()) {
-                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, this.MgConfig); 
+                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, config, this.MgConfig); 
             }
         }
 
