@@ -17,11 +17,11 @@ namespace BoSSS.Solution.LevelSetTools.TestCases {
         }
 
         /// <summary>
-        /// Signed-Distance Level-Set Function for a Popcorn
+        /// Level-Set Function for a Popcorn
         /// </summary>
         /// <param name="X">Cartesian Coordinates</param>
-        /// <returns>Level-Set Value at X</returns>
-        public double SignedDistance(double[] X) {
+        /// <returns>Level-Set Value (inside: -, outside: +)</returns>
+        public double LevelSetFunction(double[] X) {
             double SumOfSeries = 0;
             for (int i = 0; i <= 11; i++) {
                 double[] xk = Xk(i);
@@ -30,15 +30,19 @@ namespace BoSSS.Solution.LevelSetTools.TestCases {
             return (Math.Sqrt(X[0].Pow2() + X[1].Pow2() + X[2].Pow2()) - radius - SumOfSeries);
         }
 
-
-        ///// <summary>
-        ///// Signed-Distance 2D Level-Set Function for a Torus
-        ///// </summary>
-        ///// <param name="X">Cartesian Coordinates</param>
-        ///// <returns>Level-Set Value at X</returns>
-        //public double SignedDistance2D(double[] X) {
-        //    return Math.Sqrt((Math.Sqrt(X[0].Pow2() + X[1].Pow2()) - bigR).Pow2()) - smallR;
-        //}
+        /// <summary>
+        /// Level-Set Function for a Popcorn
+        /// </summary>
+        /// <param name="X">Cartesian Coordinates</param>
+        /// <returns>Level-Set Value (inside: -, outside: +)</returns>
+        public double LevelSetFunction2D(double[] X) {
+            double SumOfSeries = 0;
+            for (int i = 0; i <= 4; i++) {
+                double[] xk = Xk(i);
+                SumOfSeries += A * Math.Exp(-((X[0] - xk[0]).Pow2() + (X[1] - xk[1]).Pow2()) / sigma.Pow2());
+            }
+            return (Math.Sqrt(X[0].Pow2() + X[1].Pow2()) - radius - SumOfSeries);
+        }
 
         /// <summary>
         /// Get pre-determined values for sum series
