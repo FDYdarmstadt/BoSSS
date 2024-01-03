@@ -532,6 +532,8 @@ namespace BoSSS.Solution {
                 argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
             }
 
+            ilPSP.Environment.InitThreading(true, opt.NumThreads);
+
             if (!argsParseSuccess) {
                 MPI.Wrappers.csMPI.Raw.mpiFinalize();
                 _MustFinalizeMPI = false;
@@ -608,7 +610,7 @@ namespace BoSSS.Solution {
                         break;
 
                     System.Environment.SetEnvironmentVariable(ArgOverrideName, null); // delete the envvar
-                    // many test internally call the _Main function with arguments;
+                    // many tests internally call the _Main function with arguments;
                     // this would be overridden (and thus not work properly) if we don't delete the variable here and now.
 
                     if (ArgCounter < _args.Count) {
