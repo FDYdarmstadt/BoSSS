@@ -83,65 +83,60 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             return this.InnerEdgeFlux(ref inp, Uin, Uout);
         }
 
-        protected bool basecall = false;
 
         protected override double InnerEdgeFlux(ref BoSSS.Foundation.CommonParams inp, double[] Uin, double[] Uout) {
-            if (basecall) {
-                return base.InnerEdgeFlux(ref inp, Uin, Uout);
-            } else {
 
-                double UinBkUp = Uin[0];
-                double UoutBkUp = Uout[0];
-                double[] InParamsBkup = inp.Parameters_IN;
-                double[] OutParamsBkup = inp.Parameters_OUT;
 
-                
-                // subgrid boundary handling
-                // -------------------------
+            double UinBkUp = Uin[0];
+            double UoutBkUp = Uout[0];
+            double[] InParamsBkup = inp.Parameters_IN;
+            double[] OutParamsBkup = inp.Parameters_OUT;
 
-                if (inp.iEdge >= 0 && inp.jCellOut >= 0) {
 
-                    bool CellIn = SubGrdMask[inp.jCellIn];
-                    bool CellOut = SubGrdMask[inp.jCellOut];
-                    Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
+            // subgrid boundary handling
+            // -------------------------
 
-                    if (CellOut == true && CellIn == false) {
-                        // IN-cell is outside of subgrid: extrapolate from OUT-cell!
-                        Uin[0] = Uout[0];
-                        inp.Parameters_IN = inp.Parameters_OUT.CloneAs();
+            if (inp.iEdge >= 0 && inp.jCellOut >= 0) {
 
-                    }
-                    if (CellIn == true && CellOut == false) {
-                        // ... and vice-versa
-                        Uout[0] = Uin[0];
-                        inp.Parameters_OUT = inp.Parameters_IN.CloneAs();
-                    }
+                bool CellIn = SubGrdMask[inp.jCellIn];
+                bool CellOut = SubGrdMask[inp.jCellOut];
+                Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
+
+                if (CellOut == true && CellIn == false) {
+                    // IN-cell is outside of subgrid: extrapolate from OUT-cell!
+                    Uin[0] = Uout[0];
+                    inp.Parameters_IN = inp.Parameters_OUT.CloneAs();
+
                 }
-
-                // evaluate flux function
-                // ----------------------
-
-                var flx = base.InnerEdgeFlux(ref inp, Uin, Uout);
-                flx *= rho;
-
-                // cleanup mess and return
-                // -----------------------
-
-                Uout[0] = UoutBkUp;
-                Uin[0] = UinBkUp;
-                inp.Parameters_IN = InParamsBkup;
-                inp.Parameters_OUT = OutParamsBkup;
-
-                return flx;
+                if (CellIn == true && CellOut == false) {
+                    // ... and vice-versa
+                    Uout[0] = Uin[0];
+                    inp.Parameters_OUT = inp.Parameters_IN.CloneAs();
+                }
             }
+
+            // evaluate flux function
+            // ----------------------
+
+            var flx = base.InnerEdgeFlux(ref inp, Uin, Uout);
+            flx *= rho;
+
+            // cleanup mess and return
+            // -----------------------
+
+            Uout[0] = UoutBkUp;
+            Uin[0] = UinBkUp;
+            inp.Parameters_IN = InParamsBkup;
+            inp.Parameters_OUT = OutParamsBkup;
+
+            return flx;
+
         }
 
 
         protected override double BorderEdgeFlux(ref BoSSS.Foundation.CommonParamsBnd inp, double[] Uin) {
 
-            this.basecall = true;
             double flx = base.BorderEdgeFlux(ref inp, Uin);
-            this.basecall = false;
             
             flx *= rho;
 
@@ -221,66 +216,61 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             return this.InnerEdgeFlux(ref inp, Uin, Uout);
         }
 
-        protected bool basecall = false;
 
         protected override double InnerEdgeFlux(ref BoSSS.Foundation.CommonParams inp, double[] Uin, double[] Uout) {
-            if (basecall) {
-                return base.InnerEdgeFlux(ref inp, Uin, Uout);
-            } else {
-
-                double UinBkUp = Uin[0];
-                double UoutBkUp = Uout[0];
-                double[] InParamsBkup = inp.Parameters_IN;
-                double[] OutParamsBkup = inp.Parameters_OUT;
 
 
-                // subgrid boundary handling
-                // -------------------------
+            double UinBkUp = Uin[0];
+            double UoutBkUp = Uout[0];
+            double[] InParamsBkup = inp.Parameters_IN;
+            double[] OutParamsBkup = inp.Parameters_OUT;
 
-                if (inp.iEdge >= 0 && inp.jCellOut >= 0) {
 
-                    bool CellIn = SubGrdMask[inp.jCellIn];
-                    bool CellOut = SubGrdMask[inp.jCellOut];
-                    Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
+            // subgrid boundary handling
+            // -------------------------
 
-                    if (CellOut == true && CellIn == false) {
-                        // IN-cell is outside of subgrid: extrapolate from OUT-cell!
-                        Uin[0] = Uout[0];
-                        inp.Parameters_IN = inp.Parameters_OUT.CloneAs();
+            if (inp.iEdge >= 0 && inp.jCellOut >= 0) {
 
-                    }
-                    if (CellIn == true && CellOut == false) {
-                        // ... and vice-versa
-                        Uout[0] = Uin[0];
-                        inp.Parameters_OUT = inp.Parameters_IN.CloneAs();
-                    }
+                bool CellIn = SubGrdMask[inp.jCellIn];
+                bool CellOut = SubGrdMask[inp.jCellOut];
+                Debug.Assert(CellIn || CellOut, "at least one cell must be in the subgrid!");
+
+                if (CellOut == true && CellIn == false) {
+                    // IN-cell is outside of subgrid: extrapolate from OUT-cell!
+                    Uin[0] = Uout[0];
+                    inp.Parameters_IN = inp.Parameters_OUT.CloneAs();
+
                 }
-
-                // evaluate flux function
-                // ----------------------
-
-                var flx = base.InnerEdgeFlux(ref inp, Uin, Uout);
-                flx *= rho;
-
-                // cleanup mess and return
-                // -----------------------
-
-                Uout[0] = UoutBkUp;
-                Uin[0] = UinBkUp;
-                inp.Parameters_IN = InParamsBkup;
-                inp.Parameters_OUT = OutParamsBkup;
-
-                return flx;
+                if (CellIn == true && CellOut == false) {
+                    // ... and vice-versa
+                    Uout[0] = Uin[0];
+                    inp.Parameters_OUT = inp.Parameters_IN.CloneAs();
+                }
             }
+
+            // evaluate flux function
+            // ----------------------
+
+            var flx = base.InnerEdgeFlux(ref inp, Uin, Uout);
+            flx *= rho;
+
+            // cleanup mess and return
+            // -----------------------
+
+            Uout[0] = UoutBkUp;
+            Uin[0] = UinBkUp;
+            inp.Parameters_IN = InParamsBkup;
+            inp.Parameters_OUT = OutParamsBkup;
+
+            return flx;
+
         }
 
 
         protected override double BorderEdgeFlux(ref BoSSS.Foundation.CommonParamsBnd inp, double[] Uin) {
 
-            this.basecall = true;
             double flx = base.BorderEdgeFlux(ref inp, Uin);
-            this.basecall = false;
-
+            
             flx *= rho;
 
             return flx;

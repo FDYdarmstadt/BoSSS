@@ -38,6 +38,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
+using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -120,7 +121,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingViscosityJumpTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingViscosityJumpTest-p" + deg });
         }
 
 #if !DEBUG
@@ -251,7 +252,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingStaticDropletTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingStaticDropletTest-p" + deg });
         }
 
 
@@ -279,7 +280,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plot: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = false, title = "ScalingSinglePhaseChannelTest-p" + deg });
         }
 #endif      
 
@@ -889,6 +890,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0)] double angle,
+            [Values(true, false)] bool IncludeConvection, 
             [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
 #else
@@ -896,11 +898,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection, 
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
 #endif      
             ) {
-            var Tst = new ChannelTest(angle);
+            var Tst = new ChannelTest(angle, IncludeConvection);
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);
 
@@ -1262,7 +1265,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 Controls.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(Controls, true, $"Scaling{spatialDimension}DRotTorus-p{deg}-Agg{AgglomerationTreshold}");
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = $"Scaling{spatialDimension}DRotTorus-p{deg}-Agg{AgglomerationTreshold}" });
         }
 
         /// <summary>
@@ -1281,8 +1284,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.AgglomerationThreshold = AgglomerationTreshold;
                 Controls.Add(C);
             }
-
-            ConditionNumberScalingTest.Perform(Controls, true, $"Scaling{spatialDimension}DRotCube-p{deg}-Agg{AgglomerationTreshold}" );
+            var conf = new ConditionNumberScalingTest.Config() { plot = true, title = $"Scaling{spatialDimension}DRotCube-p{deg}-Agg{AgglomerationTreshold}" };
+            conf.ExpectedSlopes[ConditionNumberScalingTest.Config.TotCondNo] = (XAxisDesignation.Grid_1Dres, 2.4, 1.3);
+            ConditionNumberScalingTest.Perform(Controls, conf);
         }
 
 #if !DEBUG
@@ -1345,7 +1349,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.SkipSolveAndEvaluateResidual = false;
                 LaLa.Add(C);
             }
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
+
+            var conf = new ConditionNumberScalingTest.Config() { plot = true, title = Name };
+            conf.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_innerCut] = (XAxisDesignation.Grid_1Dres, 0.5, -0.7);
+
+            ConditionNumberScalingTest.Perform(LaLa, conf);
 #endif
         }
 

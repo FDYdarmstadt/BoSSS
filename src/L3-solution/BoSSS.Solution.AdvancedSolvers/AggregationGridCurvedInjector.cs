@@ -2274,7 +2274,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 _Injectors[ilevel] = new MultidimensionalArray[Jagg];
 
-                for(int i = 0; i < Jagg; i++) {
+                ilPSP.Environment.ParallelFor(0, Jagg, delegate (int i) {
+                    //for (int i = 0; i < Jagg; i++) {
 
 
                     // number of logical cells from previous level
@@ -2291,13 +2292,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray a = MultidimensionalArray.Create(Jlparts, Np, Np);
                     _Injectors[ilevel][i] = MultidimensionalArray.Create(Jlparts, Np, Np);
                     // iterate over logical parts
-                    for(int k = 0; k < Jlparts; k++) {
+                    for (int k = 0; k < Jlparts; k++) {
                         // number of parts
                         int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lparts[k]];
                         int Jparts = parts.Length;
 
                         // project onto the aggregated cell (consisting of aggregated cells from the previous level)
-                        for(int j = 0; j < Jparts; j++) {
+                        for (int j = 0; j < Jparts; j++) {
                             var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = parts[j], Len = 1 } }, MaskType.Geometrical);
 
                             CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
@@ -2308,14 +2309,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     NodeSet GlobalNodes = new NodeSet(Context.iGeomCells.GetRefElement(parts[j]), Length * nodes.NoOfNodes, D, false);
                                     Context.TransformLocal2Global(nodes, j0, Length, GlobalNodes.ResizeShallow(Length, nodes.NoOfNodes, D));
 
-                                    for(int d = 0; d < D; d++) {
+                                    for (int d = 0; d < D; d++) {
                                         var Cd = GlobalNodes.ExtractSubArrayShallow(-1, d);
                                         Cd.Scale(2 / (BB.Max[d] - BB.Min[d]));
                                         Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
                                     }
 #if DEBUG
-                                Debug.Assert(GlobalNodes.Min() >= -1.00001);
-                                Debug.Assert(GlobalNodes.Max() <= +1.00001);
+                                    Debug.Assert(GlobalNodes.Min() >= -1.00001);
+                                    Debug.Assert(GlobalNodes.Max() <= +1.00001);
 #endif
                                     GlobalNodes.LockForever();
 
@@ -2339,7 +2340,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray MM = MultidimensionalArray.Create(Np, Np);
                     MultidimensionalArray U = MultidimensionalArray.Create(Np, Np);
                     MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
-                    for(int k = 0; k < Jlparts; k++) {
+                    for (int k = 0; k < Jlparts; k++) {
                         MM.GEMM(1.0, a.ExtractSubArrayShallow(k, -1, -1), a.ExtractSubArrayShallow(k, -1, -1), 1.0, true);
                     }
 
@@ -2350,18 +2351,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // populate Injectors
                     _Injectors[ilevel][i].Multiply(1.0, a, orthoInv, 0.0, "jkn", "jkm", "mn");
                     // next direct Injector
-                    for(int k = 0; k < _Injectors[ilevel][i].Lengths[0]; k++) {
+                    for (int k = 0; k < _Injectors[ilevel][i].Lengths[0]; k++) {
                         // number of parts
                         int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lparts[k]];
                         int Jparts = parts.Length;
 
-                        for(int j = 0; j < Jparts; j++) {
+                        for (int j = 0; j < Jparts; j++) {
                             int kCell = parts[j];
                             _injectorCoarse[kCell].GEMM(1.0, _injectorCoarse[kCell].CloneAs(), _Injectors[ilevel][i].ExtractSubArrayShallow(k, -1, -1), 0.0);
                         }
 
                     }
-                }
+                });
             }
 
             // procede to next grid level

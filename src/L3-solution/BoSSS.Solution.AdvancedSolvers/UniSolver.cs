@@ -659,7 +659,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
                     tr.Info("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
                     tr.Info("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-                    tr.Info("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
                     tr.Info("  spmv outer " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
                 }
 
@@ -715,8 +714,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// provisional; not that the block preconditioning configured here has huge effects on the condition number.
         /// </param>
         /// <returns></returns>
+        /// <param name="config">
+        /// </param>
         /// <seealso cref="BoSSS.Solution.Application{T}.OperatorAnalysis"/>
-        static public IDictionary<string, double> OperatorAnalysis(this IDifferentialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+        static public IDictionary<string, double> OperatorAnalysis(this IDifferentialOperator op, CoordinateMapping Mapping, OperatorAnalysisConfig config, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
             var G = new MatrixAssembler(op, Mapping, null, MgConfig);
 
@@ -747,6 +748,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //long J = G.gdat.CellPartitioning.TotalLength;
             //ana.PrecondOpMatrix.SaveToTextFileSparse("OpMatrix-J" + J + ".txt");
+
+            ana.CalculateGlobals = config.CalculateGlobalConditionNumbers;
+            ana.CalculateStencils = config.CalculateStencilConditionNumbers;
 
             return ana.GetNamedProperties();
         }

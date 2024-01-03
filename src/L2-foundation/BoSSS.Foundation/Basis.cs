@@ -257,10 +257,8 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="Ns"></param>
         /// <returns>
-        /// <list type="bullet">
-        ///   <item>1st index: node index</item>
-        ///   <item>2nd index: polynomial index</item>
-        /// </list>
+        /// - 1st index: node index
+        /// - 2nd index: polynomial index
         /// </returns>
         public virtual MultidimensionalArray Evaluate(NodeSet Ns) {
             int iKref = Ns.GetVolumeRefElementIndex(this.GridDat);
@@ -279,11 +277,9 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="Ns"></param>
         /// <returns>
-        /// <list type="bullet">
-        ///   <item>1st index: node index</item>
-        ///   <item>2nd index: polynomial index</item>
-        ///   <item>3rd index: spatial dimension</item>
-        /// </list>
+        /// - 1st index: node index
+        /// - 2nd index: polynomial index
+        /// - 3rd index: spatial dimension
         /// </returns>
         public MultidimensionalArray EvaluateGradient(NodeSet Ns) {
             int iKref = Ns.GetVolumeRefElementIndex(this.GridDat);
@@ -303,13 +299,12 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="Ns"></param>
         /// <returns>
-        /// An array containing the value of the second derivatives of \f$ \phi_n \f$ at the nodes <paramref name="Ns"/>.
-        /// <list type="bullet">
-        ///   <item>1st index: node index \f$ m \f$</item>
-        ///   <item>2nd index: polynomial index \f$ n \f$</item>
-        ///   <item>3rd index: spatial direction of 1st derivation, \f$ k \f$ </item>
-        ///   <item>4th index: spatial direction of 2nd derivation, \f$ l \f$ </item>
-        /// </list>
+        /// An array containing the value of the second derivatives of \f$ \phi_n \f$ at the nodes <paramref name="Ns"/>:
+        /// - 1st index: node index \f$ m \f$
+        /// - 2nd index: polynomial index \f$ n \f$
+        /// - 3rd index: spatial direction of 1st derivation, \f$ k \f$ 
+        /// - 4th index: spatial direction of 2nd derivation, \f$ l \f$ 
+        /// 
         /// The \f$ (m,n,k,l) \f$-th entry is equal to 
         /// \f$ \frac{\partial}{\partial \xi_k} \frac{\partial}{\partial \xi_l} \phi_n (\vec{\xi}_m) \f$,
         /// where \f$ \vec{\xi}_m \f$ is the \f$ m \f$-th vector in the nodeset <paramref name="Ns"/>.
@@ -340,6 +335,7 @@ namespace BoSSS.Foundation {
         ///  - 3rd index: polynomial index <em>n</em>
         ///  - 4th index: spatial direction of 1st derivation, <em>k</em>
         ///  - 5th index: spatial direction of 2nd derivation, <em>l</em>
+        ///  
         /// So, the entry [m,n,k,l] =
         /// \f$ 
         /// \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \phi_n (\vec{x}_m)
@@ -367,11 +363,9 @@ namespace BoSSS.Foundation {
         /// <param name="j0">index of first cell to evaluate</param>
         /// <param name="Len">number of cells to evaluate</param>
         /// <returns>
-        /// <list type="bullet">
-        ///   <item>1st index: cell index</item>
-        ///   <item>2nd index: node index</item>
-        ///   <item>3rd index: polynomial index</item>
-        /// </list>
+        /// - 1st index: cell index
+        /// - 2nd index: node index
+        /// - 3rd index: polynomial index
         /// </returns>
         public virtual MultidimensionalArray CellEval(NodeSet nodes, int j0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisValues.GetValue_Cell(nodes, j0, Len, this.Degree);
@@ -391,11 +385,9 @@ namespace BoSSS.Foundation {
         /// <param name="e0">index of first edge to evaluate</param>
         /// <param name="Len">number of edges to evaluate</param>
         /// <returns>
-        /// <list type="bullet">
-        ///   <item>1st index: cell index</item>
-        ///   <item>2nd index: node index</item>
-        ///   <item>3rd index: polynomial index</item>
-        /// </list>
+        /// - 1st index: cell index
+        /// - 2nd index: node index
+        /// - 3rd index: polynomial index
         /// </returns>
         public virtual Tuple<MultidimensionalArray, MultidimensionalArray> EdgeEval(NodeSet nodes, int e0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisValues.GetValue_EdgeDV(nodes, e0, Len, this.Degree);
@@ -425,12 +417,10 @@ namespace BoSSS.Foundation {
         /// <param name="j0">index of first cell to evaluate</param>
         /// <param name="Len">number of cells to evaluate</param>
         /// <returns>
-        /// <list type="bullet">
-        ///   <item>1st index: cell index</item>
-        ///   <item>2nd index: node index</item>
-        ///   <item>3rd index: polynomial index</item>
-        ///   <item>4th index: spatial dimension</item>
-        /// </list>
+        /// - 1st index: cell index
+        /// - 2nd index: node index
+        /// - 3rd index: polynomial index
+        /// - 4th index: spatial dimension
         /// </returns>
         public virtual MultidimensionalArray CellEvalGradient(NodeSet NS, int j0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisGradientValues.GetValue_Cell(NS, j0, Len, this.Degree);
@@ -451,13 +441,11 @@ namespace BoSSS.Foundation {
         /// <param name="j0">index of first edge to evaluate</param>
         /// <param name="Len">number of cells to evaluate</param>
         /// <returns>
-        /// For each 'in'- and 'out'-cell, arrays;<br/>
-        /// <list type="bullet">
-        ///   <item>1st index: cell index</item>
-        ///   <item>2nd index: node index</item>
-        ///   <item>3rd index: polynomial index</item>
-        ///   <item>4th index: spatial dimension</item>
-        /// </list>
+        /// For each 'in'- and 'out'-cell, arrays:
+        /// - 1st index: cell index
+        /// - 2nd index: node index
+        /// - 3rd index: polynomial index
+        /// - 4th index: spatial dimension
         /// </returns>
         public virtual Tuple<MultidimensionalArray, MultidimensionalArray> EdgeEvalGradient(NodeSet NS, int j0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisGradientValues.GetValue_EdgeDV(NS, j0, Len, this.Degree);

@@ -28,7 +28,7 @@ using BoSSS.Platform.LinAlg;
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
-    class NonlinVolumeFormVectorizer : INonlinVolumeForm_GradV, INonlinVolumeForm_V {
+    class NonlinVolumeFormVectorizer : INonlinVolumeForm_GradV, INonlinVolumeForm_V, IMultitreadSafety {
 
         public TermActivationFlags VolTerms {
             get;
@@ -265,10 +265,67 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
         }
 
+        bool m_IsMultithreadSafe;
+
+        public bool IsMultithreadSafe {
+            get {
+                SetupMultithread();
+                return m_IsMultithreadSafe;
+            }
+        }
+
+        bool m_SetupMultithread_executed = false;
+
+        void SetupMultithread() {
+            if (m_SetupMultithread_executed == true)
+                return;
+            m_SetupMultithread_executed = true;
+
+            if (this.volForm is IMultitreadSafety ms) {
+                if (ms.IsMultithreadSafe) {
+                    // nothing to do
+                    m_IsMultithreadSafe = true;
+                } else {
+                    var clone = (IVolumeForm)ms.CloneForThread();
+                    if (clone != null) {
+                        this.volForm = clone;
+                        m_IsMultithreadSafe = true;
+                    } else {
+                        m_IsMultithreadSafe = false;
+                    }
+                }
+
+                m_SetupMultithread_executed = true;
+            } else {
+                // per default we just assume nothing goes wrong.
+                m_IsMultithreadSafe = true;
+            }
+
+
+
+        }
+
+
+        public IEquationComponent CloneForThread() {
+            SetupMultithread();
+            if (this.m_IsMultithreadSafe == true)
+                return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
+            else
+                return null;
+        }
+
+        public object GetPadlock() {
+            SetupMultithread();
+            if (this.volForm is IMultitreadSafety ms)
+                return ms.GetPadlock();
+            else
+                return this.volForm;
+        }
+
     }
 
 
-    class NonlinEdgeFormVectorizer : INonlinEdgeForm_V, INonlinEdgeForm_GradV {
+    class NonlinEdgeFormVectorizer : INonlinEdgeForm_V, INonlinEdgeForm_GradV, IMultitreadSafety {
 
         public NonlinEdgeFormVectorizer(IEdgeForm __edgeForm) {
             this.BoundaryEdgeTerms = __edgeForm.BoundaryEdgeTerms;
@@ -711,6 +768,59 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 Debug.Assert(f_RelErr < 1e-14);
             }
 #endif
+        }
+
+        bool m_IsMultithreadSafe;
+
+        public bool IsMultithreadSafe {
+            get {
+                SetupMultithread();
+                return m_IsMultithreadSafe;
+            }
+        }
+
+        bool m_SetupMultithread_executed = false;
+
+        void SetupMultithread() {
+            if (m_SetupMultithread_executed == true)
+                return;
+            m_SetupMultithread_executed = true;
+
+            if (this.edgeForm is IMultitreadSafety ms) {
+                if (ms.IsMultithreadSafe) {
+                    // nothing to do
+                    m_IsMultithreadSafe = true;
+                } else {
+                    var clone = (IEdgeForm)ms.CloneForThread();
+                    if (clone != null) {
+                        this.edgeForm = clone;
+                        m_IsMultithreadSafe = true;
+                    } else {
+                        m_IsMultithreadSafe = false;
+                    }
+                }
+
+                m_SetupMultithread_executed = true;
+            } else {
+                // per default we just assume nothing goes wrong.
+                m_IsMultithreadSafe = true;
+            }
+        }
+
+        public IEquationComponent CloneForThread() {
+            SetupMultithread();
+            if (this.m_IsMultithreadSafe == true)
+                return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
+            else
+                return null;
+        }
+
+        public object GetPadlock() {
+            SetupMultithread();
+            if (this.edgeForm is IMultitreadSafety ms)
+                return ms.GetPadlock();
+            else
+                return this.edgeForm;
         }
     }
 }

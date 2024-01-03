@@ -27,7 +27,15 @@ namespace ilPSP.Utils {
     /// </summary>
     public class LAPACK : DynLibLoader {
 
-        static LAPACK _F77_LAPACK;
+        /// <summary>
+        /// sequential (single-threaded) LAPACK wrapper
+        /// </summary>
+        public readonly static LAPACK seq_F77_LAPACK;
+
+        /// <summary>
+        /// parallel (multi-threaded) LAPACK wrapper
+        /// </summary>
+        public readonly static LAPACK omp_F77_LAPACK;
 
         /// <summary>
         /// entry point to FORTRAN 77 - style LAPACK
@@ -38,32 +46,32 @@ namespace ilPSP.Utils {
             }
         }
 
+        static LAPACK _F77_LAPACK;
+
+        internal static void ActivateOMP() {
+            _F77_LAPACK = omp_F77_LAPACK;
+        }
+        internal static void ActivateSEQ() {
+            _F77_LAPACK = seq_F77_LAPACK;
+        }
+
         static LAPACK() {
-            _F77_LAPACK = new LAPACK();
+            seq_F77_LAPACK = new LAPACK(Parallelism.SEQ);
+            omp_F77_LAPACK = new LAPACK(Parallelism.OMP);
+            _F77_LAPACK = omp_F77_LAPACK;
         }
 
-        // workaround for .NET bug:
-        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
-        static PlatformID[] Helper() {
-            PlatformID[] p = new PlatformID[5];
-            p[0] = PlatformID.Win32NT;
-            p[1] = PlatformID.Unix;
-            p[2] = PlatformID.Unix;
-            p[3] = PlatformID.Unix;
-            p[4] = PlatformID.Unix;
-            return p;
-        }
-
+     
 
         /// <summary>
         /// ctor
         /// </summary>
-        public LAPACK() :
-            base(new string[] { "BLAS_LAPACK.dll","libBoSSSnative_seq.so", "libacml.so", "liblapack.so", "libopenblas.so" },
-                 new string[5][][],
-                 new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
-                 Helper(),
-                 new int[] { -1, -1, -1, -1, -1 }) {
+        public LAPACK(Parallelism par) :
+            base(BLAS_LAPACK_Libstuff.GetLibname(par),
+                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
+                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
+                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) {
         }
 
 #pragma warning disable        649

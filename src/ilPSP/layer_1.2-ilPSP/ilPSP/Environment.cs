@@ -15,10 +15,13 @@ limitations under the License.
 */
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 
@@ -129,11 +132,13 @@ namespace ilPSP {
                 csMPI.Raw.Init(CommandLineArgs);
                 mpiInitialized = true;
             }
-     
+
+            InitThreading(true, null);
+
 
             // init MPI enviroment
             // ===================
-            m_MpiEnv = new MPIEnviroment();
+            m_MpiEnv = new MPIEnvironment();
             //System.Threading.Thread.Sleep(10000);
             //Console.WriteLine("StdoutOnlyOnRank0 set to false");
             StdoutOnlyOnRank0 = true;
@@ -166,6 +171,121 @@ namespace ilPSP {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Number of threads used in multi-thread-parallelization
+        /// </summary>
+        public static int NumThreads {
+            get;
+            set;
+        } = 4;
+
+        public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body, bool enablePar = false) {
+            if (InParallelSection) {
+                throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
+            }
+
+            int __Numthreads = enablePar ? NumThreads : 1;
+
+
+            var options = new ParallelOptions {
+                MaxDegreeOfParallelism = __Numthreads,
+            };
+            ThreadPool.SetMinThreads(__Numthreads, 1);
+            ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+            try {
+                InParallelSection = true;
+                BLAS.ActivateSEQ();
+                LAPACK.ActivateSEQ();
+
+                return Parallel.For(fromInclusive, toExclusive, options, body);
+            } finally { 
+                InParallelSection = false;
+                BLAS.ActivateOMP();
+                LAPACK.ActivateOMP();
+            }
+        }
+
+        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = false) {
+            if (InParallelSection == true) {
+                for (int i = 0; i< toExclusive; i++) {
+                    body(i);
+                }
+            } else {
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                ThreadPool.SetMinThreads(__Numthreads, 1);
+                ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+                    Parallel.For(fromInclusive, toExclusive, options, body);
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                }
+            }
+        }
+
+        public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
+            if (InParallelSection) {
+                throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
+            }
+
+            int __Numthreads = enablePar ? NumThreads : 1;
+
+            var options = new ParallelOptions {
+                MaxDegreeOfParallelism = __Numthreads,
+            };
+            ThreadPool.SetMinThreads(__Numthreads, 1);
+            ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+            try {
+                InParallelSection = true;
+                BLAS.ActivateSEQ();
+                LAPACK.ActivateSEQ();
+
+                return Parallel.For(fromInclusive, toExclusive, options, localInit, body, localFinally);
+            } finally {
+                InParallelSection = false;
+                BLAS.ActivateOMP();
+                LAPACK.ActivateOMP();
+            }
+        }
+
+        public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
+            using (var tr = new FuncTrace()) {
+
+                if(NumThreadsOverride != null) {
+                    tr.Info("API override of number of threads: " + NumThreadsOverride.Value);
+                    NumThreads = NumThreadsOverride.Value;
+                }
+
+                MKLservice.SetNumThreads(NumThreads);
+            }
+        }
+
+        /// <summary>
+        /// true, if the code currently runs in multi-threaded; then, further spawning into sub-threads should not occur.
+        /// </summary>
+        public static bool InParallelSection {
+            get;
+            private set;
+        } = false;
+
+
+
+
 
         static bool m_StdoutOnlyOnRank0 = false;
 
@@ -200,12 +320,12 @@ namespace ilPSP {
             return exists;
         }
 
-        static MPIEnviroment m_MpiEnv;
+        static MPIEnvironment m_MpiEnv;
 
         /// <summary>
         /// environment of the world communicator
         /// </summary>
-        public static MPIEnviroment MPIEnv {
+        public static MPIEnvironment MPIEnv {
             get {
                 return m_MpiEnv;
             }

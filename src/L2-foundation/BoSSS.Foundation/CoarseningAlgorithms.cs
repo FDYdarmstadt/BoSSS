@@ -58,6 +58,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <returns></returns>
         public static AggregationGridData[] CreateSequence(IGridData GridDat, int MaxDepth = -1) {
             using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+
                 int D = GridDat.SpatialDimension;
                 MaxDepth = MaxDepth >= 0 ? MaxDepth : int.MaxValue;
                 //int cutoff = MaxDepth < 0 ? int.MaxValue : MaxDepth * skip;
@@ -75,8 +77,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 globalNoOfCells.Add(aggGrids[0].CellPartitioning.TotalLength);
 
                 while (true) {
+                    MPICollectiveWatchDog.Watch(token: 80);
                     if (aggGrids.Count >= MaxDepth)
                         break;
+                    MPICollectiveWatchDog.Watch(token: 83);
 
                     // simple coarsening
                     var grid2coarsen = aggGrids.Last();

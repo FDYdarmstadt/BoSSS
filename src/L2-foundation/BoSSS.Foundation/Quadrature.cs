@@ -24,6 +24,12 @@ using ilPSP.Tracing;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data;
+using ilPSP.Utils;
+using System.IO;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -44,6 +50,27 @@ namespace BoSSS.Foundation.Quadrature {
         where TQuadRule : QuadRule
         where TDomain : ExecutionMask {
 
+
+        /// <summary>
+        /// In order to support multi-thread parallelization, this methods must provide clones with separate thread-local memory,
+        /// see e.g., <see cref="AllocateBuffers(int, NodeSet)"/>
+        /// </summary>
+        /// <returns></returns>
+        public abstract Quadrature<TQuadRule, TDomain> CloneForThreadParallelization(int iThread, int NumThreads);
+
+        /// <summary>
+        /// called on some object after <see cref="CloneForThreadParallelization(int, int)"/> to initialize thread-locals
+        /// </summary>
+        protected Del_OnCloneForThreadParallelization m_OnCloneForThreadParallelization = null;
+
+
+        /// <summary>
+        /// activate multi-thread-parallelization (quasi OpenMP)
+        /// </summary>
+        public bool ExecuteParallel {
+            get;
+            set;
+        } = false;
         
 
         /// <summary>
@@ -113,16 +140,16 @@ namespace BoSSS.Foundation.Quadrature {
         
         /// <summary>
         /// results of evaluation<br/>
-        /// 1st index: quadrature item (cell, edge)<br/>
-        /// 2nd index: quadrature node <br/>
-        /// 3rd to (<see cref="IntegralCompDim"/>.Length + 2)-th index: integral components
+        /// - 1st index: quadrature item (cell, edge)
+        /// - 2nd index: quadrature node 
+        /// - 3rd to (<see cref="IntegralCompDim"/>.Length + 2)-th index: integral components
         /// </summary>
         protected MultidimensionalArray m_EvalResults;
 
         /// <summary>
-        /// results of quadrature<br/>
-        /// 1st index: quadrature item (cell, edge)<br/>
-        /// 2nd to (<see cref="IntegralCompDim"/>.Length + 1)-th index: integral components
+        /// results of quadrature
+        /// - 1st index: quadrature item (cell, edge)
+        /// - 2nd to (<see cref="IntegralCompDim"/>.Length + 1)-th index: integral components
         /// </summary>
         protected MultidimensionalArray m_QuadResults;
 
@@ -217,7 +244,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         /// <param name="NoOfItems">number of edges or cells to integrate</param>
         /// <param name="ruleNodes">quadrature rule nodes</param>
-        protected virtual void AllocateBuffersInternal(int NoOfItems, NodeSet ruleNodes) {
+        /// <param name="iThread">should be used to allocate thread-local resources when multi-thread parallelization is used</param>
+        /// <param name="NumThreads">should be used to allocate thread-local resources when multi-thread parallelization is used</param>
+        protected virtual void AllocateBuffersInternal(int NoOfItems, NodeSet ruleNodes, int iThread, int NumThreads) {
             try {
                 Debug.Assert(ruleNodes.Dimension == 2);
                 if (this.m_ExEvaluate == null) {
@@ -238,7 +267,7 @@ namespace BoSSS.Foundation.Quadrature {
                 }
 
                 if (m_AllocateBuffers != null)
-                    m_AllocateBuffers(NoOfItems, ruleNodes);
+                    m_AllocateBuffers(NoOfItems, ruleNodes, iThread, NumThreads);
 
             } catch (OutOfMemoryException oome) {
                 Console.Error.WriteLine($"{oome}: Number of nodes: " + ruleNodes.NoOfNodes);
@@ -255,9 +284,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// This method will be called whenever a new 
         /// node set family was locked, i.e. whenever the set of quadrature nodes is changed.
         /// </summary>
-        protected virtual void QuadNodesChanged(NodeSet newNodes) {
+        protected virtual void QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads) {
             if (m_quadNodesChanged != null)
-                m_quadNodesChanged(newNodes);
+                m_quadNodesChanged(newNodes, iThread, NumThreads);
         }
 
         /// <summary>
@@ -273,7 +302,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// On exit, the result of the integrand evaluation.
         /// Implementers can expect a cleared array, i.e. all entries are 0.0.
         ///  - 1st index: local cell or edge index minus <paramref name="i0"/>;
-        ///  - 2nd index: Node Index;<br/>
+        ///  - 2nd index: Node Index;
         ///  - 3rd to (<see cref="IntegralCompDim"/>.Length + 2)-th index: integral component;
         /// </param>
         protected virtual void Evaluate(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult) {
@@ -347,6 +376,12 @@ namespace BoSSS.Foundation.Quadrature {
             set;
         }
 
+        Stopwatch stpwSaveIntRes = new Stopwatch();
+        Stopwatch stpwQuad = new Stopwatch();
+        Stopwatch stpwEval = new Stopwatch();
+        Stopwatch stpwAlloc = new Stopwatch();
+        Stopwatch stpwNdSet = new Stopwatch();
+        
         
         /// <summary>
         /// performs an integration over cells or edges in the composite rule provided to the constructor;
@@ -356,149 +391,96 @@ namespace BoSSS.Foundation.Quadrature {
                 // Init
                 // ====
 
-                // timers
-                Stopwatch stpwSaveIntRes = new Stopwatch();
-                stpwSaveIntRes.Reset();
-                Stopwatch stpwQuad = new Stopwatch();
-                stpwQuad.Reset();
-                Stopwatch stpwEval = new Stopwatch();
-                stpwEval.Reset();
-                Stopwatch stpwAlloc = new Stopwatch();
-                stpwAlloc.Reset();
-                Stopwatch stpwNdSet = new Stopwatch();
-                stpwNdSet.Reset();
-
-                for (int i = CustomTimers.Length - 1; i >= 0; i--)
-                    CustomTimers[i].Reset();
-
                 // check input ...
                 IGridData grd = gridData;
 
+                // compute partitioning across threads
+                // ===================================
+
+                int NumThreads = ilPSP.Environment.NumThreads;
+                ICompositeQuadRule<TQuadRule>[] _compositeRuleS = SplitQuadRuleForMultithread(NumThreads, out int NoOfItems);
+
+
                 // do quadrature
                 // =============
-                MultidimensionalArray lastQuadRuleNodes = null;
-                int oldBulksize = -1;
-                int oldNoOfNodes = -1;
-                int Bulkcnt = 0;
-                foreach (var chunkRulePair in m_compositeRule) {
-                    Chunk chunk = chunkRulePair.Chunk;
-                    m_CurrentRule = chunkRulePair.Rule;
 
-                    //// init node set
-                    stpwNdSet.Start();
-                    if (!object.ReferenceEquals(m_CurrentRule.Nodes, lastQuadRuleNodes)) {
-                        QuadNodesChanged(m_CurrentRule.Nodes);
+                Quadrature<TQuadRule, TDomain>[] allThreads = new Quadrature<TQuadRule, TDomain>[NumThreads];
+
+                if (ilPSP.Environment.InParallelSection == false && this.ExecuteParallel && NoOfItems > 1) {
+                   
+
+                    allThreads[0] = this;
+                    this.m_OnCloneForThreadParallelization?.Invoke(this, 0, NumThreads);
+                    for (int iRnk = 1; iRnk < NumThreads; iRnk++) {
+                        allThreads[iRnk] = this.CloneForThreadParallelization(iRnk, NumThreads);
+                        allThreads[iRnk].m_OnCloneForThreadParallelization?.Invoke(allThreads[iRnk], iRnk, NumThreads);
+                        allThreads[iRnk].m_compositeRule = null; // prevent accidental use
+
                     }
-                    stpwNdSet.Stop();
 
-                    // define bulk size
-                    int NoOfNodes = m_CurrentRule.Nodes.GetLength(0);
-                    long lItemSize = ((long)m_TotalNoOfIntegralsPerItem) * ((long)NoOfNodes);
-                    if(lItemSize >= int.MaxValue) {
-                        throw new OverflowException($"Too many integral evaluations per cell/edge! Number of quadrature nodes: {NoOfNodes}; Number of integrals: {m_TotalNoOfIntegralsPerItem}; Total number of evaluations is {lItemSize}, this exceeds the supported maximum (int.MaxValue).");
+                    // compute serial results for checking
+                    var checkResults = MultidimensionalArray.Create(ArrayTools.Cat(new int[] { NoOfItems }, this.IntegralCompDim));
+                    int[] ItemOffset = new int[_compositeRuleS.Length];
+                    {
+                        int[] ItemsPerThread = _compositeRuleS.Select(rule => rule.Select(chunkPair => chunkPair.Chunk.Len).Sum()).ToArray();
+                        for (int iThread = 0; iThread < NumThreads; iThread++) {
+                            if (iThread > 0)
+                                ItemOffset[iThread] = ItemOffset[iThread - 1] + ItemsPerThread[iThread - 1];
+                            allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, true, ItemOffset[iThread], null);
+                        }
                     }
-                    int ItemSize = m_TotalNoOfIntegralsPerItem * NoOfNodes;
-                    if(ItemSize <= 0)
-                        continue;
-                    int cdl = Quadrature_Bulksize.CHUNK_LIMIT;
-                    if (ChunkDataLimitOverride > 0)
-                        cdl = ChunkDataLimitOverride;
-                    //int MaxChunkLength = cdl / ItemSize;
-                    int MaxChunkLength = cdl;
-                    if(MaxChunkLength < 1)
-                        MaxChunkLength = 1;
 
+                    var errorList = new List<(int item, double err, double threshold)>[NumThreads];
+                    ilPSP.Environment.ParallelFor(0, NumThreads, 
+                        delegate(int iThread) {
+                            errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], allThreads);
+                        });
 
-                    //if (OberOasch && Bulkcnt == 0)
-                    //    Console.WriteLine("Max Chunk length: " + MaxChunkLength);
+                    if (errorList.Any(l => l != null)) {
+                        int errCnt = 0;
+                        using (var wrt = new StringWriter()) {
+                            
+                            foreach (var checkErrors in errorList) {
+                                bool brk = false;
+                                if (checkErrors != null) {
+                                    for (int k = 0; k < checkErrors.Count; k++) {
+                                        if (checkErrors[k].err > checkErrors[k].threshold) {
+                                            if (errCnt >= 500) {
+                                                brk = true;
+                                                wrt.Write(" ...");
+                                                break;
+                                            } else {
+                                                errCnt++;
 
-                    int j = chunk.i0;
-                    int ChunkLength = MaxChunkLength;
-                    int ChunkEnd = chunk.i0 + chunk.Len;
+                                                wrt.Write($" {checkErrors[k]}");
+                                            }
+                                        }
 
-                    
-                    while (j < ChunkEnd) {
-                        Bulkcnt++;
-
-                        // limit bulksize 
-                        long l_ChunkLength = ChunkLength;
-                        if ((j + l_ChunkLength) > ChunkEnd) {
-                            ChunkLength = checked((int)(l_ChunkLength - (j + l_ChunkLength - ChunkEnd)));
-                        }
-
-
-                        // DEBUG check
-#if DEBUG
-                        CheckQuadratureChunk(j, ChunkLength, CurrentRuleRefElementIndex);
-#endif
-                        
-                        // reallocate buffers if bulksize was changed
-                        stpwAlloc.Start();
-                        if (ChunkLength != oldBulksize || m_CurrentRule.NoOfNodes != oldNoOfNodes) {
-                            AllocateBuffersInternal(ChunkLength, m_CurrentRule.Nodes);
-                            AllocateBuffers(ChunkLength, m_CurrentRule.Nodes);
-                            oldBulksize = ChunkLength;
-                            oldNoOfNodes = m_CurrentRule.NoOfNodes;
-                        }
-                        stpwAlloc.Stop();
-
-                        
-                        if(this.m_ExEvaluate == null) {
-
-                            // evaluation of integrand
-                            // =======================
-                            stpwEval.Start();
-                            m_EvalResults.Clear();
-                            if(this.CurrentRule.IsEmpty) {
-                                // this is an empty rule
-                                m_EvalResults.Clear();
-                            } else {
-                                // normal evaluation
-                                this.Evaluate(j, ChunkLength, this.CurrentRule, m_EvalResults);
+                                    }
+                                }
+                                if (brk)
+                                    break;
                             }
-                            stpwEval.Stop();
-
-                            // quadrature
-                            // ==========
-                            stpwQuad.Start();
-                            DoQuadrature(m_CurrentRule, j, ChunkLength);
-                            stpwQuad.Stop();
-                        } else {
-                            Debug.Assert(this.m_Evaluate == null);
-
-                            // evaluation of integrand
-                            // =======================
-                            stpwEval.Start();
-                            if(this.CurrentRule.IsEmpty) {
-                                // this is an empty rule
-                                m_QuadResults.Clear();
-                            } else {
-                                // normal evaluation
-                                this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults);
-                            }
-                            stpwEval.Stop();
+                            if (errCnt > 0)
+                                throw new Exception("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
+                                //Console.Error.WriteLine("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
+                            else
+                                Console.WriteLine($"no parallelization error ({NumThreads} threads, {this.GetType()}).");
                         }
-
-                        // save results
-                        // ============
-                        stpwSaveIntRes.Start();
-                        SaveIntegrationResults(j, ChunkLength, m_QuadResults);
-                        stpwSaveIntRes.Stop();
-
-                        // inc
-                        j += ChunkLength;
                     }
 
-                    lastQuadRuleNodes = m_CurrentRule.Nodes;
+                } else {
+                    NumThreads = 1;
+                    this.m_OnCloneForThreadParallelization?.Invoke(this, 0, 1);
+                    this.ExecuteThread(0, NumThreads, _compositeRuleS[0], null, false, 0, null);
                 }
-                m_CurrentRule = null;
 
                 //tr.Info("Quadrature performed in " + Bulkcnt + " chunk(s).");
                 //Console.WriteLine("Quadrature performed in " + Bulkcnt + " chunk(s).");
-               
+
                 // finalize
                 // ========
-                
+
                 {
 
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -509,11 +491,11 @@ namespace BoSSS.Foundation.Quadrature {
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-                    var mcrEval = tr.LogDummyblock(stpwEval.Elapsed.Ticks, "integrand_evaluation");  
-                    tr.LogDummyblock(stpwQuad.Elapsed.Ticks, "quadrature");
-                    tr.LogDummyblock(stpwSaveIntRes.Elapsed.Ticks, "saving_results");
-                    tr.LogDummyblock(stpwNdSet.Elapsed.Ticks, "node_set_management");
-                    tr.LogDummyblock(stpwAlloc.Elapsed.Ticks, "buffer_allocation");
+                    var mcrEval = tr.LogDummyblock(allThreads.Max(th => stpwEval.Elapsed.Ticks), "integrand_evaluation");
+                    tr.LogDummyblock(allThreads.Max(th => stpwQuad.Elapsed.Ticks), "quadrature");
+                    tr.LogDummyblock(allThreads.Max(th => stpwSaveIntRes.Elapsed.Ticks), "saving_results");
+                    tr.LogDummyblock(allThreads.Max(th => stpwNdSet.Elapsed.Ticks), "node_set_management");
+                    tr.LogDummyblock(allThreads.Max(th => stpwAlloc.Elapsed.Ticks), "buffer_allocation");
 
                     Debug.Assert(m_CustomTimers.Length == m_CustomTimers_Names.Length);
                     Debug.Assert(m_CustomTimers.Length == m_CustomTimers_RootPointer.Length);
@@ -522,12 +504,331 @@ namespace BoSSS.Foundation.Quadrature {
                     for (int iTimer = 0; iTimer < mcrS.Length; iTimer++) {
                         int pt = m_CustomTimers_RootPointer[iTimer];
                         MethodCallRecord OwnerMcr = pt >= 0 ? mcrS[pt] : mcrEval;
-                        mcrS[iTimer] = OwnerMcr.AddSubCall(CustomTimers_Names[iTimer], m_CustomTimers[iTimer].Elapsed.Ticks);
+                        mcrS[iTimer] = OwnerMcr.AddSubCall(CustomTimers_Names[iTimer], allThreads.Max(th => m_CustomTimers[iTimer].Elapsed.Ticks));
                     }
-
-                    
                 }
             }
+        }
+
+        /// <summary>
+        /// splits the composite quadrature rule <see cref="m_compositeRule"/> int <paramref name="NumThreads"/> parts of approximately equal cost.
+        /// The cost of some quadrature in some cell is measured as number of nodes.
+        /// </summary>
+        private ICompositeQuadRule<TQuadRule>[] SplitQuadRuleForMultithread(int NumThreads, out int NoOfItems) {
+            NoOfItems = 0;
+            ICompositeQuadRule<TQuadRule>[] _compositeRule;
+            if (ExecuteParallel == false || NumThreads <= 1) {
+                // ++++++++++++++++
+                // serial execution
+                // ++++++++++++++++
+                _compositeRule = new[] { m_compositeRule };
+
+            } else {
+
+                
+
+                // +++++++++++++++++++++++++++++++++++++++++
+                // split up quad rule for parallel execution
+                // +++++++++++++++++++++++++++++++++++++++++
+
+
+                // first sweep: compute total cost of integration
+                int TotCost = 0;
+                foreach (var chunkRulePair in m_compositeRule) {
+                    NoOfItems += chunkRulePair.Chunk.Len;
+                    int costPerItm = chunkRulePair.Rule.NoOfNodes; // we assume that the "cost" of one item (= edge integral, volume integral, ...)
+                                                                   //                                          is proportional to the number of quadrature nodes.
+                                                                   //                                          Because of XDG, this cost-per-item can vary a lot in between items.
+                    TotCost += costPerItm*chunkRulePair.Chunk.Len;
+                }
+
+                if (NoOfItems <= 1) {
+                    // only one item to integrate => impossible to do parallelization
+                    _compositeRule = new[] { m_compositeRule };
+                } else {
+                    var __compositeRule = NumThreads.ForLoop(i => new List<IChunkRulePair<TQuadRule>>());
+                    _compositeRule = __compositeRule.Select(list => new CompositeQuadRule<TQuadRule>() { chunkRulePairs = list }).ToArray();
+
+                    // determine a cost partitioning across threads
+                    // Note: this maybe does not align with the item Boundaries
+                    int[] CostLimits = new int[NumThreads + 1];
+                    for (int iRank = 1; iRank <= NumThreads; iRank++) {
+                        CostLimits[iRank] = (TotCost*iRank)/NumThreads;
+                    }
+
+                    int CostSoFar = 0;
+                    //int iItm = 0;
+                    int _iRank = 0;
+
+                    foreach (var chunkRulePair in m_compositeRule) {
+                        var currentPair = chunkRulePair;
+                        int costPerItm = chunkRulePair.Rule.NoOfNodes;
+
+
+                        int L = chunkRulePair.Chunk.Len;
+                        int l = 0;
+                        while (l < L) {
+                            CostSoFar += costPerItm;
+                            l++;
+
+                            if (CostSoFar > CostLimits[_iRank + 1]) {
+                                // current item should be done in the next rank
+                                _iRank++;
+
+                                if (l >= 2) {
+                                    // at least one item should be done on previous rank, the rest should be done on next rank
+                                    __compositeRule[_iRank - 1].Add(new ChunkRulePair<TQuadRule>(
+                                        new Chunk() { i0 = currentPair.Chunk.i0, Len = l - 1 },
+                                        currentPair.Rule));
+
+                                }
+
+                                // split up rule;
+                                currentPair = new ChunkRulePair<TQuadRule>(
+                                    new Chunk() { i0 = currentPair.Chunk.i0 + l - 1, Len = L - l + 1 },
+                                    currentPair.Rule);
+                                l = 1;
+                                L = currentPair.Chunk.Len;
+                                continue;
+                            }
+
+
+                            //iItm++;
+                        }
+                        if (currentPair.Chunk.Len > 0)
+                            __compositeRule[_iRank].Add(currentPair);
+                    }
+                }
+
+                //#if DEBUG
+                if (NoOfItems > 1) {
+                    var itemInInOrgRule = new List<(int iItem, TQuadRule QR)>();
+                    var itemInInSplitRule = new List<(int iItem, TQuadRule QR)>();
+
+                    void appendRuleToCheckList(ICompositeQuadRule<TQuadRule> CR, List<(int, TQuadRule)> list) {
+                        foreach (var chunkRulePair in CR) {
+                            for (int i = chunkRulePair.Chunk.i0; i < chunkRulePair.Chunk.JE; i++) {
+                                list.Add((i, chunkRulePair.Rule));
+                            }
+                        }
+                    }
+
+                    appendRuleToCheckList(m_compositeRule, itemInInOrgRule);
+
+                    for (int iRnk = 0; iRnk < NumThreads; iRnk++) {
+                        appendRuleToCheckList(_compositeRule[iRnk], itemInInSplitRule);
+                    }
+
+                    if (!itemInInOrgRule.ListEquals(itemInInSplitRule, (A, B) => A.iItem == B.iItem && object.ReferenceEquals(A.QR, B.QR))) {
+                        throw new ApplicationException("implementation error in split-up of composite quadrature rule for multi-threading.");
+                    }
+                } else {
+                    if (_compositeRule.Length != 1)
+                        throw new ApplicationException($"internal error; for {NoOfItems} quadrature item(s), the splitting of the composite rule must be deactivated.");
+
+                }
+                //#endif
+
+            }
+
+            return _compositeRule;
+        }
+
+        List<(int item, double err, double threshold)> ExecuteThread(int ThreadRank, int NumThreads, ICompositeQuadRule<TQuadRule> _compositeRule, MultidimensionalArray checkResults, bool record4Checking, int ItemThreadOffset, object syncToken) {
+            MultidimensionalArray lastQuadRuleNodes = null;
+            int oldBulksize = -1;
+            int oldNoOfNodes = -1;
+            int Bulkcnt = 0;
+
+            // timers
+            stpwSaveIntRes.Reset();
+            stpwQuad.Reset();
+            stpwEval.Reset();
+            stpwAlloc.Reset();
+            stpwNdSet.Reset();
+
+            for (int i = CustomTimers.Length - 1; i >= 0; i--)
+                CustomTimers[i].Reset();
+
+            List<(int item, double err, double threshold)> checkErrors = null;
+            if (checkResults != null && record4Checking == false) {
+                checkErrors = new List<(int, double, double)>();
+            }
+
+            int ItemCounter = ItemThreadOffset;
+            foreach (var chunkRulePair in _compositeRule) {
+                Chunk chunk = chunkRulePair.Chunk;
+                m_CurrentRule = chunkRulePair.Rule;
+
+                //// init node set
+                stpwNdSet.Start();
+                if (!object.ReferenceEquals(m_CurrentRule.Nodes, lastQuadRuleNodes)) {
+                    QuadNodesChanged(m_CurrentRule.Nodes, ThreadRank, NumThreads);
+                }
+                stpwNdSet.Stop();
+
+                // define bulk size
+                int NoOfNodes = m_CurrentRule.Nodes.GetLength(0);
+                long lItemSize = ((long)m_TotalNoOfIntegralsPerItem) * ((long)NoOfNodes);
+                if (lItemSize >= int.MaxValue) {
+                    throw new OverflowException($"Too many integral evaluations per cell/edge! Number of quadrature nodes: {NoOfNodes}; Number of integrals: {m_TotalNoOfIntegralsPerItem}; Total number of evaluations is {lItemSize}, this exceeds the supported maximum (int.MaxValue).");
+                }
+                int ItemSize = m_TotalNoOfIntegralsPerItem * NoOfNodes;
+                if (ItemSize <= 0)
+                    continue;
+                int cdl = Quadrature_Bulksize.CHUNK_LIMIT;
+                if (ChunkDataLimitOverride > 0)
+                    cdl = ChunkDataLimitOverride;
+                //int MaxChunkLength = cdl / ItemSize;
+                int MaxChunkLength = cdl;
+                if (MaxChunkLength < 1)
+                    MaxChunkLength = 1;
+
+                int j = chunk.i0;
+                int ChunkLength = MaxChunkLength;
+                int ChunkEnd = chunk.i0 + chunk.Len;
+
+
+                while (j < ChunkEnd) {
+                    Bulkcnt++;
+
+                    // limit bulksize 
+                    long l_ChunkLength = ChunkLength;
+                    if ((j + l_ChunkLength) > ChunkEnd) {
+                        ChunkLength = checked((int)(l_ChunkLength - (j + l_ChunkLength - ChunkEnd)));
+                    }
+
+
+                    // DEBUG check
+#if DEBUG
+                    CheckQuadratureChunk(j, ChunkLength, CurrentRuleRefElementIndex);
+#endif
+
+                    // reallocate buffers if bulksize was changed
+                    stpwAlloc.Start();
+                    if (ChunkLength != oldBulksize || m_CurrentRule.NoOfNodes != oldNoOfNodes) {
+                        AllocateBuffersInternal(ChunkLength, m_CurrentRule.Nodes, ThreadRank, NumThreads);
+                        AllocateBuffers(ChunkLength, m_CurrentRule.Nodes);
+                        oldBulksize = ChunkLength;
+                        oldNoOfNodes = m_CurrentRule.NoOfNodes;
+                    }
+                    stpwAlloc.Stop();
+
+
+                    if (this.m_ExEvaluate == null) {
+
+                        // evaluation of integrand
+                        // =======================
+                        stpwEval.Start();
+                        m_EvalResults.Clear();
+                        if (this.CurrentRule.IsEmpty) {
+                            // this is an empty rule; avoid calling, because the `Evaluate`-Implementation might not handle this correctly.
+                            m_EvalResults.Clear();
+                        } else {
+                            // normal evaluation
+                            this.Evaluate(j, ChunkLength, this.CurrentRule, m_EvalResults);
+                        }
+                        stpwEval.Stop();
+
+                        // quadrature
+                        // ==========
+                        stpwQuad.Start();
+                        DoQuadrature(m_CurrentRule, j, ChunkLength);
+                        stpwQuad.Stop();
+                    } else {
+                        Debug.Assert(this.m_Evaluate == null);
+
+                        // evaluation of integrand
+                        // =======================
+                        stpwEval.Start();
+                        if (this.CurrentRule.IsEmpty) {
+                            // this is an empty rule; avoid calling, because the `Evaluate`-Implementation might not handle this correctly.
+                            m_QuadResults.Clear(); 
+                        } else {
+                            // normal evaluation
+                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults, ThreadRank, NumThreads);
+                        }
+                        stpwEval.Stop();
+                    }
+
+                    // save results
+                    // ============
+                    if(checkResults != null) {
+
+                        MultidimensionalArray checkResultsPart;
+                        {
+                            int[] i0 = new int[checkResults.Dimension];
+                            int[] iE = m_QuadResults.Lengths;
+                            i0[0] += ItemCounter;
+                            iE[0] += ItemCounter;
+                            ItemCounter += ChunkLength;
+                            if (m_QuadResults.GetLength(0) != ChunkLength)
+                                throw new Exception("mismatch between chunk length and eval results");
+                            for (int r = 0; r < iE.Length; r++)
+                                iE[r] -= 1;
+                            checkResultsPart = checkResults.ExtractSubArrayShallow(i0, iE);
+                        }
+
+                        if (record4Checking) {
+                            // ++++++++++++++++++++++++++++++++++ 
+                            // store results for later comparison
+                            // ++++++++++++++++++++++++++++++++++
+                            Debug.Assert(checkResultsPart.L2Norm() == 0.0);
+                            checkResultsPart.Acc(1.0, m_QuadResults);
+                        } else {
+                            // ++++++++++++++++++++++++
+                            // compare existing results
+                            // ++++++++++++++++++++++++
+
+                            int[] part = new int[m_QuadResults.Dimension];
+                            part.SetAll(-1);
+
+                            for(int k = 0; k < ChunkLength; k++) {
+                                part[0] = k;
+                                var ref_k = checkResultsPart.ExtractSubArrayShallow(part);
+                                var res_k = m_QuadResults.ExtractSubArrayShallow(part);
+
+                                double norm_ref_k = ref_k.L2Norm();
+                                double norm_res_k = res_k.L2Norm();
+                                var err_k = ref_k.CloneAs();
+                                err_k.Acc(-1.0, res_k);
+                                double norm_err_k = err_k.L2Norm();
+
+                                checkErrors.Add((j + k, norm_err_k, Math.Max(norm_ref_k, norm_res_k)*1.0e-10));
+                            }
+                        }
+                    }
+
+                    if (record4Checking == false) {
+                        stpwSaveIntRes.Start();
+                        if (syncToken != null) {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // sync required for permanent saving of quadrature results
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            lock (syncToken) {
+                                SaveIntegrationResults(j, ChunkLength, m_QuadResults);
+                            }
+                        } else {
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // users responsibility to ensure the saving does not screw things up
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            SaveIntegrationResults(j, ChunkLength, m_QuadResults);
+                        }
+                        stpwSaveIntRes.Stop();
+                    }
+
+
+                    // inc
+                    j += ChunkLength;
+                }
+
+                lastQuadRuleNodes = m_CurrentRule.Nodes;
+            }
+            m_CurrentRule = null;
+
+            return checkErrors;
+
+            
         }
 
         /// <summary>
@@ -721,7 +1022,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public delegate void Del_Evaluate(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult);
 
-        
+        /// <summary>
+        /// evaluation of integrand, multiplication with quadrature weights, and summation, in **a multi-threaded environment**.
+        /// </summary>
+        public delegate void Del_EvaluateEx(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult, int iThread, int NumOfThreads);
 
 
         /// <summary>
@@ -736,19 +1040,25 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="EdgeQuadrature.GetQuadrature"/> and
         /// <see cref="CellBoundaryQuadrature{T}.GetQuadrature"/>
         /// </summary>
-        public delegate void Del_AllocateBuffers(int NoOfItems, MultidimensionalArray ruleNodes);
+        public delegate void Del_AllocateBuffersEx(int NoOfItems, MultidimensionalArray ruleNodes, int iThread, int NumThreads);
 
         /// <summary>
         /// used by <see cref="CellQuadrature.GetQuadrature"/>,
         /// <see cref="EdgeQuadrature.GetQuadrature"/> and
         /// <see cref="CellBoundaryQuadrature{T}.GetQuadrature"/>
         /// </summary>
-        public delegate void Del_QuadNodesChanged(NodeSet newNodes);
+        public delegate void Del_QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads);
+
+        /// <summary>
+        /// might be used with multithread-parallelization to init thread-local variables, e.g. <see cref="IQuadrature.CustomTimers"/>
+        /// </summary>
+        public delegate void Del_OnCloneForThreadParallelization(IQuadrature owner, int iThread, int NumThreads);
+
 
         internal Del_Evaluate m_Evaluate;
-        internal Del_Evaluate m_ExEvaluate; // expert evaluate/ the user is responsible for multiplying with quad weigths
+        internal Del_EvaluateEx m_ExEvaluate; // expert evaluate/ the user is responsible for multiplying with quad weights
         internal Del_SaveIntegrationResults m_SaveIntegrationResults;
-        internal Del_AllocateBuffers m_AllocateBuffers;
+        internal Del_AllocateBuffersEx m_AllocateBuffers;
         internal Del_QuadNodesChanged m_quadNodesChanged;
     }
 }
