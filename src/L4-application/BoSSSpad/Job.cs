@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.DotNet.Interactive.Formatting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -526,7 +527,8 @@ namespace BoSSS.Application.BoSSSpad {
             string[] args = new string[] {
                 "--control", "control.obj",
                 "--prjnmn", PrjName,
-                "--sesnmn", this.Name
+                "--sesnmn", this.Name,
+                "--num_threads", this.NumberOfThreads.ToString()
             };
             if (m_ctrl_index >= 0) {
                 ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
@@ -1176,10 +1178,31 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfMPIProcs;
             }
             set {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException("number of MPI processes must be at least 1");
                 TestActivation();
                 m_NumberOfMPIProcs = value;
             }
         }
+
+        int m_NumberOfThreads = 4;
+
+        /// <summary>
+        /// Number of threads for each MPI rank
+        /// </summary>
+        public int NumberOfThreads {
+            get {
+                return m_NumberOfThreads;
+            }
+            set {
+                if(value <= 0) 
+                    throw new ArgumentOutOfRangeException("number of threads must be at least 1");
+                TestActivation();
+                m_NumberOfThreads = value;
+            }
+        }
+
+
 
         bool m_UseComputeNodesExclusive = false;
 

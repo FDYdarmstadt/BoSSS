@@ -230,6 +230,32 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
+
+        /// <summary>
+        /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
+        /// 
+        /// Note: it has been observed that parallel jobs on MS HPC are sometimes much slower (by a factor of 10 or more) when executes via the Job manager
+        /// in comparison to manual execution form the command line in an interactive session.
+        /// This behavior can also be reproduced, e.g. if OpenMP-parallelization is used within the MPI processes, but only one core
+        /// is allocated for each MPI process.
+        /// I.e., it seems that the HPC Job Scheduler stalls jobs which occupy many more threads than allocated cores.
+        /// Therefore, it is recommended to reserve one or two cores for background threads, e.g., those used for non-blocking MPI communication.
+        /// </summary>
+        public int NumOfAdditionalServiceCores = 1;
+
+        /// <summary>
+        /// Additional number of cores (for all jobs with only one MPI rank) which are allocated for 'service', independent of the MPI Size;
+        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// </summary>
+        public int NumOfAdditionalServiceCoresMPISerial = 1;
+
+
+        /// <summary>
+        /// Additional number of cores which are allocated for 'service';
+        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// </summary>
+        public int NumOfServiceCoresPerMPIprocess = 0;
+
         /*
         /// <summary>
         /// Unsafely stored password
@@ -687,16 +713,20 @@ namespace BoSSS.Application.BoSSSpad {
             string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             string JobName = myJob.Name;
 
+            int MPISz = myJob.NumberOfMPIProcs;
+
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores = myJob.NumberOfMPIProcs;
+            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
             bool SingleNode = this.SingleNode;
-            string UserName = this.Username;
             var Priority = this.DefaultJobPriority;
+            string user = this.Username;
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                str.Write("mpiexec ");
+                if (MPISz > 1) {
+                    str.Write($"mpiexec -n {MPISz} ");
+                }
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);
@@ -708,7 +738,6 @@ namespace BoSSS.Application.BoSSSpad {
                 CommandLine = str.ToString();
             }
 
-            string user = this.Username;
 
             string WorkDirectory = DeploymentDirectory;
             string StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
