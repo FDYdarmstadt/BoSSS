@@ -241,13 +241,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// I.e., it seems that the HPC Job Scheduler stalls jobs which occupy many more threads than allocated cores.
         /// Therefore, it is recommended to reserve one or two cores for background threads, e.g., those used for non-blocking MPI communication.
         /// </summary>
-        public int NumOfAdditionalServiceCores = 1;
+        public int NumOfAdditionalServiceCores = 2;
 
         /// <summary>
         /// Additional number of cores (for all jobs with only one MPI rank) which are allocated for 'service', independent of the MPI Size;
         /// <see cref="NumOfAdditionalServiceCores"/>.
         /// </summary>
-        public int NumOfAdditionalServiceCoresMPISerial = 1;
+        public int NumOfAdditionalServiceCoresMPISerial = 0;
 
 
         /// <summary>
@@ -256,14 +256,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public int NumOfServiceCoresPerMPIprocess = 0;
 
-        /*
-        /// <summary>
-        /// Unsafely stored password
-        /// </summary>
-        [DataMember]
-        public string Password;
-        */
-
+       
         /// <summary>
         /// Active directory computer name of head node
         /// </summary>
@@ -717,16 +710,23 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
+            int NumberOfCores;
+            
+            if(MPISz == 1) {
+                NumberOfCores = 1;
+            } else {
+                NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
+            }
+
+            
             bool SingleNode = this.SingleNode;
             var Priority = this.DefaultJobPriority;
             string user = this.Username;
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                if (MPISz > 1) {
-                    str.Write($"mpiexec -n {MPISz} ");
-                }
+                //str.Write($"mpiexec -n {MPISz} ");
+                str.Write($"mpiexec ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);
