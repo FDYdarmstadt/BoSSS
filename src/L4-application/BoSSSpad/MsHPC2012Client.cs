@@ -241,13 +241,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// I.e., it seems that the HPC Job Scheduler stalls jobs which occupy many more threads than allocated cores.
         /// Therefore, it is recommended to reserve one or two cores for background threads, e.g., those used for non-blocking MPI communication.
         /// </summary>
-        public int NumOfAdditionalServiceCores = 1;
+        public int NumOfAdditionalServiceCores = 0;
 
         /// <summary>
         /// Additional number of cores (for all jobs with only one MPI rank) which are allocated for 'service', independent of the MPI Size;
         /// <see cref="NumOfAdditionalServiceCores"/>.
         /// </summary>
-        public int NumOfAdditionalServiceCoresMPISerial = 1;
+        public int NumOfAdditionalServiceCoresMPISerial = 0;
 
 
         /// <summary>

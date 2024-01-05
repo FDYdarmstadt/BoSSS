@@ -389,6 +389,8 @@ namespace BoSSS.Application.BoSSSpad {
                 Foundation.Grid.IGrid g = m_ctrl.GridFunc();
                 Guid id = dbi.SaveGrid(ref g);
 
+                Console.WriteLine($"Using grid {id} at {dbi.Path}.");
+
                 m_ctrl.GridFunc = null;
                 m_ctrl.GridGuid = id;
                 Console.WriteLine("Control object modified.");
