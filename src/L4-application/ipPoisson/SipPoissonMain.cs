@@ -42,6 +42,7 @@ using BoSSS.Platform.Utils.Geom;
 using System.Threading;
 using ilPSP.LinSolvers.PARDISO;
 using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -50,6 +51,12 @@ namespace BoSSS.Application.SipPoisson {
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
+
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetProcessGroupAffinity(IntPtr hProcess, ref ushort GroupCount, [Out] ushort[] GroupArray);
+
 
         /// <summary>
         /// Main routine
@@ -74,6 +81,19 @@ namespace BoSSS.Application.SipPoisson {
             Process proc = Process.GetCurrentProcess();
             Console.WriteLine("r" + Rank + "  Affinity " + proc.ProcessorAffinity);
 
+            {
+                ushort[] groupArray = new ushort[100];
+                ushort groupCount = 0;
+
+                if (GetProcessGroupAffinity(Process.GetCurrentProcess().Handle, ref groupCount, groupArray)) {
+                    Console.WriteLine($"R{Rank}: Process is in Group: {groupCount} {groupArray[0]} {groupArray[1]} {groupArray[2]} {groupArray[3]}");
+                } else {
+                    Console.WriteLine($"R{Rank}: Failed to get processor group.  {groupCount} {groupArray[0]} {groupArray[1]} {groupArray[2]} {groupArray[3]}");
+                }
+
+            }
+
+
             ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
 
@@ -94,7 +114,7 @@ namespace BoSSS.Application.SipPoisson {
 
             }
 
-            SetAffinity(Nothreads, 0);
+            SetAffinity(Nothreads, Rank, MpiSz, true);
             ilPSP.Environment.InitThreading(false, Nothreads);
 
 
@@ -128,14 +148,14 @@ namespace BoSSS.Application.SipPoisson {
                 }
 
 
-                cnt++;
-                if (cnt > 2) {
-                    Console.WriteLine("Now with proper affinity...");
-                    SetAffinity(Nothreads, Rank);
-                } else {
-                    Console.WriteLine("Now with fucked-up affinity...");
-                    SetAffinity(Nothreads, 0);
-                }
+                //cnt++;
+                //if (cnt > 2) {
+                //    Console.WriteLine("Now with proper affinity...");
+                //    SetAffinity(Nothreads, Rank);
+                //} else {
+                //    Console.WriteLine("Now with fucked-up affinity...");
+                //    SetAffinity(Nothreads, 0);
+                //}
 
 
                 s0.Reset();
@@ -226,10 +246,14 @@ namespace BoSSS.Application.SipPoisson {
             });*/
         }
 
-        private static void SetAffinity(int Nothreads, int Rank) {
+        private static void SetAffinity(int Nothreads, int Rank, int Size, bool Global) {
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
-            string omp_places = $"{{{Nothreads*Rank}:{Nothreads}}}";
+            string omp_places;
+            if(!Global)
+                omp_places = $"{{{Nothreads*Rank}:{Nothreads}}}";
+            else
+                omp_places = $"{{0:{Nothreads*Size}}}";
             System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
             System.Environment.SetEnvironmentVariable("OMP_PLACES", omp_places);
             Console.WriteLine($"R{Rank}: OMP_PLACES = {omp_places}");
