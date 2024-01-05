@@ -41,6 +41,7 @@ using System.IO;
 using BoSSS.Platform.Utils.Geom;
 using System.Threading;
 using ilPSP.LinSolvers.PARDISO;
+using System.Collections;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -62,8 +63,25 @@ namespace BoSSS.Application.SipPoisson {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
             Console.WriteLine($"Stressing with {MpiSz}x{Nothreads}");
             ilPSP.Environment.InitThreading(false, Nothreads);
-            Process proc = Process.GetCurrentProcess();
-            Console.WriteLine("Affinity " + proc.ProcessorAffinity);
+            //Process proc = Process.GetCurrentProcess();
+            //Console.WriteLine("Affinity " + proc.ProcessorAffinity);
+
+            {
+                Console.WriteLine("Environment Variables:");
+                Console.WriteLine("----------------------");
+
+                // Get all environment variables
+                IDictionary environmentVariables = Environment.GetEnvironmentVariables();
+
+                // Iterate through the environment variables and print them
+                foreach (DictionaryEntry variable in environmentVariables) {
+                    Console.WriteLine($"{variable.Key} = {variable.Value}");
+                }
+
+                Console.WriteLine("end of envvar");
+            }
+
+
 
             int N = 5000;
             var A = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
