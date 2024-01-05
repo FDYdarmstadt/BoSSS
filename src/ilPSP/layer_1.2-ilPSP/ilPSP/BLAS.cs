@@ -459,7 +459,7 @@ namespace ilPSP.Utils {
             }
 
             if (spx != null) {
-                // sparce vector -> compute only nonzero entries
+                // sparse vector -> compute only nonzero entries
                 // +++++++++++++++++++++++++++++++++++++++++++++
 
                 int[] idx = new int[spx.NonZeros];

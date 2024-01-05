@@ -55,11 +55,128 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
+            InitMPI(args);
+            int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
+            int MpiSz;
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
+            Console.WriteLine($"Stressing with {MpiSz}x{Nothreads}");
+            ilPSP.Environment.InitThreading(false, Nothreads);
+            Process proc = Process.GetCurrentProcess();
+            Console.WriteLine("Affinity " + proc.ProcessorAffinity);
+
+            int N = 5000;
+            var A = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
+            var B = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
+            var C = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
+
+            ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int ith) {
+                A[ith].Storage.FillRandom();
+                B[ith].Storage.FillRandom();
+                C[ith].Storage.FillRandom();
+            });
+
+            bool ompMkl = args.Contains("ompmkl");
+            bool tplMkl = args.Contains("tplmkl");
+            bool tpl = args.Contains("tpl");
+
+
+
+            var start = DateTime.Now;
+            var timeout = new TimeSpan(hours: 0, minutes: 50, seconds: 1);
+            Stopwatch s0 = new Stopwatch();
+            while (true) {
+                if (DateTime.Now - start > timeout) {
+                    FinalizeMPI();
+                    return;
+                }
+
+                s0.Reset();
+                s0.Start();
+                var AnrmLoc = new double[A.Length];
+                var BnrmLoc = new double[B.Length];
+                var CnrmLoc = new double[C.Length];
+
+                ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
+                    AnrmLoc[iThread] = A[iThread].L2Norm();
+                    BnrmLoc[iThread] = B[iThread].L2Norm();
+                    CnrmLoc[iThread] = C[iThread].L2Norm();
+                });
+
+                s0.Stop();
+                Console.WriteLine("   dnrm time: " + s0.Elapsed.TotalSeconds);
+
+                s0.Reset();
+                s0.Start();
+                var AnrmG = AnrmLoc.MPISum().Sum();
+                var BnrmG = BnrmLoc.MPISum().Sum();
+                var CnrmG = CnrmLoc.MPISum().Sum();
+
+                Console.WriteLine("A norm: " + AnrmG);
+                Console.WriteLine("B norm: " + BnrmG);
+                Console.WriteLine("C norm: " + CnrmG);
+                s0.Stop();
+                Console.WriteLine("   MPIsum time: " + s0.Elapsed.TotalSeconds);
+
+                if (ompMkl) {
+                    Console.WriteLine("   OMP MKL");
+                    s0.Reset();
+                    s0.Start();
+                    A[0].GEMM(1.0, B[0], C[0], 0.1);
+                    s0.Stop();
+                    Console.WriteLine("   DGEMM time: " + s0.Elapsed.TotalSeconds);
+                }
+                if (tplMkl) {
+                    Console.WriteLine("   TPL MKL");
+                    s0.Reset();
+                    s0.Start();
+                    ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
+                        A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
+                        A[iThread].Storage.ScaleV(0.01);
+
+                        
+                    });
+                    s0.Stop();
+                    Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
+                }
+
+
+                if (tpl) {
+                    Console.WriteLine("   TPL only");
+                    s0.Reset();
+                    s0.Start();
+                    ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
+                        //A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
+                        //A[iThread].Storage.ScaleV(0.01);
+
+                        var _A = A[iThread];
+                        var _B = B[iThread];
+                        var _C = C[iThread];
+
+
+                        for (int iRow = 0; iRow < N; iRow++) {
+                            for (int iCol = 0; iCol < N; iCol++) {
+                                double Acc = _A[iRow, iCol]*0.1;
+                                for (int k = 0; k < N; k++)
+                                    Acc += _B[iRow, k]*_C[k, iCol];
+                                _A[iRow, iCol] = Acc;
+                            }
+                        }
+
+                    });
+                    s0.Stop();
+                    Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
+                }
+
+            }
+
+
+            /*
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
                 return p;
-            });
+            });*/
         }
 
 
