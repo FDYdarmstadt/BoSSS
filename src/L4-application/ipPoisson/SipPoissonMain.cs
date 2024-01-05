@@ -59,27 +59,43 @@ namespace BoSSS.Application.SipPoisson {
 
             InitMPI(args);
             int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
+            int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
+            int Rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
             Console.WriteLine($"Stressing with {MpiSz}x{Nothreads}");
-            ilPSP.Environment.InitThreading(false, Nothreads);
-            //Process proc = Process.GetCurrentProcess();
-            //Console.WriteLine("Affinity " + proc.ProcessorAffinity);
+            
+
+
+
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
+
+            Process proc = Process.GetCurrentProcess();
+            Console.WriteLine("r" + Rank + "  Affinity " + proc.ProcessorAffinity);
+
+            ilPSP.Environment.StdoutOnlyOnRank0 = true;
+
+
 
             {
-                Console.WriteLine("Environment Variables:");
-                Console.WriteLine("----------------------");
-
+                
                 // Get all environment variables
-                IDictionary environmentVariables = Environment.GetEnvironmentVariables();
+                IDictionary environmentVariables = System.Environment.GetEnvironmentVariables();
 
-                // Iterate through the environment variables and print them
-                foreach (DictionaryEntry variable in environmentVariables) {
-                    Console.WriteLine($"{variable.Key} = {variable.Value}");
+                
+
+                using (var stw = new StreamWriter("envvar" + Rank + ".txt")) {
+                    foreach (DictionaryEntry variable in environmentVariables) {
+                        stw.WriteLine($"Rank {Rank}: {variable.Key} = {variable.Value}");
+                    }
+
                 }
 
-                Console.WriteLine("end of envvar");
             }
+
+            SetAffinity(Nothreads, 0);
+            ilPSP.Environment.InitThreading(false, Nothreads);
 
 
 
@@ -98,16 +114,29 @@ namespace BoSSS.Application.SipPoisson {
             bool tplMkl = args.Contains("tplmkl");
             bool tpl = args.Contains("tpl");
 
-
+            if ((ompMkl || tpl || tplMkl) == false)
+                throw new Exception("you must turn something on");
 
             var start = DateTime.Now;
             var timeout = new TimeSpan(hours: 0, minutes: 50, seconds: 1);
             Stopwatch s0 = new Stopwatch();
+            int cnt = 0;
             while (true) {
                 if (DateTime.Now - start > timeout) {
                     FinalizeMPI();
                     return;
                 }
+
+
+                cnt++;
+                if (cnt > 2) {
+                    Console.WriteLine("Now with proper affinity...");
+                    SetAffinity(Nothreads, Rank);
+                } else {
+                    Console.WriteLine("Now with fucked-up affinity...");
+                    SetAffinity(Nothreads, 0);
+                }
+
 
                 s0.Reset();
                 s0.Start();
@@ -152,7 +181,7 @@ namespace BoSSS.Application.SipPoisson {
                         A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
                         A[iThread].Storage.ScaleV(0.01);
 
-                        
+
                     });
                     s0.Stop();
                     Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
@@ -195,6 +224,17 @@ namespace BoSSS.Application.SipPoisson {
                 
                 return p;
             });*/
+        }
+
+        private static void SetAffinity(int Nothreads, int Rank) {
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
+
+            string omp_places = $"{{{Nothreads*Rank}:{Nothreads}}}";
+            System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
+            System.Environment.SetEnvironmentVariable("OMP_PLACES", omp_places);
+            Console.WriteLine($"R{Rank}: OMP_PLACES = {omp_places}");
+
+            ilPSP.Environment.StdoutOnlyOnRank0 = true;
         }
 
 
