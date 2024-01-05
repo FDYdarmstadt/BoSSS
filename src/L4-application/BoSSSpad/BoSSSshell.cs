@@ -95,7 +95,7 @@ namespace BoSSS.Application.BoSSSpad {
                 //InteractiveShell.LastError = e;
             }
             InitTraceFile();
-            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everything, so we might find something useful
 
             Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
             Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;
@@ -156,6 +156,9 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new AggregateException(e);
                 }
             }
+
+            ilPSP.Environment.InitThreading(true, 1);
+
 
             Console.WriteLine("BoSSSpad is ready to go!");
         }

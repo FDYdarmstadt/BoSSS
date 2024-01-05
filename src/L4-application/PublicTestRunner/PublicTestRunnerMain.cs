@@ -1596,8 +1596,8 @@ namespace PublicTestRunner {
             }
 
             BoSSS.Solution.Application.InitMPI();
-
-           
+            ilPSP.Environment.InitThreading(true, null);
+            
             int ret = -1;
             switch (args[0]) {
                 case "nunit3":
