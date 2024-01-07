@@ -469,9 +469,9 @@ namespace ApplicationWithIDT {
         /// <param name="dt"></param>
         /// <returns></returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            if(CurrentAgglo > 0 && TimestepNo % Control.ImmediatePlotPeriod ==0 && Control.ImmediatePlotPeriod!= -1) {
-                MultiphaseAgglomerator.PlotAgglomerationPairs(Control.ProjectName + "_aggloMap" + "_" + CurrentStepNo);
-            }
+            //if(CurrentAgglo > 0 && TimestepNo % Control.ImmediatePlotPeriod ==0 && Control.ImmediatePlotPeriod!= -1) {
+            //    MultiphaseAgglomerator.PlotAgglomerationPairs(Control.ProjectName + "_aggloMap" + "_" + CurrentStepNo);
+            //}
 
             if(TimestepNo == 1) {
                 //set initial kappa
