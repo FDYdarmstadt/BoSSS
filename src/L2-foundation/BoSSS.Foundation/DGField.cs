@@ -1007,8 +1007,8 @@ namespace BoSSS.Foundation {
             double[] x;
             for (int n=0;n<nRef;n++)
             {
-                double scale1 = (nRef - 1 - n) / (nRef - 1);
-                double scale2 = n / (nRef - 1);
+                double scale1 = ((double)nRef - 1 - n) / (nRef - 1);
+                double scale2 = ((double)n) / (nRef - 1);
                 x = parametrization(min * scale1 + max * scale2);
                 result[n] = this.ProbeAt(x);               
             }
