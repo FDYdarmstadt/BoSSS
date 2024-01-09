@@ -951,8 +951,20 @@ namespace BoSSS.Foundation {
             long globalID, globalIndex;
             bool inside, dummy;
             Basis.GridDat.LocatePoint(_inp, out globalID, out globalIndex, out inside, out dummy);
-            if (!inside)
-                throw new ArgumentException("specified point is outside of grid");
+            
+            //exception if point is not inside grid.
+            if (!inside )
+            {
+                string outputString = "x=[" + _inp[0];
+                for(int i = 1; i < _inp.Length; i++)
+                {
+                    outputString = outputString + "," + _inp[i];
+                }
+                outputString = outputString + "]";
+                throw new ArgumentException($"specified point {outputString} is outside of grid");
+            }
+               
+                
 
             // process which own the cell
             int ownerProc = Basis.GridDat.CellPartitioning.FindProcess((int)globalIndex);
