@@ -79,11 +79,13 @@ namespace BoSSS.Application.SipPoisson {
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
             Process proc = Process.GetCurrentProcess();
-            Console.WriteLine("r" + Rank + "  Affinity " + proc.ProcessorAffinity);
+            Console.WriteLine("r" + Rank + $"  Affinity {proc.ProcessorAffinity:X}");
 
+            //proc.ProcessorAffinity = (IntPtr)0xFFFFFFFFFFFF;
+            //Console.WriteLine("r" + Rank + $"  Reset Affinity {proc.ProcessorAffinity:X}");
             {
                 ushort[] groupArray = new ushort[100];
-                ushort groupCount = 0;
+                ushort groupCount = 100;
 
                 if (GetProcessGroupAffinity(Process.GetCurrentProcess().Handle, ref groupCount, groupArray)) {
                     Console.WriteLine($"R{Rank}: Process is in Group: {groupCount} {groupArray[0]} {groupArray[1]} {groupArray[2]} {groupArray[3]}");
@@ -114,7 +116,7 @@ namespace BoSSS.Application.SipPoisson {
 
             }
 
-            SetAffinity(Nothreads, Rank, MpiSz, true);
+            //SetAffinity(Nothreads, Rank, MpiSz, false);
             ilPSP.Environment.InitThreading(false, Nothreads);
 
 
@@ -185,18 +187,21 @@ namespace BoSSS.Application.SipPoisson {
                 s0.Stop();
                 Console.WriteLine("   MPIsum time: " + s0.Elapsed.TotalSeconds);
 
-                if (ompMkl) {
-                    Console.WriteLine("   OMP MKL");
+                if (ompMkl && Rank == 0) {
+                    Console.WriteLine($"   OMP MKL DGEMM {N}x{N}");
                     s0.Reset();
+                    var st2 = DateTime.Now;
                     s0.Start();
                     A[0].GEMM(1.0, B[0], C[0], 0.1);
                     s0.Stop();
-                    Console.WriteLine("   DGEMM time: " + s0.Elapsed.TotalSeconds);
+                    var en2 = DateTime.Now;
+                    Console.WriteLine($"   MKL time: {s0.Elapsed.TotalSeconds:0.##} ( {(en2 - st2).TotalSeconds:0.##}");
                 }
                 if (tplMkl) {
-                    Console.WriteLine("   TPL MKL");
+                    Console.WriteLine($"   TPL MKL: {Nothreads}x Serial MKL-DGEMM {N}x{N}");
                     s0.Reset();
-                    s0.Start();
+                    var st3 = DateTime.Now;
+                    s0.Start(); 
                     ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
                         A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
                         A[iThread].Storage.ScaleV(0.01);
@@ -204,12 +209,13 @@ namespace BoSSS.Application.SipPoisson {
 
                     });
                     s0.Stop();
-                    Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
+                    var en3 = DateTime.Now;
+                    Console.WriteLine($"   TPL time: {s0.Elapsed.TotalSeconds:0.##} ( {(en3 - st3).TotalSeconds:0.##}");
                 }
 
 
                 if (tpl) {
-                    Console.WriteLine("   TPL only");
+                    Console.WriteLine($"   TPL only: {Nothreads}x Serial Naive DGEMM {N}x{N}");
                     s0.Reset();
                     s0.Start();
                     ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
