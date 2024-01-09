@@ -79,6 +79,14 @@ namespace BoSSS.Application.SipPoisson {
 
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
+            /*{
+                int coreCount = 0;
+                foreach (var item in new System.Management.ManagementObjectSearcher("Select * from Win32_Processor").Get()) {
+                    coreCount += int.Parse(item["NumberOfCores"].ToString());
+                }
+                Console.WriteLine("Number Of Cores: {0}", coreCount);
+            }*/
+
 
             //Process proc = Process.GetCurrentProcess();
             var CPUidxs = ilPSP.Utils.CPUAffinity.GetAffinity();
