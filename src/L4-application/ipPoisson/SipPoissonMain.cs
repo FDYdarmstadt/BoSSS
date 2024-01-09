@@ -66,7 +66,7 @@ namespace BoSSS.Application.SipPoisson {
         static void Main(string[] args) {
 
             InitMPI(args);
-            int Nothreads = 4;// args.Length > 0 ? int.Parse(args[0]) : 4;
+            int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
             //int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
@@ -113,8 +113,7 @@ namespace BoSSS.Application.SipPoisson {
             }
             //*/
 
-            ilPSP.Utils.CPUAffinityWindows.GetAffinity();
-
+            
 
 
             ilPSP.Environment.StdoutOnlyOnRank0 = true;
@@ -137,7 +136,7 @@ namespace BoSSS.Application.SipPoisson {
 
             }
 
-            //SetAffinity(Nothreads, Rank, MpiSz, false);
+            //SetOMPAffinity(Nothreads, Rank, MpiSz, false);
             ilPSP.Environment.InitThreading(false, Nothreads);
 
 
@@ -256,6 +255,7 @@ namespace BoSSS.Application.SipPoisson {
                                 _A[iRow, iCol] = Acc;
                             }
                         }
+                        ilPSP.Utils.CPUAffinityWindows.HelloGroup();
 
                     });
                     s0.Stop();
@@ -273,7 +273,7 @@ namespace BoSSS.Application.SipPoisson {
             });*/
         }
 
-        private static void SetAffinity(int Nothreads, int Rank, int Size, bool Global) {
+        private static void SetOMPAffinity(int Nothreads, int Rank, int Size, bool Global) {
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
             string omp_places;
