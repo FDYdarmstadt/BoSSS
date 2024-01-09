@@ -52,6 +52,15 @@ namespace ilPSP.Utils {
             public ushort Reserved3;
         }
 
+        public static void HelloGroup() {
+            GROUP_AFFINITY _groupAffinity;
+            if (GetThreadGroupAffinity(GetCurrentThread(), out _groupAffinity)) {
+                Console.Error.WriteLine($"Group aff is {_groupAffinity.Group}, mask = {_groupAffinity.Mask:X}");
+            } else {
+                Console.Error.WriteLine($"Group aff is err");
+            }
+        }
+
         /// <summary>
         /// (Windows version) Returns the list of CPU's to which the current process is assigned to.
         /// </summary>
@@ -62,9 +71,11 @@ namespace ilPSP.Utils {
             ushort groupCount = 0;
             GetProcessGroupAffinity(processHandle, out groupCount, null);
             if (groupCount != 1) {
-                throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
+                Console.WriteLine($"Process associated to more than one processor group ({groupCount}) -- i don't know what to do about it (tell Florian)!");
+                //throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
             }
-
+            
+            
             ushort[] groups = new ushort[groupCount];
             if (!GetProcessGroupAffinity(processHandle, out groupCount, groups)) {
                 Console.Error.WriteLine("Failed to get processor group affinity.");
@@ -72,7 +83,21 @@ namespace ilPSP.Utils {
                 throw new Win32Exception(errorCode);
             }
 
+                //Console.WriteLine("Groups are " + groups.ToConcatString("", ", ", ""));
+
             ushort group = groups[0];
+
+            /*
+            ilPSP.Environment.ParallelFor(0, 1024, delegate (int i) {
+
+                GROUP_AFFINITY _groupAffinity;
+                if (GetThreadGroupAffinity(GetCurrentThread(), out _groupAffinity)) {
+                Console.WriteLine($"Group aff in {i} = {_groupAffinity.Group}, mask = {_groupAffinity.Mask:X}");
+                } else {
+                    Console.WriteLine($"Group aff in {i} = err");
+                }
+            });
+            */
 
             GROUP_AFFINITY groupAffinity;
             if (GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
