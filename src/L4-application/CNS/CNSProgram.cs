@@ -37,6 +37,7 @@ using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
 using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Utils;
+using CNS.Tests;
 
 namespace CNS {
 
@@ -54,7 +55,7 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //DeleteOldPlotFiles();
-            
+            //AcousticWaveShockInteraction.Test00();
             //var c = ControlExamples_Supersonic.AcousticWave(MachL:4.0,numOfCellsX:300,numOfCellsY:3);
             //var pCNS = new CNSProgram();
             //pCNS.Init(c);
