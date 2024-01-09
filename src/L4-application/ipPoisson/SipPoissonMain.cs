@@ -43,6 +43,7 @@ using System.Threading;
 using ilPSP.LinSolvers.PARDISO;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.ComponentModel;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -65,8 +66,8 @@ namespace BoSSS.Application.SipPoisson {
         static void Main(string[] args) {
 
             InitMPI(args);
-            int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
-            int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
+            int Nothreads = 4;// args.Length > 0 ? int.Parse(args[0]) : 4;
+            //int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
             int Rank;
@@ -78,22 +79,34 @@ namespace BoSSS.Application.SipPoisson {
 
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
-            Process proc = Process.GetCurrentProcess();
-            Console.WriteLine("r" + Rank + $"  Affinity {proc.ProcessorAffinity:X}");
 
-            //proc.ProcessorAffinity = (IntPtr)0xFFFFFFFFFFFF;
+            //Process proc = Process.GetCurrentProcess();
+            var CPUidxs = ilPSP.Utils.CPUAffinity.GetAffinity();
+            Console.WriteLine("r" + Rank + $"  Affinity to {CPUidxs.Count()} cores: {CPUidxs.ToConcatString("", ", ", ";")}");
+
+            //proc.ProcessorAffinity = (IntPtr) 0xFFFFFFFFFFFF;
             //Console.WriteLine("r" + Rank + $"  Reset Affinity {proc.ProcessorAffinity:X}");
+
+            /*
             {
                 ushort[] groupArray = new ushort[100];
+                groupArray[0] = 100;
                 ushort groupCount = 100;
 
                 if (GetProcessGroupAffinity(Process.GetCurrentProcess().Handle, ref groupCount, groupArray)) {
                     Console.WriteLine($"R{Rank}: Process is in Group: {groupCount} {groupArray[0]} {groupArray[1]} {groupArray[2]} {groupArray[3]}");
                 } else {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    Win32Exception exception = new Win32Exception(errorCode);
+                    Console.WriteLine("error code: " + errorCode + ": " + exception);
                     Console.WriteLine($"R{Rank}: Failed to get processor group.  {groupCount} {groupArray[0]} {groupArray[1]} {groupArray[2]} {groupArray[3]}");
                 }
 
             }
+            //*/
+
+            ilPSP.Utils.CPUAffinityWindows.GetAffinity();
+
 
 
             ilPSP.Environment.StdoutOnlyOnRank0 = true;
