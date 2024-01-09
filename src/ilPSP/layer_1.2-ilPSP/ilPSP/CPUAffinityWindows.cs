@@ -76,14 +76,14 @@ namespace ilPSP.Utils {
 
             GROUP_AFFINITY groupAffinity;
             if (GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                return CheckCpuAffinity(groupAffinity.Mask, group);
+                return CheckCpuAffinity(groupAffinity.Mask, group, System.Environment.ProcessorCount / groupCount);
             } else {
                 int errorCode = Marshal.GetLastWin32Error();
                 throw new Win32Exception(errorCode);
             }
         }
 
-        static IEnumerable<int> CheckCpuAffinity(UIntPtr mask, int iProcessorGroup) {
+        static IEnumerable<int> CheckCpuAffinity(UIntPtr mask, int iProcessorGroup, int procsPerGroup) {
             var res = new List<int>();
             ulong bitmask = (ulong)mask;
             for (int cpu = 0; cpu < 64; cpu++)  // Assuming a maximum of 64 CPUs per group
@@ -91,7 +91,7 @@ namespace ilPSP.Utils {
                 ulong cpuBit = 1UL << cpu;
                 if ((bitmask & cpuBit) != 0) {
                     //Console.WriteLine($"  CPU {cpu + iProcessorGroup*64} is available in this group.");
-                    res.Add(cpu + iProcessorGroup*64);
+                    res.Add(cpu + iProcessorGroup*procsPerGroup);
                 }
             }
             return res.ToArray();
