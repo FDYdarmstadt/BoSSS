@@ -2341,7 +2341,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray U = MultidimensionalArray.Create(Np, Np);
                     MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
                     for (int k = 0; k < Jlparts; k++) {
-                        MM.GEMM(1.0, a.ExtractSubArrayShallow(k, -1, -1), a.ExtractSubArrayShallow(k, -1, -1), 1.0, false);
+                        MM.GEMM(1.0, a.ExtractSubArrayShallow(k, -1, -1), a.ExtractSubArrayShallow(k, -1, -1), 1.0, true);
                     }
 
                     MM.Cholesky();
@@ -2364,6 +2364,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                 }
+
+                //for (int i = 0; i < Jagg; i++)
+                //    ComputeInjectorForCell(i);
 
                 ilPSP.Environment.ParallelFor(0, Jagg, ComputeInjectorForCell);
             }
