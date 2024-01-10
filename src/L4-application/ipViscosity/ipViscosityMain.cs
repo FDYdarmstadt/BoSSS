@@ -92,15 +92,19 @@ namespace BoSSS.Application.ipViscosity {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //BoSSS.Solution.Application.InitMPI(new string[0]);
+            BoSSS.Solution.Application.InitMPI(new string[0]);
+            ilPSP.Environment.InitThreading(true, 1);
             //BoSSS.Application.ipViscosity._Test.ConsistencyTest(Terms.T1, 0);
-            //return;
+            BoSSS.Application.ipViscosity._Test.ConsistencyTest(Terms.T1, 1);
+            csMPI.Raw.mpiFinalize();
+            return;
 
+            /*
             BoSSS.Solution.Application._Main(args, true, delegate () {
                 ipViscosityMain p = new ipViscosityMain();
                 return p;
             });
-
+            */
             //
             ////_Test.ConsistencyTest(Terms.T2, 1);
             //_Test.solverTest(Terms.T1 | Terms.T2 | Terms.T3, 2, 4);

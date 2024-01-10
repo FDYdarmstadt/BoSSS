@@ -532,6 +532,7 @@ namespace BoSSS.Solution {
                 argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
             }
 
+            //opt.NumThreads = 
             ilPSP.Environment.InitThreading(true, opt.NumThreads);
 
             if (!argsParseSuccess) {
