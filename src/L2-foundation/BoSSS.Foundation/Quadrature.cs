@@ -407,7 +407,9 @@ namespace BoSSS.Foundation.Quadrature {
                 Quadrature<TQuadRule, TDomain>[] allThreads = new Quadrature<TQuadRule, TDomain>[NumThreads];
 
                 if (ilPSP.Environment.InParallelSection == false && this.ExecuteParallel && NoOfItems > 1) {
-                   
+                    // ++++++++++++++++++++++++++
+                    // parallel quadrature branch
+                    // ++++++++++++++++++++++++++
 
                     allThreads[0] = this;
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, NumThreads);
@@ -419,6 +421,7 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     // compute serial results for checking
+                    // (to be removed/de-activated)
                     var checkResults = MultidimensionalArray.Create(ArrayTools.Cat(new int[] { NoOfItems }, this.IntegralCompDim));
                     int[] ItemOffset = new int[_compositeRuleS.Length];
                     {
@@ -470,6 +473,11 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                 } else {
+                    // ++++++++++++++++++++++++
+                    // serial quadrature branch
+                    // ++++++++++++++++++++++++
+
+
                     NumThreads = 1;
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, 1);
                     this.ExecuteThread(0, NumThreads, _compositeRuleS[0], null, false, 0, null);
@@ -536,6 +544,8 @@ namespace BoSSS.Foundation.Quadrature {
                 int TotCost = 0;
                 foreach (var chunkRulePair in m_compositeRule) {
                     NoOfItems += chunkRulePair.Chunk.Len;
+                    if (chunkRulePair.Rule.Nodes.IsLocked == false)
+                        throw new ApplicationException("internal error - quadrature rule node set is not locked!");
                     int costPerItm = chunkRulePair.Rule.NoOfNodes; // we assume that the "cost" of one item (= edge integral, volume integral, ...)
                                                                    //                                          is proportional to the number of quadrature nodes.
                                                                    //                                          Because of XDG, this cost-per-item can vary a lot in between items.
