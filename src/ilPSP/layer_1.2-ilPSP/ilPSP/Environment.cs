@@ -331,6 +331,11 @@ namespace ilPSP {
                 if(NumThreads <= 0)
                     throw new NotSupportedException($"Number of threads must be at least 1; set to {NumThreads}");
                 MKLservice.SetNumThreads(NumThreads);
+
+                var ReservedCPUs = CPUAffinity.GetAffinity();
+                if(ReservedCPUs.Count() < NumThreads) {
+                    throw new NotSupportedException("Less CPU's than threads (" + NumThreads + ") CPU's: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+                }
             }
         }
 

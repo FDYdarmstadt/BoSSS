@@ -54,16 +54,15 @@ namespace BoSSS.Application.SipPoisson {
     public class SipPoissonMain : Application<SipControl> {
 
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetProcessGroupAffinity(IntPtr hProcess, ref ushort GroupCount, [Out] ushort[] GroupArray);
-
 
         /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
+            /*
+
 
             InitMPI(args);
             int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
@@ -79,13 +78,7 @@ namespace BoSSS.Application.SipPoisson {
 
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
-            /*{
-                int coreCount = 0;
-                foreach (var item in new System.Management.ManagementObjectSearcher("Select * from Win32_Processor").Get()) {
-                    coreCount += int.Parse(item["NumberOfCores"].ToString());
-                }
-                Console.WriteLine("Number Of Cores: {0}", coreCount);
-            }*/
+            
 
 
             //Process proc = Process.GetCurrentProcess();
@@ -95,23 +88,7 @@ namespace BoSSS.Application.SipPoisson {
             //proc.ProcessorAffinity = (IntPtr) 0xFFFFFFFFFFFF;
             //Console.WriteLine("r" + Rank + $"  Reset Affinity {proc.ProcessorAffinity:X}");
 
-            /*
-            {
-                ushort[] groupArray = new ushort[100];
-                groupArray[0] = 100;
-                ushort groupCount = 100;
-
-                if (GetProcessGroupAffinity(Process.GetCurrentProcess().Handle, ref groupCount, groupArray)) {
-                    Console.WriteLine($"R{Rank}: Process is in Group: {groupCount} {groupArray[0]} {groupArray[1]} {groupArray[2]} {groupArray[3]}");
-                } else {
-                    int errorCode = Marshal.GetLastWin32Error();
-                    Win32Exception exception = new Win32Exception(errorCode);
-                    Console.WriteLine("error code: " + errorCode + ": " + exception);
-                    Console.WriteLine($"R{Rank}: Failed to get processor group.  {groupCount} {groupArray[0]} {groupArray[1]} {groupArray[2]} {groupArray[3]}");
-                }
-
-            }
-            //*/
+            
 
             
 
@@ -264,13 +241,13 @@ namespace BoSSS.Application.SipPoisson {
 
             }
 
-
-            /*
+            */
+            
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
                 return p;
-            });*/
+            });
         }
 
         private static void SetOMPAffinity(int Nothreads, int Rank, int Size, bool Global) {
