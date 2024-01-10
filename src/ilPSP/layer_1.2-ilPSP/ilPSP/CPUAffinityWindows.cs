@@ -108,6 +108,25 @@ namespace ilPSP.Utils {
             }
         }
 
+        public static IEnumerable<int> GetAffinityFromCCPVar() {
+            string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
+            if(CCP_AFFINITY == null) {
+                return new int[0];
+            }
+
+            var affGroup = CCP_AFFINITY.Split( new string[] {","}, StringSplitOptions.RemoveEmptyEntries);
+
+            var ret = new List<int>();
+            int iGroup = 0;
+            foreach (string aff in affGroup) {
+                ret.AddRange(CheckCpuAffinity(new UIntPtr(Convert.ToUInt64(aff, 16)), iGroup, System.Environment.ProcessorCount / affGroup.Length));
+                iGroup++;
+            }
+
+            return ret.ToArray();
+        }
+
+
         static IEnumerable<int> CheckCpuAffinity(UIntPtr mask, int iProcessorGroup, int procsPerGroup) {
             var res = new List<int>();
             ulong bitmask = (ulong)mask;

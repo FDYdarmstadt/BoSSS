@@ -334,7 +334,12 @@ namespace ilPSP {
 
                 var ReservedCPUs = CPUAffinity.GetAffinity();
                 if(ReservedCPUs.Count() < NumThreads) {
-                    throw new NotSupportedException("Less CPU's than threads (" + NumThreads + ") CPU's: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+                    Console.Error.WriteLine("Less CPU's than threads (" + NumThreads + ") CPU's: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+                }
+
+                if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                    Console.WriteLine("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+                    Console.WriteLine("Affinity reported from mpiexec  : " + CPUAffinityWindows.GetAffinityFromCCPVar().ToConcatString("", ", ", ";"));
                 }
             }
         }
