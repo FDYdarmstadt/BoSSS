@@ -136,8 +136,8 @@ namespace ilPSP {
 
             // wait for all processors to arrive here 
             // ======================================
-            int tokenMin = token.MPIMin();
-            int tokenMax = token.MPIMax();
+            int tokenMin = token.MPIMin(comm);
+            int tokenMax = token.MPIMax(comm);
             if (tokenMin != tokenMax)
                 throw new ApplicationException($"synchronization error: token minimum {tokenMin}, maximum {tokenMax}");
             csMPI.Raw.Barrier(comm); // must be in the 'main' thread
