@@ -96,6 +96,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             double _V = 1.0;
 
 #if DEBUG
+            //
+            // see `EquationComponentArgMapping.cs`, ll 188:
+            // in DEBUG mode, we **always** use the vectorizer, even if we have a vectorized implementation.
+            // however, what it actually does is a comparison of the vectorized and non-vectorized implementation.
+            //
+
+
             MultidimensionalArray f_check = null;
 
             if (volForm is INonlinVolumeForm_V volForm_) {
@@ -137,7 +144,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
 
@@ -260,7 +267,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
         }
@@ -482,7 +489,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             if (fin_check != null) {
                 double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
                 double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);
-                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
 
             }
 #endif
@@ -565,7 +572,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) { 
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1); 
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
         }
@@ -680,7 +687,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             if (fin_check != null) {
                 double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
                 double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);               
-                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
 
             }
 #endif
@@ -765,7 +772,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);              
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
         }
