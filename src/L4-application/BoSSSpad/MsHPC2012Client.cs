@@ -164,6 +164,8 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             base.RuntimeLocation = "win\\amd64";
+
+            m_AdditionalEnvironmentVars.Add("OMP_PROC_BIND", "spread");
         }
 
 
@@ -233,20 +235,15 @@ namespace BoSSS.Application.BoSSSpad {
 
         /// <summary>
         /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
-        /// 
-        /// Note: it has been observed that parallel jobs on MS HPC are sometimes much slower (by a factor of 10 or more) when executes via the Job manager
-        /// in comparison to manual execution form the command line in an interactive session.
-        /// This behavior can also be reproduced, e.g. if OpenMP-parallelization is used within the MPI processes, but only one core
-        /// is allocated for each MPI process.
-        /// I.e., it seems that the HPC Job Scheduler stalls jobs which occupy many more threads than allocated cores.
-        /// Therefore, it is recommended to reserve one or two cores for background threads, e.g., those used for non-blocking MPI communication.
         /// </summary>
+        [DataMember]
         public int NumOfAdditionalServiceCores = 0;
 
         /// <summary>
         /// Additional number of cores (for all jobs with only one MPI rank) which are allocated for 'service', independent of the MPI Size;
         /// <see cref="NumOfAdditionalServiceCores"/>.
         /// </summary>
+        [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
 
 
@@ -254,6 +251,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Additional number of cores which are allocated for 'service';
         /// <see cref="NumOfAdditionalServiceCores"/>.
         /// </summary>
+        [DataMember]
         public int NumOfServiceCoresPerMPIprocess = 0;
 
        
@@ -451,7 +449,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // Get Exit code from task
                 // =======================
                 //
-                // Note: in our simoplified interface, we only have one task per job
+                // Note: in our simplified interface, we only have one task per job
 
                 int? exitcode = null;
                 if (state == JobState.Canceled || state == JobState.Failed || state == JobState.Finished) {
@@ -710,14 +708,8 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores;
+            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
             
-            if(MPISz == 1) {
-                NumberOfCores = 1;
-            } else {
-                NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
-            }
-
             
             bool SingleNode = this.SingleNode;
             var Priority = this.DefaultJobPriority;
@@ -725,8 +717,8 @@ namespace BoSSS.Application.BoSSSpad {
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                //str.Write($"mpiexec -n {MPISz} ");
-                str.Write($"mpiexec ");
+                str.Write($"mpiexec -n {MPISz} ");
+                //str.Write($"mpiexec ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);
@@ -742,12 +734,6 @@ namespace BoSSS.Application.BoSSSpad {
             string WorkDirectory = DeploymentDirectory;
             string StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
             string StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
-
-
-            string Nodes = "";
-            if (this.ComputeNodes != null) {
-                Nodes = ComputeNodes.ToConcatString("", ",", "");
-            }
 
 
 
@@ -768,7 +754,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine($"	 JobTemplate=\"Default\" ");
                 stw.WriteLine($"	 Priority=\"{Priority}\" ");
                 if (this.ComputeNodes != null)
-                    stw.WriteLine($"	 RequestedNodes=\"{Nodes}\" ");
+                    stw.WriteLine($"	 RequestedNodes=\"{ComputeNodes.ToConcatString("", ",", "")}\" ");
                 stw.WriteLine($"	 AutoCalculateMax=\"false\" ");
                 stw.WriteLine($"	 AutoCalculateMin=\"false\" ");
                 stw.WriteLine($"	 MinCores=\"{NumberOfCores}\" ");
@@ -795,6 +781,8 @@ namespace BoSSS.Application.BoSSSpad {
                         stw.WriteLine($"                    <Value>{kv.Value}</Value>");
                         stw.WriteLine($"                </Variable>");
                     }
+                    
+
                     stw.WriteLine($"			</EnvironmentVariables>");
                 }
                 stw.WriteLine($"        </Task>");
@@ -806,6 +794,20 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
         }
+
+        [NonSerialized]
+        Dictionary<string, string> m_AdditionalEnvironmentVars = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Additional environment variables for the process. 
+        /// </summary>
+        [DataMember]
+        public IDictionary<string, string> AdditionalEnvironmentVars {
+            get {
+                return m_AdditionalEnvironmentVars;
+            }
+        }
+
 
         /// <summary>
         /// Synchronous wrapper around process execution, 
