@@ -831,12 +831,19 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// - index: local cell index
         /// - content: condition number (one norm) of the local stencil
         /// </returns>
-        public double[] StencilCondNumbers() {
+        public double[] StencilCondNumbers(char type = 'O') {
             using(new FuncTrace()) {
+                BlockMsrMatrix Mtx;
+
+                if (type == 'O')
+                    Mtx = m_MultigridOp.OperatorMatrix;
+                else if (type == 'M')
+                    Mtx = m_MultigridOp.MassMatrix;
+                else
+                    throw new ArgumentException("Unknown type of stencil condition number is requested");
+
                 int J = m_map.LocalNoOfBlocks;
                 Debug.Assert(J == m_map.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
-
-                var Mtx = m_MultigridOp.OperatorMatrix;
                 Debug.Assert(Mtx._ColPartitioning.LocalNoOfBlocks == J);
                 Debug.Assert(Mtx._RowPartitioning.LocalNoOfBlocks == J);
 
@@ -1017,7 +1024,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Stencil condition numbers, organized in a dictionary to create a regression over multiple meshes
         /// </summary>
-        public IDictionary<string, double> CalculateStencilNumbers(bool plotStencilNumbers = false, bool calculateMassMatrices = true) {
+        public IDictionary<string, double> CalculateStencilNumbers(bool plotStencilNumbers = false, bool calculatemassMatrix = false) {
             using (new FuncTrace()) {
                 var Ret = new Dictionary<string, double>();
 
@@ -1029,18 +1036,18 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 var stpw = new Stopwatch();
                 stpw.Start();
 
-                    // block-wise condition numbers
-                    // ============================
-                    double[] bcn = this.StencilCondNumbers();
+                // block-wise condition numbers
+                // ============================
+                double[] bcnOperator = this.StencilCondNumbers('O');
                 stpw.Stop();
 
-                    CellMask innerUncut, innerCut, bndyUncut, bndyCut;
-                    if(m_LsTrk != null) {
-                        // +++++++++
-                        // using XDG
-                        // +++++++++
-                        innerUncut = grd.GetBoundaryCells().Complement().Except(m_LsTrk.Regions.GetCutCellMask());
-                        innerCut = m_LsTrk.Regions.GetCutCellMask().Except(grd.GetBoundaryCells());
+                CellMask innerUncut, innerCut, bndyUncut, bndyCut;
+                if (m_LsTrk != null) {
+                    // +++++++++
+                    // using XDG
+                    // +++++++++
+                    innerUncut = grd.GetBoundaryCells().Complement().Except(m_LsTrk.Regions.GetCutCellMask());
+                    innerCut = m_LsTrk.Regions.GetCutCellMask().Except(grd.GetBoundaryCells());
 
                         bndyUncut = grd.GetBoundaryCells().Except(m_LsTrk.Regions.GetCutCellMask());
                         bndyCut = grd.GetBoundaryCells().Intersect(m_LsTrk.Regions.GetCutCellMask());
@@ -1051,13 +1058,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                         innerUncut = grd.GetBoundaryCells().Complement();
                         innerCut = CellMask.GetEmptyMask(grd);
 
-                        bndyUncut = grd.GetBoundaryCells();
-                        bndyCut = CellMask.GetEmptyMask(grd);
-                    }
-                    double innerUncut_MaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-                    double innerCut_MaxCondNo = innerCut.NoOfItemsLocally > 0 ? innerCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-                    double bndyUncut_MaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-                    double bndyCut_MaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+                    bndyUncut = grd.GetBoundaryCells();
+                    bndyCut = CellMask.GetEmptyMask(grd);
+                }
 
                 //Stencil condition number for mass matrix
                 double innerUncut_OpMaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcnOperator[jCell]) : 1.0;
@@ -1081,7 +1084,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 double[] bcnMass = null;
                 //Stencil condition number for mass matrix (MaMa)
-                if (calculateMassMatrices) {
+                if (calculatemassMatrix) {
                     stpw.Start();
                     bcnMass = this.StencilCondNumbers('M');
                     stpw.Stop();
@@ -1098,13 +1101,15 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     Ret.Add("MaMaStencilCondNo-innerUncut-" + VarNames, innerUncut_MaMaMaxCondNo);
                     Ret.Add("MaMaStencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaMaMaxCondNo);
 
-                    Ret.Add("StencilCondNo-innerUncut-" + VarNames, innerUncut_MaxCondNo);
-                    Ret.Add("StencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaxCondNo);
 
-                    if(m_LsTrk != null) {
-                        Ret.Add("StencilCondNo-innerCut-" + VarNames, innerCut_MaxCondNo);
-                        Ret.Add("StencilCondNo-bndyCut-" + VarNames, bndyCut_MaxCondNo);
+                    if (m_LsTrk != null) {
+                        Ret.Add("MaMaStencilCondNo-innerCut-" + VarNames, innerCut_MaMaMaxCondNo);
+                        Ret.Add("MaMaStencilCondNo-bndyCut-" + VarNames, bndyCut_MaMaMaxCondNo);
                     }
+                }
+
+
+                Console.WriteLine("StencilCondNumbers- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
 
                 if (plotStencilNumbers) {
                     var StencilCondNoVizS = new List<DGField>();
@@ -1115,12 +1120,13 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     StencilCondNoVizS.Add(OpStencilCondNo);
 
-                    if (calculateMassMatrices) {
+                    if (calculatemassMatrix) {
                         SinglePhaseField MaMaStencilCondNo = new SinglePhaseField(new Basis(grd, 0), "MaMaStencilCondNo-" + VarNames);
                         for (int j = 0; j < bcnMass.Length; j++)
                             MaMaStencilCondNo.SetMeanValue(j, bcnMass[j]);
 
-                    StencilCondNoVizS.Add(StencilCondNo);
+                        StencilCondNoVizS.Add(MaMaStencilCondNo);
+                    }
 
                     // Add all level sets: Phi (Two-phase flow) and Phi2 (IBM)
                     var LevelSets = m_LsTrk.LevelSetHistories;
