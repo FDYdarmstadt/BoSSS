@@ -51,9 +51,9 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            Application.InitMPI(args);
+            //Application.InitMPI(args);
             //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
-            CNS.Tests.DiffusiveFlux.SIPGConsistency.SIPGconsistencyTest(1);
+            //CNS.Tests.DiffusiveFlux.SIPGConsistency.SIPGconsistencyTest(1);
             //DeleteOldPlotFiles();
             //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
 
@@ -72,13 +72,13 @@ namespace CNS {
             //pCNS.Init(cIBMBowShock);
             //pCNS.RunSolverMode();
 
-            Debug.Assert(false, "remove me");
-            return;
+            //Debug.Assert(false, "remove me");
+            //return;
 
-            //Application<CNSControl>._Main(
-            //    args,
-            //    false,
-            //    () => new CNSProgram());
+            Application<CNSControl>._Main(
+                args,
+                false,
+                () => new CNSProgram());
         }
     }
 
