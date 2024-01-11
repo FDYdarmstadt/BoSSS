@@ -51,7 +51,8 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //Application.InitMPI(args);
+            Application.InitMPI(args);
+            CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro2AllButRusanovTest(Convection.ConvectiveFluxTypes.HLL);
             //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
             //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexOneStepGaussAndStokesNoAgglomerationTest();
             //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
