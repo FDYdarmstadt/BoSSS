@@ -571,6 +571,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IDictionary<string, string> EnvironmentVars {
             get {
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.NumberOfThreads.ToString();
                 return m_EnvironmentVars;
             }
         }

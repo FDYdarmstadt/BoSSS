@@ -273,12 +273,12 @@ namespace ilPSP {
                 if(NumThreadsOverride != null) {
                     tr.Info("API override of number of threads: " + NumThreadsOverride.Value + " (ignoring OMP_NUM_THREADS, etc.)");
                     NumThreads = NumThreadsOverride.Value;
-                } else { 
-                    if(LookAtEnvVar) {
+                } else {
+                    if (LookAtEnvVar) {
                         int? omp_num_threads = null;
                         try {
                             string _omp_num_treads = System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS");
-                            if(_omp_num_treads != null) {
+                            if (_omp_num_treads != null) {
                                 omp_num_threads = Int32.Parse(_omp_num_treads);
                                 tr.Info("OMP_NUM_THREADS = " + omp_num_threads);
                             } else {
@@ -288,38 +288,22 @@ namespace ilPSP {
                             tr.Error("Exception parsing OMP_NUM_THREADS: " + e);
                         }
 
-
-
-                        if(omp_num_threads != null) {
+                        if (omp_num_threads != null) {
                             NumThreads = omp_num_threads.Value;
                         } else {
-                            var _num_procs = System.Environment.GetEnvironmentVariable("NUMBER_OF_PROCESSORS");
-                            int? num_procs_per_smp = null;
-                            try {
-                                if (_num_procs != null) {
-                                    int MPIsz = int.MaxValue;
-                                    for (int iSMP = 0; iSMP < MPIEnv.NoOfSMPs; iSMP++) {
-                                        MPIsz = Math.Min(MPIsz, MPIEnv.MPIProcessesPerSMP(iSMP));
-                                    }
-                                    tr.Info("MPI procs per compute node (minimum): " + MPIsz);
 
-                                    if(_num_procs != null) {
-                                        int num_procs = Int32.Parse(_num_procs);
-                                        tr.Info("NUMBER_OF_PROCESSORS = " + num_procs);
-                                        num_procs = Math.Max(1, num_procs - 2); // leave some cores for the system.
-                                        num_procs_per_smp = Math.Max(1, num_procs/MPIsz);
-                                    } else {
-                                        tr.Info("not defined: NUMBER_OF_PROCESSORS");
-                                    }
-
-                                }
-                            } catch (Exception e) {
-                                tr.Error("Exception parsing NUMBER_OF_PROCESSORS: " + e);
+                            int MPIranksOnNode = int.MaxValue;
+                            for (int iSMP = 0; iSMP < MPIEnv.NoOfSMPs; iSMP++) {
+                                MPIranksOnNode = Math.Min(MPIranksOnNode, MPIEnv.MPIProcessesPerSMP(iSMP));
                             }
+                            
+                            int num_procs_tot = System.Environment.ProcessorCount;
+                            int num_procs = Math.Max(1, num_procs_tot - 2); // leave some cores for the system.
+                            int num_procs_per_smp = Math.Max(1, num_procs/MPIranksOnNode);
+                            tr.Info($"Failed to determine user whish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2 for BoSSS ({num_procs} total, {num_procs_per_smp} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
 
-                            if(num_procs_per_smp != null) {
-                                NumThreads = num_procs_per_smp.Value;
-                            }
+                            NumThreads = num_procs_per_smp;
+
                         }
                     } else {
                         tr.Info($"Using default value for number of threads ({NumThreads})");
@@ -334,7 +318,7 @@ namespace ilPSP {
 
                 var ReservedCPUs = CPUAffinity.GetAffinity();
                 if(ReservedCPUs.Count() < NumThreads) {
-                    Console.Error.WriteLine("Less CPU's than threads (" + NumThreads + ") CPU's: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+                    tr.Error("Less CPU's than threads (" + NumThreads + ") CPU's: " + ReservedCPUs.ToConcatString("", ", ", ";"));
                 }
 
                 if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {

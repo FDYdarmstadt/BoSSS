@@ -110,6 +110,7 @@ namespace ilPSP.Utils {
 
         public static IEnumerable<int> GetAffinityFromCCPVar() {
             string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
+            Console.Error.WriteLine("CCP_AFFINITY = " + CCP_AFFINITY);
             if(CCP_AFFINITY == null) {
                 return new int[0];
             }
