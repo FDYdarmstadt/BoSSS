@@ -31,7 +31,16 @@ namespace ilPSP {
     /// </summary>
     public static class TempBuffer {
 
-        const int MAX_BUFFERS = 8*8;
+        static int ___MAX_BUFFERS = -1;
+
+        static int MAX_BUFFERS {
+            get {
+                if(___MAX_BUFFERS < 0) {
+                    ___MAX_BUFFERS = 8*8*Math.Max(1, ilPSP.Environment.NumThreads);
+                }
+                return ___MAX_BUFFERS;
+            }
+        }
 
         static WeakReference[] BigBuf = new WeakReference[MAX_BUFFERS];
         static bool[] BufLok = new bool[MAX_BUFFERS];
