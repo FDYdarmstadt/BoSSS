@@ -1203,7 +1203,7 @@ namespace CNS {
         /// <exception cref="NotSupportedException"></exception>
         public static CNSControl AcousticWave(string dbPath = null, double perStartTime=12, int savePeriod = 10000, double s_alpha = 20, int dgDegree = 2, double CFLFraction = 0.1,
             double MachL = 1.5, int numOfCellsX = 301, int numOfCellsY = 3, double endTime = 2.13, double shockPosition = 1.5,
-        double p_amp_neg = 1e-5, double p_amp_pos = 0.0, string waveform = "bump", double waveLength = 0.4, double wavePosition = 3.0, bool isRestart = false, string sessId=null) {
+        double p_amp_neg = 0.0, double p_amp_pos = 1e-5, string waveform = "bump", double waveLength = 0.4, double wavePosition = -0.4, bool isRestart = false, string sessId=null) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -1382,15 +1382,15 @@ namespace CNS {
             else if (waveform == "bump")
             { //c ifnity bumb (differentiable everywhere)
 
-                double L = waveLength;
-                double bumpPos = wavePosition + L/2;
+                double L = waveLength/2;
+                double bumpPos = wavePosition+L;
                 Func<double, double> f_base = x => Math.Exp(-1 / (1 - x * x)) * Math.E;
 
                 f_waveform = delegate (double X)
                 {
-                    if (bumpPos - L/2 < X && X < bumpPos + L/2)
+                    if (bumpPos - L < X && X < bumpPos + L)
                     {
-                        return f_base(2*(X - bumpPos) / L);
+                        return f_base((X - bumpPos) / L);
                     }
                     else
                     {
@@ -1430,11 +1430,11 @@ namespace CNS {
 
                 if (X[0] < shockPosition)
                 {
-                    return p_amp_neg / (densityL * cL) * f_waveform(X[0] - (velocityL - cL) * X[1]) - p_amp_pos / (densityL * cL) * f_waveform(X[0] - (velocityL + cL) * X[1]);
+                    return -p_amp_neg / (densityL * cL) * f_waveform(X[0] - (velocityL - cL) * X[1]) + p_amp_pos / (densityL * cL) * f_waveform(X[0] - (velocityL + cL) * X[1]);
                 }
                 else
                 {
-                    return p_amp_neg / (densityR * cR) * f_waveform(X[0] - (velocityR - cR) * X[1]) - p_amp_pos / (densityR * cR) * f_waveform(X[0] - (velocityR + cR) * X[1]); ;
+                    return -p_amp_neg / (densityR * cR) * f_waveform(X[0] - (velocityR - cR) * X[1]) + p_amp_pos / (densityR * cR) * f_waveform(X[0] - (velocityR + cR) * X[1]); ;
                 }
             };
             //var PressurePertubation = delegate (double t) {
@@ -1694,7 +1694,7 @@ namespace CNS {
 
             // ### Project and sessions name ###
             c.ProjectName = "AcousticWave";
-            c.SessionName = String.Format("AW_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_sP{5}_pST{6}_wP{7}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder,c.shockPosition,perStartTime,wavePosition);
+            c.SessionName = String.Format("AW_p{0}_xCells{1}_yCells{2}_sP{3}_pST{4}_wP{5}_ampneg{6}_amppos{7}_wL{8}_Mach{9}", dgDegree, numOfCellsX, numOfCellsY,c.shockPosition,perStartTime,wavePosition,p_amp_neg,p_amp_pos, waveLength,MachL);
             //c.ProjectName = "StatShockRef";
             //c.SessionName = String.Format("StatShockRef_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_sP{5}_Mach{6}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder, c.shockPosition,MachL);
 
