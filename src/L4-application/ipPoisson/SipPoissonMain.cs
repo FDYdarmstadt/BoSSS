@@ -61,11 +61,14 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            /*
+            
 
 
             InitMPI(args);
-            int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
+            BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
+            
+            /*
+             * int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
             //int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
@@ -242,7 +245,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             */
-            
+
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
