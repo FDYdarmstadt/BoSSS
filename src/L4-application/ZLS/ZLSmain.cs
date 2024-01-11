@@ -96,7 +96,7 @@ namespace ZwoLevelSetSolver {
 
                 
             }
-            ConditionNumberScalingTest.Perform(controlFiles, true);
+            ConditionNumberScalingTest.Perform(controlFiles, new ConditionNumberScalingTest.Config() { plot = true, title= "ConditionNumberScaling" });
         }
 
 
@@ -142,7 +142,7 @@ namespace ZwoLevelSetSolver {
 
                 
             }
-            ConditionNumberScalingTest.Perform(controlFiles, true);
+            ConditionNumberScalingTest.Perform(controlFiles, new ConditionNumberScalingTest.Config() { plot = true, title = "ConvergenceNumberScaling" });
         }
 
           /*
