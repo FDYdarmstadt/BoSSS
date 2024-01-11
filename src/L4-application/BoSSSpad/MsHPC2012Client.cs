@@ -773,15 +773,24 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine($"			  MinCores=\"{NumberOfCores}\" ");
                 stw.WriteLine($"			  MaxCores=\"{NumberOfCores}\" ");
                 stw.WriteLine($"			  Type=\"Basic\">");
-                if (myJob.EnvironmentVars.Count > 0) {
+                if(myJob.EnvironmentVars.Count() + this.AdditionalEnvironmentVars.Count() > 0) {
                     stw.WriteLine($"            <EnvironmentVariables>");
-                    foreach (var kv in myJob.EnvironmentVars) {
+
+                    void WriteEnvVar(string name, string value) {
                         stw.WriteLine($"                <Variable>");
-                        stw.WriteLine($"                    <Name>{kv.Key}</Name>");
-                        stw.WriteLine($"                    <Value>{kv.Value}</Value>");
+                        stw.WriteLine($"                    <Name>{name}</Name>");
+                        stw.WriteLine($"                    <Value>{value}</Value>");
                         stw.WriteLine($"                </Variable>");
                     }
-                    
+
+                    foreach (var kv in myJob.EnvironmentVars) {
+                        WriteEnvVar(kv.Key, kv.Value);
+                    }
+
+                    foreach (var kv in this.AdditionalEnvironmentVars) {
+                        WriteEnvVar(kv.Key, kv.Value);
+                    }
+
 
                     stw.WriteLine($"			</EnvironmentVariables>");
                 }
