@@ -814,28 +814,28 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
 #if DEBUG
-            for(int f = 0; f < NoOfFields; f++) {
-                if(m_owner.m_DomainAndParamFields[f] == null) {
+                for(int f = 0; f < NoOfFields; f++) {
+                    if(m_owner.m_DomainAndParamFields[f] == null) {
 
-                    if(m_FieldValuesIN[f] != null) {
-                        Debug.Assert(m_FieldValuesIN[f].L2Norm() == 0.0);
-                        Debug.Assert(m_FieldValuesOT[f].L2Norm() == 0.0);
+                        if(m_FieldValuesIN[f] != null) {
+                            Debug.Assert(m_FieldValuesIN[f].L2Norm() == 0.0);
+                            Debug.Assert(m_FieldValuesOT[f].L2Norm() == 0.0);
+                        }
+
+
+                        if(f < m_MeanFieldValuesIN.Length && m_MeanFieldValuesIN[f] != null) {
+                            Debug.Assert(m_MeanFieldValuesIN[f].L2Norm() == 0.0);
+                            Debug.Assert(m_MeanFieldValuesOT[f].L2Norm() == 0.0);
+                        }
+
+
+                        if(f < m_FieldGradientIN.Length && m_FieldGradientIN[f] != null) {
+                            Debug.Assert(m_FieldGradientIN[f].L2Norm() == 0.0);
+                            Debug.Assert(m_FieldGradientOT[f].L2Norm() == 0.0);
+                        }
+
                     }
-
-
-                    if(f < m_MeanFieldValuesIN.Length && m_MeanFieldValuesIN[f] != null) {
-                        Debug.Assert(m_MeanFieldValuesIN[f].L2Norm() == 0.0);
-                        Debug.Assert(m_MeanFieldValuesOT[f].L2Norm() == 0.0);
-                    }
-
-
-                    if(f < m_FieldGradientIN.Length && m_FieldGradientIN[f] != null) {
-                        Debug.Assert(m_FieldGradientIN[f].L2Norm() == 0.0);
-                        Debug.Assert(m_FieldGradientOT[f].L2Norm() == 0.0);
-                    }
-
                 }
-            }
 #endif
 
 
