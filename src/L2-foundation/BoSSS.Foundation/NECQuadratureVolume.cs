@@ -462,7 +462,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 bool[] RequireTestFunctionGradient = new bool[NoOfEquations];
                 bool[] Cleared_m_FluxValues = new bool[NoOfEquations];
 
+                bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
+
                 this.Flux_Eval.Start();
+                if(MustLock)
+                    Monitor.Enter(this.m_owner);
                 {
                     // loop over all equations ...
                     for (int _e = 0; _e < NoOfEquations; _e++) {
@@ -677,6 +681,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         }
                     }
                 }
+
+
+                if (MustLock)
+                    Monitor.Exit(this.m_owner);
+
                 this.Flux_Eval.Stop();
 
                 // ================

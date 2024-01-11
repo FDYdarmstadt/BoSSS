@@ -2976,6 +2976,8 @@ namespace BoSSS.Foundation {
             if (this.TemporalOperator != null)
                 JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);
 
+            JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
+
             foreach (string CodNmn in this.CodomainVar) {
                 foreach(var eq in this.EquationComponents[CodNmn]) {
 
@@ -3122,8 +3124,29 @@ namespace BoSSS.Foundation {
             }
         }
 
+        bool m_FluxesAreNOTMultithreadSafe;
+
 
         /// <summary>
+        /// Set to true, if **all** fluxes must be synchronized in multi-threaded execution.
+        /// **This will come at a performance degeneration.**
+        /// This is some lazy option: the default value is false,
+        /// i.e., fluxes are not synchronized.
+        /// <seealso cref="IMultitreadSafety"/>
+        /// </summary>
+        public bool FluxesAreNOTMultithreadSafe {
+            get {
+                return m_FluxesAreNOTMultithreadSafe;
+            }
+            set {
+                if (IsCommitted)
+                    throw new NotSupportedException("illegal to call after commit");
+                m_FluxesAreNOTMultithreadSafe = value;
+            }
+        }
+
+        /// <summary>
+        /// Dictionary which prevents changing after <see cref="Commit"/> has been called;
         /// I hate shit like this class - so many dumb lines of code.
         /// </summary>
         class MyDict : IDictionary<string, bool> {
