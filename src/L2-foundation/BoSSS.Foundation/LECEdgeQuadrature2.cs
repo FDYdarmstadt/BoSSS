@@ -474,7 +474,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // evaluate forms
                 // ==============
                 #region FLUX_EVAL
+                
+                bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
+
                 this.Flux_Eval.Start();
+                if (MustLock)
+                    Monitor.Enter(this.m_owner);
+
                 bool bLinearRequired, bAffineRequired;
                 {
                     List<MyChunk> Edges = new List<MyChunk>();
@@ -535,8 +541,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                 (E, mda) => E.BoundaryEdge_GradV(ref efp, mda));
                         }
                     }
-                    this.Flux_Eval.Stop();
                 }
+
+                if (MustLock)
+                    Monitor.Exit(this.m_owner);
+
+                this.Flux_Eval.Stop();
                 #endregion
 
                 // evaluate test and trial basis functions

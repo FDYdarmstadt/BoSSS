@@ -64,8 +64,8 @@ namespace BoSSS.Application.SipPoisson {
             
 
 
-            InitMPI(args);
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
+            //InitMPI(args);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
             
             /*
              * int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;

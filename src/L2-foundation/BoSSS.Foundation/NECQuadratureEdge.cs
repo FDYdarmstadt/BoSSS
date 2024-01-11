@@ -850,8 +850,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // =======================
                 #region FLUX_EVAL
 
+                bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
 
                 this.Flux_Eval.Start();
+
+                if (MustLock)
+                    Monitor.Enter(m_owner);
+
                 {
                     // loop over all equations ...
                     for (int _e = 0; _e < NoOfEquations; _e++) {
@@ -1165,6 +1170,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     }
                 }
+
+                if (MustLock)
+                    Monitor.Exit(m_owner);
+
                 this.Flux_Trafo.Stop();
                 #endregion
 

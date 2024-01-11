@@ -26,6 +26,7 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using ilPSP.Utils;
 using ilPSP;
+using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.Linear {
     class LECVolumeQuadrature2<M, V> // : CellQuadrature
@@ -791,7 +792,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // evaluate forms/fluxes
                 // =====================
                 #region FLUXEVAL
+                bool MustLock = this.m_owner.Operator.FluxesAreNOTMultithreadSafe;
+
                 this.Flux_Eval.Start();
+                if (MustLock)
+                    Monitor.Enter(this.m_owner);
+
                 //lock(m_owner) { 
                 { 
                     VolumFormParams vfp = default;
@@ -903,6 +909,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     }
 
                 }
+
+                if (MustLock)
+                    Monitor.Exit(this.m_owner);
+
                 this.FluxTrafo.Stop();
                 #endregion
 
