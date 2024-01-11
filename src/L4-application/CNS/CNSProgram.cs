@@ -56,30 +56,6 @@ namespace CNS {
             //Application.InitMPI(args);
             //DeleteOldPlotFiles();
             //AcousticWaveShockInteraction.Test00();
-            //var c = ControlExamples_Supersonic.AcousticWave(MachL:4.0,numOfCellsX:300,numOfCellsY:3);
-            //var pCNS = new CNSProgram();
-            //pCNS.Init(c);
-            //pCNS.RunSolverMode();
-
-            //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
-
-            //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
-
-            //int numOfCellsX = 8;
-            //int numOfCellsY = 16;
-            //var cIBMBowShock = ControlExamples_Supersonic.IBMBowShock(
-            //    dbPath: @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\BoSSS\experimental\internal\src\private-seb\Notebooks\XESF\BowShock\BowShock_P0_db", savePeriod: 1000, dgDegree: 0, CFLFraction: 0.1, explicitScheme: 1, explicitOrder: 1,
-            //    endTime: 32, numOfCellsX: numOfCellsX, numOfCellsY: numOfCellsY);
-
-
-            //var pCNS = new CNS.Program<CNS.IBM.IBMControl>();
-            //pCNS.Init(cIBMBowShock);
-            //pCNS.RunSolverMode();
-
-            //
-
             //Debug.Assert(false, "remove me");
             //return;
 
