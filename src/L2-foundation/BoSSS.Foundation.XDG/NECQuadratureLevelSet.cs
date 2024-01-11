@@ -516,7 +516,11 @@ namespace BoSSS.Foundation.XDG {
 
                 // Evaluate Bilin. forms
                 // - - - - - - - - - - -
-                
+
+                bool MustLock = this.m_DiffOp.FluxesAreNOTMultithreadSafe;
+                if (MustLock)
+                    Monitor.Enter(this.m_DiffOp);
+
                 {
                     EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_V[gamma], this.m_NonlinLsForm_V_Watches[gamma],
                         Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 0), Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 1),
@@ -539,6 +543,9 @@ namespace BoSSS.Foundation.XDG {
                         },
                         m_iThread);
                 }
+
+                if (MustLock)
+                    Monitor.Exit(this.m_DiffOp);
             }            
 
             // Summation Loops: multiply with test and trial functions
