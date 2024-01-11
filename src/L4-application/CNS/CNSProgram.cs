@@ -52,7 +52,8 @@ namespace CNS {
         static void Main(string[] args) {
 
             Application.InitMPI(args);
-            CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
+            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
+            CNS.Tests.DiffusiveFlux.SIPGConsistency.SIPGconsistencyTest(1);
             //DeleteOldPlotFiles();
             //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
 
