@@ -16,6 +16,7 @@
     <ProjectReference Include="..\AdvancedSolverTests\AdvancedSolverTests.csproj" />
     <ProjectReference Include="..\ALTSTests\ALTSTests.csproj" />
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj" />
+    <ProjectReference Include="..\BUIDT\BUIDT.csproj" />
     <ProjectReference Include="..\CDG_ProjectionTest\CDG_ProjectionTest.csproj" />
     <ProjectReference Include="..\CDG_Projection_MPI\CDG_Projection_MPI.csproj" />
     <ProjectReference Include="..\CNS\CNS.csproj" />
@@ -38,12 +39,14 @@
     <ProjectReference Include="..\MultigridTest\MultigridTest.csproj" />
     <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj" />
     <ProjectReference Include="..\QuadratureTest\QuadratureAndProjectionTest.csproj" />
+    <ProjectReference Include="..\SAIDT\SAIDT.csproj" />
     <ProjectReference Include="..\SpecFEM\SpecFEM.csproj" />
     <ProjectReference Include="..\TutorialTests\TutorialTests.csproj" />
     <ProjectReference Include="..\XdgNastyLevsetLocationTest\XdgNastyLevsetLocationTest.csproj" />
     <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj" />
     <ProjectReference Include="..\XDGTest\XDGTest.csproj" />
     <ProjectReference Include="..\XdgTimesteppingTest\XdgTimesteppingTest.csproj" />
+    <ProjectReference Include="..\XESF\XESF.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver_LargeMPItest\XNSE_Solver_LargeMPItest.csproj" />

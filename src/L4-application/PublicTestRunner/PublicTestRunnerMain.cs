@@ -148,7 +148,10 @@ namespace PublicTestRunner {
                         typeof(HangingNodesTests.HangingNodesTestMain),
                         typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain),
                         typeof(IntersectingLevelSetTest.AllUpTest),
-                    };
+                        typeof(BUIDT.Tests.BUIDTTestProgram),
+                        typeof(SAIDT.Tests.SAIDTTestProgram),
+                        typeof(XESF.Tests.XESFTestProgram)
+                };
             }
         }
 
