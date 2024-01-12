@@ -222,6 +222,10 @@ namespace ilPSP.Utils {
                 MaxNumOMPThreads= sanSubGroup.Count();
             }
 
+            var bkup = ilPSP.Environment.StdoutOnlyOnRank0;
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
+            Console.WriteLine($"R{MPIrank}, SMP rank {SMPrank}: CCP_AFFINITY = {CCP_AFFINITY}, setting OMP_PLACES = {OMP_PLACES}");
+            ilPSP.Environment.StdoutOnlyOnRank0 = bkup;
 
             System.Environment.SetEnvironmentVariable("OMP_PLACES", OMP_PLACES);
             return MaxNumOMPThreads;
