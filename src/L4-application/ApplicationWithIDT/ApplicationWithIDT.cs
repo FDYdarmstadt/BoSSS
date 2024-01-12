@@ -1344,10 +1344,6 @@ namespace ApplicationWithIDT {
         /// <param name="targetOptiLevelSet"></param>
         public void MakeLevelSetContinous(IOptiLevelSet targetOptiLevelSet) {
             // Does a continuity projection (hopefully)
-
-            int numThbkup = ilPSP.Environment.NumThreads;
-            ilPSP.Environment.NumThreads = 1;
-
             IGridData gridData = targetOptiLevelSet.GetGrid();
             SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, targetOptiLevelSet.GetDegree()), "LevelSet_cont");
             var tmp_LsTrk = new LevelSetTracker((GridData)gridData, Control.CutCellQuadratureType, 1, LsTrk.SpeciesTable, new LevelSet[] { targetOptiLevelSet.ToLevelSet(targetOptiLevelSet.GetDegree()) });
@@ -1371,8 +1367,6 @@ namespace ApplicationWithIDT {
             ContinuityProjection.MakeContinuous(targetOptiLevelSet.ToSinglePhaseField(targetOptiLevelSet.GetDegree()), continuousLevelSet, nearMask, posMask);
             targetOptiLevelSet.ProjectFromLevelSet(continuousLevelSet);
             //targetOptiLevelSet.ProjectOntoLevelSet(LsTBO);
-
-            ilPSP.Environment.NumThreads = numThbkup;
         }
 
         /// <summary>
