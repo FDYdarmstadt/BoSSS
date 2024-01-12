@@ -199,7 +199,14 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         static void Main(string[] args) {
 
-            //BoSSS.Solution.Application.InitMPI(args);
+            BoSSS.Solution.Application.InitMPI(args);
+            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
+            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
+            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
+            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
+            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(4, 1, 1024);
+            //public static void DerivativeTest_BuildInGrid([Range(1, 22)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size)
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(19, 1, 1024);
             //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(21, 1, 1024);
             //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(10, 1, 1024);
             //ilPSP.Environment.NumThreads = 8;
@@ -214,7 +221,7 @@ namespace BoSSS.Application.DerivativeTest {
             // Build-In Grids
             // ==============
 
-
+            /*
             for (int i = 14; i <= 14; i++) {
                 BoSSS.Solution.Application._Main(args, true, delegate () {
                     var R = new DerivativeTestMain();
