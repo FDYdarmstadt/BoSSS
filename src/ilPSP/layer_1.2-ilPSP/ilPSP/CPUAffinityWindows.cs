@@ -132,7 +132,7 @@ namespace ilPSP.Utils {
             bool glCCP_AFFINITY_DEFINED = CCP_AFFINITY_DEFINED.MPIOr();
 
             if(glCCP_AFFINITY_DEFINED != CCP_AFFINITY_DEFINED) {
-                string errMsg = $"`CCP_AFFINITY` defined on some ranks, but not on all; defined on {MPIrank}? {CCP_AFFINITY_DEFINED}, globally? {glCCP_AFFINITY_DEFINED}"
+                string errMsg = $"`CCP_AFFINITY` defined on some ranks, but not on all; defined on {MPIrank}? {CCP_AFFINITY_DEFINED}, globally? {glCCP_AFFINITY_DEFINED}";
                 Console.Error.WriteLine(errMsg);
                 throw new ApplicationException(errMsg);
             }
