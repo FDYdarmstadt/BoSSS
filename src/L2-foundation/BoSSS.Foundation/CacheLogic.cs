@@ -617,7 +617,7 @@ namespace BoSSS.Foundation.Caching {
                 }
 
                 bool RinReq = Rin == null;
-                bool RotReq = Rin == null;
+                bool RotReq = Rot == null;
 
                 lastEdge_e0 = e0;
                 lastEdge_Len = Len;

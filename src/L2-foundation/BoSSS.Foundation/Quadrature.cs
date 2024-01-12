@@ -420,8 +420,10 @@ namespace BoSSS.Foundation.Quadrature {
 
                     }
 
+
                     // compute serial results for checking
                     // (to be removed/de-activated)
+                    /*
                     var checkResults = MultidimensionalArray.Create(ArrayTools.Cat(new int[] { NoOfItems }, this.IntegralCompDim));
                     int[] ItemOffset = new int[_compositeRuleS.Length];
                     {
@@ -432,6 +434,9 @@ namespace BoSSS.Foundation.Quadrature {
                             allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, true, ItemOffset[iThread], null);
                         }
                     }
+                    */
+                    var checkResults = default(MultidimensionalArray);
+                    int[] ItemOffset = new int[_compositeRuleS.Length];
 
                     var errorList = new List<(int item, double err, double threshold)>[NumThreads];
                     ilPSP.Environment.ParallelFor(0, NumThreads, 
@@ -464,11 +469,12 @@ namespace BoSSS.Foundation.Quadrature {
                                 if (brk)
                                     break;
                             }
-                            if (errCnt > 0)
+                            if (errCnt > 0) {
                                 throw new Exception("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
                                 //Console.Error.WriteLine("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
-                            else
-                                Console.WriteLine($"no parallelization error ({NumThreads} threads, {this.GetType()}).");
+                            } else {
+                                //Console.WriteLine($"no parallelization error ({NumThreads} threads, {this.GetType()}).");
+                            }
                         }
                     }
 

@@ -1046,13 +1046,11 @@ namespace PublicTestRunner {
                                     // delete deploy directory
                                     using(new BlockTrace("delete_deploy_dir", trr)) {
                                         if(s == JobStatus.FinishedSuccessful) {
-                                            Console.WriteLine("Omiting deletion of deployment directory ");
-                                            /*
                                             try {
                                                 Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
                                             } catch(Exception e) {
                                                 Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
-                                            }*/
+                                            }
                                         }
                                     }
 
