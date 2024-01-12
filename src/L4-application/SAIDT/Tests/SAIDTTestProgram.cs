@@ -25,7 +25,6 @@ namespace SAIDT.Tests {
         [Test]
         //This test checks if the results presented on Eccomas 2022 can still be reproduced
         public static void CurvedShock_Eccomas22() {
-            BoSSS.Solution.Application.InitMPI();
             using(var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.CurvedShock_Eccomas22(
                         dbPath: null,
@@ -46,7 +45,6 @@ namespace SAIDT.Tests {
         [Test]
         //Some Example with good first guess, but p=2
         public static void StraightShock_p2() {
-            BoSSS.Solution.Application.InitMPI();
             using(var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.StraightShock(
                     dbPath: null,
@@ -72,7 +70,6 @@ namespace SAIDT.Tests {
         //Some straight Example with good first guess and SinglePhaseFieldLevelSet
         // very bad convergence to the actual solution
         public static void StraightShock_p0_SInglePhaseFieldLS() {
-            BoSSS.Solution.Application.InitMPI();
             using(var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.StraightShock(
                     dbPath: null,
@@ -98,7 +95,6 @@ namespace SAIDT.Tests {
         [Test]
         //Some straight Example with good first guess and SinglePhaseFieldLevelSet
         public static void StraightShock_p0_SplineLevelSet() {
-            BoSSS.Solution.Application.InitMPI();
             using(var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.StraightShock(
                     MaxIterations: 150,

@@ -180,6 +180,11 @@ namespace ilPSP {
             set;
         } = 4;
 
+        public static int MaxNumOpenMPthreads { 
+            get; 
+            private set; 
+        }
+
         public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body, bool enablePar = false) {
             if (InParallelSection) {
                 throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
@@ -204,7 +209,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                MKLservice.SetNumThreads(NumThreads);
+                MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
             }
         }
 
@@ -234,7 +239,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    MKLservice.SetNumThreads(NumThreads);
+                    MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
                 }
             }
         }
@@ -262,7 +267,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                MKLservice.SetNumThreads(NumThreads);
+                MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
             }
         }
 
@@ -314,7 +319,7 @@ namespace ilPSP {
 
                 if(NumThreads <= 0)
                     throw new NotSupportedException($"Number of threads must be at least 1; set to {NumThreads}");
-                MKLservice.SetNumThreads(NumThreads);
+                
 
                 var ReservedCPUs = CPUAffinity.GetAffinity();
                 if(ReservedCPUs.Count() < NumThreads) {
@@ -323,8 +328,12 @@ namespace ilPSP {
 
                 if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     Console.WriteLine("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
-                    Console.WriteLine("Affinity reported from mpiexec  : " + CPUAffinityWindows.GetAffinityFromCCPVar().ToConcatString("", ", ", ";"));
+                    MaxNumOpenMPthreads = CPUAffinityWindows.SetOMP_PLACESfromCCPVar(NumThreads);
+                } else {
+                    MaxNumOpenMPthreads = NumThreads*MPIEnv.ProcessesOnMySMP;
                 }
+
+                MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
             }
         }
 
