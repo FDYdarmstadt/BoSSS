@@ -1217,8 +1217,13 @@ namespace CNS {
             c.ResidualLoggerType = BoSSS.Solution.CompressibleFlowCommon.Residual.ResidualLoggerTypes.Rigorous;
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
-            
+
             //Restart
+
+            double xMin = 0;
+            double xMax = 3.0;
+            double yMin = 0;
+            double yMax = 0.03;
             if (isRestart)
             {
                 if (MachL == 1.5 && shockPosition == 1.5 && dgDegree == 2)
@@ -1233,7 +1238,44 @@ namespace CNS {
                 {
                     throw new NotSupportedException("for this parameter configuration no restart available");
                 }
-                perStartTime = 0.0;
+            }
+            else
+            {
+
+                c.GridFunc = delegate {
+                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                    //grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                    grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
+
+                    grid.DefineEdgeTags(delegate (double[] X) {
+                        if (Math.Abs(X[1]) < 1e-14)
+                        {   // bottom
+                            return 2;
+                        }
+                        else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14)
+                        {    // top
+                            return 2;
+                        }
+                        else if (Math.Abs(X[0]) < 1e-14)
+                        {                    // left
+                            return 1;
+                        }
+                        else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14)
+                        {    // right
+                            return 1;
+                        }
+                        else
+                        {
+                            throw new System.Exception("Boundary condition not specified");
+                        }
+                    });
+
+                    return grid;
+                };
             }
             // ### Time-Stepping ###
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
@@ -1303,11 +1345,7 @@ namespace CNS {
             //c.AddVariable(CNSVariables.Rank, 0);
 
             // ### Grid ###
-            
-            double xMin = 0;
-            double xMax = 3.0;
-            double yMin = 0;
-            double yMax = 0.03;
+
             //if (wavePosition < shockPosition)
             //{
             //    wavePosition = xMin-waveLength;
@@ -1320,31 +1358,7 @@ namespace CNS {
             //numOfCellsX = 600+1;
             //numOfCellsY = 6;
 
-            c.GridFunc = delegate {
-            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-            double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-            var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-
-            grid.EdgeTagNames.Add(1, "SupersonicInlet");
-            //grid.EdgeTagNames.Add(2, "SupersonicOutlet");
-            grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
-
-            grid.DefineEdgeTags(delegate (double[] X) {
-                if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                    return 2;
-                } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                    return 2;
-                } else if (Math.Abs(X[0]) < 1e-14) {                    // left
-                    return 1;
-                } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
-                    return 1;
-                } else {
-                    throw new System.Exception("Boundary condition not specified");
-                }
-            });
-
-            return grid;
-            };
+            
 
             //supersonic Base Flow - left values
             double densityL = 1; double pressureL = 1;
