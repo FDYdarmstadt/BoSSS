@@ -1212,12 +1212,29 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1000;
-            c.ResidualInterval = 1000;
+            c.PrintInterval = savePeriod;
+            c.ResidualInterval = savePeriod;
             c.ResidualLoggerType = BoSSS.Solution.CompressibleFlowCommon.Residual.ResidualLoggerTypes.Rigorous;
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
-
+            
+            //Restart
+            if (isRestart)
+            {
+                if (MachL == 1.5 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("4861c701-4e55-4c3e-baf1-bb266013efb0"), new TimestepNumber(402500));
+                }
+                else if (MachL == 1.5 && shockPosition == 0.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("cd45b796-f15a-43b4-bde2-a00854a27fad"), new TimestepNumber(397500));
+                }
+                else
+                {
+                    throw new NotSupportedException("for this parameter configuration no restart available");
+                }
+                perStartTime = 0.0;
+            }
             // ### Time-Stepping ###
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
