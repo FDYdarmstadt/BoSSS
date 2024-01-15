@@ -1061,13 +1061,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray In_MassMatrixBlock, MultidimensionalArray In_OperatorMatrixBlock, 
             MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC,
             MultidimensionalArray work ) {
-
+            double tol = 1.0e-32;
             var SymmPart = work;
             In_OperatorMatrixBlock.TransposeTo(SymmPart);
             SymmPart.Acc(1.0, In_OperatorMatrixBlock);
             SymmPart.Scale(0.5);
 
-            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false); //check the zero entries on Mass Matrix
+            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, tol, false); //check the zero entries on Mass Matrix
 
             int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
             int[] _IndefRows = ZerosEntries;
@@ -1088,7 +1088,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC); //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC);
 
                 var dummyOUT_rightPC = OUT_rightPC.CloneAs(); //we need to clone to assign MatrixStructure (alternatively one can modify the MultidimensinaolArray.Create method)
-                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, dummyOUT_rightPC, 1.0e-12, true);
+                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, dummyOUT_rightPC, tol, true);
 
                 if (!ZerosEntries2.SetEquals(ZerosEntries)) {
 
