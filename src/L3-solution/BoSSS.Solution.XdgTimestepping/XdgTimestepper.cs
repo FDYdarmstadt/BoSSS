@@ -126,6 +126,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         ESDIRK_32 = 1132,
 
         /// <summary>
+        /// (Implicit) Diagonally implicit Runge-Kutta, 6-stage 4nd order, first stage explicit (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_22"/>
+        /// </summary>
+        ESDIRK_64 = 1164,
+
+        /// <summary>
         /// (Implicit) Diagonally implicit Runge-Kutta, 3-stage 3rd order (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_33"/>
         /// </summary>
         SDIRK_33 = 1033,
@@ -503,6 +508,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 rksch = RungeKuttaScheme.SDIRK_22;
             else if (Scheme == TimeSteppingScheme.ESDIRK_32)
                 rksch = RungeKuttaScheme.ESDIRK_32;
+            else if (Scheme == TimeSteppingScheme.ESDIRK_64)
+                rksch = RungeKuttaScheme.ESDIRK_64;
             else if (Scheme == TimeSteppingScheme.SDIRK_33)
                 rksch = RungeKuttaScheme.SDIRK_33;
             else if (Scheme == TimeSteppingScheme.SDIRK_43)
