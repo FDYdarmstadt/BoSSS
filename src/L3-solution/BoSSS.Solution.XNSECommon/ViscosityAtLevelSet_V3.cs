@@ -51,7 +51,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_D = SpaceDim;
             this.freeSurface = _freeSurface;
             this.sI = _sI;
-            this.beta = sI.IsInfinity() ? 0.0 : (muA + muB)/sI;
+            this.beta = sI.IsInfinity() ? 0.0 : (muA + muB)/(2 * sI);
         }
 
         double muA;
