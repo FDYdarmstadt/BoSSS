@@ -37,17 +37,8 @@ namespace BoSSS.Solution.LoadBalancing {
         /// </summary>
         void UpdateEstimates(IApplication app);
 
-      /*
-        /// <summary>
-        /// The estimated total cost of all cells on this process
-        /// </summary>
-        double EstimatedLocalCost {
-            get;
-        }
-      */
         /// <summary>
         /// The estimated cost of each individual cell on this process;
-        /// 
         /// 
         /// </summary>
         /// <returns>
