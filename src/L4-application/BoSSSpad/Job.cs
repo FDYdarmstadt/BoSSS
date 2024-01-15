@@ -268,6 +268,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// The demanded execution time for the job manager (relevant for Slurm clients <see cref="BoSSS.Solution.Control.AppControl.SessionName"/>)
+        /// Slurm queues are dependent on the execution time, so if it is too long. It can be in back in the queue. 
+        /// </summary>
+        public string ExecutionTime {
+            set;
+            get;
+        }
+
+        /// <summary>
         /// Adds a text file to <see cref="AdditionalDeploymentFiles"/>.
         /// </summary>
         /// <param name="Content">Content of the text file.</param>
