@@ -183,7 +183,7 @@ namespace ilPSP.Utils {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 //
                 // (It seems, OpenMP is not smart enough to negotiate thread ownership on one SMP node;
-                // some locking was observers, i.e., it seems that multiple ranks on one SMP node try to grab the same CPU.)
+                // some locking was observed, i.e., it seems that multiple ranks on one SMP node try to grab the same CPU.)
                 //
 
 
