@@ -6407,6 +6407,17 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
+        public static XNSE_Control InfiniteConditionNumberTorus() {
+            // this test case was resulting in infinite condition numbers
+            var C = RotatingTiltedXRigid(2, 128, 2, false, shape: Shape.Torus, RotAxis: "z", SolverOn: false, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 10;
+            C.AgglomerationThreshold = 0;
+            C.CalculateConditionNumber = AppControl._ConditionStudy.OperatorandMass;
+
+            return C;
+        }
+
         public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true, double rateOfRadius = 0.0, double partRad = 0.39) {
             XNSE_Control C = new XNSE_Control();
 
@@ -6446,7 +6457,12 @@ namespace BoSSS.Application.XNSE_Solver {
             //double partRad = 0.39;
             double d_hyd = 2 * partRad;
             double VelocityMax = Re * muA / rhoA / d_hyd;
-            double anglev = VelocityMax / partRad; //depending on the shape, the longest arm from the center of rotation.
+            double anglev = VelocityMax / partRad;
+
+            // The longest arm from the center of rotation is larger than the given parameter partRad for the popcorn case.
+            if (shape == Shape.Popcorn)
+                anglev = anglev / 1.39;
+
             double[] pos = new double[SpaceDim];
             double ts = 2 * Math.PI / anglev / NoOfTimeSteps; //   1 revolution around its rot. axis
             Console.WriteLine("VelocityMax: {0} Angular Velocity: {1}", VelocityMax, anglev);
