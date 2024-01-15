@@ -175,15 +175,31 @@ namespace ilPSP.Utils {
 
             string OMP_PLACES;
             int MaxNumOMPThreads;
-            if(CPUlist.SetEquals(GlobalCPUlist)) {
-                //
+            if (CPUlist.SetEquals(GlobalCPUlist)) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // the same CPU list for all ranks on the SMP node
+                // give to each process its
+                // dedicated portion of CPUs
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 //
+                // (It seems, OpenMP is not smart enough to negotiate thread ownership on one SMP node;
+                // some locking was observers, i.e., it seems that multiple ranks on one SMP node try to grab the same CPU.)
+                //
+
+
+                var subGroup = CPUlist.GetSubVector(SMPrank*iThreads, iThreads);
+                var sanSubGroup = SanitzeGroup(subGroup);
+
+
+                OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
+                MaxNumOMPThreads= sanSubGroup.Count();
+
+                /*
 
                 if (CPUlist.Count < iThreads*SMPsize) {
                     throw new NotSupportedException($"Less CPU's reserved by MS HPC ({CPUlist.Count}) than required; number of threads: ({SMPsize}*{iThreads} = {SMPsize*iThreads})");
                 }
-                if(allInOneGroup) {
+                if (allInOneGroup) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // all CPU's in one CPU group: all processors may use all CPU's
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -205,7 +221,7 @@ namespace ilPSP.Utils {
                     OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
                     MaxNumOMPThreads= sanSubGroup.Count();
                 }
-
+                */
             } else {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // MS HPC gave us different groups for each process
