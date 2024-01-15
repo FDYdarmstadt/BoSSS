@@ -1017,7 +1017,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Stencil condition numbers, organized in a dictionary to create a regression over multiple meshes
         /// </summary>
-        public IDictionary<string, double> CalculateStencilNumbers(bool plotStencilNumbers = false) {
+        public IDictionary<string, double> CalculateStencilNumbers(bool plotStencilNumbers = false, bool calculateMassMatrices = true) {
             using (new FuncTrace()) {
                 var Ret = new Dictionary<string, double>();
 
@@ -1033,7 +1033,6 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     // ============================
                     double[] bcn = this.StencilCondNumbers();
                 stpw.Stop();
-                Console.WriteLine("StencilCondNumbers- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
 
                     CellMask innerUncut, innerCut, bndyUncut, bndyCut;
                     if(m_LsTrk != null) {
@@ -1060,10 +1059,44 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     double bndyUncut_MaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
                     double bndyCut_MaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
 
-                    innerUncut_MaxCondNo = innerUncut_MaxCondNo.MPIMax();
-                    innerCut_MaxCondNo = innerCut_MaxCondNo.MPIMax();
-                    bndyUncut_MaxCondNo = bndyUncut_MaxCondNo.MPIMax();
-                    bndyCut_MaxCondNo = bndyCut_MaxCondNo.MPIMax();
+                //Stencil condition number for mass matrix
+                double innerUncut_OpMaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcnOperator[jCell]) : 1.0;
+                double innerCut_OpMaxCondNo = innerCut.NoOfItemsLocally > 0 ? innerCut.ItemEnum.Max(jCell => bcnOperator[jCell]) : 1.0;
+                double bndyUncut_OpMaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcnOperator[jCell]) : 1.0;
+                double bndyCut_OpMaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcnOperator[jCell]) : 1.0;
+
+                innerUncut_OpMaxCondNo = innerUncut_OpMaxCondNo.MPIMax();
+                innerCut_OpMaxCondNo = innerCut_OpMaxCondNo.MPIMax();
+                bndyUncut_OpMaxCondNo = bndyUncut_OpMaxCondNo.MPIMax();
+                bndyCut_OpMaxCondNo = bndyCut_OpMaxCondNo.MPIMax();
+
+                Ret.Add("OpStencilCondNo-innerUncut-" + VarNames, innerUncut_OpMaxCondNo);
+                Ret.Add("OpStencilCondNo-bndyUncut-" + VarNames, bndyUncut_OpMaxCondNo);
+
+
+                if (m_LsTrk != null) {
+                    Ret.Add("OpStencilCondNo-innerCut-" + VarNames, innerCut_OpMaxCondNo);
+                    Ret.Add("OpStencilCondNo-bndyCut-" + VarNames, bndyCut_OpMaxCondNo);
+                }
+
+                double[] bcnMass = null;
+                //Stencil condition number for mass matrix (MaMa)
+                if (calculateMassMatrices) {
+                    stpw.Start();
+                    bcnMass = this.StencilCondNumbers('M');
+                    stpw.Stop();
+                    double innerUncut_MaMaMaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcnMass[jCell]) : 1.0;
+                    double innerCut_MaMaMaxCondNo = innerCut.NoOfItemsLocally > 0 ? innerCut.ItemEnum.Max(jCell => bcnMass[jCell]) : 1.0;
+                    double bndyUncut_MaMaMaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcnMass[jCell]) : 1.0;
+                    double bndyCut_MaMaMaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcnMass[jCell]) : 1.0;
+
+                    innerUncut_MaMaMaxCondNo = innerUncut_MaMaMaxCondNo.MPIMax();
+                    innerCut_MaMaMaxCondNo = innerCut_MaMaMaxCondNo.MPIMax();
+                    bndyUncut_MaMaMaxCondNo = bndyUncut_MaMaMaxCondNo.MPIMax();
+                    bndyCut_MaMaMaxCondNo = bndyCut_MaMaMaxCondNo.MPIMax();
+
+                    Ret.Add("MaMaStencilCondNo-innerUncut-" + VarNames, innerUncut_MaMaMaxCondNo);
+                    Ret.Add("MaMaStencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaMaMaxCondNo);
 
                     Ret.Add("StencilCondNo-innerUncut-" + VarNames, innerUncut_MaxCondNo);
                     Ret.Add("StencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaxCondNo);
@@ -1076,9 +1109,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 if (plotStencilNumbers) {
                     var StencilCondNoVizS = new List<DGField>();
 
-                    SinglePhaseField StencilCondNo = new SinglePhaseField(new Basis(grd, 0), "StencilCondNo-" + VarNames);
-                    for (int j = 0; j < bcn.Length; j++)
-                        StencilCondNo.SetMeanValue(j, bcn[j]);
+                    SinglePhaseField OpStencilCondNo = new SinglePhaseField(new Basis(grd, 0), "OpStencilCondNo-" + VarNames);
+                    for (int j = 0; j < bcnOperator.Length; j++)
+                        OpStencilCondNo.SetMeanValue(j, bcnOperator[j]);
+
+                    StencilCondNoVizS.Add(OpStencilCondNo);
+
+                    if (calculateMassMatrices) {
+                        SinglePhaseField MaMaStencilCondNo = new SinglePhaseField(new Basis(grd, 0), "OpStencilCondNo-" + VarNames);
+                        for (int j = 0; j < bcnMass.Length; j++)
+                            MaMaStencilCondNo.SetMeanValue(j, bcnMass[j]);
 
                     StencilCondNoVizS.Add(StencilCondNo);
 
