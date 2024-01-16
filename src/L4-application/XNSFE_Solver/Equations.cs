@@ -205,7 +205,7 @@ namespace BoSSS.Application.XNSFE_Solver {
                         AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling_Tangential(d, D, config.physParams, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
                     }
                 }
-                AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+                AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getPhysParams, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
                 AddComponent(new ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(d, D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
             } else {
                 if (config.isRecoilPressure) {
