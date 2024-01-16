@@ -53,13 +53,16 @@ namespace BoSSS.Solution.LoadBalancing {
         ///   than an un-cut cell; for the linear solver, this factor might be only 2).
         /// For these reasons, one would like to balance not only the total weight, but also the weight within each cluster.
         ///
-        /// Then, <see cref="LoadBalancer.GetNewPartitioning"/> tries not to balance the total weight (sum over all weights) 
-        /// across the MPI processors, but it also tries to balance the weight in each cluster
+        /// If multiple weights per cell are given, the load balancer in
+        /// <see cref="LoadBalancer.GetNewPartitioning"/> tries not only to balance the total weight 
+        /// (sum over all weights) across the MPI processors, 
+        /// but it also tries to balance the weight in each cluster
         /// (i.e., the sum of all weights over all cells, **for each cluster**, is roughly the same for each MPI process.)
+        /// This is also referred to as multi-constraint optimization. 
         /// </summary>
         /// <returns>
         /// cell weights for multi-constraint partitioning, where multiple weights are assigned to each cells.
-        /// - 1st index: constraint index (only 0 for a single constraint)
+        /// - 1st index: cell cluster/constraint index (only 0 for a single constraint)
         /// - 2nd index: correlates with local cell index.
         /// </returns>
         int[][] GetEstimatedCellCosts();
