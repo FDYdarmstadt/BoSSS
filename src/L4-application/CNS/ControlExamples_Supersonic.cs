@@ -35,6 +35,8 @@ using ilPSP.Utils;
 using System;
 using System.Runtime.CompilerServices;
 using BoSSS.Solution;
+using BoSSS.Foundation;
+using System.Collections.Generic;
 
 namespace CNS {
 
@@ -5321,6 +5323,33 @@ namespace CNS {
             c.SessionName = tempSessionName;
 
             return c;
+        }
+    }
+    class ScalarTransportFlux :  IVolumeForm
+    {
+        public TermActivationFlags BoundaryEdgeTerms => throw new NotImplementedException();
+
+        public TermActivationFlags InnerEdgeTerms => throw new NotImplementedException();
+
+        public IList<string> ArgumentOrdering => throw new NotImplementedException();
+
+        public IList<string> ParameterOrdering => throw new NotImplementedException();
+
+        public TermActivationFlags VolTerms => throw new NotImplementedException();
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        {
+            throw new NotImplementedException();
         }
     }
 }
