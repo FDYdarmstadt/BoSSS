@@ -293,8 +293,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         int[][] VectorComponentIndices;
 
 
-        Basis maxTestBasis = null;
-        Basis maxTestGradientBasis = null;
+        readonly Basis maxTestBasis = null;
+        readonly Basis maxTestGradientBasis = null;
 
 
         /// <summary>
