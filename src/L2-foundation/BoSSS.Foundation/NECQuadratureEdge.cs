@@ -139,11 +139,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         int[][] VectorComponentIndices;
 
-
-
         readonly Basis maxTestBasis = null;
         readonly Basis maxTestGradientBasis = null;
-
 
         /// <summary>
         /// true, if the evaluation of the a domain variable is required. 

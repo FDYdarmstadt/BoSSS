@@ -5,6 +5,9 @@ using System.Text;
 namespace BoSSS.Solution.LoadBalancing {
 
 
+    /// <summary>
+    /// 
+    /// </summary>
     [Serializable]
     abstract public class CellTypeBasedEstimator : ICellCostEstimator {
 
@@ -23,6 +26,8 @@ namespace BoSSS.Solution.LoadBalancing {
 
 
         public abstract object Clone();
+        
+        
         public abstract int[][] GetEstimatedCellCosts();
         
         public virtual void Init(IApplication app) {

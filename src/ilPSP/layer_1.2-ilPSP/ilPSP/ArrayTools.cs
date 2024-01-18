@@ -20,7 +20,6 @@ using System.Linq;
 
 namespace ilPSP.Utils {
 
-
     /// <summary>
     /// some static functions, which should help manipulating matrices and vectors;
     /// not very high-performance, but helpful;

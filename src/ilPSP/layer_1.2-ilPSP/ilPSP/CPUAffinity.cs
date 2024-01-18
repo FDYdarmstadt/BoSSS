@@ -12,7 +12,8 @@ namespace ilPSP.Utils {
 
 
         /// <summary>
-        /// (Linux version) Returns the list of CPU's to which the current process is assigned to.
+        /// Returns the list of CPU's to which the current process is assigned to;
+        /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
         public static IEnumerable<int> GetAffinity() {
 

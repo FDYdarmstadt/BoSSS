@@ -310,6 +310,8 @@ namespace BoSSS.Solution {
                 GetNativeLibraryDir(),
                 out bool _MustFinalizeMPI);
 
+            ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
+
             m_Logger.Info("_MustFinalizeMPI = " + _MustFinalizeMPI);
 
             int rank, size;
