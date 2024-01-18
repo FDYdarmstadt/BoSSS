@@ -4,8 +4,6 @@ BoSSS (Bounded Support Spectral Solver) is a flexible framework for the developm
 application of numerical discretization schemes based on the Discontinuous Galerkin (DG) method.
 
 
-
-
 ## Getting Started
 
 ### Wiki:
