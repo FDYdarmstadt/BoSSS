@@ -305,7 +305,7 @@ namespace ilPSP {
                             int num_procs_tot = System.Environment.ProcessorCount;
                             int num_procs = Math.Max(1, num_procs_tot - 2); // leave some cores for the system.
                             int num_procs_per_smp = Math.Max(1, num_procs/MPIranksOnNode);
-                            tr.Info($"Failed to determine user whish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2 for BoSSS ({num_procs} total, {num_procs_per_smp} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
+                            tr.Info($"Failed to determine user wish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2 for BoSSS ({num_procs} total, {num_procs_per_smp} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
 
                             NumThreads = num_procs_per_smp;
 
