@@ -25,8 +25,11 @@ using System.Linq;
 namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
-    /// Provides a measure to estimate the runtime cost of a given cell in
-    /// the computational grid
+    /// Provides a measure to estimate the runtime cost (aka. weight) of all cells in the computational grid.
+    /// These weights (<see cref="GetEstimatedCellCosts"/>) 
+    /// are then uses by <see cref="LoadBalancer.GetNewPartitioning"/>
+    /// to compute a cell partitioning (i.e., which cell is assigned to which MPI process),
+    /// which assigns approximately the same weight to each MPI process.
     /// </summary>
     public interface ICellCostEstimator : ICloneable {
 
@@ -37,13 +40,29 @@ namespace BoSSS.Solution.LoadBalancing {
         /// </summary>
         void UpdateEstimates(IApplication app);
 
+
         /// <summary>
-        /// The estimated cost of each individual cell on this process;
+        /// The estimated cost of each individual cell on this process, for each cluster.
         /// 
+        /// Why multiple weights, i.e., clusters?
+        /// Very often, one has multiple kinds of cells (aka. classes or clusters, like, e.g., cut and un-cut cells)
+        /// where the computational costs vary by one or two magnitudes.
+        /// Furthermore, the factor between this costs
+        /// - is not constant and depends on many settings, e.g. DG polynomial degree and
+        /// - varies for different parts of the algorithm (e.g., for matrix assembly, a cut cell might be 10 times more expensive 
+        ///   than an un-cut cell; for the linear solver, this factor might be only 2).
+        /// For these reasons, one would like to balance not only the total weight, but also the weight within each cluster.
+        ///
+        /// If multiple weights per cell are given, the load balancer in
+        /// <see cref="LoadBalancer.GetNewPartitioning"/> tries not only to balance the total weight 
+        /// (sum over all weights) across the MPI processors, 
+        /// but it also tries to balance the weight in each cluster
+        /// (i.e., the sum of all weights over all cells, **for each cluster**, is roughly the same for each MPI process.)
+        /// This is also referred to as multi-constraint optimization. 
         /// </summary>
         /// <returns>
         /// cell weights for multi-constraint partitioning, where multiple weights are assigned to each cells.
-        /// - 1st index: constraint index (only 0 for a single constraint)
+        /// - 1st index: cell cluster/constraint index (only 0 for a single constraint)
         /// - 2nd index: correlates with local cell index.
         /// </returns>
         int[][] GetEstimatedCellCosts();

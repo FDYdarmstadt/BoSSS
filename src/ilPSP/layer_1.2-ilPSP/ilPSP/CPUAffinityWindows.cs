@@ -244,6 +244,7 @@ namespace ilPSP.Utils {
             ilPSP.Environment.StdoutOnlyOnRank0 = bkup;
 
             System.Environment.SetEnvironmentVariable("OMP_PLACES", OMP_PLACES);
+            System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
             return MaxNumOMPThreads;
         }
 
