@@ -331,10 +331,14 @@ namespace HangingNodesTests {
             Console.WriteLine();
             Console.WriteLine("Results:");
             for (int i = 0; i < Description.Count; i++) {
-                Console.WriteLine(Description[i] + " : MomRes : {0}, TempRes : {1}", MomentumRes[i], TemperatureRes[i]);
+                Console.WriteLine($"{Description[i]}: MomRes : {MomentumRes[i]}, TempRes : {TemperatureRes[i]}");
             }
-            Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
-            Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
+            for (int i = 0; i < MomentumRes.Count; i++) {
+                Assert.Less(MomentumRes[i].Abs(), 1e-6, "Momentum Residual to high.");
+            }
+            for (int i = 0; i < TemperatureRes.Count; i++) {
+                Assert.Less(TemperatureRes[i].Abs(), 1e-6, "Temperature Residual to high.");
+            }
         }
 
     }
