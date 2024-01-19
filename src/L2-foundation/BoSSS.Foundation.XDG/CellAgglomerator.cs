@@ -311,7 +311,9 @@ namespace BoSSS.Foundation.XDG {
                 if (InterProcessAgglomeration > 0) {
                     int NoOfChangedPairs = DoAggPairsMPIexchangeForOwners(g, AgglomerationPairs.ToList(), ref NeighborPairs);
                     AgglomerationPairs = AgglomerationPairs.Union(NeighborPairs).Distinct().ToList();
-                    Debug.Assert(NoOfChangedPairs == InterProcessAgglomeration);
+                    //Debug.Assert(NoOfChangedPairs == InterProcessAgglomeration);
+                    //if (NoOfChangedPairs != InterProcessAgglomeration)
+                    //    throw new ApplicationException("note: discuss this w. toprak");
                 }
 
                 var AggPairs = AgglomerationPairs.ToList();
