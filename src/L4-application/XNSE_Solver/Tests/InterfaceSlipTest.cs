@@ -36,6 +36,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// <summary>
     /// a periodic shear flow, with two phases.
     /// Interfacial slip (noslip, slip, freeslip) with equal and unequal viscosities can be tested
+    /// More details in Annual Report 2023 "Rieckmann" (add arxiv when available), Case 1
     /// </summary>
     class InterfaceSlipTest : IXNSETest {
 

@@ -40,6 +40,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
     /// With a nonmaterial interface there will be a jump in tangential stresses.
     /// This means that for larger massfluxes the sign of the velocity gradient can switch!
     /// Convective terms are not regarded.
+    /// More details in Annual Report 2023 "Rieckmann" (add arxiv when available), Case 2
     /// </summary>
     class InterfaceSlipTestLin : IXNSFETest {
 
@@ -379,6 +380,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
     /// With a nonmaterial interface there will be a jump in tangential stresses.
     /// This means that for larger massfluxes the sign of the velocity gradient can switch!
     /// Convective terms are regarded.
+    /// More details in Annual Report 2023 "Rieckmann" (add arxiv when available), Case 3
     /// </summary>
     class InterfaceSlipTestNonLin : IXNSFETest {
 
