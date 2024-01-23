@@ -1269,6 +1269,41 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
+        /// A simple Shear flow with interfacial slip
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.InterfaceSlipTest"/>
+        /// </summary>
+        [Test]
+        public static void InterfaceSlipTest(
+#if DEBUG
+            [Values(2)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(1.0, double.PositiveInfinity)] double slipI,
+            [Values(0.143)] double viscosityratio
+#else
+            [Values(2, 3, 4)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
+            [Values(1.0, 0.143, 13.0)] double viscosityratio
+#endif      
+            ) {
+            var Tst = new InterfaceSlipTest(angle, slipI, viscosityratio);
+
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, nonlinsolver: nonlinsolver);
+            C.PhysicalParameters.slipI = Tst.slipI;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+
+            XNSESolverTest(Tst, C);
+        }
+
+        /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
         /// </summary>
         public static void ScalingRotCubeTest(int deg = 1, int spatialDimension = 2, double AgglomerationTreshold = 0.1) {

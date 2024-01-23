@@ -17,6 +17,7 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,6 +37,10 @@ namespace BoSSS.Application.XNSFE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            InitMPI(args);
+            ilPSP.Environment.InitThreading(true, 8);
+            BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
+            Assert.IsTrue(false, "remove me");
 
             XNSFE._Main(args, false, delegate () {
                 var p = new XNSFE();
