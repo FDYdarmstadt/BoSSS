@@ -37,6 +37,7 @@ using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.Gnuplot;
 using System.Diagnostics;
+using ilPSP.LinSolvers.MUMPS;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -261,6 +262,15 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.PhysicalParameters.slipI = Tst.slipI;
             C.NonLinearSolver.MaxSolverIterations = 10;
 
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
+
             XNSFESolverTest(Tst, C);
         }
 
@@ -296,9 +306,72 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, nonlinsolver: nonlinsolver, GridResolution: 3);
             C.PhysicalParameters.slipI = Tst.slipI;
-            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             XNSFESolverTest(Tst, C);
+        }
+
+        /// <summary>
+        /// A simple Shear flow with interfacial slip and evaporation, test scaling
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.InterfaceSlipTest"/>
+        /// </summary>
+        #if !DEBUG
+        [Test]
+        #endif
+        public static void InterfaceSlipTestScaling(
+            [Values(2, 3)] int deg,
+            [Values(0, 1, 2)] byte setup, // linear (no convection no recoil pressure), semilinear (no ceonvection), nonlinear (full complexity)
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(1.0)] double slipI,
+            [Values(1.21)] double viscosityratio,
+            [Values(0.27)] double massflux
+            ) {
+
+            IXNSFETest Tst;
+            switch (setup) {
+                case 0:
+                    Tst = new InterfaceSlipTestLin(angle, slipI, viscosityratio, massflux);
+                    break;
+                case 1:
+                    Tst = new InterfaceSlipTestLin(angle, slipI, viscosityratio, massflux);
+                    break;
+                case 2:
+                    Tst = new InterfaceSlipTestNonLin(angle, slipI, viscosityratio, massflux);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            var LaLa = new List<XNSFE_Control>();
+            foreach (var Res in new[] { 2, 4, 8 }) {
+                var C = TstObj2CtrlObj(Tst, deg, 0.1,
+                    vmode: vmode,
+                    GridResolution: Res,
+                    SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
+                    CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.Saye);
+                if(setup == 0) {
+                    C.IncludeRecoilPressure = false;
+                }
+                C.SkipSolveAndEvaluateResidual = true;
+                C.PhysicalParameters.slipI = ((ISlipTest)Tst).slipI;
+
+                LaLa.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "InterfaceSlipScalingTest-p" + deg + "-Setup" + setup });
         }
 
         private static void XHeatSolverTest(IXHeatTest Tst, XNSFE_Control C) {
