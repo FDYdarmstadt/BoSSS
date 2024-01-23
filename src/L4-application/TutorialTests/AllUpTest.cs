@@ -39,19 +39,19 @@ namespace BoSSS.Application.TutorialTests {
         internal static string DirectoryOffset = "";
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
-        [Test]
-        static public void Run__IsentropicVortex() {
-            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("InitialValues/InitialValues.ipynb")]
         [Test]
         static public void Run__InitialValues() {
             RunWorksheet("InitialValues/InitialValues.ipynb");
         }
 
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
+        [Test]
+        static public void Run__IsentropicVortex() {
+            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
+        }
       
 
         /// <summary> Testing of respective worksheet. </summary>
