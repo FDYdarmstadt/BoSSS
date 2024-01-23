@@ -1406,9 +1406,29 @@ namespace CNS {
             }
             else if (waveform == "fullsinus")
             { //full sinus
-                f_waveform = delegate (double X)
-                {
-                    return Math.Sin(2 * Math.PI * X / waveLength);
+                f_waveform = delegate (double X) {
+                    if (shockPosition < wavePosition)
+                    {
+                        if (wavePosition < X)
+                        {
+                            return Math.Sin(2 * Math.PI * X / waveLength);
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
+                    else
+                    {
+                        if (wavePosition > X)
+                        {
+                            return Math.Sin(2 * Math.PI * X / waveLength);
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
                 };
 
             }
@@ -1727,7 +1747,7 @@ namespace CNS {
 
             // ### Project and sessions name ###
             c.ProjectName = "AcousticWave";
-            c.SessionName = String.Format("AW_p{0}_xCells{1}_yCells{2}_sP{3}_pST{4}_wP{5}_ampneg{6}_amppos{7}_wL{8}_Mach{9}", dgDegree, numOfCellsX, numOfCellsY,c.shockPosition,perStartTime,wavePosition,p_amp_neg,p_amp_pos, waveLength,MachL);
+            c.SessionName = String.Format("AW_p{0}_xCells{1}_yCells{2}_sP{3}_pST{4}_wP{5}_ampneg{6}_amppos{7}_wL{8}_Mach{9}_{10}", dgDegree, numOfCellsX, numOfCellsY,c.shockPosition,perStartTime,wavePosition,p_amp_neg,p_amp_pos, waveLength,MachL,waveform);
             //c.ProjectName = "StatShockRef";
             //c.SessionName = String.Format("StatShockRef_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_sP{5}_Mach{6}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder, c.shockPosition,MachL);
 
