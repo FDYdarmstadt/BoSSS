@@ -55,7 +55,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         [OneTimeSetUp]
         public static void SetUp() {
-            CHUNK_DATA_LIMIT_bkup = Quadrature_Bulksize.CHUNK_LIMIT;
+            CHUNK_DATA_LIMIT_bkup = Quadrature_Settings.CHUNK_LIMIT;
         }
 
 
@@ -71,7 +71,8 @@ namespace BoSSS.Application.DerivativeTest {
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
             DerivativeTestMain.GRID_FILE = null;
-            Quadrature_Bulksize.CHUNK_LIMIT = bulksize_limit;
+            Quadrature_Settings.CHUNK_LIMIT = bulksize_limit;
+            Quadrature_Settings.ENABLE_MULTITHREAD_CHECKING = true;
             DerivativeTestMain.TestFDJacobian = cache_size >= 1024 * 1024;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
@@ -91,7 +92,7 @@ namespace BoSSS.Application.DerivativeTest {
         public static void DerivativeTest_BuildInGrid_Ext([Range(30, 30)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
-            Quadrature_Bulksize.CHUNK_LIMIT = bulksize_limit;
+            Quadrature_Settings.CHUNK_LIMIT = bulksize_limit;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
             BoSSS.Solution.Application._Main(new string[0], true, delegate () {
@@ -157,7 +158,7 @@ namespace BoSSS.Application.DerivativeTest {
             DerivativeTestMain.GRID_CASE = 50;
             DerivativeTestMain.GRID_FILE = File;
             DerivativeTestMain p = null;
-            Quadrature_Bulksize.CHUNK_LIMIT = CHUNK_DATA_LIMIT_bkup; // might have been changed by other test, needs re-set
+            Quadrature_Settings.CHUNK_LIMIT = CHUNK_DATA_LIMIT_bkup; // might have been changed by other test, needs re-set
             DerivativeTestMain.TestFDJacobian = false;
             if(CHUNK_DATA_LIMIT_bkup < 1)
                 throw new ApplicationException();
