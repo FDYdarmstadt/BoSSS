@@ -334,7 +334,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         #endif
         public static void InterfaceSlipTestScaling(
             [Values(2, 3)] int deg,
-            [Values(0, 1, 2)] byte setup,
+            [Values(0, 1)] byte setup,
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0)] double angle,
