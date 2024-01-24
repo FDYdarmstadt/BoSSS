@@ -311,6 +311,17 @@ namespace BoSSS.Solution {
                 out bool _MustFinalizeMPI);
 
             //ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
+            int? num_threads = null;
+            if(args.Contains("--num_threads") || args.Contains("-T")) {
+                int iOff = args.FirstIndexWhere(arg => arg == "--num_threads" || arg == "-T");
+                try {
+                    num_threads = int.Parse(args[iOff + 1]);
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"During parsing --num_threads/-T the following exception occurred: {e}");
+                }
+            }
+            ilPSP.Environment.InitThreading(true, num_threads);
+            
 
             m_Logger.Info("_MustFinalizeMPI = " + _MustFinalizeMPI);
 

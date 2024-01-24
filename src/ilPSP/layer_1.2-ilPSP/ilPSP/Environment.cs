@@ -319,7 +319,7 @@ namespace ilPSP {
 
                 if(NumThreads <= 0)
                     throw new NotSupportedException($"Number of threads must be at least 1; set to {NumThreads}");
-                
+
 
                 var ReservedCPUs = CPUAffinity.GetAffinity();
                 if(ReservedCPUs.Count() < NumThreads) {
