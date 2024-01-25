@@ -1339,6 +1339,8 @@ namespace BoSSS.Foundation.XDG {
 
                 double[] Coords = GetCoords(jCell);
 
+                if (Coords == null)
+                    continue; // species not present in cell; no contribution.
                 // in this cell, we have an orthonormal basis, i.e. the mass matrix is the identity
 
                 acc += Coords.L2NormPow2();
