@@ -1116,7 +1116,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     StencilCondNoVizS.Add(OpStencilCondNo);
 
                     if (calculateMassMatrices) {
-                        SinglePhaseField MaMaStencilCondNo = new SinglePhaseField(new Basis(grd, 0), "OpStencilCondNo-" + VarNames);
+                        SinglePhaseField MaMaStencilCondNo = new SinglePhaseField(new Basis(grd, 0), "MaMaStencilCondNo-" + VarNames);
                         for (int j = 0; j < bcnMass.Length; j++)
                             MaMaStencilCondNo.SetMeanValue(j, bcnMass[j]);
 
