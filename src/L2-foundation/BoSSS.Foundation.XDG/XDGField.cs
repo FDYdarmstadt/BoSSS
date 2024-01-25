@@ -1239,7 +1239,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public double L2NormSpecies(string spcNmn, CellMask cm = null) {
             SpeciesId spc = this.Basis.Tracker.GetSpeciesId(spcNmn);
-            return L2NormSpecies(spc);
+            return L2NormSpecies(spc,cm);
         }
 
         /// <summary>
