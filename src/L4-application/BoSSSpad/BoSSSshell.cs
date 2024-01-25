@@ -77,7 +77,11 @@ namespace BoSSS.Application.BoSSSpad {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-            BoSSS.Solution.Application.InitMPI();
+
+            bool InBatchMode = !System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName).IsEmptyOrWhite();
+            BoSSS.Solution.Application.InitMPI( num_threads: (InBatchMode ? 1 : null));
+            
+
             CallRandomStuff();
             try {
                 databases = DatabaseController.LoadDatabaseInfosFromXML();
@@ -157,7 +161,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            ilPSP.Environment.InitThreading(true, 1);
+            
 
 
             Console.WriteLine("BoSSSpad is ready to go!");
