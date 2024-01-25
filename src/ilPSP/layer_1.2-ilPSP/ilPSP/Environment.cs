@@ -499,7 +499,7 @@ namespace ilPSP {
             if (Rank == 0) {
                 TimeRef0 = GEMMbench();
 
-                Console.WriteLine($"Ref run: (min|avg|max) : (\t{TimeRef0.minTime:0.###E-00} |\t{TimeRef0.avgTime:0.###E-00} |\t{TimeRef0.maxTime:0.###E-00})");
+                //Console.WriteLine($"Ref run: (min|avg|max) : (\t{TimeRef0.minTime:0.###E-00} |\t{TimeRef0.avgTime:0.###E-00} |\t{TimeRef0.maxTime:0.###E-00})");
             }
 
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -516,7 +516,13 @@ namespace ilPSP {
                     double avgFactor = TimeX.avgTime/TimeRef.avgTime;
                     double maxFactor = TimeX.maxTime/TimeRef.maxTime;
 
-                    Console.WriteLine($"R{Rank}: {ranksToBench+1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})");
+                    if (minFactor.MPIMax() > 5 || maxFactor.MPIMax() > 5 || avgFactor.MPIMax() > 5) {
+
+                        string scaling = $"R{Rank}: {ranksToBench+1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
+                        Console.WriteLine("Benchmarking error: " + scaling);
+
+                        throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
+                    }
                 }
 
 
