@@ -372,7 +372,7 @@ namespace PublicTestRunner {
                     // first, seach for num_threads defined for the entire class...
                     int? num_threads_class = null;
                     if (t.GetCustomAttribute(typeof(NUnitNumThreads)) != null) {
-                        var nta = t.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitNumThreads;
+                        var nta = t.GetCustomAttribute(typeof(NUnitNumThreads)) as NUnitNumThreads;
                         //if (dc != null)
                         //    throw new NotSupportedException("Palacing a `NUnitFileToCopyHackAttribute` together with `SetUpAttribute` or `OneTimeSetUpAttribute` is not supported (anymore).");
 
@@ -408,7 +408,7 @@ namespace PublicTestRunner {
                         // search int num_threads is "overridden" for the respective test
                         int? num_threads = num_threads_class;
                         if (m.GetCustomAttribute(typeof(NUnitNumThreads)) != null) {
-                            var nta = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitNumThreads;
+                            var nta = m.GetCustomAttribute(typeof(NUnitNumThreads)) as NUnitNumThreads;
                             //if (dc != null)
                             //    throw new NotSupportedException("Palacing a `NUnitFileToCopyHackAttribute` together with `SetUpAttribute` or `OneTimeSetUpAttribute` is not supported (anymore).");
 
