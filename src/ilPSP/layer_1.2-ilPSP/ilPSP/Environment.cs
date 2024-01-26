@@ -273,7 +273,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 bool bkup = StdoutOnlyOnRank0;
                 StdoutOnlyOnRank0 = false;
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
@@ -455,7 +455,7 @@ namespace ilPSP {
 
 
             const int N = 2048;
-            const int Runs = 10;
+            const int Runs = 3;
 
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSz);
@@ -506,9 +506,9 @@ namespace ilPSP {
             var TimeRef = TimeRef0.MPIBroadcast(0);
 
             for(int ranksToBench = 0; ranksToBench < MpiSz; ranksToBench++) {
-                if (Rank == 0) {
-                    Console.WriteLine("Now, doing work on " + (ranksToBench + 1) + " ranks ...");
-                }
+                //if (Rank == 0) {
+                //    Console.WriteLine("Now, doing work on " + (ranksToBench + 1) + " ranks ...");
+                //}
 
                 if(Rank <= ranksToBench) {
                     var TimeX = GEMMbench();
