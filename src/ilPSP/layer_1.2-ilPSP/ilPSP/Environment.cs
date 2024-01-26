@@ -461,8 +461,7 @@ namespace ilPSP {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSz);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int Rank);
 
-            int Nothreads = NumThreads;
-
+           
             var A = MultidimensionalArray.Create(N, N);
             var B = MultidimensionalArray.Create(N, N);
             var C = MultidimensionalArray.Create(N, N);
@@ -505,25 +504,30 @@ namespace ilPSP {
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             var TimeRef = TimeRef0.MPIBroadcast(0);
 
-            for(int ranksToBench = 0; ranksToBench < MpiSz; ranksToBench++) {
+            for (int ranksToBench = 0; ranksToBench < MpiSz; ranksToBench++) {
                 //if (Rank == 0) {
                 //    Console.WriteLine("Now, doing work on " + (ranksToBench + 1) + " ranks ...");
                 //}
 
-                if(Rank <= ranksToBench) {
-                    var TimeX = GEMMbench();
-                    double minFactor = TimeX.minTime/TimeRef.minTime;
-                    double avgFactor = TimeX.avgTime/TimeRef.avgTime;
-                    double maxFactor = TimeX.maxTime/TimeRef.maxTime;
-
-                    if (minFactor.MPIMax() > 5 || maxFactor.MPIMax() > 5 || avgFactor.MPIMax() > 5) {
-
-                        string scaling = $"R{Rank}: {ranksToBench+1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
-                        Console.WriteLine("Benchmarking error: " + scaling);
-
-                        throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
-                    }
+                (double minTime, double avgTime, double maxTime) TimeX = (BLAS.MachineEps, BLAS.MachineEps, BLAS.MachineEps);
+                if (Rank <= ranksToBench) {
+                    TimeX = GEMMbench();
                 }
+
+
+                double minFactor = TimeX.minTime/TimeRef.minTime;
+                double avgFactor = TimeX.avgTime/TimeRef.avgTime;
+                double maxFactor = TimeX.maxTime/TimeRef.maxTime;
+
+
+                if (minFactor.MPIMax() > 5 || maxFactor.MPIMax() > 5 || avgFactor.MPIMax() > 5) {
+
+                    string scaling = $"R{Rank}: {ranksToBench+1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
+                    Console.WriteLine("Benchmarking error: " + scaling);
+
+                    throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
+                }
+
 
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
