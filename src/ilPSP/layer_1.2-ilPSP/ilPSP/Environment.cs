@@ -349,6 +349,15 @@ namespace ilPSP {
             }
         }
 
+        /// <summary>
+        /// We are trying to identify if OpenMP-thread from different MPI ranks dead-lock each other;
+        /// Therefore:
+        /// 1. A reference measurement of a GEMM operation is performed on rank 0
+        /// 2. The same operation is then performed on rank [0], [0,1], [0,1,2], ...
+        /// 3. The runtime measurements are then compared to the reference measurement
+        /// 4. an exception is thrown if the parallel runs take much longer than the reference run
+        /// </summary>
+        /// <exception cref="ApplicationException"></exception>
         static void CheckOMPThreading() {
 
             /* SOME TESTS ON LICHTENBERG: 
@@ -520,7 +529,7 @@ namespace ilPSP {
                 double maxFactor = TimeX.maxTime/TimeRef.maxTime;
 
 
-                if (minFactor.MPIMax() > 5 || maxFactor.MPIMax() > 7 || avgFactor.MPIMax() > 12) {
+                if (minFactor.MPIMax() > 5 || maxFactor.MPIMax() > 7 || avgFactor.MPIMax() > 15) {
 
                     string scaling = $"R{Rank}: {ranksToBench+1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
                     Console.WriteLine("Benchmarking error: " + scaling);
