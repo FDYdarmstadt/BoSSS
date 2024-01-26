@@ -200,6 +200,8 @@ namespace BoSSS.Foundation.XDG {
                             jCellSource = Source.jCell,
                             OwnerRank4Target = OwnerRank4GroupTarget,
                             OwnerRank4Source = Source.rank,
+                            posTarget = m_grdDat.Cells.GetCenter(jCellGroupTarget),
+                            fracTarget = m_CellVolumes[jCellGroupTarget],
                             AgglomerationLevel = 0 //OwnerRank4GroupTarget == Source.rank ? 0 : 1
                         });
                     }
@@ -1104,6 +1106,8 @@ namespace BoSSS.Foundation.XDG {
                             jCellTarget = jGlbTarg,
                             OwnerRank4Source = AggPair.OwnerRank4Source,
                             OwnerRank4Target = AggPair.OwnerRank4Target,
+                            posTarget = AggPair.posTarget,
+                            fracTarget = AggPair.fracTarget
                         });
 
                     }
@@ -1149,6 +1153,8 @@ namespace BoSSS.Foundation.XDG {
                             jCellTarget = jAggTarget,
                             OwnerRank4Source = rap.OwnerRank4Source,
                             OwnerRank4Target = rap.OwnerRank4Target,
+                            posTarget = rap.posTarget,
+                            fracTarget = rap.fracTarget,
                         });
 
                     }
@@ -2060,10 +2066,10 @@ namespace BoSSS.Foundation.XDG {
                                     Debug.Assert(jCellNeigh == TargetPair.jCellSource);
                                 }
 
-                                // Create the AggLevel info
-                                double SpeciesFrac = Math.Round(CellVolumes[possibleTarget] / grdDat.Cells.GetCellVolume(possibleTarget), 2);
+                                // Create the weighting info (using the real target with lvl=0)
+                                double SpeciesFrac = TargetPair.fracTarget;
+                                Vector posTarget = TargetPair.posTarget;
 
-                                Vector posTarget = grdDat.Cells.GetCenter(possibleTarget);
                                 Vector posSource = grdDat.Cells.GetCenter(jCell);
                                 Distance = Vector.Dist(posTarget, posSource);
                                 weightedEdgesjCell.Add((SpeciesFrac, Distance, AggLevel, jCell, jCellNeigh, possibleTarget, targetRank));
@@ -2083,8 +2089,16 @@ namespace BoSSS.Foundation.XDG {
                                 .First();
 
                             if (ConnectionEdge.targetRank >= 0) {
+                                //Get the target info from the target pair
+                                var TargetPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellSource == ConnectionEdge.jCellNeigh).First();
+                                double SpeciesFrac = TargetPair.fracTarget;
+                                Vector posTarget = TargetPair.posTarget;
+
+                                //Add new pair
                                 var newPair = new CellAgglomerator.AgglomerationPair() {
                                     jCellTarget = ConnectionEdge.targetCell,
+                                    posTarget = posTarget,
+                                    fracTarget = SpeciesFrac,
                                     //jNeighborSource = ConnectionEdge.jCellNeigh,
                                     jCellSource = ConnectionEdge.jCell,
                                     OwnerRank4Target = ConnectionEdge.targetRank,
@@ -2126,10 +2140,17 @@ namespace BoSSS.Foundation.XDG {
 
                         // AddToList
                         if (aggConnectionEdge.targetRank > -1) {
-                            var SourceCell2Edge_jCell = Cell2Edge[aggConnectionEdge.jCell];
+                            //Get the target info from the target pair
+                            var TargetPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellSource == aggConnectionEdge.jCellNeigh).First();
+                            double SpeciesFrac = TargetPair.fracTarget;
+                            Vector posTarget = TargetPair.posTarget;
 
+                            //Add new pair
+                            //var SourceCell2Edge_jCell = Cell2Edge[aggConnectionEdge.jCell];
                             var newPair = new CellAgglomerator.AgglomerationPair() {
                                 jCellTarget = aggConnectionEdge.targetCell,
+                                posTarget = posTarget,
+                                fracTarget = SpeciesFrac,
                                 jCellSource = aggConnectionEdge.jCell,
                                 OwnerRank4Target = aggConnectionEdge.targetRank,
                                 OwnerRank4Source = myMpiRank,
@@ -2337,6 +2358,8 @@ namespace BoSSS.Foundation.XDG {
                                 jCellTarget = jCellNeigh_max,
                                 jCellSource = jCell,
                                 OwnerRank4Target = jCellNeighRank,
+                                posTarget = grdDat.Cells.GetCenter(jCellNeigh_max),
+                                fracTarget = frac_neigh_max,
                                 OwnerRank4Source = myMpiRank,
                                 AgglomerationLevel = 0
                             });
