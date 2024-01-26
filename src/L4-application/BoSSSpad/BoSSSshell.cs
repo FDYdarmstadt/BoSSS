@@ -81,38 +81,7 @@ namespace BoSSS.Application.BoSSSpad {
             bool InBatchMode = !System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName).IsEmptyOrWhite();
             BoSSS.Solution.Application.InitMPI( num_threads: (InBatchMode ? 1 : null));
             //Debugger.Launch();
-            {
-                try {
-                    // Synchronization during batch-execution of BoSSS-worksheets:
-                    // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
-
-                    var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
-                    if (!tempguid.IsEmptyOrWhite()) {
-                        Console.WriteLine("Worksheet got tempguid = " + tempguid + " @ " + DateTime.Now);
-                        using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
-                            using (var cts = new CancellationTokenSource()) {
-                                var t = pipeServer.WaitForConnectionAsync(cts.Token);
-
-                                bool timeot = t.Wait(1000 * 60);
-                                if (timeot == false) {
-                                    Console.Error.WriteLine("timeout in worksheet  @ " + DateTime.Now);
-                                    cts.Cancel();
-                                } else {
-                                    pipeServer.WriteByte(1);
-                                }
-                            }
-                        }
-
-                        //File.WriteAllText(tempguid + ".txt", "Hallo du Arsch!");
-                        //Console.WriteLine("token file written @ " + DateTime.Now);
-                    }
-                } catch (Exception e) {
-                    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message} at {DateTime.Now}");
-                    throw new AggregateException(e);
-                }
-
-                Console.WriteLine("BoSSSpad is ready to go!");
-            }
+            
 
 
             CallRandomStuff();
@@ -163,12 +132,43 @@ namespace BoSSS.Application.BoSSSpad {
 
             //AddTableFormatter();
 
-            
-
-            
 
 
-            
+
+            {
+                try {
+                    // Synchronization during batch-execution of BoSSS-worksheets:
+                    // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
+
+                    var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
+                    if (!tempguid.IsEmptyOrWhite()) {
+                        Console.WriteLine("Worksheet got tempguid = " + tempguid + " @ " + DateTime.Now);
+                        using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
+                            using (var cts = new CancellationTokenSource()) {
+                                var t = pipeServer.WaitForConnectionAsync(cts.Token);
+
+                                bool timeot = t.Wait(1000 * 60);
+                                if (timeot == false) {
+                                    Console.Error.WriteLine("timeout in worksheet  @ " + DateTime.Now);
+                                    cts.Cancel();
+                                } else {
+                                    pipeServer.WriteByte(1);
+                                }
+                            }
+                        }
+
+                        //File.WriteAllText(tempguid + ".txt", "Hallo du Arsch!");
+                        //Console.WriteLine("token file written @ " + DateTime.Now);
+                    }
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message} at {DateTime.Now}");
+                    throw new AggregateException(e);
+                }
+
+                Console.WriteLine("BoSSSpad is ready to go!");
+            }
+
+
         }
 
         /// <summary>
