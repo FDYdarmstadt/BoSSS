@@ -196,8 +196,8 @@ namespace ilPSP {
             var options = new ParallelOptions {
                 MaxDegreeOfParallelism = __Numthreads,
             };
-            ThreadPool.SetMinThreads(__Numthreads, 1);
-            ThreadPool.SetMaxThreads(__Numthreads, 2);
+            //ThreadPool.SetMinThreads(__Numthreads, 1);
+            //ThreadPool.SetMaxThreads(__Numthreads, 2);
 
             try {
                 InParallelSection = true;
@@ -226,8 +226,8 @@ namespace ilPSP {
                 var options = new ParallelOptions {
                     MaxDegreeOfParallelism = __Numthreads,
                 };
-                ThreadPool.SetMinThreads(__Numthreads, 1);
-                ThreadPool.SetMaxThreads(__Numthreads, 2);
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
 
                 try {
                     InParallelSection = true;
@@ -254,8 +254,8 @@ namespace ilPSP {
             var options = new ParallelOptions {
                 MaxDegreeOfParallelism = __Numthreads,
             };
-            ThreadPool.SetMinThreads(__Numthreads, 1);
-            ThreadPool.SetMaxThreads(__Numthreads, 2);
+            //ThreadPool.SetMinThreads(__Numthreads, 1);
+            //ThreadPool.SetMaxThreads(__Numthreads, 2);
 
             try {
                 InParallelSection = true;
