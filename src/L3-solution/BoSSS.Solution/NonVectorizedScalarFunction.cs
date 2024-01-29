@@ -300,23 +300,23 @@ namespace BoSSS.Solution.Utils {
             });
         }
 
-        /// <summary>
-        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar implementation
-        /// </summary>
-        /// <param name="f">calling sequence: f(x)</param>
-        /// <returns></returns>
-        public static ScalarFunction Vectorize(this Func<Vector, double> f) {
-            return (delegate (MultidimensionalArray inp, MultidimensionalArray res) {
-                int D = inp.GetLength(1);
-                for (int i = 0; i < inp.GetLength(0); i++) {
-                    Vector X = new Vector(D);
-                    for(int j = 0; j < D; ++j) {
-                        X[j] = inp[i, j];
-                    }
-                    res[i] = f(X);
-                }
-            });
-        }
+        ///// <summary>
+        ///// Vectorized function (<see cref="ScalarFunction"/>) from a scalar implementation
+        ///// </summary>
+        ///// <param name="f">calling sequence: f(x)</param>
+        ///// <returns></returns>
+        //public static ScalarFunction Vectorize(this Func<Vector, double> f) {
+        //    return (delegate (MultidimensionalArray inp, MultidimensionalArray res) {
+        //        int D = inp.GetLength(1);
+        //        for (int i = 0; i < inp.GetLength(0); i++) {
+        //            Vector X = new Vector(D);
+        //            for(int j = 0; j < D; ++j) {
+        //                X[j] = inp[i, j];
+        //            }
+        //            res[i] = f(X);
+        //        }
+        //    });
+        //}
 
         /// <summary>
         /// Vectorized 2D function (<see cref="ScalarFunction"/>) from a scalar implementation, with fixed time

@@ -16,7 +16,7 @@ using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.ControlFiles {
 
-    public static class Droplet {
+    public static class Droplet3D {
 
         public static ZLS_Control Aland( int p = 2, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
@@ -93,21 +93,26 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===============
             #region grid
 
-            double xSize = 6;
-            double yTop = (3.5 - 0.00625);
-            double yBottom = (- 2.5 - 0.00625);
+            double xSize = 2;
+            //double yTop = (3.5 - 0.00625);
+            //double yBottom = (- 2.5 - 0.00625);
+            double yTop = 2;
+            double yBottom = -2;
             //int kelem = 12;
-            int kelem = 36;
+            int kelem = 4;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(yBottom, yTop, kelem / 2 + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+                double[] Ynodes = GenericBlas.Linspace(yBottom, yTop, kelem + 1);
+                double[] Znodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
+                var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
                 grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
-                //grd.EdgeTagNames.Add(3, "wall_left");
-                //grd.EdgeTagNames.Add(4, "wall_right");
+                grd.EdgeTagNames.Add(3, "FreeSlip_left");
+                grd.EdgeTagNames.Add(4, "FreeSlip_right");
+                grd.EdgeTagNames.Add(5, "FreeSlip_front");
+                grd.EdgeTagNames.Add(6, "FreeSlip_back");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
@@ -115,10 +120,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
                         et = 1;
                     if(Math.Abs(X[1] - yTop) <= 1.0e-8)
                         et = 2;
-                    //if(Math.Abs(X[0] + xSize) <= 1.0e-8)
-                    //    et = 3;
-                    //if(Math.Abs(X[0] - xSize) <= 1.0e-8)
-                    //   et = 4;
+                    if(Math.Abs(X[0] + xSize) <= 1.0e-8)
+                        et = 3;
+                    if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        et = 4;
+                    if(Math.Abs(X[2] - xSize) <= 1.0e-8)
+                        et = 5;
+                    if(Math.Abs(X[2] + xSize) <= 1.0e-8)
+                        et = 6;
 
                     return et;
                 });
@@ -133,7 +142,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ==============
             #region init
 
-            double R = (1.778);
+            //double R = (1.778);
+            double R = (0.5);
             double Theta_e = Math.PI / 2;
             double s = 2 * R * Math.Sin(Theta_e);
             double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
@@ -144,7 +154,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             double Phi(double[] X) {
                 //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
-                return ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - R;
+                return ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[1]).Pow2()).Sqrt() - R;
+                //return X[0];
             }
 
 
@@ -158,7 +169,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
 
             //Func<double[], double> Phi1Func = (X => -(X[1] -0.02 + 0.4 * X[0] * X[0]));
-            Func<double[], double> Phi1Func = (X => -( X[1] - 0.001));
+            Func<double[], double> Phi1Func = (X => -(X[1] + 0.01));
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
             #endregion
@@ -171,8 +182,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AddBoundaryValue("wall_lower");
             C.AddBoundaryValue("pressure_outlet_upper");
-            //C.AddBoundaryValue("wall_left");
-            //C.AddBoundaryValue("wall_right");
+            C.AddBoundaryValue("FreeSlip_left");
+            C.AddBoundaryValue("FreeSlip_right");
+            C.AddBoundaryValue("FreeSlip_front");
+            C.AddBoundaryValue("FreeSlip_back");
 
             C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
@@ -208,12 +221,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = false;
-            //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 4});
-            //C.AMR_startUpSweeps = 3;
-            //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 6 });
-            //C.AMR_startUpSweeps = 5;
-            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
-            //C.AMR_startUpSweeps = 2;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
+            C.AMR_startUpSweeps = 2;
 
             #endregion
 
@@ -236,7 +245,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;
-            C.NoOfTimesteps = 10000;
+            C.NoOfTimesteps = 1;
             C.saveperiod = 1;
 
             #endregion

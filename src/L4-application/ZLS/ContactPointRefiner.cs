@@ -37,22 +37,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             int[] levels = new int[J];
 
             CellMask band = LsTrk.Regions.GetNearMask4LevSet(0,1).Intersect(LsTrk.Regions.GetNearMask4LevSet(1,1));
-            
+            var bitmask = band.GetBitMask();
 
             int cellsToRefine = 0;
             int cellsToCoarse = 0;
             Cell[] cells = GridData.Grid.Cells;
             for(int j = 0; j < J; j++) {
                 int currentLevel = cells[j].RefinementLevel;
-                if(band.Contains(j) && currentLevel < maxRefinementLevel) {
+                if(bitmask[j] && currentLevel < maxRefinementLevel) {
                     levels[j] = 1;
                     
                     LsTrk.GridDat.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] neighbors, out int[] temp);
                     for(int i = 0; i < neighbors.Length; ++i) {
+                        if(neighbors[i] >= J)
+                            continue;
                         levels[neighbors[i]] = 1;
                         cellsToRefine++;
                     }
-                } else if(!band.Contains(j) && currentLevel > 0) {
+                } else if(!bitmask[j] && currentLevel > 0) {
                     //levels[j] = -1;
                     //cellsToCoarse++;
                 }

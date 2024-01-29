@@ -17,6 +17,8 @@ using System.Runtime.CompilerServices;
 using System.ComponentModel;
 using System.Collections;
 using BoSSS.Platform.LinAlg;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace BoSSS.Foundation.XDG.Quadrature {
     internal static class IntersectingQuadratureFactories {
@@ -116,16 +118,41 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             List<ChunkRulePair<QuadRule>> rules = new List<ChunkRulePair<QuadRule>>();
-            foreach (Chunk chunk in mask) {
-                for (int j = chunk.i0; j < chunk.JE; ++j) {
+            //ConcurrentDictionary<int, QuadRule> tempRules = new ConcurrentDictionary<int, QuadRule>();
+
+            //Parallel.ForEach(mask.ItemEnum, delegate (int j) {
+            foreach (int j in mask.ItemEnum) {
+                //for (int j = chunk.i0; j < chunk.JE; ++j) {
+                try {
                     QuadRule rule = GetQuadRule(j, order);
                     if (rule.NoOfNodes == 0) {
                         rule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
                         rule.Nodes.LockForever();
                     }
                     rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), rule));
+                } catch(Exception e) {
+
+                    var grid = mask.GridData.Grid as BoSSS.Foundation.Grid.Classic.GridCommons;
+                    Console.Error.WriteLine("Cell: ");
+                    Console.Error.WriteLine(grid.Cells[j].ToString());
+
+                    var lsAlpah = (alpha.LevelSet as DGField);
+                    Console.Error.WriteLine("DG coordinates of level set alpha: " + lsAlpah.Coordinates.GetRow(j).ToConcatString("[", ", ", "]"));
+
+                    var lsBeta = (beta.LevelSet as DGField);
+                    Console.Error.WriteLine("DG coordinates of level set beta: " + lsBeta.Coordinates.GetRow(j).ToConcatString("[", ", ", "]"));
+
+
+                    throw e;
                 }
+                //tempRules.TryAdd(j, rule);
+                //}
             }
+
+
+            //foreach (int j in mask.ItemEnum)
+            //    rules.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(j), tempRules[j]));
+
             return rules;
         }
 

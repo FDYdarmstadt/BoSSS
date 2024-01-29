@@ -782,11 +782,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 {
                     var physParams = this.Control.PhysicalParameters;
                     if (physParams.Sigma != 0) {
-                        double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin * (p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
-                        if (dt_cap < dt) {
-                            dt = Math.Min(dt_cap, dt);
-                            Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
-                        }
+                        //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin * (p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                        //if (dt_cap < dt) {
+                        //    dt = Math.Min(dt_cap, dt);
+                        //    Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                        //}
                     }
                 }
 
@@ -800,12 +800,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         var LevelSetVelocity = GetInterfaceVelocity();
 
-                        double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
-                        dt_cfl *= s / Math.Pow(p, 2);
-                        if (dt_cfl < dt) {
-                            dt = Math.Min(dt_cfl, dt);
-                            Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
-                        }
+                        //double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
+                        //dt_cfl *= s / Math.Pow(p, 2);
+                        //if (dt_cfl < dt) {
+                        //    dt = Math.Min(dt_cfl, dt);
+                        //    Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
+                        //}
                     }
                 }
             }
