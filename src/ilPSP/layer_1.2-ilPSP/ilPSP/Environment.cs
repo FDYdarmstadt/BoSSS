@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
+using NUnit.Framework;
 
 namespace ilPSP {
 
@@ -464,7 +465,7 @@ namespace ilPSP {
 
 
             const int N = 2048;
-            const int Runs = 3;
+            const int Runs = 5;
 
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSz);
@@ -484,7 +485,8 @@ namespace ilPSP {
             (double minTime, double avgTime, double maxTime) GEMMbench() {
                 double mintime = double.MaxValue;
                 double maxtime = 0.0;
-                double avgTime = 0.0;
+                
+                var RunTimes = new System.Collections.Generic.List<double>();
 
                 for (int i = 0; i < Runs; i++) {
                     var start = DateTime.Now;
@@ -493,10 +495,16 @@ namespace ilPSP {
 
                     double secs = (end - start).TotalSeconds;
 
-                    avgTime += secs;
+                    RunTimes.Add(secs);
                     mintime = Math.Min(mintime, secs);
                     maxtime = Math.Max(maxtime, secs);
                 }
+
+                // remove the outliers before computing the average:
+                RunTimes.Sort();
+                RunTimes.RemoveAt(0);
+                RunTimes.RemoveAt(RunTimes.Count - 1);
+                double avgTime = RunTimes.Sum() / RunTimes.Count;
 
                 avgTime /= Runs;
 
@@ -529,12 +537,13 @@ namespace ilPSP {
                 double maxFactor = TimeX.maxTime/TimeRef.maxTime;
 
 
-                if (minFactor.MPIMax() > 19 || maxFactor.MPIMax() > 7 || avgFactor.MPIMax() > 19) {
+                if (minFactor.MPIMax() > 10 || maxFactor.MPIMax() > 5 || avgFactor.MPIMax() > 10) {
 
                     string scaling = $"R{Rank}: {ranksToBench+1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
-                    Console.WriteLine("Benchmarking error: " + scaling);
+                    Console.WriteLine("Suspicious OpenMP runtime behavior: " + scaling);
 
-                    throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
+                    if(avgFactor > 7)
+                        throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
                 }
 
 
