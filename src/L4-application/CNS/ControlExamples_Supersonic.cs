@@ -1235,7 +1235,32 @@ namespace CNS {
                 else if (MachL == 1.5 && shockPosition == 0.5 && dgDegree == 2)
                 {
                     c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("cd45b796-f15a-43b4-bde2-a00854a27fad"), new TimestepNumber(397500));
+                }else if(MachL==3.0 && shockPosition ==1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("467e81b3-62e0-4859-9dde-e1fb534e33d1"), new TimestepNumber(1035000)); 
                 }
+                else if (MachL == 4.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+                else if (MachL == 5.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("c53ec337-7829-4d05-8507-79854dc5acab"), new TimestepNumber(1035000));
+                }
+                /// TODO:
+                else if (MachL == 6.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+                else if (MachL == 7.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+                else if (MachL == 8.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+
                 else
                 {
                     throw new NotSupportedException("for this parameter configuration no restart available");
@@ -1327,6 +1352,7 @@ namespace CNS {
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             //c.AddVariable(CNSVariables.Entropy, dgDegree);
             //c.AddVariable(CNSVariables.Temperature, dgDegree);
@@ -1723,6 +1749,7 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => smooth_init_vals(X, 1));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => smooth_init_vals(X, 2));
+
 
             //c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => 1.0);
             //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
