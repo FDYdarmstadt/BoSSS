@@ -578,7 +578,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var gDat = (GridData) _gDat;
             var DummyLevSet = new LevelSet(new Basis(gDat, 1), "DummyPhi");
             DummyLevSet.AccConstant(-1.0);
-            LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new[] { "A", "B" }, DummyLevSet);
+            LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, 1, new[] { "A", "B" }, DummyLevSet);
             LsTrk.UpdateTracker(0.0, __NearRegionWith: 0);
 
             var spcA = LsTrk.GetSpeciesId("A");
