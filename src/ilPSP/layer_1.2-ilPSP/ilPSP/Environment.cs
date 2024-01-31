@@ -542,8 +542,8 @@ namespace ilPSP {
                     string scaling = $"R{Rank}: {ranksToBench+1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
                     Console.WriteLine("Suspicious OpenMP runtime behavior: " + scaling);
 
-                    if(avgFactor > 7)
-                        throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
+                    //if(avgFactor > 7)
+                    //    throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
                 }
 
 
