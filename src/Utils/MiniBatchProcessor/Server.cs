@@ -327,6 +327,7 @@ namespace MiniBatchProcessor {
                 ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
                 LogFile = new StreamWriter(File.Open(LogFilePath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite));
                 var ServerMutexS = new StreamWriter(ServerMutex);
+                ServerMutexS.WriteLine("Locked on: " + DateTime.Now);
                 ServerMutexS.WriteLine("This file is used by the MiniBatchProcessor to ensure that only");
                 ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
                 ServerMutexS.Flush();
