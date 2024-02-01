@@ -695,16 +695,28 @@ namespace MiniBatchProcessor {
                     psi.WorkingDirectory = data.ExeDir;
 
                     for (int i = 0; i < data.EnvVars.Length; i++) {
-                        psi.EnvironmentVariables.Add(data.EnvVars[i].Item1, data.EnvVars[i].Item2);
+                        //lastset = $" Envvar: {data.EnvVars[i].Item1 ?? "NULL"}={data.EnvVars[i].Item2 ?? "NULL"}";
+
+                        string varname = data.EnvVars[i].Item1;
+                        string varvalue = data.EnvVars[i].Item1;
+
+                        if (psi.EnvironmentVariables.ContainsKey(varname)) {
+                            Server.LogMessage($"starting job #{data.ID},  variable is already set: {varname}={varvalue}");
+                            psi.EnvironmentVariables[varname] = varvalue;
+                        } else {
+
+                            psi.EnvironmentVariables.Add(data.EnvVars[i].Item1, data.EnvVars[i].Item2);
+                        }
                     }
+                    //lastset = "envars set.";
 
                     psi.UseShellExecute = false;
                     psi.RedirectStandardOutput = true;
                     psi.RedirectStandardError = true;
                 } catch (Exception e) {
-                    foreach (var a in data.EnvVars) {
-                        Console.Error.WriteLine($"   Envvar job {data.ID}: {a.Item1 ?? "NULL"}={a.Item2 ?? "NULL"}");
-                    }
+                    //foreach (var a in data.EnvVars) {
+                    //    Console.Error.WriteLine($"   Envvar job {data.ID}: {a.Item1 ?? "NULL"}={a.Item2 ?? "NULL"}");
+                    //}
                     Console.WriteLine(e.GetType().Name + " during process setup: " + e.Message);
                     Console.WriteLine(e.StackTrace);
                     return;
