@@ -654,73 +654,66 @@ namespace MiniBatchProcessor {
                 //psi.WorkingDirectory = exeFileInfo.DirectoryName;
 
                 ProcessStartInfo psi = new ProcessStartInfo();
-                try {
-                    switch (System.Environment.OSVersion.Platform) {
-                        case System.PlatformID.Unix:
-                            //psi.FileName = "mpirun";
-                            //psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
-                            if (data.NoOfProcs <= 1) {
 
-                                // This is some "speciality" due to our CI workflow
-                                // On our Linux server (Ubuntu 20.04.6 LTS, OpenMPI 4.0.3), 
-                                // when we are using `mpirun` or `mpiexe` to execute validation tests
-                                // (i.e., tests which execute a Jupyter worksheet)
-                                // the worksheet crashes on MPI_Init;
-                                // If executed without `mpirun` or `mpiexec`, the respective tests work.
-                                //
-                                // This is a somewhat known issue: https://github.com/open-mpi/ompi/issues/11063
-                                // When we set the envrinoment variable "PMIX_MCA_gds" to "hash", this resolves the problem partly,
-                                // (e.g., add `psi.EnvironmentVariables.Add("PMIX_MCA_gds", "hash");` here.)
-                                // i.e. the worksheet test sucseeds, but the test runner seems to hang indefinitly during exit.
-                                //
-                                // However, since worksheets only use one processor anyway, 
-                                // avoiding `mpirun` is a sufficient workaround for now (fk, 03aug23).
-                                //
-                                Server.LogMessage($"Skipping mpirun on {data.exefile} because MPI size is 1 anyway.");
-                                psi.FileName = data.exefile;
+                switch (System.Environment.OSVersion.Platform) {
+                    case System.PlatformID.Unix:
+                        //psi.FileName = "mpirun";
+                        //psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
+                        if (data.NoOfProcs <= 1) {
 
-                            } else {
-                                psi.FileName = "mpirun";
-                                psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
-                            }
-                            break;
-                        default:
-                            psi.FileName = "mpiexec.exe";
-                            psi.Arguments = " -n " + data.NoOfProcs + " " + data.exefile + " ";
-                            break;
-                    }
+                            // This is some "speciality" due to our CI workflow
+                            // On our Linux server (Ubuntu 20.04.6 LTS, OpenMPI 4.0.3), 
+                            // when we are using `mpirun` or `mpiexe` to execute validation tests
+                            // (i.e., tests which execute a Jupyter worksheet)
+                            // the worksheet crashes on MPI_Init;
+                            // If executed without `mpirun` or `mpiexec`, the respective tests work.
+                            //
+                            // This is a somewhat known issue: https://github.com/open-mpi/ompi/issues/11063
+                            // When we set the envrinoment variable "PMIX_MCA_gds" to "hash", this resolves the problem partly,
+                            // (e.g., add `psi.EnvironmentVariables.Add("PMIX_MCA_gds", "hash");` here.)
+                            // i.e. the worksheet test sucseeds, but the test runner seems to hang indefinitly during exit.
+                            //
+                            // However, since worksheets only use one processor anyway, 
+                            // avoiding `mpirun` is a sufficient workaround for now (fk, 03aug23).
+                            //
+                            Server.LogMessage($"Skipping mpirun on {data.exefile} because MPI size is 1 anyway.");
+                            psi.FileName = data.exefile;
 
-                    foreach (var a in data.Arguments)
-                        psi.Arguments += a + " ";
-                    psi.WorkingDirectory = data.ExeDir;
-
-                    for (int i = 0; i < data.EnvVars.Length; i++) {
-                        //lastset = $" Envvar: {data.EnvVars[i].Item1 ?? "NULL"}={data.EnvVars[i].Item2 ?? "NULL"}";
-
-                        string varname = data.EnvVars[i].Item1;
-                        string varvalue = data.EnvVars[i].Item1;
-
-                        if (psi.EnvironmentVariables.ContainsKey(varname)) {
-                            Server.LogMessage($"starting job #{data.ID},  variable is already set: {varname}={varvalue}");
-                            psi.EnvironmentVariables[varname] = varvalue;
                         } else {
-
-                            psi.EnvironmentVariables.Add(data.EnvVars[i].Item1, data.EnvVars[i].Item2);
+                            psi.FileName = "mpirun";
+                            psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
                         }
-                    }
-                    //lastset = "envars set.";
-
-                    psi.UseShellExecute = false;
-                    psi.RedirectStandardOutput = true;
-                    psi.RedirectStandardError = true;
-                } catch (Exception e) {
-                    //foreach (var a in data.EnvVars) {
-                    //    Console.Error.WriteLine($"   Envvar job {data.ID}: {a.Item1 ?? "NULL"}={a.Item2 ?? "NULL"}");
-                    //}
-                    Console.WriteLine(e.GetType().Name + " during process setup: " + e.Message);
-                    Console.WriteLine(e.StackTrace);
-                    return;
+                        break;
+                    default:
+                        psi.FileName = "mpiexec.exe";
+                        psi.Arguments = " -n " + data.NoOfProcs + " " + data.exefile + " ";
+                        break;
                 }
+
+                foreach (var a in data.Arguments)
+                    psi.Arguments += a + " ";
+                psi.WorkingDirectory = data.ExeDir;
+
+                for (int i = 0; i < data.EnvVars.Length; i++) {
+                    //lastset = $" Envvar: {data.EnvVars[i].Item1 ?? "NULL"}={data.EnvVars[i].Item2 ?? "NULL"}";
+
+                    string varname = data.EnvVars[i].Item1;
+                    string varvalue = data.EnvVars[i].Item2;
+
+                    if (psi.EnvironmentVariables.ContainsKey(varname)) {
+                        Server.LogMessage($"starting job #{data.ID},  variable is already set: {varname}={varvalue}");
+                        psi.EnvironmentVariables[varname] = varvalue;
+                    } else {
+
+                        psi.EnvironmentVariables.Add(varname, varvalue);
+                    }
+                }
+                //lastset = "envars set.";
+
+                psi.UseShellExecute = false;
+                psi.RedirectStandardOutput = true;
+                psi.RedirectStandardError = true;
+
 
                 Server.LogMessage(string.Format("starting job #{2}, '{3}': {0} {1}", psi.FileName, psi.Arguments, data.ID, data.Name));
 
