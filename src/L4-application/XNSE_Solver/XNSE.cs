@@ -426,6 +426,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             FinalOperatorSettings(XOP, D);
+            XOP.FluxesAreNOTMultithreadSafe = false;
             XOP.Commit();
 
             return XOP;

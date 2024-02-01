@@ -1621,12 +1621,11 @@ namespace PublicTestRunner {
 
             if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
                 BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
-                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Helo, Suckers!");
+                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Hello, Suckers!");
                 Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
             }
 
             BoSSS.Solution.Application.InitMPI();
-            ilPSP.Environment.InitThreading(true, null);
             
             int ret = -1;
             switch (args[0]) {

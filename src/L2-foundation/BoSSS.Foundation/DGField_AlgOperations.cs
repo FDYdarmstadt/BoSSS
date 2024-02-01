@@ -335,6 +335,7 @@ namespace BoSSS.Foundation {
             powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat));
             powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
 
+            powOp.FluxesAreNOTMultithreadSafe = false;
             powOp.Commit();
 
             CoordinateVector coDom = new CoordinateVector(this);
@@ -440,6 +441,7 @@ namespace BoSSS.Foundation {
             powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat));
             powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
 
+            powOp.FluxesAreNOTMultithreadSafe = false;
             powOp.Commit();
 
             CoordinateVector coDom = this.CoordinateVector;
@@ -628,6 +630,7 @@ namespace BoSSS.Foundation {
             src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(Dom, f));
             src.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.Basis.GridDat));
             src.VolumeQuadraturSchemeProvider = g => cqs;
+            src.FluxesAreNOTMultithreadSafe = false;
             src.Commit();
 
             var ev = src.GetEvaluatorEx(
@@ -715,6 +718,7 @@ namespace BoSSS.Foundation {
             multOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
             multOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
             multOp.EquationComponents["res"].Add(new MultiplySource());
+            multOp.FluxesAreNOTMultithreadSafe = false;
             multOp.Commit();
 
             var ev = multOp.GetEvaluatorEx(
@@ -830,6 +834,7 @@ namespace BoSSS.Foundation {
             fracOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
             fracOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, cm);
             fracOp.EquationComponents["res"].Add(new QuotientSource());
+            fracOp.FluxesAreNOTMultithreadSafe = false;
             fracOp.Commit();
 
             CoordinateVector coDom = this.CoordinateVector;

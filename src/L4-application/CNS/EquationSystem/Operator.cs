@@ -148,6 +148,7 @@ namespace CNS.EquationSystem {
                 QuadOrderFunc.NonLinearWithoutParameters(2));
             MapComponents(spatialOp);
             spatialOp.Commit();
+            spatialOp.FluxesAreNOTMultithreadSafe = false;
             return spatialOp;
         }
 

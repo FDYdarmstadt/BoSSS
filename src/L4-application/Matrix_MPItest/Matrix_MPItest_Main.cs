@@ -161,6 +161,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             Op.EquationComponents["c2"].Add(new DxFlux("u2", 77.7)); // Flux in Bulk Phase;
             Op.EquationComponents["c2"].Add(new LevSetFlx("u2", 77.7));
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 
