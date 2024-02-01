@@ -1300,6 +1300,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.PhysicalParameters.slipI = Tst.slipI;
             C.NonLinearSolver.MaxSolverIterations = 10;
 
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+
             XNSESolverTest(Tst, C);
         }
 
