@@ -702,7 +702,7 @@ namespace MiniBatchProcessor {
                     string varvalue = data.EnvVars[i].Item2;
 
                     if (psi.EnvironmentVariables.ContainsKey(varname)) {
-                        Server.LogMessage($"starting job #{data.ID},  variable is already set: {varname}={varvalue}");
+                        //Server.LogMessage($"starting job #{data.ID},  variable is already set: {varname}={varvalue}");
                         psi.EnvironmentVariables[varname] = varvalue;
                     } else {
 
