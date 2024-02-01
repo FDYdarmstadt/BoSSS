@@ -206,6 +206,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             Op.AgglomerationThreshold = this.THRESHOLD;
             Op.TemporalOperator = new ConstantXTemporalOperator(Op, 1.0);
 
+            Op.FluxesAreNOTMultithreadSafe = false;
             Op.Commit();
 
             if (L == null) {

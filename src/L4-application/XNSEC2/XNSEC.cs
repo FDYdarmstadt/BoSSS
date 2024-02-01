@@ -691,6 +691,7 @@ namespace BoSSS.Application.XNSEC {
                 OperatorFactory temporalOperatorFactory = new OperatorFactory();
                 DefineTemporalTerm(D, temporalOperatorFactory);
                 XDifferentialOperatorMk2 temporalXOP = temporalOperatorFactory.GetSpatialOperator(QuadOrder());
+                temporalXOP.FluxesAreNOTMultithreadSafe = true;
                 temporalXOP.Commit();
 
                 var DependentTemporalOp = new DependentXTemporalOperator(XOP);
@@ -815,6 +816,7 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Using solver safe guard!");
                 XOP.SolverSafeguard = DelValidationCombustion;
             }
+            XOP.FluxesAreNOTMultithreadSafe = true;
             XOP.Commit();
 
             PrintConfiguration();

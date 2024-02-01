@@ -245,6 +245,7 @@ namespace BoSSS.Foundation.XDG {
         public override string ToString() {
             return "XDG-" + this.GetType().Name + ": " + m_OrgForm.ToString() + "(" + m_OrgForm.GetType().FullName + ")";
         }
+
         bool m_IsMultithreadSafe;
 
         public bool IsMultithreadSafe {

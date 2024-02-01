@@ -230,6 +230,7 @@ namespace IntersectingLevelSetTest {
 
             //Op.EquationComponents["c1"].Add(new DxBroken());
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 

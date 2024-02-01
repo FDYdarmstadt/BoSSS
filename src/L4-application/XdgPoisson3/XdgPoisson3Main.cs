@@ -174,6 +174,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             Op.EquationComponents["c1"].Add(new RHSSource(this.rhs));
             Op.IsLinear = true;
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
 
         }

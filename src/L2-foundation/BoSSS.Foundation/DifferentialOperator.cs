@@ -3019,6 +3019,7 @@ namespace BoSSS.Foundation {
             JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
             JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
+            JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
             JacobianOp.Commit(false);
             return JacobianOp;
         }
@@ -3124,7 +3125,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-        bool m_FluxesAreNOTMultithreadSafe;
+        bool m_FluxesAreNOTMultithreadSafe = true;
 
 
         /// <summary>

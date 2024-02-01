@@ -168,7 +168,7 @@ namespace BoSSS.Foundation {
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
         /// <param name="allowVarAddition">
-        /// - false: domain and parameter variables aof components (<see cref="IEquationComponent.ArgumentOrdering"/>, <see cref="IEquationComponent.ParameterOrdering"/>) which are not in the <see cref="DomainVar"/> list will cause an exception
+        /// - false: domain and parameter variables of components (<see cref="IEquationComponent.ArgumentOrdering"/>, <see cref="IEquationComponent.ParameterOrdering"/>) which are not in the <see cref="DomainVar"/> list will cause an exception
         /// - true: domain and parameter variables will be added during the commit-operation
         /// </param>
         void Commit(bool allowVarAddition = true);
