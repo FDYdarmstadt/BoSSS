@@ -174,7 +174,9 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Number of threads used in multi-thread-parallelization
+        /// Number of threads used in multi-thread-parallelization;
+        /// - This variable refers to the number of threads used for the C#-parts of BoSSS, e.g. the quadrature kernel.
+        /// - OpenMP threading is controlled by 
         /// </summary>
         public static int NumThreads {
             get;
@@ -185,6 +187,36 @@ namespace ilPSP {
             get; 
             private set; 
         }
+
+
+        static bool OpenMPdisabled = false;
+        static int backup_MaxNumOpenMPthreads = -1;
+
+        /// <summary>
+        /// Disable the use of OpenMP in external libraries
+        /// </summary>
+        public static void DisableOpenMP() {
+            if(OpenMPdisabled == false) {
+                OpenMPdisabled = true;
+                backup_MaxNumOpenMPthreads = MaxNumOpenMPthreads;
+                BLAS.ActivateSEQ();
+                LAPACK.ActivateSEQ();
+            }
+        }
+
+        /// <summary>
+        /// Enable/Re-enable the use of OpenMP in external libraries (mostly Intel MKL, which provides BLAS, LAPACK and PARDISO)
+        /// </summary>
+        public static void EnableOpenMP() {
+            if(OpenMPdisabled) {
+                MaxNumOpenMPthreads = backup_MaxNumOpenMPthreads;
+                OpenMPdisabled = false;
+            }
+
+            BLAS.ActivateOMP();
+            LAPACK.ActivateOMP();
+        }
+
 
         public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body, bool enablePar = false) {
             if (InParallelSection) {
@@ -345,6 +377,8 @@ namespace ilPSP {
 
 
                 MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
+                BLAS.ActivateOMP();
+                LAPACK.ActivateOMP();
                 CheckOMPThreading();
                 StdoutOnlyOnRank0 = bkup;
             }
