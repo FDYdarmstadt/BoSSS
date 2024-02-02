@@ -49,7 +49,10 @@ namespace ilPSP.Utils {
         static LAPACK _F77_LAPACK;
 
         internal static void ActivateOMP() {
-            _F77_LAPACK = omp_F77_LAPACK;
+            if (ilPSP.Environment.MaxNumOpenMPthreads > 1)
+                _F77_LAPACK = omp_F77_LAPACK;
+            else
+                _F77_LAPACK = seq_F77_LAPACK;
         }
         internal static void ActivateSEQ() {
             _F77_LAPACK = seq_F77_LAPACK;

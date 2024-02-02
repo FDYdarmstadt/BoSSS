@@ -73,7 +73,7 @@ namespace ilPSP.Utils {
             ushort groupCount = 0;
             GetProcessGroupAffinity(processHandle, out groupCount, null);
             if (groupCount != 1) {
-                Console.WriteLine($"Process associated to more than one processor group ({groupCount}) -- i don't know what to do about it (tell Florian)!");
+                //Console.WriteLine($"Process associated to more than one processor group ({groupCount}) -- i don't know what to do about it (tell Florian)!");
                 //throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
             }
             
