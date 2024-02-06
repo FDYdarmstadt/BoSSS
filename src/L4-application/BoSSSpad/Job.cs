@@ -1520,6 +1520,8 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
+
+
                 // ================
                 // status
                 // ================
@@ -1535,10 +1537,9 @@ namespace BoSSS.Application.BoSSSpad {
                         return;
                     }
                 }
-             
 
 
-
+               
                 // ========================================================================
                 // finally, it might be necessary to submit the job to the batch processor. 
                 // ========================================================================
@@ -1547,6 +1548,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // some database syncing might be necessary 
                 FiddleControlFile(AssignedBatchProc);
+
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();

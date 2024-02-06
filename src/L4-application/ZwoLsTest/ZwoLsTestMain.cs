@@ -227,6 +227,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             //Op.EquationComponents["c1"].Add(new DxBroken());
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 

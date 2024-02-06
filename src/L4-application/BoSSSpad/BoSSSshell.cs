@@ -77,7 +77,13 @@ namespace BoSSS.Application.BoSSSpad {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-            BoSSS.Solution.Application.InitMPI();
+
+            bool InBatchMode = !System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName).IsEmptyOrWhite();
+            BoSSS.Solution.Application.InitMPI( num_threads: (InBatchMode ? 1 : null));
+            //Debugger.Launch();
+            
+
+
             CallRandomStuff();
             try {
                 databases = DatabaseController.LoadDatabaseInfosFromXML();
@@ -126,6 +132,9 @@ namespace BoSSS.Application.BoSSSpad {
 
             //AddTableFormatter();
 
+
+
+
             {
                 try {
                     // Synchronization during batch-execution of BoSSS-worksheets:
@@ -134,13 +143,14 @@ namespace BoSSS.Application.BoSSSpad {
                     var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
                     if (!tempguid.IsEmptyOrWhite()) {
                         Console.WriteLine("Worksheet got tempguid = " + tempguid + " @ " + DateTime.Now);
+                        ilPSP.Environment.DisableOpenMP(); // prevent openMP deadlocks occurring with multiple tests running simultaneously on windows cluster.
                         using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
                             using (var cts = new CancellationTokenSource()) {
                                 var t = pipeServer.WaitForConnectionAsync(cts.Token);
 
                                 bool timeot = t.Wait(1000 * 60);
                                 if (timeot == false) {
-                                    Console.WriteLine("timeout in worksheet  @ " + DateTime.Now);
+                                    Console.Error.WriteLine("timeout in worksheet  @ " + DateTime.Now);
                                     cts.Cancel();
                                 } else {
                                     pipeServer.WriteByte(1);
@@ -155,12 +165,11 @@ namespace BoSSS.Application.BoSSSpad {
                     Console.Error.WriteLine($"{e} during startup synchronization: {e.Message} at {DateTime.Now}");
                     throw new AggregateException(e);
                 }
+
+                Console.WriteLine("BoSSSpad is ready to go!");
             }
 
-            ilPSP.Environment.InitThreading(true, 1);
 
-
-            Console.WriteLine("BoSSSpad is ready to go!");
         }
 
         /// <summary>

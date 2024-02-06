@@ -36,11 +36,17 @@ namespace BoSSS.Foundation.Quadrature {
     /// <summary>
     /// tuning parameters for the quadrature
     /// </summary>
-    public static class Quadrature_Bulksize {
+    public static class Quadrature_Settings {
         /// <summary>
         /// Number of cells or edges done at maximum in a singe quadrature chunk
         /// </summary>
         public static int CHUNK_LIMIT = 20;//12*1024*1024;
+
+        /// <summary>
+        /// if enabled, 
+        /// the results from multi-threaded quadrature are compared against single-threaded quadrature execution.
+        /// </summary>
+        public static bool ENABLE_MULTITHREAD_CHECKING = false;
     }
 
     /// <summary>
@@ -369,7 +375,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         /// <summary>
         /// - if smaller or equal 0, ignored; (default) 
-        /// - otherwise, an override to the global variable <see cref="Quadrature_Bulksize.CHUNK_LIMIT"/>
+        /// - otherwise, an override to the global variable <see cref="Quadrature_Settings.CHUNK_LIMIT"/>
         /// </summary>
         public int ChunkDataLimitOverride {
             get;
@@ -420,17 +426,25 @@ namespace BoSSS.Foundation.Quadrature {
 
                     }
 
+
                     // compute serial results for checking
                     // (to be removed/de-activated)
-                    var checkResults = MultidimensionalArray.Create(ArrayTools.Cat(new int[] { NoOfItems }, this.IntegralCompDim));
-                    int[] ItemOffset = new int[_compositeRuleS.Length];
-                    {
-                        int[] ItemsPerThread = _compositeRuleS.Select(rule => rule.Select(chunkPair => chunkPair.Chunk.Len).Sum()).ToArray();
-                        for (int iThread = 0; iThread < NumThreads; iThread++) {
-                            if (iThread > 0)
-                                ItemOffset[iThread] = ItemOffset[iThread - 1] + ItemsPerThread[iThread - 1];
-                            allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, true, ItemOffset[iThread], null);
+                    MultidimensionalArray checkResults;
+                    int[] ItemOffset;
+                    if (Quadrature_Settings.ENABLE_MULTITHREAD_CHECKING) {
+                        checkResults = MultidimensionalArray.Create(ArrayTools.Cat(new int[] { NoOfItems }, this.IntegralCompDim));
+                        ItemOffset = new int[_compositeRuleS.Length];
+                        {
+                            int[] ItemsPerThread = _compositeRuleS.Select(rule => rule.Select(chunkPair => chunkPair.Chunk.Len).Sum()).ToArray();
+                            for (int iThread = 0; iThread < NumThreads; iThread++) {
+                                if (iThread > 0)
+                                    ItemOffset[iThread] = ItemOffset[iThread - 1] + ItemsPerThread[iThread - 1];
+                                allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, true, ItemOffset[iThread], null);
+                            }
                         }
+                    } else {
+                        checkResults = default(MultidimensionalArray);
+                        ItemOffset = new int[_compositeRuleS.Length];
                     }
 
                     var errorList = new List<(int item, double err, double threshold)>[NumThreads];
@@ -464,11 +478,12 @@ namespace BoSSS.Foundation.Quadrature {
                                 if (brk)
                                     break;
                             }
-                            if (errCnt > 0)
+                            if (errCnt > 0) {
                                 throw new Exception("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
                                 //Console.Error.WriteLine("OpenMP Parallelization fail: difference between serial and parallel execution: " + wrt.ToString());
-                            else
+                            } else {
                                 Console.WriteLine($"no parallelization error ({NumThreads} threads, {this.GetType()}).");
+                            }
                         }
                     }
 
@@ -686,7 +701,7 @@ namespace BoSSS.Foundation.Quadrature {
                 int ItemSize = m_TotalNoOfIntegralsPerItem * NoOfNodes;
                 if (ItemSize <= 0)
                     continue;
-                int cdl = Quadrature_Bulksize.CHUNK_LIMIT;
+                int cdl = Quadrature_Settings.CHUNK_LIMIT;
                 if (ChunkDataLimitOverride > 0)
                     cdl = ChunkDataLimitOverride;
                 //int MaxChunkLength = cdl / ItemSize;

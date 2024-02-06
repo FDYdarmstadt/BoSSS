@@ -137,7 +137,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Test on a curved grid.
         /// </summary>
         public static SipControl TestSpherical() {
-            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCurved();
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestSpherical();
             var R = new SipControl();
             R.ProjectName = "ipPoison/curved";
             R.savetodb = false;

@@ -474,6 +474,7 @@ namespace BoSSS.Foundation {
             d_dx.VolumeQuadraturSchemeProvider = g => new Quadrature.CellQuadratureScheme(true, emVol);
             var flux = CreateDerivativeFlux(d, f.Identification);
             d_dx.EquationComponents["out"].Add(flux);
+            d_dx.FluxesAreNOTMultithreadSafe = false;
             d_dx.Commit();
 
 
