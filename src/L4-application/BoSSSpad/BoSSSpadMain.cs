@@ -28,6 +28,7 @@ using ilPSP;
 using System.IO.Pipes;
 using System.Threading.Tasks;
 using static ilPSP.Connectors.Matlab.BatchmodeConnector;
+using System.Diagnostics.Metrics;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -122,8 +123,9 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine(tt.Item1);
                 Console.ResetColor();
             }
+            
 
-            SingleSessionSshClinet ssh = new SingleSessionSshClinet("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
+            var ssh = new BoSSS.Application.BoSSSpad.SingleSessionSshClient("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_ed25519"), "C:\\Program Files\\Git\\usr\\bin\\ssh.exe");
 
             var rr = ssh.RunCommand("ls"); w(rr);
             rr = ssh.RunCommand("cd mono"); w(rr);
@@ -138,8 +140,8 @@ namespace BoSSS.Application.BoSSSpad {
 
             bool gracefull = ssh.Disconnect(false);
             Console.WriteLine("gracefull exit? " + gracefull);
-            return 0;
-            */
+            //return 0;
+            //*/
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             
@@ -411,12 +413,39 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-                void GetMutex() {
+                void GetMutex(int RecDepth) {
                     if (MutexReleased) {
                         Console.WriteLine("Waiting for Jupyter mutex, " + DateTime.Now +" (can only start one Jupyter notebook at time) ...");
                         try {
                             JupyterMutex.WaitOne();
-                        } catch(Exception eee) {
+                        } catch (AbandonedMutexException ae) {
+                            Console.WriteLine($"AbandonedMutexException caught during WaitOne() : ({ae}: {ae.Message})");
+                            if (RecDepth > 10) {
+                                Console.WriteLine("Stopping trying - unrecoverable");
+                                Console.Error.WriteLine("Terminating application.");
+                                System.Environment.Exit(-989);
+                            } else {
+                                Random rnd = new Random();
+                                int msWait = rnd.Next(10000);
+                                Console.WriteLine($"Retry No. {RecDepth} in {msWait} milliseconds.");
+                                Thread.Sleep(msWait);
+
+
+                                try {
+                                    if (JupyterMutex != null) {
+                                        JupyterMutex.ReleaseMutex();
+                                        JupyterMutex.Dispose();
+                                    }
+                                    JupyterMutex = new Mutex(false, "JupyterMutex");
+                                } catch (Exception eee) {
+                                    Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Unrecoverable Exception during creation of JupyterMutex : " + eee);
+                                    Console.Error.WriteLine("Terminating application.");
+                                    System.Environment.Exit(-988);
+                                }
+                                GetMutex(RecDepth + 1);
+                            }
+
+                        } catch (Exception eee) {
                             Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Exception during WaitOne() :" + eee);
                             Console.Error.WriteLine("Terminating application.");
                             System.Environment.Exit(-988);
@@ -494,7 +523,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     int RunAnacondaShell(string command, bool useMutex, bool startupMutex) {
                         if (useMutex)
-                            GetMutex();
+                            GetMutex(0);
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -547,7 +576,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     int RunExt(string executable, string arguments, bool useMutex, bool startupMutex) {
                         if(startupMutex)
-                            GetMutex();
+                            GetMutex(0);
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();

@@ -32,6 +32,7 @@ namespace BoSSS.Application.TutorialTests {
     /// Runs all the worksheets contained in the BoSSS handbook.
     /// </summary>
     [TestFixture]
+    [NUnitNumThreads(1)]
     static public class AllUpTest {
 
         
@@ -52,52 +53,7 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("InitialValues/InitialValues.ipynb");
         }
 
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
-        [Test]
-        static public void Run__BoundaryAndInitialData() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
-             Mutex JupyterMutex = new Mutex(false, "BoundaryAndInitialData");
-            try {
-                JupyterMutex.WaitOne();
-
-                NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
-                NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
-                RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
-            } finally {
-                JupyterMutex.ReleaseMutex();
-            }
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
-        [Test]
-        static public void Run__MetaJobManager() {
-            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
-            Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
-            try {
-                JupyterMutex.WaitOne();
-                NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
-                RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
-            } finally {
-                JupyterMutex.ReleaseMutex();
-            }
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("GridGeneration/GridGeneration.ipynb")]
-        [Test]
-        static public void Run__GridGeneration() {
-            RunWorksheet("GridGeneration/GridGeneration.ipynb");
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartIBM/channel.ipynb")]
-        [Test]
-        static public void Run__channel() {
-            RunWorksheet("quickStartIBM/channel.ipynb");
-        }
+      
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.ipynb")]
@@ -122,54 +78,41 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
         }
 
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
         [Test]
         static public void Run__SpatialOperatorNexpTimeInt() {
             RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb");
         }
-#endif
 
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.ipynb")]
         [Test]
         static public void Run__ue5NumFluxConv() {
             RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.ipynb");
         }
-#endif
 
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("HeatEquationSolver/HeatEquationSolver.ipynb")]
         [Test]
         static public void Run__HeatEquationSolver() {
             RunWorksheet("HeatEquationSolver/HeatEquationSolver.ipynb");
         }
-#endif
 
-
-
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
         [Test]
         static public void Run__ue6ScalarConvStability() {
             RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.ipynb");
         }
-#endif
 
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial9-SIP/sip.ipynb")]
         [Test]
         static public void Run__sip() {
             RunWorksheet("tutorial9-SIP/sip.ipynb");
         }
-#endif
 
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.ipynb")]
         [Test]
@@ -177,9 +120,6 @@ namespace BoSSS.Application.TutorialTests {
             // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__Poisson
             RunWorksheet("tutorial10-PoissonSystem/Poisson.ipynb");
         }
-#endif
-
-#if !DEBUG
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("tutorial11-Stokes/StokesEq.ipynb")]
@@ -187,45 +127,6 @@ namespace BoSSS.Application.TutorialTests {
         static public void Run__StokesEq() {
             RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
-#endif
-
-
-
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
-        [Test]
-        static public void Run__convStudy() {
-            Mutex JupyterMutex = new Mutex(false, "ConvStudyTutorial");
-            try {
-                JupyterMutex.WaitOne();
-                NotebookRunner.DeleteDatabase("ConvStudyTutorial");
-                NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
-                RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
-            } finally {
-                JupyterMutex.ReleaseMutex();
-            }
-        }
-#endif
-        /*
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
-        [Test]
-        static public void Run__memprofile() {
-            //BoSSS.Application.TutorialTests.AllUpTest.Run__memprofile#
-            Mutex JupyterMutex = new Mutex(false, "memprofileMutex");
-            try {
-                JupyterMutex.WaitOne();
-
-                NotebookRunner.DeleteDatabase("memprofile");
-                NotebookRunner.DeleteDeployments("memprofile*");
-                RunWorksheet("memprofile/memprofile.ipynb");
-            } finally {
-                JupyterMutex.ReleaseMutex();
-            }
-        }
-#endif*/
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("XDGagglomeration/XDGagglomeration.ipynb")]

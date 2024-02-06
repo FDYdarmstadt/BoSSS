@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        bool m_FluxesAreNOTMultithreadSafe;
+        bool m_FluxesAreNOTMultithreadSafe = true;
 
 
         /// <summary>
