@@ -42,6 +42,14 @@ namespace BoSSS.Application.XNSFE_Solver {
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
 
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            ////Tests.StaticDropletTest.StaticDropletScalingTest(2);
+            //Tests.StaticDropletTest.StaticDropletConvergenceTest(4);
+
+            //FinalizeMPI();
+            //System.Environment.Exit(-111);
+
             XNSFE._Main(args, false, delegate () {
                 var p = new XNSFE();
                 return p;
@@ -63,7 +71,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             // configuration for Temperature
             var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
                 DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
-                mode = MultigridOperator.Mode.LeftInverse_DiagBlock,//MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,//MultigridOperator.Mode.LeftInverse_DiagBlock,
                 VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Temperature) }
             };
             configsLevel.Add(confTemp);
@@ -961,9 +969,9 @@ namespace BoSSS.Application.XNSFE_Solver {
             //int[] varGroup_Stokes = Enumerable.Range(0, D + 1).ToArray();
             //int[] varGroup_Temperature = Enumerable.Range(D + 1, 1).ToArray();
             //int[] varGroup_all = Enumerable.Range(0, D + 2).ToArray();
-            //var res = this.Timestepping.OperatorAnalysis(new[] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
+            //var res = this.Timestepping.OperatorAnalysis(config, new int[][] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
 
-            int[] varGroup = new int[] { 0, 1, 2, 3};
+            int[] varGroup = Enumerable.Range(0, D + 2).ToArray();
             var res = this.Timestepping.OperatorAnalysis(config, new[] { varGroup });
 
             return res;
