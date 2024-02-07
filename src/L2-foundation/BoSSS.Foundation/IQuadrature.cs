@@ -20,7 +20,7 @@ using System.Diagnostics;
 namespace BoSSS.Foundation.Quadrature {
     
     /// <summary>
-    /// common methods for alll kinds of quadrature objects
+    /// common methods for all kinds of quadrature objects
     /// </summary>
     public interface IQuadrature {
 

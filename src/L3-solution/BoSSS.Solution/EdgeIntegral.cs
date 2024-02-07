@@ -234,10 +234,14 @@ namespace BoSSS.Solution.Utils {
             /// <param name="edgeMask">
             /// An optional restriction of the domain
             /// </param>
-            public MyEdgeQuadrature(GridData grdDat, int quadratureOrder, INonlinearFlux flux, CoordinateMapping mapping, int iKref, EdgeMask edgeMask)
+            public MyEdgeQuadrature(IGridData grdDat, int quadratureOrder, INonlinearFlux flux, CoordinateMapping mapping, int iKref, EdgeMask edgeMask)
                 : base(new int[] { 1 }, grdDat, (new EdgeQuadratureScheme(true, edgeMask)).Compile(grdDat, quadratureOrder)) {
                 evaluators = mapping.Fields.ToArray();
                 this.flux = flux;
+            }
+
+            public override Quadrature<QuadRule, EdgeMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                return new MyEdgeQuadrature(this.GridDat, 1, this.flux, new CoordinateMapping(this.evaluators), 0, null);
             }
 
 

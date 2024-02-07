@@ -288,13 +288,16 @@ namespace BoSSS.Solution {
         /// <param name="args">
         /// command line arguments
         /// </param>
+        /// <param name="num_threads">
+        /// number of threads to use, see <see cref="ilPSP.Environment.InitThreading"/>
+        /// </param>
         /// <returns>
         /// Whether this call actually initialized MPI
         /// - true, if this routine actually called <see cref="IMPIdriver.Init"/>; then, the call should be 
         ///   an other call to <see cref="FinalizeMPI"/>.
         /// - false, if not.
         /// </returns>
-        public static bool InitMPI(string[] args = null) {
+        public static bool InitMPI(string[] args = null, int? num_threads = null) {
             if (args == null)
                 args = new string[0];
 
@@ -310,7 +313,17 @@ namespace BoSSS.Solution {
                 GetNativeLibraryDir(),
                 out bool _MustFinalizeMPI);
 
-            ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
+            //ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
+            if(args.Contains("--num_threads") || args.Contains("-T")) {
+                int iOff = args.FirstIndexWhere(arg => arg == "--num_threads" || arg == "-T");
+                try {
+                    num_threads = int.Parse(args[iOff + 1]);
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"During parsing --num_threads/-T the following exception occurred: {e}");
+                }
+            }
+            ilPSP.Environment.InitThreading(true, num_threads);
+            
 
             m_Logger.Info("_MustFinalizeMPI = " + _MustFinalizeMPI);
 
@@ -398,6 +411,7 @@ namespace BoSSS.Solution {
             ReadBatchModeConnectorConfig();
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
 
             return _MustFinalizeMPI;
         }
@@ -533,6 +547,9 @@ namespace BoSSS.Solution {
                 argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
             }
 
+            //opt.NumThreads = 
+            ilPSP.Environment.InitThreading(true, opt.NumThreads);
+
             if (!argsParseSuccess) {
                 MPI.Wrappers.csMPI.Raw.mpiFinalize();
                 _MustFinalizeMPI = false;
@@ -609,7 +626,7 @@ namespace BoSSS.Solution {
                         break;
 
                     System.Environment.SetEnvironmentVariable(ArgOverrideName, null); // delete the envvar
-                    // many test internally call the _Main function with arguments;
+                    // many tests internally call the _Main function with arguments;
                     // this would be overridden (and thus not work properly) if we don't delete the variable here and now.
 
                     if (ArgCounter < _args.Count) {

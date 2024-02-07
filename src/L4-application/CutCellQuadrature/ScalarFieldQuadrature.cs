@@ -55,5 +55,11 @@ namespace CutCellQuadrature {
                 Result += ResultsOfIntegration[i, 0];
             }
         }
+
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+            return new ScalarFieldQuadrature(this.GridDat, field, new CellQuadratureScheme(true, CellMask.GetEmptyMask(this.GridDat)), 1) {
+
+            };
+        }
     }
 }

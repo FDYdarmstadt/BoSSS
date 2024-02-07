@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
@@ -34,8 +35,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Basis dgBasis = _maxDgBasis;
 
             // check type of underlying reference elements
-            foreach(var refel in agGrd.AncestorGrid.iGeomCells.RefElements) {
-                if(refel.GetType() != typeof(BoSSS.Foundation.Grid.RefElements.Square)) { throw new NotSupportedException("currently only square elements are supported"); }
+            foreach (var refel in agGrd.AncestorGrid.iGeomCells.RefElements) {
+                if (refel.GetType() != typeof(BoSSS.Foundation.Grid.RefElements.Square)) { throw new NotSupportedException("currently only square elements are supported"); }
             }
 
             // get dimensions of Injection operator
@@ -51,7 +52,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int[] iedges;
             List<int> l_iedges = new List<int>();
 
-            for(int i = 0; i < Jagg; i++) {
+            for (int i = 0; i < Jagg; i++) {
 
                 Console.WriteLine($"aggregating cell {i}");
                 // get parts of current aggregation cell
@@ -59,9 +60,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 l_iedges.Clear();
 
-                for(int j = 0; j < agGrd.iGeomEdges.Count; j++) {
+                for (int j = 0; j < agGrd.iGeomEdges.Count; j++) {
                     // check for outer edges and if both cells on the edge belong to the current aggregation cell     
-                    if(agGrd.iGeomEdges.LogicalCellIndices[j, 0] == agGrd.iGeomEdges.LogicalCellIndices[j, 1] && agGrd.iGeomEdges.LogicalCellIndices[j, 0] == i) {
+                    if (agGrd.iGeomEdges.LogicalCellIndices[j, 0] == agGrd.iGeomEdges.LogicalCellIndices[j, 1] && agGrd.iGeomEdges.LogicalCellIndices[j, 0] == i) {
                         l_iedges.Add(j);
                     }
                 }
@@ -80,7 +81,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(-1, 0, 0).Acc(1, GetCoefficients0Degree(agGrd, dgBasis, parts));
 
                 // compute the columns in the Injection operator for subsequent basis functions
-                for(int n = 1; n < Np; n++) {
+                for (int n = 1; n < Np; n++) {
                     //InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(new int[] { 0, 0, n }, new int[] { parts.Length - 1, n, -1 }).Acc(1, GetCoefficients(agGrd, dgBasis, InjectorCoarseLogicalCell[i], RotationCoarseLogicalCell[i], parts, iedges, n));
                     //InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(new int[] { 0, 0, n }, new int[] { parts.Length - 1, n, -1 }).Acc(1, GetCoefficientsIntegral(agGrd, dgBasis, InjectorCoarseLogicalCell[i], RotationCoarseLogicalCell[i], parts, iedges, n));
                     InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(new int[] { 0, 0, n }, new int[] { parts.Length - 1, n, -1 }).Acc(1, GetCoefficientsGlobalSF(agGrd, dgBasis, InjectorCoarseLogicalCell[i], RotationCoarseLogicalCell[i], parts, iedges, n));
@@ -93,7 +94,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MultidimensionalArray ortho = MultidimensionalArray.Create(Np, Np);
                 MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
 
-                foreach(int k in parts) {
+                foreach (int k in parts) {
                     MM.GEMM(1.0, InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), 1.0, true);
                 }
 
@@ -101,7 +102,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MM.TransposeTo(ortho);
                 ortho.InvertTo(orthoInv);
 
-                foreach(int k in parts) {
+                foreach (int k in parts) {
                     InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1).GEMM(1.0, InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1).CloneAs(), orthoInv, 0.0);
                 }
 
@@ -112,7 +113,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 // accumulate the direct operator
-                foreach(int k in parts) {
+                foreach (int k in parts) {
                     // apply rotation to raw injector and accumulate in direct injector array
                     _InjectorCoarse[k] = MultidimensionalArray.Create(Np, Np);
                     _InjectorCoarse[k].GEMM(1.0, RotationCoarseLogicalCell[i][Array.IndexOf(parts, k)], InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), 0.0);
@@ -139,7 +140,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, pairs[0, 0]), -1, -1).AccEye(1.0);
 
             // iterate over each cell pair
-            for(int i = 0; i < pairs.GetLength(0); i++) {
+            for (int i = 0; i < pairs.GetLength(0); i++) {
                 var thisInjector = Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, pairs[i, 1]), -1, -1);
                 int cell_i = pairs[i, 0];
                 int cell_j = pairs[i, 1];
@@ -151,7 +152,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 thisInjector[0, 0] = GetCoefficients0DegreeSuccessive(_agGrd, _dgBasis, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, pairs[i, 0]), -1, -1), thisParts);
 
                 // compute both variants with nonzero diagonal (+,-) and select the better
-                for(int n = 1; n < Np; n++) {
+                for (int n = 1; n < Np; n++) {
                     //(var injPos, var qPos) = GetCoefficientsSuccessive(_agGrd, _dgBasis, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, pairs[i, 0]), -1, -1), thisRots, thisParts, edge, n, true);
                     //(var injNeg, var qNeg) = GetCoefficientsSuccessive(_agGrd, _dgBasis, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, pairs[i, 0]), -1, -1), thisRots, thisParts, edge, n, false);
 
@@ -174,7 +175,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray ortho = MultidimensionalArray.Create(Np, Np);
             MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
 
-            foreach(int k in _parts) {
+            foreach (int k in _parts) {
                 MM.GEMM(1.0, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1), Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1), 1.0, true);
             }
 
@@ -182,7 +183,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MM.TransposeTo(ortho);
             ortho.InvertTo(orthoInv);
 
-            foreach(int k in _parts) {
+            foreach (int k in _parts) {
                 Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1).GEMM(1.0, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1).CloneAs(), orthoInv, 0.0);
             }
 
@@ -200,9 +201,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // extract cell pairs
             int[,] pairs = ExtractCellPairs(_agGrd, parts);
 
-            if(D == 3) {
+            if (D == 3) {
                 throw new NotImplementedException();
-            } else if(D == 2) {
+            } else if (D == 2) {
 
 
 
@@ -210,7 +211,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // First cell serves as reference without rotation
                 RotationMatrices[Array.IndexOf(parts, pairs[0, 0])].AccEye(1.0);
 
-                for(int i = 0; i < pairs.GetLength(0); i++) {
+                for (int i = 0; i < pairs.GetLength(0); i++) {
                     int iCell = Array.IndexOf(parts, pairs[i, 0]);
                     int jCell = Array.IndexOf(parts, pairs[i, 1]);
 
@@ -243,12 +244,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // 0    0   0   k2  0   k1
                     // and so on
                     int start = 0;
-                    for(int n = 0; n <= _maxDgBasis.Degree; n++) {
+                    for (int n = 0; n <= _maxDgBasis.Degree; n++) {
                         start += n;
                         MultidimensionalArray rot = RotationMatrices[jCell].ExtractSubArrayShallow(new int[] { start, start }, new int[] { start + n, start + n });
-                        if(n % 2 == 0) {
+                        if (n % 2 == 0) {
                             rot[n / 2, n / 2] = 1;
-                            for(int m = 0; m < n - 1; m++) {
+                            for (int m = 0; m < n - 1; m++) {
                                 rot[m, m] = k1;
                                 rot[n - m, n - m] = k1;
 
@@ -256,7 +257,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 rot[n - m, m] = k2;
                             }
                         } else {
-                            for(int m = 0; m < n; m++) {
+                            for (int m = 0; m < n; m++) {
                                 rot[m, m] = k1;
                                 rot[n - m, n - m] = k1;
 
@@ -283,11 +284,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             List<int> excluded = new List<int>();
             excluded.Add(parts[0]);
 
-            for(int i = 0; i < parts.Length - 1; i++) {
+            for (int i = 0; i < parts.Length - 1; i++) {
                 // get inner neighbours that are not yet part of the graph
                 int[] neighbours = agGrd.AncestorGrid.iLogicalCells.CellNeighbours[excluded[i]].Where(t => parts.Except(excluded).Contains(t)).ToArray();
 
-                foreach(int n in neighbours) {
+                foreach (int n in neighbours) {
                     // write cellpair
                     pairs[k, 0] = excluded[i];
                     pairs[k, 1] = n;
@@ -308,7 +309,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // calculate total aggregation cell volume
             double aggVol = 0;
-            foreach(int i in parts) {
+            foreach (int i in parts) {
                 aggVol += _agGrd.AncestorGrid.Cells.GetCellVolume(i);
             }
 
@@ -316,7 +317,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double scale = 1 / Math.Sqrt(aggVol);
 
             int count = 0;
-            foreach(int i in parts) {
+            foreach (int i in parts) {
                 Injector0Degree[count] = Math.Sqrt(_agGrd.AncestorGrid.Cells.GetCellVolume(i)) * scale;
                 count++;
             }
@@ -358,9 +359,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             #region orthogonality conditions
 
             // orthogonality
-            for(int row = 0; row < basisIndex; row++) {
-                for(int i = 0; i < partCount; i++) {
-                    for(int column = 0; column <= row; column++) {
+            for (int row = 0; row < basisIndex; row++) {
+                for (int i = 0; i < partCount; i++) {
+                    for (int column = 0; column <= row; column++) {
                         aggE1[row, i * (basisIndex + 1) + column] = _inj[i, column, row];
                         //E[row, i * (basisIndex + 1) + column] = _inj[i, column, row];
                     }
@@ -380,7 +381,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             List<int> usableRowsE = Enumerable.Range(0, basisIndex + 1).ToList();
 
 
-            for(int row = 0; row < iedges.Length; row++) {
+            for (int row = 0; row < iedges.Length; row++) {
 
                 // FOR THE WHOLE SEGMENT, SUPER CLUNKY RIGHT NOW NEEDS TO BE WORKED OVER IF CODE IS FUNCTIONAL
                 // select current edge
@@ -403,18 +404,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 MultidimensionalArray edgeEvalPoints = MultidimensionalArray.Create(currentDegree + 1, refEl.SpatialDimension);
                 refEl.Vertices.To2DArray();
-                if(edgeVertCount < currentDegree + 1) {
-                    for(int i = 0; i < edgeVertCount; i++) {
+                if (edgeVertCount < currentDegree + 1) {
+                    for (int i = 0; i < edgeVertCount; i++) {
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
                     }
 
-                    for(int i = edgeVertCount; i < currentDegree + 1; i++) {
+                    for (int i = edgeVertCount; i < currentDegree + 1; i++) {
                         // construct a point as middle point between the edge vertices
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount, -1));
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount + 1, -1));
                     }
                 } else {
-                    for(int i = 0; i < currentDegree + 1; i++) {
+                    for (int i = 0; i < currentDegree + 1; i++) {
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
                     }
                 }
@@ -430,9 +431,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 edge_values.Item1.Multiply(1.0, edge_values.Item1.CloneAs(), _rot[index_i], 0.0, "cij", "cik", "kj");
                 edge_values.Item2.Multiply(1.0, edge_values.Item2.CloneAs(), _rot[index_j], 0.0, "cij", "cik", "kj");
 
-                for(int i = 0; i < (currentDegree + 1); i++) {
+                for (int i = 0; i < (currentDegree + 1); i++) {
 
-                    for(int column = 0; column < basisIndex + 1; column++) {
+                    for (int column = 0; column < basisIndex + 1; column++) {
                         aggE1[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = edge_values.Item1[0, i, column];
                         aggE1[row * (currentDegree + 1) + i + rowOffset, index_j * (basisIndex + 1) + column] = -edge_values.Item2[0, i, column];
                         //E[row * (currentDegree + 1) + i + rowOffset, index_i * (basisIndex + 1) + column] = edge_values.Item1[0, i, column];
@@ -459,7 +460,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray gradient = MultidimensionalArray.Create(2, basisIndex, 2, basisIndex);
             List<int> usableRowsQ = new List<int>();
             // iterate over edges
-            for(int row = 0; row < iedges.Length; row++) {
+            for (int row = 0; row < iedges.Length; row++) {
                 // FOR THE WHOLE SEGMENT, SUPER CLUNKY RIGHT NOW NEEDS TO BE WORKED OVER IF CODE IS FUNCTIONAL
                 // select current edge
                 int edge = iedges[row];
@@ -515,13 +516,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 // iterate over both cells (leading coeffcient)
-                for(int i = 0; i <= 1; i++) {
+                for (int i = 0; i <= 1; i++) {
 
                     // iterate over all conditions for the current cell
-                    for(int k = 1; k < basisIndex + 1; k++) {
+                    for (int k = 1; k < basisIndex + 1; k++) {
 
                         // iterate over the variables
-                        for(int column = 1; column < basisIndex + 1; column++) {
+                        for (int column = 1; column < basisIndex + 1; column++) {
                             aggE2[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
                             aggE2[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_j * (basisIndex + 1) + column] = gradient[i, k - 1, 1, column - 1];
                             //A[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
@@ -550,14 +551,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray E = MultidimensionalArray.Create(usableRowsE.Count(), varCount);
             MultidimensionalArray ET = MultidimensionalArray.Create(varCount, usableRowsE.Count());
 
-            for(int i = 0; i < usableRowsE.Count(); i++) {
+            for (int i = 0; i < usableRowsE.Count(); i++) {
                 E.SetRow(i, aggE1.ExtractSubArrayShallow(usableRowsE.ElementAt(i), -1).To1DArray());
                 ET.SetColumn(i, aggE1.ExtractSubArrayShallow(usableRowsE.ElementAt(i), -1).To1DArray());
             }
 
             MultidimensionalArray hQ = MultidimensionalArray.Create(usableRowsQ.Count(), varCount);
 
-            for(int i = 0; i < usableRowsQ.Count(); i++) {
+            for (int i = 0; i < usableRowsQ.Count(); i++) {
                 hQ.SetRow(i, aggE2.ExtractSubArrayShallow(usableRowsQ.ElementAt(i), -1).To1DArray());
             }
 
@@ -624,12 +625,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // check the diagonal entries
             bool isPD = true;
-            for(int i = 0; i < parts.Length; i++) {
-                if(Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) <= 1E-5) { isPD = false; }
+            for (int i = 0; i < parts.Length; i++) {
+                if (Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) <= 1E-5) { isPD = false; }
             }
 
             // if diagonal entries are too small use fmincon
-            if(!isPD) {
+            if (!isPD) {
                 Console.WriteLine("Using fmincon to ensure Positive Definiteness");
                 // solve with fmincon as optimization problem, note the 3 additional scripts already present in the working directory
                 BatchmodeConnector bmc = new BatchmodeConnector(@"D:\bosss_db_masterthesis\Matlab");
@@ -644,7 +645,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 string infimum = $@"1/{parts.Length}*1E-8";
                 bmc.Cmd($"H = cell({parts.Length},1);");
                 bmc.Cmd($"d = cell({parts.Length},1);");
-                for(int i = 0; i < parts.Length; i++) {
+                for (int i = 0; i < parts.Length; i++) {
                     H[i] = MultidimensionalArray.Create(varCount, varCount);
                     H[i][(i + 1) * (basisIndex + 1) - 1, (i + 1) * (basisIndex + 1) - 1] = -1;
                     bmc.PutMatrix(H[i], $"H{{{i + 1}}}");
@@ -693,19 +694,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 vector_InjectorNDegree = vector_InjectorNDegree_Matlab.ExtractSubArrayShallow(-1, 0);
 
                 // simple test to at least get an idea if somethings gone horribly wrong
-                if(Math.Abs(vector_InjectorNDegree_Matlab.L2Norm() - 1) >= 1E-3) Console.WriteLine("Warning converged to infeasable point");
+                if (Math.Abs(vector_InjectorNDegree_Matlab.L2Norm() - 1) >= 1E-3) Console.WriteLine("Warning converged to infeasable point");
 
                 isPD = true;
-                for(int i = 0; i < parts.Length; i++) {
-                    if(Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) - lowerlimit <= 0) { isPD = false; }
+                for (int i = 0; i < parts.Length; i++) {
+                    if (Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) - lowerlimit <= 0) { isPD = false; }
                 }
 
-                if(!isPD) Console.WriteLine($"WARNING: Basisfunction {basisIndex} violates pd condition");
+                if (!isPD) Console.WriteLine($"WARNING: Basisfunction {basisIndex} violates pd condition");
             }
             #endregion
 
             // restructure to Injector operator form
-            for(int i = 0; i < parts.Length; i++) {
+            for (int i = 0; i < parts.Length; i++) {
                 InjectorNDegree.ExtractSubArrayShallow(i, -1).Acc(1.0, vector_InjectorNDegree.ExtractSubArrayShallow(new int[] { i * (basisIndex + 1) }, new int[] { (i + 1) * (basisIndex + 1) - 1 }));
             }
 
@@ -748,9 +749,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             #region orthogonality conditions
 
             // orthogonality
-            for(int row = 0; row < basisIndex; row++) {
-                for(int i = 0; i < partCount; i++) {
-                    for(int column = 0; column <= row; column++) {
+            for (int row = 0; row < basisIndex; row++) {
+                for (int i = 0; i < partCount; i++) {
+                    for (int column = 0; column <= row; column++) {
                         aggE1[row, i * (basisIndex + 1) + column] = _inj[i, column, row];
                         //E[row, i * (basisIndex + 1) + column] = _inj[i, column, row];
                     }
@@ -773,7 +774,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray jump = MultidimensionalArray.Create(2, basisIndex + 1, 2, basisIndex + 1);
             List<int> usableRowsE = Enumerable.Range(0, basisIndex + 1).ToList();
             // iterate over edges
-            for(int row = 0; row < iedges.Length; row++) {
+            for (int row = 0; row < iedges.Length; row++) {
                 // FOR THE WHOLE SEGMENT, SUPER CLUNKY RIGHT NOW NEEDS TO BE WORKED OVER IF CODE IS FUNCTIONAL
                 // select current edge
                 int edge = iedges[row];
@@ -827,13 +828,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 // iterate over both cells (leading coeffcient)
-                for(int i = 0; i <= 1; i++) {
+                for (int i = 0; i <= 1; i++) {
 
                     // iterate over all conditions for the current cell
-                    for(int k = 0; k < basisIndex + 1; k++) {
+                    for (int k = 0; k < basisIndex + 1; k++) {
 
                         // iterate over the variables
-                        for(int column = 0; column < basisIndex + 1; column++) {
+                        for (int column = 0; column < basisIndex + 1; column++) {
 
                             aggE1[rowOffset + row * (basisIndex + 1) * 2 + k + i * (basisIndex + 1), index_i * (basisIndex + 1) + column] = jump[i, k, 0, column];
                             aggE1[rowOffset + row * (basisIndex + 1) * 2 + k + i * (basisIndex + 1), index_j * (basisIndex + 1) + column] = -jump[i, k, 1, column];
@@ -861,7 +862,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray gradient = MultidimensionalArray.Create(2, basisIndex, 2, basisIndex);
             List<int> usableRowsQ = new List<int>();
             // iterate over edges
-            for(int row = 0; row < iedges.Length; row++) {
+            for (int row = 0; row < iedges.Length; row++) {
                 // FOR THE WHOLE SEGMENT, SUPER CLUNKY RIGHT NOW NEEDS TO BE WORKED OVER IF CODE IS FUNCTIONAL
                 // select current edge
                 int edge = iedges[row];
@@ -917,13 +918,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 // iterate over both cells (leading coeffcient)
-                for(int i = 0; i <= 1; i++) {
+                for (int i = 0; i <= 1; i++) {
 
                     // iterate over all conditions for the current cell
-                    for(int k = 1; k < basisIndex + 1; k++) {
+                    for (int k = 1; k < basisIndex + 1; k++) {
 
                         // iterate over the variables
-                        for(int column = 1; column < basisIndex + 1; column++) {
+                        for (int column = 1; column < basisIndex + 1; column++) {
                             aggE2[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
                             aggE2[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_j * (basisIndex + 1) + column] = gradient[i, k - 1, 1, column - 1];
                             //A[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
@@ -952,14 +953,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray E = MultidimensionalArray.Create(usableRowsE.Count(), varCount);
             MultidimensionalArray ET = MultidimensionalArray.Create(varCount, usableRowsE.Count());
 
-            for(int i = 0; i < usableRowsE.Count(); i++) {
+            for (int i = 0; i < usableRowsE.Count(); i++) {
                 E.SetRow(i, aggE1.ExtractSubArrayShallow(usableRowsE.ElementAt(i), -1).To1DArray());
                 ET.SetColumn(i, aggE1.ExtractSubArrayShallow(usableRowsE.ElementAt(i), -1).To1DArray());
             }
 
             MultidimensionalArray hQ = MultidimensionalArray.Create(usableRowsQ.Count(), varCount);
 
-            for(int i = 0; i < usableRowsQ.Count(); i++) {
+            for (int i = 0; i < usableRowsQ.Count(); i++) {
                 hQ.SetRow(i, aggE2.ExtractSubArrayShallow(usableRowsQ.ElementAt(i), -1).To1DArray());
             }
 
@@ -1027,12 +1028,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // check the diagonal entries
             bool isPD = true;
-            for(int i = 0; i < parts.Length; i++) {
-                if(Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) <= 1E-5) { isPD = false; }
+            for (int i = 0; i < parts.Length; i++) {
+                if (Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) <= 1E-5) { isPD = false; }
             }
 
             // if diagonal entries are too small use fmincon
-            if(!isPD) {
+            if (!isPD) {
                 Console.WriteLine("Using fmincon to ensure Positive Definiteness");
                 // solve with fmincon as optimization problem, note the 3 additional scripts already present in the working directory
                 BatchmodeConnector bmc = new BatchmodeConnector(@"D:\bosss_db_masterthesis\Matlab");
@@ -1047,7 +1048,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 string infimum = $@"1/{parts.Length}*1E-8";
                 bmc.Cmd($"H = cell({parts.Length},1);");
                 bmc.Cmd($"d = cell({parts.Length},1);");
-                for(int i = 0; i < parts.Length; i++) {
+                for (int i = 0; i < parts.Length; i++) {
                     H[i] = MultidimensionalArray.Create(varCount, varCount);
                     H[i][(i + 1) * (basisIndex + 1) - 1, (i + 1) * (basisIndex + 1) - 1] = -1;
                     bmc.PutMatrix(H[i], $"H{{{i + 1}}}");
@@ -1096,14 +1097,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 vector_InjectorNDegree = vector_InjectorNDegree_Matlab.ExtractSubArrayShallow(-1, 0);
 
                 // simple test to at least get an idea if somethings gone horribly wrong
-                if(Math.Abs(vector_InjectorNDegree_Matlab.L2Norm() - 1) >= 1E-3) Console.WriteLine("Warning converged to infeasable point");
+                if (Math.Abs(vector_InjectorNDegree_Matlab.L2Norm() - 1) >= 1E-3) Console.WriteLine("Warning converged to infeasable point");
 
                 isPD = true;
-                for(int i = 0; i < parts.Length; i++) {
-                    if(Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) - lowerlimit <= 0) { isPD = false; }
+                for (int i = 0; i < parts.Length; i++) {
+                    if (Math.Abs(vector_InjectorNDegree[(i + 1) * (basisIndex + 1) - 1]) - lowerlimit <= 0) { isPD = false; }
                 }
 
-                if(!isPD) Console.WriteLine($"WARNING: Basisfunction {basisIndex} violates pd condition");
+                if (!isPD) Console.WriteLine($"WARNING: Basisfunction {basisIndex} violates pd condition");
             }
             #endregion
 
@@ -1112,7 +1113,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             // restructure to Injector operator form
-            for(int i = 0; i < parts.Length; i++) {
+            for (int i = 0; i < parts.Length; i++) {
                 InjectorNDegree.ExtractSubArrayShallow(i, -1).Acc(1.0, vector_InjectorNDegree.ExtractSubArrayShallow(new int[] { i * (basisIndex + 1) }, new int[] { (i + 1) * (basisIndex + 1) - 1 }));
             }
 
@@ -1184,7 +1185,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray jump = MultidimensionalArray.Create(2, basisIndex + 1, 2, basisIndex + 1);
             List<int> usableRowsE = Enumerable.Range(0, 2).ToList();
             // iterate over edges
-            for(int row = 0; row < iedges.Length; row++) {
+            for (int row = 0; row < iedges.Length; row++) {
                 // FOR THE WHOLE SEGMENT, SUPER CLUNKY RIGHT NOW NEEDS TO BE WORKED OVER IF CODE IS FUNCTIONAL
                 // select current edge
                 int edge = iedges[row];
@@ -1238,13 +1239,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 // iterate over both cells (leading coeffcient)
-                for(int i = 0; i <= 1; i++) {
+                for (int i = 0; i <= 1; i++) {
 
                     // iterate over all conditions for the current cell
-                    for(int k = 0; k * basisIndex < basisIndex + 1; k++) {
+                    for (int k = 0; k * basisIndex < basisIndex + 1; k++) {
 
                         // iterate over the variables
-                        for(int column = 0; column * basisIndex < basisIndex + 1; column++) {
+                        for (int column = 0; column * basisIndex < basisIndex + 1; column++) {
 
                             aggE1[rowOffset + row * 4 + k + i * 2, index_i * 2 + column] = jump[i, k * basisIndex, 0, column * basisIndex];
                             aggE1[rowOffset + row * 4 + k + i * 2, index_j * 2 + column] = -jump[i, k * basisIndex, 1, column * basisIndex];
@@ -1272,7 +1273,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray gradient = MultidimensionalArray.Create(2, basisIndex, 2, basisIndex);
             List<int> usableRowsQ = new List<int>();
             // iterate over edges
-            for(int row = 0; row < iedges.Length; row++) {
+            for (int row = 0; row < iedges.Length; row++) {
                 // FOR THE WHOLE SEGMENT, SUPER CLUNKY RIGHT NOW NEEDS TO BE WORKED OVER IF CODE IS FUNCTIONAL
                 // select current edge
                 int edge = iedges[row];
@@ -1328,13 +1329,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 // iterate over both cells (leading coeffcient)
-                for(int i = 0; i <= 1; i++) {
+                for (int i = 0; i <= 1; i++) {
 
                     // iterate over all conditions for the current cell
-                    for(int k = 1; k * basisIndex < basisIndex + 1; k++) {
+                    for (int k = 1; k * basisIndex < basisIndex + 1; k++) {
 
                         // iterate over the variables
-                        for(int column = 1; column * basisIndex < basisIndex + 1; column++) {
+                        for (int column = 1; column * basisIndex < basisIndex + 1; column++) {
                             aggE2[row * 2 + (k - 1) + i * 1, index_i * 2 + column] = gradient[i, k * basisIndex - 1, 0, column * basisIndex - 1];
                             aggE2[row * 2 + (k - 1) + i * 1, index_j * 2 + column] = gradient[i, k * basisIndex - 1, 1, column * basisIndex - 1];
                             //A[row * (basisIndex * 2) + (k - 1) + i * basisIndex, index_i * (basisIndex + 1) + column] = gradient[i, k - 1, 0, column - 1];
@@ -1363,14 +1364,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray E = MultidimensionalArray.Create(usableRowsE.Count(), varCount);
             MultidimensionalArray ET = MultidimensionalArray.Create(varCount, usableRowsE.Count());
 
-            for(int i = 0; i < usableRowsE.Count(); i++) {
+            for (int i = 0; i < usableRowsE.Count(); i++) {
                 E.SetRow(i, aggE1.ExtractSubArrayShallow(usableRowsE.ElementAt(i), -1).To1DArray());
                 ET.SetColumn(i, aggE1.ExtractSubArrayShallow(usableRowsE.ElementAt(i), -1).To1DArray());
             }
 
             MultidimensionalArray hQ = MultidimensionalArray.Create(usableRowsQ.Count(), varCount);
 
-            for(int i = 0; i < usableRowsQ.Count(); i++) {
+            for (int i = 0; i < usableRowsQ.Count(); i++) {
                 hQ.SetRow(i, aggE2.ExtractSubArrayShallow(usableRowsQ.ElementAt(i), -1).To1DArray());
             }
 
@@ -1563,7 +1564,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             // restructure to Injector operator form
-            for(int i = 0; i < parts.Length; i++) {
+            for (int i = 0; i < parts.Length; i++) {
                 InjectorNDegree[i, 0] = vector_InjectorNDegree[i * 2];
                 InjectorNDegree[i, basisIndex] = vector_InjectorNDegree[i * 2 + 1];
             }
@@ -1573,7 +1574,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         // computes the injector coefficients for the first basis functions, successive variant
         private static double GetCoefficients0DegreeSuccessive(AggregationGridData _agGrd, Basis _maxDgBasis, MultidimensionalArray _inj_i, int[] parts) {
-            if(parts.Length != 2) throw new ArgumentException();
+            if (parts.Length != 2) throw new ArgumentException();
 
             // calculate the aggregation cell volumes
             double aggVol_i = _agGrd.AncestorGrid.Cells.GetCellVolume(parts[0]);
@@ -1586,7 +1587,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private static (MultidimensionalArray, double) GetCoefficientsSuccessive(AggregationGridData _agGrd, Basis _maxDgBasis, MultidimensionalArray _inj_i, MultidimensionalArray[] _rot, int[] parts, int edge, int basisIndex, bool direction) {
 
-            if(parts.Length != 2) throw new ArgumentException();
+            if (parts.Length != 2) throw new ArgumentException();
 
             var InjectorNDegree = MultidimensionalArray.Create(1, basisIndex + 1);
             double quality;
@@ -1643,18 +1644,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 MultidimensionalArray edgeEvalPoints = MultidimensionalArray.Create(currentDegree + 1, refEl.SpatialDimension);
                 refEl.Vertices.To2DArray();
-                if(edgeVertCount < currentDegree + 1) {
-                    for(int i = 0; i < edgeVertCount; i++) {
+                if (edgeVertCount < currentDegree + 1) {
+                    for (int i = 0; i < edgeVertCount; i++) {
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
                     }
 
-                    for(int i = edgeVertCount; i < currentDegree + 1; i++) {
+                    for (int i = edgeVertCount; i < currentDegree + 1; i++) {
                         // construct a point as middle point between the edge vertices
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount, -1));
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount + 1, -1));
                     }
                 } else {
-                    for(int i = 0; i < currentDegree + 1; i++) {
+                    for (int i = 0; i < currentDegree + 1; i++) {
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
                     }
                 }
@@ -1676,9 +1677,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // also apply the injector for the currently fixed cell
                 //edge_values_0.Multiply(1.0, edge_values_0.CloneAs(), _inj_i, 0.0, "cij", "cik", "kj");
 
-                for(int i = 0; i < (currentDegree + 1); i++) {
+                for (int i = 0; i < (currentDegree + 1); i++) {
 
-                    for(int column = 0; column < basisIndex + 1; column++) {
+                    for (int column = 0; column < basisIndex + 1; column++) {
                         aggRhs1[i] += edge_values_0[0, i, column] * _inj_i[column, basisIndex];
                         aggE1[i, column] = edge_values_1[0, i, column];
                     }
@@ -1758,13 +1759,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var gradient_values_1 = index_i == 0 ? gradient.ExtractSubArrayShallow(-1, -1, 1, -1) : gradient.ExtractSubArrayShallow(-1, -1, 0, -1);
 
                 // iterate over both cells (leading coeffcient)
-                for(int i = 0; i <= 1; i++) {
+                for (int i = 0; i <= 1; i++) {
 
                     // iterate over all conditions for the current cell
-                    for(int k = 1; k < basisIndex + 1; k++) {
+                    for (int k = 1; k < basisIndex + 1; k++) {
 
                         // iterate over the variables
-                        for(int column = 1; column < basisIndex + 1; column++) {
+                        for (int column = 1; column < basisIndex + 1; column++) {
                             aggE2[(k - 1) + i * basisIndex, column] = gradient_values_1[i, k - 1, column - 1];
                             aggRhs2[(k - 1) + i * basisIndex] -= gradient_values_0[i, k - 1, column - 1] * _inj_i[column, basisIndex];
 
@@ -1807,7 +1808,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             #region ensure positive definiteness
 
-            while(sol[basisIndex].Abs() <= 1E-1 * factor || sol[basisIndex].Abs() >= 1E+4) {
+            while (sol[basisIndex].Abs() <= 1E-1 * factor || sol[basisIndex].Abs() >= 1E+4) {
                 double fscale = 1E+2 * Math.Sign(S[basisIndex, basisIndex]);//aggRhs2.L2Norm();
                 rS[basisIndex] += direction ? -factor * fscale : factor * fscale;
                 S[basisIndex, basisIndex] += fscale;
@@ -1835,7 +1836,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private static (MultidimensionalArray, double) GetCoefficientsScaleFit(AggregationGridData _agGrd, Basis _maxDgBasis, MultidimensionalArray _inj_i, MultidimensionalArray[] _rot, int[] parts, int edge, int basisIndex, bool direction) {
 
-            if(parts.Length != 2) throw new ArgumentException();
+            if (parts.Length != 2) throw new ArgumentException();
 
             var InjectorNDegree = MultidimensionalArray.Create(1, basisIndex + 1);
             double quality;
@@ -1892,18 +1893,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 MultidimensionalArray edgeEvalPoints = MultidimensionalArray.Create(currentDegree + 1, refEl.SpatialDimension);
                 refEl.Vertices.To2DArray();
-                if(edgeVertCount < currentDegree + 1) {
-                    for(int i = 0; i < edgeVertCount; i++) {
+                if (edgeVertCount < currentDegree + 1) {
+                    for (int i = 0; i < edgeVertCount; i++) {
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
                     }
 
-                    for(int i = edgeVertCount; i < currentDegree + 1; i++) {
+                    for (int i = edgeVertCount; i < currentDegree + 1; i++) {
                         // construct a point as middle point between the edge vertices
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount, -1));
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(0.5, edgeEvalPoints.ExtractSubArrayShallow(i - edgeVertCount + 1, -1));
                     }
                 } else {
-                    for(int i = 0; i < currentDegree + 1; i++) {
+                    for (int i = 0; i < currentDegree + 1; i++) {
                         edgeEvalPoints.ExtractSubArrayShallow(i, -1).Acc(1.0, refEl.Vertices.ExtractSubArrayShallow(i, -1));
                     }
                 }
@@ -1925,9 +1926,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // also apply the injector for the currently fixed cell
                 //edge_values_0.Multiply(1.0, edge_values_0.CloneAs(), _inj_i, 0.0, "cij", "cik", "kj");
 
-                for(int i = 0; i < (currentDegree + 1); i++) {
+                for (int i = 0; i < (currentDegree + 1); i++) {
 
-                    for(int column = 0; column < basisIndex + 1; column++) {
+                    for (int column = 0; column < basisIndex + 1; column++) {
                         aggRhs1[i] += edge_values_0[0, i, column] * _inj_i[column, basisIndex];
                         aggE1[i, column] = edge_values_1[0, i, column];
                     }
@@ -2007,13 +2008,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var gradient_values_1 = index_i == 0 ? gradient.ExtractSubArrayShallow(-1, -1, 1, -1) : gradient.ExtractSubArrayShallow(-1, -1, 0, -1);
 
                 // iterate over both cells (leading coeffcient)
-                for(int i = 0; i <= 1; i++) {
+                for (int i = 0; i <= 1; i++) {
 
                     // iterate over all conditions for the current cell
-                    for(int k = 1; k < basisIndex + 1; k++) {
+                    for (int k = 1; k < basisIndex + 1; k++) {
 
                         // iterate over the variables
-                        for(int column = 1; column < basisIndex + 1; column++) {
+                        for (int column = 1; column < basisIndex + 1; column++) {
                             aggE2[(k - 1) + i * basisIndex, column] = gradient_values_1[i, k - 1, column - 1];
                             aggRhs2[(k - 1) + i * basisIndex] -= gradient_values_0[i, k - 1, column - 1] * _inj_i[column, basisIndex];
 
@@ -2065,7 +2066,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         // recursively extracts the Injection operator from ilevel-1 to  ilevel from the direct operator to ilevel
         public static void ExtractInjectorCurved(AggregationGridData[] _agGrd, Basis _maxDgBasis, MultidimensionalArray[][] _Injectors, MultidimensionalArray[] _injectorCoarse, int ilevel) {
-            if(ilevel >= 1) {
+            if (ilevel >= 1) {
 
                 Console.WriteLine($"Extracting Injector from level {ilevel - 1} to {ilevel}");
 
@@ -2085,14 +2086,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MultidimensionalArray MMcontrol = MultidimensionalArray.Create(Np, Np);
 
                 // iterate over all aggregate (logical) cells of ilevel
-                for(int aggCell = 0; aggCell < Jagg; aggCell++) {
+                for (int aggCell = 0; aggCell < Jagg; aggCell++) {
 
                     // logical cells on ilevel-1 that build the aggregated cell on ilevel
                     int[] aggParts = _agGrd[ilevel].jCellCoarse2jCellFine[aggCell];
                     _Injectors[ilevel][aggCell] = MultidimensionalArray.Create(aggParts.Length, Np, Np);
 
                     // iterate over all aggregate (logical) cells of ilevel - 1
-                    foreach(int lCell in aggParts) {
+                    foreach (int lCell in aggParts) {
                         int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lCell];
 
                         ortho.Clear();
@@ -2101,13 +2102,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // based on the cell ordering we have to distinguish different cases
                         // case cell on level k consists of more than one k-1 cells
-                        if(aggParts.Length > 1) {
+                        if (aggParts.Length > 1) {
 
                             // case cell on level k-1 consists of more than one level 0 cells
-                            if(parts.Length > 1) {
+                            if (parts.Length > 1) {
 
                                 // assemble the Massmatrix of the finer level logical cell
-                                foreach(int gCell in parts) {
+                                foreach (int gCell in parts) {
                                     var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
 
                                     CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
@@ -2143,7 +2144,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 ortho.InvertTo(orthoInv);
 
                                 // form the new direct injector to ilevel - 1
-                                foreach(int gCell in parts) {
+                                foreach (int gCell in parts) {
                                     MultidimensionalArray coarseClone = _injectorCoarse[gCell].CloneAs();
                                     _injectorCoarse[gCell].Multiply(1.0, coarseClone, orthoInv, 0.0, "ij", "ik", "kj");
                                 }
@@ -2170,15 +2171,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         MMcontrol.Clear();
 
                         //check orthonormality(move to a more suitable location later on)
-                        foreach (int gCell in parts)
-                        {
+                        foreach (int gCell in parts) {
 
                             var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = gCell, Len = 1 } }, MaskType.Geometrical);
 
                             CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
                             (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2), // integrate over target cell
-                            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult)
-                            {
+                            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                                 // get a set of quad points on the reference element
                                 NodeSet nodes = QR.Nodes;
                                 Debug.Assert(Length == 1);
@@ -2192,8 +2191,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 EvalResult.Multiply(1.0, phi, phi, 0.0, "kmn", "kn", "km");
                             },
-                            /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
-                                                         {
+                            /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                                                              Debug.Assert(Length == 1);
 
                                                              var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
@@ -2201,8 +2199,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                                          }).Execute();
                         }
 
-                        foreach (int gCell in parts)
-                        {
+                        foreach (int gCell in parts) {
                             MMcontrol.GEMM(1.0, _injectorCoarse[gCell], _injectorCoarse[gCell], 1.0, true);
                         }
 
@@ -2243,7 +2240,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int[] pivot = IMatrixExtensions.ReducedRowEchelonForm(E.ExtractSubArrayShallow(new int[] { offset, 0 }, new int[] { offset + rows - 1, cols - 1 }).TransposeTo()).Item2;
 
-            for(int i = 0; i < pivot.Length; i++) pivot[i] += offset;
+            for (int i = 0; i < pivot.Length; i++) pivot[i] += offset;
 
             usableRows.AddRange(pivot);
             return usableRows;
@@ -2264,8 +2261,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int Np = _maxDgBasis.Length;
             var Context = _maxDgBasis.GridDat;
             // special treatment of 0-th level
-            if(ilevel == 0) {
-                for(int i = 0; i < Jagg; i++) {
+            if (ilevel == 0) {
+                for (int i = 0; i < Jagg; i++) {
                     //_Injectors[ilevel][i] = MultidimensionalArray.Create(Np, Np);
                     //_Injectors[ilevel][i].AccEye(1.0);
                     _injectorCoarse[i] = MultidimensionalArray.Create(Np, Np);
@@ -2274,8 +2271,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 _Injectors[ilevel] = new MultidimensionalArray[Jagg];
 
-                for(int i = 0; i < Jagg; i++) {
-
+                void ComputeInjectorForCell(int i) {
 
                     // number of logical cells from previous level
                     int[] lparts = _agGrd[ilevel].jCellCoarse2jCellFine[i];
@@ -2291,31 +2287,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray a = MultidimensionalArray.Create(Jlparts, Np, Np);
                     _Injectors[ilevel][i] = MultidimensionalArray.Create(Jlparts, Np, Np);
                     // iterate over logical parts
-                    for(int k = 0; k < Jlparts; k++) {
+                    for (int k = 0; k < Jlparts; k++) {
                         // number of parts
                         int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lparts[k]];
                         int Jparts = parts.Length;
 
                         // project onto the aggregated cell (consisting of aggregated cells from the previous level)
-                        for(int j = 0; j < Jparts; j++) {
+                        for (int j = 0; j < Jparts; j++) {
                             var cellMask = new CellMask(Context, new[] { new Chunk() { i0 = parts[j], Len = 1 } }, MaskType.Geometrical);
+                            var scheme = new CellQuadratureScheme(true, cellMask);
+                            var quadRule = scheme.Compile(Context, _maxDgBasis.Degree * 2);
 
-                            CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
-                                (new CellQuadratureScheme(true, cellMask)).Compile(Context, _maxDgBasis.Degree * 2),
+                            var q = CellQuadrature.GetQuadrature(new int[2] { Np, Np }, Context,
+                                quadRule,
                                 delegate (int j0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                                     NodeSet nodes = QR.Nodes;
+                                    if (!nodes.IsLocked)
+                                        throw new ApplicationException();
                                     int D = nodes.SpatialDimension;
                                     NodeSet GlobalNodes = new NodeSet(Context.iGeomCells.GetRefElement(parts[j]), Length * nodes.NoOfNodes, D, false);
                                     Context.TransformLocal2Global(nodes, j0, Length, GlobalNodes.ResizeShallow(Length, nodes.NoOfNodes, D));
 
-                                    for(int d = 0; d < D; d++) {
+                                    for (int d = 0; d < D; d++) {
                                         var Cd = GlobalNodes.ExtractSubArrayShallow(-1, d);
                                         Cd.Scale(2 / (BB.Max[d] - BB.Min[d]));
                                         Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
                                     }
 #if DEBUG
-                                Debug.Assert(GlobalNodes.Min() >= -1.00001);
-                                Debug.Assert(GlobalNodes.Max() <= +1.00001);
+                                    Debug.Assert(GlobalNodes.Min() >= -1.00001);
+                                    Debug.Assert(GlobalNodes.Max() <= +1.00001);
 #endif
                                     GlobalNodes.LockForever();
 
@@ -2331,7 +2331,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 },
                                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // _SaveIntegrationResults:
                                     a.ExtractSubArrayShallow(k, -1, -1).Acc(1.0, ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1));
-                                }).Execute();
+                                });
+                            q.Execute();
                         }
                     }
 
@@ -2339,7 +2340,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray MM = MultidimensionalArray.Create(Np, Np);
                     MultidimensionalArray U = MultidimensionalArray.Create(Np, Np);
                     MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
-                    for(int k = 0; k < Jlparts; k++) {
+                    for (int k = 0; k < Jlparts; k++) {
                         MM.GEMM(1.0, a.ExtractSubArrayShallow(k, -1, -1), a.ExtractSubArrayShallow(k, -1, -1), 1.0, true);
                     }
 
@@ -2350,23 +2351,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // populate Injectors
                     _Injectors[ilevel][i].Multiply(1.0, a, orthoInv, 0.0, "jkn", "jkm", "mn");
                     // next direct Injector
-                    for(int k = 0; k < _Injectors[ilevel][i].Lengths[0]; k++) {
+                    for (int k = 0; k < _Injectors[ilevel][i].Lengths[0]; k++) {
                         // number of parts
                         int[] parts = _agGrd[ilevel - 1].iLogicalCells.AggregateCellToParts[lparts[k]];
                         int Jparts = parts.Length;
 
-                        for(int j = 0; j < Jparts; j++) {
+                        for (int j = 0; j < Jparts; j++) {
                             int kCell = parts[j];
                             _injectorCoarse[kCell].GEMM(1.0, _injectorCoarse[kCell].CloneAs(), _Injectors[ilevel][i].ExtractSubArrayShallow(k, -1, -1), 0.0);
                         }
 
                     }
+
                 }
+
+                //for (int i = 0; i < Jagg; i++)
+                //    ComputeInjectorForCell(i);
+
+                ilPSP.Environment.ParallelFor(0, Jagg, ComputeInjectorForCell);
             }
 
             // procede to next grid level
             ilevel++;
-            if(ilevel < _agGrd.Length) {
+            if (ilevel < _agGrd.Length) {
                 ProjectBasis(_agGrd, _maxDgBasis, _Injectors, _injectorCoarse, ilevel);
             }
         }

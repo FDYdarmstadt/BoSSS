@@ -91,11 +91,11 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public bool IsEmpty {
             get {
-                if(NoOfNodes < 0)
-                    return true;
+                if(NoOfNodes <= 0)
+                    return true; // decide as fast as possible
                 if(Weights[0] != 0.0)
-                    return false; 
-                if(Weights.Length == 1 && Weights[0] == 0.0)
+                    return false; // decide as fast as possible 
+                if (Weights.Length == 1 && Weights[0] == 0.0)
                     return true; // also quite often the case
 
                 return Weights.AbsSum() <= 0.0; // should be quite rare that we need to check this.

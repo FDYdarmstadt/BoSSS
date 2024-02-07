@@ -60,6 +60,27 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        bool m_FluxesAreNOTMultithreadSafe = true;
+
+
+        /// <summary>
+        /// Set to true, if **all** fluxes must be synchronized in multi-threaded execution.
+        /// **This will come at a performance degeneration.**
+        /// This is some lazy option: the default value is false,
+        /// i.e., fluxes are not synchronized.
+        /// <seealso cref="IMultitreadSafety"/>
+        /// </summary>
+        public bool FluxesAreNOTMultithreadSafe {
+            get {
+                return m_FluxesAreNOTMultithreadSafe;
+            }
+            set {
+                if (IsCommitted)
+                    throw new NotSupportedException("illegal to call after commit");
+                m_FluxesAreNOTMultithreadSafe = value;
+            }
+        }
+
         /// <summary>
         /// <see cref="IDifferentialOperator.VectorFieldIndices"/>
         /// </summary>
@@ -107,7 +128,7 @@ namespace BoSSS.Foundation.XDG {
         private DifferentialOperator FilterSpeciesOperator(IDifferentialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
             var r = new DifferentialOperator(op.DomainVar, op.ParameterVar, op.CodomainVar, (degDom, degParam, degCod) => order);
-
+            r.FluxesAreNOTMultithreadSafe = op.FluxesAreNOTMultithreadSafe;
             r.UserDefinedValues.AddRange(this.UserDefinedValues[species]);
 
             foreach(string comps in op.CodomainVar) { // loop over rows
@@ -345,21 +366,19 @@ namespace BoSSS.Foundation.XDG {
         /// Clone Method
         /// </summary>
         /// <returns></returns>
-        public XDifferentialOperatorMk2 CloneAs()
-        {
+        public XDifferentialOperatorMk2 CloneAs() {
             var ret = new XDifferentialOperatorMk2(this.DomainVar, this.CodomainVar, this.QuadOrderFunction, this.Species);
 
-            foreach(string var in this.CodomainVar)
-            {
-                foreach(IEquationComponent comp in this.EquationComponents[var])
-                {
+            foreach (string var in this.CodomainVar) {
+                foreach (IEquationComponent comp in this.EquationComponents[var]) {
                     ret.EquationComponents[var].Add(comp);
                 }
             }
-            ret.AgglomerationThreshold= this.AgglomerationThreshold;    
+            ret.AgglomerationThreshold= this.AgglomerationThreshold;
             ret.LinearizationHint=this.LinearizationHint;
             ret.IsLinear= this.IsLinear;
-            ret.TemporalOperator= this.TemporalOperator;    
+            ret.TemporalOperator= this.TemporalOperator;
+            ret.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
             return ret;
         }
 
@@ -1333,6 +1352,8 @@ namespace BoSSS.Foundation.XDG {
                    this.CodomainVar,
                    this.QuadOrderFunction,
                    this.Species.ToArray());
+
+            JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
 
             if (this.TemporalOperator != null)
                 JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);

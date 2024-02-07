@@ -313,7 +313,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 #if !DEBUG
         /// <summary>
-        /// operator condition number scaling
+        /// Convergence against exact solution in 3D
         /// </summary>
         [Test()]
         public static void TestOperatorConvergence3D([Values(1,2,3)] int dgDeg) {
@@ -347,7 +347,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
         /// <summary>
-        /// operator condition number scaling
+        /// Convergence against exact solution on a 2D square.
         /// </summary>
         [Test()]
         public static void TestOperatorConvergence2D([Values(2,3)] int dgDeg) {

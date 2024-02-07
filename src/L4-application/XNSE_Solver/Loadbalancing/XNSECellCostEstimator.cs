@@ -57,8 +57,6 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
 
         /// <summary>
         /// returns tuple array for cell-weights for a multi-constrained optimization
-        /// 
-        /// Currently only treats 
         /// </summary>
         public (CutStateClassifier.CellTypeFlags CellType, int Weight)[] TypeToWgt {
             get {

@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="domNrule">quadrature rule and domain</param>
         /// <param name="cs">Physical or reference coordinate system?</param>
         public DoubleEdgeQuadrature(
-            int[] noOfIntegralsPerCell, Grid.Classic.GridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs = Quadrature.CoordinateSystem.Physical)
+            int[] noOfIntegralsPerCell, IGridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs = Quadrature.CoordinateSystem.Physical)
             : base(noOfIntegralsPerCell, context, domNrule, cs) //
         {
             foreach(IChunkRulePair<QuadRule> crp in domNrule) {
@@ -262,8 +262,8 @@ namespace BoSSS.Foundation.Quadrature {
                 (m_QuadResults.Lengths.Take(2).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
 
 
-            if (m_AllocateBuffers != null)
-                m_AllocateBuffers(NoOfItems, rule);
+            //if (m_AllocateBuffers != null)
+            //    m_AllocateBuffers(NoOfItems, rule);
         }
 
 
@@ -276,14 +276,14 @@ namespace BoSSS.Foundation.Quadrature {
                               ICompositeQuadRule<DoubleEdgeQuadRule> domNrule,
                               Del_Evaluate _Evaluate,
                               Del_SaveIntegrationResults _SaveIntegrationResults,
-                              Del_AllocateBuffers _AllocateBuffers = null,
-                              Del_QuadNodesChanged _PostLockNodes = null,
+                              //Del_AllocateBuffers _AllocateBuffers = null,
+                              //Del_QuadNodesChanged _PostLockNodes = null,
                               CoordinateSystem cs = CoordinateSystem.Physical) {
             var ret = new DoubleEdgeQuadratureImpl(noOfIntegralsPerCell, context, domNrule, cs) {
                 m_Evaluate = _Evaluate,
                 m_SaveIntegrationResults = _SaveIntegrationResults,
-                m_AllocateBuffers = _AllocateBuffers,
-                m_quadNodesChanged = _PostLockNodes,
+                //m_AllocateBuffers = _AllocateBuffers,
+                //m_quadNodesChanged = _PostLockNodes,
 
             };
             return ret;
@@ -293,10 +293,21 @@ namespace BoSSS.Foundation.Quadrature {
         private class DoubleEdgeQuadratureImpl : DoubleEdgeQuadrature {
 
             public DoubleEdgeQuadratureImpl(
-                int[] noOfIntegralsPerCell, Grid.Classic.GridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs)
+                int[] noOfIntegralsPerCell, IGridData context, ICompositeQuadRule<DoubleEdgeQuadRule> domNrule, CoordinateSystem cs)
                 : base(noOfIntegralsPerCell, context, domNrule, cs) {
             }
 
+            public override Quadrature<DoubleEdgeQuadRule, EdgeMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                return new DoubleEdgeQuadratureImpl(
+                    this.IntegralCompDim, this.GridDat, this.m_compositeRule, this.CoordinateSystem) {
+                    m_AllocateBuffers = this.m_AllocateBuffers,
+                    m_SaveIntegrationResults = this.m_SaveIntegrationResults,
+                    m_quadNodesChanged = this.m_quadNodesChanged,
+                    m_ExEvaluate = this.m_ExEvaluate,
+                    m_Evaluate = this.m_Evaluate,
+                    m_OnCloneForThreadParallelization = this.m_OnCloneForThreadParallelization,
+                };
+            }
         }
 
     }
