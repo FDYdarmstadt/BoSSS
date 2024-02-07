@@ -426,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             FinalOperatorSettings(XOP, D);
-            XOP.FluxesAreNOTMultithreadSafe = false;
+            XOP.FluxesAreNOTMultithreadSafe = false; // enable multi-threaded evaluation of fluxes
             XOP.Commit();
 
             return XOP;
