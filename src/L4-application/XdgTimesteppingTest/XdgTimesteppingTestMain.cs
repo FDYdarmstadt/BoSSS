@@ -319,6 +319,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.IsLinear = true;
+                Operator.FluxesAreNOTMultithreadSafe = true;
                 Operator.Commit();
 
                 return Operator;
@@ -336,6 +337,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+                Operator.FluxesAreNOTMultithreadSafe = true;
                 Operator.Commit();
 
                 return Operator;
@@ -349,6 +351,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+                Operator.FluxesAreNOTMultithreadSafe = true;
                 Operator.Commit();
 
                 return Operator;

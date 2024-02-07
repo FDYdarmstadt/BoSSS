@@ -866,8 +866,7 @@ namespace ilPSP {
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        public int CheckForNanOrInf(bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true) {
-
+        public int CheckForNanOrInf(bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null) {
             int Problems = 0;
 
             this.ApplyAll(delegate(int[] index, double a) {
@@ -885,7 +884,13 @@ namespace ilPSP {
                                 stw.Write(index.Last());
                                 stw.Write("]");
 
-                                throw new ArithmeticException("NaN found at " + stw.ToString() + "-th entry.");
+                                if (messageprefix == null)
+                                    messageprefix = "";
+                                else
+                                    messageprefix = messageprefix + ": ";
+
+
+                                throw new ArithmeticException($"{messageprefix}NaN found at " + stw.ToString() + "-th entry.");
                             }
                         } else {
                             Problems++;
@@ -905,8 +910,12 @@ namespace ilPSP {
                                 stw.Write(index.Last());
                                 stw.Write("]");
 
+                                if (messageprefix == null)
+                                    messageprefix = "";
+                                else
+                                    messageprefix = messageprefix + ": ";
 
-                                throw new ArithmeticException("Inf found at " + stw.ToString() + "-th entry.");
+                                throw new ArithmeticException($"{messageprefix}Inf found at " + stw.ToString() + "-th entry.");
                             }
                         } else {
                             Problems++;

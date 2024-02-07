@@ -123,8 +123,9 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine(tt.Item1);
                 Console.ResetColor();
             }
+            
 
-            SingleSessionSshClinet ssh = new SingleSessionSshClinet("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
+            var ssh = new BoSSS.Application.BoSSSpad.SingleSessionSshClient("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_ed25519"), "C:\\Program Files\\Git\\usr\\bin\\ssh.exe");
 
             var rr = ssh.RunCommand("ls"); w(rr);
             rr = ssh.RunCommand("cd mono"); w(rr);
@@ -139,8 +140,8 @@ namespace BoSSS.Application.BoSSSpad {
 
             bool gracefull = ssh.Disconnect(false);
             Console.WriteLine("gracefull exit? " + gracefull);
-            return 0;
-            */
+            //return 0;
+            //*/
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             

@@ -401,11 +401,9 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <remarks>
         /// Indices are defined as follows:
-        /// <list type="bullet">
-        ///   <item>1st index: local cell index (locally updated and external cells);</item>
-        ///   <item>2nd index: matrix row index;</item>
-        ///   <item>3rd index: matrix column index;</item>
-        /// </list>
+        /// - 1st index: local cell index (locally updated and external cells);
+        /// - 2nd index: matrix row index;
+        /// - 3rd index: matrix column index;
         /// </remarks>
         MultidimensionalArray InverseTransformation {
             get;
@@ -420,11 +418,9 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <remarks>
         /// Indices are defined as follows:
-        /// <list type="bullet">
-        ///   <item>1st index: local cell index (locally updated and external cells);</item>
-        ///   <item>2nd index: matrix row index;</item>
-        ///   <item>3rd index: matrix column index;</item>
-        /// </list>
+        /// - 1st index: local cell index (locally updated and external cells);
+        /// - 2nd index: matrix row index;
+        /// - 3rd index: matrix column index;
         /// </remarks>
         MultidimensionalArray Transformation {
             get;

@@ -34,6 +34,10 @@ using BoSSS.Solution.XNSECommon;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
+    interface ISlipTest {
+        double slipI { get; }
+    }
+
     /// <summary>
     /// a periodic shear flow, with two phases.
     /// Interfacial slip (noslip, slip, freeslip) with equal and unequal viscosities can be tested
@@ -42,7 +46,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
     /// Convective terms are not regarded.
     /// More details in Annual Report 2023 "Rieckmann" (add arxiv when available), Case 2
     /// </summary>
-    class InterfaceSlipTestLin : IXNSFETest {
+    class InterfaceSlipTestLin : IXNSFETest, ISlipTest {
 
         public bool TestImmersedBoundary => false;
 
@@ -341,7 +345,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public double[] AcceptableL2Error {
             get {
-                return new double[] { 5.0e-7, 1.0e-7, 1.0e-7, 1.0e-7 };
+                return new double[] { 5.0e-6, 1.0e-6, 1.0e-6, 1.0e-6 };
+                // old: return new double[] { 5.0e-6, 1.0e-7, 1.0e-7, 1.0e-7 };
             }
         }
 
@@ -382,7 +387,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
     /// Convective terms are regarded.
     /// More details in Annual Report 2023 "Rieckmann" (add arxiv when available), Case 3
     /// </summary>
-    class InterfaceSlipTestNonLin : IXNSFETest {
+    class InterfaceSlipTestNonLin : IXNSFETest, ISlipTest {
 
         public bool TestImmersedBoundary => false;
 

@@ -26,6 +26,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using System.Threading;
 
 namespace BoSSS.Foundation.XDG {
     
@@ -43,7 +44,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Mapping of DG-DOF into <see cref="ResultVector"/>
         /// </summary>
-        UnsetteledCoordinateMapping m_CodomainMap;
+        readonly UnsetteledCoordinateMapping m_CodomainMap;
                 
         /// <summary>
         /// All Domain and Parameter fields (domain first (0 to <see cref="DELTA"/>-1), then parameters) are defined by the operator, on the negative side of the level-set (species A)
@@ -58,27 +59,27 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Number of domain fields
         /// </summary>
-        int DELTA;
+        readonly int DELTA;
 
         /// <summary>
         /// Switch, whether the evaluation (the field value) of <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/> is actually necessary.
         /// </summary>
-        bool[] m_ValueRequired;
+        readonly bool[] m_ValueRequired;
 
         /// <summary>
         /// Switch, whether the evaluation (the gradient value) of <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/> is actually necessary.
         /// </summary>
-        bool[] m_GradientRequired;
+        readonly bool[] m_GradientRequired;
         
         /// <summary>
         /// ye good old level set tracker
         /// </summary>
-        LevelSetTracker m_lsTrk;
+        readonly LevelSetTracker m_lsTrk;
 
         /// <summary>
         /// index into <see cref="LevelSetTracker.RegionsHistory"/>, etc.
         /// </summary>
-        int m_LsTrkHistoryIndex;
+        readonly int m_LsTrkHistoryIndex;
 
 
         /// <summary>
@@ -97,7 +98,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Negative and positive (with respect to level-set) species.
         /// </summary>
-        Tuple<SpeciesId,SpeciesId> m_SpeciesPair;
+        readonly Tuple<SpeciesId,SpeciesId> m_SpeciesPair;
 
         /// <summary>
         /// Negative species/Species A
@@ -116,6 +117,24 @@ namespace BoSSS.Foundation.XDG {
                 return m_SpeciesPair.Item2;
             }
         }
+
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+            return new NECQuadratureLevelSet<V>(
+                this.gridData, m_DiffOp,
+                this.ResultVector,
+                m_DomainAndParamFieldsA.Take(DELTA).ToArray(), new DGField[m_DiffOp.ParameterVar.Count], m_CodomainMap,
+                this.m_lsTrk, this.m_LevSetIdx, this.m_LsTrkHistoryIndex,
+                this.m_SpeciesPair,
+                base.m_compositeRule) {
+                m_DomainAndParamFieldsA = this.m_DomainAndParamFieldsA,
+                m_DomainAndParamFieldsB = this.m_DomainAndParamFieldsB,
+                m_iThread = iThread,
+            };
+        }
+
+        int m_iThread;
+
+        readonly XDifferentialOperatorMk2 m_DiffOp;
 
         /// <summary>
         /// ctor.
@@ -139,6 +158,7 @@ namespace BoSSS.Foundation.XDG {
             // set members / check ctor parameters
             // -----------------------------------
             m_lsTrk = lsTrk;
+            m_DiffOp = DiffOp;
             m_LsTrkHistoryIndex = TrackerHistoryHindex;
             this.m_LevSetIdx = _iLevSet;
             this.m_SpeciesPair = SpeciesPair;
@@ -466,9 +486,10 @@ namespace BoSSS.Foundation.XDG {
             // Evaluate Integral components
             // ----------------------------
 
-                       
+
             // loop over codomain variables ...
-            for (int gamma = 0; gamma < GAMMA; gamma++) {
+            for (int __gamma = 0; __gamma < GAMMA; __gamma++) {
+                int gamma = (__gamma + m_iThread) % GAMMA; // shuffle around to reduce locking in threads
 
                 // prepare parameters
                 // - - - - - - - - - 
@@ -495,7 +516,11 @@ namespace BoSSS.Foundation.XDG {
 
                 // Evaluate Bilin. forms
                 // - - - - - - - - - - -
-                
+
+                bool MustLock = this.m_DiffOp.FluxesAreNOTMultithreadSafe;
+                if (MustLock)
+                    Monitor.Enter(this.m_DiffOp);
+
                 {
                     EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_V[gamma], this.m_NonlinLsForm_V_Watches[gamma],
                         Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 0), Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, 1),
@@ -504,7 +529,8 @@ namespace BoSSS.Foundation.XDG {
                         Flux_Eval,
                         delegate (INonlinLevelSetForm_V _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
                             _comp.NonlinInternalEdge_V(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
-                        });
+                        },
+                        m_iThread);
                 }
                 {
                     EvalComponent(ref _inParams, gamma, this.m_NonlinLsForm_GradV[gamma], this.m_NonlinLsForm_GradV_Watches[gamma],
@@ -514,8 +540,12 @@ namespace BoSSS.Foundation.XDG {
                         Flux_Eval,
                         delegate (INonlinLevelSetForm_GradV _comp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBufIn, MultidimensionalArray SumBufOt) {
                             _comp.NonlinInternalEdge_GradV(ref _inParams, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
-                        });
+                        },
+                        m_iThread);
                 }
+
+                if (MustLock)
+                    Monitor.Exit(this.m_DiffOp);
             }            
 
             // Summation Loops: multiply with test and trial functions
@@ -575,16 +605,18 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray[] FieldValuesPos, MultidimensionalArray[] FieldValuesNeg, MultidimensionalArray[] FieldGradientValuesPos, MultidimensionalArray[] FieldGradientValuesNeg,
             int DELTA,
             Stopwatch timer,
-            Action<T, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray, MultidimensionalArray> ComponentFunc) 
+            Action<T, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray, MultidimensionalArray> ComponentFunc,
+            int iThread) 
             where T : ILevelSetForm //
         {
             timer.Start();
 
 
 
-            for(int i = 0; i < bf.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
+            for (int __i = 0; __i < bf.m_AllComponentsOfMyType.Length; __i++) {  // loop over equation components
+                int i = (__i + iThread) % bf.m_AllComponentsOfMyType.Length; // shuffling in threads to reduce locking
                 var comp = bf.m_AllComponentsOfMyType[i];
-
+                object blck = bf.m_LockObjects[i];
 
                 int NoOfArgs = bf.NoOfArguments[i];
                 Debug.Assert(NoOfArgs == comp.ArgumentOrdering.Count);
@@ -609,7 +641,11 @@ namespace BoSSS.Foundation.XDG {
 
                 // evaluate equation components
                 timers[i].Start();
+                if (blck != null)
+                    Monitor.Enter(blck);
                 ComponentFunc(comp, uA, uB, Grad_uA, Grad_uB, SumBufIn, SumBufOt);
+                if (blck != null)
+                    Monitor.Exit(blck);
                 timers[i].Stop();
 #if DEBUG
                 SumBufIn.CheckForNanOrInf();

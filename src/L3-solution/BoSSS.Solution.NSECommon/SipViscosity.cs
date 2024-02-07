@@ -250,41 +250,40 @@ namespace BoSSS.Solution.NSECommon {
 
         }
 
-        // store instances of object used in 'Viscosity' -- theoretically, this should produce less stress on the garbage collector
-        double[] m_Parameters;
-        double[] m_Velocity;
-        double[,] m_VelocityGrad;
+
 
         protected double Viscosity(int i, int n, int D, MultidimensionalArray[] Parameters, MultidimensionalArray[] Velocity, MultidimensionalArray[] VelocityGrad) {
+            
+
             int noOfParams = Parameters != null ? Parameters.Length : 0;
-            if(m_Parameters == null)
-                m_Parameters = new double[noOfParams];
+            //if(m_Parameters == null)
+            var m_Parameters = new double[noOfParams]; // must allocate for every call to be multithread-save
 
             //int NoOfVelocities1 = Velocity != null ? Velocity.Length : 0;
             //int NoOfVelocities2 = VelocityGrad != null ? VelocityGrad.Length : 0;
-            
-            if(m_Velocity == null)
-                m_Velocity = new double[D];
+
+            //if(m_Velocity == null)
+            var m_Velocity = new double[D];
 
             //int D = VelocityGrad != null ? VelocityGrad[0].GetLength(2) : 0;
-            if(m_VelocityGrad == null) 
-                m_VelocityGrad = new double[D, D];
+            //if(m_VelocityGrad == null) 
+            var m_VelocityGrad = new double[D, D];
 
-            
-            for(int f = 0; f < noOfParams; f++) {
+
+            for (int f = 0; f < noOfParams; f++) {
                 m_Parameters[f] = Parameters[f][i, n];
             }
-            for(int f = 0; f < D; f++) {
-                if(Velocity[f] != null)
+            for (int f = 0; f < D; f++) {
+                if (Velocity[f] != null)
                     m_Velocity[f] = Velocity[f][i, n];
                 else
                     m_Velocity[f] = 0.0;
-                if(VelocityGrad[f] != null) {
-                    for(int d = 0; d < D; d++) {
+                if (VelocityGrad[f] != null) {
+                    for (int d = 0; d < D; d++) {
                         m_VelocityGrad[f, d] = VelocityGrad[f][i, n, d];
                     }
                 } else {
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         m_VelocityGrad[f, d] = 0.0;
                     }
                 }

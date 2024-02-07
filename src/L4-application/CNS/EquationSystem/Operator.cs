@@ -147,6 +147,7 @@ namespace CNS.EquationSystem {
                 CompressibleEnvironment.PrimalArgumentOrdering,
                 QuadOrderFunc.NonLinearWithoutParameters(2));
             MapComponents(spatialOp);
+            spatialOp.FluxesAreNOTMultithreadSafe = false;
             spatialOp.Commit();
             return spatialOp;
         }

@@ -182,6 +182,7 @@ namespace IntersectingLevelSetTest {
             Op.EquationComponents["c1"].Add(new LevSetJump_CA()); // flux am lev-set 1
             Op.EquationComponents["c1"].Add(new LevSetJump_CB()); // flux am lev-set 1
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 
