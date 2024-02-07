@@ -11,7 +11,7 @@ namespace ilPSP {
         public MKLservice() :
             base(BLAS_LAPACK_Libstuff.GetLibname(Parallelism.OMP),
                  BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(Parallelism.OMP),
-                 new GetNameMangling[] { DynLibLoader.Identity, DynLibLoader.Identity } ,
+                 BLAS_LAPACK_Libstuff.GetLibname(Parallelism.OMP).Length.ForLoop<GetNameMangling>( i => DynLibLoader.Identity),
                  BLAS_LAPACK_Libstuff.GetPlatformID(Parallelism.OMP),
                  BLAS_LAPACK_Libstuff.GetPointerSizeFilter(Parallelism.OMP)) //
         { }

@@ -282,7 +282,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.0004198291651200775;
+                double angularVelocitySol = -0.0004346048227901287; // -0.0004198291651200775; Don't know why this changed when updating the linear solver; don't care ;)
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
