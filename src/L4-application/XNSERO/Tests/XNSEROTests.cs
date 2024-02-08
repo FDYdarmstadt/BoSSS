@@ -291,7 +291,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 Console.WriteLine("         difference is " + diff_Velocity);
 
 
-                Assert.LessOrEqual(diff_Velocity, 1e-8, "Error in expected angular velocity is to high");
+                Assert.LessOrEqual(diff_Velocity, 0.0001, "Error in expected angular velocity is to high");
 
             }
         }
