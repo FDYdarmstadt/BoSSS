@@ -108,7 +108,7 @@ namespace BoSSS.Application.XNSEC {
 
                 LaLa.Add(C);
             }
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = Name });
 #endif
         }
 
@@ -127,7 +127,7 @@ namespace BoSSS.Application.XNSEC {
 
                 LaLa.Add(C);
             }
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = Name });
 //#endif
         }
 

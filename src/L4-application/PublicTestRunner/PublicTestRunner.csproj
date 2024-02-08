@@ -28,6 +28,7 @@
     <ProjectReference Include="..\ExternalBinding\ExternalBinding.csproj" />
     <ProjectReference Include="..\HangingNodesTests\HangingNodesTests.csproj" />
     <ProjectReference Include="..\HilbertTest\HilbertTest.csproj" />
+    <ProjectReference Include="..\IntersectingLevelSetTest\IntersectingLevelSetTest.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\ipViscosity\ipViscosity.csproj" />
     <ProjectReference Include="..\LoadBalancingTest\LoadBalancingTest.csproj" />

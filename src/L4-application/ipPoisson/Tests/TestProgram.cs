@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
@@ -111,7 +112,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
             [Values(3,4)]int dgDeg,
             [Values(8)]int res,
             [Values(3)]int dim,
-            [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz)] SolverCodes solver
+            [Values(SolverCodes.exp_gmres_levelpmg, SolverCodes.exp_Kcycle_schwarz_CoarseMesh, SolverCodes.exp_Kcycle_schwarz_PerProcess)] SolverCodes solver
 #endif
             ) {
 
@@ -120,6 +121,11 @@ namespace BoSSS.Application.SipPoisson.Tests {
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
                 //ctrl.TracingNamespaces = "*";
+
+                if(ctrl.LinearSolver is OrthoMGSchwarzConfig omgsc) {
+                    omgsc.CoarseKickIn = 10000;
+                }
+
                 p.Init(ctrl);
                 p.RunSolverMode();
                 
@@ -249,7 +255,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             }
 
-            ConditionNumberScalingTest.Perform(Controls, true, "CondnumberSlopes");
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "CondnumberSlopes" });
         }
 
 #if !DEBUG
@@ -301,13 +307,13 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 }
             }
 
-            ConditionNumberScalingTest.Perform(Controls);
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "SIP-TestOperatorScaling3D-p" + dgDeg });
 
         }
 
 #if !DEBUG
         /// <summary>
-        /// operator condition number scaling
+        /// Convergence against exact solution in 3D
         /// </summary>
         [Test()]
         public static void TestOperatorConvergence3D([Values(1,2,3)] int dgDeg) {
@@ -341,7 +347,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
         /// <summary>
-        /// operator condition number scaling
+        /// Convergence against exact solution on a 2D square.
         /// </summary>
         [Test()]
         public static void TestOperatorConvergence2D([Values(2,3)] int dgDeg) {

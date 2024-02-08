@@ -36,6 +36,12 @@ using BoSSS.Solution.Statistic;
 using System.IO;
 using System.Runtime.Serialization;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Gnuplot;
+using System.Net.NetworkInformation;
+using BoSSS.Solution.Tecplot;
+using System.Xml.Linq;
+using NUnit.Common;
+using ilPSP.LinSolvers.monkey;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -49,7 +55,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     ///  SPE Symposium on Numerical Simulation of Reservoir Performance, 
     ///  doi: 10.2118/5729-MS, Los Angeles, California, 1976
     /// </remarks>
-    class CoreOrthonormalizationProcedure {
+    class CoreOrthonormalizationProcedure : ICloneable {
 
 
         public CoreOrthonormalizationProcedure(ISparseMatrix __OpMatrix) {
@@ -139,7 +145,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="id">
         /// name/information for debugging and analysis
         /// </param>
-        private double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, string id) {
+        /// <param name="plot"></param>
+        private double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, string id, bool plot = false) {
             using (var ft = new FuncTrace()) {
                 Debug.Assert(SolHistory.Count == MxxHistory.Count);
                 Debug.Assert(outX.Length == OpMatrix.ColPartition.LocalLength);
@@ -167,14 +174,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BLAS.daxpy(L, alpha_i, SolHistory[i], 1, outX, 1); // accumulate solution correction...
                 BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1); // ...and its effect on the residual
 
-                double ResNorm = Norm(outRes);
-                double tol = Math.Max(ResNorm, oldResiNorm) * 0.2;
-                tol = Math.Max(tol, 1.0e-7);
-                if (ResNorm > oldResiNorm + tol)
-                    throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm / oldResiNorm}");
 
 
-                if (m_UsedMoreThanOneOrthoCycle || KrylovDim % 40 == 0) { // 40 should be a decent compromise between performance and stability
+                if (m_UsedMoreThanOneOrthoCycle || KrylovDim % RecalcResiPeriod == 0) { // 40 should be a decent compromise between performance and stability
+                  
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // once in a while, re-compute the residual to get rid of round-off errors which might accumulate
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -187,43 +190,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-
-                /*
-                if (m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {
-                    // prevent to much info dropping from lower levels
-                    double xNorm = Norm(outX);
-                    ft.Info("|x|: " + xNorm + ", last alpha was " + alpha_i);
-
-                    //var iterSol = mgop.ProlongateRhsToDg(outX, "Sol");
-                    //Tecplot.Tecplot.PlotFields(iterSol, "itersol-" + cnt, 0, 2);
-                    Console.WriteLine("residual: " + cnt + "    " + ResNorm);
-                    cnt++;
-                }
-                */
+                double ResNorm = Norm(outRes);
+                double tol = Math.Max(ResNorm, oldResiNorm) * 0.2;
+                tol = Math.Max(tol, 1.0e-7);
+                if (ResNorm > oldResiNorm + tol)
+                    throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm / oldResiNorm}");
 
 
-                /*
-                // -------------------
-                var rjCheck = Res0.CloneAs();
-                OpMatrix.SpMV(-1.0, outX, 1.0, rjCheck);
-                double dist = rjCheck.L2Dist(outRes);
-
-                
-                var OrthoCheck = MultidimensionalArray.Create(i + 1, i + 1);
-                for(int k = 0; k <= i; k++) {
-                    for(int w = 0; w <= i; w++) {
-                        OrthoCheck[k, w] = MxxHistory[k].InnerProd(MxxHistory[w]).MPISum();
-                    }
-                }
-                OrthoCheck.AccEye(-1.0);
-                var orthoErr = OrthoCheck.InfNorm();
-
-                double newResiNorm = outRes.L2Norm();
-                Debug.Assert(dist <= Math.Max(outRes.L2Norm(), rjCheck.L2Norm()) * 1e-10);
-                Debug.Assert(newResiNorm < oldResiNorm * 1.0001, "residual should shrink");
-                Debug.Assert(orthoErr < 1.0e-7);
-                // ------------------------
-                */
+                if (plot)
+                    ft.Info($"reduction factor: {ResNorm / oldResiNorm}: old norm: {oldResiNorm}, new norm {ResNorm}");
 
 
 
@@ -233,6 +208,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        public int RecalcResiPeriod = 1;
  
 
         bool m_UsedMoreThanOneOrthoCycle = false;
@@ -240,16 +216,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="X"></param>
-        /// <param name="name"></param>
-        private double AddSol(ref double[] X, string name) {
+        internal (double UsablePart, bool CancellationTriggered) AddSol(ref double[] X, string name) {
             using (var ft = new FuncTrace()) {
 
                 m_UsedMoreThanOneOrthoCycle = false;
 
-                double FillXwithRandom(double[] __X, double[] __Mxx) {
+                double FillXwithRandom(double[] __X, double[] __Mxx, int iSweep) {
                     double __NormMxx;
-                    ft.Error("Solution norm is exactly 0.0 -- OR -- re-orthonormalization failed; trying with a random vector instead to recover.");
+                    ft.Error(name + ": Solution norm is exactly 0.0 -- OR -- re-orthonormalization failed; trying with a random vector instead to recover; sweep " + iSweep);
                     __X.FillRandom();
 
                     __Mxx.ClearEntries();
@@ -257,9 +231,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     __NormMxx = Norm(__Mxx);
 
                     if (__NormMxx == 0)
-                        throw new ArithmeticException("Numerical breakdown: norm of matrix * solution after using RANDOM NUMBERS (!) is " + __NormMxx);
+                        throw new ArithmeticException(name + ": Numerical breakdown: norm of matrix * solution after using RANDOM NUMBERS (!) is " + __NormMxx);
                     if (__NormMxx.IsNaNorInf())
-                        throw new ArithmeticException("Numerical breakdown: norm of matrix * solution after using RANDOM NUMBERS (!) is " + __NormMxx);
+                        throw new ArithmeticException(name + ": Numerical breakdown: norm of matrix * solution after using RANDOM NUMBERS (!) is " + __NormMxx);
                     return __NormMxx;
                 }
 
@@ -273,11 +247,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OpMatrix.SpMV(1.0, X, 0.0, Mxx);
                 double NormMxx = Norm(Mxx);
                 if (NormMxx.IsNaNorInf())
-                    throw new ArithmeticException("Numerical breakdown: norm of matrix * solution is " + NormMxx);
+                    throw new ArithmeticException(name + ": Numerical breakdown: norm of matrix * solution is " + NormMxx);
 
                 if (NormMxx == 0) {
                     // solution is really strange: try with a random vector.
-                    NormMxx = FillXwithRandom(X, Mxx);
+                    double Xnorm = Norm(X);
+                    ft.Error("Problem on Entry into Orthonormalization: NormMxx = " + NormMxx + ", Xnorm = " + Xnorm);
+                    NormMxx = FillXwithRandom(X, Mxx, 0);
                 }
 
                 // scale Mxx to norm 1, should allow better stability when compared to the Krylov vectors who have all norm 1;
@@ -286,6 +262,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 const int MaxOrtho = 10;
                 double MxxRemainderAfterOrthoNorm = 0;
+                bool _CancellationTriggered = false;
                 for (int jj = 0; jj <= MaxOrtho; jj++) { // re-orthogonalisation, loop-limit to 10; See also book of Saad, p 156, section 6.3.2
 
                     m_UsedMoreThanOneOrthoCycle = jj > 0;
@@ -304,9 +281,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (jj == 0)
                         MxxRemainderAfterOrthoNorm = NewMxxNorm;
 
+                    //{
+                    //    long _L_mpi = ((long)X.Length).MPISum(comm);
+                    //    double _Xnorm = Norm(X);
+                    //    Console.Out.WriteLine("Orthonormalization (R" + OpMatrix.RowPartitioning.MpiRank + "): " + name + "." + jj +  ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + _Xnorm + "; L = " + _L_mpi);
+                    //}
+
                     if (NewMxxNorm <= 1E-5) {
                         using (new BlockTrace("re-orthonormalization", ft)) {
-
+                            _CancellationTriggered = true;
                             if (jj < MaxOrtho) {
 
                                 // a lot of canceling out has occurred; |Mxx| dropped by several magnitudes.
@@ -317,28 +300,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // To ensure stability, we must start over with a re-scaled X!
                                 // We have to re-scale what is remaining of X:
                                 double Xnorm = Norm(X);
-                                Console.Error.WriteLine("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
-                                ft.Info("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
+                                long L_mpi = ((long)X.Length).MPISum(comm);
+                                Console.Out.WriteLine("Orthonormalization (Rank" + OpMatrix.RowPartitioning.MpiRank + "): Severe cancellation after " + name + ", norm after ortho is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + L_mpi);
+                                ft.Info("Orthonormalization: Severe cancellation after " + name + ", norm after ortho is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + L_mpi);
 
                                 if ((Xnorm < 1e-200) || (jj == MaxOrtho - 1)) {
                                     // prohibits div by 0, if we got zero solution  
-                                    NormMxx = FillXwithRandom(X, Mxx);
+                                    ft.Error("Xnorm = " + Xnorm + " (almost zero solution branch)");
+                                    NormMxx = FillXwithRandom(X, Mxx, jj + 1);
                                 } else {
                                     X.ScaleV(1.0 / Xnorm);
                                     Mxx.ClearEntries();
                                     OpMatrix.SpMV(1.0, X, 0.0, Mxx);
                                     NormMxx = Norm(Mxx);
 
-                                    if (NormMxx == 0)
+                                    if (NormMxx == 0) {
                                         // solution is really strange: try with a random vector.
-                                        NormMxx = FillXwithRandom(X, Mxx);
+                                        ft.Error("Xnorm = " + Xnorm + " (exactly zero solution branch)");
+                                        NormMxx = FillXwithRandom(X, Mxx, jj + 1);
+                                    }
                                 }
 
                                 double gamma = 1 / NewMxxNorm;
                                 BLAS.dscal(L, gamma, Mxx, 1);
                                 BLAS.dscal(L, gamma, X, 1);
                             } else {
-                                throw new ArithmeticException("numerical breakdown");
+                                throw new ArithmeticException(name + ": numerical breakdown");
                             }
                         }
                     } else {
@@ -349,12 +336,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-
                 SolHistory.Add(X);
                 MxxHistory.Add(Mxx);
                 X = null;
 
-                return MxxRemainderAfterOrthoNorm;
+                return (MxxRemainderAfterOrthoNorm, _CancellationTriggered);
             }
         }
 
@@ -385,7 +371,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double acc = 0;
                 for(int i = 0; i < L; i++) {
                     if (Diagonal[i] <= 0)
-                        throw new ArithmeticException("fuced up diagonal");
+                        throw new ArithmeticException("fucked up diagonal");
                     acc += A[i] * B[i] * Diagonal[i];
                 }
                 return acc.MPISum(comm);
@@ -429,8 +415,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// guess for the solution (typically, preconditioner output); will be modified during the orthonormalization
         /// </param>
         public double AddSolAndMinimizeResidual(ref double[] xGuess, double[] outX, double[] Sol0, double[] Res0, double[] outRes, string name) {            
-            double UsablePart = AddSol(ref xGuess, name);
-            double newResNorm = MinimizeResidual(outX, Sol0, Res0, outRes, name);
+            var (_, _CancellationTriggered) = AddSol(ref xGuess, name);
+            
+            double newResNorm = MinimizeResidual(outX, Sol0, Res0, outRes, name, false);
+            this.CancellationTriggered = _CancellationTriggered;
 
             //if(name != null)
             //    Console.WriteLine($"   {name} \t\t\t{UsablePart:0.####e-00}\t{Alphas.Last().RelResReduction:0.####e-00}\t{newResNorm:0.####e-00}");
@@ -438,98 +426,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return newResNorm;
         }
-    }
-    /*
-    class DecompositionAccelerator {
 
-        CoreOrthonormalizationProcedure m_kSpace;
+        public object Clone() {
+            var R = new CoreOrthonormalizationProcedure(this.OpMatrix);
+            R.Alphas.AddRange(this.Alphas);
+            R.CancellationTriggered = this.CancellationTriggered;
+            R.Diagonal = this.Diagonal?.CloneAs();
+            R.MxxHistory.AddRange(this.MxxHistory.Select(a => a.CloneAs())); 
+            R.SolHistory.AddRange(this.SolHistory.Select(a => a.CloneAs()));
+            R.RecalcResiPeriod = this.RecalcResiPeriod;
+            R.m_UsedMoreThanOneOrthoCycle = this.m_UsedMoreThanOneOrthoCycle;
 
-        public DecompositionAccelerator(MultigridOperator op, CoreOrthonormalizationProcedure kSpace) {
-            m_kSpace = kSpace;
-            
-            int pLowVel = 4;
-            int pLowPres = pLowVel - 1;
-
-            SubBlockSelector VelLo = new SubBlockSelector(op.DgMapping);
-            VelLo.VariableSelector(0, 1);
-            VelLo.SetModeSelector(k => k <= pLowVel);
-            BlockMask maskVelLo = new BlockMask(VelLo);
-
-            SubBlockSelector VelHi = new SubBlockSelector(op.DgMapping);
-            VelHi.VariableSelector(0, 1);
-            VelHi.SetModeSelector(k => k > pLowVel);
-            BlockMask maskVelHi = new BlockMask(VelHi);
-
-            SubBlockSelector PresLo = new SubBlockSelector(op.DgMapping);
-            PresLo.VariableSelector(2);
-            PresLo.SetModeSelector(k => k <= pLowPres);
-            BlockMask maskPresLo = new BlockMask(PresLo);
-
-            SubBlockSelector PresHi = new SubBlockSelector(op.DgMapping);
-            PresHi.VariableSelector(2);
-            PresHi.SetModeSelector(k => k > pLowPres);
-            BlockMask maskPresHi = new BlockMask(PresHi);
-
-            int L = op.Mapping.LocalLength;
-
-
-            bool[] check = new bool[L];
-            foreach (var msk in new BlockMask[] { maskVelLo, maskVelHi, maskPresLo, maskPresHi }) {
-                foreach (int i in msk.LocalIndices) {
-                    if (check[i] == true)
-                        throw new Exception("double hit " + i);
-                    check[i] = true;
-                }
-            }
-            for (int i = 0; i < L; i++) {
-                if (check[i] == false)
-                    throw new Exception("miss " + i);
-
-            }
-        
-            m_Decompositions.Add(maskVelLo.LocalIndices);
-            m_Decompositions.Add(maskVelHi.LocalIndices);
-            m_Decompositions.Add(maskPresLo.LocalIndices);
-            m_Decompositions.Add(maskPresHi.LocalIndices);
+            return R;
         }
 
-        List<int[]> m_Decompositions = new List<int[]>();                                                   
-
-
-        public void Solve(double[] X, double[] RHS) {
-
-            var X0 = X.CloneAs();
-            var Res = RHS.CloneAs();
-
-            int L = X.Length;
-            X.ClearEntries();
-
-            var myOrtho = new CoreOrthonormalizationProcedure(m_kSpace.OpMatrix);
-
-            //myOrtho.AddSolAndMinimizeResidual()
-
-            foreach(var Y in m_kSpace.SolHistory) {
-                int i = -1;
-                foreach(int[] Decomp in m_Decompositions) {
-                    i++;
-
-                    double[] Yd = new double[L];
-                    Yd.AccV(1.0, Y, Decomp, Decomp);
-                    if (Yd.MPI_L2Norm(m_kSpace.OpMatrix.MPI_Comm) <= 0)
-                        continue;
-                    double resNorm = myOrtho.AddSolAndMinimizeResidual(ref Yd, X, X0, RHS, Res, "decomp" + i);
-                    
-                    //Console.WriteLine("decomp" + i + ": " + resNorm);
-                }
-            }
-
-        }
-
-
+        public bool CancellationTriggered;
     }
-    */
-
-
+ 
     /// <summary>
     /// A recursive multigrid method, where the convergence (i.e. non-divergence) of each mesh level is guaranteed by an
     /// orthonormalization approach, similar to flexible GMRES, 
@@ -655,12 +568,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// The matrix at this level.
         /// </summary>
-        public BlockMsrMatrix OpMatrix => m_MgOperator.OperatorMatrix;
+        public BlockMsrMatrix OpMatrix => m_OpMapPair.OperatorMatrix;
 
         /// <summary>
         /// passed in <see cref="InitImpl"/>
         /// </summary>
-        IOperatorMappingPair m_MgOperator;
+        IOperatorMappingPair m_OpMapPair;
 
 
         /// <summary>
@@ -678,90 +591,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
-        /*
-        public void ScalingKakke(MultigridOperator op) { 
-            int pLowVel = 4;
-            int pLowPres = pLowVel - 1;
-
-            SubBlockSelector VelLo = new SubBlockSelector(op.DgMapping);
-            VelLo.SetVariableSelector(0, 1);
-            VelLo.SetModeSelector(k => k <= pLowVel);
-            BlockMask maskVelLo = new BlockMask(VelLo);
-
-            SubBlockSelector VelHi = new SubBlockSelector(op.DgMapping);
-            VelHi.SetVariableSelector(0, 1);
-            VelHi.SetModeSelector(k => k > pLowVel);
-            BlockMask maskVelHi = new BlockMask(VelHi);
-            
-            SubBlockSelector PresLo = new SubBlockSelector(op.DgMapping);
-            PresLo.SetVariableSelector(2);
-            PresLo.SetModeSelector(k => k <= pLowPres);
-            BlockMask maskPresLo = new BlockMask(PresLo);
-
-            SubBlockSelector PresHi = new SubBlockSelector(op.DgMapping);
-            PresHi.SetVariableSelector(2);
-            PresHi.SetModeSelector(k => k > pLowPres);
-            BlockMask maskPresHi = new BlockMask(PresHi);
-
-            int L = op.Mapping.LocalLength;
-            ortho.Diagonal = new double[L];
-            ortho.Diagonal.SetAll(1.0);
-
-
-            bool[] check = new bool[L];
-            foreach (var msk in new BlockMask[] { maskVelLo, maskVelHi, maskPresLo, maskPresHi }) {
-                foreach (int i in msk.LocalIndices) {
-                    if (check[i] == true)
-                        throw new Exception("double hit " + i);
-                    check[i] = true;
-                }
-            }
-            for(int i = 0; i < L; i++) {
-                if (check[i] == false)
-                    throw new Exception("miss " + i);
-
-            }
-
-            Console.WriteLine($"    Inner Product diagonal factors: {velScaleLo}  {velScaleHi}  {presScaleLo}  {presScaleHi}");
-            
-            ortho.Diagonal.ScaleV(velScaleLo, maskVelLo.LocalIndices);
-            ortho.Diagonal.ScaleV(velScaleHi, maskVelHi.LocalIndices);
-            ortho.Diagonal.ScaleV(presScaleLo, maskPresLo.LocalIndices);
-            ortho.Diagonal.ScaleV(presScaleHi, maskPresHi.LocalIndices);
-
-        
-
-            //Console.WriteLine("     vL: " + maskVelLo.GetSubVec(vec).L2Norm());
-            //Console.WriteLine("     vH: " + maskVelHi.GetSubVec(vec).L2Norm());
-            //Console.WriteLine("     pL: " + maskPresLo.GetSubVec(vec).L2Norm());
-            //Console.WriteLine("     pH: " + maskPresHi.GetSubVec(vec).L2Norm());
-
-
-            Console.WriteLine("check passed");
-        }
-
-        
-        public static double velScaleLo = 1;
-        public static double presScaleLo = 1;
-        public static double velScaleHi = 1;
-        public static double presScaleHi = 1;
-        //*/
-
 
         CoreOrthonormalizationProcedure ortho;
 
         void InitImpl(IOperatorMappingPair op) {
             using (var tr = new FuncTrace()) {
-                if (object.ReferenceEquals(op, m_MgOperator))
+                if (object.ReferenceEquals(op, m_OpMapPair))
                     return; // already initialized
                 else
                     this.Dispose();
 
 
-                this.m_MgOperator = op;
+                this.m_OpMapPair = op;
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.DgMapping;
-                
+
                 if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!Mtx.ColPartition.EqualsPartition(MgMap))
@@ -777,25 +621,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // initiate coarser level
                 // ======================
-                if (this.CoarserLevelSolver == null) {
-                    //throw new NotSupportedException("Missing coarse level solver.");
-                    Console.WriteLine("OrthonormalizationMultigrid: running without coarse solver.");
-                } else {
-                    if (op is MultigridOperator mgOp) {
-                        if (myConfig.CoarseOnLovwerLevel && mgOp.CoarserLevel != null) {
-                            this.CoarserLevelSolver.Init(mgOp.CoarserLevel);
-                        } else {
-                            Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
-                            this.CoarserLevelSolver.Init(mgOp);
-                        }
-                    } else {
-                        if(myConfig.CoarseOnLovwerLevel == false && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
-                            ssCoarse.Init(op);
-                        } else {
-                            throw new NotSupportedException($"Unable to initialize coarse-level-solver if operator is not a {typeof(MultigridOperator)}");
-                        }
-                    }
-                }
+                InitCoarse();
 
                 // init smoother
                 // =============
@@ -822,7 +648,47 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
-                if(AdditionalPostSmoothers != null) {
+
+            }
+        }
+
+        private void InitCoarse() {
+            using (var tr = new FuncTrace()) {
+                var op = this.m_OpMapPair;
+                if (this.CoarserLevelSolver == null) {
+                    //throw new NotSupportedException("Missing coarse level solver.");
+                    tr.Info("OrthonormalizationMultigrid: running without coarse solver.");
+                } else {
+                    if (op is MultigridOperator mgOp) {
+                        if (myConfig.CoarseOnLovwerLevel && mgOp.CoarserLevel != null) {
+                            this.CoarserLevelSolver.Init(mgOp.CoarserLevel);
+                        } else {
+                            tr.Info("OrthonormalizationMultigrid: running coarse solver on same level.");
+                            this.CoarserLevelSolver.Init(mgOp);
+                        }
+                    } else {
+                        if (myConfig.CoarseOnLovwerLevel == false && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
+                            ssCoarse.Init(op);
+                        } else {
+                            throw new NotSupportedException($"Unable to initialize coarse-level-solver if operator is not a {typeof(MultigridOperator)}");
+                        }
+                    }
+                }
+            }
+        }
+
+        bool m_AdditionalPostSmoothersInitialized = false;
+
+
+        /// <summary>
+        /// Deferred initialization of the <see cref="AdditionalPostSmoothers"/>;
+        /// these are fall-back-options, so on a normal run, we don't want to waste time and resources for their initialization.
+        /// </summary>
+        /// <exception cref="NotSupportedException"></exception>
+        void InitAdditionalPostSmooters() {
+            using (new FuncTrace()) {
+                if (AdditionalPostSmoothers != null) {
+                    var op = this.m_OpMapPair;
                     foreach (var ps in AdditionalPostSmoothers) {
                         if (ps is ISubsystemSolver ssPostSmother) {
                             ssPostSmother.Init(op);
@@ -834,6 +700,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
                         }
                     }
+
+                    m_AdditionalPostSmoothersInitialized = true;
                 }
             }
         }
@@ -860,8 +728,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public ISolverSmootherTemplate[] AdditionalPostSmoothers;
 
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -878,9 +744,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
         public void Residual(double[] Res, double[] X, double[] B) {
             using (new FuncTrace()) {
-                Debug.Assert(Res.Length == m_MgOperator.DgMapping.LocalLength);
-                Debug.Assert(X.Length == m_MgOperator.DgMapping.LocalLength);
-                Debug.Assert(B.Length == m_MgOperator.DgMapping.LocalLength);
+                Debug.Assert(Res.Length == m_OpMapPair.DgMapping.LocalLength);
+                Debug.Assert(X.Length == m_OpMapPair.DgMapping.LocalLength);
+                Debug.Assert(B.Length == m_OpMapPair.DgMapping.LocalLength);
                 int L = Res.Length;
                 //Res.SetV(B);
                 Array.Copy(B, Res, L);
@@ -891,6 +757,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        static double Inner(MultigridOperator mgOp, double[] a, double[] b) {
+            int L = mgOp.Mapping.LocalLength;
+            if (a.Length != L)
+                throw new ArgumentException();
+            if(b.Length != L)
+                throw new ArgumentException();
+
+            if(mgOp.MassMatrix == null) {
+                return a.MPI_InnerProd(b, mgOp.OperatorMatrix.MPI_Comm);
+            } else {
+                double[] Mb = new double[L];
+                mgOp.MassMatrix.SpMV(1.0, b, 0.0, Mb);
+                return a.MPI_InnerProd(Mb, mgOp.MassMatrix.MPI_Comm);
+            }
+
+
+        }
+
+
+        
         /// <summary>
         /// the multigrid iterations for a linear problem
         /// </summary>
@@ -901,6 +787,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> //
         {
             using (var f = new FuncTrace()) {
+                ThisLevelTime.Start();
                 double[] B, X;
                 if (_B is double[])
                     B = _B as double[];
@@ -912,14 +799,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     X = _xl.ToArray();
 
                 int L = X.Length;
-                int Lc;
-                if (this.CoarserLevelSolver != null && myConfig.CoarseOnLovwerLevel)
-                    Lc = ((MultigridOperator)m_MgOperator).CoarserLevel.Mapping.LocalLength;
-                else
-                    Lc = -1;
-
                 double[] Res = new double[L];
-                double[] ResCoarse = new double[Lc];
+
+                double[] ResCoarse;
+                int Lc;
+                if (this.CoarserLevelSolver != null && myConfig.CoarseOnLovwerLevel) {
+                    Lc = ((MultigridOperator)m_OpMapPair).CoarserLevel.Mapping.LocalLength;
+                    ResCoarse = new double[Lc];
+                } else {
+                    Lc = -1;
+                    ResCoarse = null;
+                }
+
 
 
                 double[] Sol0 = X.CloneAs();
@@ -927,17 +818,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, Res, L);
 
-                bool isTopLevel = ((m_MgOperator as MultigridOperator)?.LevelIndex ?? -1) == 0;
+                if(ortho.Norm(Res0) <= 0) {
+                    double normB = ortho.Norm(B);
+                    double normX = ortho.Norm(X);
+                    f.Error($" **** Residual is 0.0: |X| = {normB}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}");
+
+
+                }
+
+                int iLevel = ((m_OpMapPair as MultigridOperator)?.LevelIndex ?? -1);
 
                 double iter0_resNorm = ortho.Norm(Res0);
                 double resNorm = iter0_resNorm;
-                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator as MultigridOperator);
+                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
                                 
                 // clear history of coarse solvers
                 ortho.Clear();
                 bool bIterate = true;
 
-                for (int iIter = 1; bIterate; iIter++) {
+                bool skipPreSmooth = false;
+
+
+                ISolverSmootherTemplate[] allSmooters;
+                int iPostSmooter;
+                {
+                    allSmooters = new ISolverSmootherTemplate[(PostSmoother != null ? 1 : 0) + (AdditionalPostSmoothers?.Length ?? 0)];
+                    if (PostSmoother != null)
+                        allSmooters[allSmooters.Length - 1] = PostSmoother;
+                    if (AdditionalPostSmoothers != null)
+                        Array.Copy(AdditionalPostSmoothers, allSmooters, AdditionalPostSmoothers.Length);
+                    iPostSmooter = allSmooters.Length - 1;
+                }
+
+
+                int iIter;
+                for (iIter = 1; bIterate; iIter++) {
                     var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState.bNotTerminate) {
                         Converged = termState.bSuccess;
@@ -950,32 +865,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // ------------
 
                     {
-                        VerivyCurrentResidual(X, B, Res, iIter);
+                        if (PreSmoother != null && skipPreSmooth == false) {
+                            VerivyCurrentResidual(X, B, Res, iIter);
 
-
-                        // compute correction
-                        //var oldRl = rl.CloneAs();
-
-                        if (PreSmoother != null) {
                             double[] PreCorr = new double[L];
                             PreSmoother.Solve(PreCorr, Res); // Vorglättung
 
                             // orthonormalization and residual minimization
-                            resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, isTopLevel ? "presmooth" : null);
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel);
 
-                        }
+                            //SpecAnalysisSample(iIter, X, "ortho1");
+                            var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                            if (!termState2.bNotTerminate) {
+                                Converged = termState2.bSuccess;
+                                break;
+                            }
 
-
-                        //SpecAnalysisSample(iIter, X, "ortho1");
-                        var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-                        if (!termState2.bNotTerminate) {
-                            Converged = termState2.bSuccess;
-                            break;
+                            skipPreSmooth = false;
                         }
                     }
 
                     // coarse grid correction
                     // ----------------------
+                    CrseLevelTime.Start();
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
                     VerivyCurrentResidual(X, B, Res, iIter);
 
@@ -986,7 +898,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             double[] vl = new double[L];
                             if (myConfig.CoarseOnLovwerLevel) {
 
-                                var _MgOperator = m_MgOperator as MultigridOperator;
+                                var _MgOperator = m_OpMapPair as MultigridOperator;
 
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 // coarse grid solver defined on COARSER MESH LEVEL:
@@ -1014,14 +926,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 this.CoarserLevelSolver.Solve(vl, Res);
                             }
 
-
-
                             // orthonormalization and residual minimization
-                            //ortho.AddSol(ref vl, "coarsecor");
-                            //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 2);
-                            resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, isTopLevel ? "coarsecor" : null);
-
-
+                            if (vl.ContainsNanOrInf().MPIOr() && CoarseArithmeticExceptionCount < 20) {
+                                CoarseArithmeticExceptionCount++;
+                                Console.WriteLine("Coarse solver failed " + CoarseArithmeticExceptionCount);
+                                if(CoarseArithmeticExceptionCount == 1) {
+                                    BlockMsrMatrix coarseMtx = myConfig.CoarseOnLovwerLevel ? (m_OpMapPair as MultigridOperator).CoarserLevel.OperatorMatrix : m_OpMapPair.OperatorMatrix;
+                                    coarseMtx.SaveToTextFileSparse("FailedCoarseMatrix.txt");
+                                }
+                                vl = null;
+                                this.CoarserLevelSolver.Dispose();
+                                this.InitCoarse();
+                            } else {
+                                resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, "coarsecorL" + iLevel);
+                            }
 
                         }
                     } // end of coarse-solver loop
@@ -1031,57 +949,66 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Converged = termState3.bSuccess;
                         break;
                     }
-
-
+                    CrseLevelTime.Stop();
 
                     // post-smoother
                     // -------------
                     if (PostSmoother != null || AdditionalPostSmoothers != null) {
                         bool termPost = false;
 
-                        ISolverSmootherTemplate[] allSmooters;
-                        {
-                            allSmooters = new ISolverSmootherTemplate[(PostSmoother != null ? 1 : 0) + (AdditionalPostSmoothers?.Length ?? 0)];
-                            if (PostSmoother != null)
-                                allSmooters[allSmooters.Length - 1] = PostSmoother;
-                            if (AdditionalPostSmoothers != null)
-                                Array.Copy(AdditionalPostSmoothers, allSmooters, AdditionalPostSmoothers.Length);
-                        }
+                        
 
                         for (int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // Test: Residual on this level / already computed by 'MinimizeResidual' above
 
-                            ISolverSmootherTemplate _PostSmoother = allSmooters[g % allSmooters.Length];
-
+                            ISolverSmootherTemplate _PostSmoother = allSmooters[iPostSmooter];// g % allSmooters.Length];
+                            if (iPostSmooter > 0)
+                                InitAdditionalPostSmooters();
                             VerivyCurrentResidual(X, B, Res, iIter); // 
-
-                            string id = "";
-                            if (_PostSmoother is CellILU cilu)
-                                id = cilu.id;
-
                             double[] PostCorr = new double[L];
-                            //if (g % 2 == 1)
-                            //    PreSmoother.Solve(PostCorr, Res);
-                            //else
 
-                            _PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
+                            bool fail = false;
+                            try {
+                                _PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
+                            } catch (ArithmeticException ae) {
+                                f.Error($"Smoother fail on Rank {m_OpMapPair.DgMapping.MpiRank}: " + ae.ToString());
+                                fail = true;
+                            }
+                            fail = fail.MPIOr();
 
-                            if (PostCorr.ContainsForNanOrInfV()) {
-                                Console.Error.WriteLine("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g);
+                            if ((PostCorr.ContainsNanOrInf() || fail).MPIOr()) {
+                                PostSmootherArithmeticExceptionCount++;
+                                Console.Error.WriteLine("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g + " for " + PostSmootherArithmeticExceptionCount + "-th time.");
 
-                                if (Res.ContainsForNanOrInfV())
+                                if (Res.ContainsNanOrInf()) {
                                     Console.WriteLine("... so does RHS");
-                                else
+                                    throw new ArithmeticException("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g + " RHS already corrupted.");
+                                } else
                                     Console.WriteLine("... although RHS is regular");
 
-                                var viz = new MGViz(m_MgOperator as MultigridOperator);
-                                var __RHS = viz.ProlongateRhsToDg(Res, "RES");
-                                var __SOL = viz.ProlongateRhsToDg(PostCorr, "SOL");
-                                Tecplot.Tecplot.PlotFields(__SOL.Cat(__RHS), "iilufail", 0.0, 0);
-                                throw new ArithmeticException();
+                                //var viz = new MGViz(m_OpMapPair as MultigridOperator);
+                                //var __RHS = viz.ProlongateRhsToDg(Res, "RES");
+                                //var __SOL = viz.ProlongateRhsToDg(PostCorr, "SOL");
+                                //Tecplot.Tecplot.PlotFields(__SOL.Cat(__RHS), "iilufail", 0.0, 0);
+                                //
 
+                                if (PostSmootherArithmeticExceptionCount < 20) {
+                                    PostCorr = null;
+                                    _PostSmoother.Dispose();
+                                    if (PostSmoother is ISubsystemSolver ssPostSmother) {
+                                        ssPostSmother.Init(this.m_OpMapPair);
+                                    } else {
+                                        if (this.m_OpMapPair is MultigridOperator mgOp) {
+                                            PostSmoother.Init(mgOp);
+                                        } else {
+                                            throw new NotSupportedException($"Unable to initialize post-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
+                                        }
+                                    }
+                                } else {
+                                    throw new ArithmeticException("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g);
+                                }
 
                             } else {
-                                resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, isTopLevel ? ("pstsmth" + id + "-" + g) : null);
+                                resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" +  iLevel + "-sw" + g);
 
 
 
@@ -1089,6 +1016,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 if (!termState4.bNotTerminate) {
                                     Converged = termState4.bSuccess;
                                     termPost = true;
+                                    break;
+                                }
+
+                                if (ortho.CancellationTriggered) {
+                                    skipPreSmooth = true; // most of the time, the pre-smoother does nothing different than the post-smoother; So, if we cancel post-smoothing there is no need to do pre-smoothing in the next loop.
+
+                                    iPostSmooter++;
+                                    if(iPostSmooter >= allSmooters.Length)
+                                        iPostSmooter = 0;
+
+                                    
+                                   
+
                                     break;
                                 }
                             }
@@ -1105,25 +1045,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // iteration callback
                     // ------------------
                     this.ThisLevelIterations++;
-                    IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator as MultigridOperator);
-
-
-      
-
-                    //ScalingKakke(this.m_MgOperator as MultigridOperator, Res);
-
-                    //SpecAnalysisSample(iIter, X, "_");
-
-                    
+                    IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
 
                 } // end of solver iterations
+
+                IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
+
 
                 // solution copy
                 // =============
                 if (!ReferenceEquals(_xl, X)) {
                     _xl.SetV(X);
                 }
-
+                ThisLevelTime.Stop();
             } // end of functrace
         }
 
@@ -1134,12 +1068,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// assumes that <see cref="PreSmoother"/> and <see cref="PostSmoother"/>
         /// update the residual on exit.
         /// </summary>
-        /// <param name="X"></param>
-        /// <param name="B"></param>
-        /// <param name="Res"></param>
-        /// <param name="iter"></param>
         private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
             using (var tr = new FuncTrace()) {
+                /*
 #if DEBUG
             {
 #else
@@ -1158,40 +1089,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
                     //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
                 }
+
+                */
             }
         }
 
-        /*
-        private double[] cloneofX;
+        int PostSmootherArithmeticExceptionCount = 0;
+        int CoarseArithmeticExceptionCount = 0;
 
-        /// <summary>
-        /// RealX is left unchanged, no worries
-        /// </summary>
-        /// <param name="iter"></param>
-        /// <param name="RealX"></param>
-        /// <param name="name"></param>
-        private void SpecAnalysisSample(int iter, double[] RealX, string name) {
 
-            var _mgOp = this.m_MgOperator as MultigridOperator;
+        Stopwatch ThisLevelTime = new Stopwatch();
+        Stopwatch CrseLevelTime = new Stopwatch();
 
-            if (ExtractSamples == null || _mgOp.LevelIndex > 0)
-                return; // zero overhead
-
-            if (cloneofX == null)
-                cloneofX = new double[RealX.Length];
-            cloneofX.SetV(RealX);
-            ExtractSamples.Invoke(iter, cloneofX, name);
-        }
-
-        /// <summary>
-        /// gefrickel, could be integrated into IterationCallback
-        /// without individual string of course
-        /// </summary>
-        public Action<int, double[], string> ExtractSamples {
-            get;
-            set;
-        }
-        */
 
         /// <summary>
         /// ~
@@ -1277,10 +1186,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Dispose() {
             //if (m_MTracker != null) m_MTracker.Dispose();
-            if (m_verbose && m_MgOperator != null && m_MgOperator is MultigridOperator _mgop && _mgop.LevelIndex == 0) {
-                Console.WriteLine($"OrthoMG - total memory: {UsedMemory() / (1024 * 1024)} MB");
-                Console.WriteLine($"OrthoMG - internal memory: {MemoryOfMultigrid() / (1024 * 1024)} MB");
-                Console.WriteLine($"OrthoMG - smoother memory: {MemoryOfSmoother() / (1024 * 1024)} MB");
+            if (m_verbose && m_OpMapPair != null && m_OpMapPair is MultigridOperator _mgop) {
+                int lv = _mgop.LevelIndex;
+                Console.WriteLine($"OrthoMG lv {lv} - total memory: {UsedMemory() / (1024 * 1024)} MB");
+                Console.WriteLine($"OrthoMG lv {lv} - internal memory: {MemoryOfMultigrid() / (1024 * 1024)} MB");
+                Console.WriteLine($"OrthoMG lv {lv} - smoother memory: {MemoryOfSmoother() / (1024 * 1024)} MB");
+
+                Console.WriteLine($"OrthoMG lv {lv} - total runtime: {ThisLevelTime.Elapsed.TotalSeconds} sec");
+                Console.WriteLine($"OrthoMG lv {lv} - coarse runtime: {CrseLevelTime.Elapsed.TotalSeconds:F1} sec ({100*CrseLevelTime.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");
             }
             if (this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.Dispose();
@@ -1288,14 +1201,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             ortho?.Clear();
             ortho = null;
-            this.m_MgOperator = null;
+            this.m_OpMapPair = null;
 
-            if (PreSmoother != null)
-                this.PreSmoother.Dispose();
-            if (PostSmoother != null)
-                this.PostSmoother.Dispose();
+            this.PreSmoother?.Dispose();
+            this.PostSmoother?.Dispose();
             //this.PreSmoother = null; // don't delete - we need this again for the next init
             //this.PostSmoother = null;  // don't delete - we need this again for the next init
+
+            if(AdditionalPostSmoothers != null && m_AdditionalPostSmoothersInitialized) {
+                foreach(var aps in AdditionalPostSmoothers)
+                    aps?.Dispose();
+                m_AdditionalPostSmoothersInitialized = false;
+            }
         }
 
 

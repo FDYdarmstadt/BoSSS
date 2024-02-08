@@ -383,31 +383,31 @@ namespace BoSSS.Solution.Utils {
             });
         }
 
-//        /// <summary>
-//        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar implementation
-//        /// </summary>
-//        /// <param name="f">calling sequence: f(x,y,z)</param>
-//        /// <returns></returns>
-//        public static ScalarFunction Vectorize(this Func<Vector, double> f) {
-//            return (delegate(MultidimensionalArray inp, MultidimensionalArray res) {
-//                int D = inp.GetLength(1);
-//                double[] X = new double[D];
+        /// <summary>
+        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar implementation
+        /// </summary>
+        /// <param name="f">calling sequence: f(x,y,z)</param>
+        /// <returns></returns>
+        public static ScalarFunction Vectorize2(this Func<Vector, double> f) {
+            return (delegate (MultidimensionalArray inp, MultidimensionalArray res) {
+                int D = inp.GetLength(1);
+                double[] X = new double[D];
 
-//                for (int i = 0; i < inp.GetLength(0); i++) {
-//                    for (int d = 0; d < D; d++)
-//                        X[d] = inp[i, d];
+                for (int i = 0; i < inp.GetLength(0); i++) {
+                    for (int d = 0; d < D; d++)
+                        X[d] = inp[i, d];
 
-//                    res[i] = f(X);
-//#if DEBUG
-//                    if (res[i].IsNaN())
-//                        throw new ArithmeticException("Vectorizing returns invalid values");
-//#endif
-//                }
-//            });
-//        }
+                    res[i] = f(X);
+#if DEBUG
+                    if (res[i].IsNaN())
+                        throw new ArithmeticException("Vectorizing returns invalid values");
+#endif
+                }
+            });
+        }
 
         /// <summary>
-        /// Vectorized function (<see cref="ScalarFunction"/>) from a scala
+        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar
         /// implementation
         /// </summary>
         /// <param name="f">calling sequence: f(x,y,z,t)</param>
@@ -428,7 +428,7 @@ namespace BoSSS.Solution.Utils {
         }
 
         /// <summary>
-        /// Vectorized function (<see cref="ScalarFunction"/>) from a scala
+        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar
         /// implementation
         /// </summary>
         /// <param name="f">calling sequence: f(x,y,z,t)</param>

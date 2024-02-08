@@ -599,7 +599,7 @@ namespace BoSSS.Solution.XNSECommon {
             var IntgrlOf_CurvTimesNormal = new VectorField<SinglePhaseField>(new SinglePhaseField(Bs), new SinglePhaseField(Bs));
 
             {
-                XSpatialOperatorMk2 op = new XSpatialOperatorMk2(DomName, Params, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
+                XDifferentialOperatorMk2 op = new XDifferentialOperatorMk2(DomName, Params, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
                     var H = new SurfaceTension_LaplaceBeltrami_BndLine(d, 1.0, true);
                     op.SurfaceElementOperator_Ls0.EquationComponents[CodName[d]].Add(H);
@@ -610,7 +610,7 @@ namespace BoSSS.Solution.XNSECommon {
                 //    map, LevSetGradient, map,
                 //    default(MsrMatrix), IntgrlOf_CurvTimesNormal.CoordinateVector, true, 0.0,
                 //    false, LsTrk.GetSpeciesId("A"));
-                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = op.GetMatrixBuilder(LsTrk, map, LevSetGradient, map);
+                XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = op.GetMatrixBuilder(LsTrk, map, LevSetGradient, map);
                 mtxBuilder.time = 0.0;
                 mtxBuilder.ComputeAffine(IntgrlOf_CurvTimesNormal.CoordinateVector);
             }
@@ -620,7 +620,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             var IntgrlOf_Normal = new VectorField<SinglePhaseField>(new SinglePhaseField(Bs), new SinglePhaseField(Bs));
             {
-                XSpatialOperatorMk2 qr = new XSpatialOperatorMk2(DomName, new string[] { "Curvature" }, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
+                XDifferentialOperatorMk2 qr = new XDifferentialOperatorMk2(DomName, new string[] { "Curvature" }, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
                     qr.EquationComponents[CodName[d]].Add(new CurvatureBasedSurfaceTension(d, D, 1.0));
                 }
@@ -633,7 +633,7 @@ namespace BoSSS.Solution.XNSECommon {
                 //    map, new DGField[] { fakeCurvature }, map,
                 //    default(MsrMatrix), IntgrlOf_Normal.CoordinateVector, true, 0.0,
                 //    false, LsTrk.GetSpeciesId("A"));
-                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = qr.GetMatrixBuilder(LsTrk, map, LevSetGradient, map);
+                XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = qr.GetMatrixBuilder(LsTrk, map, LevSetGradient, map);
                 mtxBuilder.time = 0.0;
                 mtxBuilder.ComputeAffine(IntgrlOf_CurvTimesNormal.CoordinateVector);
             }
@@ -1197,7 +1197,7 @@ namespace BoSSS.Solution.XNSECommon {
             var OpMatrix = new MsrMatrix(surfaceForce.Mapping, surfaceForce.Mapping);
 
             int HMForder = Agglom.CutCellQuadratureOrder;
-            XSpatialOperatorMk2 xOp = new XSpatialOperatorMk2(domName, parameters, codName, (A,B,C) => HMForder, null);
+            XDifferentialOperatorMk2 xOp = new XDifferentialOperatorMk2(domName, parameters, codName, (A,B,C) => HMForder, null);
 
             if(surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected 
                 || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean 
@@ -1237,7 +1237,7 @@ namespace BoSSS.Solution.XNSECommon {
             //    surfaceForce.Mapping, ParamsList, surfaceForce.Mapping, 
             //    OpMatrix, surfaceForce.CoordinateVector, true, 0.0, true,
             //    LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = xOp.GetMatrixBuilder(LsTrk, surfaceForce.Mapping, ParamsList, surfaceForce.Mapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = xOp.GetMatrixBuilder(LsTrk, surfaceForce.Mapping, ParamsList, surfaceForce.Mapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.MPITtransceive = true;
             mtxBuilder.ComputeMatrix(OpMatrix, surfaceForce.CoordinateVector);

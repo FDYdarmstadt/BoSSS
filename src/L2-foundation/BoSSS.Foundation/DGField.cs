@@ -186,15 +186,15 @@ namespace BoSSS.Foundation {
                 // get basis values
                 MultidimensionalArray BasisValues = m_Owner.Basis.CellEval(NodesUntransformed, i0, Length);
 
-                // (ScalarField) * (m-th Basis function)                
-                for (int j = 0; j < Length; j++) {   // loop over cells
-                    for (int n = 0; n < N; n++) {    // loop over quadrature nodes
-                        for (int m = 0; m < M; m++) { // loop over coordinates
-                            EvalResult[j, n, m] = m_FunctionValues[j, n] * BasisValues[j, n, m];
-                        }
-                    }
-                }
-
+                //// (ScalarField) * (m-th Basis function)                
+                //for (int j = 0; j < Length; j++) {   // loop over cells
+                //    for (int n = 0; n < N; n++) {    // loop over quadrature nodes
+                //        for (int m = 0; m < M; m++) { // loop over coordinates
+                //            EvalResult[j, n, m] = m_FunctionValues[j, n] * BasisValues[j, n, m];
+                //        }
+                //    }
+                //}
+                EvalResult.Multiply(1.0, m_FunctionValues, BasisValues, 0.0, "jnm", "jn", "jnm");
             }
 
             /// <summary>
@@ -225,6 +225,12 @@ namespace BoSSS.Foundation {
                         }
                     }
                 }
+            }
+
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                return new ProjectionQuadrature(this.m_Owner, this.m_alpha, this.m_func, this.m_compositeRule) {
+                    m_func2 = this.m_func2
+                };
             }
         }
 
@@ -261,8 +267,11 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="scheme"></param>
         virtual public void ProjectField(double alpha, ScalarFunction func, CellQuadratureScheme scheme = null) {
-            using (new FuncTrace()) {
-                int order = this.Basis.Degree * 2 + 2;
+            using (var tr = new FuncTrace()) {
+                int dgDeg = this.Basis.Degree;
+                int order = dgDeg * 2 + 2;
+                tr.Info($"dg degree {dgDeg}, quad order {order}");
+
                 var rule = scheme.SaveCompile(this.Basis.GridDat, order);
 
                 //Stopwatch w = new Stopwatch();
@@ -317,8 +326,10 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="scheme"></param>
         public void ProjectField(double alpha, ScalarFunctionEx func, CellQuadratureScheme scheme = null) {
-            using (new FuncTrace()) {
-                int order = this.Basis.Degree * 2 + 2;
+            using (var tr = new FuncTrace()) {
+                int dgDeg = this.Basis.Degree;
+                int order = dgDeg * 2 + 2;
+                tr.Info($"dg degree {dgDeg}, quad order {order}");
                 var pq = new ProjectionQuadrature(this, alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
                 pq.Execute();
             }

@@ -40,7 +40,7 @@ namespace BoSSS.Solution.TimeStepping {
         /// <summary>
         /// The spatial operator this time stepper is based on
         /// </summary>
-        public SpatialOperator Operator {
+        public DifferentialOperator Operator {
             get;
             private set;
         }
@@ -138,7 +138,7 @@ namespace BoSSS.Solution.TimeStepping {
         /// </param>
         /// <param name="DelayInit">TODO: Delayed Initialization for restarts etc.</param>
         /// <param name="subGrid">TODO: Perform Time-Marching only on Substep</param>
-        public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit, SubGrid subGrid = null) {
+        public BDFTimestepper(DifferentialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit, SubGrid subGrid = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
                 //if (spatialOp.ContainsNonlinear) { throw new NotImplementedException("No Inversion of Nonlinear Operators implemented, yet."); };

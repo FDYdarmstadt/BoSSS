@@ -98,12 +98,19 @@ namespace BoSSS.Foundation.IO {
                 tr.Info("Loading session " + sessionId);
 
                 using(Stream s = fsDriver.GetSessionInfoStream(false, sessionId)) {
-                    SessionInfo loadedSession = (SessionInfo)Driver.Deserialize(s, typeof(SessionInfo));
-                    loadedSession.Database = database;
-                    loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
-                    s.Close();
+                    // fk, 19aug23: Create a MemoryStream and write he buffer into it
+                    // for certain streams, the JSON deserialization ifrom a memory stream than much faster than directly deserializing from the original stream
+                    using (MemoryStream memoryStream = new MemoryStream()) {
+                        s.CopyTo(memoryStream);
+                        memoryStream.Seek(0, SeekOrigin.Begin);
+                        s.Close();
 
-                    return loadedSession;
+                        SessionInfo loadedSession = (SessionInfo)Driver.Deserialize(memoryStream, typeof(SessionInfo));
+                        loadedSession.Database = database;
+                        loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
+
+                        return loadedSession;
+                    }
                 }
             }
         }

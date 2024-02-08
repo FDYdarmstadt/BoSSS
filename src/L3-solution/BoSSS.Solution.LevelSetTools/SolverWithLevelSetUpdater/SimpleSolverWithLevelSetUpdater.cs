@@ -34,12 +34,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-            XSpatialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D) {
+            XDifferentialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
             return xOperator;
         }
 
-        protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
+        protected abstract XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         protected abstract LevelSetUpdater InstantiateLevelSetUpdater();
         

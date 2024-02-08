@@ -71,7 +71,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         internal static int[][] getNestedIntArray(string filename, string polyMeshDir) {
             var ret = new List<int[]>();
-            string text = File.ReadAllText(polyMeshDir + filename);
+            string text = File.ReadAllText(Path.Combine(polyMeshDir, filename));
             Clean(ref text);
             string[] lines = text.Split('\n');
             var pat = @"^[0-9]*\((.*?)\)";
@@ -91,7 +91,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         internal static int[] getIntArray(string filename, string polyMeshDir) {
             var ret = new List<int>();
-            string text = File.ReadAllText(polyMeshDir + filename);
+            string text = File.ReadAllText(Path.Combine(polyMeshDir, filename));
             Clean(ref text);
             text = Regex.Replace(text, "\n", " ");
             var pat = @"[0-9]*\s*\((.*?)\)";
@@ -110,7 +110,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         internal static double[,] getNestedDoubleArray(string filename, string polyMeshDir) {
             var ret = new List<double[]>();
-            string text = File.ReadAllText(polyMeshDir + filename);
+            string text = File.ReadAllText(Path.Combine(polyMeshDir, filename));
             Clean(ref text);
             string[] lines = text.Split('\n');
             var pat = @"^[0-9]*\((.*?)\)";
@@ -153,7 +153,7 @@ namespace BoSSS.Application.ExternalBinding {
             return getNestedDoubleArray("points", polyMeshDir);
         }
 
-        internal static string[] names = new string[] {"left", "right", "empty"};
+        internal static string[] names = new string[] {"left", "right", "top", "bottom", "frontAndBack"};
 
         internal static int[] getPatchIDs(int len){
             int[] ret = new int[len];

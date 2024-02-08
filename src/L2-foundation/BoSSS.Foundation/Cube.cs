@@ -150,50 +150,57 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// <see cref="RefElement.GetQuadratureRule"/>
         /// </summary>
         /// <remarks>
-        /// The 3D-Rules occupy a significant amount of memory (about 200 MB), so we only create those that we need on the fly.
+        /// The 3D-Rules occupy a significant amount of memory (about 200 MB, particularly bad when running with lots of MPI cores:
+        /// E.g., 100 Processors, 20 GB of memory just for quadrature rules), so we only create those that we need on the fly.
         /// </remarks>
         public override QuadRule GetQuadratureRule(int DesiredOrder) {
             if (DesiredOrder > HighestKnownOrder) {
                 throw new ArgumentOutOfRangeException("no quadrature rule for desired order " + DesiredOrder + " available for simplex " + this.GetType().Name + ".", "DesiredOrder");
             }
-                       
 
-            QuadRule realQr;
-            if(!m_3drules.TryGetValue(DesiredOrder, out realQr)) {
+            lock (m_3drules) {
 
-                int OrderOfPrecision = m_1Drules.Keys.Where(order => order >= DesiredOrder).Min();
+                QuadRule realQr;
+                if (!m_3drules.TryGetValue(DesiredOrder, out realQr)) {
 
-                if(!m_3drules.TryGetValue(OrderOfPrecision, out realQr)) {
-                    var _1Drule = m_1Drules[OrderOfPrecision];
+                    //
+                    //
+                    //
 
-                    int NN = _1Drule.Weights.GetLength(0);
-                    int D = this.SpatialDimension;
-                    realQr = QuadRule.CreateEmpty(this, NN * NN * NN, D, true);
+                    int OrderOfPrecision = m_1Drules.Keys.Where(order => order >= DesiredOrder).Min();
 
-                    for(int i = 0; i < NN; i++) {
-                        for(int j = 0; j < NN; j++) {
-                            for(int k = 0; k < NN; k++) {
-                                realQr.Nodes[(i * NN + j) * NN + k, 0] = _1Drule.Nodes[k, 0];
-                                realQr.Nodes[(i * NN + j) * NN + k, 1] = _1Drule.Nodes[j, 0];
-                                realQr.Nodes[(i * NN + j) * NN + k, 2] = _1Drule.Nodes[i, 0];
-                                realQr.Weights[(i * NN + j) * NN + k] = _1Drule.Weights[i] * _1Drule.Weights[j] * _1Drule.Weights[k];
+                    if (!m_3drules.TryGetValue(OrderOfPrecision, out realQr)) {
+                        var _1Drule = m_1Drules[OrderOfPrecision];
+
+                        int NN = _1Drule.Weights.GetLength(0);
+                        int D = this.SpatialDimension;
+                        realQr = QuadRule.CreateEmpty(this, NN * NN * NN, D, true);
+
+                        for (int i = 0; i < NN; i++) {
+                            for (int j = 0; j < NN; j++) {
+                                for (int k = 0; k < NN; k++) {
+                                    realQr.Nodes[(i * NN + j) * NN + k, 0] = _1Drule.Nodes[k, 0];
+                                    realQr.Nodes[(i * NN + j) * NN + k, 1] = _1Drule.Nodes[j, 0];
+                                    realQr.Nodes[(i * NN + j) * NN + k, 2] = _1Drule.Nodes[i, 0];
+                                    realQr.Weights[(i * NN + j) * NN + k] = _1Drule.Weights[i] * _1Drule.Weights[j] * _1Drule.Weights[k];
+                                }
                             }
                         }
-                    }
 
-                    realQr.OrderOfPrecision = OrderOfPrecision;
-                    realQr.Nodes.LockForever();
-                    realQr.Weights.LockForever();
-                    m_3drules.Add(OrderOfPrecision, realQr); // the rule of order 'OrderOfPrecision' must also be used for order 'DesiredOrder'
-                    if(DesiredOrder != OrderOfPrecision)
+                        realQr.OrderOfPrecision = OrderOfPrecision;
+                        realQr.Nodes.LockForever();
+                        realQr.Weights.LockForever();
+                        m_3drules.Add(OrderOfPrecision, realQr); // the rule of order 'OrderOfPrecision' must also be used for order 'DesiredOrder'
+                        if (DesiredOrder != OrderOfPrecision)
+                            m_3drules.Add(DesiredOrder, realQr);
+                    } else {
                         m_3drules.Add(DesiredOrder, realQr);
-                } else {
-                    m_3drules.Add(DesiredOrder, realQr);
+                    }
                 }
-            } 
-            
+                
+                return realQr;
+            }
 
-            return realQr;
         }
 
         /// <summary>

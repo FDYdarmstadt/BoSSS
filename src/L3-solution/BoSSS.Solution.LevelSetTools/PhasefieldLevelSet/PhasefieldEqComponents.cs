@@ -33,12 +33,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
 
         int m_D;
-        public override IList<string> ParameterOrdering => null;
+        // public override IList<string> ParameterOrdering => null;
+        public override IList<string> ParameterOrdering => VariableNames.VelocityVector(m_D);
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
             double UxN = 0;
             for (int d = 0; d < m_D; d++) {
-                UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
+                // UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
+                UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
             }
 
             double v;
@@ -142,18 +144,22 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Transport flux for Cahn-Hilliard
     /// </summary>
-    public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
-        public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi") {
+    public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IParameterHandling {
+        public phi_Flux(int D, Func<DGField[]> VelocityGetter, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi") {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction[LevelSetName];
             m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
+            m_velocityGetter = VelocityGetter;
         }
 
         protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
         protected int m_D;
         protected BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         protected Func<double[], double, double>[] m_bndFunc;
+        Func<DGField[]> m_velocityGetter;
+
+
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxGradV;
 
@@ -165,7 +171,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
+        public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             // expand for treatment of input functions, for now hardcode to -1.0
             double UxN = 0;
             for (int d = 0; d < m_D; d++) {
@@ -182,7 +188,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             return phi * UxN * _vIN;
         }
 
-        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+        public virtual double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double UxN = 0;
             for (int d = 0; d < m_D; d++) {
                 UxN += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
@@ -210,6 +216,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new[] { this };
+        }
+
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters)
+        {}
+
+        public DGField[] MyParameterAlloc(DGField[] Arguments)
+        {
+            return m_velocityGetter();
         }
     }
 

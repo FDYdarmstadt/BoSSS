@@ -74,7 +74,7 @@ namespace BoSSS.Foundation {
                 MultidimensionalArray trfCoördinates = TempBuffer.GetTempMultidimensionalarray(out iBuf, L, N);
                 TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
 
-                if(ResultAcc.IsContinious && trfCoördinates.IsContinious && BasisValues.IsContinious) {
+                if(ResultAcc.IsContinuous && trfCoördinates.IsContinuous && BasisValues.IsContinuous) {
                     unsafe {
                         fixed(double* _pResultAcc = ResultAcc.Storage, _ptrfCoördinates = trfCoördinates.Storage, _pBasisValues = BasisValues.Storage) {
                             double* pResultAcc = _pResultAcc + ResultAcc.Index(0,0);
@@ -536,59 +536,7 @@ namespace BoSSS.Foundation {
             if(Not > 0)
                 TempBuffer.FreeTempBuffer(iBufOT);
 
-            /*
-            {
-                var _BasisValues = grd.ChefBasis.EdgeEval.GetValues(NS, e0, Len, _Basis.Degree);
-                        
-
-                var resultINAccCheck = valIN.CloneAs();
-                var resultOTAccCheck = valOT.CloneAs();
-
-                for(int e = 0; e < Len; e++) {
-                    int iEdge = e + e0;
-                    int jCellIN = E2C[iEdge, 0];
-                    int jCellOT = E2C[iEdge, 1];
-                    int iTrfIN = trfIdx[iEdge, 0];
-                    int iTrfOT = trfIdx[iEdge, 1];
-
-                    for(int k = 0; k < NoOfNodes; k++) {
-                        int BN = _Basis.GetLength(jCellIN);
-
-                        resultINAccCheck[e, k] *= ResultPreScale;
-                        resultOTAccCheck[e, k] *= ResultPreScale;
-
-                        for(int n = 0; n < BN; n++) {
-                            double Cinerr = trfCoördinatesIN[e, n] - Coord[jCellIN, n];
-                            double Coterr = jCellOT >= 0 ? trfCoördinatesOT[e, n] - Coord[jCellOT, n] : 0.0;
-
-                            if(Math.Abs(Cinerr) > 1.0e-5)
-                                Console.WriteLine("44fuckIN" + e);
-                            if(Math.Abs(Coterr) > 1.0e-5)
-                                Console.WriteLine("44fuckOT" + e);
-
-
-                            resultINAccCheck[e, k] += Coord[jCellIN, n] * _BasisValues[iTrfIN, k, n];
-                            if(jCellOT >= 0)
-                                resultOTAccCheck[e, k] += Coord[jCellOT, n] * _BasisValues[iTrfOT, k, n];
-
-                        }
-
-                        double Vinerr = resultINAccCheck[e, k] - valIN[e, k];
-                        double Voterr = jCellOT >= 0 ? resultOTAccCheck[e, k] - valOT[e, k] : 0.0;
-
-                        
-
-                        if(Math.Abs(Vinerr) > 1.0e-5)
-                            Console.WriteLine("44fuckIN" + e);
-                        if(Math.Abs(Voterr) > 1.0e-5)
-                            Console.WriteLine("44fuckOT" + e);
-                    }
-
-                }
-
-                //resultINAcc.Set(resultINAccCheck);
-                //resultOTAcc.Set(resultOTAccCheck);
-            }  */
+          
         }
 
         static MultidimensionalArray.MultiplyProgram mp_i_i_Ti = MultidimensionalArray.MultiplyProgram.Compile("i", "i", "T(i)", true);

@@ -637,6 +637,11 @@ namespace BoSSS.Foundation.XDG {
                 m_gradPhi = new MultidimensionalArray(3);
             }
 
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                return new SignedDistanceErrorQuad(m_phi, this.m_compositeRule);
+            }
+
+
             /// <summary>
             /// owner
             /// </summary>
@@ -730,7 +735,7 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray dst = ((MultidimensionalArray)ret.Coordinates);
             MultidimensionalArray src = ((MultidimensionalArray)base.Coordinates);
 
-            if (dst.IsContinious && src.IsContinious) {
+            if (dst.IsContinuous && src.IsContinuous) {
                 Array.Copy(src.Storage, dst.Storage, dst.Length);
             } else {
                 throw new NotImplementedException("remainder");

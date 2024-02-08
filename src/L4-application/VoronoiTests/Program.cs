@@ -1,16 +1,14 @@
 ﻿using System.Collections.Generic;
 
-namespace VoronoiTests
-{
-    class Program
-    {
+namespace VoronoiTests {
+    class Program {
         public static void Main() {
+
             TestBench selectedTest = availableTests["Boundary Tests"];
             RunTest(selectedTest);
         }
 
-        static void RunTest(TestBench test)
-        {
+        static void RunTest(TestBench test) {
             test.SetUp();
             test.Run();
             test.TearDown();

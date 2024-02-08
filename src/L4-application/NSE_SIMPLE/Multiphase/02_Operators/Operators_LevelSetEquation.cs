@@ -41,7 +41,7 @@ namespace NSE_SIMPLE {
             : base(LevelSetMapping, LevelSetMapping, ArrayTools.Cat<SinglePhaseField>(Velocity0.ToArray(), Velocity0Mean.ToArray()),
                 SolverConf, IsConstant: false) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             return (new LinearizedScalarConvection(SolverConf.SpatialDimension, SolverConf.BcMap, null)).Operator();
             //return (new CoupledLaxFriedrichsScalar(SolverConf.SpatialDimension, SolverConf.EoS, SolverConf.BcMap)).Operator();
             //return (new LinearizedScalarUpwind(SolverConf.SpatialDimension, SolverConf.BcMap, SolverConf.EoS)).Operator();

@@ -35,6 +35,7 @@ namespace BoSSS.Application.XNSEC {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //InitMPI();
+            //BoSSS.Application.XNSEC.NUnitTest.ManufacturedSolutionLowMachCombustionTest();
             //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
 
@@ -351,7 +352,7 @@ namespace BoSSS.Application.XNSEC {
                 opFactory.AddParameter(new Viscosity(EoS_A, EoS_B));
                 opFactory.AddParameter(new HeatCapacity(EoS_A, EoS_B));
             }
-            opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
+            opFactory.AddCoefficient(new Solution.XNSECommon.SlipLengths(config, VelocityDegree()));
 
 
 
@@ -368,7 +369,11 @@ namespace BoSSS.Application.XNSEC {
             opFactory.AddParameter(normalsParameter);
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
-            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, new Velocity0Mean(D, LsTrk, quadOrder));
+            var v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
+            if (config.physParams.IncludeConvection && config.isTransport) {
+                opFactory.AddParameter(v0Mean);
+            }
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
 
             #region SurfaceTension
 
@@ -643,7 +648,7 @@ namespace BoSSS.Application.XNSEC {
         public MaterialLaw_MultipleSpecies EoS_A;
         public MaterialLaw_MultipleSpecies EoS_B;
 
-        private XSpatialOperatorMk2 XOP;
+        private XDifferentialOperatorMk2 XOP;
         /// <summary>
         /// Low-Mach system of equations definition
         /// </summary>
@@ -651,7 +656,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="opFactory"></param>
         /// <param name="lsUpdater"></param>
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
             OperatorFactory opFactory = new OperatorFactory();
 
             DefineSystem(D, opFactory, levelSetUpdater);
@@ -661,6 +666,7 @@ namespace BoSSS.Application.XNSEC {
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
 
+            XOP.FluxesAreNOTMultithreadSafe = true;
 
 
             if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
@@ -684,7 +690,8 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Using low Mach temporal operator");
                 OperatorFactory temporalOperatorFactory = new OperatorFactory();
                 DefineTemporalTerm(D, temporalOperatorFactory);
-                XSpatialOperatorMk2 temporalXOP = temporalOperatorFactory.GetSpatialOperator(QuadOrder());
+                XDifferentialOperatorMk2 temporalXOP = temporalOperatorFactory.GetSpatialOperator(QuadOrder());
+                temporalXOP.FluxesAreNOTMultithreadSafe = true;
                 temporalXOP.Commit();
 
                 var DependentTemporalOp = new DependentXTemporalOperator(XOP);
@@ -809,6 +816,7 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Using solver safe guard!");
                 XOP.SolverSafeguard = DelValidationCombustion;
             }
+            XOP.FluxesAreNOTMultithreadSafe = true;
             XOP.Commit();
 
             PrintConfiguration();
@@ -973,10 +981,7 @@ namespace BoSSS.Application.XNSEC {
             return dt;
         }
 
-        protected override void Bye() {
-            // base.PostprocessingModules.Add();
-            base.Bye();
-        }
+       
 
         private int hack_TimestepIndex = 0;
         //private PerssonSensor sensor;
@@ -1062,8 +1067,8 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
-            return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, this.MultigridOperatorConfig);
+        public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
+            return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, config, this.MultigridOperatorConfig);
         }
 
 

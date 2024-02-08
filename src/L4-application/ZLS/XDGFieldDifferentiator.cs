@@ -39,7 +39,7 @@ namespace ZwoLevelSetSolver {
                 throw new ArgumentException("spatial dimension out of range.", "d");
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-            XSpatialOperatorMk2 d_dx = new XSpatialOperatorMk2(1, 1, QuadOrderFunc.Linear(), new string[] { species }, "in", "out");
+           XDifferentialOperatorMk2 d_dx = new XDifferentialOperatorMk2(1, 1, QuadOrderFunc.Linear(), new string[] { species }, "in", "out");
 
             var flux = new DerivativeFlux(d);
             d_dx.EquationComponents["out"].Add(flux);

@@ -2,6 +2,7 @@
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -272,9 +273,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        bool? m_converged;
+
         public bool Converged {
             get {
-                return LowerPSolver?.Converged ?? false;
+                return m_converged ?? false;
             }
         }
 
@@ -389,8 +392,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
 
-            if(LowerPSolver != null)
-                LowerPSolver.Solve(xLo, bLo);
+            if (LowerPSolver != null) {
+                double normRHS = bLo.MPI_L2Norm(m_MgOperatorRestriction.OperatorMatrix.MPI_Comm);
+                //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrnk);
+                //Console.Error.WriteLine($"  ++++ R{MPIrnk} Restriction: RHS is {normRHS}; input RHS norm is {B.MPI_L2Norm(m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)}");
+                if (normRHS <= 0) {
+                    //B.SaveToTextFile("Br" + MPIrnk + "-" + Guid.NewGuid().ToString() + ".txt", m_MgOperatorRestriction.OperatorMatrix.MPI_Comm);
+                    //X.ClearEntries();
+
+                    m_converged = true;
+                    return;
+                } else {
+                    LowerPSolver.Solve(xLo, bLo);
+                    m_converged = LowerPSolver.Converged;
+                }
+            }
 
             if(xExt != null)
                 m_MgOperatorRestriction.BlkMask.AccSubVec(xLo, xExt, X);

@@ -90,7 +90,7 @@ namespace NSE_SIMPLE {
             if (varDensConf.Froude.HasValue) {
                 this.BuoyantForce = new IEvaluatorNonLin[SolverConf.SpatialDimension];
                 for (int d = 0; d < SolverConf.SpatialDimension; d++) {
-                    SpatialOperator BuoyancyOperator = (new Buoyancy(varDensConf.GravityDirection,
+                    DifferentialOperator BuoyancyOperator = (new Buoyancy(varDensConf.GravityDirection,
                         d,
                         varDensConf.Froude.Value, SolverConf.Control.PhysicsMode,
                         varDensConf.EoS)).Operator();

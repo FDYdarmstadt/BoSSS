@@ -26,19 +26,21 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using System.Data;
+using System.Threading;
 
 namespace BoSSS.Foundation.XDG {
-    
+
     /// <summary>
     /// integrator for coupling components, linear components;
     /// </summary>
-    internal class LECQuadratureLevelSet<M,V> : BoSSS.Foundation.Quadrature.CellQuadrature  
+    internal class LECQuadratureLevelSet<M, V> : BoSSS.Foundation.Quadrature.CellQuadrature
         where M : IMutableMatrix
         where V : IList<double> //
     {
-        
-        UnsetteledCoordinateMapping m_RowMap;
-        UnsetteledCoordinateMapping m_ColMap;
+
+        readonly UnsetteledCoordinateMapping m_RowMap;
+        readonly UnsetteledCoordinateMapping m_ColMap;
 
         ConventionalDGField[] m_ParametersA;
         ConventionalDGField[] m_ParametersB;
@@ -62,33 +64,21 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-        
+
         /// <summary>
         /// les tracker
         /// </summary>
-        LevelSetTracker m_lsTrk;
+        readonly LevelSetTracker m_lsTrk;
 
         /// <summary>
         /// index into <see cref="LevelSetTracker.RegionsHistory"/>, etc.
         /// </summary>
-        int m_LsTrkHistoryIndex;
-
-        /*
-        /// <summary>
-        /// Normals, etc.
-        /// </summary>
-        LevelSetTracker.LevelSetData m_lsData;
-
-        /// <summary>
-        /// cut-cell masks, etc.
-        /// </summary>
-        LevelSetTracker.LevelSetRegions m_lsRegions;
-        */
+        readonly int m_LsTrkHistoryIndex;
 
         /// <summary>
         /// Negative and positive (with respect to level-set) species.
         /// </summary>
-        Tuple<SpeciesId,SpeciesId> m_SpeciesPair;
+        readonly Tuple<SpeciesId, SpeciesId> m_SpeciesPair;
 
         /// <summary>
         /// Negative species/Species A
@@ -108,24 +98,41 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+            return new LECQuadratureLevelSet<M, V>(
+                this.gridData, m_DiffOp,
+                this.OperatorMatrix, this.OperatorAffine,
+                m_RowMap, m_ParametersA, m_ColMap,
+                this.m_lsTrk, this.m_LevSetIdx, this.m_LsTrkHistoryIndex,
+                this.m_SpeciesPair,
+                base.m_compositeRule) {
+                m_ParametersA = this.m_ParametersA,
+                m_ParametersB = this.m_ParametersB,
+                m_iThread = iThread
+            };
+        }
 
-                
+        int m_iThread;
+
+        readonly XDifferentialOperatorMk2 m_DiffOp;
+
         /// <summary>
         /// ctor.
         /// </summary>
         internal LECQuadratureLevelSet(IGridData context,
-                                     XSpatialOperatorMk2 DiffOp,
+                                     XDifferentialOperatorMk2 DiffOp,
                                      M Matrix, V OffsetVec,
                                      UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
                                      LevelSetTracker lsTrk, int _iLevSet, int TrackerHistoryIndex,
-                                     Tuple<SpeciesId,SpeciesId> SpeciesPair,
+                                     Tuple<SpeciesId, SpeciesId> SpeciesPair,
                                      //Tuple<CoefficientSet,CoefficientSet> NegPosCoeff,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
             : base(new int[] { RowMap.GetNonXBasisLengths(0).Sum()*2, 1 + ((Matrix == null) ? 0 : ColMap.GetNonXBasisLengths(0).Sum()*2) }, // we always integrate over species in pairs (neg + pos), so we need to alloc mem only 2 species
                  context,
                  domAndRule) //
         {
+
+            m_DiffOp = DiffOp;
 
             // ------------------
             // init custom timers
@@ -161,15 +168,15 @@ namespace BoSSS.Foundation.XDG {
             var _Parameters = (ParamsMap != null) ? ParamsMap.ToArray() : new DGField[0];
             m_ParametersA = new ConventionalDGField[_Parameters.Length];
             m_ParametersB = new ConventionalDGField[_Parameters.Length];
-            for(int i = 0; i < _Parameters.Length; i++) {
+            for (int i = 0; i < _Parameters.Length; i++) {
                 var f = _Parameters[i];
-                if(f == null) {
+                if (f == null) {
                     m_ParametersA[i] = null;
                     m_ParametersB[i] = null;
-                } else if(f is XDGField xf) {
+                } else if (f is XDGField xf) {
                     m_ParametersA[i] = xf.GetSpeciesShadowField(this.SpeciesA);
                     m_ParametersB[i] = xf.GetSpeciesShadowField(this.SpeciesB);
-                } else if(f is ConventionalDGField cf) {
+                } else if (f is ConventionalDGField cf) {
                     m_ParametersA[i] = cf;
                     m_ParametersB[i] = null;
                 } else {
@@ -244,7 +251,7 @@ namespace BoSSS.Foundation.XDG {
         private bool Compfilter(IEquationComponent c) {
 
             ILevelSetForm b = (ILevelSetForm)c;
-            
+
             if (this.m_LevSetIdx != b.LevelSetIndex)
                 // component is not relevant for this level-set
                 return false;
@@ -260,7 +267,7 @@ namespace BoSSS.Foundation.XDG {
             // filter passed
             return true;
         }
-        
+
         void AllocEmpty<T>(EquationComponentArgMapping<T>[] components,
             out MultidimensionalArray[][] compBuffer, out MultidimensionalArray[,] sumBuffer, int Dim, bool affine)
             where T : IEquationComponent {
@@ -299,14 +306,14 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                for(int delta = 0; delta < (affine ? 1 : Delta); delta++) {
+                for (int delta = 0; delta < (affine ? 1 : Delta); delta++) {
                     if (UsedMarker[delta])
                         sumBuffer[gamma, delta] = new MultidimensionalArray(Dim - (affine ? 0 : 1));
                 }
             }
         }
 
-        
+
 
         EquationComponentArgMapping<ILevelSetForm_UxV>[] m_LsForm_UxV;
         EquationComponentArgMapping<ILevelSetForm_GradUxV>[] m_LsForm_GradUxV;
@@ -331,7 +338,7 @@ namespace BoSSS.Foundation.XDG {
         /// </list>
         /// </summary>
         MultidimensionalArray m_ParamFieldValuesPos;
-        
+
         /// <summary>
         /// values of parameter fields, positive side of level Set
         /// <list type="bullet">
@@ -367,7 +374,7 @@ namespace BoSSS.Foundation.XDG {
         static T[] ToArray<T>(params T[] obj) {
             return obj;
         }
-        
+
         /// <summary>
         /// memory allocation.
         /// </summary>
@@ -419,7 +426,7 @@ namespace BoSSS.Foundation.XDG {
 
             for (int gamma = 0; gamma < Gamma; gamma++) {
                 var bg = components[gamma];
-                
+
                 int iComp = -1;
                 foreach (var b in bg.m_AllComponentsOfMyType) {
                     iComp++;
@@ -432,7 +439,7 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(sumBuffer != null, "oops!");
                 }
 
-                for(int delta = 0; delta < (i_of_Delta >= 0 ? Delta : 1); delta++) {
+                for (int delta = 0; delta < (i_of_Delta >= 0 ? Delta : 1); delta++) {
                     if (sumBuffer[gamma, delta] != null)
                         sumBuffer[gamma, delta].Allocate(SumbufLengths);
                 }
@@ -447,7 +454,7 @@ namespace BoSSS.Foundation.XDG {
             int GAMMA = m_RowMap.BasisS.Count;  // GAMMA: number of codom variables
 
 
-            TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, m_LsTrkHistoryIndex, this.SpeciesA, this.SpeciesB,  this.m_LevSetIdx);
+            TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, m_LsTrkHistoryIndex, this.SpeciesA, this.SpeciesB, this.m_LevSetIdx);
 
 
 
@@ -488,8 +495,8 @@ namespace BoSSS.Foundation.XDG {
             bool[] ReqV = new bool[GAMMA];
             bool[] ReqGradV = new bool[GAMMA];
 
-            for(int gamma = 0; gamma < GAMMA; gamma++) {
-                for(int delta = 0; delta < DELTA; delta++) {
+            for (int gamma = 0; gamma < GAMMA; gamma++) {
+                for (int delta = 0; delta < DELTA; delta++) {
                     if (Sum_Koeff_UxV[gamma, delta] != null) {
                         ReqU[delta] = true;
                         ReqV[gamma] = true;
@@ -515,7 +522,7 @@ namespace BoSSS.Foundation.XDG {
                     //ReqV[gamma] = true;
                 }
             }
-            
+
             MultidimensionalArray[] BasisValues; //           index: domain variable/trial function
             MultidimensionalArray[] BasisGradientValues; //   index: domain variable/trial function
             MultidimensionalArray[] TestValues; //            index: codom variable/test function
@@ -528,7 +535,7 @@ namespace BoSSS.Foundation.XDG {
             // compute offsets into matrix blocks
             // ----------------------------------
 
-            
+
             CompOffsets(i0, Len, out int[] offsetDom, out int[] NnonxDom, m_ColMap);
             CompOffsets(i0, Len, out int[] offsetCod, out int[] NnonxCod, m_RowMap);
 
@@ -545,11 +552,11 @@ namespace BoSSS.Foundation.XDG {
             EdgeFormParams _inParams = default(EdgeFormParams);
             _inParams.e0 = i0;
             _inParams.Len = Len;
-            
-            
-            // loop over codomain variables ...
-            for (int gamma = 0; gamma < GAMMA; gamma++) {
 
+
+            // loop over codomain variables ...
+            for (int __gamma = 0; __gamma < GAMMA; __gamma++) {
+                int gamma = (__gamma + m_iThread) % GAMMA; // shuffle around to reduce locking in threads
 
                 // prepare parameters
                 // - - - - - - - - - 
@@ -566,7 +573,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // clear summation buffers
                 // - - - - - - - - - - - -
-                for(int delta = 0; delta < DELTA; delta++) {
+                for (int delta = 0; delta < DELTA; delta++) {
                     if (Sum_Koeff_UxV[gamma, delta] != null)
                         Sum_Koeff_UxV[gamma, delta].Clear();
                     if (Sum_Koeff_NablaUxV[gamma, delta] != null)
@@ -584,15 +591,21 @@ namespace BoSSS.Foundation.XDG {
 
                 // Evaluate Bilin. forms
                 // - - - - - - - - - - -
+
+                bool MustLock = this.m_DiffOp.FluxesAreNOTMultithreadSafe;
+                if (MustLock)
+                    Monitor.Enter(this.m_DiffOp);
+
                 {
-                    EvalComponent(ref _inParams, gamma, this.m_LsForm_UxV[gamma], this.m_LsForm_UxV_Watches[gamma], 
+                    EvalComponent(ref _inParams, gamma, this.m_LsForm_UxV[gamma], this.m_LsForm_UxV_Watches[gamma],
                         Koeff_UxV, Sum_Koeff_UxV, 4,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
                         delegate (ILevelSetForm_UxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
                             _comp.InternalEdge_UxV(ref inp, Koeff_UxV[_gamma][i]);
-                        });
+                        },
+                        m_iThread);
                 }
                 {
                     EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxV[gamma], this.m_LsForm_GradUxV_Watches[gamma],
@@ -602,7 +615,8 @@ namespace BoSSS.Foundation.XDG {
                         base.CustomTimers[0],
                         delegate (ILevelSetForm_GradUxV _comp, int _gamma, int i, ref EdgeFormParams inp) {
                             _comp.InternalEdge_GradUxV(ref inp, Koeff_NablaUxV[_gamma][i]);
-                        });
+                        },
+                        m_iThread);
                 }
                 {
                     EvalComponent(ref _inParams, gamma, this.m_LsForm_UxGradV[gamma], this.m_LsForm_UxGradV_Watches[gamma],
@@ -612,7 +626,8 @@ namespace BoSSS.Foundation.XDG {
                         base.CustomTimers[0],
                         delegate (ILevelSetForm_UxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
                             _comp.InternalEdge_UxGradV(ref inp, Koeff_UxNablaV[_gamma][i]);
-                        });
+                        },
+                        m_iThread);
                 }
                 {
                     EvalComponent(ref _inParams, gamma, this.m_LsForm_GradUxGradV[gamma], this.m_LsForm_GradUxGradV_Watches[gamma],
@@ -622,7 +637,8 @@ namespace BoSSS.Foundation.XDG {
                         base.CustomTimers[0],
                         delegate (ILevelSetForm_GradUxGradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
                             _comp.InternalEdge_GradUxGradV(ref inp, Koeff_NablaUxNablaV[_gamma][i]);
-                        });
+                        },
+                        m_iThread);
                 }
 
                 {
@@ -633,7 +649,8 @@ namespace BoSSS.Foundation.XDG {
                         base.CustomTimers[0],
                         delegate (ILevelSetForm_V _comp, int _gamma, int i, ref EdgeFormParams inp) {
                             _comp.InternalEdge_V(ref inp, Koeff_V[_gamma][i]);
-                        });
+                        },
+                        m_iThread);
                 }
                 {
                     EvalComponent(ref _inParams, gamma, this.m_LsForm_GradV[gamma], this.m_LsForm_GradV_Watches[gamma],
@@ -643,8 +660,12 @@ namespace BoSSS.Foundation.XDG {
                         base.CustomTimers[0],
                         delegate (ILevelSetForm_GradV _comp, int _gamma, int i, ref EdgeFormParams inp) {
                             _comp.InternalEdge_GradV(ref inp, Koeff_NablaV[_gamma][i]);
-                        });
+                        },
+                        m_iThread);
                 }
+
+                if (MustLock)
+                    Monitor.Exit(this.m_DiffOp);
             }
 
 
@@ -665,7 +686,7 @@ namespace BoSSS.Foundation.XDG {
                 else
                     N = 0;
 
-                if(N <= 0)
+                if (N <= 0)
                     continue; // nothing to do for codomain/row variable 'gamma'
 
                 base.CustomTimers[2].Start();
@@ -689,16 +710,16 @@ namespace BoSSS.Foundation.XDG {
                     for (int cr = 0; cr < 2; cr++) {  // loop over neg/pos species, row...
                         for (int cc = 0; cc < 2; cc++) {  // loop over neg/pos species, column...
 
-                            if(M <= 0)
+                            if (M <= 0)
                                 continue; // nothing to do for domain/column variable 'delta'
                             Debug.Assert(NnonxDom[delta] == M);
-                                                        
-                            int[] extr0 = new int[] { 0, 0, 
+
+                            int[] extr0 = new int[] { 0, 0,
                                 cr * N + offsetCod[gamma], // row
                                 cc * M + 1 + offsetDom[delta] }; // col
-                                //sectionsTest[gamma, cr] * N + offsetCod[gamma], // row
-                                //sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] }; // col
-                            int[] extrE = new int[] { Len - 1, NoOfNodes - 1, 
+                                                                 //sectionsTest[gamma, cr] * N + offsetCod[gamma], // row
+                                                                 //sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] }; // col
+                            int[] extrE = new int[] { Len - 1, NoOfNodes - 1,
                                 extr0[2] + N - 1, // row
                                 extr0[3] + M - 1 }; // col
                             var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
@@ -756,7 +777,7 @@ namespace BoSSS.Foundation.XDG {
         /// Should be pretty quick, so we can do this also in Release.
         /// </summary>
         internal static void TestNegativeAndPositiveSpecies(ICompositeQuadRule<QuadRule> rule, LevelSetTracker lsTrk, int HistoryIndex, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
-            foreach(var crp in rule) {
+            foreach (var crp in rule) {
 
                 TestNegativeAndPositiveSpecies(crp.Chunk.i0, crp.Chunk.Len, lsTrk, HistoryIndex, spcNeg, spcPos, iLevSet);
             }
@@ -773,27 +794,27 @@ namespace BoSSS.Foundation.XDG {
 
             var Regions = lsTrk.RegionsHistory[HistoryIndex];
 
-            for(int j = i0; j < (i0 + Len); j++) {
+            for (int j = i0; j < (i0 + Len); j++) {
                 Regions.GetSpeciesIndex(spcNeg, j);
                 Regions.GetSpeciesIndex(spcPos, j);
 
                 //ushort RegionCode = m_lsTrk.Regions.m_LevSetRegions[j];
                 LevelsetCellSignCode csc = Regions.GetCellSignCode(j);
 
-                if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
+                if (!(csc.GetSign(iLevSet) == LevelsetSign.Both))
                     throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
 
 
                 var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
-                if(lsTrk.ContainesSpecies(spcNeg, cscNeg) == false)
+                if (lsTrk.ContainesSpecies(spcNeg, cscNeg) == false)
                     throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell MUST contain negative species
-                if(lsTrk.ContainesSpecies(spcPos, cscNeg) == true)
+                if (lsTrk.ContainesSpecies(spcPos, cscNeg) == true)
                     throw new ApplicationException("Pos/Neg species mishmash."); // for negative sign, cell should NOT contain positive species
 
                 var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
-                if(lsTrk.ContainesSpecies(spcPos, cscPos) == false)
+                if (lsTrk.ContainesSpecies(spcPos, cscPos) == false)
                     throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell MUST contain positive species
-                if(lsTrk.ContainesSpecies(spcNeg, cscPos) == true)
+                if (lsTrk.ContainesSpecies(spcNeg, cscPos) == true)
                     throw new ApplicationException("Pos/Neg species mishmash."); // for positive sign, cell should NOT contain negative species
             }
         }
@@ -803,12 +824,12 @@ namespace BoSSS.Foundation.XDG {
             Nnonx = Map.GetNonXBasisLengths(i0);
             Debug.Assert(DELTA == Nnonx.Length);
             offset = new int[DELTA];
-            for(int delta = 1; delta < DELTA; delta++) {
+            for (int delta = 1; delta < DELTA; delta++) {
                 offset[delta] = offset[delta - 1] + Nnonx[delta - 1] * 2;
             }
 
 #if DEBUG
-            
+
             for (int i = 1; i < L; i++) {
                 int[] __Nnonx = Map.GetNonXBasisLengths(i0 + i);
                 Debug.Assert(ArrayTools.ListEquals(Nnonx, __Nnonx));
@@ -825,16 +846,19 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray ParamFieldValuesPos, MultidimensionalArray ParamFieldValuesNeg,
             int DELTA,
             Stopwatch timer,
-            CallComponent<T> ComponentFunc) where T : ILevelSetForm {
+            CallComponent<T> ComponentFunc, 
+            int iThread) where T : ILevelSetForm {
             timer.Start();
-            
-            
-            for (int i = 0; i < bf.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
+
+
+            for (int __i = 0; __i < bf.m_AllComponentsOfMyType.Length; __i++) {  // loop over equation components
+                int i = (__i + iThread) % bf.m_AllComponentsOfMyType.Length; // shuffling in threads to reduce locking
                 var comp = bf.m_AllComponentsOfMyType[i];
+                object blck = bf.m_LockObjects[i];
 
                 //LengthScales.TryGetValue(comp.NegativeSpecies, out _inParams.NegCellLengthScale);
                 //LengthScales.TryGetValue(comp.PositiveSpecies, out _inParams.PosCellLengthScale);
-                
+
                 argsPerComp[gamma][i].Clear();
 
                 int NoOfArgs = bf.NoOfArguments[i];
@@ -855,7 +879,11 @@ namespace BoSSS.Foundation.XDG {
 
                 // evaluate equation components
                 timers[i].Start();
+                if (blck != null)
+                    Monitor.Enter(blck);
                 ComponentFunc(comp, gamma, i, ref _inParams);
+                if (blck != null)
+                    Monitor.Exit(blck);
                 timers[i].Stop();
 #if DEBUG
                 argsPerComp[gamma][i].CheckForNanOrInf();
@@ -864,7 +892,7 @@ namespace BoSSS.Foundation.XDG {
                 // sum up bilinear forms:
                 {
                     MultidimensionalArray Summand = argsPerComp[gamma][i];
-                    
+
                     if (componentIdx >= 0) {
                         for (int c = 0; c < NoOfArgs; c++) { // loop over arguments of equation component
                             int targ = bf.AllToSub[i, c];
@@ -891,9 +919,9 @@ namespace BoSSS.Foundation.XDG {
                         MultidimensionalArray Accu = argsSum[gamma, 0];
                         Accu.Acc(1.0, Summand);
                     }
-                    
+
                 }
-                
+
 
             }
             timer.Stop();
@@ -911,7 +939,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="TestGradientValues"></param>
         /// <param name="Nodes">input, nodes where the basis should be evaluated</param>
         static internal void EvalBasis(int i0, int Len, IList<Basis> basisEnum, bool[] ReqB, bool[] ReqGrad, out MultidimensionalArray[] TestValues, out MultidimensionalArray[] TestGradientValues, NodeSet Nodes) {
-            
+
             TestGradientValues = new MultidimensionalArray[basisEnum.Count];
             TestValues = new MultidimensionalArray[basisEnum.Count];
             //sectionsTest = new int[TestValues.Length, 2];
@@ -923,7 +951,7 @@ namespace BoSSS.Foundation.XDG {
             int i = 0;
             foreach (var basis in basisEnum) {
                 if (basis is XDGBasis Xbasis) {
-                    
+
                     TestValues[i] = ReqB[i] ? Xbasis.NonX_Basis.CellEval(Nodes, i0, Len) : null;
                     TestGradientValues[i] = ReqGrad[i] ? Xbasis.NonX_Basis.CellEvalGradient(Nodes, i0, Len) : null;
 
@@ -968,7 +996,7 @@ namespace BoSSS.Foundation.XDG {
 
             CompOffsets(i0, Length, out int[] offsetCol, out int[] ColNonxN, m_ColMap);
             CompOffsets(i0, Length, out int[] offsetRow, out int[] RowNonxN, m_RowMap);
-            
+
 
             SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
 
@@ -999,8 +1027,8 @@ namespace BoSSS.Foundation.XDG {
                 _i0aff[2] = 0;
                 _iEaff[2] = -1;
 
-                for(int gamma = 0; gamma < GAMMA; gamma++) { // loop over rows...
-                    for(int cr = 0; cr < 2; cr++) { // loop over neg/pos species row...
+                for (int gamma = 0; gamma < GAMMA; gamma++) { // loop over rows...
+                    for (int cr = 0; cr < 2; cr++) { // loop over neg/pos species row...
                         SpeciesId rowSpc = spcS[cr];
                         int Row0 = m_RowMap.LocalUniqueCoordinateIndex(m_lsTrk, gamma, jCell, rowSpc, 0);
                         long Row0_g = m_RowMap.i0 + Row0;
@@ -1010,12 +1038,12 @@ namespace BoSSS.Foundation.XDG {
                         _iEaff[1] = _i0aff[1] + RowNonxN[gamma] - 1;
 
 
-                        if(saveMtx) {
+                        if (saveMtx) {
                             _i0[1] = _i0aff[1];
                             _iE[1] = _iEaff[1];
 
-                            for(int delta = 0; delta < DELTA; delta++) {
-                                for(int cc = 0; cc < 2; cc++) {
+                            for (int delta = 0; delta < DELTA; delta++) {
+                                for (int cc = 0; cc < 2; cc++) {
                                     SpeciesId colSpc = spcS[cc];
                                     int Col0 = m_ColMap.LocalUniqueCoordinateIndex(m_lsTrk, delta, jCell, colSpc, 0);
                                     long Col0_g = m_ColMap.i0 + Col0;
@@ -1031,10 +1059,10 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
 
-                        if(saveAff) {
+                        if (saveAff) {
                             var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
 
-                            for(int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
+                            for (int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
                                 OperatorAffine[Row0 + r] += BlockRes[r]*a;
                         }
                     }

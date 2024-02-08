@@ -22,15 +22,15 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid;
 using NUnit.Framework;
 using BoSSS.Platform;
+using System.Diagnostics;
 
-namespace BoSSS.Application.DatabaseTests  {
+namespace BoSSS.Application.DatabaseTests {
 
     /// <summary>
     /// Tests for the "standard" Windows file-system.
     /// </summary>
     /// 
-    class DBDriverTests : DatabaseTest
-    {
+    class DBDriverTests : DatabaseTest {
         [Test]
         public void TestCopyGrid() {
             var grid1 = databaseWithFiles.Controller.Grids.First();
@@ -252,8 +252,8 @@ namespace BoSSS.Application.DatabaseTests  {
             string[] files = Directory.GetFiles(directoryPath, "*.*", SearchOption.AllDirectories);
 
             int ret = 0;
-            foreach(var f in files) {
-                if(Path.GetExtension(f) != ".token")
+            foreach (var f in files) {
+                if (Path.GetExtension(f) != ".token")
                     ret++;
             }
             return ret;

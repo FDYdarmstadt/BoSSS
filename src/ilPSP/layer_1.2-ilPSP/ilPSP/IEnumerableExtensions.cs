@@ -271,6 +271,8 @@ namespace ilPSP {
         /// <paramref name="seq"/>, or -1, if not found.
         /// </returns>
         public static int IndexOf<T>(this IEnumerable<T> seq, T element, Func<T, T, bool> comparer) {
+            if (seq == null)
+                return -1;
             int i = 0;
             foreach (var e in seq) {
                 if (comparer(e, element))
@@ -296,6 +298,8 @@ namespace ilPSP {
         /// where <paramref name="condition"/> evaluates to true
         /// </returns>
         public static int IndexWhere<T>(this IEnumerable<T> seq, Func<T, bool> condition) {
+            if (seq == null)
+                return -1;
             int cnt = 0;
             int ret = -1;
             int ifound = 0;
@@ -329,6 +333,8 @@ namespace ilPSP {
         /// where <paramref name="condition"/> evaluates to true
         /// </returns>
         public static int FirstIndexWhere<T>(this IEnumerable<T> seq, Func<T, bool> condition) {
+            if (seq == null)
+                return -1;
             int cnt = 0;
             foreach (var t in seq) {
                 if (condition(t))
@@ -354,6 +360,8 @@ namespace ilPSP {
         /// where <paramref name="condition"/> evaluates to true
         /// </returns>
         public static int LastIndexWhere<T>(this IEnumerable<T> seq, Func<T, bool> condition) {
+            if (seq == null)
+                return -1;
             int r = -1;
             int cnt = 0;
             foreach (var t in seq) {

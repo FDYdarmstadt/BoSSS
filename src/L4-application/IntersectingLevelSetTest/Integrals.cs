@@ -28,7 +28,7 @@ namespace IntersectingLevelSetTest {
         /// <param name="quadOrder"></param>
         /// <returns></returns>
         public static (double intersection, double edge, double volume, double surface) Evaluate2D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
-            LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize(), beta.Vectorize(), resolution, levelSetDegree, 2);
+            LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize2(), beta.Vectorize2(), resolution, levelSetDegree, 2);
             return Evaluate(LsTrk, quadOrder);
         }
 
@@ -43,7 +43,7 @@ namespace IntersectingLevelSetTest {
         /// <param name="quadOrder"></param>
         /// <returns></returns>
         public static (double intersection, double edge, double volume, double surface) Evaluate3D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
-            LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize(), beta.Vectorize(), resolution, levelSetDegree, 3);
+            LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize2(), beta.Vectorize2(), resolution, levelSetDegree, 3);
             return Evaluate(LsTrk, quadOrder);
         }
 

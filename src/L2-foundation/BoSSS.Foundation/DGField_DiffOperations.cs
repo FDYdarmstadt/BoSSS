@@ -117,7 +117,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// accumulates the divergence of vector field <paramref name="vec"/>
+        /// accumulates the broken divergence of vector field <paramref name="vec"/>
         /// times <paramref name="alpha"/> to this field.
         /// </summary>
         /// <param name="alpha"></param>
@@ -139,7 +139,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// accumulates the divergence of vector field <paramref name="vec"/>
+        /// accumulates the broken divergence of vector field <paramref name="vec"/>
         /// times <paramref name="alpha"/> to this field.
         /// </summary>
         /// <param name="alpha"></param>
@@ -161,7 +161,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// accumulates the divergence of vector field <paramref name="vec"/>
+        /// accumulates the central difference divergence of vector field <paramref name="vec"/>
         /// times <paramref name="alpha"/>
         /// to this field.
         /// </summary>
@@ -511,11 +511,12 @@ namespace BoSSS.Foundation {
             EdgeMask emEdge = (optionalSubGrid != null) ? optionalSubGrid.AllEdgesMask : null;
             CellMask emVol = (optionalSubGrid != null) ? optionalSubGrid.VolumeMask : null;
 
-            SpatialOperator d_dx = new SpatialOperator(1, 1, QuadOrderFunc.Linear(),"in", "out");
+            DifferentialOperator d_dx = new DifferentialOperator(1, 1, QuadOrderFunc.Linear(),"in", "out");
             d_dx.EdgeQuadraturSchemeProvider = g => new Quadrature.EdgeQuadratureScheme(true, emEdge);
             d_dx.VolumeQuadraturSchemeProvider = g => new Quadrature.CellQuadratureScheme(true, emVol);
             var flux = CreateDerivativeFlux(d, f.Identification);
             d_dx.EquationComponents["out"].Add(flux);
+            d_dx.FluxesAreNOTMultithreadSafe = false;
             d_dx.Commit();
 
 

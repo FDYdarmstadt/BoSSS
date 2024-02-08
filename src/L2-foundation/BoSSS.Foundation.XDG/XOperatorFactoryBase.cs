@@ -31,9 +31,9 @@ namespace BoSSS.Foundation.XDG {
 
     public abstract class XOperatorFactoryBase {
 
-        protected XSpatialOperatorMk2 m_XOp;
+        protected XDifferentialOperatorMk2 m_XOp;
 
-        public XSpatialOperatorMk2 Xop {
+        public XDifferentialOperatorMk2 Xop {
             get {
                 return m_XOp;
             }

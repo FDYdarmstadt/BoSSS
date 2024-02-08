@@ -20,7 +20,6 @@ using System.Linq;
 
 namespace ilPSP.Utils {
 
-
     /// <summary>
     /// some static functions, which should help manipulating matrices and vectors;
     /// not very high-performance, but helpful;
@@ -668,6 +667,17 @@ namespace ilPSP.Utils {
         public static T[] Cat<T>(this IEnumerable<T> erstes, params object[] andere) {
             return Cat_<T>(erstes.ToArray(), andere);
         }
+
+        /// <summary>
+        /// concatenates list, arrays and single objects to an array of type <typeparamref name="T"/>
+        /// </summary>
+        public static T[] Concat<V,T>(this IEnumerable<V> list_of_lists) where V : IList<T> {
+            if (list_of_lists.Any())
+                return Cat_<T>(list_of_lists.First(), list_of_lists.Skip(1).ToArray());
+            else
+                return new T[0];
+        }
+
 
         static T[] Cat_<T>(IList<T> erstes, params object[] andere) {
             List<T> ret = new List<T>();

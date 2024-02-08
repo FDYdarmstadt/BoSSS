@@ -70,6 +70,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             double[] tempForces = new double[SpatialDim];
             double[] IntegrationForces = tempForces.CloneAs();
             double[] forcesAndTorque = new double[SpatialDim + 1];
+            if (!CutCells.IsSubMaskOf(CellMask.GetFullMask(LevelSetTracker.GridDat))){
+                throw new Exception("Cut cell mask not a sub mask of full mask.");
+            }
             {
                 XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId(FluidSpecies) }, RequiredOrder, 1).XQuadSchemeHelper;
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(1, CutCells);
@@ -78,19 +81,19 @@ namespace BoSSS.Application.XNSERO_Solver {
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray result) {
                         NodeSet Ns = QR.Nodes;
                         int K = result.GetLength(1);
-                        MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, SpatialDim, SpatialDim);
-                        MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
+                        MultidimensionalArray GradU = MultidimensionalArray.Create(Length, K, SpatialDim, SpatialDim);
+                        MultidimensionalArray pressure = MultidimensionalArray.Create(Length, K);
                         MultidimensionalArray Normals = LevelSetTracker.DataHistories[1].Current.GetLevelSetNormals(Ns, i0, Length);
-                        for(int i = 0; i < SpatialDim; i++) {
-                            U[i].EvaluateGradient(i0, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                        for(int d = 0; d < SpatialDim; d++) {
+                            U[d].EvaluateGradient(i0, Length, Ns, GradU.ExtractSubArrayShallow(-1, -1, d, -1), 0, 1);
                         }
-                        P.Evaluate(i0, Length, Ns, pARes);
+                        P.Evaluate(i0, Length, Ns, pressure);
                         MultidimensionalArray Ns_Global = Ns.CloneAs();
                         for(int j = 0; j < Length; j++) {
-                            LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, i0 + j);
+                            LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j + i0);
                             for(int k = 0; k < K; k++) {
-                                result[j, k, 0] = CalculateStressVectorX(Grad_UARes, pARes, Normals, FluidViscosity[fluidSpeciesID], k, j);
-                                result[j, k, 1] = CalculateStressVectorY(Grad_UARes, pARes, Normals, FluidViscosity[fluidSpeciesID], k, j);
+                                result[j, k, 0] = CalculateStressVectorX(GradU, pressure, Normals, FluidViscosity[fluidSpeciesID], k, j);
+                                result[j, k, 1] = CalculateStressVectorY(GradU, pressure, Normals, FluidViscosity[fluidSpeciesID], k, j);
                                 result[j, k, 2] = CalculateTorqueFromStress(new double[] { result[j, k, 0], result[j, k, 1] }, Ns_Global, k, j, Position);
                             }
                         }
@@ -98,7 +101,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                         for(int i = 0; i < Length; i++)
                             for(int d = 0; d < SpatialDim + 1; d++) {
-                                forcesAndTorque[d] += ResultsOfIntegration[i, d];
+                                forcesAndTorque[d] = ForceTorqueSummationWithNeumaierArray(forcesAndTorque[d], ResultsOfIntegration, Length, d);
                             }
                     }
                 ).Execute();
@@ -157,21 +160,23 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The current cell ID
         /// </param>
         private double CalculateStressVectorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
-            double[] SummandsVelGradient = new double[3];
-            SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * NormalVector[j, k, 0];
-            SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
-            SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
-            double SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
+            double[] SummandsVelGradient = new double[3]; 
+            Vector normal = new Vector(NormalVector[j, k, 0], NormalVector[j, k, 1]);
+            normal = normal / normal.Abs();
+            SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * normal[0];
+            SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * normal[1];
+            SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * normal[1];
+            double SummandsPressure = pARes[j, k] * normal[0];
             return NeumaierSummation(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 
         /// <summary>
         /// This method performs the integration in y-direction
         /// </summary>
-        /// <param name="Grad_UARes">
+        /// <param name="GradU">
         /// The gradient of the velocity.
         /// </param>
-        /// <param name="pARes">
+        /// <param name="Pressure">
         /// The pressure.
         /// </param>
         /// <param name="NormalVector">
@@ -186,12 +191,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="j">
         /// The current cell ID
         /// </param>
-        private double CalculateStressVectorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
+        private double CalculateStressVectorY(MultidimensionalArray GradU, MultidimensionalArray Pressure, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
             double[] SummandsVelGradient = new double[3];
-            SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * NormalVector[j, k, 1];
-            SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
-            SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
-            double SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
+            Vector normal = new Vector(NormalVector[j, k, 0], NormalVector[j, k, 1]);
+            normal = normal / normal.Abs();
+            SummandsVelGradient[0] = -2 * GradU[j, k, 1, 1] * normal[1];
+            SummandsVelGradient[1] = -GradU[j, k, 1, 0] * normal[0];
+            SummandsVelGradient[2] = -GradU[j, k, 0, 1] * normal[0];
+            double SummandsPressure = Pressure[j, k] * normal[1];
             return NeumaierSummation(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 
@@ -296,6 +303,34 @@ namespace BoSSS.Application.XNSERO_Solver {
                 c += (SummandsPressure - naiveSum) + sum;
             }
             sum = naiveSum;
+            return sum + c;
+        }
+
+        /// <summary>
+        /// This method performs the Neumaier algorithm form the sum of the entries of an array.
+        /// </summary>
+        /// <param name="resultVariable">
+        /// The variable where  the sum will be saved.
+        /// </param>
+        /// <param name="summands">
+        /// The array of summands
+        /// </param>
+        /// <param name="noOfSummands">
+        /// The number of summands.
+        /// </param>
+        private double ForceTorqueSummationWithNeumaierArray(double resultVariable, MultidimensionalArray summands, double noOfSummands, int d) {
+            double sum = resultVariable;
+            double naiveSum;
+            double c = 0.0;
+            for (int i = 0; i < noOfSummands; i++) {
+                naiveSum = sum + summands[i, d];
+                if (Math.Abs(sum) >= Math.Abs(summands[i, d])) {
+                    c += (sum - naiveSum) + summands[i, d];
+                } else {
+                    c += (summands[i, d] - naiveSum) + sum;
+                }
+                sum = naiveSum;
+            }
             return sum + c;
         }
     }

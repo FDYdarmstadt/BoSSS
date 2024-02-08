@@ -118,17 +118,17 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.Iterative {
         /// <param name="f"> Specifying the method of flux calculation </param>
         /// <param name="Restriction"> The narrow band around the zero level set wherein the calculations are performed </param>
         void CalculateLevelSetGradient(LevelSet LS, VectorField<SinglePhaseField> LSG, string f, SubGrid Restriction) {
-            SpatialOperator SO;
+            DifferentialOperator SO;
             CoordinateMapping CoDom;
 
             if (m_ctx.SpatialDimension == 2) {
-                SO = new SpatialOperator(1, 2,QuadOrderFunc.Linear(), new string[] { "LS", "LSG[0]", "LSG[1]" });
+                SO = new DifferentialOperator(1, 2,QuadOrderFunc.Linear(), new string[] { "LS", "LSG[0]", "LSG[1]" });
                 SO.EquationComponents["LSG[0]"].Add(CreateFlux(m_ctx, f, 0));
                 SO.EquationComponents["LSG[1]"].Add(CreateFlux(m_ctx, f, 1));
                 SO.Commit();
                 CoDom = new CoordinateMapping(LSG[0], LSG[1]);
             } else if (m_ctx.SpatialDimension == 3) {
-                SO = new SpatialOperator(1, 3,QuadOrderFunc.Linear(), new string[] { "LS", "LSG[0]", "LSG[1]", "LSG[2]" });
+                SO = new DifferentialOperator(1, 3,QuadOrderFunc.Linear(), new string[] { "LS", "LSG[0]", "LSG[1]", "LSG[2]" });
                 SO.EquationComponents["LSG[0]"].Add(CreateFlux(m_ctx, f, 0));
                 SO.EquationComponents["LSG[1]"].Add(CreateFlux(m_ctx, f, 1));
                 SO.EquationComponents["LSG[2]"].Add(CreateFlux(m_ctx, f, 2));
@@ -207,15 +207,15 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.Iterative {
 
                 ExplicitEuler TimeIntegrator;
 
-                SpatialOperator SO;
+                DifferentialOperator SO;
                 Func<int[], int[], int[], int> QuadratureOrder = QuadOrderFunc.NonLinear(3);
                 if (m_ctx.SpatialDimension == 2) {
-                    SO = new SpatialOperator(1, 5, 1, QuadratureOrder, new string[] { "LS", "LSCGV", "LSDG[0]", "LSUG[0]", "LSDG[1]", "LSUG[1]", "Result" });
+                    SO = new DifferentialOperator(1, 5, 1, QuadratureOrder, new string[] { "LS", "LSCGV", "LSDG[0]", "LSUG[0]", "LSDG[1]", "LSUG[1]", "Result" });
                     SO.EquationComponents["Result"].Add(new GodunovHamiltonian(m_ctx, thickness));
                     SO.Commit();
                     TimeIntegrator = new RungeKutta(m_Scheme, SO, new CoordinateMapping(LS), new CoordinateMapping(LSCGV, LSDG[0], LSUG[0], LSDG[1], LSUG[1]), sgrd:Restriction);
                 } else {
-                    SO = new SpatialOperator(1, 7, 1, QuadratureOrder, new string[] { "LS", "LSCGV", "LSDG[0]", "LSUG[0]", "LSDG[1]", "LSUG[1]", "LSDG[2]", "LSUG[2]", "Result" });
+                    SO = new DifferentialOperator(1, 7, 1, QuadratureOrder, new string[] { "LS", "LSCGV", "LSDG[0]", "LSUG[0]", "LSDG[1]", "LSUG[1]", "LSDG[2]", "LSUG[2]", "Result" });
                     SO.EquationComponents["Result"].Add(new GodunovHamiltonian(m_ctx, thickness));
                     SO.Commit();
                     TimeIntegrator = new RungeKutta(m_Scheme, SO, new CoordinateMapping(LS), new CoordinateMapping(LSCGV, LSDG[0], LSUG[0], LSDG[1], LSUG[1], LSDG[2], LSUG[2]), sgrd:Restriction);
