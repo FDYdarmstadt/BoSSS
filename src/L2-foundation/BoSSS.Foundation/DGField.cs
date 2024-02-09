@@ -229,6 +229,12 @@ namespace BoSSS.Foundation {
                     }
                 }
             }
+
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                return new ProjectionQuadrature(this.m_Owner, this.m_alpha, this.m_func, this.m_compositeRule) {
+                    m_func2 = this.m_func2
+                };
+            }
         }
 
         /// <summary>

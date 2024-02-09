@@ -659,7 +659,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
                     tr.Info("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
                     tr.Info("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-                    tr.Info("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
                     tr.Info("  spmv outer " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
                 }
 

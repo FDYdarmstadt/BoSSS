@@ -162,7 +162,9 @@ namespace MPI.Wrappers.Utils {
         /// <param name="PointerSizeFilter">
         /// library is excluded from search if the size of pointers (usually 4 or 8 bytes) in not equal; 
         /// This is for libs which require a different name mangling in 64 and 32 bit mode;
-        /// Ignored, when negative;
+        /// - Ignored, when negative;
+        /// - 4: when the corresponding library is exclusive for 32 bit
+        /// - 8: when the corresponding library is exclusive for 64 bit
         /// </param>
         /// <param name="PrequesiteLibraries">
         /// - 1st index: correlates with library names

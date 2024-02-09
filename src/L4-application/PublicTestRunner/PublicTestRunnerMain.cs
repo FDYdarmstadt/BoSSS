@@ -358,8 +358,9 @@ namespace PublicTestRunner {
             return ret.ToArray();
         }
 
-        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
+        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test, int?[] NumThreads) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
             var r = new List<string>(); // full test names
+            var n = new List<int?>(); // number of threads for test
             var l = new List<string>(); // short names 
             var d = new Dictionary<string, string[]>(); // pairs of (full test name | files for the test)
 
@@ -371,6 +372,18 @@ namespace PublicTestRunner {
                 if (t.IsClass) {
                     var mmm = t.GetMethods();
 
+                    // first, seach for num_threads defined for the entire class...
+                    int? num_threads_class = null;
+                    if (t.GetCustomAttribute(typeof(NUnitNumThreads)) != null) {
+                        var nta = t.GetCustomAttribute(typeof(NUnitNumThreads)) as NUnitNumThreads;
+                        //if (dc != null)
+                        //    throw new NotSupportedException("Palacing a `NUnitFileToCopyHackAttribute` together with `SetUpAttribute` or `OneTimeSetUpAttribute` is not supported (anymore).");
+
+                        num_threads_class = nta.NumThreads;
+                    }
+
+
+
                     foreach (var m in mmm) { // loop over methods in type...
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
@@ -379,6 +392,7 @@ namespace PublicTestRunner {
                             continue;
 
                         var s = new HashSet<string>();
+
 
 
                         if (m.GetCustomAttribute(typeof(SetUpAttribute)) != null
@@ -394,10 +408,21 @@ namespace PublicTestRunner {
                             }
                         }
 
+                        // search int num_threads is "overridden" for the respective test
+                        int? num_threads = num_threads_class;
+                        if (m.GetCustomAttribute(typeof(NUnitNumThreads)) != null) {
+                            var nta = m.GetCustomAttribute(typeof(NUnitNumThreads)) as NUnitNumThreads;
+                            //if (dc != null)
+                            //    throw new NotSupportedException("Palacing a `NUnitFileToCopyHackAttribute` together with `SetUpAttribute` or `OneTimeSetUpAttribute` is not supported (anymore).");
+
+                            num_threads = nta.NumThreads;
+                        }
+
 
                         //bool testAdded = false;
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." + m.Name);
+                            n.Add(num_threads);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
                             //Console.WriteLine("Added: " + r.Last());
                             //testAdded = true;
@@ -436,7 +461,7 @@ namespace PublicTestRunner {
             }
 
 
-            // add assmbly-global files for test, check uniqueness of filenames
+            // add assembly-global files for test, check uniqueness of filenames
             foreach(var testname in d.Keys) {
                 var s = new List<string>();
                 s.AddRange(d[testname]);
@@ -452,10 +477,11 @@ namespace PublicTestRunner {
 
                 d[testname] = s.ToArray();
             }
-            
 
+            if (n.Count != r.Count)
+                throw new ApplicationException("internal error");
 
-            return (r.Count, r.ToArray(), l.ToArray(), d);
+            return (r.Count, r.ToArray(), l.ToArray(), d, n.ToArray());
         }
 
         /*
@@ -864,7 +890,7 @@ namespace PublicTestRunner {
 
 
                 // collection for all tests:
-                var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
+                var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs, int? NumThreads)>();
                 
                 // Find all serial tests:
                 {
@@ -878,7 +904,7 @@ namespace PublicTestRunner {
                                         Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
                                         break;
                                     }
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1, allTst4Assi.NumThreads[iTest]));
                                 }
                             }
                         }
@@ -902,7 +928,7 @@ namespace PublicTestRunner {
                                         break;
                                     }
 
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs, allTst4Assi.NumThreads[iTest]));
                                 }
                             }
                         }
@@ -948,7 +974,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
+                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, t.NumThreads, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1269,6 +1295,7 @@ namespace PublicTestRunner {
             string[] AdditionalFiles,
             string prefix,
             int NoOfMpiProcs,
+            int? NumThreads,
             string nativeOverride,
             string TestRunnerRelPath,
             int cnt) {
@@ -1318,6 +1345,9 @@ namespace PublicTestRunner {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
                 }
                 j.NumberOfMPIProcs = NoOfMpiProcs;
+                if(NumThreads != null) {
+                    j.NumberOfThreads = NumThreads.Value;
+                }
                 if(TestRunnerRelPath != null)
                     j.EntryAssemblyRedirection = TestRunnerRelPath;
                 j.Activate(bpc);
@@ -1594,13 +1624,15 @@ namespace PublicTestRunner {
 
             if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
                 BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
-                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Helo, Suckers!");
+                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Hello, Suckers!");
                 Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
             }
 
             BoSSS.Solution.Application.InitMPI();
 
-           
+            Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
+            ilPSP.Environment.DisableOpenMP();
+            
             int ret = -1;
             switch (args[0]) {
                 case "nunit3":
@@ -1694,7 +1726,7 @@ namespace PublicTestRunner {
             //for(int i = 0; i < args.Length; i++) {
             //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
             //}
-
+            //Debugger.Launch();
 
             try {
                 return _Main(args, new PublicTests());

@@ -30,6 +30,18 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
     /// Base class for optimized versions of the HLLC flux
     /// </summary>
     public abstract class OptimizedHLLCFlux : INonlinearFlux, IEquationComponentSpeciesNotification {
+        /*
+        public IEquationComponent CloneForThread() {
+            return null;
+        }
+
+        public object GetPadlock() {
+            return material;
+        }
+
+        public bool IsMultithreadSafe => false;
+        */
+
 
         /// <summary>
         /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
@@ -185,6 +197,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         public void SetParameter(string speciesName) {
             this.speciesName = speciesName;
         }
+
 
         #endregion
 

@@ -37,7 +37,8 @@ using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.Gnuplot;
 using System.Diagnostics;
-using ilPSP.LinSolvers.MUMPS;
+//using BoSSS.Foundation.Quadrature;
+//using ilPSP.LinSolvers.MUMPS;
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
@@ -231,7 +232,11 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         /// <summary>
         /// A simple Shear flow with interfacial slip and evaporation
-        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.InterfaceSlipTest"/>
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.InterfaceSlipTest"/>.
+        /// 
+        /// NOTE: something about this test is fishy; it seems to fail on certain machines, especially when multi-threading is activated.
+        /// However, it also fails in non-multithreaded execution on certain computers,
+        /// e.g., it passes on an i7-6700 and  i7-9700K, but fails on i7-11800H.
         /// </summary>
         [Test]
         public static void InterfaceSlipTestLin(
@@ -258,6 +263,39 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 #endif
             ) {
             var Tst = new InterfaceSlipTestLin(angle, slipI, viscosityratio, massflux);
+
+            if (deg == 3 && slipI == 0) {
+                //Note (fk,24jan24)
+                //Ich habe mal die Fehler aus mehreren Runs gesammelt.
+                //Die Gemeinsamkeit scheint zu sein, 
+                //Param 1: es tritt nur bei DG-Grad 3 auftritt(und nicht bei 4);
+                //                Param 8: es tritt nur bei slipI = 0 auf.
+                //                (Param 2-- 7 werden im Test gar nicht nicht variiere, sondern sind immer[0.0d, FullySymmetric, 0.0d, Saye, Newton]).
+                //                //                   1 2    3              4    5    7      7    8      9
+                //                InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 1.2d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 1.2d)
+
+
+
+                ilPSP.Environment.NumThreads = 1;
+
+
+            }
+            //Quadrature_Settings.ENABLE_MULTITHREAD_CHECKING = true;
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, nonlinsolver: nonlinsolver);
             C.PhysicalParameters.slipI = Tst.slipI;

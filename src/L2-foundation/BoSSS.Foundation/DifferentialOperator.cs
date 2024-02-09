@@ -1812,6 +1812,49 @@ namespace BoSSS.Foundation {
                     
                     if(volRule.Any() && DoVolume) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
+
+                            /*
+                            if (Matrix != null && AffineOffset != null) {
+                                for (int i = 0; i < 1; i++) {
+                                    Console.WriteLine($"   i = {i}");
+
+                                    double afferrNorm = 0, mtxerrNorm = 0;
+                                    for (int k = 0; k < 1; k++) {
+                                        var clMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
+                                        var clAffine = new double[AffineOffset.Count];
+                                        var mpMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
+                                        var mpAffine = new double[AffineOffset.Count];
+
+                                        Debugi.SkipComp = -1;
+                                        Debugi.CompCont = 0;
+                                        Debugi.printInfo = k == 0;
+                                        ilPSP.Environment.NumThreads = 1;
+                                        var clmtxBuilder = new LECVolumeQuadrature2<MsrMatrix, double[]>(_Owner);
+                                        clmtxBuilder.m_alpha = alpha;
+                                        clmtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, clMatrix, clAffine, time);
+
+                                        Debugi.SkipComp = -1;
+                                        Debugi.CompCont = 0;
+                                        //Debugi.printInfo = false;
+                                        ilPSP.Environment.NumThreads = 8;
+                                        var mpmtxBuilder = new LECVolumeQuadrature2<MsrMatrix, double[]>(_Owner);
+                                        mpmtxBuilder.m_alpha = alpha;
+                                        mpmtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, mpMatrix, mpAffine, time);
+
+
+                                        var errMtx = clMatrix.CloneAs();
+                                        errMtx.Acc(mpMatrix, -1.0);
+                                        mtxerrNorm += errMtx.InfNorm();
+
+                                        afferrNorm += clAffine.MPI_L2Dist(mpAffine);
+
+                                    }
+                                    Console.WriteLine($"   difference (i = {i}): {mtxerrNorm:0.####e-00}  {mtxerrNorm:0.####e-00}");
+                                    Console.Write("");
+                                }
+                            }
+                            //*/
+
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
@@ -2933,6 +2976,8 @@ namespace BoSSS.Foundation {
             if (this.TemporalOperator != null)
                 JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);
 
+            JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
+
             foreach (string CodNmn in this.CodomainVar) {
                 foreach(var eq in this.EquationComponents[CodNmn]) {
 
@@ -2974,6 +3019,7 @@ namespace BoSSS.Foundation {
             JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
             JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
+            JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
             JacobianOp.Commit(false);
             return JacobianOp;
         }
@@ -3079,8 +3125,29 @@ namespace BoSSS.Foundation {
             }
         }
 
+        bool m_FluxesAreNOTMultithreadSafe = true;
+
 
         /// <summary>
+        /// Set to true, if **all** fluxes must be synchronized in multi-threaded execution.
+        /// **This will come at a performance degeneration.**
+        /// This is some lazy option: the default value is false,
+        /// i.e., fluxes are not synchronized.
+        /// <seealso cref="IMultitreadSafety"/>
+        /// </summary>
+        public bool FluxesAreNOTMultithreadSafe {
+            get {
+                return m_FluxesAreNOTMultithreadSafe;
+            }
+            set {
+                if (IsCommitted)
+                    throw new NotSupportedException("illegal to call after commit");
+                m_FluxesAreNOTMultithreadSafe = value;
+            }
+        }
+
+        /// <summary>
+        /// Dictionary which prevents changing after <see cref="Commit"/> has been called;
         /// I hate shit like this class - so many dumb lines of code.
         /// </summary>
         class MyDict : IDictionary<string, bool> {

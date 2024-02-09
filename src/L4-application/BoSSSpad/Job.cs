@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.DotNet.Interactive.Formatting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -388,6 +389,8 @@ namespace BoSSS.Application.BoSSSpad {
                 Foundation.Grid.IGrid g = m_ctrl.GridFunc();
                 Guid id = dbi.SaveGrid(ref g);
 
+                Console.WriteLine($"Using grid {id} at {dbi.Path}.");
+
                 m_ctrl.GridFunc = null;
                 m_ctrl.GridGuid = id;
                 Console.WriteLine("Control object modified.");
@@ -526,7 +529,8 @@ namespace BoSSS.Application.BoSSSpad {
             string[] args = new string[] {
                 "--control", "control.obj",
                 "--prjnmn", PrjName,
-                "--sesnmn", this.Name
+                "--sesnmn", this.Name,
+                "--num_threads", this.NumberOfThreads.ToString()
             };
             if (m_ctrl_index >= 0) {
                 ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
@@ -567,6 +571,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IDictionary<string, string> EnvironmentVars {
             get {
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.NumberOfThreads.ToString();
                 return m_EnvironmentVars;
             }
         }
@@ -1176,10 +1181,31 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfMPIProcs;
             }
             set {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException("number of MPI processes must be at least 1");
                 TestActivation();
                 m_NumberOfMPIProcs = value;
             }
         }
+
+        int m_NumberOfThreads = 4;
+
+        /// <summary>
+        /// Number of threads for each MPI rank
+        /// </summary>
+        public int NumberOfThreads {
+            get {
+                return m_NumberOfThreads;
+            }
+            set {
+                if(value <= 0) 
+                    throw new ArgumentOutOfRangeException("number of threads must be at least 1");
+                TestActivation();
+                m_NumberOfThreads = value;
+            }
+        }
+
+
 
         bool m_UseComputeNodesExclusive = false;
 
@@ -1494,6 +1520,8 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
+
+
                 // ================
                 // status
                 // ================
@@ -1509,10 +1537,9 @@ namespace BoSSS.Application.BoSSSpad {
                         return;
                     }
                 }
-             
 
 
-
+               
                 // ========================================================================
                 // finally, it might be necessary to submit the job to the batch processor. 
                 // ========================================================================
@@ -1521,6 +1548,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // some database syncing might be necessary 
                 FiddleControlFile(AssignedBatchProc);
+
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();
