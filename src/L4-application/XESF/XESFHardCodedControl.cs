@@ -177,7 +177,7 @@ namespace XESF {
             #endregion
 
             #region Initial Position of LevelSets
-            double Mach = 2.0;
+            double Mach_Left = 2.0;
             double shock_angle_exact = 39.3139318;
             double shock_angle_radial;
             if(iVFromShockRelations) {
@@ -275,36 +275,38 @@ namespace XESF {
             c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
             c.AddVariable(CompressibleVariables.Energy, dgDegree);
             // Boundary conditions
-            double density = 1.0;
-            double pressure = 1.0;
+            double density_Left = 1.0;
+            double pressure_Left = 1.0;
 
 
             double gamma = IdealGas.Air.HeatCapacityRatio;
-            double speedOfSound = Math.Sqrt(gamma * pressure / density);
+            double speedOfSound_Left = Math.Sqrt(gamma * pressure_Left / density_Left);
 
-            double velocityX = Mach * speedOfSound;
-            double velocityY = 0.0;
+            double velocityX_Left = Mach_Left * speedOfSound_Left;
+            double velocityY_Left = 0.0;
 
-            double momentumX = density * velocityX;
+            double momentumX_Left = density_Left * velocityX_Left;
 
 
-            double innerEnergy = pressure / (gamma - 1);
-            double kineticEnergy = 0.5 * density * (velocityX * velocityX + velocityY * velocityY);
-            double totalEnergy = innerEnergy + kineticEnergy;
+            double innerEnergy_Left = pressure_Left / (gamma - 1);
+            double kineticEnergy_Left = 0.5 * density_Left * (velocityX_Left * velocityX_Left + velocityY_Left * velocityY_Left);
+            double totalEnergy_Left = innerEnergy_Left + kineticEnergy_Left;
 
             // Boundary conditions in PRIMITIVE variables
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#L", (X, t) => density);
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#R", (X, t) => density);
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#L", (X, t) => velocityX);
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#R", (X, t) => velocityX);
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.yComponent + "#L", (X, t) => velocityY);
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.yComponent + "#R", (X, t) => velocityY);
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#L", (X, t) => pressure);
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#R", (X, t) => pressure);
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#L", (X, t) => density_Left);
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#R", (X, t) => density_Left);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#L", (X, t) => velocityX_Left);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#R", (X, t) => velocityX_Left);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.yComponent + "#L", (X, t) => velocityY_Left);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.yComponent + "#R", (X, t) => velocityY_Left);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#L", (X, t) => pressure_Left);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#R", (X, t) => pressure_Left);
 
+ 
+            //double density_Right = (gamma + 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) / ((gamma - 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) + 2.0);
+            //double pressure_Right = 1.0 + (2.0 * gamma * (Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) - 1.0)) / (gamma + 1.0);
 
-            double density_Right = (gamma + 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) / ((gamma - 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) + 2.0);
-            double pressure_Right = 1.0 + (2.0 * gamma * (Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) - 1.0)) / (gamma + 1.0);
+            (double density_Right, double velocityX_normal_Rigth, double pressure_Right, double c_R, double Mach_normal_R) =CompressibleHelperFunc.ComputeNormalShockWaveRelations(density_Left, velocityX_Left * Math.Sin(shock_angle_radial), pressure_Right, Mach_Left* Math.Sin(shock_angle_radial), gamma);
 
             // calculate Velocity via Transformation matrix
             MultidimensionalArray TransMat = MultidimensionalArray.Create(2, 2);
@@ -315,8 +317,8 @@ namespace XESF {
 
 
             double[] velocity_left_normal = new double[2];
-            velocity_left_normal[0] = velocityX * Math.Cos(shock_angle_radial);
-            velocity_left_normal[1] = velocityX * Math.Sin(shock_angle_radial);
+            velocity_left_normal[0] = velocityX_Left * Math.Cos(shock_angle_radial);
+            velocity_left_normal[1] = velocityX_Left * Math.Sin(shock_angle_radial);
 
 
             double[] velocity_right_normal = new double[2];
@@ -358,13 +360,13 @@ namespace XESF {
                     }
                 } else { //pre Shock
                     if(component == 0) {
-                        return density;
+                        return density_Left;
                     } else if(component == 1) {
-                        return velocityX;
+                        return velocityX_Left;
                     } else if(component == 2) {
                         return 0;
                     } else if(component == 3) {
-                        return pressure;
+                        return pressure_Right;
                     }
                 }
                 return 0;
@@ -373,10 +375,10 @@ namespace XESF {
             if(iVFromShockRelations) {
 
                 //// Initial conditions in PRIMITIVE variables -- Pre Shock
-                c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => density);
-                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#L", X => velocityX);
-                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.yComponent + "#L", X => velocityY);
-                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#L", X => pressure);
+                c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => density_Left);
+                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#L", X => velocityX_Left);
+                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.yComponent + "#L", X => velocityY_Left);
+                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#L", X => pressure_Right);
 
                 //// Initial conditions in PRIMITIVE variables -- Post Shock
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#R", X => density_Right);
