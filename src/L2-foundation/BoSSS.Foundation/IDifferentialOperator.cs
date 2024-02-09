@@ -120,6 +120,19 @@ namespace BoSSS.Foundation {
         /// </summary>
         bool IsCommitted { get; }
 
+
+        /// <summary>
+        /// Set to true, if **all** fluxes must be synchronized in multi-threaded execution.
+        /// **This will come at a performance degeneration.**
+        /// This is some lazy option: the default value is false,
+        /// i.e., fluxes are not synchronized.
+        /// <seealso cref="IMultitreadSafety"/>
+        /// </summary>
+        bool FluxesAreNOTMultithreadSafe {
+            get;
+            set;
+        }
+
         /// <summary>
         /// If set, used to update parameters before evaluation.
         /// Keep in mind: Here, multiple handlers can be added so it is not necessary to 
@@ -155,7 +168,7 @@ namespace BoSSS.Foundation {
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
         /// <param name="allowVarAddition">
-        /// - false: domain and parameter variables aof components (<see cref="IEquationComponent.ArgumentOrdering"/>, <see cref="IEquationComponent.ParameterOrdering"/>) which are not in the <see cref="DomainVar"/> list will cause an exception
+        /// - false: domain and parameter variables of components (<see cref="IEquationComponent.ArgumentOrdering"/>, <see cref="IEquationComponent.ParameterOrdering"/>) which are not in the <see cref="DomainVar"/> list will cause an exception
         /// - true: domain and parameter variables will be added during the commit-operation
         /// </param>
         void Commit(bool allowVarAddition = true);
@@ -300,7 +313,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// Indicate wheter a specfic combination of DG degrees is a valid combination (e.g. with respect to numerical stability, a degree 0 is invalid for an SIP discretization)
+        /// Indicate whether a specific combination of DG degrees is a valid combination (e.g. with respect to numerical stability, a degree 0 is invalid for an SIP discretization)
         /// </summary>
         /// <param name="DomainDegreesPerVariable">
         /// - index correlates with <see cref="DomainVar"/>

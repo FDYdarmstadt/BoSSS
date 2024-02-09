@@ -161,6 +161,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             Op.EquationComponents["c2"].Add(new DxFlux("u2", 77.7)); // Flux in Bulk Phase;
             Op.EquationComponents["c2"].Add(new LevSetFlx("u2", 77.7));
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 
@@ -210,13 +211,15 @@ namespace BoSSS.Application.Matrix_MPItest {
             mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
-
-            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            // matrix non-zero-pattern seems to be very sensitive to the sequence of summation;
+            // hence, introduce a threshold to mitigate this.
+            double threshold = this.OperatorMatrix.InfNorm()*1.0e-14;
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
            
-            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
-            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
+            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
            
             MsrMatrix Comp = AltOperatorMatrix.CloneAs();
             Comp.Acc(-1.0, OperatorMatrix);

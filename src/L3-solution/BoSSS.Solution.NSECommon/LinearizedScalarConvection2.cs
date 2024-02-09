@@ -884,13 +884,11 @@ namespace BoSSS.Solution.NSECommon {
             return this.BorderEdgeFlux(ref inp, _uA) * _vA;
         }
 
-        private double[] buf = null;
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             int D = GradV.Length;
             double acc = 0;
-            if (buf == null)
-                buf = new double[D];
+            var buf = new double[D];
             this.Flux(ref cpv, U, buf);
             for (int d = 0; d < D; d++)
                 acc += buf[d] * GradV[d];

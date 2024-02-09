@@ -1746,14 +1746,16 @@ namespace ilPSP.LinSolvers {
         /// <param name="Block">Block to add.</param>
         /// <param name="beta">Scaling applied to this matrix before accumulation</param>
         public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
-            if (Block.Dimension != 2)
-                throw new ArgumentException();
-            int I = Block.NoOfRows;
-            int J = Block.NoOfCols;
+            lock (this) {
+                if (Block.Dimension != 2)
+                    throw new ArgumentException();
+                int I = Block.NoOfRows;
+                int J = Block.NoOfCols;
 
-            for (int i = 0; i < I; i++)
-                for (int j = 0; j < J; j++)
-                    this[i0 + i, j0 + j] = this[i0 + i, j0 + j] * beta + alpha * Block[i, j];
+                for (int i = 0; i < I; i++)
+                    for (int j = 0; j < J; j++)
+                        this[i0 + i, j0 + j] = this[i0 + i, j0 + j] * beta + alpha * Block[i, j];
+            }
         }
 
         /// <summary>

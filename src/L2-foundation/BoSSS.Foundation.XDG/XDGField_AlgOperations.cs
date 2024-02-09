@@ -65,6 +65,7 @@ namespace BoSSS.Foundation.XDG {
             {
                 src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(spc, f, Dom));
             }
+            src.FluxesAreNOTMultithreadSafe = false;
             src.Commit();
 
             var ev = src.GetEvaluatorEx(

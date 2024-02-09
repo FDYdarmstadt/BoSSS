@@ -78,8 +78,10 @@ namespace BoSSS.Application.BoSSSpad {
             {
                 // MPI should already be loaded
                 CheckDynamicLibrary("MPI", () => (DynLibLoader)csMPI.Raw);
-                CheckDynamicLibrary("BLAS", () => new UnsafeDBLAS());
-                CheckDynamicLibrary("LAPACK", () => new LAPACK());
+                CheckDynamicLibrary("BLAS (sequential)", () => new UnsafeDBLAS(Parallelism.SEQ));
+                CheckDynamicLibrary("LAPACK (sequential)", () => new LAPACK(Parallelism.SEQ));
+                CheckDynamicLibrary("BLAS (OpenMP-parallel)", () => new UnsafeDBLAS(Parallelism.OMP));
+                CheckDynamicLibrary("LAPACK (OpenMPparallel)", () => new LAPACK(Parallelism.OMP));
             }
 
 
@@ -105,11 +107,11 @@ namespace BoSSS.Application.BoSSSpad {
 
                 CheckDynamicLibrary("Tecplot", () => new UnsafeTECIO(), isOptional: true);
 
-                CheckDynamicLibrary("MUMPS", () => new UnsafeMUMPS(ilPSP.LinSolvers.Parallelism.SEQ), isOptional: true);
-                CheckDynamicLibrary("MUMPS (MPI)", () => new UnsafeMUMPS(ilPSP.LinSolvers.Parallelism.MPI), isOptional: true);
+                CheckDynamicLibrary("MUMPS", () => new UnsafeMUMPS(ilPSP.Parallelism.SEQ), isOptional: true);
+                CheckDynamicLibrary("MUMPS (MPI)", () => new UnsafeMUMPS(ilPSP.Parallelism.MPI), isOptional: true);
 
-                CheckDynamicLibrary("PARDISO (Intel MKL)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL( ilPSP.LinSolvers.Parallelism.SEQ), isOptional: true);
-                CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL( ilPSP.LinSolvers.Parallelism.OMP), isOptional: true);
+                CheckDynamicLibrary("PARDISO (Intel MKL)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL( ilPSP.Parallelism.SEQ), isOptional: true);
+                CheckDynamicLibrary("PARDISO (Intel MKL, OMP)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_MKL( ilPSP.Parallelism.OMP), isOptional: true);
 
                 CheckDynamicLibrary("PARDISO (v5)", () => new ilPSP.LinSolvers.PARDISO.Wrapper_v5(), isOptional: true);
 

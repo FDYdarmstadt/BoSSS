@@ -37,7 +37,17 @@ namespace CNS.IBM {
     /// Abstract base class for source terms that represent boundary conditions
     /// at immersed interfaces. 
     /// </summary>
-    public abstract class BoundaryConditionSource : IEquationComponent {
+    public abstract class BoundaryConditionSource : IEquationComponent, IMultitreadSafety {
+
+        public IEquationComponent CloneForThread() {
+            return null;
+        }
+
+        public object GetPadlock() {
+            return boundaryCondition;
+        }
+
+        public bool IsMultithreadSafe => false;
 
         /// <summary>
         /// Configuration options
