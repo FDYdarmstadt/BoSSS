@@ -20,6 +20,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation;
 using System.Collections.Generic;
 using ilPSP;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.ScalarTransport {
 
@@ -120,47 +121,38 @@ namespace BoSSS.Application.ScalarTransport {
         /// <summary>
         /// predefined, div-free flow field
         /// </summary>
-        double[] FlowField(double[] x, double[] Uin, double[] Uout) {
+        Vector FlowField(double[] x, double[] Uin, double[] Uout) {
+            Vector temp_u = new Vector(3);
             temp_u[0] = 0.5*(Uin[1] + Uout[1]);
             temp_u[1] = 0.5*(Uin[2] + Uout[2]);
             temp_u[2] = 0.5*(Uin[3] + Uout[3]);
             return temp_u;
         }
 
-        double[] temp_u = new double[3];
-
-        static double Dot(double[] a, double[] b) {
-            return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]);
-        }
+   
 
 
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
             //Vector n; n.x = normal[0]; n.y = normal[1];
             var u = FlowField(x, Uin, Uin);
 
-            if (Dot(u,normal) >= 0) {
-                return Dot(u, normal) * Uin[0]; // (c(x) * Uin[0]) * n;
+            if ((u * normal) >= 0) {
+                return (u * normal) * Uin[0]; // (c(x) * Uin[0]) * n;
             } else {
-                return Dot(u, normal) * Inflow(time); //(c(x) * Inflow(time)) * n;
+                return (u * normal) * Inflow(time); //(c(x) * Inflow(time)) * n;
             }
         }
 
         /// <summary>
         /// a new comment
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="x"></param>
-        /// <param name="normal"></param>
-        /// <param name="Uin"></param>
-        /// <param name="Uout"></param>
-        /// <returns></returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            double[] u = FlowField(x, Uin, Uout);
+            var u = FlowField(x, Uin, Uout);
                         
-            if (Dot(u, normal) > 0)
-                return Dot(u, normal) * Uin[0]; // (c(x) * Uin[0]) * n;
+            if( (u * normal) > 0)
+                return (u * normal) * Uin[0]; // (c(x) * Uin[0]) * n;
             else
-                return Dot(u, normal) * Uout[0]; // (c(x) * Uout[0]) * n;
+                return (u * normal) * Uout[0]; // (c(x) * Uout[0]) * n;
 
         }
 

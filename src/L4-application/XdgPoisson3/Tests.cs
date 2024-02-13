@@ -48,7 +48,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="SolverName"></param>
         [Test]
-        public static void IterativeSolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
+        public static void IterativeSolverTest([Values(Code.exp_Kcycle_schwarz_CoarseMesh, Code.exp_Kcycle_schwarz_PerProcess, Code.exp_gmres_levelpmg)] Code SolverName) {
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest
             using (var solver = new XdgPoisson3Main()) {
 
@@ -61,6 +61,11 @@ namespace BoSSS.Application.XdgPoisson3 {
                 p = 3;
 #endif
                 var C = HardCodedControl.Ball3D(pDeg: p, Res: Res, solverCode: SolverName);
+
+                if(C.LinearSolver is OrthoMGSchwarzConfig omgs) {
+                    omgs.CoarseKickIn = 10000; // small threshold for direct solver ensures that we are actually using a multigrid method and not just a direct solver on fines level
+                    omgs.CoarseUsepTG = false;
+                }
 
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -152,7 +157,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             Slope for StencilCondNo-bndyCut-Var0: 0e00             
             */
 
-            ConditionNumberScalingTest.Perform(Controls, plot: true, title: "ScalingCircle2D");
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingCircle2D" });
         }
     }
 }

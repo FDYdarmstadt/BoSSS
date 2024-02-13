@@ -219,7 +219,7 @@ namespace BoSSS.Solution.Statistic {
                         if(finestSolution.GetType() != coarseSolution.GetType())
                             throw new NotSupportedException();
                         if(coarseSolution.Basis.Degree != finestSolution.Basis.Degree)
-                            throw new NotSupportedException();
+                            throw new NotSupportedException($"degree mismatch: coarse Solution: {coarseSolution.Basis.Degree},  finest Solution: {finestSolution.Basis.Degree}");
 
                         if(finestSolution is XDGField) {
                             XDGField _coarseSolution = (XDGField)coarseSolution;

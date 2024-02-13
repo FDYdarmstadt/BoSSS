@@ -6,6 +6,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
@@ -16,6 +17,7 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,6 +37,10 @@ namespace BoSSS.Application.XNSFE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            //InitMPI(args);
+            //ilPSP.Environment.InitThreading(true, 8);
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
+            //Assert.IsTrue(false, "remove me");
 
             XNSFE._Main(args, false, delegate () {
                 var p = new XNSFE();
@@ -302,14 +308,14 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
         }
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
 
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator            
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+            XDifferentialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
             var config = new XNSFE_OperatorConfiguration(this.Control);
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
@@ -328,6 +334,7 @@ namespace BoSSS.Application.XNSFE_Solver {
                 //    //Console.WriteLine("Updating Homotopy Scalar aka. scaling for heat convection, Value = " + HomotopyScalar);
                 //});
             }
+            XOP.FluxesAreNOTMultithreadSafe = true;
             XOP.Commit();
 
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) Console.WriteLine("Warning using Picard iteration, this is not recommended!");
@@ -946,7 +953,7 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// <summary>
         /// automatized analysis of condition number 
         /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
+        public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
 
             int D = this.GridData.SpatialDimension;
 
@@ -957,7 +964,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             //var res = this.Timestepping.OperatorAnalysis(new[] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
 
             int[] varGroup = new int[] { 0, 1, 2, 3};
-            var res = this.Timestepping.OperatorAnalysis(new[] { varGroup });
+            var res = this.Timestepping.OperatorAnalysis(config, new[] { varGroup });
 
             return res;
         }

@@ -30,6 +30,7 @@ using System.Diagnostics;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.LevelSetTools;
 using System.Collections;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -375,7 +376,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             ).Execute();
 
-            return Math.Sqrt(Jump_NORM);
+            return Math.Sqrt(Jump_NORM.MPISum());
         }
 
 
@@ -494,7 +495,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             double[] Jump_NORM = new double[D];
             for (int d = 0; d < D; d++) {
-                ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
+                void ErrFunc(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                     int K = result.GetLength(1); // No nof Nodes
                     MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D);
                     MultidimensionalArray Grad_UBRes = MultidimensionalArray.Create(Len, K, D, D);
@@ -561,7 +562,7 @@ namespace BoSSS.Solution.XNSECommon {
                 ).Execute();
             }
 
-            return Jump_NORM.Select(x => x.Sqrt()).ToArray();
+            return Jump_NORM.MPISum().Select(x => x.Sqrt()).ToArray();
         }
 
 
@@ -606,7 +607,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             ).Execute();
 
-            return STF_Norm.Select(x => x.Sqrt()).ToArray();
+            return STF_Norm.MPISum().Select(x => x.Sqrt()).ToArray();
 
         }
 
@@ -819,7 +820,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             ).Execute();
 
-            return momBal_Norm.Select(x => x.Sqrt()).ToArray();
+            return momBal_Norm.MPISum().Select(x => x.Sqrt()).ToArray();
 
         }
 
@@ -1202,7 +1203,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             ).Execute();
 
-            return spcArea;
+            return spcArea.MPISum();
         }
 
 
@@ -1225,7 +1226,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             ).Execute();
 
-            return interLength;
+            return interLength.MPISum();
         }
 
 
@@ -1296,7 +1297,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             ).Execute();
 
-            return SurfTnetF;
+            return SurfTnetF.MPISum();
 
         }
 
@@ -1523,248 +1524,6 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         #endregion
-
-
-
-        //public static void ProjectEnergyJumpAtInterface(double alpha, SinglePhaseField acc, LevelSetTracker LsTrk, IEnumerable<XDGField> Velocity, XDGField Pressure, double muA, double muB,
-        //    bool mean, CellQuadratureScheme quadScheme = null) {
-
-        //    ScalarFunctionEx EnergyJumpFunc = GetEnergyJumpFunc(LsTrk, Velocity, Pressure, muA, muB);
-
-        //    if (!mean) {
-
-        //        int order = (acc.Basis.Degree + 2);
-        //        if (quadScheme == null) {
-        //            quadScheme = (new CellQuadratureScheme(false, LsTrk.Regions.GetCutCellMask())).AddFixedOrderRules(LsTrk.GridDat, order);
-
-        //            //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
-        //            //quadScheme = SchemeHelper.GetLevelSetquadScheme(0, LsTrk._Regions.GetCutCellMask());
-        //        }
-
-        //        acc.ProjectField(alpha, EnergyJumpFunc,
-        //            quadScheme);
-
-        //    } else {
-
-        //        int order = 0;
-        //        if (LsTrk.GetCachedOrders().Count > 0) {
-        //            order = LsTrk.GetCachedOrders().Max();
-        //        } else {
-        //            order = 1;
-        //        }
-
-        //        var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
-        //        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-
-        //        double mini = double.MaxValue, maxi = double.MinValue;
-
-        //        CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-        //            cqs.Compile(LsTrk.GridDat, order),
-        //            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-        //                EnergyJumpFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-        //                EvalResult.ExtractSubArrayShallow(-1, -1, 1).SetAll(1.0);
-        //            },
-        //            delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-        //                for (int i = 0; i < Length; i++) {
-        //                    int jCell = i0 + i;
-        //                    double val = acc.GetMeanValue(jCell);
-
-        //                    double JumpErr = ResultsOfIntegration[i, 0];
-        //                    double ArcLen = ResultsOfIntegration[i, 1];
-
-        //                    mini = Math.Min(JumpErr / ArcLen, mini);
-        //                    maxi = Math.Max(JumpErr / ArcLen, maxi);
-
-        //                    val += alpha * (JumpErr / ArcLen);
-        //                    acc.SetMeanValue(jCell, JumpErr / ArcLen);
-        //                }
-        //            }
-        //        ).Execute();
-
-        //    }
-        //}
-
-
-        //public static void ProjectSurfaceEnergyChangerate(double alpha, SinglePhaseField acc, LevelSetTracker LsTrk, IEnumerable<DGField> Velocity, double sigma,
-        //    bool mean, CellQuadratureScheme quadScheme = null) {
-
-        //    ScalarFunctionEx SurfaceChangerate = GetSurfaceChangerateFunc(LsTrk, Velocity);
-
-        //    if (!mean) {
-
-        //        int order = (acc.Basis.Degree + 2);
-        //        if (quadScheme == null) {
-        //            quadScheme = (new CellQuadratureScheme(false, LsTrk.Regions.GetCutCellMask())).AddFixedOrderRules(LsTrk.GridDat, order);
-
-        //            //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
-        //            //quadScheme = SchemeHelper.GetLevelSetquadScheme(0, LsTrk._Regions.GetCutCellMask());
-        //        }
-
-        //        acc.ProjectField(alpha, SurfaceChangerate,
-        //            quadScheme);
-
-        //        acc.Scale(sigma);
-
-        //    } else {
-
-        //        int order = 0;
-        //        if (LsTrk.GetCachedOrders().Count > 0) {
-        //            order = LsTrk.GetCachedOrders().Max();
-        //        } else {
-        //            order = 1;
-        //        }
-
-        //        var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
-        //        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-
-        //        double mini = double.MaxValue, maxi = double.MinValue;
-
-        //        CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-        //            cqs.Compile(LsTrk.GridDat, order),
-        //            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-        //                SurfaceChangerate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-        //                EvalResult.ExtractSubArrayShallow(-1, -1, 1).SetAll(1.0);
-        //            },
-        //            delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-        //                for (int i = 0; i < Length; i++) {
-        //                    int jCell = i0 + i;
-        //                    double val = acc.GetMeanValue(jCell);
-
-        //                    double JumpErr = ResultsOfIntegration[i, 0];
-        //                    double ArcLen = ResultsOfIntegration[i, 1];
-
-        //                    mini = Math.Min(JumpErr / ArcLen, mini);
-        //                    maxi = Math.Max(JumpErr / ArcLen, maxi);
-
-        //                    val += alpha * (JumpErr / ArcLen);
-        //                    acc.SetMeanValue(jCell, JumpErr / ArcLen);
-        //                }
-        //            }
-        //        ).Execute();
-
-        //        acc.Scale(sigma);
-        //    }
-        //}
-
-
-        //public static void ProjectCurvatureEnergy(double alpha, SinglePhaseField acc, LevelSetTracker LsTrk, IEnumerable<DGField> Velocity, double sigma,
-        //    DGField Curvature, bool ExtVel, bool mean, CellQuadratureScheme quadScheme = null) {
-
-        //    ScalarFunctionEx CurvEnergyFunc = GetCurvatureEnergyFunc(LsTrk, Velocity, sigma, Curvature, ExtVel);
-
-        //    if (!mean) {
-
-        //        int order = (acc.Basis.Degree + 2);
-        //        if (quadScheme == null) {
-        //            quadScheme = (new CellQuadratureScheme(false, LsTrk.Regions.GetCutCellMask())).AddFixedOrderRules(LsTrk.GridDat, order);
-
-        //            //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
-        //            //quadScheme = SchemeHelper.GetLevelSetquadScheme(0, LsTrk._Regions.GetCutCellMask());
-        //        }
-
-        //        acc.ProjectField(alpha, CurvEnergyFunc,
-        //            quadScheme);
-
-        //    } else {
-
-        //        int order = 0;
-        //        if (LsTrk.GetCachedOrders().Count > 0) {
-        //            order = LsTrk.GetCachedOrders().Max();
-        //        } else {
-        //            order = 1;
-        //        }
-
-        //        var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
-        //        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-
-        //        double mini = double.MaxValue, maxi = double.MinValue;
-
-        //        CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-        //            cqs.Compile(LsTrk.GridDat, order),
-        //            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-        //                CurvEnergyFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-        //                EvalResult.ExtractSubArrayShallow(-1, -1, 1).SetAll(1.0);
-        //            },
-        //            delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-        //                for (int i = 0; i < Length; i++) {
-        //                    int jCell = i0 + i;
-        //                    double val = acc.GetMeanValue(jCell);
-
-        //                    double JumpErr = ResultsOfIntegration[i, 0];
-        //                    double ArcLen = ResultsOfIntegration[i, 1];
-
-        //                    mini = Math.Min(JumpErr / ArcLen, mini);
-        //                    maxi = Math.Max(JumpErr / ArcLen, maxi);
-
-        //                    val += alpha * (JumpErr / ArcLen);
-        //                    acc.SetMeanValue(jCell, JumpErr / ArcLen);
-        //                }
-        //            }
-        //        ).Execute();
-
-        //    }
-        //}
-
-
-        //public static void ProjectInterfaceDivergence(double alpha, DGField acc, LevelSetTracker LsTrk, IEnumerable<DGField> Velocity,
-        //    bool OnlyNormalComp, bool mean, CellQuadratureScheme quadScheme = null) {
-
-        //    ScalarFunctionEx InterfaceDivergence = GetInterfaceDivergenceFunc(LsTrk, Velocity, OnlyNormalComp);
-
-        //    if (!mean) {
-
-        //        int order = (acc.Basis.Degree + 2);
-        //        if (quadScheme == null) {
-        //            quadScheme = (new CellQuadratureScheme(false, LsTrk.Regions.GetCutCellMask())).AddFixedOrderRules(LsTrk.GridDat, order);
-
-        //            //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
-        //            //quadScheme = SchemeHelper.GetLevelSetquadScheme(0, LsTrk._Regions.GetCutCellMask());
-        //        }
-
-        //        acc.ProjectField(alpha, InterfaceDivergence,
-        //            quadScheme);
-
-        //    } else {
-
-        //        int order = 0;
-        //        if (LsTrk.GetCachedOrders().Count > 0) {
-        //            order = LsTrk.GetCachedOrders().Max();
-        //        } else {
-        //            order = 1;
-        //        }
-
-        //        var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
-        //        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-
-        //        double mini = double.MaxValue, maxi = double.MinValue;
-
-        //        CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
-        //            cqs.Compile(LsTrk.GridDat, order),
-        //            delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-        //                InterfaceDivergence(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
-        //                EvalResult.ExtractSubArrayShallow(-1, -1, 1).SetAll(1.0);
-        //            },
-        //            delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-        //                for (int i = 0; i < Length; i++) {
-        //                    int jCell = i0 + i;
-        //                    double val = acc.GetMeanValue(jCell);
-
-        //                    double JumpErr = ResultsOfIntegration[i, 0];
-        //                    double ArcLen = ResultsOfIntegration[i, 1];
-
-        //                    mini = Math.Min(JumpErr / ArcLen, mini);
-        //                    maxi = Math.Max(JumpErr / ArcLen, maxi);
-
-        //                    val += alpha * (JumpErr / ArcLen);
-        //                    acc.SetMeanValue(jCell, JumpErr / ArcLen);
-        //                }
-        //            }
-        //        ).Execute();
-
-        //    }
-
-        //}
-
 
 
 

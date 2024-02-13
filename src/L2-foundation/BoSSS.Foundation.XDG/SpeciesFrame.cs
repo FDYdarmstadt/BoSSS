@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.XDG {
     
     
     /// <summary>
-    /// common functionality for the framing classes <see cref="BoSSS.Foundation.XDG.XSpatialOperatorMk2.SpeciesFrameMatrix{M}"/> and <see cref="BoSSS.Foundation.XDG.XSpatialOperatorMk2.SpeciesFrameVector{V}"/>.
+    /// common functionality for the framing classes <see cref="BoSSS.Foundation.XDG.XDifferentialOperatorMk2.SpeciesFrameMatrix{M}"/> and <see cref="BoSSS.Foundation.XDG.XDifferentialOperatorMk2.SpeciesFrameVector{V}"/>.
     /// </summary>
     public sealed class FrameBase {
 

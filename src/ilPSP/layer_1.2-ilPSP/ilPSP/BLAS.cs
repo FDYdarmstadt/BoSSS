@@ -25,6 +25,9 @@ using System.IO;
 using System.Globalization;
 using System.Diagnostics;
 using System.Linq;
+using static MPI.Wrappers.Utils.DynLibLoader;
+using System.Threading;
+using System.Collections.Concurrent;
 
 namespace ilPSP.Utils {
 
@@ -428,12 +431,13 @@ namespace ilPSP.Utils {
                 return;
             } else {
 
-                for(int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     double a;
                     a = DX[i * INCX];
                     DX[i * INCX] = DY[i * INCY];
                     DY[i * INCY] = a;
-                }
+                });
             }
         }
 
@@ -455,7 +459,7 @@ namespace ilPSP.Utils {
             }
 
             if (spx != null) {
-                // sparce vector -> compute only nonzero entries
+                // sparse vector -> compute only nonzero entries
                 // +++++++++++++++++++++++++++++++++++++++++++++
 
                 int[] idx = new int[spx.NonZeros];
@@ -540,9 +544,10 @@ namespace ilPSP.Utils {
                 // default branch
                 // ++++++++++++++
 
-                for (int n = 0; n < N; n++)
+                ilPSP.Environment.ParallelFor(0, N, delegate (int n) {
+                    //for (int n = 0; n < N; n++)
                     Y[n * INCY] += X[n * INCX] * alpha;
-
+                });
                 return;
             }
         }
@@ -571,9 +576,10 @@ namespace ilPSP.Utils {
             where R : IList<int>
         {
             int L = index.Count;
-            for (int i = 0; i < L; i++) {
+            ilPSP.Environment.ParallelFor(0, L, delegate (int i) {
+                //for (int i = 0; i < L; i++) {
                 a[index[i]] *= alpha;
-            }
+            });
         }
 
         /// <summary>
@@ -815,7 +821,7 @@ namespace ilPSP.Utils {
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        static public bool ContainsForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true)
+        static public bool ContainsNanOrInf<T>(this T v, bool CheckForInf = true, bool CheckForNan = true)
             where T : IEnumerable<double> //
         {
 
@@ -855,30 +861,43 @@ namespace ilPSP.Utils {
                     throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
 
                 int N = acc_index.Count;
-                for (int i = 0; i < N; i++) {
+                //var dir = new ConcurrentDictionary<int, List<int>>();
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //int ithread = Thread.CurrentThread.ManagedThreadId;
+                    //if(!dir.ContainsKey(ithread))
+                    //    dir.TryAdd(ithread, new List<int>());
+                    //dir[ithread].Add(i);
+
                     acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                }
+                });
+
+                //for (int i = 0; i < N; i++) {
+                //    acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
+                //}
 
             } else if( acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
-                for (int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     acc[acc_index[i] + acc_index_shift] += alpha*b[i + b_index_shift];
-                }
+                });
             } else if (acc_index == null && b_index != null) {
 
                 int N = b_index.Count;
-                for (int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     acc[i + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                }
+                });
             } else if (acc_index == null && b_index == null) {
                 int N = acc.Count;
                 if (acc.Count != b.Count)
                     throw new ArgumentOutOfRangeException("length of 'acc' and 'b' must match.");
 
-                for (int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     acc[i + acc_index_shift] += alpha * b[i + b_index_shift];
-                }
+                });
             } else {
                 throw new Exception("should never be reached");
             }
@@ -907,30 +926,34 @@ namespace ilPSP.Utils {
                     throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
 
                 int N = acc_index.Count;
-                for (int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
-                }
+                });
 
             } else if(acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
-                for (int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(i + b_index_shift))];
-                }
+                });
             } else if (acc_index == null && b_index != null) {
 
                 int N = b_index.Count;
-                for (int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     acc[checked((int)(i + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
-                }
+                });
             } else if (acc_index == null && b_index == null) {
                 int N = acc.Count;
                 if (acc.Count != b.Count)
                     throw new ArgumentOutOfRangeException("length of 'acc' and 'b' must match.");
 
-                for (int i = 0; i < N; i++) {
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                    //for (int i = 0; i < N; i++) {
                     acc[checked((int)(i + acc_index_shift))] += alpha * b[checked((int)(i + b_index_shift))];
-                }
+                });
             } else {
                 throw new Exception("should never be reached");
             }
@@ -948,9 +971,10 @@ namespace ilPSP.Utils {
         {
             if(N < 0)
                 N = b.Count;
-            for (int i = 0; i < N; i++) {
+            ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
+                //for (int i = 0; i < N; i++) {
                 acc[i * inc_acc + offset_acc] += alpha * b[i * inc_b + offset_b];
-            }
+            });
         }
 
 
@@ -1058,34 +1082,64 @@ namespace ilPSP.Utils {
             return Math.Acos(cos_alpha);
         }
     }
+
+    internal class BLAS_LAPACK_Libstuff {
+        // workaround for .NET bug:
+        // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
+        public static PlatformID[] GetPlatformID(Parallelism par) {
+            switch (par) {
+                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public static string[] GetLibname(Parallelism par) {
+            switch (par) {
+                case Parallelism.SEQ: return new string[] { "PARDISO2_seq.dll", "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.OMP: return new string[] { "PARDISO2_omp.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
+            switch (par) {
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public static string[][][] GetPrequesiteLibraries(Parallelism par) {
+            return new string[GetLibname(par).Length][][];
+        }
+
+        public static int[] GetPointerSizeFilter(Parallelism par) {
+            var r = new int[GetLibname(par).Length];
+            r.SetAll(-1);
+            return r;
+        }
+    }
+
+
     
     /// <summary>
     /// subset of BLAS
     /// </summary>
     public sealed class UnsafeDBLAS : DynLibLoader {
 		
-		// workaround for .NET bug:
-		// https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
-		static PlatformID[] Helper() {
-			PlatformID[] p = new PlatformID[6];
-			p[0] = PlatformID.Win32NT;
-			p[1] = PlatformID.Unix;
-			p[2] = PlatformID.Unix;
-			p[3] = PlatformID.Unix;
-			p[4] = PlatformID.Unix;
-            p[5] = PlatformID.Unix;
-            return p;
-		}
+		
+
 
         /// <summary>
         /// ctor
         /// </summary>
-        public UnsafeDBLAS() :
-            base(new string[] { "BLAS_LAPACK.dll", "libBoSSSnative_seq.so", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
-                  new string[6][][], 
-                  new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
-                  Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
-                  new int[] { -1, -1, -1, -1, -1, -1 }) { }
+        public UnsafeDBLAS(Parallelism par) :
+            base(BLAS_LAPACK_Libstuff.GetLibname(par),
+                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
+                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
+                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) { }
 
         
         /// <summary> FORTRAN BLAS routine </summary>
@@ -1231,18 +1285,39 @@ namespace ilPSP.Utils {
             }
         }
 
+        public readonly static UnsafeDBLAS m_seq_BLAS;
+        public readonly static UnsafeDBLAS m_omp_BLAS;
+
         static UnsafeDBLAS m_BLAS;
+
 
         /// <summary>Cos
         /// most native BLAS interface available
         /// </summary>
-        public static UnsafeDBLAS F77_BLAS { get { return m_BLAS; }}
+        public static UnsafeDBLAS F77_BLAS { 
+            get { 
+                return m_BLAS; 
+            }
+        }
+
+        internal static void ActivateOMP() {
+            if (ilPSP.Environment.MaxNumOpenMPthreads > 1)
+                m_BLAS = m_omp_BLAS;
+            else
+                m_BLAS = m_seq_BLAS;
+        }
+        internal static void ActivateSEQ() {
+            m_BLAS = m_seq_BLAS;
+        }
+
 
         /// <summary>
         /// static ctor
         /// </summary>
         static BLAS() {
-            m_BLAS = new UnsafeDBLAS();
+            m_seq_BLAS = new UnsafeDBLAS(Parallelism.SEQ);
+            m_omp_BLAS = new UnsafeDBLAS(Parallelism.OMP);
+            m_BLAS = m_omp_BLAS;
         }
 
         /// <summary> FORTRAN-Style BLAS routine </summary>

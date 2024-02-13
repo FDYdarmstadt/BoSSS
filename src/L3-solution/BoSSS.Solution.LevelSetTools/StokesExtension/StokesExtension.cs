@@ -26,12 +26,13 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes) {
+        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, bool useBCMap = false) {
             this.D = D;
             this.map = map;
             this.m_CutCellQuadOrder = cutCellQuadOrder;
             this.AgglomerationThreshold = AgglomerationThrshold;
             this.fullStokes = fullStokes;
+            this.m_useBCMap = useBCMap; // if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from map are applied.
         }
 
         int D;
@@ -39,6 +40,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         IncompressibleBoundaryCondMap map;
         double AgglomerationThreshold;
         bool fullStokes;
+        bool m_useBCMap;
 
         const double penalty_safety = 4.0;
 
@@ -48,43 +50,43 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// Bulk of the artificial Stokes extension equation;
         /// 
         /// Note that it would also be possible to integrate this operator with <see cref="GetInterfaceOperator(int)"/>:
-        /// We could simply use an <see cref="XSpatialOperatorMk2"/> **on single phase fields** for the bulk matrix assembly;
+        /// We could simply use an <see cref="XDifferentialOperatorMk2"/> **on single phase fields** for the bulk matrix assembly;
         /// Then, in any cut background cell, the contribution of all cut cells would be summed up (because
         /// the single-phase field has only a single set of DOFs), in sum mimicking a standard cell integration.
         /// Obviously, this is overkill/unnecessary expense.
         /// It could be resolved by tinkering with the quadrature scheme providers 
-        /// (<see cref="XSpatialOperatorMk2.VolumeQuadraturSchemeProvider"/> and <see cref="XSpatialOperatorMk2.EdgeQuadraturSchemeProvider"/>).
+        /// (<see cref="XDifferentialOperatorMk2.VolumeQuadraturSchemeProvider"/> and <see cref="XDifferentialOperatorMk2.EdgeQuadraturSchemeProvider"/>).
         /// However, since the X-Navier-Stokes terms are implemented in the XNSECommon-package, 
         /// **we cannot use them here anyway, because we would run into circular reference**.
         /// </summary>
-        SpatialOperator GetBulkOperator() {
+        DifferentialOperator GetBulkOperator() {
             var DomVar = VariableNames.VelocityVector(D);
             var CoDomVar = EquationNames.MomentumEquations(D);
             if (fullStokes) {
                 DomVar = DomVar.Cat(VariableNames.Pressure);
                 CoDomVar = CoDomVar.Cat(EquationNames.ContinuityEquation);
             }
-            SpatialOperator Op = new SpatialOperator(DomVar, CoDomVar, QuadOrderFunc.Linear() );
+            DifferentialOperator Op = new DifferentialOperator(DomVar, CoDomVar, QuadOrderFunc.Linear() );
             //Op.QuadOrderFunction = QuadOrderFunc.Linear();
 
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
-                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
+                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity, useBCMap: m_useBCMap);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
 
                 if (fullStokes) {
                     // Momentum, Pressure gradient:
                     for (int d = 0; d < D; d++) {
-                        var PresDeriv = new ExtensionPressureGradient(d, map);
+                        var PresDeriv = new ExtensionPressureGradient(d, map, useBCMap: m_useBCMap);
                         Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(PresDeriv);
                     }
 
                     // Continuity:
                     for (int d = 0; d < D; d++) {
                         var divVol = new Divergence_DerivativeSource(d, D);
-                        var divEdg = new ExtensionDivergenceFlux(d, map);
+                        var divEdg = new ExtensionDivergenceFlux(d, map, useBCMap: m_useBCMap);
                         Op.EquationComponents[EquationNames.ContinuityEquation].Add(divVol);
                         Op.EquationComponents[EquationNames.ContinuityEquation].Add(divEdg);
                     }
@@ -132,16 +134,21 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// this provides the coupling of the artificial Stokes equation for the extension
         /// to the physical equation, <see cref="InteriorVelocityBoundary"/>.
         /// </summary>
-        XSpatialOperatorMk2 GetInterfaceOperator(int levelSetIndex, LevelSetTracker LsTrk, DGField[] InterfaceVelocity) {
+        XDifferentialOperatorMk2 GetInterfaceOperator(int levelSetIndex, LevelSetTracker LsTrk, DGField[] InterfaceVelocity) {
             var BulkOp = GetBulkOperator();
 
             IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSetIndex);
-            var Op = new XSpatialOperatorMk2(
+            var Op = new XDifferentialOperatorMk2(
                 BulkOp.DomainVar, 
                 VariableNames.AsLevelSetVariable("Interface", VariableNames.VelocityVector(D)),
                 BulkOp.CodomainVar,
                 (int[] a, int[] b, int[] c) => m_CutCellQuadOrder,
                 requiredSpecies);
+
+            //var cc = LsTrk.Regions.GetCutCellMask();
+            //Console.WriteLine("Stokes Extension No of cut cells " + cc.NoOfItemsLocally.MPISum());
+            //Console.WriteLine(InterfaceVelocity.Select(vel => vel.L2Norm(cc)).ToConcatString("[", ",", "]"));
+            //Console.WriteLine(InterfaceVelocity.Select(vel => vel.L2Norm()).ToConcatString("[", ",", "]"));
             
             for(int d = 0; d < D; d++) {
                 foreach ((string, string) speciesPair in LsTrk.GetSpeciesPairsSeparatedByLevSet(levelSetIndex)) {
@@ -246,9 +253,15 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             var gDat = lsTrk.GridDat;
             int deg = ExtensionVelocity[0].Basis.Degree;
 
+            double[] InputVelL2 = VelocityAtInterface.Select(vel => vel.L2Norm()).ToArray();
+
             
+            // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
             m_LatestAgglom = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, this.AgglomerationThreshold);
 
+            int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
+            var Gradients = lsTrk.DataHistories[0].Current.GetLevelSetGradients(gDat.Grid.RefElements[0].Center, 0, J);
+            var yValues = Gradients.ExtractSubArrayShallow(-1, -1, 1);
 
             DGField[] DummySolFields = ExtensionVelocity;
             if (fullStokes) {
@@ -259,10 +272,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
+            //var RHSdg = new CoordinateVector(DummySolFields.Select(dd => dd.CloneAs()));
+            //RHSdg.SetV(RHS, 1.0);
+            //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
+
             // should be replaced by something more sophisticated
             var Residual = RHS.CloneAs();
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
 
+            // Console.WriteLine("StokesExt Vel L2: " + RHS.L2Norm());
+
+            double[] OutputVelL2 = ExtensionVelocity.Select(vel => vel.L2Norm()).ToArray();
+
+            // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
             /*
             {
                 double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();

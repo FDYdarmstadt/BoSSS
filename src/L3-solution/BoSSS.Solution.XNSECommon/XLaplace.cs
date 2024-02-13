@@ -79,6 +79,7 @@ namespace BoSSS.Solution.XNSECommon {
                 default: throw new ArgumentException("Unknown species.");
             }
             current_species = speciesName;
+            //Console.WriteLine("current spc = " + current_species);
         }
 
         double species_Mu;

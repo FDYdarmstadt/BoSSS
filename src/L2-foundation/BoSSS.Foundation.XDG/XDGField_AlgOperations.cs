@@ -59,12 +59,13 @@ namespace BoSSS.Foundation.XDG {
 
             string[] Cod = new string[] { "res" };
 
-            XSpatialOperatorMk2 src = new XSpatialOperatorMk2(0.1, speciesToEvaluateNames.ToArray<string>());
+            XDifferentialOperatorMk2 src = new XDifferentialOperatorMk2(0.1, speciesToEvaluateNames.ToArray<string>());
 
             foreach (string spc in speciesToEvaluateNames)
             {
                 src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(spc, f, Dom));
             }
+            src.FluxesAreNOTMultithreadSafe = false;
             src.Commit();
 
             var ev = src.GetEvaluatorEx(

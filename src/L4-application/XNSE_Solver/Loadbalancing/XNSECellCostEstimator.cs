@@ -3,13 +3,26 @@ using BoSSS.Solution.LoadBalancing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
 
-
+    /// <summary>
+    /// The default cell cost estimator for XNSE;
+    /// The primary purpose of this class is to assign multiple weights/costs to each cell, so that 
+    /// <see cref="LoadBalancer.GetNewPartitioning"/>
+    /// can compute a cell partitioning (i.e., which cell is assigned to which MPI process).
+    /// 
+    /// Why multiple weights?
+    /// The general idea is to have multiple classes (aka. clusters) of cells.
+    /// E.g., cluster 0 are ordinary, un-cut cells and cluster 1 are cut-cells.
+    /// Then, <see cref="LoadBalancer.GetNewPartitioning"/> tries not to balance the total weight (sum over all weights) 
+    /// across the MPI processors, but it also tries to balance the weight in each cluster
+    /// (i.e., the sum of all weights over all cells, **for each cluster**, is roughly the same for each MPI process.)
+    /// </summary>
     [Serializable]
     public class XNSECellCostEstimator : CellTypeBasedEstimator {
 
@@ -22,10 +35,6 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         /// </summary>
         public XNSECellCostEstimator() {
             base.CellClassifier = new CutStateClassifier();
-
-
-
-            
         }
 
         
@@ -41,16 +50,15 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         /// returns the weight for the individual cell type
         /// </summary>
         public int FindWeightFor(CutStateClassifier.CellTypeFlags CellType) {
-            return TypeToWgt.Where(p => p.Item1 == CellType).First().Item2;
+            return TypeToWgt.Where(p => p.CellType == CellType).First().Weight;
         }
 
-        (CutStateClassifier.CellTypeFlags, int)[] typeToWgt;
+        (CutStateClassifier.CellTypeFlags CellType, int Weight)[] typeToWgt;
 
         /// <summary>
         /// returns tuple array for cell-weights for a multi-constrained optimization
-        /// Manually set
         /// </summary>
-        public (CutStateClassifier.CellTypeFlags, int)[] TypeToWgt {
+        public (CutStateClassifier.CellTypeFlags CellType, int Weight)[] TypeToWgt {
             get {
                 typeToWgt = typeToWgt ?? new[] {
                 //(CutStateClassifier.CellTypeFlags.Void, 0), As void does not impact weights, it is unnecessary to include it in calculations.

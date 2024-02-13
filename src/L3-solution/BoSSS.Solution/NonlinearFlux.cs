@@ -30,7 +30,7 @@ namespace BoSSS.Solution.Utils {
     /// Instead of implementing the (a bit complicated) vectorized functions in the interface,
     /// the user only has to override scalar versions;
     /// </summary>
-    public abstract class NonlinearFlux : INonlinearFlux {
+    public abstract class NonlinearFlux : INonlinearFlux, IMultitreadSafety {
 
         /// <summary>
         /// not in use, returning null
@@ -204,6 +204,14 @@ namespace BoSSS.Solution.Utils {
             
         }
 
+        virtual public IEquationComponent CloneForThread() {
+            return null;
+        }
+
+        public object GetPadlock() {
+            return this;
+        }
+
         #endregion
 
         #region IEquationComponent Member
@@ -212,7 +220,9 @@ namespace BoSSS.Solution.Utils {
         /// <see cref="IEquationComponent.ArgumentOrdering"/>
         /// </summary>
         public abstract IList<string> ArgumentOrdering { get; }
-  
+
+        virtual public bool IsMultithreadSafe => false;
+
         #endregion
     }
 

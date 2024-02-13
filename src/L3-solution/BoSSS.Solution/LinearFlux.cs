@@ -76,7 +76,7 @@ namespace BoSSS.Solution.Utils {
             }
         }
 
-        double[] buf = null;
+        //double[] buf = null; // can't be a class member because than multi-thread does not work
 
         /// <summary>
         /// Implementation of a Bilinear for linear volume fluxes
@@ -84,8 +84,9 @@ namespace BoSSS.Solution.Utils {
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             int D = GradV.Length;
             double acc = 0;
-            if (buf == null)
-                buf = new double[D];
+            //if (buf == null)
+            //    buf = new double[D];
+            var buf = new double[D];
             this.Flux(ref cpv, U, buf);
             for (int d = 0; d < D; d++)
                 acc += buf[d] * GradV[d];

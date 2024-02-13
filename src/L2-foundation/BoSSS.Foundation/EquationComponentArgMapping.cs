@@ -26,6 +26,15 @@ using ilPSP;
 
 namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
 
+    ///// <summary>
+    ///// Testcode, to be removed; If you find me, delete me and everything which depends on my; I don't deserve to live
+    ///// </summary>
+    //internal static class Debugi {
+    //    public static int SkipComp = -1;
+    //    public static int CompCont = 0;
+    //    public static bool printInfo = false;
+    //}
+
 
     /// <summary>
     /// used by the spatial operator (see <see cref="EquationComponentArgMapping{T}.GetArgMapping"/>)
@@ -34,6 +43,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
     /// </summary>
     public class EquationComponentArgMapping<T> where T : IEquationComponent {
 
+        
 
         /// <summary>
         /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
@@ -50,14 +60,14 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// vectorizer option: translate some equation component to another one
         /// </param>
         /// <param name="op"></param>
-        static public EquationComponentArgMapping<T>[] GetArgMapping(ISpatialOperator op, bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) {
+        static public EquationComponentArgMapping<T>[] GetArgMapping(IDifferentialOperator op, bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) {
 //             public EquationComponentArgMapping<T>[] GetArgMapping<T>(                  bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
 
             if(!op.IsCommitted)
                 throw new ApplicationException("Commit() has to be called prior to this method.");
 
             int Gamma = op.CodomainVar.Count;
-
+            //Debugi.CompCont = 0;
             var ret = new EquationComponentArgMapping<T>[Gamma];
             for(int i = 0; i < Gamma; i++) {
                 var codName = op.CodomainVar[i];
@@ -78,7 +88,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// </summary>
         /// <param name="DiffOp"></param>
         /// <param name="CoDomVarName">
-        /// the name of the variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>-member
+        /// the name of the variable in the codomain (<see cref="DifferentialOperator.CodomainVar"/>-member
         /// of <paramref name="DiffOp"/>, for which this object should be defined;
         /// </param>
         /// <param name="_fieldList">
@@ -93,7 +103,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// <param name="vectorizer">
         /// Function for the vectorization of the evaluation of <paramref name="F"/>
         /// </param>
-        public EquationComponentArgMapping(ISpatialOperator DiffOp, string CoDomVarName,
+        public EquationComponentArgMapping(IDifferentialOperator DiffOp, string CoDomVarName,
             IList<string> _fieldList, IList<string> _fieldList2, Func<T, bool> F, Func<IEquationComponent, IEquationComponent> vectorizer) {
             m_CoDomVarName = CoDomVarName;
             //m_DomainFields = DomainMapping.Fields;
@@ -121,21 +131,21 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                 T optComp = (eqComp is T) ? (T)eqComp : default; //                    optimized component (user-optimized)
                 T vecComp = (vectorizer != null) ? (T)vectorizer(eqComp) : default; // default vectorization (non-optimized)
 
-                if(eqComp is IBoundaryEdgeForm) {
+                if (eqComp is IBoundaryEdgeForm) {
 
-                    if(eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
+                    if (eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
                         // we are ok
                     } else {
                         throw new NotSupportedException($"{eqComp} implements only {typeof(IBoundaryEdgeForm)}, but neither {typeof(IEdgeForm)} nor ILevelSetForm: this is not supported at the moment;");
                     }
 
                 }
-                if(eqComp is IInnerEdgeForm) {
-                    if(eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
+                if (eqComp is IInnerEdgeForm) {
+                    if (eqComp is IEdgeForm || eqComp.GetType().GetInterface("ILevelSetForm") != null) {
                         // we are ok
                     } else {
                         throw new NotSupportedException($"{eqComp} implements only {typeof(IInnerEdgeForm)}, but neither {typeof(IEdgeForm)} nor ILevelSetForm: this is not supported at the moment;");
-                    }               
+                    }
                 }
 
 
@@ -187,14 +197,63 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
                     useOptComp = true;
                 }
 
-                if (useOptComp)
-                    AllComponentsofMyType.Add(optComp);
-                else
-                    AllComponentsofMyType.Add(vecComp);
+                //if (Debugi.SkipComp >= 0) {
+                //    if (Debugi.CompCont > Debugi.SkipComp) {
+                //        // skip
+                //    } else {
+                //        if(Debugi.printInfo)
+                //            Console.Error.WriteLine("using : " + optComp?.ToString() + " // " + vecComp?.ToString());
 
+                //        if (useOptComp) {
+                //            AllComponentsofMyType.Add(optComp);
+                //        } else {
+                //            AllComponentsofMyType.Add(vecComp);
+                //        }
+                //    }
+
+                //    Debugi.CompCont++;
+                //} else 
+                {
+                    if (useOptComp) {
+                        AllComponentsofMyType.Add(optComp);
+                    } else {
+                        AllComponentsofMyType.Add(vecComp);
+                    }
+
+                }
             }
 
             m_AllComponentsOfMyType = AllComponentsofMyType.ToArray();
+
+            // ============================================
+            // check for multi-thread safety, create clones
+            // ============================================
+
+            m_LockObjects = new object[m_AllComponentsOfMyType.Length];
+            for(int iComp = 0; iComp < m_AllComponentsOfMyType.Length; ++iComp) {
+                var w = m_AllComponentsOfMyType[iComp];
+                if(w is IMultitreadSafety ms) {
+                    if (ms.IsMultithreadSafe) {
+                        m_LockObjects[iComp] = null;
+                    } else {
+                        T clone = (T) ms.CloneForThread();
+                        if(clone == null) {
+                            // not thread-safe, no clone possible => locking required
+                            m_LockObjects[iComp] = ms.GetPadlock();
+                            if(m_LockObjects[iComp] == null) {
+                                throw new NotSupportedException($"Equation component {w}: requires synchronization, but does not provide a padlock object.");
+                            }
+                        } else {
+                            // not thread-safe, but we can obtain some save clone => no locking
+                            m_LockObjects[iComp] = null;
+                            m_AllComponentsOfMyType[iComp] = clone;
+                        }
+                    }
+                } else {
+                    m_LockObjects[iComp] = null; 
+                }
+            }
+
 
             // ======================
             // build argument mapping
@@ -241,6 +300,13 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// 
         /// </summary>
         public T[] m_AllComponentsOfMyType;
+
+        /// <summary>
+        /// if non-null, a a lock-object for synchronization of flux evaluation
+        /// - index: correlates with <see cref="m_AllComponentsOfMyType"/>
+        /// </summary>
+        public object[] m_LockObjects;
+
 
         /// <summary>
         /// 

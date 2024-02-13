@@ -15,28 +15,33 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.XNSERO_Solver {
     [Serializable]
+    /// <summary>
+    /// Contains methods to call the calculation of the hydrodynamic forces and torques. Also provides relaxations methods for hydrodynamics.
+    /// </summary>
     internal class ParticleHydrodynamics {
+        /// <summary>
+        /// Enables calculation of the hydrodynamic forces and torques.
+        /// </summary>
+        /// <param name="SpatialDimension"></param>
         internal ParticleHydrodynamics(int SpatialDimension) {
             this.SpatialDimension = SpatialDimension;
-            if (SpatialDimension == 2)
-                TorqueVectorDimension = 1;
-            else if (SpatialDimension == 3)
-                throw new NotImplementedException("FSI_Solver is currently only capable of 2D.");
-            else
-                throw new ArithmeticException("Error in spatial dimensions, only dim == 2 and dim == 3 are allowed!");
+            TorqueVectorDimension = SpatialDimension switch {
+                2 => 1,
+                3 => throw new NotImplementedException("XNSERO is currently only capable of 2D."),
+                _ => throw new ArithmeticException("Error in spatial dimensions, only dim == 2 and dim == 3 are allowed!"),
+            };
         }
+
         [DataMember]
         private readonly int SpatialDimension;
         [DataMember]
@@ -46,57 +51,59 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         private readonly List<double[]> m_ForcesAndTorqueWithoutRelaxation = new List<double[]>();
 
-        public bool AlreadyUpdatedLevelSetParameter = false;
-        public bool FromLevelSetParameterUpdate = false;
-
         /// <summary>
         /// Calculation of hydrodynamic forces F and torque T for all particles. 
         /// The relaxation (Aitken-relaxation) is applied to the entire array of all F+T, leading to better convergence.
         /// </summary>
-        /// <param name="AllParticles"></param>
+        /// <param name="Particles"></param>
         /// <param name="HydrodynamicIntegrator"></param>
         /// <param name="FluidSpecies"></param>
         /// <param name="Gravity"></param>
         /// <param name="dt"></param>
-        internal void CalculateHydrodynamics(Particle[] AllParticles, ParticleHydrodynamicsIntegration HydrodynamicIntegrator, string[] FluidSpecies, Vector Gravity, double dt) {
+        internal void CalculateHydrodynamics(Particle[] Particles, CellMask AllCutCells, ParticleHydrodynamicsIntegration HydrodynamicIntegrator, string[] FluidSpecies, Vector Gravity, double dt) {
             using (new FuncTrace()) {
-                double[] hydrodynamics = new double[(SpatialDimension + TorqueVectorDimension) * AllParticles.Count()];
+                double[] hydrodynamics = new double[(SpatialDimension + TorqueVectorDimension) * Particles.Length];
                
                 // Calculate hydrodynamics.
-                CellMask allCutCells = AllParticles[0].LsTrk.Regions.GetCutCellMask();
-                for (int p = 0; p < AllParticles.Count(); p++) {
-                    Particle currentParticle = AllParticles[p];
-                    CellMask CutCells = currentParticle.ParticleCutCells(AllParticles[0].LsTrk, allCutCells, 0);
+                for (int p = 0; p < Particles.Length; p++) {
+                    CellMask CutCells = Particles[p].ParticleCutCells(Particles[0].LsTrk, AllCutCells);
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
-                    double[] tempHydrodynamics = currentParticle.Motion.CalculateHydrodynamics(HydrodynamicIntegrator, CutCells, FluidSpecies, dt);
+                    double[] tempHydrodynamics = Particles[p].Motion.CalculateHydrodynamics(HydrodynamicIntegrator, CutCells, FluidSpecies, dt);
                     for (int d = 0; d < SpatialDimension + 1; d++) 
                         hydrodynamics[offset + d] = tempHydrodynamics[d];
                 }
+
                 hydrodynamics = hydrodynamics.MPISum();
 
                 // Gravity, has to be added after MPISum()!
-                for (int p = 0; p < AllParticles.Count(); p++) {
-                    Particle currentParticle = AllParticles[p];
+                for (int p = 0; p < Particles.Length; p++) {
+                    Particle currentParticle = Particles[p];
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
-                    Vector gravity = currentParticle.Motion.GetGravityForces(Gravity);
+                    Vector gravity = currentParticle.Motion.GravityForce(Gravity/1000);//REMOVE /1000
                     for(int d = 0; d < SpatialDimension; d++) {
                         hydrodynamics[offset + d] += gravity[d];
                     }
                 }
 
                 // Relaxation
-                double omega = AllParticles[0].Motion.omega;
-                hydrodynamics = HydrodynamicsRelaxation(hydrodynamics, ref omega);
-                AllParticles[0].Motion.omega = omega;
+                if (hydrodynamics.Sum() > 1e-10){
+                    double omega = Particles[0].Motion.RelaxationParameter;
+                    hydrodynamics = HydrodynamicsRelaxation(hydrodynamics, ref omega);
+                    Particles[0].Motion.RelaxationParameter = omega; 
+                }
 
                 // Write to single particles.
-                for (int p = 0; p < AllParticles.Count(); p++) {
-                    Particle currentParticle = AllParticles[p];
+                for (int p = 0; p < Particles.Length; p++) {
+                    Particle currentParticle = Particles[p];
                     currentParticle.Motion.UpdateForcesAndTorque(p, hydrodynamics);
                 }
             }
         }
 
+        /// <summary>
+        /// Saves hydrodynamic forces and torques of the last time-step.
+        /// </summary>
+        /// <param name="AllParticles"></param>
         internal void SaveHydrodynamicOfPreviousTimestep(Particle[] AllParticles) {
             double[] hydrodynamics = new double[(SpatialDimension + 1) * AllParticles.Length];
             m_ForcesAndTorquePreviousIteration.Clear();
@@ -115,13 +122,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// ...
+        /// Saves hydrodynamic forces and torques of the last iteration of the solver in the current time-step.
         /// </summary>
         /// <param name="AllParticles"></param>
         internal void SaveHydrodynamicOfPreviousIteration(Particle[] AllParticles) {
             double[] hydrodynamics = new double[(SpatialDimension + 1) * AllParticles.Length];
-            if (m_ForcesAndTorquePreviousIteration.Count() > 5)
-                m_ForcesAndTorquePreviousIteration.RemoveAt(5);
+            if (m_ForcesAndTorquePreviousIteration.Count() > 4) {
+                m_ForcesAndTorquePreviousIteration.RemoveAt(4);
+            }
+            if(m_ForcesAndTorqueWithoutRelaxation.Count() > 4) {
+                m_ForcesAndTorqueWithoutRelaxation.RemoveAt(4);
+            }
             for (int p = 0; p < AllParticles.Length; p++) {
                 Particle currentParticle = AllParticles[p];
                 int offset = p * (SpatialDimension + 1);
@@ -136,7 +147,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
+        /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque. Küttler+Wall 2008: "Fixed-point fluid–structure interaction solvers with dynamic relaxation"
         /// </summary>
         /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsRelaxation(double[] hydrodynamics, ref double omega) {
@@ -150,7 +161,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int d = 0; d < variable.Length; d++) {
                     if (variable[d] == 0)
                         continue;
-                    returnVariable[d] = 0.001 * variable[d] + (1 - 0.001) * m_ForcesAndTorquePreviousIteration[1][d];
+                    returnVariable[d] = 0.5 * variable[d] + (1 - 0.5) * m_ForcesAndTorquePreviousIteration[1][d];
                 }
                 return returnVariable;
             }
@@ -162,10 +173,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 double[] residualDiff = new double[variable.Length];
                 double residualScalar = 0;
                 for (int i = 0; i < variable.Length; i++) {
-                    if (variable[i] == 0) {// ghost particle
-                        residualDiff[i] = 0;
-                        continue;
-                    }
                     residual[i] = new double[] { (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]), (m_ForcesAndTorqueWithoutRelaxation[1][i] - m_ForcesAndTorquePreviousIteration[1][i]) };
                     residualDiff[i] = residual[i][0] - residual[i][1];
                     residualScalar += residual[i][1] * residualDiff[i];
@@ -173,8 +180,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
                 double[] outVar = variable.CloneAs();
                 for (int i = 0; i < variable.Length; i++) {
-                    if (variable[i] == 0)// ghost particle
-                        continue;
                     outVar[i] = Omega * (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]) + m_ForcesAndTorquePreviousIteration[0][i];
                 }
                 return outVar;

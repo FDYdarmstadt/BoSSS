@@ -249,7 +249,7 @@ namespace CNS {
             delegate (DGField residual, CellMask cellMask, IProgram<CNSControl> program) {
                 residual.Clear();
                 
-                SpatialOperator op = program.FullOperator.ToSpatialOperator(program.WorkingSet);
+                DifferentialOperator op = program.FullOperator.ToSpatialOperator(program.WorkingSet);
                 var mapping = new UnsetteledCoordinateMapping(program.WorkingSet.ConservativeVariables.Select((field) => field.Basis).ToArray());
                 var mapping2 = new CoordinateMapping(program.WorkingSet.ConservativeVariables);
 

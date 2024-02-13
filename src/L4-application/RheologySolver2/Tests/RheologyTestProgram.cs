@@ -105,7 +105,7 @@ namespace BoSSS.Application.Rheology
                 CC.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(CC, true, "ScalingChannelTestStokesCondition-p" + deg);
+            ConditionNumberScalingTest.Perform(CC, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingChannelTestStokesCondition-p" + deg });
         }
 //#endif
 

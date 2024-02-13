@@ -343,7 +343,7 @@ namespace BoSSS.Foundation.Comm {
             int[] i0 = new int[vector.Dimension];
             int offset = vector.Index(i0);
 
-            if (!vector.IsContinious || !(offset == 0) || !(vector.Storage.Length == vector.Length))
+            if (!vector.IsContinuous || !(offset == 0) || !(vector.Storage.Length == vector.Length))
                 throw new NotSupportedException();
 
             if (vector.GetLength(0) != master.iLogicalCells.Count)

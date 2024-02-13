@@ -145,13 +145,13 @@ namespace BoSSS.Application.Matrix_MPItest {
 
         }
 
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
         int m_quadOrder;
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_quadOrder = u1.Basis.Degree * 2;
 
-            Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
+            Op = new XDifferentialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
             
             Op.EquationComponents["c1"].Add(new DxFlux("u1", -3.0)); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx( "u1", -3.0));
@@ -161,6 +161,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             Op.EquationComponents["c2"].Add(new DxFlux("u2", 77.7)); // Flux in Bulk Phase;
             Op.EquationComponents["c2"].Add(new LevSetFlx("u2", 77.7));
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 
@@ -197,7 +198,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             //    OperatorMatrix, Affine, false, 0.0, true,
             //    Agg.CellLengthScales, null, null,
             //    LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, ProblemMapping, null, ProblemMapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, ProblemMapping, null, ProblemMapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
@@ -210,13 +211,15 @@ namespace BoSSS.Application.Matrix_MPItest {
             mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
-
-            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            // matrix non-zero-pattern seems to be very sensitive to the sequence of summation;
+            // hence, introduce a threshold to mitigate this.
+            double threshold = this.OperatorMatrix.InfNorm()*1.0e-14;
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
            
-            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
-            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
+            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
            
             MsrMatrix Comp = AltOperatorMatrix.CloneAs();
             Comp.Acc(-1.0, OperatorMatrix);

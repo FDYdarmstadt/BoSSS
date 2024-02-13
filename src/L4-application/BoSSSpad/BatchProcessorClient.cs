@@ -194,18 +194,18 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
                 }
 
-                if(fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase)) {
+                if (fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase)) {
                     var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
                     relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
 
 
                     string PathAtRemote = pp.PathAtRemote;
-                    if(PathAtRemote.IsEmptyOrWhite())
+                    if (PathAtRemote.IsEmptyOrWhite())
                         PathAtRemote = pp.LocalMountPath;
                     PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
 
                     string DirSep;
-                    if(PathAtRemote.StartsWith("/")) {
+                    if (PathAtRemote.StartsWith("/")) {
                         // very likely to be a Unix path
 
                         // convert Windows path to UNIX
@@ -221,13 +221,77 @@ namespace BoSSS.Application.BoSSSpad {
                     }
 
                     string fullAltPath = PathAtRemote + DirSep + relDbPath;
-                    
-                    if(ctrl.AlternateDbPaths != null) {
-                        if(ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)))
+
+                    if (ctrl.AlternateDbPaths != null) {
+                        if (ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)))
                             return true;
                     }
 
                     (fullAltPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
+
+                    return true;
+
+                }
+
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// verifies that a database at <paramref name="dbPath"/> 
+        /// can be used with this batch processor, 
+        /// by comparing with this batch  <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
+        /// </summary>
+        public bool IsDatabasePathAllowed(string dbPath) {
+
+            if (AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+                return true;
+
+            // fix any relative path
+            string fullDbPath;
+            if (!System.IO.Path.IsPathRooted(dbPath)) {
+
+                fullDbPath = Path.GetFullPath(dbPath);
+
+            } else {
+                fullDbPath = dbPath;
+            }
+
+
+            // check if path is allowed
+            foreach (var pp in AllowedDatabasesPaths) {
+                if (!Path.IsPathRooted(pp.LocalMountPath)) {
+                    throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+                }
+
+                if (fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase)) {
+                    var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
+                    relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
+
+
+                    string PathAtRemote = pp.PathAtRemote;
+                    if (PathAtRemote.IsEmptyOrWhite())
+                        PathAtRemote = pp.LocalMountPath;
+                    PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
+
+                    string DirSep;
+                    if (PathAtRemote.StartsWith("/")) {
+                        // very likely to be a Unix path
+
+                        // convert Windows path to UNIX
+                        relDbPath = relDbPath.Replace('\\', '/');
+
+                        // (don't consider the other way, i.e. Unix to Windows:
+                        // nobody who works on Linux seriously 
+                        // considers a Windows HPC system).
+
+                        DirSep = "/";
+                    } else {
+                        DirSep = @"\";
+                    }
+
+                    string fullAltPath = PathAtRemote + DirSep + relDbPath;
 
                     return true;
                 }
@@ -236,91 +300,6 @@ namespace BoSSS.Application.BoSSSpad {
 
             return false;
         }
-
-
-
-        /*
-        List<IDatabaseInfo> m_AllowedDatabases;
-
-        /// <summary>
-        /// See <see cref="AllowedDatabasesPaths"/>
-        /// </summary>
-        public IReadOnlyList<IDatabaseInfo> AllowedDatabases {
-            get {
-                if(m_AllowedDatabases == null) {
-                    m_AllowedDatabases = new List<IDatabaseInfo>();
-                    if(AllowedDatabasesPaths != null) {
-
-                        // fill up with empty entries
-                        m_AllowedDatabases.AddRange(AllowedDatabasesPaths.Select(path => default(IDatabaseInfo)));
-
-                        // pass 1: search in already-known databases
-                        for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
-                            foreach(var db in InteractiveShell.databases) {
-                                if(db.PathMatch(AllowedDatabasesPaths[i])) {
-                                    // bingo
-                                    m_AllowedDatabases[i] = db;
-                                    break;
-                                }
-                            }
-                        }
-
-                        // pass 2: try to open other databases
-                        for(int i = 0; i < AllowedDatabasesPaths.Length; i++) {
-                            if(m_AllowedDatabases[i] == null) {
-                                try {
-                                    var db = InteractiveShell.OpenDatabase(AllowedDatabasesPaths[i]);
-                                    m_AllowedDatabases[i] = db;
-                                    //if(!InteractiveShell.databases.Any(idb => object.ReferenceEquals(idb, db))) {
-                                    //    InteractiveShell.databases.Add(db);
-                                    //    Console.WriteLine($"Note: adding database {db} specified for batch queue {this}");
-                                    //}
-                                } catch(Exception e) {
-                                    Console.Error.WriteLine($"Unable to open 'allowed database' for {this.ToString()} at path {AllowedDatabasesPaths[i]}. Check configuration file 'BatchProcessorConfig.json'. ({e.GetType().Name} : {e.Message})");
-                                    Console.Error.WriteLine($"{this.ToString()} will continue to work, but database synchronization on job submission might not work correctly.");
-                                }
-                            }
-                        }
-
-                        // remove empty entries
-                        for(int i = 0; i < m_AllowedDatabases.Count; i++) {
-                            if(m_AllowedDatabases[i] == null) {
-                                m_AllowedDatabases.RemoveAt(i);
-                                i--;
-                            }
-                        }
-                    }
-                }
-
-                var ret = new List<IDatabaseInfo>();
-                ret.AddRange(m_AllowedDatabases);
-
-                // add any local database which might be acceptable
-                //if(InteractiveShell.databases != null) {
-                //    foreach(var db in InteractiveShell.databases) {
-
-                //        bool found = false;
-                //        foreach(var odb in m_AllowedDatabases) {
-                //            if(odb.Equals(db)) {
-                //                found = true;
-                //                break;
-                //            }
-                //        }
-                //        if(found)
-                //            continue;
-
-                //        if(!found) {
-                //            // 'db' is not in the list to return, but is it located on the local machine?
-
-                //            db.
-                //        }
-                //    }
-                }
-                return ret.AsReadOnly();
-            }
-        }
-        */
-
 
 
 
@@ -356,6 +335,7 @@ namespace BoSSS.Application.BoSSSpad {
         public abstract string GetStderrFile(string idToken, string DeployDir);
 
 
+
         /// <summary>
         /// Creates (or opens) a database in a location which is ensured to work with this batch processor
         /// </summary>
@@ -378,8 +358,6 @@ namespace BoSSS.Application.BoSSSpad {
                 string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
                 string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
                 fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
-
-                //todo:  add alternate path 
                 DatabaseInfo.AddAlternateDbPaths(fullPath, fullPathAtRemote, null);
             }
 
@@ -391,7 +369,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Creates (or opens) a database in a location which is ensured to work with this batch processor
         /// </summary>
         public IDatabaseInfo CreateTempDatabase() {
-             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+            if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
                 throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             string relPath = null;

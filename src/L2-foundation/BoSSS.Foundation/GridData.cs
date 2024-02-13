@@ -31,6 +31,7 @@ using log4net;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
 using ilPSP.Connectors;
+using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -64,6 +65,48 @@ namespace BoSSS.Foundation.Grid.Classic {
             get {
                 return m_Grid;
             }
+        }
+
+        AggregationGridData[] m_MultigridSequence;
+
+        /// <summary>
+        /// an optional (i.e. can be null) multi-grid hierarchy
+        /// </summary>
+        public AggregationGridData[] MultigridSequence {
+            get {
+                if(m_MultigridSequence == null) {
+                    Console.WriteLine("Warning: Multigrid sequence is requested, but not setup for this mesh; performing a zero-aggregation with one level; consider configuring multigrid using the `AggregationGridData[] MultigridSequence(...)` method.");
+                    m_MultigridSequence = new AggregationGridData[] { CoarseningAlgorithms.ZeroAggregation(this) };
+                }
+                
+                return m_MultigridSequence;
+            }
+        }
+
+        /// <summary>
+        /// setup of <see cref="MultigridSequence"/>
+        /// </summary>
+        public void RegisterMultigridSequence(AggregationGridData[] mgseq) {
+            if(mgseq == null) {
+                throw new ArgumentException("Null is not allowed; use an array with zero entries to disable the multigrid.");
+            }
+
+            for(int i = 0; i < mgseq.Length; i++) {
+                if (!object.ReferenceEquals(mgseq[i].AncestorGrid, this)) {
+                    throw new ArgumentException("Multigrid sequence must be associated to this grid.");
+                }
+
+                if (mgseq[i].MgLevel != i)
+                    throw new ArgumentException("Multigrid level index corruption.");
+
+                if(i > 0) {
+                    if (!object.ReferenceEquals(mgseq[i].ParentGrid, mgseq[i-1])) {
+                        throw new ArgumentException("Multigrid sequence corruption.");
+                    }
+                }
+            }
+
+            m_MultigridSequence = mgseq.CloneAs();
         }
 
 
@@ -305,6 +348,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             this.m_NoOCellsPerRefElement_External = null;
             this.m_NoOfCellsPerRefElement_Local = null;
             this.m_Subgrid4RefElement = null;
+            this.m_MultigridSequence = null;
         }
 
         bool m_IsAlive = true;
@@ -767,7 +811,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             Debug.Assert(Jacobian.GetLength(3) == D);
 
             unsafe {
-                if(!Jacobian.IsContinious)
+                if(!Jacobian.IsContinuous)
                     throw new NotSupportedException();
 
                 fixed(double *pJacobian = Jacobian.Storage) {

@@ -27,6 +27,8 @@ using System.Linq;
 using System.Threading;
 using System.Reflection;
 using ilPSP.LinSolvers;
+using BoSSS.Solution.Gnuplot;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -43,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Development history:
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
-    /// - Quadrature order: saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
+    /// - Quadrature order: Saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
     ///   We transform $` \int f dx $` to the reference Element, $` \int f dx = \int f(T) |det D(T)| d\hat{x} $`
     ///   Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
     ///   has approximately degree <= n * p + (p - 1)
@@ -73,16 +75,46 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            Debugger.Launch();
 
-
+            //ilPSP.Environment.NumThreads = 8;
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             //DeleteOldPlotFiles();
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonicsPostprocessingTest(true, 3, true);
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
+            /*
+            var plots = new List<Plot2Ddata>();
+            for(int i = 0; i < 4; i++) {
+                var p = new Plot2Ddata();
+                var x = GenericBlas.Linspace(1, 20, 100);
+                var y = x.Select(x_i => Math.Sin(x_i + i)).ToArray();
+                p.AddDataGroup("pli" + i, x, y);
+
+                plots.Add(p);
+            }
+
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            if (rank == 0) {
+                Plot2Ddata[,] multi = new Plot2Ddata[1, plots.Count];
+                int iCol = 0;
+                foreach (var kv in plots) {
+                    multi[0, iCol] = kv;
+                    iCol++;
+                    //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
+                    //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
+                    //kv.Value.SavePgfplotsFile_WA(Path.Combine(OutputDir, kv.Key + ".tex");
+                }
+
+                multi.SaveToGIF("waterfall." + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".png", 600*4, 600);
+
+            }
+
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            throw new Exception("exit2");
+
+            //*/
 
             /*
             var mtxa = IMatrixExtensions.LoadFromTextFile(@"..\..\..\bin\release\net5.0\weirdo\indef.txt");
@@ -116,6 +148,7 @@ namespace BoSSS.Application.XNSE_Solver {
             NUnit.Framework.Assert.IsTrue(false, "remove me"); 
             */
 
+            
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
@@ -138,7 +171,7 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
         public override void Init(AppControl control) {
-
+                
 
             base.Init(control);
             var ctrl = (control as XNSE_Control);
@@ -336,6 +369,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
                 int D = this.GridData.SpatialDimension;
 
+                
                 if (this.Control.UseSchurBlockPrec) {
                     tr.Info($"pre-precond, level {iLevel}: using {MultigridOperator.Mode.SchurComplement}");
 
@@ -381,26 +415,27 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Operator/equation assembly
         /// </summary>
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
 
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+            XDifferentialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
             FinalOperatorSettings(XOP, D);
+            XOP.FluxesAreNOTMultithreadSafe = false; // enable multi-threaded evaluation of fluxes
             XOP.Commit();
 
             return XOP;
         }
 
         /// <summary>
-        /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
+        /// Misc adjustments to the spatial operator before calling <see cref="IDifferentialOperator.Commit"/>
         /// </summary>
-        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
+        protected virtual void FinalOperatorSettings(XDifferentialOperatorMk2 XOP, int D) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
@@ -665,7 +700,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
                 double AvgCells = NoOfCellsTot / (double)this.MPISize;
                 double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
-                double RelCutCellsInbalance = (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
+                double RelCutCellsInbalance = NoOfCutCells_Max == 0 ? 0 : (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
 
                 Console.WriteLine($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
                 Console.WriteLine($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");

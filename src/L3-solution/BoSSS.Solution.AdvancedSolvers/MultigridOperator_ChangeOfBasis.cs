@@ -28,6 +28,10 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 using System.IO;
+using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     partial class MultigridOperator {
@@ -191,22 +195,56 @@ namespace BoSSS.Solution.AdvancedSolvers {
            
         }
 
+        class ComputeChangeOfBasis_ThreadLocals {
+
+            public ComputeChangeOfBasis_ThreadLocals(MultigridOperator mgo) {
+                var _Config = mgo.m_Config;
+                int LL = _Config.Length;
+                MassBlock = new MultidimensionalArray[LL];
+                OperatorBlock = new MultidimensionalArray[LL];
+                PCleftBlock = new MultidimensionalArray[LL];
+                work = new MultidimensionalArray[LL];
+                PCrightBlock_inv = new MultidimensionalArray[LL];
+                PCleftBlock_inv = new MultidimensionalArray[LL];
+                PCrightBlock = new MultidimensionalArray[LL];
+                __i0s = new long[LL][];
+                __Lns = new int[LL][];
+
+                for (int i = 0; i < LL; i++) {
+                    var conf = _Config[i];
+                    __i0s[i] = new long[conf.VarIndex.Length];
+                    __Lns[i] = new int[conf.VarIndex.Length];
+                }
+            }
+
+
+            public MultidimensionalArray[] MassBlock;
+            public MultidimensionalArray[] OperatorBlock;
+            public MultidimensionalArray[] PCleftBlock;
+            public MultidimensionalArray[] work;
+            public MultidimensionalArray[] PCrightBlock_inv;
+            public MultidimensionalArray[] PCleftBlock_inv;
+            public MultidimensionalArray[] PCrightBlock;
+            public long[][] __i0s;
+            public int[][] __Lns;
+    }
+
 
         /// <summary>
         /// applies the pre-conditioning to the operator matrix
         /// (passed in the constructor)
         /// and returns the pre-conditioned matrix
         /// </summary>
-        /// <param name="LeftPreCond">
+        /// <param name="__LeftPreCond">
         /// left pre-conditioning matrix
         /// </param>
-        /// <param name="RightPreCond">
+        /// <param name="__RightPreCond">
         /// right pre-conditioning matrix
         /// </param>
-        /// <param name="RightPreCondInv">
-        /// the inverse of <paramref name="RightPreCond"/> -- usually required to transform an initial guess.
+        /// <param name="__RightPreCondInv">
+        /// the inverse of <paramref name="__RightPreCond"/> -- usually required to transform an initial guess.
         /// </param>
-        /// <param name="LeftPreCondInv"></param>
+        /// <param name="__LeftPreCondInv"></param>
         /// <param name="MassMatrix">
         /// on entry the mass matrix w.r.t. the XDG basis
         /// </param>
@@ -215,7 +253,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns>
         /// List of indefinite row indices.
         /// </returns>
-        long[] ComputeChangeOfBasis(BlockMsrMatrix OpMatrix, BlockMsrMatrix MassMatrix, out BlockMsrMatrix LeftPreCond, out BlockMsrMatrix RightPreCond, out BlockMsrMatrix LeftPreCondInv, out BlockMsrMatrix RightPreCondInv) {
+        long[] ComputeChangeOfBasis(BlockMsrMatrix OpMatrix, BlockMsrMatrix MassMatrix, out BlockMsrMatrix __LeftPreCond, out BlockMsrMatrix __RightPreCond, out BlockMsrMatrix __LeftPreCondInv, out BlockMsrMatrix __RightPreCondInv) {
             using (var tr = new FuncTrace()) {
                 // test arguments
                 // ==============
@@ -239,204 +277,179 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Stopwatch stw_Comp = new Stopwatch(); stw_Comp.Reset();
 
 
-                    LeftPreCond = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
-                    RightPreCond = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
-                    RightPreCondInv = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
-                    LeftPreCondInv = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
-                    LeftPreCond.AccEyeSp(1.0);
-                    RightPreCond.AccEyeSp(1.0);
-                    LeftPreCondInv.AccEyeSp(1.0);
-                    RightPreCondInv.AccEyeSp(1.0);
+                    __LeftPreCond = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
+                    __RightPreCond = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
+                    __RightPreCondInv = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
+                    __LeftPreCondInv = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
+                    __LeftPreCond.AccEyeSp(1.0);
+                    __RightPreCond.AccEyeSp(1.0);
+                    __LeftPreCondInv.AccEyeSp(1.0);
+                    __RightPreCondInv.AccEyeSp(1.0);
+
+                    var LeftPreCond = __LeftPreCond;
+                    var RightPreCond = __RightPreCond;
+                    var LeftPreCondInv = __LeftPreCondInv;
+                    var RightPreCondInv = __RightPreCondInv;
 
 
                     int LL = this.m_Config.Length;
-                    MultidimensionalArray[] MassBlock = new MultidimensionalArray[LL];
-                    MultidimensionalArray[] OperatorBlock = new MultidimensionalArray[LL];
-                    MultidimensionalArray[] PCleftBlock = new MultidimensionalArray[LL];
-                    MultidimensionalArray[] work = new MultidimensionalArray[LL];
-                    MultidimensionalArray[] PCrightBlock_inv = new MultidimensionalArray[LL];
-                    MultidimensionalArray[] PCleftBlock_inv = new MultidimensionalArray[LL];
-                    MultidimensionalArray[] PCrightBlock = new MultidimensionalArray[LL];
-                    long[][] __i0s = new long[LL][];
-                    int[][] __Lns = new int[LL][];
-
-                    for (int i = 0; i < LL; i++) {
-                        var conf = m_Config[i];
-                        __i0s[i] = new long[conf.VarIndex.Length];
-                        __Lns[i] = new int[conf.VarIndex.Length];
-                    }
-
+                    
                     int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                    long i0 = this.Mapping.Partitioning.i0;
+                    long i0 = this.Mapping.Partitioning.i0; //Processor offset
 
-                    //List<Chunk> blaagr = new List<Chunk>();
+                    
 
-                    //for (int jCell = 0; jCell < J; jCell++) {
-                    //    for (int i = 0; i < LL; i++) {
-                    //        long[] _i0s = __i0s[i];
-                    //        int[] _Lns = __Lns[i];
-                    //        var conf = m_Config[i];
-                    //        int E = conf.VarIndex.Length;
-                    //        for (int e = 0; e < E; e++) {
-                    //            int iVar = conf.VarIndex[e];
-                    //            _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
-                    //            _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
-                    //        }
-                    //        ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
-                    //        ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
+                    ilPSP.Environment.ParallelFor(0, J, 
+                        () => new ComputeChangeOfBasis_ThreadLocals(this),
+                        delegate (int jCell, ParallelLoopState s, ComputeChangeOfBasis_ThreadLocals tmp) {
+                            //for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
+                            //ReducedRegionCode rrc;
+                            //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
 
-                    //        if (MassBlock[i].InfNorm() == 0) {
-                    //            Console.WriteLine("zero massmtx block in " + jCell);
-                    //            double[] coords = this.Mapping.AggGrid.iLogicalCells.GetCenter(jCell);
-                    //            foreach (var c in coords)
-                    //                Console.WriteLine(c);
-                    //            blaagr.Add(Chunk.GetSingleElementChunk(jCell));
-                    //        }
+                            //if (this.Mapping.GetLength(jCell) == 0)
+                            //    // void cell
+                            //    continue;
 
-                    //    }
-                    //}
+                            for (int i = 0; i < LL; i++) { // for each configuration item...
+                                var conf = m_Config[i];
 
-                    //(new CellMask(GridData, blaagr)).SaveToTextFile("failCell.csv");
+                                int E = conf.VarIndex.Length; //number of variables (e.g. 3 for u_x, u_y, p)
+                                long[] _i0s = tmp.__i0s[i];
+                                int[] _Lns = tmp.__Lns[i];
+                                //AggregationGridBasis basis = null;
 
-                    for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
-                                                              //ReducedRegionCode rrc;
-                                                              //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
-
-                        //if (this.Mapping.GetLength(jCell) == 0)
-                        //    // void cell
-                        //    continue;
-
-                        for (int i = 0; i < LL; i++) { // for each configuration item...
-                            var conf = m_Config[i];
-
-                            int E = conf.VarIndex.Length;
-                            long[] _i0s = __i0s[i];
-                            int[] _Lns = __Lns[i];
-                            //AggregationGridBasis basis = null;
-
-                            int DOF = 0;
-                            bool AnyZeroLength = false;
-                            for (int e1 = 0; e1 < E; e1++) {
-                                int dof_var = this.Mapping.GetLengthForVar(jCell, conf.VarIndex[e1]);
-                                DOF += dof_var;
-                                AnyZeroLength |= (dof_var == 0);
-                            }
-                            if (AnyZeroLength && DOF > 0)
-                                throw new ApplicationException();
-
-                            if (DOF == 0)
-                                // void cell
-                                continue;
-
-                            for (int e = 0; e < E; e++) {
-                                int iVar = conf.VarIndex[e];
-                                _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
-                                _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
-                            }
-
-                            // extract blocks from operator and mass matrix
-                            // --------------------------------------------
-
-                            stw_Data.Start();
-                            ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
-                            ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
-                            stw_Data.Stop();
-                            double MassBlkNrm = MassBlock[i].InfNorm();
-                            double OperatorBlkNrm = OperatorBlock[i].InfNorm();
-                            int NN = MassBlock[i].NoOfRows;
-
-                            if (MassBlkNrm == 0) {
-                                //throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
-                                //Console.WriteLine("absolute zero Mass block in cell " + jCell + ".");
-
-                                //if (conf.mode == Mode.IdMass_DropIndefinite || conf.mode == Mode.SymPart_DiagBlockEquilib_DropIndefinite) {
-                                //    // we can deal with this ...
-
-
-                                //Console.WriteLine("Error at level" + i);
-                                //throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
-
-
-                                int Length = 0;
-                                foreach (int len in _Lns) {
-                                    Length += len;
+                                int DOF = 0;
+                                bool AnyZeroLength = false;
+                                for (int e1 = 0; e1 < E; e1++) {
+                                    int dof_var = this.Mapping.GetLengthForVar(jCell, conf.VarIndex[e1]);
+                                    DOF += dof_var;
+                                    AnyZeroLength |= (dof_var == 0);
                                 }
-                                long[] ZeroIdc = Length.ForLoop(Z => _i0s[0] + Z);
-                                IndefRows.AddRange(ZeroIdc);
-                                if (!marker) {
-                                    Console.WriteLine("Zero mass matrix blocks detected. This should not happen, but we can deal with this.");
-                                    Console.WriteLine("zero blocks at cell: ");
-                                    marker = true;
-                                }
-                                Console.WriteLine(jCell);
-                            } else {
+                                if (AnyZeroLength && DOF > 0)
+                                    throw new ApplicationException();
 
-                                //if(OperatorBlkNrm == 0) {
-                                //    throw new ArithmeticException("absolute zero Operator block in cell " + jCell + ".");
-                                //}
+                                if (DOF == 0)
+                                    // void cell
+                                    continue;
 
-                                // mem alloc
-                                // ---------
-
-                                if (PCleftBlock[i] == null || PCleftBlock[i].NoOfRows != NN) {
-                                    PCleftBlock[i] = MultidimensionalArray.Create(NN, NN);
-                                }
-                                if (PCrightBlock[i] == null || PCrightBlock[i].NoOfRows != NN) {
-                                    PCrightBlock[i] = MultidimensionalArray.Create(NN, NN);
-                                }
-                                if (work[i] == null || work[i].NoOfRows != NN) {
-                                    work[i] = MultidimensionalArray.Create(NN, NN);
+                                for (int e = 0; e < E; e++) {
+                                    int iVar = conf.VarIndex[e];
+                                    _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
+                                    _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
                                 }
 
-                                // compute precond
-                                // ---------------
+                                // extract blocks from operator and mass matrix
+                                // --------------------------------------------
 
-
-                                stw_Comp.Start();
-                                int Rank;
-                                PCleftBlock[i].Clear();
-                                PCrightBlock[i].Clear();
-                                int[] idr = ComputeChangeOfBasisBlock(_Lns, MassBlock[i], OperatorBlock[i], PCleftBlock[i], PCrightBlock[i], conf.mode, out Rank, work[i]);
-                                if (Rank != NN) {
-                                    IndefRows.AddRange(ConvertRowIndices(jCell, basisS, Degrees, conf, E, _i0s, idr));
-                                } else {
-                                    Debug.Assert(idr == null);
-                                }
-                                stw_Comp.Stop();
-
-                                // write block back
-                                // ----------------
                                 stw_Data.Start();
-                                ExtractBlock(_i0s, _Lns, false, LeftPreCond, ref PCleftBlock[i]);
-                                ExtractBlock(_i0s, _Lns, false, RightPreCond, ref PCrightBlock[i]);
-
-
-                                // inverse precond-matrix
-                                // ----------------------
-                                // right-inverse: (required for transforming solution guess)
-                                if (PCrightBlock_inv[i] == null || PCrightBlock_inv[i].NoOfRows != NN) {
-                                    PCrightBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
-                                }
-                                if (Rank == NN)
-                                    PCrightBlock[i].InvertTo(PCrightBlock_inv[i]);
-                                else
-                                    RankDefInvert(PCrightBlock[i], PCrightBlock_inv[i]);
-                                ExtractBlock(_i0s, _Lns, false, RightPreCondInv, ref PCrightBlock_inv[i]);
-
-                                // left-inverse: (required for analysis purposes, to transform residuals back onto original grid)
-                                if (PCleftBlock_inv[i] == null || PCleftBlock_inv[i].NoOfRows != NN) {
-                                    PCleftBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
-                                }
-                                if (Rank == NN)
-                                    PCleftBlock[i].InvertTo(PCleftBlock_inv[i]);
-                                else
-                                    RankDefInvert(PCleftBlock[i], PCleftBlock_inv[i]);
-                                ExtractBlock(_i0s, _Lns, false, LeftPreCondInv, ref PCleftBlock_inv[i]);
-
+                                ExtractBlock(_i0s, _Lns, true, MassMatrix, ref tmp.MassBlock[i]);
+                                ExtractBlock(_i0s, _Lns, true, OpMatrix, ref tmp.OperatorBlock[i]);
                                 stw_Data.Stop();
+                                double MassBlkNrm = tmp.MassBlock[i].InfNorm();
+                                double OperatorBlkNrm = tmp.OperatorBlock[i].InfNorm();
+                                int NN = tmp.MassBlock[i].NoOfRows;
+
+                                if (MassBlkNrm == 0) {
+                                    //throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
+                                    //Console.WriteLine("absolute zero Mass block in cell " + jCell + ".");
+
+                                    //if (conf.mode == Mode.IdMass_DropIndefinite || conf.mode == Mode.SymPart_DiagBlockEquilib_DropIndefinite) {
+                                    //    // we can deal with this ...
+
+
+                                    //Console.WriteLine("Error at level" + i);
+                                    //throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
+
+
+                                    int Length = 0;
+                                    foreach (int len in _Lns) {
+                                        Length += len;
+                                    }
+                                    long[] ZeroIdc = Length.ForLoop(Z => _i0s[0] + Z);
+                                    IndefRows.AddRange(ZeroIdc);
+                                    if (!marker) {
+                                        Console.WriteLine("Zero mass matrix blocks detected. This should not happen, but we can deal with this.");
+                                        Console.WriteLine("zero blocks at cell: ");
+                                        marker = true;
+                                    }
+                                    Console.WriteLine(jCell);
+                                } else {
+
+                                    //if(OperatorBlkNrm == 0) {
+                                    //    throw new ArithmeticException("absolute zero Operator block in cell " + jCell + ".");
+                                    //}
+
+                                    // mem alloc
+                                    // ---------
+
+                                    if (tmp.PCleftBlock[i] == null || tmp.PCleftBlock[i].NoOfRows != NN) {
+                                        tmp.PCleftBlock[i] = MultidimensionalArray.Create(NN, NN);
+                                    }
+                                    if (tmp.PCrightBlock[i] == null || tmp.PCrightBlock[i].NoOfRows != NN) {
+                                        tmp.PCrightBlock[i] = MultidimensionalArray.Create(NN, NN);
+                                    }
+                                    if (tmp.work[i] == null || tmp.work[i].NoOfRows != NN) {
+                                        tmp.work[i] = MultidimensionalArray.Create(NN, NN);
+                                    }
+
+                                    // compute precond
+                                    // ---------------
+
+
+                                    stw_Comp.Start();
+                                    int Rank;
+                                    tmp.PCleftBlock[i].Clear();
+                                    tmp.PCrightBlock[i].Clear();
+                                    int[] idr = ComputeChangeOfBasisBlock(_Lns, tmp.MassBlock[i], tmp.OperatorBlock[i], tmp.PCleftBlock[i], tmp.PCrightBlock[i], conf.mode, out Rank, tmp.work[i]);
+                                    if (Rank != NN) {
+                                        lock (IndefRows) {
+                                            IndefRows.AddRange(ConvertRowIndices(jCell, basisS, Degrees, conf, E, _i0s, idr));
+                                        }
+                                    } else {
+                                        Debug.Assert(idr == null);
+                                    }
+                                    stw_Comp.Stop();
+
+                                    // write block back
+                                    // ----------------
+                                    stw_Data.Start();
+                                    ExtractBlock(_i0s, _Lns, false, LeftPreCond, ref tmp.PCleftBlock[i]);
+                                    ExtractBlock(_i0s, _Lns, false, RightPreCond, ref tmp.PCrightBlock[i]);
+
+
+                                    // inverse precond-matrix
+                                    // ----------------------
+                                    // right-inverse: (required for transforming solution guess)
+                                    if (tmp.PCrightBlock_inv[i] == null || tmp.PCrightBlock_inv[i].NoOfRows != NN) {
+                                        tmp.PCrightBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
+                                    }
+                                    if (Rank == NN)
+                                        tmp.PCrightBlock[i].InvertTo(tmp.PCrightBlock_inv[i]);
+                                    else
+                                        RankDefInvert(tmp.PCrightBlock[i], tmp.PCrightBlock_inv[i]);
+
+                                    ExtractBlock(_i0s, _Lns, false, RightPreCondInv, ref tmp.PCrightBlock_inv[i]);
+
+                                    // left-inverse: (required for analysis purposes, to transform residuals back onto original grid)
+                                    if (tmp.PCleftBlock_inv[i] == null || tmp.PCleftBlock_inv[i].NoOfRows != NN) {
+                                        tmp.PCleftBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
+                                    }
+                                    if (Rank == NN)
+                                        tmp.PCleftBlock[i].InvertTo(tmp.PCleftBlock_inv[i]);
+                                    else
+                                        RankDefInvert(tmp.PCleftBlock[i], tmp.PCleftBlock_inv[i]);
+
+                                    ExtractBlock(_i0s, _Lns, false, LeftPreCondInv, ref tmp.PCleftBlock_inv[i]);
+
+                                    stw_Data.Stop();
+                                }
                             }
-                        }
-                    }
+                            return tmp;
+                        },
+                        (ComputeChangeOfBasis_ThreadLocals tmp) => { },
+                        enablePar: true);
+
+                    IndefRows.Sort();
 
                     bt.LogDummyblock(stw_Data.Elapsed.Ticks, "Change_of_Basis_data_copy");
                     bt.LogDummyblock(stw_Comp.Elapsed.Ticks, "Change_of_Basis_compute");
@@ -447,7 +460,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_i0s">Offset for each field/variable</param>
+        /// <param name="_Lns">Lengths for degrees of freedom for each field/variable</param>
+        /// <param name="Sp2Full"></param>
+        /// <param name="MtxSp">
+        /// sparse matrix;
+        /// - if <paramref name="Sp2Full"/>==false, then an input;
+        ///   if NULL, assumed to be an identity matrix
+        /// - if <paramref name="Sp2Full"/>==false, then an output
+        /// </param>
+        /// <param name="MtxFl"></param>
         private static void ExtractBlock(
             long[] _i0s, 
             int[] _Lns,
@@ -490,19 +515,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     if (Sp2Full) {
+                        // copy: sparse matrix -> full block
+
                         if (MtxSp != null) {
                             MtxSp.ReadBlock(i0Row, i0Col, MtxFl_blk);
                         } else {
-                            MtxFl_blk.AccEye(1.0);
+                            // no sparse matrix given: we assume its the identity
+                            
+                            if(eCol == eRow)
+                                MtxFl_blk.AccEye(1.0);
                         }
 
                     } else {
+                        // copy: full block -> sparse matrix
                         MtxSp.AccBlock(i0Row, i0Col, 1.0, MtxFl_blk, 0.0);
                     }
 #if DEBUG
                     for(int n_row = 0; n_row < NRow; n_row++) { // row loop...
                         for(int n_col = 0; n_col < NCol; n_col++) { // column loop...
-                            Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row ? 1.0 : 0.0)));
+                            Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row && eCol == eRow ? 1.0 : 0.0)));
                         }
                     }
 #endif
@@ -512,6 +543,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Convert local indices to global indices
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <param name="basisS"></param>
+        /// <param name="Degrees">Degree for each variable</param>
+        /// <param name="conf"></param>
+        /// <param name="E">Number of variables</param>
+        /// <param name="_i0s"></param>
+        /// <param name="LocIdx"></param>
+        /// <returns></returns>
         private static long[] ConvertRowIndices(
             int jCell,
             AggregationGridBasis[] basisS, int[] Degrees,
@@ -546,10 +588,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-
+        /// <summary>
+        /// Inverse cholesky factorization (L * L^T) giving the result R * L = M^(-1) where R= L^T
+        /// </summary>
+        /// <param name="M">Input matrix (will be reduced to identity during the call)</param>
+        /// <param name="L"> Inverse of L decomposition</param>
+        /// <param name="R">Inverse of R decomposition, i.e. L^T </param>
+        /// <exception cref="ArithmeticException"></exception>
         static void SymmInv(MultidimensionalArray M, MultidimensionalArray L, MultidimensionalArray R) {
             L.Clear();
+            L.StructureType = MatrixStructure.LowerTriangular;
             R.Clear();
+            R.StructureType = MatrixStructure.UpperTriangular;
             L.AccEye(1.0);
 #if DEBUG
             var Mbefore = M.CloneAs();
@@ -734,204 +784,208 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC, Mode PCMode, out int Rank,
             MultidimensionalArray work) //
         {
-            Rank = In_MassMatrixBlock.NoOfCols;
 
-            int[] IndefRows = null;
 
-            switch (PCMode) {
-                case Mode.Eye: {
-                    OUT_LeftPC.AccEye(1.0);
-                    OUT_rightPC.AccEye(1.0);
-                    break;
+                Rank = In_MassMatrixBlock.NoOfCols;
+
+                int[] IndefRows = null;
+
+                switch (PCMode) {
+                    case Mode.Eye: {
+                            OUT_LeftPC.AccEye(1.0);
+                            OUT_rightPC.AccEye(1.0);
+                            break;
+                        }
+
+                    case Mode.DiagBlockEquilib: {
+                            double symmErr = In_OperatorMatrixBlock.SymmetryError();
+                            double infNorm = In_OperatorMatrixBlock.InfNorm();
+
+                            if (symmErr / infNorm > 1.0e-8)
+                                throw new ArithmeticException(string.Format("LDL_DiagBlock is not supported on unsymmetric matrices (Symm-Err: {0:0.####E-00}, Inf-Norm: {1:0.####E-00}, Quotient {2:0.####E-00}).", symmErr, infNorm, symmErr / infNorm));
+                            SymmInv(In_OperatorMatrixBlock, OUT_LeftPC, OUT_rightPC);
+
+                            break;
+                        }
+
+                    case Mode.SymPart_DiagBlockEquilib: {
+                            var SymmPart = work;
+                            In_OperatorMatrixBlock.TransposeTo(SymmPart);
+                            SymmPart.Acc(1.0, In_OperatorMatrixBlock);
+                            SymmPart.Scale(0.5);
+
+                            SymmInv(SymmPart, OUT_LeftPC, OUT_rightPC);
+                            break;
+                        }
+
+                    case Mode.IdMass: {
+                            In_MassMatrixBlock.SymmetricLDLInversion(OUT_rightPC, default(double[]));
+                            OUT_rightPC.TransposeTo(OUT_LeftPC);
+                            break;
+                        }
+
+                    case Mode.LeftInverse_DiagBlock: {
+                            In_OperatorMatrixBlock.InvertTo(OUT_LeftPC);
+                            OUT_rightPC.AccEye(1.0);
+                            break;
+                        }
+
+                    case Mode.LeftInverse_Mass: {
+                            In_MassMatrixBlock.InvertTo(OUT_LeftPC);
+                            OUT_rightPC.AccEye(1.0);
+                            break;
+                        }
+
+                    case Mode.IdMass_DropIndefinite: {
+                            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false);
+                            int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
+                            IndefRows = ZerosEntries;
+                            Rank = OUT_LeftPC.NoOfCols - NoOfZeros;
+                            OUT_rightPC.TransposeTo(OUT_LeftPC);
+                            break;
+                        }
+
+                    case Mode.SymPart_DiagBlockEquilib_DropIndefinite: {
+
+                            (Rank, IndefRows) = SymPart_DiagBlockEquilib_DropIndefinite(In_MassMatrixBlock, In_OperatorMatrixBlock, OUT_LeftPC, OUT_rightPC, work);
+
+                            break;
+                        }
+
+                    case Mode.SchurComplement: {
+
+                            //throw new NotImplementedException("todo");
+
+                            int NoVars = BlockLen.Length;
+                            if (NoVars <= 1)
+                                throw new NotSupportedException("The Schur complement requires at least 2 variables, moron!");
+                            int N1 = BlockLen.Take(NoVars - 1).Sum();
+                            int N2 = BlockLen.Last();
+                            int N = N1 + N2;
+
+                            //string TestPath = @"C:\Users\flori\OneDrive\MATLAB\Schur";
+                            //In_OperatorMatrixBlock.SaveToTextFile(Path.Combine(TestPath, "Opm.txt"));
+
+                            Debug.Assert(N == In_OperatorMatrixBlock.NoOfRows);
+                            Debug.Assert(N == In_OperatorMatrixBlock.NoOfCols);
+
+                            (MultidimensionalArray M11, MultidimensionalArray M12, MultidimensionalArray M21, MultidimensionalArray M22) GetSubblox(MultidimensionalArray Mtx) {
+                                return (
+                                    Mtx.ExtractSubArrayShallow(new[] { 0, 0 }, new[] { N1 - 1, N1 - 1 }),
+                                    Mtx.ExtractSubArrayShallow(new[] { 0, N1 }, new[] { N1 - 1, N - 1 }),
+                                    Mtx.ExtractSubArrayShallow(new[] { N1, 0 }, new[] { N - 1, N1 - 1 }),
+                                    Mtx.ExtractSubArrayShallow(new[] { N1, N1 }, new[] { N - 1, N - 1 })
+                                );
+                            }
+
+                            var OpMtxSub = GetSubblox(In_OperatorMatrixBlock);
+                            var MaMaSub = GetSubblox(In_MassMatrixBlock);
+                            var workSub = GetSubblox(work);
+                            var lpcSub = GetSubblox(OUT_LeftPC);
+                            var rpcSub = GetSubblox(OUT_rightPC);
+
+                            (int Rank11, int[] IndefRows11) = SymPart_DiagBlockEquilib_DropIndefinite(MaMaSub.M11, OpMtxSub.M11, lpcSub.M11, rpcSub.M11, workSub.M11);
+
+                            // compute lpcSub.M11*OpMtxSub.M11*rpcSub.M11
+                            // (without additional mem-alloc, yeah!)
+                            var Diag11 = workSub.M11;
+                            Diag11.GEMM(1.0, lpcSub.M11, OpMtxSub.M11, 0.0);
+                            OpMtxSub.M11.GEMM(1.0, Diag11, rpcSub.M11, 0.0);
+
+                            // invert diag
+                            if (Rank11 == N1) {
+                                OpMtxSub.M11.InvertTo(workSub.M11);
+                            } else {
+                                 RankDefInvert(OpMtxSub.M11, workSub.M11);
+                            }
+
+
+                            ////Copying the matrix for multiplication (dgemm)
+                            //var OpMtxSub11 = default(MultidimensionalArray);
+                            //OpMtxSub11 = OpMtxSub.M11.CloneAs();
+                            OpMtxSub.M11.GEMM(1.0, rpcSub.M11, OpMtxSub.M11, 0.0); // fk, 26aug22, Note: now, GEMM should be able to handle in-place correctly.
+
+                            workSub.M11.GEMM(1.0, OpMtxSub.M11, lpcSub.M11, 0.0);
+                            var Q = workSub.M11;
+
+                            //
+                            workSub.M21.GEMM(-1.0, OpMtxSub.M21, Q, 0.0);
+                            workSub.M12.GEMM(-1.0, Q, OpMtxSub.M12, 0.0);
+
+                            //rpcSub.M12.SetMatrix(workSub.M12); rpcSub.M22.AccEye(1.0);
+                            //lpcSub.M21.SetMatrix(workSub.M21); lpcSub.M22.AccEye(1.0);
+                            //OUT_LeftPC.SaveToTextFile(Path.Combine(TestPath, "Lpc.txt"));
+                            //OUT_rightPC.SaveToTextFile(Path.Combine(TestPath, "Rpc.txt"));
+
+
+                            rpcSub.M12.GEMM(1.0, Q, OpMtxSub.M12, 0.0);
+                            OpMtxSub.M22.GEMM(-1.0, OpMtxSub.M21, rpcSub.M12, 1.0);
+
+
+                            (int Rank22, int[] IndefRows22) = SymPart_DiagBlockEquilib_DropIndefinite(MaMaSub.M22, OpMtxSub.M22, lpcSub.M22, rpcSub.M22, workSub.M22);
+
+                            lpcSub.M21.GEMM(1.0, lpcSub.M22, workSub.M21, 0.0);
+                            rpcSub.M12.GEMM(1.0, workSub.M12, rpcSub.M22, 0.0);
+
+                            //OUT_LeftPC.SaveToTextFile(Path.Combine(TestPath, "Lpc.txt"));
+                            //OUT_rightPC.SaveToTextFile(Path.Combine(TestPath, "Rpc.txt"));
+
+                            if (IndefRows11 != null && IndefRows22 != null)
+                                IndefRows = ArrayTools.Cat(IndefRows11, IndefRows22);
+                            else if (IndefRows11 != null)
+                                IndefRows = IndefRows11;
+                            else if (IndefRows22 != null)
+                                IndefRows = IndefRows22;
+                            else
+                                IndefRows = null;
+
+                            Rank = Rank11 + Rank22;
+                            break;
+                        }
+
+                    /*
+                    case Mode.LDL_DiagBlock_DropIndefinite: {
+                            if(In_OperatorMatrixBlock.SymmetryError() / In_OperatorMatrixBlock.InfNorm() > 1.0e-8)
+                                throw new NotSupportedException("LDL_DiagBlock is not supported on unsymmetric matrices");
+                            int N = OUT_LeftPC.NoOfCols;
+
+                            MultidimensionalArray PL = MultidimensionalArray.Create(N, N);
+                            MultidimensionalArray PR = MultidimensionalArray.Create(N, N);
+
+                            int zeros1 = CRM114(In_MassMatrixBlock, PR, 1.0e-12);
+                            Rank = N - zeros1;
+                            PR.TransposeTo(PL);
+
+                            var OpTr = (PL * In_OperatorMatrixBlock) * PR;
+
+                            MultidimensionalArray QL = MultidimensionalArray.Create(N, N);
+                            MultidimensionalArray QR =  MultidimensionalArray.Create(N, N);
+                            int zeros2 = CRM114(OpTr, QR, 1.0e-12);
+                            QR.TransposeTo(QL);
+
+                            if(zeros1 != zeros2)
+                                // I want this to fire also in Release mode, therfore i don't use Debug.Assert(...)
+                                throw new ApplicationException();
+
+
+                            OUT_LeftPC.GEMM(1.0, QL, PL, 0.0);
+                            OUT_rightPC.GEMM(1.0, PR, QR, 0.0);
+
+                            //if (zeros1 > 0 || zeros2 > 0) {
+                            //    Console.WriteLine("zeros introduced: " + zeros1 + ", " + zeros2);
+                            //}
+
+                            break;
+                        }
+                        */
+                    default:
+                        throw new NotImplementedException("Unknown option: " + PCMode);
                 }
 
-                case Mode.DiagBlockEquilib: {
-                    double symmErr = In_OperatorMatrixBlock.SymmetryError();
-                    double infNorm = In_OperatorMatrixBlock.InfNorm();
+                return IndefRows;
 
-                    if(symmErr / infNorm > 1.0e-8)
-                        throw new ArithmeticException(string.Format("LDL_DiagBlock is not supported on unsymmetric matrices (Symm-Err: {0:0.####E-00}, Inf-Norm: {1:0.####E-00}, Quotient {2:0.####E-00}).", symmErr, infNorm, symmErr / infNorm));
-                    SymmInv(In_OperatorMatrixBlock, OUT_LeftPC, OUT_rightPC);
-                                       
-                    break;
-                }
-
-                case Mode.SymPart_DiagBlockEquilib: {
-                    var SymmPart = work;
-                    In_OperatorMatrixBlock.TransposeTo(SymmPart);
-                    SymmPart.Acc(1.0, In_OperatorMatrixBlock);
-                    SymmPart.Scale(0.5);
-
-                    SymmInv(SymmPart, OUT_LeftPC, OUT_rightPC);
-                    break;
-                }
-
-                case Mode.IdMass: {
-                    In_MassMatrixBlock.SymmetricLDLInversion(OUT_rightPC, default(double[]));
-                    OUT_rightPC.TransposeTo(OUT_LeftPC);
-                    break;
-                }
-
-                case Mode.LeftInverse_DiagBlock: {
-                    In_OperatorMatrixBlock.InvertTo(OUT_LeftPC);
-                    OUT_rightPC.AccEye(1.0);
-                    break;
-                }
-
-                case Mode.LeftInverse_Mass: {
-                    In_MassMatrixBlock.InvertTo(OUT_LeftPC);
-                    OUT_rightPC.AccEye(1.0);
-                    break;
-                }
-
-                case Mode.IdMass_DropIndefinite: {
-                    int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false);
-                    int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
-                    IndefRows = ZerosEntries;
-                    Rank = OUT_LeftPC.NoOfCols - NoOfZeros;
-                    OUT_rightPC.TransposeTo(OUT_LeftPC);
-                    break;
-                }
-
-                case Mode.SymPart_DiagBlockEquilib_DropIndefinite: {
-                   
-                    (Rank, IndefRows) = SymPart_DiagBlockEquilib_DropIndefinite(In_MassMatrixBlock, In_OperatorMatrixBlock, OUT_LeftPC, OUT_rightPC, work);
-
-                    break;
-                }
-
-                case Mode.SchurComplement: {
-
-                    //throw new NotImplementedException("todo");
-
-                    int NoVars = BlockLen.Length;
-                    if (NoVars <= 1)
-                        throw new NotSupportedException("The Schur complement requires at least 2 variables, moron!");
-                    int N1 = BlockLen.Take(NoVars - 1).Sum();
-                    int N2 = BlockLen.Last();
-                    int N = N1 + N2;
-
-                    //string TestPath = @"C:\Users\flori\OneDrive\MATLAB\Schur";
-                    //In_OperatorMatrixBlock.SaveToTextFile(Path.Combine(TestPath, "Opm.txt"));
-
-                    Debug.Assert(N == In_OperatorMatrixBlock.NoOfRows);
-                    Debug.Assert(N == In_OperatorMatrixBlock.NoOfCols);
-
-                    (MultidimensionalArray M11, MultidimensionalArray M12, MultidimensionalArray M21, MultidimensionalArray M22) GetSubblox(MultidimensionalArray Mtx) {
-                        return (
-                            Mtx.ExtractSubArrayShallow(new[] { 0, 0 }, new[] { N1 - 1, N1 - 1 }),
-                            Mtx.ExtractSubArrayShallow(new[] { 0, N1 }, new[] { N1 - 1, N - 1 }),
-                            Mtx.ExtractSubArrayShallow(new[] { N1, 0 }, new[] { N - 1, N1 - 1 }),
-                            Mtx.ExtractSubArrayShallow(new[] { N1, N1 }, new[] { N - 1, N - 1 })
-                        );
-                    }
-
-                    var OpMtxSub = GetSubblox(In_OperatorMatrixBlock);
-                    var MamaSub = GetSubblox(In_MassMatrixBlock);
-                    var workSub = GetSubblox(work);
-                    var lpcSub = GetSubblox(OUT_LeftPC);
-                    var rpcSub = GetSubblox(OUT_rightPC);
-
-                    (int Rank11, int[] IndefRows11) = SymPart_DiagBlockEquilib_DropIndefinite(MamaSub.M11, OpMtxSub.M11, lpcSub.M11, rpcSub.M11, workSub.M11);
-
-                    // compute lpcSub.M11*OpMtxSub.M11*rpcSub.M11
-                    // (without additional mem-alloc, yeah!)
-                    var Diag11 = workSub.M11;
-                    Diag11.GEMM(1.0, lpcSub.M11, OpMtxSub.M11, 0.0);
-                    OpMtxSub.M11.GEMM(1.0, Diag11, rpcSub.M11, 0.0);
-
-                    // invert diag
-                    if (Rank11 == N1) {
-                        OpMtxSub.M11.InvertTo(workSub.M11);
-                    } else {
-                        RankDefInvert(OpMtxSub.M11, workSub.M11);
-                    }
-
-                    
-                    ////Copying the matrix for multiplication (dgemm)
-                    //var OpMtxSub11 = default(MultidimensionalArray);
-                    //OpMtxSub11 = OpMtxSub.M11.CloneAs();
-                    OpMtxSub.M11.GEMM(1.0, rpcSub.M11, OpMtxSub.M11, 0.0); // fk, 26aug22, Note: now, GEMM should be able to handle in-place correctly.
-
-                    workSub.M11.GEMM(1.0, OpMtxSub.M11, lpcSub.M11, 0.0);
-                    var Q = workSub.M11;
-
-                    //
-                    workSub.M21.GEMM(-1.0, OpMtxSub.M21, Q, 0.0);
-                    workSub.M12.GEMM(-1.0, Q, OpMtxSub.M12, 0.0);
-
-                    //rpcSub.M12.SetMatrix(workSub.M12); rpcSub.M22.AccEye(1.0);
-                    //lpcSub.M21.SetMatrix(workSub.M21); lpcSub.M22.AccEye(1.0);
-                    //OUT_LeftPC.SaveToTextFile(Path.Combine(TestPath, "Lpc.txt"));
-                    //OUT_rightPC.SaveToTextFile(Path.Combine(TestPath, "Rpc.txt"));
-
-
-                    rpcSub.M12.GEMM(1.0, Q, OpMtxSub.M12, 0.0);
-                    OpMtxSub.M22.GEMM(-1.0, OpMtxSub.M21, rpcSub.M12, 1.0);
-
-
-                    (int Rank22, int[] IndefRows22) = SymPart_DiagBlockEquilib_DropIndefinite(MamaSub.M22, OpMtxSub.M22, lpcSub.M22, rpcSub.M22, workSub.M22);
-
-                    lpcSub.M21.GEMM(1.0, lpcSub.M22, workSub.M21, 0.0);
-                    rpcSub.M12.GEMM(1.0, workSub.M12, rpcSub.M22, 0.0);
-
-                    //OUT_LeftPC.SaveToTextFile(Path.Combine(TestPath, "Lpc.txt"));
-                    //OUT_rightPC.SaveToTextFile(Path.Combine(TestPath, "Rpc.txt"));
-
-                    if (IndefRows11 != null && IndefRows22 != null)
-                        IndefRows = ArrayTools.Cat(IndefRows11, IndefRows22);
-                    else if (IndefRows11 != null)
-                        IndefRows = IndefRows11;
-                    else if (IndefRows22 != null)
-                        IndefRows = IndefRows22;
-                    else
-                        IndefRows = null;
-
-                    Rank = Rank11 + Rank22;
-                    break;
-                }
-
-                /*
-                case Mode.LDL_DiagBlock_DropIndefinite: {
-                        if(In_OperatorMatrixBlock.SymmetryError() / In_OperatorMatrixBlock.InfNorm() > 1.0e-8)
-                            throw new NotSupportedException("LDL_DiagBlock is not supported on unsymmetric matrices");
-                        int N = OUT_LeftPC.NoOfCols;
-
-                        MultidimensionalArray PL = MultidimensionalArray.Create(N, N);
-                        MultidimensionalArray PR = MultidimensionalArray.Create(N, N);
-
-                        int zeros1 = CRM114(In_MassMatrixBlock, PR, 1.0e-12);
-                        Rank = N - zeros1;
-                        PR.TransposeTo(PL);
-
-                        var OpTr = (PL * In_OperatorMatrixBlock) * PR;
-
-                        MultidimensionalArray QL = MultidimensionalArray.Create(N, N);
-                        MultidimensionalArray QR =  MultidimensionalArray.Create(N, N);
-                        int zeros2 = CRM114(OpTr, QR, 1.0e-12);
-                        QR.TransposeTo(QL);
-
-                        if(zeros1 != zeros2)
-                            // I want this to fire also in Release mode, therfore i don't use Debug.Assert(...)
-                            throw new ApplicationException();
-
-
-                        OUT_LeftPC.GEMM(1.0, QL, PL, 0.0);
-                        OUT_rightPC.GEMM(1.0, PR, QR, 0.0);
-
-                        //if (zeros1 > 0 || zeros2 > 0) {
-                        //    Console.WriteLine("zeros introduced: " + zeros1 + ", " + zeros2);
-                        //}
-
-                        break;
-                    }
-                    */
-                default:
-                throw new NotImplementedException("Unknown option: " + PCMode);
-            }
-
-            return IndefRows;
         }
+
 
 
         /// <summary>
@@ -955,20 +1009,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
             List<int> NonzeroIdx = new List<int>();
             for(int i = 0; i < M; i++) {
                 double[] row_i = MtxIn.GetRow(i);
+                double[] col_i = MtxIn.GetColumn(i);
 
-                if(row_i.L2NormPow2() == 0.0) {
-                    double[] col_i = MtxIn.GetColumn(i);
-
-                    if(col_i.L2NormPow2() != 0.0)
-                        throw new ArgumentException("Row is zero, but column is not.");
-
-                } else {
-                    NonzeroIdx.Add(i);
+                // If the matrix comes from Cholesky decomposition, it would have L or U shape and only the row or columns, resp., would be zeros.
+                switch (MtxIn.StructureType) {
+                    case MatrixStructure.LowerTriangular:
+                        if (row_i.L2NormPow2() != 0.0)
+                            NonzeroIdx.Add(i);
+                    break;
+                    case MatrixStructure.UpperTriangular:
+                        if (col_i.L2NormPow2() != 0.0)
+                            NonzeroIdx.Add(i);
+                    break;
+                    default: //check if both row and columns are zero since it is not a triangular matrix
+                        if (row_i.L2NormPow2() != 0.0)
+                            if (col_i.L2NormPow2() != 0.0) {
+                            NonzeroIdx.Add(i);
+                            } else {
+                                MtxIn.SaveToTextFileUnsteady("ProblemMatx");
+                                throw new ArgumentException("Column is zero, but row is not.");
+                            }
+                        break;
                 }
             }
 
-            if(NonzeroIdx.Count == M)
+            if (NonzeroIdx.Count == M) {
+                MtxIn.SaveToTextFileUnsteady("d_problemMatrix");
                 throw new ArgumentException("Unable to find zero row/column.");
+            }
 
             int Q = NonzeroIdx.Count;
             MultidimensionalArray TmpIn = MultidimensionalArray.Create(Q, Q);
@@ -978,7 +1046,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int j = 0; j < Q; j++)
                     TmpIn[i, j] = MtxIn[NonzeroIdx[i], NonzeroIdx[j]];
 
-            TmpIn.InvertTo(TmpOt);
+                TmpIn.InvertTo(TmpOt);
 
             MtxOt.Clear();
             for(int i = 0; i < Q; i++)
@@ -993,17 +1061,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray In_MassMatrixBlock, MultidimensionalArray In_OperatorMatrixBlock, 
             MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC,
             MultidimensionalArray work ) {
+
             var SymmPart = work;
             In_OperatorMatrixBlock.TransposeTo(SymmPart);
             SymmPart.Acc(1.0, In_OperatorMatrixBlock);
             SymmPart.Scale(0.5);
 
-            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false);
+            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false); //check the zero entries on Mass Matrix
+
             int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
             int[] _IndefRows = ZerosEntries;
             int _Rank = OUT_LeftPC.NoOfCols - NoOfZeros;
 
-            if(NoOfZeros == 0) {
+            if (NoOfZeros == 0) {
                 // normal cell -- nix indefinite
                 // +++++++++++++++++++++++++++++
 
@@ -1012,15 +1082,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // problem-cell
                 // ++++++++++++++
 
-                OUT_rightPC.TransposeTo(OUT_LeftPC);
+                //OUT_rightPC.TransposeTo(OUT_LeftPC);
+                //SymmInv(SymmPart, OUT_LeftPC, OUT_rightPC);
 
-                SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC);
+                //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC); //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC);
 
-                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, OUT_rightPC, 1.0e-12, true);
-                OUT_rightPC.TransposeTo(OUT_LeftPC);
+                var dummyOUT_rightPC = OUT_rightPC.CloneAs(); //we need to clone to assign MatrixStructure (alternatively one can modify the MultidimensinaolArray.Create method)
+                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, dummyOUT_rightPC, 1.0e-12, true);
 
-                if(!ZerosEntries2.SetEquals(ZerosEntries))
-                    throw new ArithmeticException();
+                if (!ZerosEntries2.SetEquals(ZerosEntries)) {
+
+                    // Make zero those which correspond to the indefinite rows in mass matrix
+                    foreach (int n in ZerosEntries) {
+                        dummyOUT_rightPC.ColScale(n, 0.0);  //this the R part, hence we need to make columns zero
+
+                        SymmPart.ColScale(n, 0.0);
+                        SymmPart.RowScale(n, 0.0);
+                    }
+                    OUT_rightPC = dummyOUT_rightPC.CloneAs();
+                    OUT_rightPC.TransposeTo(OUT_LeftPC);
+
+                    //throw new ArithmeticException("Zero entries are not identical with the symmetric part");
+                }
             }
 
             return (_Rank, _IndefRows);
@@ -1052,6 +1135,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var Mtx = (Q.CloneAs());
             var LOW = B;
             LOW.Clear();
+            LOW.StructureType = MatrixStructure.LowerTriangular;
             LOW.AccEye(1.0);
             int N = B.NoOfRows;
 
@@ -1101,6 +1185,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (zeros == null)
                         zeros = new List<int>();
                     zeros.Add(n);
+
                 } else {
                     double sign_mnn = Math.Sign(m_nn);
                     if(sign_mnn == 0.0)

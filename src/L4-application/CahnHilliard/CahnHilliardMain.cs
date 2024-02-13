@@ -52,7 +52,7 @@ using System.IO;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Statistic.QuadRules;
-
+using BoSSS.Solution.LevelSetTools.StokesExtension;
 
 namespace BoSSS.Application.CahnHilliard {
 
@@ -263,7 +263,7 @@ namespace BoSSS.Application.CahnHilliard {
             //                        c);
         }
 
-        SpatialOperator CHOp;
+        DifferentialOperator CHOp;
 
         BoundaryCondMap<BoundaryType> m_bcMap;
 
@@ -283,7 +283,7 @@ namespace BoSSS.Application.CahnHilliard {
         //    }
         //}
 
-        protected override SpatialOperator GetOperatorInstance(int D) {
+        protected override DifferentialOperator GetOperatorInstance(int D) {
             double _D = D;
             //double penalty_base = (c.Basis.Degree + 1) * (c.Basis.Degree + _D) / _D;
             double penalty_factor = base.Control.penalty_poisson;// * penalty_base;
@@ -324,7 +324,7 @@ namespace BoSSS.Application.CahnHilliard {
 
             #endregion
 
-            CHOp = new SpatialOperator(
+            CHOp = new DifferentialOperator(
                         domainVar,
                         paramVar,
                         codomainVar,
@@ -338,8 +338,7 @@ namespace BoSSS.Application.CahnHilliard {
             // convection term
             if (this.Control.includeConvection == true) {
                 CHOp.EquationComponents["Res_c"].Add(
-                    //new c_Flux(D, () => this.Velocity.ToArray(), m_bcMap) // old/L4
-                    new __c_Flux(D, m_bcMap) // new/L3, TODO: check if velocity is communicated correctly
+                    new __c_Flux(D, () => this.Velocity.ToArray(), m_bcMap)
                 );
             }
 
@@ -1102,7 +1101,7 @@ namespace BoSSS.Application.CahnHilliard {
 
         // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable
         public class c_Flux : phi_Flux {
-            public c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") {}
+            public c_Flux(int D, Func<DGField[]> VelocityGetter, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, VelocityGetter, __boundaryCondMap, "c") {}
         }
 
         // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable

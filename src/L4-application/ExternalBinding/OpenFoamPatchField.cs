@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
+using System.Linq;
 
 
 namespace BoSSS.Application.ExternalBinding {
@@ -91,6 +92,9 @@ namespace BoSSS.Application.ExternalBinding {
         };
 
         public bool IsDirichlet(int EdgeTag){
+            // foreach (var et in this.EdgeTags){
+            //     Console.WriteLine(et);
+            // }
             int FaceIndex = -1;
             int i = 0;
             bool found = false;

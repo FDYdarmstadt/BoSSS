@@ -38,7 +38,7 @@ namespace BoSSS.Solution.EnergyCommon {
         //========================
         #region energy
 
-        public static void AddSpeciesKineticEnergyEquation(XSpatialOperatorMk2 XOp, IEnergy_Configuration config, int D, string spcName, SpeciesId spcId,
+        public static void AddSpeciesKineticEnergyEquation(XDifferentialOperatorMk2 XOp, IEnergy_Configuration config, int D, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
@@ -142,7 +142,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         }
 
-        public static void AddInterfaceKineticEnergyEquation(XSpatialOperatorMk2 XOp, IEnergy_Configuration config, int D,
+        public static void AddInterfaceKineticEnergyEquation(XDifferentialOperatorMk2 XOp, IEnergy_Configuration config, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU) {
 
             // check input

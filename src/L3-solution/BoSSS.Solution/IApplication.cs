@@ -127,7 +127,7 @@ namespace BoSSS.Solution {
         /// <returns>
         /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
         /// </returns>
-        IDictionary<string, double> OperatorAnalysis();
+        IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config);
 
 
         /// <summary>
@@ -136,6 +136,23 @@ namespace BoSSS.Solution {
         LevelSetTracker LsTrk {
             get;
         }
+    }
+
+    /// <summary>
+    /// custom config of the operator analysis
+    /// </summary>
+    public class OperatorAnalysisConfig {
+
+        /// <summary>
+        /// Stencil condition number: works also for higher resolutions than <see cref="CalculateGlobalConditionNumbers"/>, scales linearly with number of cells.
+        /// </summary>
+        public bool CalculateStencilConditionNumbers = true;
+
+        /// <summary>
+        /// Global condition number using MATLAB: very expensive, much more than actual solution of the system.
+        /// Only attainable for very small systems, maybe up to 10000 DOFs.
+        /// </summary>
+        public bool CalculateGlobalConditionNumbers = true;
     }
 
 

@@ -40,26 +40,232 @@ using BoSSS.Solution.Statistic;
 using System.IO;
 using BoSSS.Platform.Utils.Geom;
 using System.Threading;
+using ilPSP.LinSolvers.PARDISO;
+using System.Collections;
+using System.Runtime.InteropServices;
+using System.ComponentModel;
 
 namespace BoSSS.Application.SipPoisson {
+
 
     /// <summary>
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+
+
         /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
             
+
+
+            //InitMPI(args);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
+            
+            /*
+             * int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
+            //int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
+            int MpiSz;
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
+            int Rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
+            Console.WriteLine($"Stressing with {MpiSz}x{Nothreads}");
+            
+
+
+
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
+
+            
+
+
+            //Process proc = Process.GetCurrentProcess();
+            var CPUidxs = ilPSP.Utils.CPUAffinity.GetAffinity();
+            Console.WriteLine("r" + Rank + $"  Affinity to {CPUidxs.Count()} cores: {CPUidxs.ToConcatString("", ", ", ";")}");
+
+            //proc.ProcessorAffinity = (IntPtr) 0xFFFFFFFFFFFF;
+            //Console.WriteLine("r" + Rank + $"  Reset Affinity {proc.ProcessorAffinity:X}");
+
+            
+
+            
+
+
+            ilPSP.Environment.StdoutOnlyOnRank0 = true;
+
+
+
+            {
+                
+                // Get all environment variables
+                IDictionary environmentVariables = System.Environment.GetEnvironmentVariables();
+
+                
+
+                using (var stw = new StreamWriter("envvar" + Rank + ".txt")) {
+                    foreach (DictionaryEntry variable in environmentVariables) {
+                        stw.WriteLine($"Rank {Rank}: {variable.Key} = {variable.Value}");
+                    }
+
+                }
+
+            }
+
+            //SetOMPAffinity(Nothreads, Rank, MpiSz, false);
+            ilPSP.Environment.InitThreading(false, Nothreads);
+
+
+
+            int N = 5000;
+            var A = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
+            var B = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
+            var C = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
+
+            ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int ith) {
+                A[ith].Storage.FillRandom();
+                B[ith].Storage.FillRandom();
+                C[ith].Storage.FillRandom();
+            });
+
+            bool ompMkl = args.Contains("ompmkl");
+            bool tplMkl = args.Contains("tplmkl");
+            bool tpl = args.Contains("tpl");
+
+            if ((ompMkl || tpl || tplMkl) == false)
+                throw new Exception("you must turn something on");
+
+            var start = DateTime.Now;
+            var timeout = new TimeSpan(hours: 0, minutes: 50, seconds: 1);
+            Stopwatch s0 = new Stopwatch();
+            int cnt = 0;
+            while (true) {
+                if (DateTime.Now - start > timeout) {
+                    FinalizeMPI();
+                    return;
+                }
+
+
+                //cnt++;
+                //if (cnt > 2) {
+                //    Console.WriteLine("Now with proper affinity...");
+                //    SetAffinity(Nothreads, Rank);
+                //} else {
+                //    Console.WriteLine("Now with fucked-up affinity...");
+                //    SetAffinity(Nothreads, 0);
+                //}
+
+
+                s0.Reset();
+                s0.Start();
+                var AnrmLoc = new double[A.Length];
+                var BnrmLoc = new double[B.Length];
+                var CnrmLoc = new double[C.Length];
+
+                ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
+                    AnrmLoc[iThread] = A[iThread].L2Norm();
+                    BnrmLoc[iThread] = B[iThread].L2Norm();
+                    CnrmLoc[iThread] = C[iThread].L2Norm();
+                });
+
+                s0.Stop();
+                Console.WriteLine("   dnrm time: " + s0.Elapsed.TotalSeconds);
+
+                s0.Reset();
+                s0.Start();
+                var AnrmG = AnrmLoc.MPISum().Sum();
+                var BnrmG = BnrmLoc.MPISum().Sum();
+                var CnrmG = CnrmLoc.MPISum().Sum();
+
+                Console.WriteLine("A norm: " + AnrmG);
+                Console.WriteLine("B norm: " + BnrmG);
+                Console.WriteLine("C norm: " + CnrmG);
+                s0.Stop();
+                Console.WriteLine("   MPIsum time: " + s0.Elapsed.TotalSeconds);
+
+                if (ompMkl && Rank == 0) {
+                    Console.WriteLine($"   OMP MKL DGEMM {N}x{N}");
+                    s0.Reset();
+                    var st2 = DateTime.Now;
+                    s0.Start();
+                    A[0].GEMM(1.0, B[0], C[0], 0.1);
+                    s0.Stop();
+                    var en2 = DateTime.Now;
+                    Console.WriteLine($"   MKL time: {s0.Elapsed.TotalSeconds:0.##} ( {(en2 - st2).TotalSeconds:0.##}");
+                }
+                if (tplMkl) {
+                    Console.WriteLine($"   TPL MKL: {Nothreads}x Serial MKL-DGEMM {N}x{N}");
+                    s0.Reset();
+                    var st3 = DateTime.Now;
+                    s0.Start(); 
+                    ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
+                        A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
+                        A[iThread].Storage.ScaleV(0.01);
+
+
+                    });
+                    s0.Stop();
+                    var en3 = DateTime.Now;
+                    Console.WriteLine($"   TPL time: {s0.Elapsed.TotalSeconds:0.##} ( {(en3 - st3).TotalSeconds:0.##}");
+                }
+
+
+                if (tpl) {
+                    Console.WriteLine($"   TPL only: {Nothreads}x Serial Naive DGEMM {N}x{N}");
+                    s0.Reset();
+                    s0.Start();
+                    ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
+                        //A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
+                        //A[iThread].Storage.ScaleV(0.01);
+
+                        var _A = A[iThread];
+                        var _B = B[iThread];
+                        var _C = C[iThread];
+
+
+                        for (int iRow = 0; iRow < N; iRow++) {
+                            for (int iCol = 0; iCol < N; iCol++) {
+                                double Acc = _A[iRow, iCol]*0.1;
+                                for (int k = 0; k < N; k++)
+                                    Acc += _B[iRow, k]*_C[k, iCol];
+                                _A[iRow, iCol] = Acc;
+                            }
+                        }
+                        ilPSP.Utils.CPUAffinityWindows.HelloGroup();
+
+                    });
+                    s0.Stop();
+                    Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
+                }
+
+            }
+
+            */
+
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
                 return p;
             });
-            //*/
+        }
+
+        private static void SetOMPAffinity(int Nothreads, int Rank, int Size, bool Global) {
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
+
+            string omp_places;
+            if(!Global)
+                omp_places = $"{{{Nothreads*Rank}:{Nothreads}}}";
+            else
+                omp_places = $"{{0:{Nothreads*Size}}}";
+            System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
+            System.Environment.SetEnvironmentVariable("OMP_PLACES", omp_places);
+            Console.WriteLine($"R{Rank}: OMP_PLACES = {omp_places}");
+
+            ilPSP.Environment.StdoutOnlyOnRank0 = true;
         }
 
 
@@ -194,7 +400,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Spatial operator used by <see cref="UniSolver.Solve"/>
         /// </summary>
-        SpatialOperator LapaceIp;
+        DifferentialOperator LapaceIp;
 
         /// <summary>
         /// Includes assembly of the matrix.
@@ -206,7 +412,7 @@ namespace BoSSS.Application.SipPoisson {
                 // create operator
                 // ===============
                 BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
-                LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
+                LapaceIp = new DifferentialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
                 var flux = new ipFlux(base.Control.penalty_poisson, PoissonBcMap);
                 LapaceIp.EquationComponents["T"].Add(flux);
                 LapaceIp.EquationComponents["T"].Add(new RHSSource(this.RHS));
@@ -323,6 +529,15 @@ namespace BoSSS.Application.SipPoisson {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
 
+                int L = 1000;
+                double[] a = new double[L];
+                int[] a_acc = L.ForLoop(i => i);
+                double[] b = new double[L];
+                int[] b_acc = L.ForLoop(i => i);
+                a.AccV(1.0, b, acc_index: a_acc, b_index: b_acc);
+
+
+
                 if (Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
@@ -343,15 +558,72 @@ namespace BoSSS.Application.SipPoisson {
                 // -----------
                 //LastMatrix = this.LapaceIp.GetMatrix(T.Mapping, MgConfig: this.MgConfig);
                 //Console.WriteLine("Remember to re-activate solver !!!!!!!");
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, verbose: true, queryHandler: base.QueryHandler);
 
                 //long J = this.GridData.CellPartitioning.TotalLength;
                 //LastMatrix.SaveToTextFileSparse($"LaplaceMtx-J{J}.txt");
                 //double condNo = LastMatrix.condest();
                 //Console.WriteLine($"Matlab condition number estimate {J} cells: " + condNo);
-                
-               
-     
+
+                /*Stuff for testing OpenMP
+                {
+                    var mgOp = this.LapaceIp.GetMultigridOperator(T.Mapping, MgConfig: this.MgConfig);
+                    var rhs = new double[T.Mapping.LocalLength];
+                    rhs.FillRandom();
+
+
+                    var slvrs = new List<(int num,PARDISOSolver s)>();
+
+
+                    foreach (int numThreads in new int[] { 8, 2, 4, 8, 16, 4 }) {
+                        var _start = DateTime.Now;
+                        Console.WriteLine("First solve with " + numThreads + " threads...");
+                        var mtx = mgOp.OperatorMatrix;
+
+                        //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", numThreads.ToString());
+                        //System.Environment.SetEnvironmentVariable("MKL_NUM_THREADS", numThreads.ToString());
+                        //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
+
+                        ThreadBLAS.OMP_SET_NUM_THREADS(numThreads);
+
+                        var pardiso = new PARDISOSolver();
+                        pardiso.Parallelism = Parallelism.OMP;
+                        pardiso.CacheFactorization = false;
+                        pardiso.DefineMatrix(mtx);
+                        pardiso.Solve(new double[rhs.Length], rhs);
+
+
+                        slvrs.Add((numThreads, pardiso));
+
+                        Console.WriteLine($"done. (took {DateTime.Now - _start})");
+                    }
+
+
+                    var start = DateTime.Now;
+                    foreach(var kv in slvrs) {
+                        Console.WriteLine($"Now solving with {kv.num} threads:");
+                        ThreadBLAS.OMP_SET_NUM_THREADS(kv.num);
+
+                        int cnt = 0;
+                        while(DateTime.Now - start < new TimeSpan(hours:0, minutes:0, seconds:59)) {
+                            Console.Write($"Do run #{cnt} ... ");
+                            kv.s.Solve(new double[rhs.Length], rhs);
+                            Console.WriteLine($" done. {(DateTime.Now - start)} passed.");
+                        }
+
+                        start = DateTime.Now;
+                    }
+
+
+
+
+                    foreach (var s in slvrs)
+                        s.s.Dispose();
+                }
+                */
+
+
+
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);
@@ -433,9 +705,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        override public IDictionary<string,double> OperatorAnalysis() {
+        override public IDictionary<string,double> OperatorAnalysis(OperatorAnalysisConfig config) {
             using(new FuncTrace()) {
-                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, this.MgConfig); 
+                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, config, this.MgConfig); 
             }
         }
 

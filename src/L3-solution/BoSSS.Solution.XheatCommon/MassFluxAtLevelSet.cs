@@ -929,6 +929,99 @@ namespace BoSSS.Solution.XheatCommon {
     }
 
     /// <summary>
+    /// Interfaceflux Extension for jump conditions in Navierstokes with Massflux,
+    /// This is "Tangential Recoil pressure", only used when slip on interface, i.e., a velocity jump in tangential direction exists
+    /// </summary>
+    public class MassFluxAtLevelSet_Evaporation_StrongCoupling_Tangential : MassFluxAtLevelSet_StrongCoupling {
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_d">spatial direction</param>
+        /// <param name="_D">spatial dimension</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="physicalParameters"></param>
+        /// <param name="_movingMesh"></param>
+        public MassFluxAtLevelSet_Evaporation_StrongCoupling_Tangential(int _d, int _D, PhysicalParameters physicalParameters, ThermalParameters thermalParameters, bool _movingMesh, string phaseA, string phaseB)
+            : base(_D, thermalParameters, phaseA, phaseB) {
+
+            this.m_d = _d;
+            this.movingMesh = _movingMesh;
+            this.physParams = physicalParameters;
+            if (m_d >= m_D)
+                throw new ArgumentOutOfRangeException();
+        }
+
+        PhysicalParameters physParams;
+        bool movingMesh;
+        int m_d;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double[] Normal = cp.Normal;
+
+            double M = MassFlux(cp, Grad_uA, Grad_uB);
+
+            if (M == 0.0)
+                return 0.0;
+
+            // moving-mesh-contribution
+            // ========================
+            double Ret = 0.0;
+            double beta = physParams.slipI.IsInfinity() ? 0.0 : (physParams.mu_A + physParams.mu_B) / (2 * physParams.slipI);
+
+            if (movingMesh) {
+                throw new NotImplementedException();
+            } else {
+                var P = SurfaceProjection(Normal);
+                for (int i = 0; i < m_D; i++) {
+                    for (int j = 0; j < m_D; j++) {
+                        Ret -= M * P[i, j] * (uA[1 + j] - uB[1 + j]) * 0.5 * P[i, m_d] * (vA + vB); // using the velocity jump directly
+                    }
+                }
+                Debug.Assert(!(double.IsNaN(Ret) || double.IsInfinity(Ret)));
+            }
+
+            return Ret;
+        }
+
+        protected static double[,] SurfaceProjection(double[] Nsurf) {
+
+            int D = Nsurf.Length;
+            double[,] P = new double[D, D];
+
+            for (int d = 0; d < D; d++) {
+                for (int dd = 0; dd < D; dd++) {
+                    if (dd == d)
+                        P[d, dd] = (1 - Nsurf[d] * Nsurf[dd]);
+                    else
+                        P[d, dd] = (0 - Nsurf[d] * Nsurf[dd]);
+                }
+            }
+
+            return P;
+        }
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                if (this.movingMesh) return base.LevelSetTerms | TermActivationFlags.UxV;
+                else return base.LevelSetTerms | TermActivationFlags.UxV;
+            }
+        }
+
+        public override IList<string> ArgumentOrdering => base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+    }
+
+    /// <summary>
     /// Interfaceflux Extension for jump conditions in Heatequation with Massflux
     /// </summary>
     public class HeatFluxAtLevelSet_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
@@ -1127,14 +1220,15 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton : MassFluxAtLevelSet_StrongCoupling {
 
-        public ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(int _d, int _D, ThermalParameters thermParams, string phaseA, string phaseB)
+        public ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(int _d, int _D, PhysicalParameters physParams, ThermalParameters thermParams, string phaseA, string phaseB)
             : base(_D, thermParams, phaseA, phaseB) {
 
             this.m_d = _d;
+            this.physParams = physParams;
         }
 
         int m_d;
-
+        PhysicalParameters physParams;
 
         public override double InnerEdgeForm(ref CommonParams cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
@@ -1160,15 +1254,41 @@ namespace BoSSS.Solution.XheatCommon {
             LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
             LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
 
-            double Lambda = Math.Max(LambdaIn, LambdaOut);
-
+            double Lambda = 0.8 * Math.Max(LambdaIn, LambdaOut);
 
             double uJump = -M * ((1 / m_rhoA) - (1 / m_rhoB)) * cp.Normal[m_d];
 
+            double slip = 0.0; // if there is slip, the tangential velocity is not continuous anymore!
+            if(physParams.slipI != 0.0) {
+                var P = SurfaceProjection(cp.Normal);
+                double UxN = 0.0;
+                for (int j = 0; j < m_D; j++) {
+                    UxN += 0.5 * (U_Neg[j+1] + U_Pos[j+1]) * cp.Normal[j];
+                }
+                for (int i = 0; i < m_D; i++) {
+                    slip -= P[m_d, i] * (U_Neg[i+1] - U_Pos[i+1]) * (Lambda*(m_rhoA * vA - m_rhoB * vB) - UxN * 0.5 * (m_rhoA * vA + m_rhoB * vB));
+                }
+            }
 
-            double flx = Lambda * uJump * 0.8;
+            double flx = Lambda * uJump;
 
-            return flx * (m_rhoA * vA - m_rhoB * vB);
+            return flx * (m_rhoA * vA - m_rhoB * vB) + slip;
+        }
+        protected static double[,] SurfaceProjection(double[] Nsurf) {
+
+            int D = Nsurf.Length;
+            double[,] P = new double[D, D];
+
+            for (int d = 0; d < D; d++) {
+                for (int dd = 0; dd < D; dd++) {
+                    if (dd == d)
+                        P[d, dd] = (1 - Nsurf[d] * Nsurf[dd]);
+                    else
+                        P[d, dd] = (0 - Nsurf[d] * Nsurf[dd]);
+                }
+            }
+
+            return P;
         }
 
         public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.UxV;

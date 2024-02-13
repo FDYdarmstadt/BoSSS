@@ -33,6 +33,7 @@ using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using BoSSS.Solution.LoadBalancing;
+using Newtonsoft.Json.Linq;
 
 namespace BoSSS.Solution.Control {
 
@@ -41,7 +42,7 @@ namespace BoSSS.Solution.Control {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class AppControl {
+    public class AppControl : ICloneable {
 
         /// <summary>
         /// Returns the type of the solver main class;
@@ -1044,10 +1045,27 @@ namespace BoSSS.Solution.Control {
         public bool DynamicLoadBalancing_RedistributeAtStartup = false;
 
         /// <summary>
+        /// If true, a plot for agglomeration would be written in addition to ImmediatePlotPeriod
+        /// time-step starts
+        /// </summary>
+        [DataMember]
+        public bool PlotAgglomeration = false;
+
+        /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
         [DataMember]
-        public List<ICellCostEstimator> DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
+        public ICollection<ICellCostEstimator> DynamicLoadBalancing_CellCostEstimators { 
+            get {
+                return m_DynamicLoadBalancing_CellCostEstimators;
+            }
+        }
+
+        /// <summary>
+        /// implementation of <see cref="DynamicLoadBalancing_CellCostEstimators"/>
+        /// </summary>
+        [JsonIgnore]
+        protected List<ICellCostEstimator> m_DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
@@ -1127,8 +1145,10 @@ namespace BoSSS.Solution.Control {
                 Formatting = Formatting.Indented
 //                ObjectCreationHandling = ObjectCreationHandling.
             };
-                        
-            using(var tw = new StringWriter()) {
+
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
+
+            using (var tw = new StringWriter()) {
                 tw.WriteLine(this.GetType().AssemblyQualifiedName);
                 using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
                     formatter.Serialize(writer, this);
@@ -1170,21 +1190,22 @@ namespace BoSSS.Solution.Control {
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
             };
 
-
-            
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
+ 
             using(var tr = new StringReader(Str)) {
                 string typeName = tr.ReadLine();
                 Type ControlObjectType = Type.GetType(typeName);
 
+                
                 if(binder != null)
                     formatter.SerializationBinder = binder;
                 else
                     formatter.SerializationBinder = new KnownTypesBinder(ControlObjectType);
-
+                
 
                 using(JsonReader reader = new JsonTextReader(tr)) {
                     var obj = formatter.Deserialize(reader, ControlObjectType);
-
+                    
                     AppControl ctrl = (AppControl)obj;
                     return ctrl;
                 }
@@ -1203,6 +1224,10 @@ namespace BoSSS.Solution.Control {
               
             }
             */
+        }
+
+        public object Clone() {
+            return Deserialize(this.Serialize());
         }
 
         class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {

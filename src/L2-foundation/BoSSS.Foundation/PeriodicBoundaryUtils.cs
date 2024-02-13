@@ -13,7 +13,7 @@ namespace BoSSS.Foundation.Quadrature {
 
 
         /// <summary>
-        /// <see cref="ISpatialOperator.VectorFieldIndices"/>
+        /// <see cref="IDifferentialOperator.VectorFieldIndices"/>
         /// </summary>
         static public IEnumerable<int[]> GetVectorFieldIndices(IEnumerable<string> DomVar, int Dim) {
 
