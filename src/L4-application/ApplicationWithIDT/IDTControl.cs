@@ -295,6 +295,7 @@ namespace ApplicationWithIDT {
         public int[] TerminationMinNs { get; set; } = new int[] { 8, 8, 8, 8, 8 ,8,8,8,8};
         public double[] tALNRs { get; set; } = new double[] { 1.005, 1.005, 1.001, 1.01, 1.01, 1.01, 1.01, 1.01, 1.01 };
         public bool PartiallyFixLevelSetForSpaceTime { get; set; } = false;
+        public bool SaveMatrices { get; set; } = false;
     }
         /// <summary>
         /// this enum controls were we get the initial value from

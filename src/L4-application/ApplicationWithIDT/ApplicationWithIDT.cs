@@ -29,6 +29,7 @@ using BoSSS.Application.BoSSSpad;
 using CNS.Source;
 using System.Threading.Tasks;
 using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
+using static System.CommandLine.Help.DefaultHelpText;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -1010,9 +1011,39 @@ namespace ApplicationWithIDT {
             }
 
         }
-        
+
 
         #region Sub Methods of Optimization Algorithm
+        /// <summary>
+        /// simply sets a one one the diagonal for zero rows
+        /// </summary>
+        /// <param name="Mat"></param>
+        static public void SetDiagonaForZeroRows(MsrMatrix Mat)
+        {
+            //Console.WriteLine("Check: Computed System ...");
+            for (int rows = 0; rows < Mat.NoOfRows; rows++)
+            {
+                if (Mat.GetNoOfNonZerosPerRow(rows) == 0)
+                {
+                    Mat[rows, rows] = 1;
+                }
+            }
+        }
+        /// <summary>
+        /// simply sets a one one the diagonal for zero rows
+        /// </summary>
+        /// <param name="Mat"></param>
+        static public void SetDiagonaForZeroRows(BlockMsrMatrix Mat)
+        {
+            //Console.WriteLine("Check: Computed System ...");
+            for (int rows = 0; rows < Mat.NoOfRows; rows++)
+            {
+                if (Mat.GetNoOfNonZerosPerRow(rows) == 0)
+                {
+                    Mat[rows, rows] = 1;
+                }
+            }
+        }
         /// <summary>
         /// Solves the Linear System
         /// </summary>
@@ -1040,6 +1071,8 @@ namespace ApplicationWithIDT {
 #endif
             
             try {
+                //save mat files 
+
                 SimpleSolversInterface.Solve_Direct(LHS, stepIN, RHS);
             } catch(Exception e) {
 #if DEBUG
@@ -1615,6 +1648,27 @@ namespace ApplicationWithIDT {
             //ResidualVector.SaveToTextFile(path + $"\\ResVec_p{Control.SolDegree}_TS{CurrentStepNo}_agg.txt");
         }
 
+        public static BlockMsrMatrix GetBlockJacobi(BlockMsrMatrix M,CoordinateMapping uMap)
+        {
+            var Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+                   
+            int Jloc = uMap.LocalNoOfBlocks;
+            long j0 = uMap.FirstBlock;
+            MultidimensionalArray temp = null;
+            for (int j = 0; j < Jloc; j++)
+            {
+                long jBlock = j + j0;
+                int Nblk = uMap.GetBlockLen(jBlock);
+                long i0 = uMap.GetBlockI0(jBlock);
+
+                if (temp == null || temp.NoOfCols != Nblk)
+                    temp = MultidimensionalArray.Create(Nblk, Nblk);
+
+                M.ReadBlock(i0, i0, temp);
+                Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+            }
+            return Diag;
+        }
         /// <summary>
         /// Assembles Left- and Right Hand side 
         /// To do so 
@@ -1787,7 +1841,67 @@ namespace ApplicationWithIDT {
             RHS.ScaleV(-1.0);
 
 
+            if (Control.SaveMatrices)
+            {
+                // Save for preconditioner analysis
+                var uMap = new CoordinateMapping(ConservativeFields);
+                //SetDiagonaForZeroRows(Jr_U);
 
+                //create directory
+                var folder = "matrices";
+                if (!Directory.Exists(@".\" + folder))
+                {
+                    Directory.CreateDirectory(@".\" + folder);
+                }
+                folder= @".\"+folder + @"\";
+                
+                //Jr_U.SaveToTextFileSparse(folder + "dR0dU" + CurrentStepNo + ".txt");
+
+
+                Jr_phi.SaveToTextFileSparse(folder + "dR0dPhi" + CurrentStepNo + ".txt");
+                Jobj_phi.SaveToTextFileSparse(folder + "dR1dPhi" + CurrentStepNo + ".txt");
+                Jobj_U.SaveToTextFileSparse(folder + "dR1dU" + CurrentStepNo + ".txt");
+                RHS.SaveToTextFile(folder + "RHS" + CurrentStepNo + ".txt");
+
+                // get BlockMsrMatrix Version of Jacobian
+                var dR0dU = Jr_U.ToBlockMsrMatrix(uMap,uMap);
+                var dmy = new double[uMap.TotalLength];
+
+                //var JacobianBuilder = XSpatialOperator.GetFDJacobianBuilder(ConservativeFields, null, uMap);
+                //JacobianBuilder.ComputeMatrix(dR0dU, dmy);
+                //MultiphaseAgglomerator.ManipulateMatrixAndRHS(dR0dU, dmy, new CoordinateMapping(ConservativeFields), new CoordinateMapping(ConservativeFields));
+                //var dR0dU_MSR = dR0dU.ToMsrMatrix();
+                //SetDiagonaForZeroRows(dR0dU_MSR); 
+                dR0dU.SaveToTextFileSparse(folder + "dR0dU" + CurrentStepNo + ".txt");
+                //SetDiagonaForZeroRows(dR0dU);
+
+                //get Ilu and save
+                var dR0dU_BILU = CellILU.ComputeILU(0, dR0dU.ToBlockMsrMatrix(uMap, uMap));
+                var dR0dU_BJ = GetBlockJacobi(dR0dU, uMap);
+
+                var dR0dU_BILU_MSR = dR0dU_BILU.ToMsrMatrix(); var dR0dU_BJ_MSR = dR0dU_BJ.ToMsrMatrix();
+                //SetDiagonaForZeroRows(dR0dU_BILU_MSR); SetDiagonaForZeroRows(dR0dU_BJ_MSR);
+
+                dR0dU_BILU_MSR.SaveToTextFileSparse(folder + "dR0dU_BILU" + CurrentStepNo + ".txt");
+                dR0dU_BJ_MSR.SaveToTextFileSparse(folder + "dR0dU_BJ" + CurrentStepNo + ".txt");
+
+
+                //P0 projection and Restriction operator
+                var incOp=GetInclusionOperator(ConservativeFields, 0);
+                incOp.SaveToTextFileSparse(folder + "Q0" + CurrentStepNo + ".txt");
+                var projOp = GetProjectionOperator(LsTrk, ConservativeFields, GetGlobalQuadOrder(), 0);
+                projOp.SaveToTextFileSparse(folder + "P0" + CurrentStepNo + ".txt");
+
+                var info_keys = new string[] { "p", "nCells", "gamma",};
+                var pDeg = ConservativeFields[0].Basis.Degree;
+                var nCells = ConservativeFields[0].Basis.GridDat.iGeomCells.Count;
+                var gamma = Gammas.Last();
+                var info = new double[] { pDeg, nCells, gamma };
+
+                info.SaveToTextFile(folder + "info" + CurrentStepNo + ".txt");
+                info_keys.SaveToTextFile(folder + "info_keys" + CurrentStepNo + ".txt");
+            }
+            
             //RHS for Newton Approach 
             // double[] Jr_lambda_k= new double[noOfRowsB];
             // (J_r_comp.Transpose()).SpMV(1,lambda_k,0,Jr_lambda_k);
@@ -3370,6 +3484,111 @@ namespace ApplicationWithIDT {
             }
         }
         /// <summary>
+        /// Gets an Operator that should project a high-order solution to a low-order solution in the L2 sense
+        /// </summary>
+        /// <param name="LsTrk"></param>
+        /// <param name="xdgfieldToTest"></param>
+        /// <param name="order2Pick"></param>
+        /// <param name="pOrder"></param>
+        /// <returns></returns>
+        MsrMatrix GetProjectionOperator(LevelSetTracker LsTrk, XDGField[] fieldPhigh, int order2Pick, int pOrder)
+        {
+
+            var nVar = fieldPhigh.Length;
+            var fieldP = new XDGField[fieldPhigh.Length];
+            for (int i = 0; i < nVar; i++)
+            {
+                fieldP[i] = new XDGField(new XDGBasis(LsTrk, pOrder), "fieldP");
+            }
+            var highMap = new CoordinateMapping(fieldPhigh);
+            var lowMap = new CoordinateMapping(fieldP);
+            //get the MassMatrix
+            MassMatrixFactory massMatrixFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, order2Pick).MassMatrixFactory;
+            BlockMsrMatrix massMatrix = massMatrixFactory.GetMassMatrix(highMap, inverse: false);
+            BlockMsrMatrix MPlowPlow = massMatrixFactory.GetMassMatrix(lowMap, inverse: true);
+
+            //get the subMassMatrices of deg pOrder
+            MsrMatrix MPlowP;//Sub of Mass Mat with (rows pOrder ,column p)
+            {
+                //compute the lists of indices used by GetSubMatrix()
+                var rowIndices = new List<long>();
+                var colIndices = new List<long>();
+                {
+                    int MaxModeR = fieldPhigh[0].Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
+                    int MaxModer = fieldP[0].Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
+
+                    int iField;
+                    int jCell;
+                    int nMode;
+                    for (int iRow = 0; iRow < lowMap.TotalLength; iRow++)
+                    {
+                        lowMap.LocalFieldCoordinateIndex(iRow, out iField, out jCell, out nMode);
+                        double rMode = (double)nMode;
+                        int fac = (int)Math.Floor(rMode / MaxModer);
+                        int row = highMap.LocalUniqueCoordinateIndex(iField, jCell, nMode + fac * (MaxModeR - MaxModer));
+                        rowIndices.Add(row);
+                    }
+                    for (int i = 0; i < massMatrix.NoOfCols; i++)
+                    {
+                        colIndices.Add(i);
+                    }
+                }
+                //obtain the submatrix
+                MPlowP = massMatrix.ToMsrMatrix().GetSubMatrix(rowIndices, colIndices);
+            }
+
+            // Here we compute M_{p-1,p-1}^{-1} * M_{p-1,p}
+            return MsrMatrix.Multiply(MPlowPlow.ToMsrMatrix(), MPlowP);
+            
+        }
+
+        /// <summary>
+        /// Should give an inclusion operator that transforms a low order c_low into a high-order field c_high
+        /// A*c_low=c_high
+        /// </summary>
+        /// <param name="fieldPhigh"></param>
+        /// <param name="pOrder">order of c_low</param>
+        /// <returns></returns>
+        public MsrMatrix GetInclusionOperator(XDGField[] fieldPhigh, int pOrder)
+        {
+            var nVar = fieldPhigh.Length;
+            var fieldPlow = new XDGField[fieldPhigh.Length];
+            var copyHigh = new XDGField[fieldPhigh.Length]; 
+            for (int i = 0; i < nVar; i++)
+            {
+                fieldPlow[i] = new XDGField(new XDGBasis(LsTrk, pOrder), "fieldP");
+                copyHigh[i] = fieldPhigh[i].CloneAs();
+                copyHigh[i].Clear();
+            }
+            var cV_low = new CoordinateVector(fieldPlow);
+            var highMap = new CoordinateMapping(copyHigh);
+            var lowMap = new CoordinateMapping(fieldPlow);
+            // numbering of entries
+            for (int iRow = 0; iRow < lowMap.TotalLength; iRow++)
+            {
+                cV_low[iRow] = iRow + 1;
+            }
+            for (int i = 0; i < nVar; i++)
+            {
+                copyHigh[i].AccLaidBack(1.0, fieldPlow[i]);
+            }
+
+            var cV_high = new CoordinateVector(copyHigh);
+            MsrMatrix Inclusion = new MsrMatrix((int) highMap.TotalLength, (int) lowMap.TotalLength,1,1) ;//Sub of Mass Mat with (rows pOrder ,column p)
+            {
+                for (int iRow = 0; iRow < highMap.TotalLength; iRow++)
+                {
+                    int lowRow = (int) cV_high[iRow];
+                    if (lowRow> 0)
+                    {
+                        Inclusion[iRow, lowRow-1]=1;
+                    }
+                }
+            }
+            return Inclusion;
+
+        }
+        /// <summary>
         /// Computes the Projection onto the (p-1)-Polynomial space (relative to the input field)
         /// </summary>
         /// <param name="LsTrk"></param>
@@ -3386,7 +3605,6 @@ namespace ApplicationWithIDT {
 
                 //get the subMassMatrices of deg p-1
                 MsrMatrix MMPmin1P;//Sub of Mass Mat with (rows p-1 ,column p)
-                MsrMatrix MMPmin1Pmin1;
                 {
                     //compute the lists of indices used by GetSubMatrix()
                     var rowIndices = new List<long>();
@@ -3410,7 +3628,6 @@ namespace ApplicationWithIDT {
                         }
                     }
                     MMPmin1P = massMatrix.ToMsrMatrix().GetSubMatrix(rowIndices, colIndices);
-                    MMPmin1Pmin1 = massMatrix.ToMsrMatrix().GetSubMatrix(rowIndices, rowIndices);
                 }
 
                 // Here we compute M_{p-1,p-1}^{-1} * M_{p-1,p} * Coords(xdgfieldtoTest)
