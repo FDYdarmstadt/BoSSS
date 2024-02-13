@@ -307,7 +307,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.k_A = 1.0;
             C.ThermalParameters.k_B = 0.1;
-            C.ThermalParameters.hVap = evap ? 1000.0 : 0.0; // 0.0 means no evaporation -  for reference case!
+            C.ThermalParameters.hVap = evap ? 1000.0 : double.NegativeInfinity; // 0.0 means no evaporation -  for reference case!
             C.ThermalParameters.T_sat = 0.0;
 
             C.ThermalParameters.sliplength = 0.1;
