@@ -306,7 +306,7 @@ namespace XESF {
             //double density_Right = (gamma + 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) / ((gamma - 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) + 2.0);
             //double pressure_Right = 1.0 + (2.0 * gamma * (Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) - 1.0)) / (gamma + 1.0);
 
-            (double density_Right, double velocityX_normal_Rigth, double pressure_Right, double c_R, double Mach_normal_R) =CompressibleHelperFunc.ComputeNormalShockWaveRelations(density_Left, velocityX_Left * Math.Sin(shock_angle_radial), pressure_Right, Mach_Left* Math.Sin(shock_angle_radial), gamma);
+            (double density_Right, double velocityX_normal_Rigth, double pressure_Right, double c_R, double Mach_normal_R) =CompressibleHelperFunc.ComputeNormalShockWaveRelations(density_Left, velocityX_Left * Math.Sin(shock_angle_radial), pressure_Left, Mach_Left* Math.Sin(shock_angle_radial), gamma);
 
             // calculate Velocity via Transformation matrix
             MultidimensionalArray TransMat = MultidimensionalArray.Create(2, 2);
@@ -1220,7 +1220,7 @@ namespace XESF {
                 ReInitTols: ReInitTolsArray[iRIT],
                 fphitype:fphiTypes[iFphi]
                 ) ;
-                
+            c.SaveMatrices = true;
                 c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iProb{iProb}-iFlux{iflux}-FphiType{iFphi}-aRI_{aRI}");
             return c;
         }
