@@ -23,6 +23,7 @@ using XESF.Variables;
 using ApplicationWithIDT;
 using BoSSS.Solution.CompressibleFlowCommon.ShockFinding;
 using ApplicationWithIDT.OptiLevelSets;
+using BoSSS.Solution.Statistic.QuadRules;
 
 
 namespace XESF
@@ -48,6 +49,7 @@ namespace XESF
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args)
         {
+            //XESF.Tests.XESFTestProgram.XDGBowShockFromOldRun(tsNumber:161);
             //XESF.Tests.XESFTestProgram.XDGBowShockFromDB(5, 16, 1, 0);
             XESFMain._Main(args, false, () => new XESFMain());
         }
@@ -490,6 +492,90 @@ namespace XESF
 
         }
 
+        /// <summary>
+        /// Loads all fields in <see cref="m_IOFields"/> from the database
+        /// using the given <see cref="AppControl.RestartInfo"/> (<see cref="Control"/>)
+        /// </summary>
+        /// <param name="time">
+        /// On exit, contains the physical time represented by the time-step
+        /// </param>
+        /// <returns>
+        /// Returns the actual time-step number of the loaded time-step
+        /// </returns>
+        protected override TimestepNumber RestartFromDatabase(out double time)
+        {
+            using (var tr = new FuncTrace())
+            {
+
+                // obtain session timesteps:
+                var sessionToLoad = this.Control.RestartInfo.Item1;
+                ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
+
+                var all_ts = session.Timesteps;
+
+                // find timestep to load
+                Guid tsi_toLoad_ID;
+                tsi_toLoad_ID = GetRestartTimestepID();
+                ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
+
+                time = tsi_toLoad.PhysicalTime;
+
+
+                if (tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp)
+                {
+                    var tsiI = tp.GetInternal() as TimestepInfo;
+                    if (tsiI != null)
+                    {
+                        OnRestartTimestepInfo(tsiI);
+                    }
+                }
+
+                DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
+
+                if (((TimestepProxy)tsi_toLoad).GetInternal() is IDTTimeStepInfo IDTtsInfo)
+                {
+                    this.gamma = IDTtsInfo.Gamma;
+                    CurrentStepNo = (int)IDTtsInfo.TimeStepNumbers.Last();
+                    this.Gammas = IDTtsInfo.GammaHistory;
+                    this.Alphas = IDTtsInfo.AlphaHistory.ToList();
+                    this.ResNorms = IDTtsInfo.ResHistory.ToList();
+                    if (LevelSetOpti is SplineOptiLevelSet splineLs)
+                    {                       
+                        var LSParams = IDTtsInfo.LevelSetParams;
+                        if (LSParams.Length == splineLs.m_AllParams.Length)
+                        {
+                            for (int i = 0; i < LSParams.Length; i++)
+                            {
+                                splineLs.m_AllParams[i] = LSParams[i];
+                            }
+                            splineLs.Interpolate();
+                            splineLs.ProjectOntoLevelSet(LsTBO);
+
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
+                        }
+                    }
+                }
+                if (Control.IsTwoLevelSetRun)
+                {
+                    this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue);
+                    LsTBO = LevelSetTwo;
+                }
+                else
+                {
+                    // Level set one
+                    LsTBO = LevelSet;
+                }
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                LsTrk.UpdateTracker(CurrentStepNo);
+
+                time = CurrentStepNo;
+                // return
+                return tsi_toLoad.TimeStepNumber;
+            }
+        }
 
         /// <summary>
         /// Initializes multi-grid operator configuration object. The MGP is used only in the process of agglomeration so far to transform from solution to agglomeration space.
@@ -993,6 +1079,8 @@ namespace XESF
                     this.DerivedVariableToDoubleMap.Add(doubleVar, new double());
                 }
             }
+            #endregion
+            #region register fields
             #endregion
 
             #region register the derived Fields

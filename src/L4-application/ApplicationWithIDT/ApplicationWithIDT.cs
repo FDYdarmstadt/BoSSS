@@ -275,13 +275,24 @@ namespace ApplicationWithIDT {
             IGrid grid = null;
             switch(Control.getGridFrom) {
                 case GetGridFrom.DB:
-                grid = GridImporter.Import(Control.MeshPath);
-                var tmp = new byte[] { 1, 2, 3, 4, 5 };
-                for(int i = 0; i < Control.EdgTagNames.Length; i++) {
-                    grid.EdgeTagNames.Add(tmp[i], Control.EdgTagNames[i]);
-                }
-                grid.DefineEdgeTags(Control.EdgTagFunc);
-                return grid;
+                    if (Control.MeshPath != null)
+                    {
+                        grid = GridImporter.Import(Control.MeshPath);
+                        var tmp = new byte[] { 1, 2, 3, 4, 5 };
+                        for (int i = 0; i < Control.EdgTagNames.Length; i++)
+                        {
+                            grid.EdgeTagNames.Add(tmp[i], Control.EdgTagNames[i]);
+                        }
+                        grid.DefineEdgeTags(Control.EdgTagFunc);
+                        return grid;
+                    }
+                    else
+                    {
+                        grid = base.CreateOrLoadGrid();
+                        CompressibleEnvironment.Initialize(grid.SpatialDimension);
+                        return grid;
+                    }
+                
                 case GetGridFrom.GridFunc:
                 default:
                 // Optional: load grid from CNS calculation from which the shock level set has been reconstructed
@@ -368,6 +379,10 @@ namespace ApplicationWithIDT {
             //chose the Merit Function used in Globalization
             ChooseMeritFunction();
             ChooseFphiType();
+            ChooseOptProblem();
+            InitObjFields();
+            //Register them (also registers other fields)
+            RegisterFields();
         }
         /// <summary>
         /// Chooses the Optimization Problem that will be solved
@@ -390,11 +405,8 @@ namespace ApplicationWithIDT {
                 break;
                 default: 
                 throw new Exception("This OptProblem is not implemented yet");
-
             }
-            InitObjFields();
-            //Register them (also registers other fields)
-            RegisterFields();
+
         }
 
         /// <summary>
@@ -426,6 +438,8 @@ namespace ApplicationWithIDT {
             
 
         }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -619,7 +633,7 @@ namespace ApplicationWithIDT {
                     var testAgg = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false);
                     MultiphaseAgglomerator = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false); 
                 } catch {
-                    
+                    Console.WriteLine("Failed to update Agglomerator");
                 }
             }
         }
@@ -1302,25 +1316,36 @@ namespace ApplicationWithIDT {
                     dx_right = x + eps / 2;
                     dx_left = x - eps / 2;
 
-                    // apply right distortion
-                    LevelSetOpti.SetParam(n_param, dx_right);
-                    //project
-                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                    LsTrk.UpdateTracker(CurrentStepNo);
 
-                    //compute Objective
-                    Oproblem.EvalConsAndObj(obj_vec_eps, r_vec_eps, ConservativeFields);
+                    try
+                    {
+                        // apply right distortion
+                        LevelSetOpti.SetParam(n_param, dx_right);
+                        //project
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                        LsTrk.UpdateTracker(CurrentStepNo);
+                        //compute Objective
+                        Oproblem.EvalConsAndObj(obj_vec_eps, r_vec_eps, ConservativeFields);
 
-                    // do the same on the left
-                    LevelSetOpti.SetParam(n_param, dx_left);
-                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                    LsTrk.UpdateTracker(CurrentStepNo);
-                    Oproblem.EvalConsAndObj(obj_vec_eps2, r_vec_eps2, ConservativeFields);
-
+                        // do the same on the left
+                        LevelSetOpti.SetParam(n_param, dx_left);
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                        LsTrk.UpdateTracker(CurrentStepNo);
+                        Oproblem.EvalConsAndObj(obj_vec_eps2, r_vec_eps2, ConservativeFields);
+                    }
+                    catch
+                    {
+                        //reset
+                        LevelSetOpti.SetParam(n_param, x);
+                        LsTBO.CopyFrom(phi0backup);
+                        LsTrk.UpdateTracker(CurrentStepNo);
+                        //throw new Exception("Error in FD Computation");
+                    }
+                    
                     //Write value into the matrix
                     for(int iRow = 0; iRow < nCol_obj; iRow++) {
                         val = (obj_vec_eps[iRow] - obj_vec_eps2[iRow]) / eps;
-                        if(val != 0) {
+                        if(val != 0 && !val.IsNaNorInf()) {
                             Jobj[iRow, n_param] = val;
                         }
                         
@@ -1328,15 +1353,12 @@ namespace ApplicationWithIDT {
                     //IMutuableMatrixEx_Extensions.SaveToTextFile(Jobj,"Jobj.txt");
                     for(int iRow = 0; iRow < nCol_con; iRow++) {
                         val = (r_vec_eps[iRow] - r_vec_eps2[iRow]) / eps;
-                        if(val != 0) {
+                        if(val != 0 && !val.IsNaNorInf()) {
                             Jr[iRow, n_param] = val;
                         }
                     }
 
-                    //reset
-                    LevelSetOpti.SetParam(n_param, x);
-                    LsTBO.CopyFrom(phi0backup);
-                    LsTrk.UpdateTracker(CurrentStepNo);
+
                 }
                 return (Jr,Jobj);
             }
@@ -1630,7 +1652,17 @@ namespace ApplicationWithIDT {
             //***************************** */
             //obj_f_vec.SaveToTextFile("obj_f_vec_beforeFD.txt");
             //LsTBO.CoordinateVector.SaveToTextFile(@"C:\Users\sebastian\Documents\Forschung" + $"\\LSCoord_p{Control.SolDegree}_TS{CurrentStepNo}.txt");
-            (Jr_phi, Jobj_phi) = FD_LevelSet();
+            try
+            {
+                (Jr_phi, Jobj_phi) = FD_LevelSet();
+            }
+            catch
+            {
+                Console.WriteLine("Error in FD Level Set");
+                //AllthePossibleStepsPlot();
+                //throw new Exception("Error in FD Computation");
+            }
+            
 
             //***************************** */
             //// Agglomerate Jobj,Jr and obj_vec,r before multiplication
@@ -2425,6 +2457,114 @@ namespace ApplicationWithIDT {
             //    step_t.ScaleV(m_alpha);
             //}
 
+        }
+        public void AllthePossibleStepsPlot(double eps=1e-8)
+        {
+            var length_r = (int)ResidualMap.TotalLength;
+            //Plot the current state
+            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            Plot(0.0, 1000);
+            //Plot the possible steps
+            int i = 0;
+
+            int nCol_obj = Oproblem.GetObjLength(ConservativeFields);
+            int nCol_con = new CoordinateVector(ConservativeFields).Count;
+            int nRow = LevelSetOpti.GetLength();
+
+            MsrMatrix Jobj = new MsrMatrix(nCol_obj, nRow, 1, 1);
+            MsrMatrix Jr = new MsrMatrix(nCol_con, nRow, 1, 1);
+
+            var r_vec = new double[nCol_con];
+            var r_vec_eps = new double[nCol_con];
+            var r_vec_eps2 = new double[nCol_con];
+
+            var obj_vec = new double[nCol_obj];
+            var obj_vec_eps = new double[nCol_obj];
+            var obj_vec_eps2 = new double[nCol_obj];
+
+
+            double x;
+            double val;
+            double dx_right;
+            double dx_left;
+
+            // epsilon
+            //project OptiLevelSet onto XDGLevelSet
+            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            LsTrk.UpdateTracker(CurrentStepNo);
+            LevelSet phi0backup = new LevelSet(new Basis(LsTBO.GridDat.Grid, LsTBO.Basis.Degree), "LevelSetbackup");
+            phi0backup.CopyFrom(LsTBO);
+
+            //Evaluation of unperturbed
+            Oproblem.EvalConsAndObj(obj_vec, r_vec, ConservativeFields);
+
+
+            for (int n_param = 0; n_param < nRow; n_param++)
+            {
+
+                //skip loop if param is non changeable
+                if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
+                {
+                    double yMin = splineLS.y.Min(); //lower boundary of space time domain
+                    if (n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                    {
+                        continue;
+                    }
+
+                }
+
+                //compute distortions
+                x = LevelSetOpti.GetParam(n_param);
+                dx_right = x + eps / 2;
+                dx_left = x - eps / 2;
+
+                // apply right distortion
+                LevelSetOpti.SetParam(n_param, dx_right);
+                //project
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                
+                //compute Objective
+
+                try
+                {
+                    LsTrk.UpdateTracker(CurrentStepNo);
+                    ComputeResiduals();
+                    resetStep();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception at right fd of n_param = " +n_param + ": ");
+                    Console.WriteLine(e.ToString());
+                    Console.WriteLine("");
+                    resetStep();
+                }
+                Plot(0.0, 1000 + (n_param + 1));
+
+                // do the same on the left
+                LevelSetOpti.SetParam(n_param, dx_left);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                LsTrk.UpdateTracker(CurrentStepNo);
+
+                try
+                {
+                    LsTrk.UpdateTracker(CurrentStepNo);
+                    ComputeResiduals();
+                    resetStep();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception at left fd of n_param = " + n_param + ": ");
+                    Console.WriteLine(e.ToString());
+                    Console.WriteLine("");
+                    resetStep();
+                }
+                Plot(0.0, 1000 - (n_param + 1));
+
+                //reset
+                LevelSetOpti.SetParam(n_param, x);
+                LsTBO.CopyFrom(phi0backup);
+                LsTrk.UpdateTracker(CurrentStepNo);
+            }
         }
         public void AllthePossibleStepsPlot<Tin>(Tin step_t,double tau ) where Tin: IList<double> {
             var length_r = (int) ResidualMap.TotalLength; 
