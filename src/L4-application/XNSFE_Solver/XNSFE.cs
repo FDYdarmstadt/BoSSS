@@ -42,13 +42,28 @@ namespace BoSSS.Application.XNSFE_Solver {
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            ////Tests.StaticDropletTest.StaticDropletScalingTest(2);
-            //Tests.StaticDropletTest.StaticDropletConvergenceTest(4);
+            /*
+            InitMPI(args);
+            DeleteOldPlotFiles();
+            //Tests.StaticDropletTest.StaticDropletScalingTest(2);
+            //Tests.StaticDropletTest.StaticDropletConvergenceTest(4, true, 0.0, 80.0);
 
-            //FinalizeMPI();
-            //System.Environment.Exit(-111);
+            {
+                var C = Tests.StaticDropletTest.EvaporatigDropletTestControl(4, 4, true, 0.1, true, 1.0, 80.0);
+                //var C = StaticWedgeTestControl(deg, res, true, 0.1, evap, ls, theta);
+                C.SkipSolveAndEvaluateResidual = false;
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 2;
+
+                using (var solver = new XNSFE()) {
+                    solver.Init(C);
+                    solver.RunSolverMode();
+                }
+            }
+
+            FinalizeMPI();
+            System.Environment.Exit(-111);
+            */
 
             XNSFE._Main(args, false, delegate () {
                 var p = new XNSFE();
@@ -300,7 +315,11 @@ namespace BoSSS.Application.XNSFE_Solver {
                 if (config.isEvaporation) {
                     opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
-                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
+                    if (config.FixedInterfaceTemperature) {
+                        opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
+                    } else {
+                        opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
+                    }
                 }
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
