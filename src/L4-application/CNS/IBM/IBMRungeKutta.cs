@@ -51,11 +51,11 @@ namespace CNS.IBM {
 
         protected readonly CoordinateMapping boundaryParameterMap;
 
-        private SpatialOperator boundaryOperator;
+        private DifferentialOperator boundaryOperator;
 
         public IBMRungeKutta(
-            SpatialOperator standardOperator,
-            SpatialOperator boundaryOperator,
+            DifferentialOperator standardOperator,
+            DifferentialOperator boundaryOperator,
             CoordinateMapping fieldsMap,
             CoordinateMapping parametersMap,
             ImmersedSpeciesMap speciesMap,

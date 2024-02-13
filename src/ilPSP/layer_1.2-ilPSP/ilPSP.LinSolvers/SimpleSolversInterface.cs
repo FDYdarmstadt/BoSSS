@@ -60,12 +60,12 @@ namespace ilPSP.LinSolvers {
             double[] Residual = B.ToArray();
             if (object.ReferenceEquals(B, Residual))
                 throw new ApplicationException("ToArray does not work as expected.");
-            double RhsNorm = B.L2NormPow2().MPISum().Sqrt();
+            double RhsNorm = B.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
             double MatrixInfNorm = Matrix.InfNorm();
             Matrix.SpMV(-1.0, X, 1.0, Residual);
 
-            double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
-            double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
+            double ResidualNorm = Residual.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
+            double SolutionNorm = X.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
             double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
             double RelResidualNorm = ResidualNorm / Denom;
 
@@ -137,6 +137,7 @@ namespace ilPSP.LinSolvers {
             //*
 
             string LastError = null;
+            int count = 0;
             foreach (var f in SolverFallbackSeq) {
                 using (var slv = f()) {
                     //Console.WriteLine("Using solver: " + slv.GetType() + " ...");
@@ -148,9 +149,10 @@ namespace ilPSP.LinSolvers {
                         //Console.WriteLine("residual is fine.");
                         return;
                     } else {
-                        //Console.WriteLine("some error.");
+                        Console.Error.WriteLine($"Solve_Direct fail in fallback seq (#{count}): " + LastError);
                     }
                 }
+                count++;
             }
 
             if (LastError != null)
@@ -215,7 +217,7 @@ namespace ilPSP.LinSolvers {
                     double prev_invMinLambda = invMinLambda;
                     invMinLambda = tmp.MPI_InnerProd(Evect, Mtx.MPI_Comm);
                     double ChangeNorm = Math.Abs(invMinLambda - prev_invMinLambda) / Math.Max(invMinLambda.Abs(), prev_invMinLambda.Abs());
-                    //Console.WriteLine(i + " -- Change norm is: " + ChangeNorm);
+                    Console.WriteLine(i + " -- Change norm is: " + ChangeNorm);
 
                     // prepare for next loop:
                     var a = Evect;
@@ -272,7 +274,7 @@ namespace ilPSP.LinSolvers {
         static public double condestArnoldi(this IMutableMatrixEx Mtx, double tol = 1.0e-6) {
             (double lambdaMax, _) = MaximalEigen(Mtx, tol);
             (double lambdaMin, _) = MinimalEigen(Mtx, tol);
-            return lambdaMax / lambdaMin;
+            return Math.Abs(lambdaMax / lambdaMin);
         }
     }
 }

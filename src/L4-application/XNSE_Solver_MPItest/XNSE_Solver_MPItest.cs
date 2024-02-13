@@ -45,7 +45,7 @@ using MathNet.Numerics.Statistics;
 namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
-    /// Tests whether the XNSE solver (<see cref="XNSE_SolverMain"/>) also works MPI-parallel for 
+    /// Tests whether the XNSE solver (<see cref="XNSE{T}"/>) also works MPI-parallel for 
     /// non-trivial cases.
     /// </summary>
     [TestFixture]
@@ -65,6 +65,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+
+        
         [Test]
         static public void RotCube_GetSpeciesIDError() {
             // Tritt nur mit 4 cores auf !!!
@@ -424,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         [Test]
-        public static void EmptyMaskInSchwarz() {
+        public static void EmptyMaskInSchwarz([Values(SchwarzImplementation.PerProcess, SchwarzImplementation.PerProcess)] SchwarzImplementation schwarz) {
             //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
 
             // This test simulates bad initial distribution of void cells over ranks
@@ -433,7 +435,32 @@ namespace BoSSS.Application.XNSE_Solver {
             // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty 
             var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
             C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
-                TargetBlockSize = 1000
+                TargetBlockSize = 1000,
+                CoarseKickIn = 1000,
+                SchwarzImplementation = schwarz
+            };
+            C.GridPartType = GridPartType.Hilbert; // clusterHilbert is not suitable for XNSECostEstimator for this case as we have void cells
+            C.DynamicLoadBalancing_On = true;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
+
+            C.NoOfTimesteps = 50;
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        [Test]
+        public static void EmptyMaskInGMRES() {
+            //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
+
+            // This test simulates bad initial distribution of void cells over ranks
+            // on some processors, the local numbero of DOF's is zero,;
+            var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
+            C.LinearSolver = new Solution.AdvancedSolvers.PTGconfig() { 
+                pMaxOfCoarseSolver = 1
             };
             C.GridPartType = GridPartType.Hilbert; // clusterHilbert is not suitable for XNSECostEstimator for this case as we have void cells
             C.DynamicLoadBalancing_On = true;
@@ -452,15 +479,16 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         static void Main(string[] args) {
-
             BoSSS.Solution.Application.InitMPI();
-            //Debugger.Launch();
+            ilPSP.Environment.InitThreading(true, 4);
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.TestLoadBalancingAMRtrue();
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz();
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz(SchwarzImplementation.PerProcess);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();
             BoSSS.Solution.Application.FinalizeMPI();            
 
         }
@@ -1041,7 +1069,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 MaxSolverIterations = 100,
                 //MaxKrylovDim = 30,
                 TargetBlockSize = 10000,
-                //verbose = true
+                //verbose = true,
+                CoarseUsepTG = false,
+                CoarseKickIn = 10000
             };
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -1185,6 +1215,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 MaxSolverIterations = 100,
                 //MaxKrylovDim = 30,
                 TargetBlockSize = 10000,
+                CoarseKickIn = 10000
                 //verbose = true
             };
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;

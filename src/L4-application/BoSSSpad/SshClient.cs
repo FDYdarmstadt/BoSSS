@@ -11,6 +11,7 @@ using System.Threading;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.GridImport;
 using log4net;
+using ilPSP;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -24,16 +25,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// ctor
         /// </summary>
-        public SshClient(string ServerName, string Username, PrivateKeyFile pkf) {
+        public SshClient(string ServerName, string Username, PrivateKeyFile pkf, string sshclientExeToUse) {
             m_pkf = pkf;
             m_srvrname = ServerName;
             m_usrname = Username;
+            m_sshclientExeToUse = sshclientExeToUse;
         }
 
 
         abstract public void Dispose();
 
-        public SshClient(string ServerName, string Username, string pwd) {
+        public SshClient(string ServerName, string Username, string pwd, string sshclientExeToUse) {
             throw new NotSupportedException("TO DO");
         }
 
@@ -47,9 +49,21 @@ namespace BoSSS.Application.BoSSSpad {
             return connected;
         }
 
-        private PrivateKeyFile m_pkf;
-        private string m_usrname;
-        private string m_srvrname;
+        readonly private PrivateKeyFile m_pkf;
+        readonly private string m_usrname;
+        readonly private string m_srvrname;
+        readonly string m_sshclientExeToUse;
+
+
+        public string SshclientExeToUse {
+            get { 
+                if (m_sshclientExeToUse.IsEmptyOrWhite()) {
+                    return "ssh";
+                } else {
+                    return m_sshclientExeToUse;
+                }
+            }
+        }
 
         public string KeyFilePath {
             get { return m_pkf.Path; }
@@ -105,7 +119,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// ctor
         /// </summary>
-        public SlowSshClient(string ServerName, string Username, PrivateKeyFile pkf) : base(ServerName, Username, pkf) {
+        public SlowSshClient(string ServerName, string Username, PrivateKeyFile pkf, string sshClientExeToUse) : base(ServerName, Username, pkf, sshClientExeToUse) {
          
             PlatformID CurrentSys = System.Environment.OSVersion.Platform;
             string shell = "";
@@ -139,7 +153,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        public SlowSshClient(string ServerName, string Username, string pwd) : base(ServerName, Username, pwd) {
+        public SlowSshClient(string ServerName, string Username, string pwd, string sshClientExeToUse) : base(ServerName, Username, pwd, sshClientExeToUse) {
             throw new NotSupportedException("TO DO");
         }
 
@@ -213,7 +227,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         static Dictionary<string,int> instance_conter = new Dictionary<string,int>();
 
-        public SingleSessionSshClient(string ServerName, string Username, PrivateKeyFile pkf) : base(ServerName, Username, pkf) {
+        public SingleSessionSshClient(string ServerName, string Username, PrivateKeyFile pkf, string sshClientExeToUse) : base(ServerName, Username, pkf, sshClientExeToUse) {
             ConstructorCommon(ServerName, Username);
         }
 
@@ -234,7 +248,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        public SingleSessionSshClient(string ServerName, string Username, string pwd) : base(ServerName, Username, pwd) {
+        public SingleSessionSshClient(string ServerName, string Username, string pwd, string sshClientExeToUse) : base(ServerName, Username, pwd, sshClientExeToUse) {
             ConstructorCommon(ServerName, Username);
         }
 
@@ -412,8 +426,22 @@ namespace BoSSS.Application.BoSSSpad {
 
                 process = new Process();
 
-                process.StartInfo.FileName = "ssh";
-                process.StartInfo.Arguments = this.UserName + "@" + this.ServerName + " -oStrictHostKeyChecking=no -t -t";
+                process.StartInfo.FileName = base.SshclientExeToUse;
+                string keyfile;
+                if(base.KeyFilePath != null) {
+                    string delim;
+                    if(System.OperatingSystem.IsWindows()) {
+                        delim = "\"";
+                    } else {
+                        delim = "'";
+                    }
+
+                    keyfile = " -i " + delim + base.KeyFilePath + delim;
+                } else {
+                    keyfile = "";
+                }
+
+                process.StartInfo.Arguments = this.UserName + "@" + this.ServerName + keyfile + " -oStrictHostKeyChecking=no -t -t";
 
                 //process.StartInfo.FileName = @"C:\Users\flori\source\repos\SshBashWrapper\StupidClint\bin\Debug\net6.0\StupidClint.exe";
 
@@ -512,7 +540,7 @@ namespace BoSSS.Application.BoSSSpad {
                 
 
 
-                process.StartInfo.FileName = "ssh";
+                process.StartInfo.FileName = base.SshclientExeToUse;
                 process.StartInfo.Arguments = m_usrname + "@" + m_srvrname + " -oStrictHostKeyChecking=no -t -t";
 
                 //process.StartInfo.FileName = @"C:\Users\flori\source\repos\SshBashWrapper\StupidClint\bin\Debug\net6.0\StupidClint.exe";

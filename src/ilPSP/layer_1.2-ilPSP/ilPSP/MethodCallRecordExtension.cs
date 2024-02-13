@@ -73,7 +73,7 @@ namespace ilPSP {
         /// </summary>
         public static void GetMostExpensiveCallsDetails(TextWriter wrt, MethodCallRecord R, int cnt = 0) {
             int i = 1;
-            var mostExpensive = R.Flatten().OrderByDescending(cr => cr.ExclusiveMemoryIncrease);
+            var mostExpensive = R.Flatten().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
             foreach(MethodCallRecord cr in mostExpensive) {
                 wrt.Write("Rank " + i + ": \t");
                 wrt.Write($"{(cr.ExclusiveTimeFractionOfRoot * 100):F3}%\t{cr.TimeExclusive.TotalSeconds:0.##E-00}\t");

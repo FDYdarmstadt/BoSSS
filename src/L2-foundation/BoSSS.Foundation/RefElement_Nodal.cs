@@ -398,9 +398,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
             //FullMatrix MtxPolyAtNodes = new FullMatrix(NoOfPolys, NoOfNodes);
             //MtxPolyAtNodes.Set(PolyAtNodes);
 
-            Debug.Assert(!PolyAtNodes.ContainsNanOrInf(), "Nodal Poly generation, illegal value");
+            Debug.Assert(!IMatrixExtensions.ContainsNanOrInf(PolyAtNodes), "Nodal Poly generation, illegal value");
             var Sol = PolyAtNodes.GetInverse();
-            Debug.Assert(!Sol.ContainsNanOrInf(), "Nodal Poly generation, solution, illegal value");
+            Debug.Assert(!IMatrixExtensions.ContainsNanOrInf(Sol), "Nodal Poly generation, solution, illegal value");
 
             Modal2Nodal = MultidimensionalArray.Create(ortho_polys.Where(p => p.AbsoluteDegree <= deg).Count(), NoOfPolys);
             Nodal2Modal = MultidimensionalArray.Create(Modal2Nodal.NoOfCols, Modal2Nodal.NoOfRows);

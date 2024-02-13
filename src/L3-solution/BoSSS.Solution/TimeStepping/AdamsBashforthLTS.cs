@@ -143,7 +143,7 @@ namespace BoSSS.Solution.Timestepping {
         /// </summary>
         /// <param name="spatialOp">Spatial operator</param>
         /// <param name="Fieldsmap">Coordinate mapping for the variable fields</param>
-        /// <param name="Parameters">optional parameter fields, can be null if <paramref name="spatialOp"/> contains no parameters; must match the parameter field list of <paramref name="spatialOp"/>, see <see cref="BoSSS.Foundation.SpatialOperator.ParameterVar"/></param>
+        /// <param name="Parameters">optional parameter fields, can be null if <paramref name="spatialOp"/> contains no parameters; must match the parameter field list of <paramref name="spatialOp"/>, see <see cref="BoSSS.Foundation.DifferentialOperator.ParameterVar"/></param>
         /// <param name="order">LTS/AB order</param>
         /// <param name="numOfClusters">Amount of sub-grids/clusters to be used for LTS</param>
         /// <param name="timeStepConstraints">Time step constraints for later usage as metric</param>
@@ -156,7 +156,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="logging"></param>
         /// <param name="maxNumOfSubSteps"></param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, int maxNumOfSubSteps = 0, bool forceReclustering = false, bool logging = false, bool consoleOutput = false)
+        public AdamsBashforthLTS(DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, int maxNumOfSubSteps = 0, bool forceReclustering = false, bool logging = false, bool consoleOutput = false)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
 
             this.forceReclustering = forceReclustering;
@@ -199,7 +199,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Constructor for (A)LTS with IBM
         /// </summary>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, bool IBM, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, bool forceReclustering = false, bool logging = false, bool consoleOutput = false)
+        public AdamsBashforthLTS(DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, bool IBM, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, bool forceReclustering = false, bool logging = false, bool consoleOutput = false)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
 
             this.forceReclustering = forceReclustering;

@@ -13,7 +13,7 @@ namespace BoSSS.Solution.NSECommon {
     
     /// <summary>
     /// Upwind-based convection operator for the momentum equation;
-    /// nonlinear implementation, but supports <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// nonlinear implementation, but supports <see cref="DifferentialOperator.GetJacobiOperator"/>.
     /// </summary>
     public class UpwindMomentumConvection : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 
@@ -195,7 +195,7 @@ namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
     /// Upwind-based convection operator for the momentum equation;
-    /// nonlinear implementation, but supports <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// nonlinear implementation, but supports <see cref="DifferentialOperator.GetJacobiOperator"/>.
     /// </summary>
     public class LocalLaxFriedrichsConvection : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, ISpeciesFilter {
 

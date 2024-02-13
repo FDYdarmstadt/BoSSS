@@ -177,6 +177,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V2 : IList<double> {
 
             using(var tr = new FuncTrace()) {
+                ThisLevelTime.Start();
                 tr.InfoToConsole = false;
                 tr.Info("IterationCallback set? " + (this.IterationCallback != null));
                 tr.Info("Preconditioner is " + (this.Precond?.ToString() ?? "null"));
@@ -198,8 +199,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     bnrm2 = 1.0;
                 }
 
-                int Nloc = Matrix.RowPartitioning.LocalLength;
-                long Ntot = Matrix.RowPartitioning.TotalLength;
+                var RowPart = Matrix.RowPartitioning;
+                int Nloc = RowPart.LocalLength;
+                long Ntot = RowPart.TotalLength;
 
                 double[] r = new double[Nloc];
                 double[] z = new double[Nloc];
@@ -211,7 +213,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(this.Precond != null) {
                     r.Clear();
+                    StopwatchPrecond.Start();
                     this.Precond.Solve(r, z);
+                    StopwatchPrecond.Stop();
                 } else {
                     r.SetV(z);
                 }
@@ -242,12 +246,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[] cs = new double[m];
                 double[] sn = new double[m];
-                //double[] s = new double[m+1];
-                double[] e1 = new double[Nloc];
-                //if(Matrix.RowPartitioning.Rank == 0)
-                e1[0] = 1.0;
+                double[] s = new double[m + 2];
+                //double[] e1 = new double[Nloc];
+                //if (RowPart.i0 == 0 && Nloc > 0)
+                //    e1[0] = 1; // set standard-basis vector
 
-                double[] s = new double[Nloc], w = new double[Nloc], y;
+                double[] w = new double[Nloc], y;
                 double temp;
                 int iter;
                 int totIterCounter = 0;
@@ -260,7 +264,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     if(this.Precond != null) {
                         r.Clear();
+                        StopwatchPrecond.Start();
                         this.Precond.Solve(r, z);
+                        StopwatchPrecond.Stop();
                     } else {
                         r.SetV(z);
                     }
@@ -270,7 +276,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     V[0].SetV(r, alpha: (1.0 / norm_r));
 
                     //s = norm( r )*e1;
-                    s.SetV(e1, alpha: norm_r);
+                    //s.SetV(e1, alpha: norm_r);
+                    s.ClearEntries();
+                    s[0] = norm_r;
 
                     int i;
 
@@ -281,18 +289,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         #region Arnoldi procdure
 
                         //w = M \ (A*V(:,i));                         
-                        Matrix.SpMV(1.0, V[i - 1], 0.0, z);
+                        Matrix.SpMV(1.0, V[i -1], 0.0, z);
                         if(this.Precond != null) {
                             w.Clear();
+                            StopwatchPrecond.Start();
                             this.Precond.Solve(w, z);
+                            StopwatchPrecond.Stop();
                         } else {
                             w.SetV(z);
                         }
 
-                        for(int k = 1; k <= i; k++) {
-                            H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum(Matrix.MPI_Comm);
+
+                        
+                        for(int k = 0; k < i; k++) {
+                            //MPItime.Start();
+                            H[k, i - 1] = GenericBlas.InnerProd(w, V[k]).MPISum(Matrix.MPI_Comm); // quite costly MPI communication 
+                            //MPItime.Stop();
                             //w = w - H(k,i)*V(:,k);
-                            w.AccV(-H[k - 1, i - 1], V[k - 1]);
+                            w.AccV(-H[k, i - 1], V[k]);
                         }
 
                         double norm_w = w.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
@@ -311,6 +325,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                         //	 [cs(i),sn(i)] = rotmat( H(i,i), H(i+1,i) ); % form i-th rotation matrix
                         rotmat(out cs[i - 1], out sn[i - 1], H[i - 1, i - 1], H[i + 1 - 1, i - 1]);
+                        
+
                         temp = cs[i - 1] * s[i - 1]; //                       % approximate residual norm
                         H[i - 1, i - 1] = cs[i - 1] * H[i - 1, i - 1] + sn[i - 1] * H[i + 1 - 1, i - 1];
                         H[i + 1 - 1, i - 1] = 0.0;
@@ -318,10 +334,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         #endregion
 
                         // update the residual vector (s == beta in many pseudocodes)
-                        s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
+                        s[i] = -sn[i - 1] * s[i - 1];
                         s[i - 1] = temp;
-                        error = Math.Abs(s[i + 1 - 1]) / bnrm2;
-                        error2 = Math.Abs(s[i + 1 - 1]);
+                        error = Math.Abs(s[i]) / bnrm2;
+                        error2 = Math.Abs(s[i]);
 
                         // For Residual tracking, do not delete
                         /*
@@ -383,7 +399,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     if(this.Precond != null) {
                         r.Clear();
+                        StopwatchPrecond.Start();
                         this.Precond.Solve(r, z);
+                        StopwatchPrecond.Stop();
                     } else {
                         r.SetV(z);
                     }
@@ -410,6 +428,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // otherwise the Precond must be initialized very often.
                 //if (this.Precond is IDisposable)
                 //    (this.Precond as IDisposable).Dispose();
+
+                ThisLevelTime.Stop();
             }
         }
 
@@ -448,6 +468,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.NoOfIterations = 0;
             if(this.Precond != null)
                 this.Precond.ResetStat();
+            StopwatchPrecond.Reset();
+            ThisLevelTime.Reset();
+            //MPItime.Reset();
         }
 
 
@@ -461,15 +484,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Clone;
         }
 
+        //Stopwatch MPItime = new Stopwatch();
+        Stopwatch ThisLevelTime = new Stopwatch();
+        Stopwatch StopwatchPrecond = new Stopwatch();
+
         public void Dispose() {
-            if(this.Precond != null)
-                this.Precond.Dispose();
+            //if (m_MTracker != null) m_MTracker.Dispose();
+            if (this.m_mgop is MultigridOperator _mgop) {
+                int lv = _mgop.LevelIndex;
+                Console.WriteLine($"SoftGMRES lv {lv} - total runtime: {ThisLevelTime.Elapsed.TotalSeconds:F1} sec");
+                Console.WriteLine($"SoftGMRES lv {lv} - precond runtime: {StopwatchPrecond.Elapsed.TotalSeconds:F1} sec ({100*StopwatchPrecond.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");
+                //Console.WriteLine($"SoftGMRES lv {lv} - MPI routine runtime: {MPItime.Elapsed.TotalSeconds:F1} sec ({100*MPItime.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");
+            }
+
+            this.Precond?.Dispose();
+            this.m_mgop = null;
         }
 
         public long UsedMemory() {
             long Memory = 0;
-            if(Precond != null)
-                Memory += Precond.UsedMemory();
+            Memory += Precond?.UsedMemory() ?? 0;
             return Memory;
         }
     }

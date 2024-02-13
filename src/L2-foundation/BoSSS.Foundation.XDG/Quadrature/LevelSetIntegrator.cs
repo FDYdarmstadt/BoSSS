@@ -27,16 +27,10 @@ namespace BoSSS.Foundation.XDG {
     /// Integrates some vector field over the manifold defined by a zero
     /// level set. To do so, Gauss' theorem is applied to the surface integral
     /// over the level set. This results into
-    /// <list type="bullet">
-    ///     <item>
-    ///     a surface integral over the parts of the edges of the integration
-    ///     cell associated with species A and
-    ///     </item>
-    ///     <item>
-    ///     a volume integral over the sub-volume of the integration cell
-    ///     associated with species A
-    ///     </item>
-    /// </list>
+    /// - a surface integral over the parts of the edges of the integration
+    ///   cell associated with species A and
+    /// - a volume integral over the sub-volume of the integration cell
+    ///   associated with species A
     /// which will be evaluated by this class.
     /// </summary>
     public abstract class LevelSetIntegrator {
@@ -319,6 +313,10 @@ namespace BoSSS.Foundation.XDG {
                 m_ResultBuffer = new MultidimensionalArray(4);
             }
 
+            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new NotImplementedException("Seems to be used very rarely, multi-thread-parallelization is not implemented");
+            }
+
             /// <summary>
             /// Allocates memory for <see cref="m_WeightBuffer"/> and
             /// <see cref="m_ResultBuffer"/>
@@ -450,7 +448,10 @@ namespace BoSSS.Foundation.XDG {
                 m_WeightBuffer = new MultidimensionalArray(2);
             }
 
-            
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new NotImplementedException("Seems to be used very rarely, multi-thread-parallelization is not implemented");
+            }
+
 
             /// <summary>
             /// Allocates memory for <see cref="m_WeightBuffer"/>.

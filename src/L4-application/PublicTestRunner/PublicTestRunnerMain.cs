@@ -35,13 +35,13 @@ namespace PublicTestRunner {
         }
 
         public override void Fail(string message) {
-            Console.Error.WriteLine("Assertion Fail: " + message);
-            //Assert.Fail(message);
+            Console.Error.WriteLine("Assertion Fail: >>>" + message + "<<<");
+            Assert.Fail(message);
         }
 
         public override void Fail(string message, string detailMessage) {
-            Console.Error.WriteLine("Assertion Fail: " + message + ": " + ", detailed message is: " + detailMessage);
-            //Assert.Fail(message + ", details: " + detailMessage);
+            Console.Error.WriteLine("Assertion Fail: >>>" + message + ": " + ", detailed message is: " + detailMessage);
+            Assert.Fail(message + ", details: " + detailMessage);
         }
     }
 
@@ -146,7 +146,8 @@ namespace PublicTestRunner {
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
                         typeof(HangingNodesTests.HangingNodesTestMain),
-                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain)
+                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain),
+                        typeof(IntersectingLevelSetTest.AllUpTest),
                     };
             }
         }
@@ -170,8 +171,8 @@ namespace PublicTestRunner {
             get {
                 return new (Type type, int NoOfProcs)[] {
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
-                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 3),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4),
                         (typeof(MPITest.Program), 4),
                         //(typeof(HangingNodesTests.HangingNodesTestMain), 2), // fk, 29mar22: parallel runs executed directly in `release.yml` to allow serial-parallel comparison
@@ -354,8 +355,9 @@ namespace PublicTestRunner {
             return ret.ToArray();
         }
 
-        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
+        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test, int?[] NumThreads) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
             var r = new List<string>(); // full test names
+            var n = new List<int?>(); // number of threads for test
             var l = new List<string>(); // short names 
             var d = new Dictionary<string, string[]>(); // pairs of (full test name | files for the test)
 
@@ -367,6 +369,18 @@ namespace PublicTestRunner {
                 if (t.IsClass) {
                     var mmm = t.GetMethods();
 
+                    // first, seach for num_threads defined for the entire class...
+                    int? num_threads_class = null;
+                    if (t.GetCustomAttribute(typeof(NUnitNumThreads)) != null) {
+                        var nta = t.GetCustomAttribute(typeof(NUnitNumThreads)) as NUnitNumThreads;
+                        //if (dc != null)
+                        //    throw new NotSupportedException("Palacing a `NUnitFileToCopyHackAttribute` together with `SetUpAttribute` or `OneTimeSetUpAttribute` is not supported (anymore).");
+
+                        num_threads_class = nta.NumThreads;
+                    }
+
+
+
                     foreach (var m in mmm) { // loop over methods in type...
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
@@ -375,6 +389,7 @@ namespace PublicTestRunner {
                             continue;
 
                         var s = new HashSet<string>();
+
 
 
                         if (m.GetCustomAttribute(typeof(SetUpAttribute)) != null
@@ -390,10 +405,21 @@ namespace PublicTestRunner {
                             }
                         }
 
+                        // search int num_threads is "overridden" for the respective test
+                        int? num_threads = num_threads_class;
+                        if (m.GetCustomAttribute(typeof(NUnitNumThreads)) != null) {
+                            var nta = m.GetCustomAttribute(typeof(NUnitNumThreads)) as NUnitNumThreads;
+                            //if (dc != null)
+                            //    throw new NotSupportedException("Palacing a `NUnitFileToCopyHackAttribute` together with `SetUpAttribute` or `OneTimeSetUpAttribute` is not supported (anymore).");
+
+                            num_threads = nta.NumThreads;
+                        }
+
 
                         //bool testAdded = false;
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." + m.Name);
+                            n.Add(num_threads);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
                             //Console.WriteLine("Added: " + r.Last());
                             //testAdded = true;
@@ -418,7 +444,12 @@ namespace PublicTestRunner {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
-                            
+
+                            //if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                            //    s.Add("BOSSS_RUNTESTFROMBACKUP.txt");
+                            //}
+
+
 
                             d.Add(r.Last(), s.ToArray());
                         }
@@ -427,13 +458,13 @@ namespace PublicTestRunner {
             }
 
 
-            // add assmbly-global files for test, check uniqueness of filenames
+            // add assembly-global files for test, check uniqueness of filenames
             foreach(var testname in d.Keys) {
                 var s = new List<string>();
                 s.AddRange(d[testname]);
                 s.AddRange(g);
 
-                List<string> FileNamesOnly = new List<string>();
+                List<string> FileNamesOnly = new();
                 foreach (string filePath in s) {
                     string fileName = Path.GetFileName(filePath);
                     if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
@@ -443,10 +474,11 @@ namespace PublicTestRunner {
 
                 d[testname] = s.ToArray();
             }
-            
 
+            if (n.Count != r.Count)
+                throw new ApplicationException("internal error");
 
-            return (r.Count, r.ToArray(), l.ToArray(), d);
+            return (r.Count, r.ToArray(), l.ToArray(), d, n.ToArray());
         }
 
         /*
@@ -728,7 +760,8 @@ namespace PublicTestRunner {
         }
 
         /// <summary>
-        /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
+        /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE);
+        /// appending of the user name avoids "unauthorized access"-exceptions
         /// </summary>
         static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName);
 
@@ -795,6 +828,11 @@ namespace PublicTestRunner {
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile("JobManagerRun-" + DateNtime);
 
+            bool I_StartedMinibatch = false;
+            if(bpc is MiniBatchProcessorClient) {
+                I_StartedMinibatch = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: true);
+            }
+
             
             int returnCode = 0;
             using(var tr = new FuncTrace()) {
@@ -849,7 +887,7 @@ namespace PublicTestRunner {
 
 
                 // collection for all tests:
-                var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
+                var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs, int? NumThreads)>();
                 
                 // Find all serial tests:
                 {
@@ -863,7 +901,7 @@ namespace PublicTestRunner {
                                         Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
                                         break;
                                     }
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1, allTst4Assi.NumThreads[iTest]));
                                 }
                             }
                         }
@@ -887,7 +925,7 @@ namespace PublicTestRunner {
                                         break;
                                     }
 
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs, allTst4Assi.NumThreads[iTest]));
                                 }
                             }
                         }
@@ -933,7 +971,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
+                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, t.NumThreads, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1024,7 +1062,7 @@ namespace PublicTestRunner {
                                             foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
                                                 string dest = Path.Combine(CurrentDir, n);
-                                                File.Copy(orig, dest);
+                                                File.Copy(orig, dest, true);
                                             }
                                         } catch(IOException ioe) {
                                             Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
@@ -1137,6 +1175,10 @@ namespace PublicTestRunner {
                 Console.WriteLine($"{DateTime.Now}");
             }
 
+
+            if(I_StartedMinibatch)
+                MiniBatchProcessor.Server.SendTerminationSignal(WaitForOtherJobstoFinish: false);
+
             CloseTracing();
 
             return returnCode;
@@ -1243,13 +1285,14 @@ namespace PublicTestRunner {
             }
         }
 
-        static public (Job j, string resultFile, string name) JobManagerRun(
+        static public (Job j, string resultFile, string name) SubmitJob(
             Assembly a,
             string TestName, string Shortname,
             BatchProcessorClient bpc,
             string[] AdditionalFiles,
             string prefix,
             int NoOfMpiProcs,
+            int? NumThreads,
             string nativeOverride,
             string TestRunnerRelPath,
             int cnt) {
@@ -1292,10 +1335,16 @@ namespace PublicTestRunner {
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
                 }
+                if(BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
+                    j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_RUNTESTFROMBACKUP.txt"), "BOSSS_RUNTESTFROMBACKUP.txt"));
+                }
                 if (nativeOverride != null) {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
                 }
                 j.NumberOfMPIProcs = NoOfMpiProcs;
+                if(NumThreads != null) {
+                    j.NumberOfThreads = NumThreads.Value;
+                }
                 if(TestRunnerRelPath != null)
                     j.EntryAssemblyRedirection = TestRunnerRelPath;
                 j.Activate(bpc);
@@ -1328,16 +1377,21 @@ namespace PublicTestRunner {
         /// - otherwise (e.g. if tests are deployed to a HPC cluster) it does not copy anything and we hope that all required files are in place.
         /// </remarks>
         static void MegaMurxPlusPlus(Assembly a, string filter) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 var r = GetTestsInAssembly(a, filter);
 
                 var dir = Directory.GetCurrentDirectory();
+                tr.Info("Current dir: " + dir);
 
                 foreach (var t in r.tests) { 
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
+                        tr.Info("Origin file: " + fOrigin);
                         if (File.Exists(fOrigin)) {
                             string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
+                            tr.Info("Destination file: " + fDest);
                             File.Copy(fOrigin, fDest, true);
+                        } else {
+                            tr.Info($"Origin file {fOrigin} NOT FOUND!");
                         }
                     }
                 }
@@ -1396,6 +1450,12 @@ namespace PublicTestRunner {
                     if(!FilterTestAssembly(a, AssemblyFilter)) {
                         continue;
                     }
+
+                    if(GetTestsInAssembly(a, AssemblyFilter).NoOfTests <= 0) {
+                        Console.WriteLine("Matching Assembly search string, but none of the methods match. (wrong wildcard?)");
+                        continue;
+                    }
+
                     Console.WriteLine("Matching assembly: " + a.Location);
                     ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
@@ -1404,24 +1464,31 @@ namespace PublicTestRunner {
                         MegaMurxPlusPlus(a, AssemblyFilter);
                     }
 
+
+
+
                     Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     Console.WriteLine("All Here.");
 
                     int r;
-                    using(new BlockTrace("RUNNING_TEST", ftr)) {
+                    using(var bt = new BlockTrace("RUNNING_TEST", ftr)) {
                         var tr = new TextRunner(a);
                         r = tr.Execute(args);
+                        //var summary = tr.Summary;
+                        //File.WriteAllText("a.txt", summary.ToString());
+                        //ftr.Info("Test summary: " + summary.ToString());
                     }
 
                     using(var bt = new BlockTrace("StdOut/StdErr reset", ftr)) {
                         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
                         Console.SetError(new StreamWriter(Console.OpenStandardError()));
 
-
+                        
 
                         bt.Info("Waiting for all processors to catch up AFTER running test(s)...");
-                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD, 10*60, true); // 10 Minute timeout for all processors to arrive.
                         bt.Info("All Here.");
 
                         
@@ -1432,10 +1499,32 @@ namespace PublicTestRunner {
                         for(int rnk = 0; rnk < all_rS.Length; rnk++) {
                             bt.Info($"Rank {rnk}: NUnit returned code " + r);
                         }
-                        
+
+
+                        {
+                            string currentDirectory = Directory.GetCurrentDirectory();
+                            string[] pltFiles = Directory.GetFiles(currentDirectory, "*.plt");
+
+                            long totalSizeBytes = 0;
+
+                            foreach (string pltFile in pltFiles) {
+                                FileInfo fileInfo = new FileInfo(pltFile);
+                                totalSizeBytes += fileInfo.Length;
+                            }
+
+                            double totalSizeGigabytes = totalSizeBytes / (1024.0 * 1024 * 1024);
+
+                            if (totalSizeGigabytes > 2.0) {
+                                bt.Error("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                                //throw new IOException("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                            }
+                        }
+
                     }
 
+                    ftr.Info($"failstate before most recent code {ret} (false means OK, r = {r})");
                     ret = ret | (r != 0);
+                    ftr.Info($"failstate after most recent code {ret} (false means OK, r = {r})");
                 }
 
                 {
@@ -1449,6 +1538,7 @@ namespace PublicTestRunner {
 
 
                 Console.WriteLine();
+                ftr.Info($"failstate all tests: {ret} (false means OK)");
                 return ret ? -1 : 0;
             }
         }
@@ -1489,6 +1579,9 @@ namespace PublicTestRunner {
         }
 
 
+
+        static public bool BOSSS_RUNTESTFROMBACKUP_ENVVAR = false;
+
         /// <summary>
         /// the real main-function
         /// </summary>
@@ -1526,9 +1619,17 @@ namespace PublicTestRunner {
                 return -7777;
             }
 
+            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
+                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Hello, Suckers!");
+                Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
+            }
+
             BoSSS.Solution.Application.InitMPI();
 
-           
+            Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
+            ilPSP.Environment.DisableOpenMP();
+            
             int ret = -1;
             switch (args[0]) {
                 case "nunit3":
@@ -1607,6 +1708,8 @@ namespace PublicTestRunner {
                 break;
             }
 
+
+            Console.WriteLine("ret b4 finalize = " + ret);
             csMPI.Raw.mpiFinalize();
 
 
@@ -1620,7 +1723,7 @@ namespace PublicTestRunner {
             //for(int i = 0; i < args.Length; i++) {
             //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
             //}
-
+            //Debugger.Launch();
 
             try {
                 return _Main(args, new PublicTests());
@@ -1628,8 +1731,25 @@ namespace PublicTestRunner {
                 // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)
                 // seems to silently fail on all exceptions thrown after MPI init.
 
-                
-                Console.WriteLine(e);
+                int rank, size;
+                if (csMPI.Raw.Initialized()) {
+                    csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+                    csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                } else {
+                    rank = 0;
+                    size = 0;
+                }
+
+                Console.WriteLine("Got some exception: " + e);
+
+                using (var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + "." + rank + "of" + size + ".txt")) {
+                    stw.WriteLine("Got some exception: " + e);
+                    stw.WriteLine(e.StackTrace);
+                    stw.Flush();
+                    stw.Close();
+                }
+
+
                 return -667;
             }
         }

@@ -33,7 +33,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// Evaluation or linearization/matrix assembly of the operator;
-    /// this delegate is, so-to-say, the connection between the used <see cref="ISpatialOperator"/> and its evaluation/linearization,
+    /// this delegate is, so-to-say, the connection between the used <see cref="IDifferentialOperator"/> and its evaluation/linearization,
     /// which can be used to build a <see cref="MultigridOperator"/>
     /// </summary>
     /// <param name="Matrix"></param>
@@ -53,14 +53,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// As a recipe, this function does:
     /// 1. compute linearization/evaluation at the current state , i.e. 
     /// 1.1 in the case of `Linearization == true`,
-    ///     compute the operator matrix (<see cref="ISpatialOperator.LinearizationHint"/>, <see cref="ISpatialOperator.GetMatrixBuilder"/>, <see cref="ISpatialOperator.GetJacobiOperator"/>, <see cref="ISpatialOperator.GetFDJacobianBuilder"/>)
+    ///     compute the operator matrix (<see cref="IDifferentialOperator.LinearizationHint"/>, <see cref="IDifferentialOperator.GetMatrixBuilder"/>, <see cref="IDifferentialOperator.GetJacobiOperator"/>, <see cref="IDifferentialOperator.GetFDJacobianBuilder"/>)
     /// 1.2 in the case of `Linearization == false`,
-    ///     evaluate the operator (<see cref="ISpatialOperator.GetEvaluatorEx"/>)
-    /// 2. add timestepping terms (<see cref="ISpatialOperator.TemporalOperator"/>), also depending on the actual timestepping scheme (e.g. BDF or Runge-Kutta)
+    ///     evaluate the operator (<see cref="IDifferentialOperator.GetEvaluatorEx"/>)
+    /// 2. add timestepping terms (<see cref="IDifferentialOperator.TemporalOperator"/>), also depending on the actual timestepping scheme (e.g. BDF or Runge-Kutta)
     /// 3. Compute the mass matrix
     /// 4. perform the agglomeration (<see cref="LevelSetTracker.GetAgglomerator"/>
     /// </remarks>
-    public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out ISpatialOperator OberFrickelHack);
+    public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out IDifferentialOperator OberFrickelHack);
 
 
     /// <summary>
@@ -83,12 +83,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         protected OperatorEvalOrLin m_AssembleMatrix;
 
 
-        ISpatialOperator m_AbstractOperator;
+        IDifferentialOperator m_AbstractOperator;
 
         /// <summary>
         /// spatial operator provided by <see cref="m_AssembleMatrix"/>;
         /// </summary>
-        protected ISpatialOperator AbstractOperator {
+        protected IDifferentialOperator AbstractOperator {
             get {
                 return m_AbstractOperator;
             }
@@ -246,7 +246,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <param name="Output"></param>
         /// <param name="HomotopyValue">
-        /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+        /// <see cref="IDifferentialOperator.CurrentHomotopyValue"/>
         /// </param>
         /// <param name="ApplyRef">
         /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="MultigridOperator.FreeMeanValue"/>
@@ -348,7 +348,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="CurrentState">input, linearization point</param>
         /// <param name="U0">output, linearization point, after external update, transformed back</param>
         /// <param name="HomotopyValue">
-        /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+        /// <see cref="IDifferentialOperator.CurrentHomotopyValue"/>
         /// </param>
         protected void Update(IEnumerable<DGField> CurrentState, double[] U0, double HomotopyValue) {
 
@@ -362,7 +362,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="CurrentState">linearization point</param>
         /// <param name="HomotopyValue">
-        /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+        /// <see cref="IDifferentialOperator.CurrentHomotopyValue"/>
         /// </param>
         protected void UpdateLinearization(IEnumerable<DGField> CurrentState, double HomotopyValue) {
             if (!(this.ProblemMapping.BasisS.Count == CurrentState.Count()))
@@ -371,7 +371,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             SetHomotopyValue(HomotopyValue);
 
             // the real call:
-            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out double[] OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), true, out ISpatialOperator abstractOperator);
+            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out double[] OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), true, out IDifferentialOperator abstractOperator);
             AbstractOperator = abstractOperator;
 
             // blabla:
@@ -396,7 +396,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// This method tests that, 
-        /// if any entry in <see cref="ISpatialOperator.FreeMeanValue"/> is true, 
+        /// if any entry in <see cref="IDifferentialOperator.FreeMeanValue"/> is true, 
         /// a change in the mean/average value of the respective variable must **not** have any effect on the residual.
         /// </summary>
         public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {

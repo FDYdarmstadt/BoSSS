@@ -31,6 +31,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -47,39 +48,118 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Performs a mode decay analysis (<see cref="Waterfall(bool, bool, int)"/>) on this solver.
         /// </summary>
-        public static Dictionary<string,Plot2Ddata> WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
-            int L = mgOperator.BaseGridProblemMapping.LocalLength;
+        public static Dictionary<string,Plot2Ddata> WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix AgglomMassMatrix) {
 
-            Console.WriteLine($"Waterfall analysis for {mgOperator.GridData.CellPartitioning.TotalLength} cells, {L} DOFs...");
+            ConvergenceObserver co;
 
-            var RHS = new double[L];
-            var exSol = new double[L];
 
-            ConvergenceObserver co = new ConvergenceObserver(mgOperator, MassMatrix, exSol);
-            var bkup = linearSolver.IterationCallback;
-            linearSolver.IterationCallback = co.IterationCallback;
+            if (mgOperator.LevelIndex == 0) {
+                int L = mgOperator.BaseGridProblemMapping.LocalLength;
 
-            var pc = linearSolver as IProgrammableTermination;
-            var termBkup = pc?.TerminationCriterion;
-            //if (pc != null) {
-            //    pc.TerminationCriterion = (iter, R0_l2, R_l2) => {
-            //        return (R_l2 / R0_l2 > 1e-8) && (iter < 1500);
-            //    };
-            //}
+                Console.WriteLine($"Waterfall analysis for {mgOperator.GridData.CellPartitioning.TotalLength} cells, {L} DOFs...");
 
-            // use a random init for intial guess; if RHS = 0, then the exact solution is 0, so the error for approximate solution x_i in iteration i is (x_i - 0).
-            double[] x0 = GenericBlas.RandomVec(L, 0);
+                // use a random init for intial guess; if RHS = 0, then the exact solution is 0, so the error for approximate solution x_i in iteration i is (x_i - 0).
+                double[] x0 = GenericBlas.RandomVec(L, 0);
+                var RHS = new double[L];
+                var exSol = new double[L];
 
-            // execute solver 
-            linearSolver.Init(mgOperator);
-            mgOperator.UseSolver(linearSolver, x0, RHS);
+                co = new ConvergenceObserver(mgOperator, AgglomMassMatrix, exSol);
+                var bkup = linearSolver.IterationCallback;
+                linearSolver.IterationCallback = co.IterationCallback;
 
-            // reset and return
-            linearSolver.IterationCallback = bkup;
-            if(termBkup != null) {
-                pc.TerminationCriterion = termBkup;
+                var pc = linearSolver as IProgrammableTermination;
+                var termBkup = pc?.TerminationCriterion;
+                if (pc != null) {
+                    pc.TerminationCriterion = delegate(int iter, double R0_l2, double R_l2) {
+                        bool bNotTerminate = true;
+                        bool bSuccess = false;
+
+                        if(R_l2 < R0_l2*1e-8) {
+                            bNotTerminate = false;
+                            bSuccess = true;
+                            return (bNotTerminate, bSuccess);
+
+                        } 
+                        
+                        if(iter > 19) {
+                            bNotTerminate = false;
+                            bSuccess = false;
+                            return (bNotTerminate, bSuccess);
+                        }
+
+                        //return (R_l2 / R0_l2 > 1e-8) && (iter < 1500);
+
+                        return (bNotTerminate, bSuccess);
+                    };
+                }
+
+                
+
+                // execute solver 
+                linearSolver.Init(mgOperator);
+                mgOperator.UseSolver(linearSolver, x0, RHS);
+
+                // reset and return
+                linearSolver.IterationCallback = bkup;
+                if (termBkup != null) {
+                    pc.TerminationCriterion = termBkup;
+                }
+                //var p = co.PlotIterationTrend(true, false, true, true);
+            } else {
+                int L0 = mgOperator.BaseGridProblemMapping.LocalLength;
+                int L = mgOperator.Mapping.LocalLength;
+
+                Console.WriteLine($"Waterfall analysis for {mgOperator.GridData.CellPartitioning.TotalLength} cells, {L} DOFs...");
+
+                // use a random init for intial guess; if RHS = 0, then the exact solution is 0, so the error for approximate solution x_i in iteration i is (x_i - 0).
+                double[] x0 = GenericBlas.RandomVec(L, 0);
+                var RHS = new double[L];
+                var exSol = new double[L0];
+
+                co = new ConvergenceObserver(mgOperator.FinestLevel, AgglomMassMatrix, exSol);
+                var bkup = linearSolver.IterationCallback;
+                linearSolver.IterationCallback = co.IterationCallback;
+
+                var pc = linearSolver as IProgrammableTermination;
+                var termBkup = pc?.TerminationCriterion;
+                if (pc != null) {
+                    pc.TerminationCriterion = delegate (int iter, double R0_l2, double R_l2) {
+                        bool bNotTerminate = true;
+                        bool bSuccess = false;
+
+                        if (R_l2 < R0_l2*1e-8) {
+                            bNotTerminate = false;
+                            bSuccess = true;
+                            return (bNotTerminate, bSuccess);
+
+                        }
+
+                        if (iter > 12) {
+                            bNotTerminate = false;
+                            bSuccess = false;
+                            return (bNotTerminate, bSuccess);
+                        }
+
+                        //return (R_l2 / R0_l2 > 1e-8) && (iter < 1500);
+
+                        return (bNotTerminate, bSuccess);
+                    };
+                }
+
+
+                // execute solver 
+                linearSolver.Init(mgOperator);
+                linearSolver.Solve(x0, RHS);
+
+                // reset and return
+                linearSolver.IterationCallback = bkup;
+                if (termBkup != null) {
+                    pc.TerminationCriterion = termBkup;
+                }
+
+
+
             }
-            //var p = co.PlotIterationTrend(true, false, true, true);
 
             double resReduction = Math.Exp(Math.Log(co.Iter0ResidualNorm / co.LastResidualNorm) / co.NumberOfIterations);
             double errReduction = Math.Exp(Math.Log(co.Iter0SolNorm / co.LastSolNorm) / co.NumberOfIterations);
@@ -92,7 +172,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Console.WriteLine("Error    reduction per iteration:   " + errReduction);
             
             
-            var p = co.Waterfall(true, true, 100);
+            var p = co.Waterfall(true, true, 10);
             return p;
         }
 
@@ -101,19 +181,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ctor
         /// </summary>
-        public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution) {
-            Setup(muop, MassMatrix, __ExactSolution);
+        public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix AgglomMassMatrix, double[] __ExactSolution) {
+            Setup(muop, AgglomMassMatrix, __ExactSolution);
         }
 
         /// <summary>
         /// another constructor
         /// </summary>
-        public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution, ISolverFactory SF) {
+        public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix AgglomMassMatrix, double[] __ExactSolution, ISolverFactory SF) {
             m_SF = SF;
-            Setup(muop, MassMatrix, __ExactSolution);
+            Setup(muop, AgglomMassMatrix, __ExactSolution);
         }
 
-        private void Setup(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution) {
+        private void Setup(MultigridOperator muop, BlockMsrMatrix AgglomMassMatrix, double[] __ExactSolution) {
             if (__ExactSolution != null) {
                 if (__ExactSolution.Length != muop.BaseGridProblemMapping.LocalLength)
                     throw new ArgumentException();
@@ -132,6 +212,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
             DummyOpMatrix.AccEyeSp(123);
 
 
+            /*
+            BlockMsrMatrix MassMatrix;
+            {
+                LevelSetTracker lsTrk = (muop.BaseGridProblemMapping.BasisS.FirstOrDefault(b => b is XDGBasis) as XDGBasis)?.Tracker;
+                SpeciesId[] spcList = null;
+                if (lsTrk != null) {
+                    var xop = muop.AbstractOperator as XSpatialOperatorMk2;
+                    if (xop != null) {
+                        spcList = xop.Species.Select(spcName => lsTrk.GetSpeciesId(spcName)).ToArray();
+                    } else {
+                        lsTrk = null;
+                    }
+                }
+
+                if (lsTrk != null) {
+                    var mmFact = lsTrk.GetXDGSpaceMetrics(spcList, lsTrk.GetCachedOrders().Max()).MassMatrixFactory;
+                    MassMatrix = mmFact.GetMassMatrix(muop.BaseGridProblemMapping, false);
+                } else {
+                    MassMatrix = null;
+                }
+            }
+            */
+
             MultigridOperator.ChangeOfBasisConfig[][] config = new MultigridOperator.ChangeOfBasisConfig[1][];
             config[0] = new MultigridOperator.ChangeOfBasisConfig[muop.BaseGridProblemMapping.BasisS.Count];
             for (int iVar = 0; iVar < config[0].Length; iVar++) {
@@ -143,7 +246,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             //this.DecompositionOperator = muop; this.DecompositionOperator_IsOrthonormal = false;
-            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config, muop.AbstractOperator);
+            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, AgglomMassMatrix, config, muop.AbstractOperator);
             this.DecompositionOperator_IsOrthonormal = true;
 
             ResNormTrend = new Dictionary<(int, int, int), List<double>>();
@@ -282,13 +385,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     for (int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
                         var PlotRow = WaterfallData[iIter];
 
-                        var g = new Plot2Ddata.XYvalues("iter" + iIter, xCoords, PlotRow);
+                        var g = new Plot2Ddata.XYvalues("it" + iIter, xCoords, PlotRow);
                         if (i == 1) {
                             // error
+                            g.Name = "ERR" + g.Name;
                             g.Format.PointType = PointTypes.Circle;
                             g.Format.LineColor = LineColors.Black;
                         } else {
                             // residual
+                            g.Name = "RES" + g.Name;
                             g.Format.PointType = PointTypes.OpenBox;
                             g.Format.LineColor = LineColors.Red;
                         }
@@ -550,10 +655,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int NumberOfIterations = 0;
 
+
+        (double[] _xI, double[] _rI) ExtrapolateToLevel0(double[] xI, double[] rI, MultigridOperator mgOp) {
+            if (xI.Length != mgOp.Mapping.LocalLength)
+                throw new ArgumentException();
+            if (rI.Length != mgOp.Mapping.LocalLength)
+                throw new ArgumentException();
+
+            if(mgOp.LevelIndex == 0) {
+                return (xI, rI);
+            } else {
+                int Lf = mgOp.FinerLevel.Mapping.LocalLength;
+                double[] fxI = new double[Lf];
+                double[] frI = new double[Lf];
+
+                mgOp.Prolongate(1.0, fxI, 1.0, xI);
+                mgOp.Prolongate(1.0, frI, 1.0, rI);
+
+                return ExtrapolateToLevel0(fxI, frI, mgOp.FinerLevel);
+            }
+
+        }
+
+
         /// <summary>
         /// Callback routine, see <see cref="ISolverWithCallback.IterationCallback"/> or <see cref="NonlinearSolver.IterationCallback"/>.
         /// </summary>
-        public void IterationCallback(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
+        public void IterationCallback(int iter, double[] _xI, double[] _rI, MultigridOperator mgOp) {
+            var (xI, rI) = ExtrapolateToLevel0(_xI, _rI, mgOp);
+            
             if (xI.Length != SolverOperator.Mapping.LocalLength)
                 throw new ArgumentException();
             if (rI.Length != SolverOperator.Mapping.LocalLength)
@@ -598,7 +728,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // ===========
             double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
             double l2_ERR = Err_Org.L2NormPow2().MPISum().Sqrt();
-            Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}", iter, l2_RES, l2_ERR);
+            Console.WriteLine("   Conv Observer Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}", iter, l2_RES, l2_ERR);
 
             LastResidualNorm = l2_RES;
             LastSolNorm = l2_ERR;

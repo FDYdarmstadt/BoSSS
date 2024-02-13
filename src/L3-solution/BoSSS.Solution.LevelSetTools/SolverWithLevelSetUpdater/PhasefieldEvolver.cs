@@ -97,7 +97,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             int D = this.m_grd.SpatialDimension;
             var m_bcMap = new BoundaryCondMap<BoundaryType>(this.m_grd, BoundaryTranslator(this.m_bndVals), "phi");
 
-            var diffOp = new SpatialOperator(new string[] { "phi", "mu" },
+            var diffOp = new DifferentialOperator(new string[] { "phi", "mu" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "Phasefield", "Potential" },
                 QuadOrderFunc.NonLinear(2));

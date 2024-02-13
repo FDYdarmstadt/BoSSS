@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using ilPSP.Utils;
@@ -22,8 +23,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Combines all `memory.*.txt`-files in a session directory into a single time-line
         /// </summary>
+        /// <param name="MaxLines">
+        /// Limit to the number of lines to be analyzed; the algorithm might get to expensive, otherwise for long runs
+        /// </param>
+        /// <param name="LineOffset">
+        /// Lines to skip at the beginning
+        /// </param>
         /// <param name="SessionDirectory"></param>
-        public SessionMemtrace(DirectoryInfo SessionDirectory) {
+        public SessionMemtrace(DirectoryInfo SessionDirectory, int LineOffset = 0, int MaxLines = 10000) {
             string FilePattern = $"memory.*.txt";
 
             FileInfo[] AllFiles = SessionDirectory.GetFiles(FilePattern);
@@ -32,7 +39,10 @@ namespace BoSSS.Application.BoSSSpad {
 
             myRecord[][] AllContent = new myRecord[AllFiles.Length][];
             for (int i = 0; i < AllFiles.Length; i++) {
-                AllContent[i] = myRecord.FromFile(AllFiles[i].FullName);
+                var all = myRecord.FromFile(AllFiles[i].FullName);
+                if (all.Length - LineOffset > MaxLines)
+                    Console.WriteLine("Note: truncating memory trace ...");
+                AllContent[i] = all.Skip(LineOffset).Take(MaxLines).ToArray();
             }
 
             CombinedRanksS = LongestCommonSubsequence(AllContent, false);
@@ -290,11 +300,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Combines all `memory.*.txt`-files in multiple session directory into a single time-line
         /// </summary>
-        public SessionsComparisonMemtrace(DirectoryInfo[] SessionDirectories) {
+        public SessionsComparisonMemtrace(DirectoryInfo[] SessionDirectories, int LineOffset = 0, int MaxLines = 10000) {
 
             SessionMemtrace[] singleRuns = new SessionMemtrace[SessionDirectories.Length];
             for (int i = 0; i < singleRuns.Length; i++)
-                singleRuns[i] = new SessionMemtrace(SessionDirectories[i]);
+                singleRuns[i] = new SessionMemtrace(SessionDirectories[i], LineOffset, MaxLines);
 
 
             CombinesRuns = LongestCommonSubsequence(singleRuns.Select(run => run.CombinedRanksS).ToArray(), true);

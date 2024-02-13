@@ -63,7 +63,7 @@ namespace AdvancedSolverTests.SolverChooser
                 NonlinearSolver NLsolver = null;
 
                 //Arrange --- get test linear Solver to set in NLsolver
-                LinearSolverCode[] LinTestcandidates = { LinearSolverCode.direct_pardiso, LinearSolverCode.exp_gmres_levelpmg }; // in order to test the GMRES variants of the NL solver
+                LinearSolverCode[] LinTestcandidates = { LinearSolverCode.direct_pardiso, LinearSolverCode.exp_gmres_levelpmg, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_Kcycle_schwarz_CoarseMesh, LinearSolverCode.exp_Kcycle_schwarz_PerProcess }; // in order to test the GMRES variants of the NL solver
 
                 //Act and Assert
                 foreach(var lincode in LinTestcandidates) {

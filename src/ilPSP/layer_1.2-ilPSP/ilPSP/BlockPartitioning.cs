@@ -62,10 +62,14 @@ namespace ilPSP {
             
 
             if(othrPart.AllBlockSizesEqual) {
-                if(othrPart.LocalNoOfBlocks > 0)
-                    FrameBlockSize = checked((int)(othrPart.GetBlockI0(firstBlock + 1) - othrPart.GetBlockI0(firstBlock)));
-                else
+                if (othrPart.LocalNoOfBlocks > 0) {
+                    if (othrPart.LocalNoOfBlocks > 1)
+                        FrameBlockSize = checked((int)(othrPart.GetBlockI0(firstBlock + 1) - othrPart.GetBlockI0(firstBlock)));
+                    else
+                        FrameBlockSize = othrPart.LocalLength;
+                } else {
                     FrameBlockSize = 0; // phatologic case, somehow
+                }
             } else {
                 FrameBlockSize = -2356675;
             }

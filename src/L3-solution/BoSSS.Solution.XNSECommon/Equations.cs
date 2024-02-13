@@ -411,6 +411,9 @@ namespace BoSSS.Solution.XNSECommon {
             // ================
             if (config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
 
+                if(physParams.slipI != 0 && dntParams.ViscosityMode != ViscosityMode.FullySymmetric)
+                    throw new NotImplementedException();
+
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:

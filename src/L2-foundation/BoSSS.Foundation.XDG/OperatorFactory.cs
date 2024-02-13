@@ -162,11 +162,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// </summary>
         /// <param name="quadOrder">Quadrature Order of regular cells</param>
         /// <returns>Configured spatial operator. Not committed.</returns>
-        public XSpatialOperatorMk2 GetSpatialOperator(int quadOrder) {
+        public XDifferentialOperatorMk2 GetSpatialOperator(int quadOrder) {
             int QuadOrderFunc(int[] DomvarDegs, int[] ParamDegs, int[] CodvarDegs) {
                 return quadOrder;
             }
-            XSpatialOperatorMk2 XOP = GetSpatialOperator(QuadOrderFunc);
+            XDifferentialOperatorMk2 XOP = GetSpatialOperator(QuadOrderFunc);
             return XOP;
         }
 
@@ -176,7 +176,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// <param name="QuadOrderFunc">Function Mapping from Domain Variable Degrees, 
         /// Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order </param>
         /// <returns>Configured spatial operator. Not committed.</returns>
-        public XSpatialOperatorMk2 GetSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
+        public XDifferentialOperatorMk2 GetSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
             var XOP = CreateSpatialOperator(QuadOrderFunc);
             AddEquationComponents(XOP);
             AddSurfaceEquationComponents(XOP);
@@ -190,13 +190,13 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             return XOP;
         }
 
-        XSpatialOperatorMk2 CreateSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
+        XDifferentialOperatorMk2 CreateSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
             string[] domainVars = eqSystem.DomainVars();
             string[] codomainVars = eqSystem.CoDomainVars();
             string[] parameters = eqSystem.Parameters();
             string[] species = eqSystem.Species();
 
-            var spatialOperator = new XSpatialOperatorMk2(
+            var spatialOperator = new XDifferentialOperatorMk2(
                 domainVars,
                 parameters,
                 codomainVars,
@@ -205,12 +205,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             return spatialOperator;
         }
 
-        void AddTemporalOperator(XSpatialOperatorMk2 spatialOperator) {
+        void AddTemporalOperator(XDifferentialOperatorMk2 spatialOperator) {
             (string, double[])[] diagonal = eqSystem.MassDiagonal();
             spatialOperator.TemporalOperator = new ConstantXTemporalOperator(spatialOperator, diagonal);
         }
 
-        void AddParameterDelegates(XSpatialOperatorMk2 spatialOperator) {
+        void AddParameterDelegates(XDifferentialOperatorMk2 spatialOperator) {
             ICollection<DelParameterFactory> factories = parameters.Factories(spatialOperator.ParameterVar);
             foreach(DelParameterFactory factory in factories) {
                 spatialOperator.ParameterFactories.Add(factory);
@@ -221,7 +221,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             }
         }
 
-        void AddEquationComponents(XSpatialOperatorMk2 spatialOperator) {
+        void AddEquationComponents(XDifferentialOperatorMk2 spatialOperator) {
             foreach(SpatialEquation equation in eqSystem.SpatialEquations) {
                 foreach(IEquationComponent component in equation.Components) {
                     spatialOperator.EquationComponents[equation.CodomainName].Add(component);
@@ -239,7 +239,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             }
         }
 
-        void AddSurfaceEquationComponents(XSpatialOperatorMk2 spatialOperator) {
+        void AddSurfaceEquationComponents(XDifferentialOperatorMk2 spatialOperator) {
             foreach(SurfaceEquation equation in eqSystem.InterfaceEquations) {
                 if(equation.SurfaceComponents != null) {
                     foreach(IEquationComponent component in equation.SurfaceComponents) {
@@ -254,7 +254,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             }
         }
 
-        void AddGhostEquationComponents(XSpatialOperatorMk2 spatialOperator) {
+        void AddGhostEquationComponents(XDifferentialOperatorMk2 spatialOperator) {
             foreach(BulkEquation equation in eqSystem.BulkEquations) {
                 if(equation.GhostComponents != null) {
                     foreach(IEquationComponent component in equation.GhostComponents) {
@@ -264,7 +264,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             }
         }
 
-        void AddCoefficients(XSpatialOperatorMk2 spatialOperator) {
+        void AddCoefficients(XDifferentialOperatorMk2 spatialOperator) {
             spatialOperator.OperatorCoefficientsProvider = delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
                 var r = Coefficients(lstrk, spc, quadOrder, TrackerHistoryIdx, time);
                 r.HomotopyValue = spatialOperator.CurrentHomotopyValue;
