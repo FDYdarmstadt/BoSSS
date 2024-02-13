@@ -306,7 +306,7 @@ namespace XESF {
             //double density_Right = (gamma + 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) / ((gamma - 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) + 2.0);
             //double pressure_Right = 1.0 + (2.0 * gamma * (Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) - 1.0)) / (gamma + 1.0);
 
-            (double density_Right, double velocityX_normal_Rigth, double pressure_Right, double c_R, double Mach_normal_R) =CompressibleHelperFunc.ComputeNormalShockWaveRelations(density_Left, velocityX_Left * Math.Sin(shock_angle_radial), pressure_Right, Mach_Left* Math.Sin(shock_angle_radial), gamma);
+            (double density_Right, double velocityX_normal_Rigth, double pressure_Right, double c_R, double Mach_normal_R) =CompressibleHelperFunc.ComputeNormalShockWaveRelations(density_Left, velocityX_Left * Math.Sin(shock_angle_radial), pressure_Left, Mach_Left* Math.Sin(shock_angle_radial), gamma);
 
             // calculate Velocity via Transformation matrix
             MultidimensionalArray TransMat = MultidimensionalArray.Create(2, 2);
@@ -1330,17 +1330,17 @@ namespace XESF {
         /// <param name="getLevelSet"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        public static XESFControl XDGBowShock_TwoLs_LSFromDB(int optiLSDegree=3, int MaxIterations=500, int dgDegreeEnd=3, int dgDegreeStart=0, int numOfCellsX=10,
-        int numOfCellsY=22, int IVtsNumber = 39, int PlotInterval = -1,
-        string dbPath = null, int lsTwoDegree = 3, int lsOneDegree = 4, OptProblemType optprob= OptProblemType.FullEnRes, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC, FphiType fphitype=FphiType.None,
+        public static XESFControl XDGBowShock_TwoLs_LSFromDB(int optiLSDegree = 3, int MaxIterations = 500, int dgDegreeEnd = 3, int dgDegreeStart = 0, int numOfCellsX = 10,
+        int numOfCellsY = 22, int IVtsNumber = 39, int PlotInterval = -1,
+        string dbPath = null, int lsTwoDegree = 3, int lsOneDegree = 4, OptProblemType optprob = OptProblemType.FullEnRes, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC, FphiType fphitype = FphiType.None,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
         ConvectiveInterfaceFluxes interfaceFluxLS2 = ConvectiveInterfaceFluxes.GodunovInterface,
         Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, string shockLevelSet_Db = null, string shockLevelSet_SessionId = @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2", string pointPath = null,
-         OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, double[] tALNRs = null, int[] TermNs = null, int[] MaxReInits = null, double[] ReInitTols=null, double gammaMax=1, double gammaMin = 1e-2,
+         OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, double[] tALNRs = null, int[] TermNs = null, int[] MaxReInits = null, double[] ReInitTols = null, double gammaMax = 1, double gammaMin = 1e-2,
         GetInitialValue initialValue = GetInitialValue.FromDBSinglePhase, bool iVFromShockRelations = false,
         double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch,
-        MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter= null, TerminationStrategy terStrat =TerminationStrategy.Skyline,
-        int[] staggeredTS = null, bool applyReInit=false, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints) {
+        MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
+        int[] staggeredTS = null, bool applyReInit = false, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints, bool restart = false, string sessId = null, string gridId = null, int tsNumber = 0) {
             XESFControl c = new XESFControl();
 
             int dgDegree = dgDegreeEnd;
@@ -1354,7 +1354,6 @@ namespace XESF {
             c.ImmediatePlotPeriod = PlotInterval;
             c.SuperSampling = 2;
             c.NoOfTimesteps = MaxIterations;
-            bool restart = false;
             c.IVTimestepNumber = IVtsNumber;
             #endregion
             #region Optimization variables
@@ -1397,8 +1396,11 @@ namespace XESF {
             xMax = xMax - 0.025;
 
             if(restart == true) {
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("3b7ec178-3859-48c6-91c6-13c566ee6246"), new TimestepNumber(1));
-                c.GridGuid = new Guid("650eb82f-3642-4150-9cc6-f6925f46ef63");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(sessId), new TimestepNumber(tsNumber));
+                c.GridGuid = new Guid(gridId);
+                c.getGridFrom = GetGridFrom.DB;
+                c.GetLevelSet = GetLevelSet.DirectyFromTimestep;
+                
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1457,10 +1459,14 @@ namespace XESF {
             c.GetLevelSet = getLevelSet;
             //string shockLevelSet_SessionId = @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2";
             //string shockLevelSet_SessionId = @"3a743670-0220-4f90-81b6-b28a027944d5";
-            c.ShockLevelSet_Db = shockLevelSet_Db ?? throw new NotSupportedException("Shock level set DB is null.");
-            c.ShockLevelSet_Info = new Tuple<Guid, TimestepNumber>(new Guid(shockLevelSet_SessionId), -1);
-            c.ShockLevelSet_FieldName = "levelSet_recon_prc_cont";
-            c.ShockLevelSet_SeedFromDb = true;
+            if (c.GetLevelSet == GetLevelSet.FromOldSimulation)
+            {
+                c.ShockLevelSet_Db = shockLevelSet_Db ?? throw new NotSupportedException("Shock level set DB is null.");
+                c.ShockLevelSet_Info = new Tuple<Guid, TimestepNumber>(new Guid(shockLevelSet_SessionId), -1);
+                c.ShockLevelSet_FieldName = "levelSet_recon_prc_cont";
+                c.ShockLevelSet_SeedFromDb = true;
+            }
+            
 
             /// ### Fluxes ###
             c.ConvectiveBulkFlux = bulkFlux;
