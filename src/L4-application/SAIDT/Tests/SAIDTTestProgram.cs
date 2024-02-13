@@ -41,6 +41,9 @@ namespace SAIDT.Tests {
                 C.minimalSQPIterations = new int[] {40};
                 p.Init(C);
                 p.RunSolverMode();
+                p.Gammas.SaveToTextFile("Gammas.txt");
+                p.Alphas.SaveToTextFile("Alphas.txt");
+                p.Residuals.SaveToTextFile("Residuals");
                 Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < 1e-09 && p.ResidualVector.MPI_L2Norm() < 1e-09), System.String.Format("the L2 Error is greater than 1e-09 (Residual {0}, Enriched Residual {1}", p.ResidualVector.MPI_L2Norm(), p.obj_f_vec.MPI_L2Norm()));
             }
         }
