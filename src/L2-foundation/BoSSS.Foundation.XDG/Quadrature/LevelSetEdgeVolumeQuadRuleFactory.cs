@@ -367,6 +367,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     ////edgMask.SaveToTextFile("FuckedEdge.csv", false);
                                     //Console.WriteLine($"numpos: {numPos}, numNeg: {numNeg}");
                                     throw new ArithmeticException($"Could not determine sign of face {e} of cell {cell}");
+                                    //Console.WriteLine($"WARNING: commented out exception: Could not determine sign of face {e} of cell {cell}");
                                 }
 
                                 switch (jumpType) {
@@ -731,6 +732,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 noOfItemsLocally = mask.NoOfItemsLocally;
             }
 
+            public override Quadrature<CellEdgeBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); // 
+            }
+
             /// <summary>
             /// Computes the integrals while overwriting <see cref="Results"/>
             /// </summary>
@@ -886,6 +891,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 noOfItemsLocally = mask.NoOfItemsLocally;
             }
 
+            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); // 
+            }
 
 
             /// <summary>
@@ -970,6 +978,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
             }
+
         }
     }
 }

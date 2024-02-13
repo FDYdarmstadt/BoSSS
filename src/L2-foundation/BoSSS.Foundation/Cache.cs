@@ -22,6 +22,9 @@ using ilPSP;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
+
+
+
 namespace BoSSS.Foundation.Caching {
 
     /// <summary>
@@ -39,7 +42,6 @@ namespace BoSSS.Foundation.Caching {
         DiscardLeastRecentyUsed
     }
 
-    
     /// <summary>
     /// Cache for almost everything. All kinds of cache-logic objects
     /// may place their numerical results here and can have them back, if they are not thrown away.
@@ -49,49 +51,50 @@ namespace BoSSS.Foundation.Caching {
         /// <summary>
         /// Basic checks on the correctness of the data structure.
         /// </summary>
-        public static void Verify(out long ArraySize, out long LLsize ) {
-
-            ArraySize = 0;
-            for(int i = 0; i < Banks.Count; i++) {
-                var b = Banks[i];
-                if(b != null) { 
-                    ArraySize += b.MemSize;
-                    if(b.iBank != i)
-                        throw new ApplicationException();
+        public static void Verify(out long ArraySize, out long LLsize) {
+            lock (padlock) {
+                ArraySize = 0;
+                for (int i = 0; i < Banks.Count; i++) {
+                    var b = Banks[i];
+                    if (b != null) {
+                        ArraySize += b.MemSize;
+                        if (b.iBank != i)
+                            throw new ApplicationException();
+                    }
                 }
-            }
 
-            int NoOfBanks = 0;
-            LLsize = 0;
-            var bank = Head.next;
-            while(bank.next != null) {
-                LLsize += bank.MemSize;
+                int NoOfBanks = 0;
+                LLsize = 0;
+                var bank = Head.next;
+                while (bank.next != null) {
+                    LLsize += bank.MemSize;
 
-                if(!object.ReferenceEquals(bank.next.prev, bank))
+                    if (!object.ReferenceEquals(bank.next.prev, bank))
+                        throw new ApplicationException();
+
+                    if (!object.ReferenceEquals(bank, Banks[bank.iBank]))
+                        throw new ApplicationException();
+
+                    bank = bank.next;
+
+                    NoOfBanks++;
+                }
+
+                if (!object.ReferenceEquals(bank, Tail))
                     throw new ApplicationException();
-                
-                if(!object.ReferenceEquals(bank, Banks[bank.iBank]))
-                    throw new ApplicationException();
 
-                bank = bank.next;
-
-                NoOfBanks++;
+                if (NoOfBanks != Banks.Count)
+                    throw new ApplicationException($"Number of banks in List is {NoOfBanks}, but bank-array has {Banks.Count} entries.");
             }
-
-            if(!object.ReferenceEquals(bank, Tail))
-                throw new ApplicationException();
-
-            if(NoOfBanks != Banks.Count)
-                throw new ApplicationException($"Number of banks in List is {NoOfBanks}, but bank-array has {Banks.Count} entries.");
         }
 
 
-        
+
         /// <summary>
         /// Reference counter
         /// </summary>
         static internal uint RefCounter = 1;
-        
+
         /// <summary>
         /// Maximal memory, in bytes, which is used for caching.
         /// </summary>
@@ -127,8 +130,8 @@ namespace BoSSS.Foundation.Caching {
         static public long UsedMem {
             get {
                 long sum = 0;
-                foreach(var bank in Banks) {
-                    if(bank != null)
+                foreach (var bank in Banks) {
+                    if (bank != null)
                         sum += bank.MemSize;
                 }
                 return sum;
@@ -140,7 +143,9 @@ namespace BoSSS.Foundation.Caching {
         /// </summary>
         static public long OverheadMem {
             get {
-                return Banks.Count * CacheBank.AssumedSize + emptyBanks.Count * sizeof(int);
+                lock (padlock) {
+                    return Banks.Count * CacheBank.AssumedSize + emptyBanks.Count * sizeof(int);
+                }
             }
         }
 
@@ -148,39 +153,43 @@ namespace BoSSS.Foundation.Caching {
         /// Empties the cache, resets statistics.
         /// </summary>
         static void ResetCache() {
-            Tail = new CacheBank() {
-                iBank = int.MinValue
-            };
-            Head = new CacheBank() {
-                iBank = int.MinValue
-            };
+            lock (padlock) {
+                Tail = new CacheBank() {
+                    iBank = int.MinValue
+                };
+                Head = new CacheBank() {
+                    iBank = int.MinValue
+                };
 
-            Tail.prev = Head;
-            Head.next = Tail;
+                Tail.prev = Head;
+                Head.next = Tail;
 
-            emptyBanks = new List<int>();
-            Banks = new List<CacheBank>();
-            CurrentSize = 0;
-            m_NoOfUsedBanks = 0;
+                emptyBanks = new List<int>();
+                Banks = new List<CacheBank>();
+                CurrentSize = 0;
+                m_NoOfUsedBanks = 0;
 
-            Hits = 0;
-            Misses = 0;
+                Hits = 0;
+                Misses = 0;
+            }
         }
 
+        static object padlock = new object();
 
         /// <summary>
         /// Empties the cache, resets statistics.
         /// </summary>
         public static void ClearCache() {
-            
-            while(RemoveAtTail()) {
-                // nop
-            }
-            
-            Hits = 0;
-            Misses = 0;
+            lock (padlock) {
+                while (RemoveAtTail()) {
+                    // nop
+                }
 
-            Debug.Assert(CurrentSize == 0);
+                Hits = 0;
+                Misses = 0;
+
+                Debug.Assert(CurrentSize == 0);
+            }
         }
 
 
@@ -210,14 +219,16 @@ namespace BoSSS.Foundation.Caching {
             int iBank = (int)(Reference & 0x00000000FFFFFFFF);
             int iref = (int)((Reference & 0xFFFFFFFF00000000) >> 32);
 
-            CacheBank cb = Banks[iBank];
-            if(cb != null && iref == cb.Reference) {
-                Access(iBank);
-                Hits++;
-                return cb.Item;
-            } else {
-                Misses++;
-                return null;
+            lock (padlock) {
+                CacheBank cb = Banks[iBank];
+                if (cb != null && iref == cb.Reference) {
+                    Access(iBank);
+                    Hits++;
+                    return cb.Item;
+                } else {
+                    Misses++;
+                    return null;
+                }
             }
         }
 
@@ -229,9 +240,10 @@ namespace BoSSS.Foundation.Caching {
         public static bool IsAlive(ulong Reference) {
             int iBank = (int)(Reference & 0x00000000FFFFFFFF);
             int iref = (int)((Reference & 0xFFFFFFFF00000000) >> 32);
-
-            CacheBank cb = Banks[iBank];
-            return (cb != null && iref == cb.Reference);
+            lock (padlock) {
+                CacheBank cb = Banks[iBank];
+                return (cb != null && iref == cb.Reference);
+            }
         }
 
         /// <summary>
@@ -243,29 +255,32 @@ namespace BoSSS.Foundation.Caching {
         /// A reference code for later access to the object <paramref name="Item"/>.
         /// </returns>
         public static ulong CacheItem(object Item, int HonestItemSizeInBytes) {
-            RefCounter++;
+            lock (padlock) {
+                RefCounter++;
+                Debug.Assert((!(Item is MultidimensionalArray)) || (((MultidimensionalArray)Item).Length * sizeof(double) == HonestItemSizeInBytes));
 
-            Debug.Assert((!(Item is MultidimensionalArray)) || (((MultidimensionalArray)Item).Length * sizeof(double) == HonestItemSizeInBytes));
+                CacheBank cb = new CacheBank() {
+                    Item = Item,
+                    MemSize = HonestItemSizeInBytes,
+                    UseCount = 1,
+                    Reference = RefCounter
+                };
 
-            CacheBank cb = new CacheBank() {
-                Item = Item,
-                MemSize = HonestItemSizeInBytes,
-                UseCount = 1,
-                Reference = RefCounter
-            };
+                while (CurrentSize + cb.MemSize > MaxMem) {
+                    if (Banks.Count == 0)
+                        break;
+                    if (!RemoveAtTail())
+                        break;
+                }
 
-            while(CurrentSize + cb.MemSize > MaxMem) {
-                if(!RemoveAtTail())
-                    break;
+                int iBank = Insert(cb);
+                Debug.Assert(object.ReferenceEquals(Banks[iBank], cb));
+                Debug.Assert(cb.iBank == iBank);
+
+                ulong R = ((ulong)iBank);
+                R |= (((ulong)cb.Reference) << 32);
+                return R;
             }
-
-            int iBank = Insert(cb);
-            Debug.Assert(object.ReferenceEquals(Banks[iBank], cb));
-            Debug.Assert(cb.iBank == iBank);
-
-            ulong R = ((ulong)iBank);
-            R |= (((ulong)cb.Reference) << 32);
-            return R;
         }
 
         /// <summary>
@@ -275,19 +290,21 @@ namespace BoSSS.Foundation.Caching {
             int iBank = (int)(Reference & 0x00000000FFFFFFFF);
             int iref = (int)((Reference & 0xFFFFFFFF00000000) >> 32);
 
-            CacheBank cb = Banks[iBank];
-            if((cb != null && iref == cb.Reference)) {
-                // object is still in cache, so there is something to forget.
-                Remove(iBank);
-            }
+            lock (padlock) {
+                CacheBank cb = Banks[iBank];
+                if ((cb != null && iref == cb.Reference)) {
+                    // object is still in cache, so there is something to forget.
+                    Remove(iBank);
+                }
 
+            }
         }
 
         /// <summary>
         /// 
         /// </summary>
         public static ulong ReCacheItem(MultidimensionalArray Item, int HonestItemSizeInBytes, ulong Reference) {
-            return CacheItem(Item, HonestItemSizeInBytes); 
+            return CacheItem(Item, HonestItemSizeInBytes);
         }
 
 
@@ -304,11 +321,11 @@ namespace BoSSS.Foundation.Caching {
                 return m_NoOfUsedBanks;
             }
         }
-        
+
         static CacheBank Tail; // dummy 'bank', marking the tail of the cache-ranking list (next objects to discard)
 
         static CacheBank Head; // dummy 'bank', marking the tail of the cache-ranking list (last object to discard)
-        
+
         static void Remove(int iBank) {
             CacheBank toRemove = Banks[iBank];
             Debug.Assert(toRemove.iBank == iBank);
@@ -320,10 +337,10 @@ namespace BoSSS.Foundation.Caching {
             m_NoOfUsedBanks--;
             Debug.Assert(m_NoOfUsedBanks >= 0);
         }
-        
+
         static bool RemoveAtTail() {
             Debug.Assert(Banks.Count > 0);
-            if(object.ReferenceEquals(Tail.prev, Head)) {
+            if (object.ReferenceEquals(Tail.prev, Head)) {
                 // cache is already empty
                 Debug.Assert(m_NoOfUsedBanks == 0);
                 Debug.Assert(CurrentSize == 0);
@@ -337,45 +354,45 @@ namespace BoSSS.Foundation.Caching {
 
         static CacheBank Access(int iBank) {
             CacheBank a = Banks[iBank];
-            if(a == null)
+            if (a == null)
                 return a;
 
             a.UseCount++;
 
             // update the bank ranking:
-            switch(Strategy) {
+            switch (Strategy) {
                 case CacheStrategy.DiscardLeastRecentyUsed:
-                //
-                  
-                // remove 'a', where-ever it is...
-                a.prev.next = a.next;
-                a.next.prev = a.prev;
+                    //
 
-                // ... and put it on top:
-                a.next = Head.next;
-                a.prev = Head;
-                Head.next.prev = a;
-                Head.next = a;
+                    // remove 'a', where-ever it is...
+                    a.prev.next = a.next;
+                    a.next.prev = a.prev;
 
-                break;
-                
+                    // ... and put it on top:
+                    a.next = Head.next;
+                    a.prev = Head;
+                    Head.next.prev = a;
+                    Head.next = a;
+
+                    break;
+
                 case CacheStrategy.DiscardLeastFrequentlyUsed:
-                //
+                    //
 
-                // bubble up until the sorting is ok.
-                BubbleUp(a);
+                    // bubble up until the sorting is ok.
+                    BubbleUp(a);
 
-                break;
+                    break;
 
                 default:
-                throw new NotImplementedException();
+                    throw new NotImplementedException();
             }
 
             return a;
         }
 
         private static void BubbleUp(CacheBank a) {
-            while(
+            while (
                 (!object.ReferenceEquals(a.prev, Head))  // reached top of ranking
                 && (a.UseCount >= a.prev.UseCount))     // >= prefers least-recently used in case of doubt
                 {
@@ -394,7 +411,7 @@ namespace BoSSS.Foundation.Caching {
         }
 
         static int Insert(CacheBank cb) {
-            if(emptyBanks.Count > 0) {
+            if (emptyBanks.Count > 0) {
                 cb.iBank = emptyBanks[emptyBanks.Count - 1];
                 emptyBanks.RemoveAt(emptyBanks.Count - 1);
                 Debug.Assert(Banks[cb.iBank] == null);
@@ -405,47 +422,47 @@ namespace BoSSS.Foundation.Caching {
             }
             m_NoOfUsedBanks++;
             CurrentSize += cb.MemSize;// update the bank ranking:
-            switch(Strategy) {
+            switch (Strategy) {
                 case CacheStrategy.DiscardLeastRecentyUsed:
-                // insert at head
-                cb.next = Head.next;
-                cb.prev = Head;
-                Head.next.prev = cb;
-                Head.next = cb;
+                    // insert at head
+                    cb.next = Head.next;
+                    cb.prev = Head;
+                    Head.next.prev = cb;
+                    Head.next = cb;
 
-                break;
+                    break;
 
                 case CacheStrategy.DiscardLeastFrequentlyUsed:
-                // insert at tail
-                cb.next = Tail;
-                cb.prev = Tail.prev;
-                Tail.prev.next = cb;
-                Tail.prev = cb;
+                    // insert at tail
+                    cb.next = Tail;
+                    cb.prev = Tail.prev;
+                    Tail.prev.next = cb;
+                    Tail.prev = cb;
 
-                // bubble up until the sorting is ok.
-                BubbleUp(cb);
+                    // bubble up until the sorting is ok.
+                    BubbleUp(cb);
 
-                break;
+                    break;
 
                 default:
-                throw new NotImplementedException();
+                    throw new NotImplementedException();
             }
-            
+
             Debug.Assert(Banks[cb.iBank].iBank == cb.iBank);
             return cb.iBank;
         }
-        
+
         [StructLayout(LayoutKind.Sequential)]
         sealed class CacheBank {
             public uint Reference; // reference by which the cache-logic identifies that some stored item is still theirs
             public int iBank;      // bank index, constant for object lifetime
 
-            
+
             public CacheBank next; // double-linked list for cache bank ranking
             public CacheBank prev; // double-linked list for cache bank ranking
-            
+
             public object Item; // payload
-            
+
             public int MemSize; // size of the payload
 
             internal int UseCount; // how often the item was accessed
@@ -453,7 +470,7 @@ namespace BoSSS.Foundation.Caching {
 
             public static int AssumedSize {
                 get {
-                    return ( sizeof(int)*4 + IntPtr.Size * 3 + IntPtr.Size*2);
+                    return (sizeof(int)*4 + IntPtr.Size * 3 + IntPtr.Size*2);
                 }
             }
         }

@@ -514,6 +514,8 @@ namespace BoSSS.Foundation.IO {
             return File.Exists(Path.Combine(BasePath, RelPath));
         }
 
+        HashSet<string> NonEmptySessionDir = new HashSet<string>();
+
         /// <summary>
         /// Gathers the <see cref="Guid"/>s from the names of the files and 
         /// subdirectories in the specified <paramref name="subdir"/>.
@@ -532,41 +534,67 @@ namespace BoSSS.Foundation.IO {
         /// A list of unique identifiers from the file or directory names.
         /// </returns>
         private IEnumerable<Guid> ParseDirectory(string subdir, string searchpattern, bool searchDirs) {
-            HashSet<Guid> ret = new HashSet<Guid>();
-            DirectoryInfo ddir = new DirectoryInfo(Path.Combine(BasePath, subdir));
+            using (new FuncTrace()) {
+                HashSet<Guid> ret = new HashSet<Guid>();
+                DirectoryInfo ddir = new DirectoryInfo(Path.Combine(BasePath, subdir));
 
 
-            for (int i = 0; i < 2; i++) {
+                for (int i = 0; i < 2; i++) {
 
-                FileSystemInfo[] gridFiles;
-                if (searchDirs == false) {
-                    if (i == 0)
-                        gridFiles = ddir.GetFiles(searchpattern);
-                    else
-                        gridFiles = ddir.GetFiles(searchpattern + ".V2");
-                } else {
-                     var _subdirs = ddir.GetDirectories(searchpattern);
+                    FileSystemInfo[] gridFiles;
+                    if (searchDirs == false) {
+                        if (i == 0)
+                            gridFiles = ddir.GetFiles(searchpattern);
+                        else
+                            gridFiles = ddir.GetFiles(searchpattern + ".V2");
+                    } else {
+                        var _subdirs = ddir.GetDirectories(searchpattern);
+
+                        // NOTE: we want to ignore empty session directories;
+                        // (sometime, when a session is deleted, the session directory cannot be deleted and an empty directory remains;
+                        // this causes lots of error messages in BoSSSpad; therefore, we ignore these directories.)
+                        // However, always checking for files causes a lot of lag time in the job manager in BoSSSpad, especially on network drives (SSHFS, SMB).
 
 
-                    gridFiles = _subdirs.Where(dir => dir.GetFiles().Length > 0).ToArray(); // ignore empty session directories
-                    // (sometime, when a session is deleted, the session directory cannot be deleted and an empty directory remains;
-                    // this causes lots of error messages in BoSSSpad; therefore, we ignore these directories.)
+                        var _gridFiles = new List<FileSystemInfo>();
+                        foreach(var s in _subdirs) {
 
-                    i = 3;
+                            if(NonEmptySessionDir.Contains(s.Name)) {
+                                // dir is ok;
+                                // this should be the regular case where we can save a lot of time.
+                                // the assumption is, that session directories (with the exception of deleting a session)
+                                // never get de-polulated, the number files in a session dir just increases.
+                                _gridFiles.Add(s);
+                            } else {
+                                if(s.GetFiles().Length > 0) {
+                                    NonEmptySessionDir.Add(s.Name);
+                                    _gridFiles.Add(s);
+                                } else {
+                                    // dir is empty; not report it;
+                                    // probably it will get populated in near future (session comutation just started)?
+                                }
+                            }
+
+                        }
+
+                        gridFiles = _gridFiles.ToArray();
+
+                        i = 38978;
+                    }
+
+                    foreach (var grdFile in gridFiles) {
+                        string GuidStr = grdFile.Name.Substring(0, 36);
+                        Guid grdGuid = new Guid(GuidStr);
+
+                        if (!ret.Contains(grdGuid))
+                            // we need to check, because there can be "old" and ".V2" - files, and
+                            // because there can be the same file in multiple pa
+                            ret.Add(grdGuid);
+                    }
                 }
 
-                foreach (var grdFile in gridFiles) {
-                    string GuidStr = grdFile.Name.Substring(0, 36);
-                    Guid grdGuid = new Guid(GuidStr);
-
-                    if (!ret.Contains(grdGuid))
-                        // we need to check, because there can be "old" and ".V2" - files, and
-                        // because there can be the same file in multiple pa
-                        ret.Add(grdGuid);
-                }
+                return ret;
             }
-
-            return ret;
         }
 
         ///// <summary>
@@ -610,7 +638,9 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns></returns>
         public IEnumerable<Guid> GetAllSessionGUIDs() {
-            return ParseDirectory(SessionsDir, "*", true);
+            using (new FuncTrace()) {
+                return ParseDirectory(SessionsDir, "*", true);
+            }
         }
 
     }

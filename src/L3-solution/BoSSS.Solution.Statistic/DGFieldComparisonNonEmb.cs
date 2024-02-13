@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ilPSP;
 using ilPSP.Utils;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.Statistic {
 
@@ -43,9 +44,8 @@ namespace BoSSS.Solution.Statistic {
         /// </param>
         public static void ComputeErrors_L2(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
           out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
-
-       
-            ComputeErrors(Enumerable.Repeat(NormFactory(NormType.L2_embedded), FieldsToCompare.Count()).ToArray(), 
+            
+            ComputeErrors(Enumerable.Repeat(NormFactory(NormType.L2_approximate), FieldsToCompare.Count()).ToArray(), 
                 FieldsToCompare, timestepS, out GridRes, out __DOFs, out Errors, out timestepIds);
         }
 

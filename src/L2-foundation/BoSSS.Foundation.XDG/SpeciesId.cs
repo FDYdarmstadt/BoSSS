@@ -75,5 +75,20 @@ namespace BoSSS.Foundation.XDG {
         public static bool operator !=(SpeciesId a, SpeciesId b) {
             return (a.cntnt != b.cntnt);
         }
+
+        public override string ToString() {
+            string Tag;
+            switch (cntnt) {
+                case 11111:
+                    Tag = "A"; break;
+                case 11112:
+                    Tag = "B"; break;
+                case 11113:
+                    Tag = "C"; break;
+                default:
+                    Tag = "D"; break;
+            }
+            return Tag; 
+        }
     }
 }

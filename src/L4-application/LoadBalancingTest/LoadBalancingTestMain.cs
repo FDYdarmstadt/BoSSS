@@ -184,7 +184,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// <summary>
         /// The operator d/dx
         /// </summary>
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
 
         /// <summary>
         /// The BDF time integrator - makes load balancing challenging.
@@ -196,7 +196,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
 
-            Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, LsTrk.SpeciesNames, "u", "c1");
+            Op = new XDifferentialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, LsTrk.SpeciesNames, "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
@@ -206,6 +206,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             Op.AgglomerationThreshold = this.THRESHOLD;
             Op.TemporalOperator = new ConstantXTemporalOperator(Op, 1.0);
 
+            Op.FluxesAreNOTMultithreadSafe = false;
             Op.Commit();
 
             if (L == null) {
@@ -216,7 +217,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     new DGField[] { u }, new DGField[] { uResidual },
                     TimeSteppingScheme.BDF3,
                     () => new LevelSetTimestepping(this), LevelSetHandling.LieSplitting,
-                    MultigridOperatorConfig, MultigridSequence,
+                    MultigridOperatorConfig, 
                     _AgglomerationThreshold: this.THRESHOLD,
                     LinearSolver: this.Control.LinearSolver, NonLinearSolver: this.Control.NonLinearSolver);
                 
@@ -274,7 +275,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             //    phystime,
             //    false,
             //    base.LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping);
 
             mtxBuilder.CellLengthScales.AddRange(AgglomeratedCellLengthScales);
 

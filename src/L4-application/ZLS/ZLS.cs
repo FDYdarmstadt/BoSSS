@@ -21,6 +21,7 @@ using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using BoSSS.Solution.Utils;
 using NUnit.Framework;
+using BoSSS.Solution;
 
 namespace ZwoLevelSetSolver {
 
@@ -120,7 +121,7 @@ namespace ZwoLevelSetSolver {
             
         }
 
-        protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
+        protected override void FinalOperatorSettings(XDifferentialOperatorMk2 XOP, int D) {
             base.FinalOperatorSettings(XOP, D);
             XOP.IsLinear = false;
 
@@ -215,7 +216,7 @@ namespace ZwoLevelSetSolver {
         /// <summary>
         /// automatized analysis of condition number 
         /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
+        public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
             int D = this.Grid.SpatialDimension;
 
             int[] varGroup_mom = D.ForLoop(i => i); ;
@@ -233,7 +234,7 @@ namespace ZwoLevelSetSolver {
                 varGroup_Stokes.AddToArray(ref groups);
             }
 
-            var res = this.Timestepping.OperatorAnalysis(groups);
+            var res = this.Timestepping.OperatorAnalysis(config, groups);
 
             // filter only those results that we want;
             // this is a DG app, but it uses the LevelSetTracker; therefore, we want to filter analysis results for cut cells and only return uncut cells resutls

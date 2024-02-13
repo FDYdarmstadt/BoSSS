@@ -349,7 +349,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return VariableNames.Velocity0MeanVector(m_D);
                 }
         }
 

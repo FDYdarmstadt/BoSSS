@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Platform.Utils.Geom;
@@ -57,6 +58,13 @@ namespace BoSSS.Foundation.Grid {
         /// return the grid
         /// </summary>
         IGrid Grid {
+            get;
+        }
+
+        /// <summary>
+        /// an optional (i.e. can be null) multi-grid hierarchy
+        /// </summary>
+        AggregationGridData[] MultigridSequence {
             get;
         }
 
@@ -393,11 +401,9 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <remarks>
         /// Indices are defined as follows:
-        /// <list type="bullet">
-        ///   <item>1st index: local cell index (locally updated and external cells);</item>
-        ///   <item>2nd index: matrix row index;</item>
-        ///   <item>3rd index: matrix column index;</item>
-        /// </list>
+        /// - 1st index: local cell index (locally updated and external cells);
+        /// - 2nd index: matrix row index;
+        /// - 3rd index: matrix column index;
         /// </remarks>
         MultidimensionalArray InverseTransformation {
             get;
@@ -412,11 +418,9 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <remarks>
         /// Indices are defined as follows:
-        /// <list type="bullet">
-        ///   <item>1st index: local cell index (locally updated and external cells);</item>
-        ///   <item>2nd index: matrix row index;</item>
-        ///   <item>3rd index: matrix column index;</item>
-        /// </list>
+        /// - 1st index: local cell index (locally updated and external cells);
+        /// - 2nd index: matrix row index;
+        /// - 3rd index: matrix column index;
         /// </remarks>
         MultidimensionalArray Transformation {
             get;
@@ -1069,5 +1073,7 @@ namespace BoSSS.Foundation.Grid {
         int[] RcvCommListsNoOfItems {
             get;
         }
+
+        
     }
 }

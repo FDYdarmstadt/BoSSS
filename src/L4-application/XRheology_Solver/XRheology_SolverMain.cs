@@ -555,7 +555,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,
                         (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                        this.MultigridOperatorConfig, base.MultigridSequence,
+                        this.MultigridOperatorConfig,
                         this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
                         this.Control.AgglomerationThreshold,
                         true,
@@ -1717,10 +1717,6 @@ namespace BoSSS.Application.XRheology_Solver {
             }
         }
 
-
-        protected override void Bye() {
-            base.Bye();
-        }
 
 
         // =========================

@@ -127,13 +127,13 @@ namespace BoSSS.Application.ScalarTransport {
 
         ExplicitEuler Timestepper;
 
-        SpatialOperator diffOp;
+        DifferentialOperator diffOp;
         
         /// <summary>
         /// 
         /// </summary>
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            diffOp = new SpatialOperator(new string[] { "u" },
+            diffOp = new DifferentialOperator(new string[] { "u" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.GridData.SpatialDimension),
                 new string[] { "codom1" },
                 QuadOrderFunc.Linear());
@@ -179,7 +179,7 @@ namespace BoSSS.Application.ScalarTransport {
             //var testsizes = new int[] { 1, 2, 4, 8, 16, 32, 64, 256, 512, 1024, 2048, 8192, 16384, 16384 * 2, 16384 * 4, 100000000 };
             var testsizes = new int[] { 1, 2, 4, 1024, 16384 * 2, 16384 * 4, 100000000 };
             foreach(int bulkSize in testsizes) {
-                Quadrature_Bulksize.CHUNK_LIMIT = bulkSize;
+                Quadrature_Settings.CHUNK_LIMIT = bulkSize;
 
                 stw.Reset();
                 stw.Start();

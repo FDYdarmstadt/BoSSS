@@ -50,7 +50,7 @@ namespace NSE_SIMPLE {
                 SolverConf, false, SpatialComponent,
                 OnlyAffine: (SpatialComponent != 0), OnlyBoundaryEdges: true, MaxUsePerIterMatrix: SolverConf.SpatialDimension) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             //To be used with OnlyBoundaryEdges: false
@@ -81,7 +81,7 @@ namespace NSE_SIMPLE {
             : base(VelocityMapping, VelocityMapping, new SinglePhaseField[] { Phi }, SolverConf, false, SpatialComponent,
                 OnlyAffine: (SpatialComponent != 0), MaxUsePerIterMatrix: SolverConf.SpatialDimension) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             //return (new Viscosity(SolverConf.PenaltyViscMomentum, SolverConf.reynolds, SolverConf.BcMap, SpatialComponent, SolverConf.ConfigVariableDensity.EoS)).Operator();
@@ -113,7 +113,7 @@ namespace NSE_SIMPLE {
             : base(VelocityMapping, VelocityVectorMapping, new SinglePhaseField[] { Phi }, SolverConf, false, SpatialDirection: SpatDirection,
             MaxUsePerIterMatrix: SolverConf.SpatialDimension, MaxUsePerIterAffine: SolverConf.SpatialDimension) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             return (new SipViscosity_Term2_segregatedVar(SolverConf.PenaltyViscMomentum,
@@ -144,7 +144,7 @@ namespace NSE_SIMPLE {
             : base(VelocityMapping, VelocityVectorMapping, new SinglePhaseField[] { Phi }, SolverConf, false, SpatialDirection: SpatDirection,
             MaxUsePerIterMatrix: SolverConf.SpatialDimension, MaxUsePerIterAffine: SolverConf.SpatialDimension) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             return (new SipViscosity_Term3_segregatedVar(SolverConf.PenaltyViscMomentum,

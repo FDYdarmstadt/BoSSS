@@ -107,7 +107,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region physics
 
             switch (tc) {
-                case 1: {
+                case 1: { 
+                        // symmetric
                         C.PhysicalParameters.rho_A = 0.81;
                         C.PhysicalParameters.rho_B = 0.81;
                         C.PhysicalParameters.mu_A = 1.95;
@@ -122,6 +123,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         break;
                     }
                 case 2: {
+                        // un-symmetric
                         C.PhysicalParameters.rho_A = 0.81;
                         C.PhysicalParameters.rho_B = 0.81;
                         C.PhysicalParameters.mu_A = 1.95;

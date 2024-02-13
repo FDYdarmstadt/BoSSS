@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Platform;
 using System.Diagnostics;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.IO {
 
@@ -47,7 +48,7 @@ namespace BoSSS.Foundation.IO {
         /// Dissing.
         /// </summary>
         public void Dispose() {
-            if(realSessionInfo.IsValueCreated) {
+            if (realSessionInfo.IsValueCreated) {
                 realSessionInfo.Value.Dispose();
             }
         }
@@ -63,19 +64,47 @@ namespace BoSSS.Foundation.IO {
         public SessionProxy(Guid sessionID, IDatabaseInfo database) {
             this.ID = sessionID;
             this.Database = database;
+            this.m_sessionID = sessionID;
             realSessionInfo = new ExpirableLazy<SessionInfo>(
-                delegate () {
-                    // Allow graceful handling when loading faulty sessions
-                    try {
-                        return database.Controller.DBDriver.LoadSession(sessionID, database);
-                    } catch(Exception e) {
-                        Console.WriteLine(
-                            $"Loading session {ID} failed with message '{e.Message}'");
-                        return null;
-                    }
-                },
-                s => Utils.GetSessionFileWriteTime(s) == s.WriteTime);
+                valueFunc,
+                isUpToDateFunc);
         }
+
+        readonly Guid m_sessionID;
+
+        SessionInfo valueFunc() {
+            // Allow graceful handling when loading faulty sessions
+            try {
+                return this.Database.Controller.DBDriver.LoadSession(m_sessionID, this.Database);
+            } catch (Exception e) {
+                Console.Error.WriteLine(
+                    $"Loading session {ID} failed with message '{e.Message}'");
+                return null;
+            }
+        }
+
+        static readonly TimeSpan reevalPeriod = TimeSpan.FromMinutes(1);
+
+        DateTime lastCheck = DateTime.MinValue;
+
+        bool isUpToDateFunc(ISessionInfo s) {
+            if (s.SuccessfulTermination) {
+                var nau = DateTime.Now;
+                // if the session is surely terminated, we cache the data at least for a minute or so to safe IO ops
+                // (otherwise the workflow mgm in BoSSSpad might get very slow on network file systems)
+                if((nau - lastCheck) > reevalPeriod) {
+                    // should reevaluate; but the only cause of change should be that someone deleted the session
+                    lastCheck = nau;
+                } else {
+                    // checked less than a minute ago; probably nothing has changed.
+                    return true;
+                }
+            }
+            var fileSysWriteTime = Utils.GetSessionFileWriteTime(s);
+            bool b = fileSysWriteTime == s.WriteTime;
+            return b;
+        }
+
 
         /// <summary>
         /// See <see cref="SessionInfo.ToString"/>

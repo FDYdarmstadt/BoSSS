@@ -305,7 +305,7 @@ namespace BoSSS.Solution.NSECommon {
 
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================
-                        r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
+                        r = InnerEdgeFlux_impl(ref inp2, Uin, new double[] { Uout });
                     }
 
                     return r;
@@ -384,6 +384,13 @@ namespace BoSSS.Solution.NSECommon {
         /// bla bla bla
         /// </summary>
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+            return InnerEdgeFlux_impl(ref inp, Uin, Uout);
+        }
+
+        /// <summary>
+        /// implemented in a separate function to prevent from overloading, i.e. make sure that <see cref="BorderEdgeFlux"/> calls this implementation, not an overloaded one
+        /// </summary>
+        protected double InnerEdgeFlux_impl(ref CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
 
             // Calculate central part
@@ -605,6 +612,7 @@ namespace BoSSS.Solution.NSECommon {
 
             m_UseBoundaryVelocityParameter = UseBoundaryVelocityParameter;
             //m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
+            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0MeanVector(SpatDim));
             if(m_UseBoundaryVelocityParameter)
                 m_ParameterOrdering = ArrayTools.Cat(m_ParameterOrdering, VariableNames.BoundaryVelocityVector(SpatDim));
             m_ArgumentOrdering = VariableNames.VelocityVector(SpatDim); // VelocityX,VelocityY,(VelocityZ) as variables. 
@@ -615,7 +623,8 @@ namespace BoSSS.Solution.NSECommon {
         MaterialLaw EoS = null;
         Func<double[], double, double>[] scalarFunction = null;
         int NumberOfReactants;
-        int idx;
+        //int idx;
+      
         /// <summary>
         /// Ctor for variable density flows,
         /// i.e. low Mach number flows and
@@ -635,14 +644,14 @@ namespace BoSSS.Solution.NSECommon {
             //m_VariableDensity = true;
             this.EoS = EoS;
             this.NumberOfReactants = NumberOfComponents;
-            idx = _component; // Velocity-i as argument...
-            m_ParameterOrdering = null; // not used
+            //idx = _component; // Velocity-i as argument...
+            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0MeanVector(SpatDim)); // used for computation of penalties
 
             switch(_bcmap.PhysMode) {
                 case PhysicsMode.MixtureFraction:
                 scalarFunction = m_bcmap.bndFunction[VariableNames.MixtureFraction];
                 m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
-                m_ParameterOrdering = new string[] { /*VariableNames.Rho*/ };
+                m_ParameterOrdering = m_ParameterOrdering.Cat(new string[] { /*VariableNames.Rho*/ });
                 break;
                 case PhysicsMode.LowMach:
                 scalarFunction = m_bcmap.bndFunction[VariableNames.Temperature];
@@ -772,7 +781,7 @@ namespace BoSSS.Solution.NSECommon {
                     
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================
-                        r = InnerEdgeFlux(ref inp2, Uin, Uout);
+                        r = InnerEdgeFlux_impl(ref inp2, Uin, Uout);
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
@@ -846,6 +855,13 @@ namespace BoSSS.Solution.NSECommon {
         /// bla bla bla
         /// </summary>
         protected virtual double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+            return InnerEdgeFlux_impl(ref inp, Uin, Uout);
+        }
+
+        /// <summary>
+        /// implemented in a separate function to prevent from overloading, i.e. make sure that <see cref="BorderEdgeFlux"/> calls this implementation, not an overloaded one
+        /// </summary>
+        protected double InnerEdgeFlux_impl(ref CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
 
             // Calculate central part
@@ -900,8 +916,8 @@ namespace BoSSS.Solution.NSECommon {
             double[] VelocityMeanIn = new double[m_SpatialDimension];
             double[] VelocityMeanOut = new double[m_SpatialDimension];
             for(int d = 0; d < m_SpatialDimension; d++) {
-                VelocityMeanIn[d] = Uin[d];
-                VelocityMeanOut[d] = Uout[d];
+                VelocityMeanIn[d] = inp.Parameters_IN[d];// Uin[d];
+                VelocityMeanOut[d] = inp.Parameters_OUT[d];// Uout[d];
             }
 
             double LambdaIn;
@@ -1020,12 +1036,11 @@ namespace BoSSS.Solution.NSECommon {
             return this.BorderEdgeFlux(ref inp, _uA) * _vA;
         }
 
-        double[] buf = null;
+        
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             int D = GradV.Length;
             double acc = 0;
-            if(buf == null)
-                buf = new double[D];
+            double[] buf = new double[D];
             this.Flux(ref cpv, U, buf);
             for(int d = 0; d < D; d++)
                 acc += buf[d] * GradV[d];
@@ -1038,7 +1053,7 @@ namespace BoSSS.Solution.NSECommon {
             return new IEquationComponent[] { DivergenceDerivEdg, DivergenceDerivVol };
         }
 
-        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             if (cs.UserDefinedValues.Keys.Contains("VelocityMultiplier"))
                 VelocityMultiplier = (double)cs.UserDefinedValues["VelocityMultiplier"];
         }

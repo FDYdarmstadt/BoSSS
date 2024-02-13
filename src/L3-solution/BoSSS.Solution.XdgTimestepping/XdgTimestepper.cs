@@ -173,16 +173,16 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// spatial operator in the case of XDG, i.e. can be null if DG is used;
         /// </summary>
-        public XSpatialOperatorMk2 XdgOperator {
+        public XDifferentialOperatorMk2 XdgOperator {
             get;
             private set;
         }
 
-        XSpatialOperatorMk2 m_JacobiXdgOperator;
+        XDifferentialOperatorMk2 m_JacobiXdgOperator;
 
-        XSpatialOperatorMk2 GetJacobiXdgOperator() {
+        XDifferentialOperatorMk2 GetJacobiXdgOperator() {
             if(m_JacobiXdgOperator == null) {
-                m_JacobiXdgOperator = XdgOperator.GetJacobiOperator(GridDat.SpatialDimension) as XSpatialOperatorMk2;
+                m_JacobiXdgOperator = XdgOperator.GetJacobiOperator(GridDat.SpatialDimension) as XDifferentialOperatorMk2;
             }
             return m_JacobiXdgOperator;
         }
@@ -191,16 +191,16 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// spatial operator in the case of DG, i.e. can be null if XDG is used; 
         /// </summary>
-        public SpatialOperator DgOperator {
+        public DifferentialOperator DgOperator {
             get;
             private set;
         }
 
-        SpatialOperator m_JacobiDgOperator;
+        DifferentialOperator m_JacobiDgOperator;
 
-        SpatialOperator GetJacobiDgOperator() {
+        DifferentialOperator GetJacobiDgOperator() {
             if(m_JacobiDgOperator == null) {
-                m_JacobiDgOperator = DgOperator.GetJacobiOperator(GridDat.SpatialDimension) as SpatialOperator;
+                m_JacobiDgOperator = DgOperator.GetJacobiOperator(GridDat.SpatialDimension) as DifferentialOperator;
             }
             return m_JacobiDgOperator;
         }
@@ -209,7 +209,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// spatial operator which is integrated over time (<see cref="XdgOperator"/>, <see cref="DgOperator"/>)
         /// </summary>
-        public ISpatialOperator Operator {
+        public IDifferentialOperator Operator {
             get {
                 
                 if(XdgOperator != null)
@@ -223,7 +223,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// <see cref="XSpatialOperatorMk2.Species"/>
+        /// <see cref="XDifferentialOperatorMk2.Species"/>
         /// </summary>
         public SpeciesId[] UsedSpecies {
             get {
@@ -285,14 +285,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Constructor for an XDG operator (see <see cref="XdgOperator"/>)
         /// </summary>
         public XdgTimestepping(
-            XSpatialOperatorMk2 op,
+            XDifferentialOperatorMk2 op,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
             Func<ISlaveTimeIntegrator> _UpdateLevelset = null,
             LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
-            AggregationGridData[] _MultigridSequence = null,
             double _AgglomerationThreshold = 0.1,
             AdvancedSolvers.ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             LevelSetTracker _optTracker = null,
@@ -334,7 +333,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 _UpdateLevelset, 
                 _LevelSetHandling,
                 _MultigridOperatorConfig, 
-                _MultigridSequence, 
                 _AgglomerationThreshold,
                 LinearSolver, NonLinearSolver,
                 queryHandler);
@@ -342,11 +340,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         }       
 
         private void ConstructorCommon(
-            ISpatialOperator op, bool UseX, 
+            IDifferentialOperator op, bool UseX, 
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
             SpeciesId[] spcToCompute,
             Func<ISlaveTimeIntegrator> _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
+            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, 
             double _AgglomerationThreshold,
             ISolverFactory LinearSolver, NonLinearSolverConfig NonLinearSolver,
             QueryHandler queryHandler) //
@@ -374,12 +372,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 };
             }
 
-            // default Multi-Grid
-            // ==================
+            //// default Multi-Grid
+            //// ==================
 
-            if (_MultigridSequence == null) {
-                _MultigridSequence = new[] { CoarseningAlgorithms.ZeroAggregation(this.GridDat) };
-            }
+            //if (_MultigridSequence == null) {
+            //    _MultigridSequence = new[] { CoarseningAlgorithms.ZeroAggregation(this.GridDat) };
+            //}
 
             // default level-set treatment
             // ===========================
@@ -417,7 +415,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
-                    _MultigridOperatorConfig, _MultigridSequence,
+                    _MultigridOperatorConfig,
                     spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
@@ -432,7 +430,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
-                    _MultigridOperatorConfig, _MultigridSequence,
+                    _MultigridOperatorConfig,
                     spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
@@ -459,7 +457,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Fields, this.Parameters, IterationResiduals,
                 this.UsedSpecies,
                 this.TimesteppingBase.UpdateLevelset, this.TimesteppingBase.Config_LevelSetHandling,
-                this.TimesteppingBase.Config_MultigridOperator, this.TimesteppingBase.MultigridSequence,
+                this.TimesteppingBase.Config_MultigridOperator,
                 this.TimesteppingBase.Config_AgglomerationThreshold,
                 TimesteppingBase.LinearSolverConfig, TimesteppingBase.XdgSolverFactory.Config, queryBkup);
 
@@ -526,12 +524,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Constructor for conventional (single-phase, non-X) DG
         /// </summary>
         public XdgTimestepping(
-            SpatialOperator op,
+            DifferentialOperator op,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
-            AggregationGridData[] _MultigridSequence = null,
             ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             IList<DGField> _Parameters = null,
             QueryHandler queryHandler = null,
@@ -549,7 +546,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             var spc = CreateDummyTracker(Fields.First().GridDat);
 
-            if (lsu == null){
+            if (lsu == null) {
                 lsu = () => new UpdateLevelsetWithNothing(this);
             }
 
@@ -559,7 +556,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 lsu,
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
-                _MultigridSequence,
                 0.0,
                 LinearSolver, NonLinearSolver, queryHandler);
         }
@@ -617,11 +613,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>:
+        /// Spatial Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>:
         /// - either update operator linearization matrix 
         /// - or evaluate the operator in the current linearization point
         /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
-        /// /// </summary>
+        /// 
+        /// The contribution from the spatial operator is than added in <see cref="XdgTimesteppingBase.AssembleMatrixCallback"/>;
+        /// This contribution depends on the chosen time discretization see:
+        /// - <see cref="XdgBDFTimestepping.AssembleMatrixCallback"/>
+        /// - <see cref="XdgRKTimestepping.AssembleMatrixCallback"/>
+        /// - base routine: <see cref="XdgTimesteppingBase.AssembleMatrixCallback"/>
+        /// </summary>
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             using(var ft = new FuncTrace()) {
                 // compute operator
@@ -674,7 +676,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
                                 mtxBuilder.time = time;
                                 mtxBuilder.MPITtransceive = true;
-                                if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
+                                if(mtxBuilder.Eval is XDifferentialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
                                     foreach(var kv in AgglomeratedCellLengthScales) {
                                         evn.CellLengthScales[kv.Key] = kv.Value;
                                     }
@@ -833,8 +835,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
-            return TimesteppingBase.OperatorAnalysis(VarGroups, false);
+        public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config, IEnumerable<int[]> VarGroups = null) {
+            return TimesteppingBase.OperatorAnalysis(VarGroups, calculateGlobals: config.CalculateGlobalConditionNumbers, calculateStencils:config.CalculateStencilConditionNumbers);
         }
 
         public XdgBDFTimestepping m_BDF_Timestepper;
@@ -862,9 +864,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             bool success = false;
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
+
             if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime))
                 throw new ApplicationException($"Before timestep, mismatch in time between tracker (Regions.Time = {LsTrk.Regions.Time}) and physical time ({phystime})");
-
 
 
             double[] AvailTimesBefore;
@@ -945,7 +947,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
-            ISpatialOperator abstractOperator) //
+            IDifferentialOperator abstractOperator) //
         {
             var gDat = Fields.First().GridDat;
             if(!object.ReferenceEquals(LsTrk.GridDat, gDat))
@@ -967,10 +969,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new NotImplementedException();
             }
 
-            if (abstractOperator.GetType() == typeof(XSpatialOperatorMk2))
-                XdgOperator = (XSpatialOperatorMk2)abstractOperator;
-            if (abstractOperator.GetType() == typeof(SpatialOperator))
-                DgOperator = (SpatialOperator)abstractOperator;
+            if (abstractOperator.GetType() == typeof(XDifferentialOperatorMk2))
+                XdgOperator = (XDifferentialOperatorMk2)abstractOperator;
+            if (abstractOperator.GetType() == typeof(DifferentialOperator))
+                DgOperator = (DifferentialOperator)abstractOperator;
 
             if (!object.ReferenceEquals(this.Operator, m_BDF_Timestepper.AbstractOperator))
                 throw new ApplicationException();

@@ -272,7 +272,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             // create spatial operator
             IEvaluatorNonLin evo;
             {
-                SpatialOperator op = new SpatialOperator(1, 2, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx0", "dPhi_dx1", "cod1");
+                DifferentialOperator op = new DifferentialOperator(1, 2, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx0", "dPhi_dx1", "cod1");
                 op.EquationComponents["cod1"].Add(new ReinitOperator());
                 op.EdgeQuadraturSchemeProvider = g => (new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(g)));
                 op.VolumeQuadraturSchemeProvider = g => (new CellQuadratureScheme(domain: jCellGrid.VolumeMask));
@@ -285,7 +285,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             // create artificial diffusion operator
             MultidimensionalArray DiffMtx;
             double[] DiffRhs;
-            SpatialOperator dop;
+            DifferentialOperator dop;
             {
                 double penaltyBase = this.LevelSetBasis.Degree + 2;
                 penaltyBase = penaltyBase.Pow2();

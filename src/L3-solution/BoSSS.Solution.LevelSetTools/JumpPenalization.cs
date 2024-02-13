@@ -280,7 +280,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
 
         private MsrMatrix PenaltyMatrix(EdgeMask em, Basis LevSetBasis, Basis JumpBasis) {
 
-            var OpA = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "Phi", "c1");
+            var OpA = new DifferentialOperator(1, 0, 1, QuadOrderFunc.Linear(), "Phi", "c1");
             switch (penaltyTerms) {
                 case jumpPenalizationTerms.Jump: {
                         OpA.EquationComponents["c1"].Add(new JumpForm() { m_pnltyBase = m_penalty});
@@ -351,7 +351,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
 
         public void Evaluate2(SubGrid S, SinglePhaseField inp_LevSet, SinglePhaseField outp_Result) {
 
-            var Op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "Phi", "c1");
+            var Op = new DifferentialOperator(1, 0, 1, QuadOrderFunc.Linear(), "Phi", "c1");
             Op.EquationComponents["c1"].Add(new JumpForm());
             //Op.EquationComponents["c1"].Add(new GradientJumpForm() { BTerm = true });
             Op.EquationComponents["c1"].Add(new GradientJumpForm2());

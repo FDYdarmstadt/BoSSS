@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class ConstantXTemporalOperator : ITemporalOperator {
 
-        static ValueTuple<string, double[]>[] Diag(XSpatialOperatorMk2 __owner, double diagonalValue) {
+        static ValueTuple<string, double[]>[] Diag(XDifferentialOperatorMk2 __owner, double diagonalValue) {
             double[] diag = new double[__owner.DomainVar.Count];
             diag.SetAll(diagonalValue);
             return __owner.Species.Select(spcName => (spcName, diag.CloneAs())).ToArray();
@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="__owner"></param>
         /// <param name="diagonalValue"></param>
-        public ConstantXTemporalOperator(XSpatialOperatorMk2 __owner, double diagonalValue = 1.0)
+        public ConstantXTemporalOperator(XDifferentialOperatorMk2 __owner, double diagonalValue = 1.0)
             : this(__owner, Diag(__owner, diagonalValue)) {
 
             owner = __owner;
@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.XDG {
         /// i.e. if <paramref name="__owner"/> has 4 domain and 4 codomain variables,
         /// this must have 4 entries per species too, providing a single factor for the temporal derivative of each equation.
         /// </param>
-        public ConstantXTemporalOperator(XSpatialOperatorMk2 __owner, params ValueTuple<string, double[]>[] diagonal) {
+        public ConstantXTemporalOperator(XDifferentialOperatorMk2 __owner, params ValueTuple<string, double[]>[] diagonal) {
             owner = __owner;
             if (owner.DomainVar.Count != owner.CodomainVar.Count) {
                 throw new NotSupportedException("Expecting a square operator.");
@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        XSpatialOperatorMk2 owner;
+        XDifferentialOperatorMk2 owner;
 
         Dictionary<string, double[]> m_DiagonalScale;
 
@@ -112,7 +112,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Dirty hack to support e.g. the IBM solver (state sept2020) which uses only DG 
-        /// fields but employs an <see cref="XSpatialOperatorMk2"/>;
+        /// fields but employs an <see cref="XDifferentialOperatorMk2"/>;
         /// may be deleted, eventually.
         /// </summary>
         public void SetTrackerHack(LevelSetTracker lstrk) {
@@ -178,7 +178,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 
             /// </summary>
-            public ISpatialOperator Owner {
+            public IDifferentialOperator Owner {
                 get {
                     return m_Owner.owner;
                 }
@@ -213,12 +213,12 @@ namespace BoSSS.Foundation.XDG {
                 if (DomainMapping.NoOfVariables != CodomainMapping.NoOfVariables)
                     throw new NotSupportedException($"Mismatch between number of variables in domain ({DomainMapping.NoOfVariables}) and codomain ({CodomainMapping.NoOfVariables}).");
 
-                int QuadratureOrder = m_Owner.owner.GetOrderFromQuadOrderFunction(DomainMapping.BasisS, XSpatialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
+                int QuadratureOrder = m_Owner.owner.GetOrderFromQuadOrderFunction(DomainMapping.BasisS, XDifferentialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
                 LevelSetTracker _LsTrk;
                 if(m_Owner.m_lstrk != null)
                     _LsTrk = m_Owner.m_lstrk;
                 else
-                    _LsTrk = XSpatialOperatorMk2.GetTracker(DomainMapping.BasisS, XSpatialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
+                    _LsTrk = XDifferentialOperatorMk2.GetTracker(DomainMapping.BasisS, XDifferentialOperatorMk2.GetBasisS(Parameters), CodomainMapping.BasisS);
                 SpeciesId[] _SpeciesToCompute = m_Owner.owner.Species.Select(spcName => _LsTrk.GetSpeciesId(spcName)).ToArray();
 
 
@@ -254,15 +254,15 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class DependentXTemporalOperator : ITemporalOperator {
 
-        XSpatialOperatorMk2 owner;
+        XDifferentialOperatorMk2 owner;
 
         /// <summary>
         /// Ctor
         /// </summary>
         /// <param name="__owner"></param>
-        public DependentXTemporalOperator(XSpatialOperatorMk2 __owner) {
+        public DependentXTemporalOperator(XDifferentialOperatorMk2 __owner) {
             owner = __owner;
-            InternalRepresentation = new XSpatialOperatorMk2(__owner.DomainVar, __owner.ParameterVar, __owner.CodomainVar, __owner.QuadOrderFunction, __owner.Species.ToArray());
+            InternalRepresentation = new XDifferentialOperatorMk2(__owner.DomainVar, __owner.ParameterVar, __owner.CodomainVar, __owner.QuadOrderFunction, __owner.Species.ToArray());
             InternalRepresentation.AgglomerationThreshold = __owner.AgglomerationThreshold;
             InternalRepresentation.LinearizationHint = LinearizationHint.GetJacobiOperator;
             InternalRepresentation.m_UserDefinedValues = __owner.m_UserDefinedValues;
@@ -278,7 +278,7 @@ namespace BoSSS.Foundation.XDG {
         
         }
 
-        XSpatialOperatorMk2 InternalRepresentation;
+        XDifferentialOperatorMk2 InternalRepresentation;
 
         /// <summary>
         /// locks the configuration of the operator

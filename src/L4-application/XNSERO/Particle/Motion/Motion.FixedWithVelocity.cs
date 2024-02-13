@@ -31,36 +31,33 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionFixedWithVelocity(double density = 0) : base(density) {
-            IncludeRotation = true;
-            IncludeTranslation = true;
-        }
+        public MotionFixedWithVelocity(double density = 0) : base(density) {  }
 
         /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override Vector CalculateParticlePosition(double dt) {
+        public override Vector CalculateParticlePosition(double dt) {
             Vector position = GetPosition(1);
             Aux.TestArithmeticException(position, "particle translational velocity");
             return position;
         }
-        
+
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateParticleAngle(double dt) {
+        public override double CalculateParticleAngle(double dt) {
             double angle = GetAngle(1);
             Aux.TestArithmeticException(angle, "particle rotational velocity");
             return angle;
         }
 
         public override object Clone() {
-            Motion clonedMotion = new MotionFixed(Density);
-            clonedMotion.SetVolume(Volume);
-            clonedMotion.SetMomentOfInertia(MomentOfInertia);
+            MotionFixed clonedMotion = new MotionFixed(Density);
+            clonedMotion.Volume = this.Volume;
+            clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
         }
     }

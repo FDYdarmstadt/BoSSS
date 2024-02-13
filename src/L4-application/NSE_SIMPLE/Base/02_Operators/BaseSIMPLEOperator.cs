@@ -133,10 +133,10 @@ namespace NSE_SIMPLE {
             ComputeAffine();
         }
 
-        SpatialOperator m_SpatialOperator;        
+        DifferentialOperator m_SpatialOperator;        
         
         /// <summary>
-        /// Implement this method to define the <see cref="SpatialOperator"/> of any derived <see cref="SIMPLEOperator"/>.
+        /// Implement this method to define the <see cref="DifferentialOperator"/> of any derived <see cref="SIMPLEOperator"/>.
         /// </summary>
         /// <param name="SolverConf">
         /// Solver configuration.
@@ -150,7 +150,7 @@ namespace NSE_SIMPLE {
         /// <returns>
         /// SpatialOperator.
         /// </returns>
-        protected abstract SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int ArgumentIndex, int SpatialDirection);        
+        protected abstract DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int ArgumentIndex, int SpatialDirection);        
 
         // UseCount for matrix of operators which are not constant
         int m_UseCntMatrix = 0;

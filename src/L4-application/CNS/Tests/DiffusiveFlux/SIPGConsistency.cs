@@ -49,7 +49,9 @@ namespace CNS.Tests.DiffusiveFlux {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             CoordinateMapping output_map = new CoordinateMapping(WorkingSet.ConservativeVariables);
-            operatorFactory.GetDiffusiveOperator().ToSpatialOperator(WorkingSet).Evaluate(
+            var op = operatorFactory.GetDiffusiveOperator().ToSpatialOperator(WorkingSet);
+            
+            op.Evaluate(
                 1.0, 0.0, new CoordinateMapping(WorkingSet.ConservativeVariables), null, output_map);
             output = new CoordinateVector(output_map);
 

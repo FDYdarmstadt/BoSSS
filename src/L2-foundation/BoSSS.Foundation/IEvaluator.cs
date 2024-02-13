@@ -17,7 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using ilPSP.LinSolvers;
 using System.Collections.Generic;
-using static BoSSS.Foundation.SpatialOperator;
+using static BoSSS.Foundation.DifferentialOperator;
 
 namespace BoSSS.Foundation {
 
@@ -42,7 +42,7 @@ namespace BoSSS.Foundation {
         UnsetteledCoordinateMapping DomainMapping { get; }
 
         /// <summary>
-        /// List of parameter fields, correlates with <see cref="SpatialOperator.ParameterVar"/>.
+        /// List of parameter fields, correlates with <see cref="DifferentialOperator.ParameterVar"/>.
         /// </summary>
         IList<DGField> Parameters { get; }
         
@@ -72,7 +72,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
         /// </summary>
-        ISpatialOperator Owner { get; }
+        IDifferentialOperator Owner { get; }
     }
 
     /// <summary>

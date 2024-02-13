@@ -180,7 +180,7 @@ namespace AdvancedSolverTests {
 
         }
 
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
         int m_quadOrder;
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
@@ -196,7 +196,7 @@ namespace AdvancedSolverTests {
             //var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
             //var lap = new XLaplace_Bulk(this.LsTrk, 2.0 * penalty_base, "u1", xLaplaceBCs, 1.0, 1, 1000, lengthScales, XLaplace_Interface.Mode.SIP);
 
-            Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
+            Op = new XDifferentialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
             //Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, c) => m_quadOrder, LsTrk.SpeciesIdS.ToArray(), "u1","c1");
 
             switch (m_Mshape) {
@@ -346,16 +346,28 @@ namespace AdvancedSolverTests {
         }
 
         private void Setup() {
+            MPICollectiveWatchDog.Watch(token:349);
+            MPICollectiveWatchDog.Watch(token: 350);
+            MPICollectiveWatchDog.Watch(token: 351);
+
             MgSeq = CoarseningAlgorithms.CreateSequence(m_grid.iGridData);
+            MPICollectiveWatchDog.Watch(token: 354);
+            MPICollectiveWatchDog.Watch(token: 355);
+            MPICollectiveWatchDog.Watch(token: 356);
 
             int p = m_DGorder;
 
             var uMapping = new UnsetteledCoordinateMapping(u1.Basis, u2.Basis);
             //var uMapping = new UnsetteledCoordinateMapping(u1.Basis);
             //var uMapping = new UnsetteledCoordinateMapping(new Basis(m_grid.iGridData, p));
-
+            MPICollectiveWatchDog.Watch(token: 363);
+            MPICollectiveWatchDog.Watch(token: 364);
+            MPICollectiveWatchDog.Watch(token: 365);
             XAggB = AggregationGridBasis.CreateSequence(MgSeq, uMapping.BasisS);
             var bla = LsTrk.SpeciesIdS.ToArray();
+            MPICollectiveWatchDog.Watch(token: 368);
+            MPICollectiveWatchDog.Watch(token: 369);
+            MPICollectiveWatchDog.Watch(token: 370);
             var agg = LsTrk.GetAgglomerator(bla, m_quadOrder, THRESHOLD, AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
             XAggB.UpdateXdgAggregationBasis(agg);
             var VarDegrees=uMapping.BasisS.Count.ForLoop(i=> uMapping.BasisS[i].Degree);
@@ -397,7 +409,7 @@ namespace AdvancedSolverTests {
 
             Agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_quadOrder, __AgglomerationTreshold: this.THRESHOLD);
 
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.CellLengthScales.AddRange(Agg.CellLengthScales);
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
@@ -424,12 +436,15 @@ namespace AdvancedSolverTests {
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[1]);
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[0]);
 
-            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            // matrix non-zero-pattern seems to be very sensitive to the sequence of summation;
+            // hence, introduce a threshold to mitigate this.
+            double threshold = this.OperatorMatrix.InfNorm()*1.0e-14;
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
 
-            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
-            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros(threshold);
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
+            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
 
             MsrMatrix Comp = AltOperatorMatrix.CloneAs();
             Comp.Acc(-1.0, OperatorMatrix);

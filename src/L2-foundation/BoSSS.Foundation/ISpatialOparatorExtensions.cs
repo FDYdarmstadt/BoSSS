@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// Extension functions for <see cref="ISpatialOperator"/>
+    /// Extension functions for <see cref="IDifferentialOperator"/>
     /// </summary>
     static public class ISpatialOparatorExtensions {
 
 
         /// <summary>
-        /// Involves all <see cref="ISpatialOperator.ParameterFactories"/> events 
+        /// Involves all <see cref="IDifferentialOperator.ParameterFactories"/> events 
         /// and all <see cref="IParameterHandling.MyParameterAlloc"/> methods in the operators equation components 
         /// in order to allocate operator storage.
         /// </summary>
-        public static DGField[] InvokeParameterFactory(this ISpatialOperator op, IEnumerable<DGField> __DomainFields) {
+        public static DGField[] InvokeParameterFactory(this IDifferentialOperator op, IEnumerable<DGField> __DomainFields) {
 
             if (!op.IsCommitted)
                 throw new NotSupportedException("not allowed before commit.");
@@ -111,11 +111,11 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Involves all <see cref="ISpatialOperator.ParameterUpdates"/> events 
+        /// Involves all <see cref="IDifferentialOperator.ParameterUpdates"/> events 
         /// and all <see cref="IParameterHandling.MyParameterUpdate"/> methods in the operators equation components 
         /// in order to allocate operator storage.
         /// </summary>
-        public static void InvokeParameterUpdate(this ISpatialOperator op, double time, DGField[] __DomainFields, DGField[] __ParameterFields) {
+        public static void InvokeParameterUpdate(this IDifferentialOperator op, double time, DGField[] __DomainFields, DGField[] __ParameterFields) {
             using(new FuncTrace()) {
                 if(!op.IsCommitted)
                     throw new NotSupportedException("not allowed before commit.");

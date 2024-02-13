@@ -572,7 +572,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
                 
                 double[] matrix;
-                if (basisValues.IsContinious) {
+                if (basisValues.IsContinuous) {
                     matrix = basisValues.Storage;
                 } else {
                     matrix = new double[basisValues.Length];
@@ -807,6 +807,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 NoOfItemsLocally = mask.NoOfItemsLocally;
             }
 
+            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel.");
+            }
+
             /// <summary>
             /// Computes the integrals while overwriting <see cref="Results"/>
             /// </summary>
@@ -922,6 +926,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             {
                 this.owner = owner;
                 NoOfItemsLocally = mask.NoOfItemsLocally;
+            }
+
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel.");
             }
 
             /// <summary>

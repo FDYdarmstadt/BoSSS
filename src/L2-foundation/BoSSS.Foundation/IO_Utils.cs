@@ -567,6 +567,7 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+      
         /// <summary>
         /// Retrieves the write time of a physical file associated with an
         /// ISessionInfo object.
@@ -574,23 +575,31 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session">The session in question.</param>
         /// <returns>The last time the file has been written to disk.</returns>
         public static DateTime GetSessionFileWriteTime(ISessionInfo session) {
-            // Find sub-folder with session ID as name
+            
             try {
-                string sessFolderPath = Directory.GetDirectories(
-                    Path.Combine(session.Database.Controller.DBDriver.FsDriver.BasePath, StandardFsDriver.SessionsDir),
-                    session.ID.ToString()).FirstOrDefault();
-                if (sessFolderPath == null) {
+                
+                // way to slow: searching for the dir every time when we check if the session info is up-to-date results in a unresponsive database
+                //string sessFolderPath = Directory.GetDirectories(
+                //    Path.Combine(session.Database.Controller.DBDriver.FsDriver.BasePath, StandardFsDriver.SessionsDir),
+                //    session.ID.ToString()).FirstOrDefault();
+                //if (sessFolderPath == null) {
+
+                string sessFolderPath = Path.Combine(session.Database.Controller.DBDriver.FsDriver.BasePath, StandardFsDriver.SessionsDir, session.ID.ToString());
+                if(!Directory.Exists(sessFolderPath)) {
                     // Session has probably been deleted; Setting it to max
                     // value makes sure cached data disappears
                     return DateTime.MaxValue;
                 }
 
                 string entityFilePath = Path.Combine(sessFolderPath, "Session.info");
-                return File.GetLastWriteTime(entityFilePath);
+                var t = File.GetLastWriteTime(entityFilePath);
+                return t;
             } catch (Exception) {
                 Console.WriteLine("Error at loading of session:"+ session.ID);
                 throw;
             }
+
+            
         }
 
         /// <summary>

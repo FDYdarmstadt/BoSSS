@@ -137,7 +137,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Test on a curved grid.
         /// </summary>
         public static SipControl TestSpherical() {
-            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCurved();
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestSpherical();
             var R = new SipControl();
             R.ProjectName = "ipPoison/curved";
             R.savetodb = false;
@@ -422,6 +422,7 @@ namespace BoSSS.Application.SipPoisson {
                 // For testing in DEBUG mode, this setting enforces the use 
                 // of many multigrid-levels. In 2D, the examples are so small that 
                 omg.TargetBlockSize = 100;
+                omg.CoarseKickIn = 500;
             }
 #endif
 

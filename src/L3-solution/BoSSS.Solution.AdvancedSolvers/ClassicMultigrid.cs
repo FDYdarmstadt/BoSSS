@@ -182,7 +182,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// defines the problem matrix
         /// </summary>
         void InitImpl(IOperatorMappingPair op) {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 if(object.ReferenceEquals(op, this.m_MgOperator))
                     return; // already initialized
                 else
@@ -214,13 +214,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
                 if (this.CoarserLevelSolver == null) {
                     //throw new NotSupportedException("Missing coarse level solver.");
-                    Console.WriteLine("OrthonormalizationMultigrid: running without coarse solver.");
+                    tr.Info("ClassicMultigrid: running without coarse solver.");
                 } else {
                     if (op is MultigridOperator mgOp) {
                         if (myConfig.CoarseOnLovwerLevel && mgOp.CoarserLevel != null) {
                             this.CoarserLevelSolver.Init(mgOp.CoarserLevel);
                         } else {
-                            Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
+                            tr.Info("ClassicMultigrid: running coarse solver on same level.");
                             this.CoarserLevelSolver.Init(mgOp);
                         }
                     } else {
@@ -281,7 +281,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V2 : IList<double>
             where V3 : IList<double>
         {
-            OpMatrix.SpMV(-1.0, xl, 0.0, rl);
+            OpMatrix.SpMV(-1.0, xl, 0.0, rl); // rl is cleared by 0.0 accumulator scaling
             rl.AccV(1.0, bl);
             return rl.MPI_L2Norm(OpMatrix.MPI_Comm);
         }
@@ -337,64 +337,84 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> {
             using (new FuncTrace()) {
 
+                //var xclone = xl.ToArray();
+                //var bclone = bl.ToArray();
+                
+                //PostSmoother.Solve(xclone, bclone);
+                
+                
+                
                 int N = xl.Count;
                 
                 double[] rl = new double[N];
-                
+                double[] xc = new double[N];
 
-                double iter0ResidualNorm = bl.MPI_L2Norm(m_MgOperator.DgMapping.MPI_Comm);
+                double iter0ResidualNorm = Residual(rl, xl, bl); // Residual on this level
                 double iterNorm = iter0ResidualNorm;
-
-                for (int iIter = 0; true; iIter++) {
+                
+                for (int iIter = 1; true; iIter++) {
+                    
                     var term = TerminationCriterion(iIter, iter0ResidualNorm, iterNorm);
                     this.m_converged = term.bSuccess;
-                    if (!term.bNotTerminate)
+                    if (!term.bNotTerminate) {
+                        //Console.WriteLine("  --- mg diff: " + xclone.L2Dist(xl));
                         return;
+                    }
 
 
 
-                    if (PreSmoother != null)
-                        PreSmoother.Solve(xl, bl); // Vorglättung
-                  
-                    iterNorm = Residual(rl, xl, bl); // Residual on this level
+                    if (PreSmoother != null) {
+                        xc.ClearEntries();
+                        PreSmoother.Solve(xc, rl); // Vorglättung
+                        xl.AccV(1.0, xc);
+                        iterNorm = Residual(rl, xl, bl); // Residual on this level
+                    }
 
                     if (CoarserLevelSolver != null) {
-                        if (config.CoarseOnLovwerLevel) {
-                            var _MgOperator = this.m_MgOperator as MultigridOperator;
+                        for (int j = 0; j < config.m_omega; j++) {
+                            if (config.CoarseOnLovwerLevel) {
+                                var _MgOperator = this.m_MgOperator as MultigridOperator;
 
-                            int NN = _MgOperator.CoarserLevel.Mapping.LocalLength;
-                            double[] rlp1 = new double[NN];
-                            _MgOperator.CoarserLevel.Restrict(rl, rlp1);
+                                int NN = _MgOperator.CoarserLevel.Mapping.LocalLength;
+                                double[] rlp1 = new double[NN];
+                                _MgOperator.CoarserLevel.Restrict(rl, rlp1);
 
-                            // Berechnung der Grobgitterkorrektur
-                            double[] vlp1 = new double[NN];
-                            for (int j = 0; j < config.m_omega; j++) {
+                                // Berechnung der Grobgitterkorrektur
+                                double[] vlp1 = new double[NN];
                                 this.CoarserLevelSolver.Solve(vlp1, rlp1);
+
+                                // Prolongation der Grobgitterkorrektur
+                                _MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
+                            } else {
+                                var ssCoarse = CoarserLevelSolver as ISubsystemSolver;
+                                xc.Clear();
+                                ssCoarse.Solve(xc, rl);
+                                xl.AccV(1.0, xc);
                             }
 
-                            // Prolongation der Grobgitterkorrektur
-                            _MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
-                        } else {
-                            var ssCoarse = CoarserLevelSolver as ISubsystemSolver;
-                            for (int j = 0; j < config.m_omega; j++) {
-                                ssCoarse.Solve(xl, bl);
-                                if (j < config.m_omega - 1)
-                                    iterNorm = Residual(rl, xl, bl);
-                            }
+                            // update residual after coarse grid correction
+                            iterNorm = Residual(rl, xl, bl); // Residual on this level
                         }
                     }
-                    // check residual after coarse grid correction
-                    Residual(rl, xl, bl); // Residual on this level
+
+
 
                     // Nachglättung
-                    if (PostSmoother != null)
-                        PostSmoother.Solve(xl, bl);
+                    if (PostSmoother != null) {
+                        xc.ClearEntries();
+                        PostSmoother.Solve(xc, rl);
+                        xl.AccV(1.0, xc);
+                        iterNorm = Residual(rl, xl, bl); // Residual on this level
+                    }
 
                     // update residual
                     this.IterationCallback?.Invoke(iIter + 1, xl.ToArray(), rl, this.m_MgOperator as MultigridOperator);
-                    iterNorm = Residual(rl, xl, bl); // Residual on this level
                     this.NoOfIterations++;
                 }
+
+                
+
+                //*/
             }
         }
 
