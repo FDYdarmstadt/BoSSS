@@ -273,7 +273,7 @@ namespace BUIDT
                     ImmediatePlotPeriod: ImmediatePlotPeriod
                     );
 
-            c.SaveMatrices = true;
+            //c.SaveMatrices = true;
             // ### Grid ###
             double xMin = -0.2;
             double xMax = 1.0;
