@@ -1459,13 +1459,12 @@ namespace XESF {
             c.GetLevelSet = getLevelSet;
             //string shockLevelSet_SessionId = @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2";
             //string shockLevelSet_SessionId = @"3a743670-0220-4f90-81b6-b28a027944d5";
-            if (c.GetLevelSet == GetLevelSet.FromOldSimulation)
-            {
-                c.ShockLevelSet_Db = shockLevelSet_Db ?? throw new NotSupportedException("Shock level set DB is null.");
-                c.ShockLevelSet_Info = new Tuple<Guid, TimestepNumber>(new Guid(shockLevelSet_SessionId), -1);
-                c.ShockLevelSet_FieldName = "levelSet_recon_prc_cont";
-                c.ShockLevelSet_SeedFromDb = true;
-            }
+
+            c.ShockLevelSet_Db = shockLevelSet_Db ;
+            c.ShockLevelSet_Info = new Tuple<Guid, TimestepNumber>(new Guid(shockLevelSet_SessionId), -1);
+            c.ShockLevelSet_FieldName = "levelSet_recon_prc_cont";
+            c.ShockLevelSet_SeedFromDb = true;
+            
             
 
             /// ### Fluxes ###
