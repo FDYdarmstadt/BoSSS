@@ -1220,7 +1220,7 @@ namespace XESF {
                 ReInitTols: ReInitTolsArray[iRIT],
                 fphitype:fphiTypes[iFphi]
                 ) ;
-            c.SaveMatrices = true;
+            //c.SaveMatrices = true;
                 c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iProb{iProb}-iFlux{iflux}-FphiType{iFphi}-aRI_{aRI}");
             return c;
         }
