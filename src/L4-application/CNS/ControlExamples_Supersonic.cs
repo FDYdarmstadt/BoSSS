@@ -1781,6 +1781,269 @@ namespace CNS {
             return c;
         }
 
+        public static CNSControl ShuOsher(string dbPath = null, int savePeriod = 10000, double s_alpha = 20, int dgDegree = 2, double CFLFraction = 0.1,
+             int numOfCellsX = 70, int numOfCellsY = 3, double endTime = 1.1)
+        {
+            CNSControl c = new CNSControl();
+
+            // ### Database ###
+            //dbPath = @"c:\bosss_db";
+
+            c.DbPath = dbPath;
+            c.savetodb = dbPath != null;
+            c.saveperiod = savePeriod;
+            c.PrintInterval = savePeriod;
+            c.ResidualInterval = savePeriod;
+            c.ResidualLoggerType = BoSSS.Solution.CompressibleFlowCommon.Residual.ResidualLoggerTypes.Rigorous;
+            // ### Partitioning and load balancing ###
+            c.GridPartType = GridPartType.METIS;
+
+            //Restart
+
+            double xMin = -5.0;
+            double xMax = 2.0;
+            double yMin = 0;
+            double yMax = 0.07;
+            
+
+            c.GridFunc = delegate {
+                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                //grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
+
+                grid.DefineEdgeTags(delegate (double[] X) {
+                    if (Math.Abs(X[1]-yMin) < 1e-14)
+                    {   // bottom
+                        return 2;
+                    }
+                    else if (Math.Abs(X[1] - yMax ) < 1e-14)
+                    {    // top
+                        return 2;
+                    }
+                    else if (Math.Abs(X[0] - xMin) < 1e-14)
+                    {                    // left
+                        return 1;
+                    }
+                    else if (Math.Abs(X[0] - xMax) < 1e-14)
+                    {    // right
+                        return 1;
+                    }
+                    else
+                    {
+                        throw new System.Exception($"Boundary condition not specified at X={X}");
+                    }
+                });
+
+                return grid;
+            };
+            
+            // ### Time-Stepping ###
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
+
+            // ### Physics ###
+            c.EquationOfState = IdealGas.Air;
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            // ### Shock-Capturing ###
+            bool AV = true;
+            //if (dgDegree > 0) {
+            //    AV = true;
+            //}
+            if (AV)
+            {
+                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            }
+            else
+            {
+                c.ActiveOperators = Operators.Convection;
+            }
+            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
+
+            double sensorLimit = 1e-3;
+            double epsilon0 = 1.0;
+            double kappa = 0.5;
+            if (AV)
+            {
+                Variable sensorVariable = CompressibleVariables.Density;
+
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);    // dynamic lambdaMax
+            }
+
+            // ### Output variables ###
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
+
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+
+
+            //supersonic Base Flow - left values
+            double densityL = 3.857143; double pressureL = 10.3333; double velocityL = 2.629369;
+            double gamma = IdealGas.Air.HeatCapacityRatio;
+
+            Func<double, double> densityR = x => 1 + 0.2 * Math.Sin(5 * x);
+            Func<double, double> velocityR = x => 0;
+            Func<double, double> pressureR = x => 1;
+            double shockPosition = -0.4;
+
+
+            double cellSize = (xMax - xMin) / numOfCellsX;
+
+            // Function for smoothing the initial and top boundary conditions
+            double SmoothJump(double distance)
+            {
+                // smoothing should be in the range of h/p
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            }
+
+            Func<double[], int, double> init_valsL = delegate (double[] x, int component) {
+
+                if (component == 0)
+                {
+                    return densityL;
+                }
+                else if (component == 1)
+                {
+                    return velocityL;
+                }
+                else if (component == 2)
+                {
+                    return pressureL;
+                }
+                else
+                {
+                    throw new NotSupportedException("component not supported");
+                }
+            };
+            Func<double[], int, double> init_valsR = delegate (double[] x, int component) {
+                if (component == 0)
+                {
+                    return densityR(x[0]);
+                }
+                else if (component == 1)
+                {
+                    return velocityR(x[0]);
+                }
+                else if (component == 2)
+                {
+                    return pressureR(x[0]);
+                }
+                else
+                {
+                    throw new NotSupportedException("component not supported");
+                }
+            };
+
+            //dirichlet boundary vals
+            Func<double[], int, double> init_vals = delegate (double[] x, int component)
+            {
+                if (x[0] < shockPosition)
+                {
+                    return init_valsL(x, component);
+                }
+                else
+                {
+                    return init_valsR(x, component);
+                }
+            };
+            Func<double[], int, double> smooth_init_vals = delegate (double[] x, int component)
+            {
+                return init_valsL(x, component) - SmoothJump(x[0] - shockPosition) * (init_valsL(x, component) - init_valsR(x, component));
+            };
+            Func<double[], double, int, double> bnd_valsL = delegate (double[] x, double t, int component)
+            {
+
+                if (component == 0)
+                {
+                    return densityL;
+                }
+                else if (component == 1)
+                {
+                    return velocityL;
+                }
+                else if (component == 2)
+                {
+                    return pressureL;
+                }
+                else
+                {
+                    throw new NotSupportedException("component not supported");
+                }
+                
+            };
+            Func<double[], double, int, double> bnd_valsR = delegate (double[] x, double t, int component)
+            {
+
+                if (component == 0)
+                {
+                    return densityR((x[0]));
+                }
+                else if (component == 1)
+                {
+                    return velocityR(x[0]);
+                }
+                else if (component == 2)
+                {
+                    return pressureR(x[0]);
+                }
+                else
+                {
+                    throw new NotSupportedException("component not supported");
+                }
+            };
+
+
+
+
+
+            // ### Initial condtions ###
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => smooth_init_vals(X, 0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => smooth_init_vals(X, 1));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => smooth_init_vals(X, 2));
+
+            // ### Boundary condtions ###
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => X[0] < shockPosition ? bnd_valsL(X, t, 0) : bnd_valsR(X, t, 0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => X[0] < shockPosition ? bnd_valsL(X, t, 1) : bnd_valsR(X, t, 1));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => X[0] < shockPosition ? bnd_valsL(X, t, 2) : bnd_valsR(X, t, 2));
+            //c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => pressureR);
+            c.AddBoundaryValue("AdiabaticSlipWall");
+
+            // ### Time configuration ###
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            //c.dtFixed = 1e-4;
+            c.CFLFraction = CFLFraction;
+            c.Endtime = endTime;
+            c.NoOfTimesteps = int.MaxValue;
+
+            // ### Project and sessions name ###
+            c.ProjectName = "ShuOsher";
+            c.SessionName = string.Format($"CNS_1DShuOsher_p{dgDegree}_xCells{numOfCellsX}_tMax{endTime}");
+
+            //c.ProjectName = "StatShockRef";
+            //c.SessionName = String.Format("StatShockRef_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_sP{5}_Mach{6}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder, c.shockPosition,MachL);
+
+            return c;
+        }
+
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
