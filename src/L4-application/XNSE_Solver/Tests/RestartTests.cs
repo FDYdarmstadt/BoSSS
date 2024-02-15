@@ -42,7 +42,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// Unit tests for the XNSE restart procedures
     /// </summary>
     [TestFixture]
-    public class RestartTests {
+    public class RestartTest {
 
 
         /// <summary>
@@ -83,6 +83,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             };
             ctrl.AdaptiveMeshRefinement = AMRon;
             ctrl.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            ctrl.DynamicLoadBalancing_RedistributeAtStartup = false;
 
             double[] center = new double[] { 0.5, 0.5 };
             double radius = 0.25;
@@ -145,8 +146,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     throw new ArgumentException("Chosen timestepping scheme not supported for current test setting");
             }
 
-            ctrl.ImmediatePlotPeriod = 1;
-            ctrl.SuperSampling = 3;
+            //ctrl.ImmediatePlotPeriod = 1;
+            //ctrl.SuperSampling = 3;
 
             return ctrl;
         }
@@ -183,6 +184,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ctrl.AdaptiveMeshRefinement = AMRon;
             ctrl.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            ctrl.DynamicLoadBalancing_RedistributeAtStartup = false;
 
 
             ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
@@ -272,7 +274,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// Checks that all specified fields are correctly stored and loaded.
         /// </summary>
         [Test]
-        public static void RestartTest(
+        public static void Run_RestartTests(
                 [Values(false, true)] bool transient,
                 [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
                 [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme,
