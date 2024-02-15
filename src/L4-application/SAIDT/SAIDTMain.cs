@@ -10,8 +10,6 @@ using BoSSS.Solution.Utils;
 using SAIDT.Fluxes;
 using ApplicationWithIDT;
 using BoSSS.Solution.AdvancedSolvers;
-using NUnit.Framework;
-using BoSSS.Solution;
 
 namespace SAIDT {
     /// <summary>
@@ -29,13 +27,8 @@ namespace SAIDT {
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. `cs:SAIDT.SAIDTHardCodedControl.CurvedShock_Eccomas22()` </param>
         static void Main(string[] args) {
-            Application.InitMPI();
-            ilPSP.Environment.InitThreading(true, 4);
+            //SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SInglePhaseFieldLS();
             //SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22();
-            SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SInglePhaseFieldLS();
-            //SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SplineLevelSet();
-            Assert.IsTrue(false, "remove testcode");
-
             SAIDTMain._Main(args, false, () => new SAIDTMain());
         }
 
@@ -82,7 +75,6 @@ namespace SAIDT {
             GridData gridData = (GridData)this.GridData;
             this.XSpatialOperator = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             this.Op_obj = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
-            this.Op_obj.FluxesAreNOTMultithreadSafe = true;
             #endregion
 
             #region add EquationComponents
@@ -193,7 +185,7 @@ namespace SAIDT {
                 case OptiLevelSetType.SinglePhaseField:
                 case OptiLevelSetType.SpecFemField:
                 case OptiLevelSetType.SplineLevelSet:
-                LevelSetOpti.ProjectFromFunction(Control.InitialShockPostion);
+                LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                 break;
                 case OptiLevelSetType.GlobalLevelSet:
                 break;
