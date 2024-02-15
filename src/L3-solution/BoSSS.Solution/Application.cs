@@ -1570,7 +1570,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// <see cref="DatabaseDriver"/>
         /// </summary>
-        private IDatabaseInfo m_Database;
+        public IDatabaseInfo m_Database;
 
         public IDatabaseInfo Database {
             get {
