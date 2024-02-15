@@ -25,6 +25,8 @@ namespace SAIDT.Tests {
         [Test]
         //This test checks if the results presented on Eccomas 2022 can still be reproduced
         public static void CurvedShock_Eccomas22() {
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
             using(var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.CurvedShock_Eccomas22(
                         dbPath: null,
@@ -32,12 +34,16 @@ namespace SAIDT.Tests {
                         dgDegree: 0,
                         numOfCellsX: 10,
                         numOfCellsY: 10,
+                        ImmediatePlotPeriod:0,
                         agg: 0.4,
                         optiLevelSetType: OptiLevelSetType.SplineLevelSet
                         );
-                C.MinPIter = new int[] {40};
+                C.minimalSQPIterations = new int[] {40};
                 p.Init(C);
                 p.RunSolverMode();
+                p.Gammas.SaveToTextFile("Gammas.txt");
+                p.Alphas.SaveToTextFile("Alphas.txt");
+                p.Residuals.SaveToTextFile("Residuals");
                 Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < 1e-09 && p.ResidualVector.MPI_L2Norm() < 1e-09), System.String.Format("the L2 Error is greater than 1e-09 (Residual {0}, Enriched Residual {1}", p.ResidualVector.MPI_L2Norm(), p.obj_f_vec.MPI_L2Norm()));
             }
         }
@@ -45,7 +51,9 @@ namespace SAIDT.Tests {
         [Test]
         //Some Example with good first guess, but p=2
         public static void StraightShock_p2() {
-            using(var p = new SAIDTMain()) {
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            using (var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.StraightShock(
                     dbPath: null,
                     MaxIterations: 50,
@@ -70,7 +78,9 @@ namespace SAIDT.Tests {
         //Some straight Example with good first guess and SinglePhaseFieldLevelSet
         // very bad convergence to the actual solution
         public static void StraightShock_p0_SInglePhaseFieldLS() {
-            using(var p = new SAIDTMain()) {
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            using (var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.StraightShock(
                     dbPath: null,
                     MaxIterations: 50,
@@ -79,11 +89,10 @@ namespace SAIDT.Tests {
                     numOfCellsY: 5,
                     OptiNumOfCellsX: 5,
                     OptiNumOfCellsY: 5,
-                    agg: 0.1,
-                    ImmediatePlotPeriod: -1,
+                    agg: 0.4,
+                    ImmediatePlotPeriod: 1,
                     optiLevelSetType: OptiLevelSetType.SinglePhaseField,
-                    LSDegree: 1,
-                    withReInit: true
+                    LSDegree: 1
                     );
                 C.Gamma_Min = 1e-2;
                 //SAIDTMain.DeleteOldPlotFiles();
@@ -95,6 +104,7 @@ namespace SAIDT.Tests {
         [Test]
         //Some straight Example with good first guess and SinglePhaseFieldLevelSet
         public static void StraightShock_p0_SplineLevelSet() {
+            BoSSS.Solution.Application.InitMPI();
             using(var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.StraightShock(
                     MaxIterations: 150,
@@ -110,7 +120,7 @@ namespace SAIDT.Tests {
                     withReInit: true,
                     isFarConfig: true
                     ) ;
-                C.MinPIter = new int[] { 100, 100, 100 }; //we need to ensure enough iterations
+                C.minimalSQPIterations = new int[] { 100, 100, 100 }; //we need to ensure enough iterations
                 C.Gamma_Start = 1e-1;
                 C.Gamma_Min = 1e-2;
                 p.Init(C);
