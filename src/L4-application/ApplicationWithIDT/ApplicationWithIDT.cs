@@ -29,6 +29,7 @@ using BoSSS.Application.BoSSSpad;
 using CNS.Source;
 using System.Threading.Tasks;
 using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
+using static System.CommandLine.Help.DefaultHelpText;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -275,13 +276,24 @@ namespace ApplicationWithIDT {
             IGrid grid = null;
             switch(Control.getGridFrom) {
                 case GetGridFrom.DB:
-                grid = GridImporter.Import(Control.MeshPath);
-                var tmp = new byte[] { 1, 2, 3, 4, 5 };
-                for(int i = 0; i < Control.EdgTagNames.Length; i++) {
-                    grid.EdgeTagNames.Add(tmp[i], Control.EdgTagNames[i]);
-                }
-                grid.DefineEdgeTags(Control.EdgTagFunc);
-                return grid;
+                    if (Control.MeshPath != null)
+                    {
+                        grid = GridImporter.Import(Control.MeshPath);
+                        var tmp = new byte[] { 1, 2, 3, 4, 5 };
+                        for (int i = 0; i < Control.EdgTagNames.Length; i++)
+                        {
+                            grid.EdgeTagNames.Add(tmp[i], Control.EdgTagNames[i]);
+                        }
+                        grid.DefineEdgeTags(Control.EdgTagFunc);
+                        return grid;
+                    }
+                    else
+                    {
+                        grid = base.CreateOrLoadGrid();
+                        CompressibleEnvironment.Initialize(grid.SpatialDimension);
+                        return grid;
+                    }
+                
                 case GetGridFrom.GridFunc:
                 default:
                 // Optional: load grid from CNS calculation from which the shock level set has been reconstructed
@@ -332,7 +344,7 @@ namespace ApplicationWithIDT {
                 case SolverRunType.Standard:
                     CreateConservativeFields(this.LsTrk, Control.SolDegree);
                 break;
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                     CreateConservativeFields(this.LsTrk, Control.DgDegree_Start); //here we start with the lowest degree
                 break;
                 default:
@@ -362,12 +374,16 @@ namespace ApplicationWithIDT {
             Steps = new List<double[]>();
             Steps.Add(stepIN);
             gamma = Control.Gamma_Start;
-            CurMinIter = Control.MinPIter[0];
+            CurMinIter = Control.minimalSQPIterations[0];
             ReiniTMaxIter = Control.ReiniTMaxIters[0];
             CurrentAgglo = Control.AgglomerationThreshold;
             //chose the Merit Function used in Globalization
             ChooseMeritFunction();
             ChooseFphiType();
+            ChooseOptProblem();
+            InitObjFields();
+            //Register them (also registers other fields)
+            RegisterFields();
         }
         /// <summary>
         /// Chooses the Optimization Problem that will be solved
@@ -390,11 +406,8 @@ namespace ApplicationWithIDT {
                 break;
                 default: 
                 throw new Exception("This OptProblem is not implemented yet");
-
             }
-            InitObjFields();
-            //Register them (also registers other fields)
-            RegisterFields();
+
         }
 
         /// <summary>
@@ -407,7 +420,7 @@ namespace ApplicationWithIDT {
                 throw new NotSupportedException($"Control.Alpha_Start length must be between 0 and 1 but is {Control.Alpha_Start}");
             }
             switch(Control.solRunType) {
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                     if(Control.ReiniTMaxIters.Length < maxDeg+1) {
                         throw new NotSupportedException($"Control.ReiniTMaxIters length mus bet at least {maxDeg + 1}");
                     }
@@ -417,7 +430,7 @@ namespace ApplicationWithIDT {
                     if(Control.tALNRs.Length < maxDeg + 1) {
                         throw new NotSupportedException($"Control.tALNRs length must be at least {maxDeg+1}");
                     }
-                    if(Control.MinPIter.Length < maxDeg + 1) {
+                    if(Control.minimalSQPIterations.Length < maxDeg + 1) {
                         throw new NotSupportedException($"Control.MinPIter length must be at least {maxDeg+1}");
                     }
 
@@ -426,6 +439,8 @@ namespace ApplicationWithIDT {
             
 
         }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -469,9 +484,9 @@ namespace ApplicationWithIDT {
         /// <param name="dt"></param>
         /// <returns></returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            if(CurrentAgglo > 0 && TimestepNo % Control.ImmediatePlotPeriod ==0 && Control.ImmediatePlotPeriod!= -1) {
-                MultiphaseAgglomerator.PlotAgglomerationPairs(Control.ProjectName + "_aggloMap" + "_" + CurrentStepNo);
-            }
+            //if(CurrentAgglo > 0 && TimestepNo % Control.ImmediatePlotPeriod ==0 && Control.ImmediatePlotPeriod!= -1) {
+            //    MultiphaseAgglomerator.PlotAgglomerationPairs(Control.ProjectName + "_aggloMap" + "_" + CurrentStepNo);
+            //}
 
             if(TimestepNo == 1) {
                 //set initial kappa
@@ -492,7 +507,7 @@ namespace ApplicationWithIDT {
 
             // potentially change basis
             switch(Control.solRunType) {
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                     ChangeOfBasis();
                 break;
             }
@@ -522,13 +537,13 @@ namespace ApplicationWithIDT {
             SaveStepToField(stepIN, StepOptiLevelSet);
 
             // makes the step continues if SinglePhaseField as OptiLevelSet is used
-            if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
-                // Does a continuity projection (hopefully) of the step
-                MakeLevelSetContinous(StepOptiLevelSet);
-                SaveStepFieldToStep(stepIN, StepOptiLevelSet);
-                var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
-                SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
-            }
+            //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
+            //    // Does a continuity projection (hopefully) of the step
+            //    MakeLevelSetContinous(StepOptiLevelSet);
+            //    SaveStepFieldToStep(stepIN, StepOptiLevelSet);
+            //    var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
+            //    SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
+            //}
 
             var orgStep = stepIN.CloneAs();
             // 
@@ -582,7 +597,7 @@ namespace ApplicationWithIDT {
                     
                     //increase Current Minimal iTerations by the respective Minimal iterations wanted for the polynomial degree
 
-                    CurMinIter = CurrentStepNo + Control.MinPIter[CurrentDeg];
+                    CurMinIter = CurrentStepNo + Control.minimalSQPIterations[CurrentDeg];
                     ReiniTMaxIter = CurrentStepNo + Control.ReiniTMaxIters[CurrentDeg];
                     
                     IncreaseDegreeNextTS = false;
@@ -590,7 +605,7 @@ namespace ApplicationWithIDT {
                     Console.Write("OpEval after change:");
                     ComputeAndWriteResiduals();
                     Console.WriteLine("");
-                    Console.WriteLine($" current DGdegree={CurrentDeg}, min It.:{Control.MinPIter[CurrentDeg]}, MaxReInit:{Control.ReiniTMaxIters[CurrentDeg]}, ReInitTol:{Control.reInitTols[CurrentDeg]}," +
+                    Console.WriteLine($" current DGdegree={CurrentDeg}, min It.:{Control.minimalSQPIterations[CurrentDeg]}, MaxReInit:{Control.ReiniTMaxIters[CurrentDeg]}, ReInitTol:{Control.reInitTols[CurrentDeg]}," +
                         $" TermN:{GetCurrentTermN()}, tALNR:{Control.tALNRs[CurrentDeg]} ");
                     Console.WriteLine("");
                     Console.WriteLine("################################################################################################");
@@ -619,7 +634,7 @@ namespace ApplicationWithIDT {
                     var testAgg = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false);
                     MultiphaseAgglomerator = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false); 
                 } catch {
-                    
+                    Console.WriteLine("Failed to update Agglomerator");
                 }
             }
         }
@@ -996,9 +1011,39 @@ namespace ApplicationWithIDT {
             }
 
         }
-        
+
 
         #region Sub Methods of Optimization Algorithm
+        /// <summary>
+        /// simply sets a one one the diagonal for zero rows
+        /// </summary>
+        /// <param name="Mat"></param>
+        static public void SetDiagonaForZeroRows(MsrMatrix Mat)
+        {
+            //Console.WriteLine("Check: Computed System ...");
+            for (int rows = 0; rows < Mat.NoOfRows; rows++)
+            {
+                if (Mat.GetNoOfNonZerosPerRow(rows) == 0)
+                {
+                    Mat[rows, rows] = 1;
+                }
+            }
+        }
+        /// <summary>
+        /// simply sets a one one the diagonal for zero rows
+        /// </summary>
+        /// <param name="Mat"></param>
+        static public void SetDiagonaForZeroRows(BlockMsrMatrix Mat)
+        {
+            //Console.WriteLine("Check: Computed System ...");
+            for (int rows = 0; rows < Mat.NoOfRows; rows++)
+            {
+                if (Mat.GetNoOfNonZerosPerRow(rows) == 0)
+                {
+                    Mat[rows, rows] = 1;
+                }
+            }
+        }
         /// <summary>
         /// Solves the Linear System
         /// </summary>
@@ -1026,6 +1071,8 @@ namespace ApplicationWithIDT {
 #endif
             
             try {
+                //save mat files 
+
                 SimpleSolversInterface.Solve_Direct(LHS, stepIN, RHS);
             } catch(Exception e) {
 #if DEBUG
@@ -1286,31 +1333,52 @@ namespace ApplicationWithIDT {
 
                 for(int n_param = 0; n_param < nRow; n_param++) {
 
+                    //skip loop if param is non changeable
+                    if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
+                    {
+                        double yMin = splineLS.y.Min(); //lower boundary of space time domain
+                        if (n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                        {
+                            continue;
+                        }
+
+                    }
+
                     //compute distortions
                     x = LevelSetOpti.GetParam(n_param);
                     dx_right = x + eps / 2;
                     dx_left = x - eps / 2;
 
 
-                    // apply right distortion
-                    LevelSetOpti.SetParam(n_param, dx_right);
-                    //project
-                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                    LsTrk.UpdateTracker(CurrentStepNo);
+                    try
+                    {
+                        // apply right distortion
+                        LevelSetOpti.SetParam(n_param, dx_right);
+                        //project
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                        LsTrk.UpdateTracker(CurrentStepNo);
+                        //compute Objective
+                        Oproblem.EvalConsAndObj(obj_vec_eps, r_vec_eps, ConservativeFields);
 
-                    //compute Objective
-                    Oproblem.EvalConsAndObj(obj_vec_eps, r_vec_eps, ConservativeFields);
-
-                    // do the same on the left
-                    LevelSetOpti.SetParam(n_param, dx_left);
-                    LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-                    LsTrk.UpdateTracker(CurrentStepNo);
-                    Oproblem.EvalConsAndObj(obj_vec_eps2, r_vec_eps2, ConservativeFields);
-
+                        // do the same on the left
+                        LevelSetOpti.SetParam(n_param, dx_left);
+                        LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                        LsTrk.UpdateTracker(CurrentStepNo);
+                        Oproblem.EvalConsAndObj(obj_vec_eps2, r_vec_eps2, ConservativeFields);
+                    }
+                    catch
+                    {
+                        //reset
+                        LevelSetOpti.SetParam(n_param, x);
+                        LsTBO.CopyFrom(phi0backup);
+                        LsTrk.UpdateTracker(CurrentStepNo);
+                        //throw new Exception("Error in FD Computation");
+                    }
+                    
                     //Write value into the matrix
                     for(int iRow = 0; iRow < nCol_obj; iRow++) {
                         val = (obj_vec_eps[iRow] - obj_vec_eps2[iRow]) / eps;
-                        if(val != 0) {
+                        if(val != 0 && !val.IsNaNorInf()) {
                             Jobj[iRow, n_param] = val;
                         }
                         
@@ -1318,15 +1386,12 @@ namespace ApplicationWithIDT {
                     //IMutuableMatrixEx_Extensions.SaveToTextFile(Jobj,"Jobj.txt");
                     for(int iRow = 0; iRow < nCol_con; iRow++) {
                         val = (r_vec_eps[iRow] - r_vec_eps2[iRow]) / eps;
-                        if(val != 0) {
+                        if(val != 0 && !val.IsNaNorInf()) {
                             Jr[iRow, n_param] = val;
                         }
                     }
 
-                    //reset
-                    LevelSetOpti.SetParam(n_param, x);
-                    LsTBO.CopyFrom(phi0backup);
-                    LsTrk.UpdateTracker(CurrentStepNo);
+
                 }
                 return (Jr,Jobj);
             }
@@ -1583,6 +1648,27 @@ namespace ApplicationWithIDT {
             //ResidualVector.SaveToTextFile(path + $"\\ResVec_p{Control.SolDegree}_TS{CurrentStepNo}_agg.txt");
         }
 
+        public static BlockMsrMatrix GetBlockJacobi(BlockMsrMatrix M,CoordinateMapping uMap)
+        {
+            var Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+                   
+            int Jloc = uMap.LocalNoOfBlocks;
+            long j0 = uMap.FirstBlock;
+            MultidimensionalArray temp = null;
+            for (int j = 0; j < Jloc; j++)
+            {
+                long jBlock = j + j0;
+                int Nblk = uMap.GetBlockLen(jBlock);
+                long i0 = uMap.GetBlockI0(jBlock);
+
+                if (temp == null || temp.NoOfCols != Nblk)
+                    temp = MultidimensionalArray.Create(Nblk, Nblk);
+
+                M.ReadBlock(i0, i0, temp);
+                Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+            }
+            return Diag;
+        }
         /// <summary>
         /// Assembles Left- and Right Hand side 
         /// To do so 
@@ -1620,7 +1706,17 @@ namespace ApplicationWithIDT {
             //***************************** */
             //obj_f_vec.SaveToTextFile("obj_f_vec_beforeFD.txt");
             //LsTBO.CoordinateVector.SaveToTextFile(@"C:\Users\sebastian\Documents\Forschung" + $"\\LSCoord_p{Control.SolDegree}_TS{CurrentStepNo}.txt");
-            (Jr_phi, Jobj_phi) = FD_LevelSet();
+            try
+            {
+                (Jr_phi, Jobj_phi) = FD_LevelSet();
+            }
+            catch
+            {
+                Console.WriteLine("Error in FD Level Set");
+                //AllthePossibleStepsPlot();
+                //throw new Exception("Error in FD Computation");
+            }
+            
 
             //***************************** */
             //// Agglomerate Jobj,Jr and obj_vec,r before multiplication
@@ -1745,7 +1841,67 @@ namespace ApplicationWithIDT {
             RHS.ScaleV(-1.0);
 
 
+            if (Control.SaveMatrices)
+            {
+                // Save for preconditioner analysis
+                var uMap = new CoordinateMapping(ConservativeFields);
+                //SetDiagonaForZeroRows(Jr_U);
 
+                //create directory
+                var folder = "matrices";
+                if (!Directory.Exists(@".\" + folder))
+                {
+                    Directory.CreateDirectory(@".\" + folder);
+                }
+                folder= @".\"+folder + @"\";
+                
+                //Jr_U.SaveToTextFileSparse(folder + "dR0dU" + CurrentStepNo + ".txt");
+
+
+                Jr_phi.SaveToTextFileSparse(folder + "dR0dPhi" + CurrentStepNo + ".txt");
+                Jobj_phi.SaveToTextFileSparse(folder + "dR1dPhi" + CurrentStepNo + ".txt");
+                Jobj_U.SaveToTextFileSparse(folder + "dR1dU" + CurrentStepNo + ".txt");
+                RHS.SaveToTextFile(folder + "RHS" + CurrentStepNo + ".txt");
+
+                // get BlockMsrMatrix Version of Jacobian
+                var dR0dU = Jr_U.ToBlockMsrMatrix(uMap,uMap);
+                var dmy = new double[uMap.TotalLength];
+
+                //var JacobianBuilder = XSpatialOperator.GetFDJacobianBuilder(ConservativeFields, null, uMap);
+                //JacobianBuilder.ComputeMatrix(dR0dU, dmy);
+                //MultiphaseAgglomerator.ManipulateMatrixAndRHS(dR0dU, dmy, new CoordinateMapping(ConservativeFields), new CoordinateMapping(ConservativeFields));
+                //var dR0dU_MSR = dR0dU.ToMsrMatrix();
+                //SetDiagonaForZeroRows(dR0dU_MSR); 
+                dR0dU.SaveToTextFileSparse(folder + "dR0dU" + CurrentStepNo + ".txt");
+                //SetDiagonaForZeroRows(dR0dU);
+
+                //get Ilu and save
+                var dR0dU_BILU = CellILU.ComputeILU(0, dR0dU.ToBlockMsrMatrix(uMap, uMap));
+                var dR0dU_BJ = GetBlockJacobi(dR0dU, uMap);
+
+                var dR0dU_BILU_MSR = dR0dU_BILU.ToMsrMatrix(); var dR0dU_BJ_MSR = dR0dU_BJ.ToMsrMatrix();
+                //SetDiagonaForZeroRows(dR0dU_BILU_MSR); SetDiagonaForZeroRows(dR0dU_BJ_MSR);
+
+                dR0dU_BILU_MSR.SaveToTextFileSparse(folder + "dR0dU_BILU" + CurrentStepNo + ".txt");
+                dR0dU_BJ_MSR.SaveToTextFileSparse(folder + "dR0dU_BJ" + CurrentStepNo + ".txt");
+
+
+                //P0 projection and Restriction operator
+                var incOp=GetInclusionOperator(ConservativeFields, 0);
+                incOp.SaveToTextFileSparse(folder + "Q0" + CurrentStepNo + ".txt");
+                var projOp = GetProjectionOperator(LsTrk, ConservativeFields, GetGlobalQuadOrder(), 0);
+                projOp.SaveToTextFileSparse(folder + "P0" + CurrentStepNo + ".txt");
+
+                var info_keys = new string[] { "p", "nCells", "gamma",};
+                var pDeg = ConservativeFields[0].Basis.Degree;
+                var nCells = ConservativeFields[0].Basis.GridDat.iGeomCells.Count;
+                var gamma = Gammas.Last();
+                var info = new double[] { pDeg, nCells, gamma };
+
+                info.SaveToTextFile(folder + "info" + CurrentStepNo + ".txt");
+                info_keys.SaveToTextFile(folder + "info_keys" + CurrentStepNo + ".txt");
+            }
+            
             //RHS for Newton Approach 
             // double[] Jr_lambda_k= new double[noOfRowsB];
             // (J_r_comp.Transpose()).SpMV(1,lambda_k,0,Jr_lambda_k);
@@ -2072,7 +2228,7 @@ namespace ApplicationWithIDT {
             switch(Control.solRunType) {
                 case SolverRunType.Standard:
                     return Control.TerminationMinNs[0];
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                 try {
                     return Control.TerminationMinNs[ConservativeFields[0].Basis.Degree];
                 } catch {
@@ -2086,7 +2242,7 @@ namespace ApplicationWithIDT {
             switch(Control.solRunType) {
                 case SolverRunType.Standard:
                 return Control.tALNRs[0];
-                case SolverRunType.Staggerd:
+                case SolverRunType.PContinuation:
                 try {
                     return Control.tALNRs[ConservativeFields[0].Basis.Degree];
                 } catch {
@@ -2139,7 +2295,7 @@ namespace ApplicationWithIDT {
                         return true;
                     }
 
-                    if(itc >= Control.MaxIter) {
+                    if(itc >= Control.MaxIterations) {
                         // run out of iterations
                         return true;
                     }
@@ -2243,9 +2399,9 @@ namespace ApplicationWithIDT {
                             //    tr.Info($"minimal build-in convergence criterion NOT reached (current residual is {norm_CurRes}, limit is {_MinConvCrit * fnorminit + _MinConvCrit}) yet.");
                             //}
 
-                            if(itc >= Control.MaxIter) {
+                            if(itc >= Control.MaxIterations) {
                                 // run out of iterations
-                                tr.Info($"Maximum number of iterations reached ({Control.MaxIter}) - terminating.");
+                                tr.Info($"Maximum number of iterations reached ({Control.MaxIterations}) - terminating.");
                                 terminateLoop = true;
                                 TerminationKey = false;
                             }
@@ -2416,6 +2572,114 @@ namespace ApplicationWithIDT {
             //}
 
         }
+        public void AllthePossibleStepsPlot(double eps=1e-8)
+        {
+            var length_r = (int)ResidualMap.TotalLength;
+            //Plot the current state
+            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            Plot(0.0, 1000);
+            //Plot the possible steps
+            int i = 0;
+
+            int nCol_obj = Oproblem.GetObjLength(ConservativeFields);
+            int nCol_con = new CoordinateVector(ConservativeFields).Count;
+            int nRow = LevelSetOpti.GetLength();
+
+            MsrMatrix Jobj = new MsrMatrix(nCol_obj, nRow, 1, 1);
+            MsrMatrix Jr = new MsrMatrix(nCol_con, nRow, 1, 1);
+
+            var r_vec = new double[nCol_con];
+            var r_vec_eps = new double[nCol_con];
+            var r_vec_eps2 = new double[nCol_con];
+
+            var obj_vec = new double[nCol_obj];
+            var obj_vec_eps = new double[nCol_obj];
+            var obj_vec_eps2 = new double[nCol_obj];
+
+
+            double x;
+            double val;
+            double dx_right;
+            double dx_left;
+
+            // epsilon
+            //project OptiLevelSet onto XDGLevelSet
+            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            LsTrk.UpdateTracker(CurrentStepNo);
+            LevelSet phi0backup = new LevelSet(new Basis(LsTBO.GridDat.Grid, LsTBO.Basis.Degree), "LevelSetbackup");
+            phi0backup.CopyFrom(LsTBO);
+
+            //Evaluation of unperturbed
+            Oproblem.EvalConsAndObj(obj_vec, r_vec, ConservativeFields);
+
+
+            for (int n_param = 0; n_param < nRow; n_param++)
+            {
+
+                //skip loop if param is non changeable
+                if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
+                {
+                    double yMin = splineLS.y.Min(); //lower boundary of space time domain
+                    if (n_param < splineLS.y.Length && Math.Abs(yMin - splineLS.y[n_param]) < 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                    {
+                        continue;
+                    }
+
+                }
+
+                //compute distortions
+                x = LevelSetOpti.GetParam(n_param);
+                dx_right = x + eps / 2;
+                dx_left = x - eps / 2;
+
+                // apply right distortion
+                LevelSetOpti.SetParam(n_param, dx_right);
+                //project
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                
+                //compute Objective
+
+                try
+                {
+                    LsTrk.UpdateTracker(CurrentStepNo);
+                    ComputeResiduals();
+                    resetStep();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception at right fd of n_param = " +n_param + ": ");
+                    Console.WriteLine(e.ToString());
+                    Console.WriteLine("");
+                    resetStep();
+                }
+                Plot(0.0, 1000 + (n_param + 1));
+
+                // do the same on the left
+                LevelSetOpti.SetParam(n_param, dx_left);
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                LsTrk.UpdateTracker(CurrentStepNo);
+
+                try
+                {
+                    LsTrk.UpdateTracker(CurrentStepNo);
+                    ComputeResiduals();
+                    resetStep();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Exception at left fd of n_param = " + n_param + ": ");
+                    Console.WriteLine(e.ToString());
+                    Console.WriteLine("");
+                    resetStep();
+                }
+                Plot(0.0, 1000 - (n_param + 1));
+
+                //reset
+                LevelSetOpti.SetParam(n_param, x);
+                LsTBO.CopyFrom(phi0backup);
+                LsTrk.UpdateTracker(CurrentStepNo);
+            }
+        }
         public void AllthePossibleStepsPlot<Tin>(Tin step_t,double tau ) where Tin: IList<double> {
             var length_r = (int) ResidualMap.TotalLength; 
             //Plot the current state
@@ -2472,9 +2736,28 @@ namespace ApplicationWithIDT {
                 ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += m_alpha * step_t[stepIndex];
             }
 
-            for(int i = 0; i < LevelSetOpti.GetLength(); i++) {
-                LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]);
+
+            /// Level Set Update
+            //special treatment for space time level sets
+            if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
+            {
+                double yMin = splineLS.y.Min(); //lower boundary of space time domain
+                for (int i = 0; i < LevelSetOpti.GetLength(); i++)
+                {
+                    if (i<splineLS.y.Length && Math.Abs(yMin - splineLS.y[i])> 1e-14) //only accumalte if DOF if it is not on lower time boundary (here yMin=tMin)
+                    {
+                        LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]); 
+                    }
+                }
             }
+            else
+            {
+                for (int i = 0; i < LevelSetOpti.GetLength(); i++)
+                {
+                    LevelSetOpti.AccToParam(i, m_alpha * step_t[i + length_r]);
+                }
+            }
+
             LevelSetOpti.ProjectOntoLevelSet(LsTBO);
             //var tp = new Tecplot(GridData, 4);
             //tp = new Tecplot(GridData, 4);
@@ -3201,6 +3484,111 @@ namespace ApplicationWithIDT {
             }
         }
         /// <summary>
+        /// Gets an Operator that should project a high-order solution to a low-order solution in the L2 sense
+        /// </summary>
+        /// <param name="LsTrk"></param>
+        /// <param name="xdgfieldToTest"></param>
+        /// <param name="order2Pick"></param>
+        /// <param name="pOrder"></param>
+        /// <returns></returns>
+        MsrMatrix GetProjectionOperator(LevelSetTracker LsTrk, XDGField[] fieldPhigh, int order2Pick, int pOrder)
+        {
+
+            var nVar = fieldPhigh.Length;
+            var fieldP = new XDGField[fieldPhigh.Length];
+            for (int i = 0; i < nVar; i++)
+            {
+                fieldP[i] = new XDGField(new XDGBasis(LsTrk, pOrder), "fieldP");
+            }
+            var highMap = new CoordinateMapping(fieldPhigh);
+            var lowMap = new CoordinateMapping(fieldP);
+            //get the MassMatrix
+            MassMatrixFactory massMatrixFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, order2Pick).MassMatrixFactory;
+            BlockMsrMatrix massMatrix = massMatrixFactory.GetMassMatrix(highMap, inverse: false);
+            BlockMsrMatrix MPlowPlow = massMatrixFactory.GetMassMatrix(lowMap, inverse: true);
+
+            //get the subMassMatrices of deg pOrder
+            MsrMatrix MPlowP;//Sub of Mass Mat with (rows pOrder ,column p)
+            {
+                //compute the lists of indices used by GetSubMatrix()
+                var rowIndices = new List<long>();
+                var colIndices = new List<long>();
+                {
+                    int MaxModeR = fieldPhigh[0].Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
+                    int MaxModer = fieldP[0].Mapping.MaxTotalNoOfCoordinatesPerCell / LsTrk.TotalNoOfSpecies;
+
+                    int iField;
+                    int jCell;
+                    int nMode;
+                    for (int iRow = 0; iRow < lowMap.TotalLength; iRow++)
+                    {
+                        lowMap.LocalFieldCoordinateIndex(iRow, out iField, out jCell, out nMode);
+                        double rMode = (double)nMode;
+                        int fac = (int)Math.Floor(rMode / MaxModer);
+                        int row = highMap.LocalUniqueCoordinateIndex(iField, jCell, nMode + fac * (MaxModeR - MaxModer));
+                        rowIndices.Add(row);
+                    }
+                    for (int i = 0; i < massMatrix.NoOfCols; i++)
+                    {
+                        colIndices.Add(i);
+                    }
+                }
+                //obtain the submatrix
+                MPlowP = massMatrix.ToMsrMatrix().GetSubMatrix(rowIndices, colIndices);
+            }
+
+            // Here we compute M_{p-1,p-1}^{-1} * M_{p-1,p}
+            return MsrMatrix.Multiply(MPlowPlow.ToMsrMatrix(), MPlowP);
+            
+        }
+
+        /// <summary>
+        /// Should give an inclusion operator that transforms a low order c_low into a high-order field c_high
+        /// A*c_low=c_high
+        /// </summary>
+        /// <param name="fieldPhigh"></param>
+        /// <param name="pOrder">order of c_low</param>
+        /// <returns></returns>
+        public MsrMatrix GetInclusionOperator(XDGField[] fieldPhigh, int pOrder)
+        {
+            var nVar = fieldPhigh.Length;
+            var fieldPlow = new XDGField[fieldPhigh.Length];
+            var copyHigh = new XDGField[fieldPhigh.Length]; 
+            for (int i = 0; i < nVar; i++)
+            {
+                fieldPlow[i] = new XDGField(new XDGBasis(LsTrk, pOrder), "fieldP");
+                copyHigh[i] = fieldPhigh[i].CloneAs();
+                copyHigh[i].Clear();
+            }
+            var cV_low = new CoordinateVector(fieldPlow);
+            var highMap = new CoordinateMapping(copyHigh);
+            var lowMap = new CoordinateMapping(fieldPlow);
+            // numbering of entries
+            for (int iRow = 0; iRow < lowMap.TotalLength; iRow++)
+            {
+                cV_low[iRow] = iRow + 1;
+            }
+            for (int i = 0; i < nVar; i++)
+            {
+                copyHigh[i].AccLaidBack(1.0, fieldPlow[i]);
+            }
+
+            var cV_high = new CoordinateVector(copyHigh);
+            MsrMatrix Inclusion = new MsrMatrix((int) highMap.TotalLength, (int) lowMap.TotalLength,1,1) ;//Sub of Mass Mat with (rows pOrder ,column p)
+            {
+                for (int iRow = 0; iRow < highMap.TotalLength; iRow++)
+                {
+                    int lowRow = (int) cV_high[iRow];
+                    if (lowRow> 0)
+                    {
+                        Inclusion[iRow, lowRow-1]=1;
+                    }
+                }
+            }
+            return Inclusion;
+
+        }
+        /// <summary>
         /// Computes the Projection onto the (p-1)-Polynomial space (relative to the input field)
         /// </summary>
         /// <param name="LsTrk"></param>
@@ -3217,7 +3605,6 @@ namespace ApplicationWithIDT {
 
                 //get the subMassMatrices of deg p-1
                 MsrMatrix MMPmin1P;//Sub of Mass Mat with (rows p-1 ,column p)
-                MsrMatrix MMPmin1Pmin1;
                 {
                     //compute the lists of indices used by GetSubMatrix()
                     var rowIndices = new List<long>();
@@ -3241,7 +3628,6 @@ namespace ApplicationWithIDT {
                         }
                     }
                     MMPmin1P = massMatrix.ToMsrMatrix().GetSubMatrix(rowIndices, colIndices);
-                    MMPmin1Pmin1 = massMatrix.ToMsrMatrix().GetSubMatrix(rowIndices, rowIndices);
                 }
 
                 // Here we compute M_{p-1,p-1}^{-1} * M_{p-1,p} * Coords(xdgfieldtoTest)

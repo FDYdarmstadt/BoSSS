@@ -1935,7 +1935,7 @@ namespace BoSSS.Foundation.XDG {
                             double EdgeArea_iEdge = edgeArea[iEdge];
                             Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
-                            if ((jCellNeigh >= 0 && EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG) || CellVolumes[jCell] <= 0) {
+                            if (jCellNeigh >= 0 && (EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG || CellVolumes[jCell] <= 0)) {
                                 IsPossibleTarget = true;
 
                                 if (AggSourcesWithExternalCell[jCellNeigh])

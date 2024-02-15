@@ -136,13 +136,13 @@ namespace BUIDT
             switch (optiLevelSetType)
             {
                 case OptiLevelSetType.SplineLevelSet:
-                    c.InitialShockPostion = y => 0.4 + y[1] * 0.6 - 0.2 * y[1] * y[1];
+                    c.LevelSetTwoInitialValue = y => 0.4 + y[1] * 0.6 - 0.2 * y[1] * y[1];
                     break;
                 case OptiLevelSetType.GlobalLevelSet:
                     switch (getLevelSet)
                     {
                         case GetLevelSet.FromFunction:
-                            c.InitialShockPostion = x => x[0] - (0.4 + x[1] * 0.6 - 0.2 * x[1] * x[1]);
+                            c.LevelSetTwoInitialValue = x => x[0] - (0.4 + x[1] * 0.6 - 0.2 * x[1] * x[1]);
                             break;
                         case GetLevelSet.FromParams:
                             c.OptiLevelSet_ParamNames = new List<string>();
@@ -170,7 +170,7 @@ namespace BUIDT
                     }
                     break;
                 default:
-                    c.InitialShockPostion = x => x[0] - (0.4 + x[1] * 0.6 - 0.2 * x[1] * x[1]);
+                    c.LevelSetTwoInitialValue = x => x[0] - (0.4 + x[1] * 0.6 - 0.2 * x[1] * x[1]);
                 break;
             }
             c.InitialValueFunctionsPerSpecies.Clear();
@@ -229,7 +229,7 @@ namespace BUIDT
                 return grid;
             };
 
-            c.InitialShockPostion = x => x[0] - 0.44;
+            c.LevelSetTwoInitialValue = x => x[0] - 0.44;
             c.UseP0ProjectionAsInitialGuess = true;
             c.NonlinearQuadratureDegree = 10;
             c.SuperSampling = 4;
@@ -273,6 +273,7 @@ namespace BUIDT
                     ImmediatePlotPeriod: ImmediatePlotPeriod
                     );
 
+            //c.SaveMatrices = true;
             // ### Grid ###
             double xMin = -0.2;
             double xMax = 1.0;
@@ -346,12 +347,12 @@ namespace BUIDT
 
             //Exact LevelSetPosition
             if(optiLevelSetType == OptiLevelSetType.SplineLevelSet) {
-                //c.InitialShockPostion = x =>ShockSpeed(x[1]);
-                c.InitialShockPostion = x =>  x[1]*1.2;
+                //c.LevelSetTwoInitialValue = x =>ShockSpeed(x[1]);
+                c.LevelSetTwoInitialValue = x =>  x[1]*1.2;
                 //In case of Point Reconstruction
                 c.SLSPointPath = @"../../../SplinePointsCurvedBurgers.txt";
             } else {
-                c.InitialShockPostion = x => x[0] - ShockSpeed(x[1]);
+                c.LevelSetTwoInitialValue = x => x[0] - ShockSpeed(x[1]);
             }
 
             
@@ -387,9 +388,9 @@ namespace BUIDT
 #endregion
             c.solRunType = solverRunType;
             if(staggeredTS != null)
-                c.staggeredTimeSteps = staggeredTS;
+                c.FixedSQPIterations = staggeredTS;
             c.Gamma_Max = 1;
-            c.MinPIter = new int[] { 20, 15, 10, 10, 10 };
+            c.minimalSQPIterations = new int[] { 20, 15, 10, 10, 10 };
             c.SuperSampling = 4;
             c.AgglomerationThreshold = agg;
             c.Linearization = linearization;

@@ -22,6 +22,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
+using static BoSSS.Solution.CompressibleFlowCommon.CompressibleHelperFunc;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
@@ -32,6 +33,10 @@ using CNS.Source;
 using ilPSP;
 using ilPSP.Utils;
 using System;
+using System.Runtime.CompilerServices;
+using BoSSS.Solution;
+using BoSSS.Foundation;
+using System.Collections.Generic;
 
 namespace CNS {
 
@@ -1174,21 +1179,131 @@ namespace CNS {
 
             return c;
         }
-
-        public static CNSControl AcousticWave(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double CFLFraction = 0.1, double Ms = 1.5, int numOfCellsX = 100, int numOfCellsY = 10, double endTime = 2.13) {
+        /// <summary>
+        /// First a (hopefully) sationary stationary shock wave is computed. THen after perStartTime a pertubation is added, either on the left or the rigth boundary
+        /// </summary>
+        /// <param name="dbPath"></param>
+        /// <param name="perStartTime"></param>
+        /// <param name="savePeriod"></param>
+        /// <param name="s_alpha"></param>
+        /// <param name="dgDegree"></param>
+        /// <param name="CFLFraction"></param>
+        /// <param name="MachL"></param>
+        /// <param name="numOfCellsX"></param>
+        /// <param name="numOfCellsY"></param>
+        /// <param name="endTime"></param>
+        /// <param name="shockPosition"></param>
+        /// <param name="p_amp_neg"></param>
+        /// <param name="p_amp_pos"></param>
+        /// <param name="waveform"></param>
+        /// <param name="waveLength"></param>
+        /// <param name="wavePosition"></param>
+        /// <param name="isRestart"></param>
+        /// <param name="sessId"></param>
+        /// <returns></returns>
+        /// <exception cref="System.Exception"></exception>
+        /// <exception cref="NotSupportedException"></exception>
+        public static CNSControl AcousticWave(string dbPath = null, double perStartTime=12, int savePeriod = 10000, double s_alpha = 20, int dgDegree = 2, double CFLFraction = 0.1,
+            double MachL = 1.5, int numOfCellsX = 301, int numOfCellsY = 3, double endTime = 2.13, double shockPosition = 1.5,
+        double p_amp_neg = 0.0, double p_amp_pos = 1e-5, string waveform = "bump", double waveLength = 0.4, double wavePosition = -0.4, bool isRestart = false, string sessId=null) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
             //dbPath = @"c:\bosss_db";
-
+            
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
-
+            c.PrintInterval = savePeriod;
+            c.ResidualInterval = savePeriod;
+            c.ResidualLoggerType = BoSSS.Solution.CompressibleFlowCommon.Residual.ResidualLoggerTypes.Rigorous;
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
 
+            //Restart
+
+            double xMin = 0;
+            double xMax = 3.0;
+            double yMin = 0;
+            double yMax = 0.03;
+            if (isRestart)
+            {
+                if (MachL == 1.5 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("4861c701-4e55-4c3e-baf1-bb266013efb0"), new TimestepNumber(402500));
+                }
+                else if (MachL == 1.5 && shockPosition == 0.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("cd45b796-f15a-43b4-bde2-a00854a27fad"), new TimestepNumber(397500));
+                }else if(MachL==3.0 && shockPosition ==1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("467e81b3-62e0-4859-9dde-e1fb534e33d1"), new TimestepNumber(1035000)); 
+                }
+                else if (MachL == 4.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+                else if (MachL == 5.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("c53ec337-7829-4d05-8507-79854dc5acab"), new TimestepNumber(1035000));
+                }
+                /// TODO:
+                else if (MachL == 6.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+                else if (MachL == 7.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+                else if (MachL == 8.0 && shockPosition == 1.5 && dgDegree == 2)
+                {
+                    c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("406415ba-d062-4d53-98d1-770b84b17e31"), new TimestepNumber(1032000));
+                }
+
+                else
+                {
+                    throw new NotSupportedException("for this parameter configuration no restart available");
+                }
+            }
+            else
+            {
+
+                c.GridFunc = delegate {
+                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                    //grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                    grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
+
+                    grid.DefineEdgeTags(delegate (double[] X) {
+                        if (Math.Abs(X[1]) < 1e-14)
+                        {   // bottom
+                            return 2;
+                        }
+                        else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14)
+                        {    // top
+                            return 2;
+                        }
+                        else if (Math.Abs(X[0]) < 1e-14)
+                        {                    // left
+                            return 1;
+                        }
+                        else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14)
+                        {    // right
+                            return 1;
+                        }
+                        else
+                        {
+                            throw new System.Exception("Boundary condition not specified");
+                        }
+                    });
+
+                    return grid;
+                };
+            }
             // ### Time-Stepping ###
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
@@ -1199,8 +1314,15 @@ namespace CNS {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
+            //if(shockPosition==1.5 && MachL = 1.5)
+            //{
+            //    BoSSSshell.OpenOrCreateDataBase()
+            //    c.RestartInfo = new Tuple<Guid, TimestepNumber> (new Guid("d638d164 - 2857 - 4f44 - a8be - 4f5852b86267"),80);
+                
+            //}
+
             // ### Shock-Capturing ###
-            bool AV = false;
+            bool AV = true;
             //if (dgDegree > 0) {
             //    AV = true;
             //}
@@ -1230,6 +1352,7 @@ namespace CNS {
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             //c.AddVariable(CNSVariables.Entropy, dgDegree);
             //c.AddVariable(CNSVariables.Temperature, dgDegree);
@@ -1250,79 +1373,383 @@ namespace CNS {
             //c.AddVariable(CNSVariables.Rank, 0);
 
             // ### Grid ###
-            double xMin = 0;
-            double xMax = 6.28;
-            double yMin = 0;
-            double yMax = 0.03;
 
-            numOfCellsX = 628;
-            numOfCellsY = 3;
+            //if (wavePosition < shockPosition)
+            //{
+            //    wavePosition = xMin-waveLength;
+            //}
+            //else
+            //{
+            //    wavePosition = xMax+waveLength;
+            //}
 
-            c.GridFunc = delegate {
-                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+            //numOfCellsX = 600+1;
+            //numOfCellsY = 6;
 
-                grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                grid.EdgeTagNames.Add(2, "SupersonicOutlet");
-                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+            
 
-                grid.DefineEdgeTags(delegate (double[] X) {
-                    if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                        return 3;
-                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                        return 3;
-                    } else if (Math.Abs(X[0]) < 1e-14) {                    // left
-                        return 1;
-                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
-                        return 2;
-                    } else {
-                        throw new System.Exception("Boundary condition not specified");
+            //supersonic Base Flow - left values
+            double densityL = 1; double pressureL = 1;
+            double gamma = IdealGas.Air.HeatCapacityRatio;
+            double cL = Math.Sqrt(gamma * pressureL / densityL);
+            double velocityL = MachL * cL;
+
+            //get rigth values
+            (double densityR, double velocityR, double pressureR, double cR, double MachR)
+                = ComputeNormalShockWaveRelations(densityL, velocityL, pressureL, MachL, gamma);
+
+            c.shockPosition = shockPosition;
+            
+            Func<double, double> f_waveform = x => 0; //default no pertubation
+            //Waveform
+            if (waveform == "1sinus")
+            { //one period of sinus
+                f_waveform = delegate (double X)
+                {
+                    if (wavePosition < X && X < wavePosition+waveLength)
+                    {
+                        return Math.Sin(2 * Math.PI * X / waveLength);
                     }
-                });
+                    else
+                    {
+                        return 0;
+                    }
+                };
+            }
+            else if (waveform == "halfsinus")
+            { //half of period of sinus
+                f_waveform = delegate (double X)
+                {
+                    if (wavePosition < X && X < wavePosition+waveLength)
+                    {
+                        return Math.Sin(Math.PI * X / waveLength);
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                };
+            }
+            else if (waveform == "fullsinus")
+            { //full sinus
+                f_waveform = delegate (double X) {
+                    if (shockPosition < wavePosition)
+                    {
+                        if (wavePosition < X)
+                        {
+                            return Math.Sin(2 * Math.PI * X / waveLength);
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
+                    else
+                    {
+                        if (wavePosition > X)
+                        {
+                            return Math.Sin(2 * Math.PI * X / waveLength);
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
+                };
 
-                return grid;
+            }
+            else if (waveform == "bump")
+            { //c ifnity bumb (differentiable everywhere)
+
+                double L = waveLength/2;
+                double bumpPos = wavePosition+L;
+                Func<double, double> f_base = x => Math.Exp(-1 / (1 - x * x)) * Math.E;
+
+                f_waveform = delegate (double X)
+                {
+                    if (bumpPos - L < X && X < bumpPos + L)
+                    {
+                        return f_base((X - bumpPos) / L);
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                };
+            }
+
+            // Functions for the perturbations
+            var PressurePertubation = delegate (double[] X)
+            {
+
+                if (X[0] < shockPosition)
+                {
+                    return p_amp_neg * f_waveform(X[0] - (velocityL - cL) * X[1]) + p_amp_pos * f_waveform(X[0] - (velocityL + cL) * X[1]);
+                }
+                else
+                {
+                    return p_amp_neg * f_waveform(X[0] - (velocityR - cR) * X[1]) + p_amp_pos * f_waveform(X[0] - (velocityR + cR) * X[1]); ;
+                }
+
+            };
+            var DensityPertubation = delegate (double[] X)
+            {
+
+                if (X[0] < shockPosition)
+                {
+                    return PressurePertubation(X) / (cL * cL);
+                }
+                else
+                {
+                    return PressurePertubation(X) / (cR * cR);
+                }
+            };
+            var VelocityXPertubation = delegate (double[] X)
+            {
+
+                if (X[0] < shockPosition)
+                {
+                    return -p_amp_neg / (densityL * cL) * f_waveform(X[0] - (velocityL - cL) * X[1]) + p_amp_pos / (densityL * cL) * f_waveform(X[0] - (velocityL + cL) * X[1]);
+                }
+                else
+                {
+                    return -p_amp_neg / (densityR * cR) * f_waveform(X[0] - (velocityR - cR) * X[1]) + p_amp_pos / (densityR * cR) * f_waveform(X[0] - (velocityR + cR) * X[1]); ;
+                }
+            };
+            //var PressurePertubation = delegate (double t) {
+            //    if (wavePosition < shockPosition)
+            //    {
+            //        return p_amp_neg * f_waveform(t* (velocityL - cL)) + p_amp_pos * f_waveform(t* (velocityL + cL));
+            //    }
+            //    else
+            //    {
+            //        return p_amp_neg * f_waveform(t * (velocityR - cR)) + p_amp_pos * f_waveform(t * (velocityR + cR));
+            //    }
+            //};
+            //var DensityPertubation = delegate (double t) {
+            //        if (wavePosition < shockPosition)
+            //        {
+            //            return PressurePertubation(t) / (cL * cL);
+            //        }
+            //        else
+            //        {
+            //            return PressurePertubation(t) / (cR * cR);
+            //        }
+            //};
+            //var VelocityXPertubation = delegate (double t) {
+            //        if (wavePosition < shockPosition) 
+            //        { 
+            //            return p_amp_neg / (densityL * cL) * f_waveform(t * (velocityL - cL)) - p_amp_pos / (densityL * cL) * f_waveform(t * (velocityL + cL));
+            //        }
+            //        else
+            //        {
+            //            return p_amp_neg / (densityR * cR) * f_waveform(t * (velocityR - cR)) - p_amp_pos / (densityR * cR) * f_waveform(t * (velocityR + cR)); ;
+            //        }
+            //};
+
+            double cellSize = (xMax - xMin) / numOfCellsX;
+
+            // Function for smoothing the initial and top boundary conditions
+            double SmoothJump(double distance)
+            {
+                // smoothing should be in the range of h/p
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            }
+            //Old
+            //Func<double[], int, double> init_valsL = delegate (double[] x, int component) {
+            //    var X = new double[] { x[0], 0 };
+
+            //    if (component == 0)
+            //    {
+            //        return densityL + c.InitialDensityPertubation(X);
+            //    }
+            //    else if (component == 1)
+            //    {
+            //        return velocityL + c.InitialVelocityXPertubation(X);
+            //    }
+            //    else if (component == 2)
+            //    {
+            //        return pressureL + c.InitialPressurePertubation(X);
+            //    }
+            //    else
+            //    {
+            //        throw new NotSupportedException("component not supported");
+            //    }
+            //};
+            //Func<double[], int, double> init_valsR = delegate (double[] x, int component) {
+            //    var X = new double[] { x[0], 0 };
+            //    if (component == 0)
+            //    {
+            //        return densityR + c.InitialDensityPertubation(X);
+            //    }
+            //    else if (component == 1)
+            //    {
+            //        return velocityR + c.InitialVelocityXPertubation(X);
+            //    }
+            //    else if (component == 2)
+            //    {
+            //        return pressureR + c.InitialPressurePertubation(X);
+            //    }
+            //    else
+            //    {
+            //        throw new NotSupportedException("component not supported");
+            //    }
+            //};
+            Func<double[], int, double> init_valsL = delegate (double[] x, int component) {
+
+                if (component == 0)
+                {
+                    return densityL;
+                }
+                else if (component == 1)
+                {
+                    return velocityL;
+                }
+                else if (component == 2)
+                {
+                    return pressureL;
+                }
+                else
+                {
+                    throw new NotSupportedException("component not supported");
+                }
+            };
+            Func<double[], int, double> init_valsR = delegate (double[] x, int component) {
+                if (component == 0)
+                {
+                    return densityR ;
+                }
+                else if (component == 1)
+                {
+                    return velocityR;
+                }
+                else if (component == 2)
+                {
+                    return pressureR ;
+                }
+                else
+                {
+                    throw new NotSupportedException("component not supported");
+                }
             };
 
-            // ### Shock conditions ###
-            double gamma = IdealGas.Air.HeatCapacityRatio;
-            double densityLeft = 1;
-            double densityRight = (gamma + 1) * Ms * Ms / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
-            double pressureLeft = 1;
-            double pressureRight = (1 + 2 * gamma / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
-            double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
-            double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityXLeft;    // (1)
-            //double velocityXRight2 = velocityXLeft * densityLeft / densityRight; // equivalent to (1)
-            //double MsPostShock = Math.Sqrt((1 + ((gamma - 1) / 2) * Ms * Ms) / (gamma * Ms * Ms - (gamma - 1) / 2));
-            //double velocityXRight3 = MsPostShock * Math.Sqrt(gamma * pressureRight / densityRight);     // equivalent to (1)
+            //dirichlet boundary vals
+            Func<double[], int, double> init_vals = delegate (double[] x, int component)
+            {
+                if (x[0] < shockPosition)
+                {
+                    return init_valsL(x, component);
+                }
+                else
+                {
+                    return init_valsR(x, component);
+                }
+            };
+            Func<double[], int, double> smooth_init_vals = delegate (double[] x, int component)
+            {
+                return init_valsL(x, component) - SmoothJump(x[0] - shockPosition) * (init_valsL(x, component) - init_valsR(x, component));
+            };
+            Func<double[],double, int, double> bnd_valsL = delegate (double[] x,double t, int component)
+            {
+                if (t < perStartTime || wavePosition > shockPosition)
+                {
+                    if (component == 0)
+                    {
+                        return densityL;
+                    }
+                    else if (component == 1)
+                    {
+                        return velocityL;
+                    }
+                    else if (component == 2)
+                    {
+                        return pressureL;
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("component not supported");
+                    }
+                }
+                else
+                {
+                    if (component == 0)
+                    {
+                        return densityL + DensityPertubation(new double[] { x[0], t - perStartTime });
+                    }
+                    else if (component == 1)
+                    {
+                        return velocityL + VelocityXPertubation(new double[] { x[0], t - perStartTime });
+                    }
+                    else if (component == 2)
+                    {
+                        return pressureL + PressurePertubation(new double[] { x[0], t - perStartTime });
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("component not supported");
+                    }
+                }
+                };
+            Func<double[],double, int, double> bnd_valsR = delegate (double[] x, double t, int component)
+            {
+                if (t < perStartTime || wavePosition<shockPosition)
+                {
+                    if (component == 0)
+                    {
+                        return densityR ;
+                    }
+                    else if (component == 1)
+                    {
+                        return velocityR ;
+                    }
+                    else if (component == 2)
+                    {
+                        return pressureR ;
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("component not supported");
+                    }
+                }
+                else
+                {
+                    if (component == 0)
+                    {
+                        return densityR + DensityPertubation(new double[] { x[0], t - perStartTime });
+                    }
+                    else if (component == 1)
+                    {
+                        return velocityR + VelocityXPertubation(new double[] { x[0], t - perStartTime });
+                    }
+                    else if (component == 2)
+                    {
+                        return pressureR + PressurePertubation(new double[] { x[0], t - perStartTime });
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("component not supported");
+                    }
+                }
 
-            // ### Acoustic wave (perturbation) ###
-            // See PDF by Yi Zhang (Meeting Geisenhofer/Kummer/Oberlack/Zhang 12/08/2020)
-            double u_hat_minus = 1e-5;
-            double alpha_minus = 1.0;
-            double U0_minus = velocityXLeft;
-            double rho0_minus = densityLeft;
-            double c_minus = Math.Sqrt(gamma * pressureLeft / densityLeft);    // constant free-stream speed of sound
-            double omega = (U0_minus + c_minus) * alpha_minus;
-            double wave_length = 2 * Math.PI / omega;
+            };
 
-            double u_minus(double[] X, double t) {
-                return u_hat_minus * Math.Cos(alpha_minus * X[0] - (U0_minus + c_minus) * alpha_minus * t);
-            }
 
-            double p_minus(double[] X, double t) {
-                return c_minus * rho0_minus * u_hat_minus * Math.Cos(alpha_minus * X[0] - (U0_minus + c_minus) * alpha_minus * t);
-            }
 
-            double rho_minus(double[] X, double t) {
-                return p_minus(X, t) / c_minus / c_minus;
-            }
 
             // ### Initial condtions ###
-            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => densityLeft + rho_minus(X, 0.0));
-            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => velocityXLeft + u_minus(X, 0.0));
+            //    c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => init_vals(X,0));
+            //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => init_vals(X, 1));
+            //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => init_vals(X, 2));
+
+            // ### Initial condtions ###
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => smooth_init_vals(X, 0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => smooth_init_vals(X, 1));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft + p_minus(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => smooth_init_vals(X, 2));
+
 
             //c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => 1.0);
             //c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
@@ -1330,18 +1757,12 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 1.0);
 
             // ### Boundary condtions ###
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => densityLeft + rho_minus(X, t));
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => velocityXLeft + u_minus(X, t));
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => X[0] <shockPosition? bnd_valsL(X, t, 0) : bnd_valsR(X, t, 0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => X[0] < shockPosition ? bnd_valsL(X, t, 1) : bnd_valsR(X, t, 1));
             c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
-            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => pressureLeft + p_minus(X, t));
-            c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => p_minus(X, t));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => X[0] < shockPosition ? bnd_valsL(X, t, 2) : bnd_valsR(X,t,2));
+            //c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => pressureR);
             c.AddBoundaryValue("AdiabaticSlipWall");
-
-            //c.AddBoundaryValue("SubsonicInlet", CompressibleVariables.Density, (X, t) => 1.0 + rho_minus(X, t));
-            //c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.xComponent, (X, t) => u_minus(X, t));
-            //c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
-            //c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => 1.0 + p_minus(X, t));
-            //c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Time configuration ###
             c.dtMin = 0.0;
@@ -1353,7 +1774,9 @@ namespace CNS {
 
             // ### Project and sessions name ###
             c.ProjectName = "AcousticWave";
-            c.SessionName = String.Format("AW_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder);
+            c.SessionName = String.Format("AW_p{0}_xCells{1}_yCells{2}_sP{3}_pST{4}_wP{5}_ampneg{6}_amppos{7}_wL{8}_Mach{9}_{10}", dgDegree, numOfCellsX, numOfCellsY,c.shockPosition,perStartTime,wavePosition,p_amp_neg,p_amp_pos, waveLength,MachL,waveform);
+            //c.ProjectName = "StatShockRef";
+            //c.SessionName = String.Format("StatShockRef_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_sP{5}_Mach{6}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder, c.shockPosition,MachL);
 
             return c;
         }
@@ -4947,6 +5370,33 @@ namespace CNS {
             c.SessionName = tempSessionName;
 
             return c;
+        }
+    }
+    class ScalarTransportFlux :  IVolumeForm
+    {
+        public TermActivationFlags BoundaryEdgeTerms => throw new NotImplementedException();
+
+        public TermActivationFlags InnerEdgeTerms => throw new NotImplementedException();
+
+        public IList<string> ArgumentOrdering => throw new NotImplementedException();
+
+        public IList<string> ParameterOrdering => throw new NotImplementedException();
+
+        public TermActivationFlags VolTerms => throw new NotImplementedException();
+
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        {
+            throw new NotImplementedException();
         }
     }
 }

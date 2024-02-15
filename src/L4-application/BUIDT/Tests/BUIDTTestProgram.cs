@@ -80,7 +80,7 @@ namespace BUIDT.Tests
                     ImmediatePlotPeriod: -1,
                     optiLevelSetType: OptiLevelSetType.SplineLevelSet,
                     getLevelSet: GetLevelSet.FromFunction,
-                    solverRunType: SolverRunType.Staggerd
+                    solverRunType: SolverRunType.PContinuation
                     ) ;
                 p.Init(C);
                 p.RunSolverMode();
