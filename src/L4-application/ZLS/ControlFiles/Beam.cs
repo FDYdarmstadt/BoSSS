@@ -54,8 +54,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===================
             #region physics
 
-            C.PhysicalParameters.rho_A = 0.1;
-            C.PhysicalParameters.rho_B = 0.1;
+            //C.PhysicalParameters.rho_A = 0.1;
+            //C.PhysicalParameters.rho_B = 0.1;
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.rho_B = 1.0;
             C.PhysicalParameters.mu_A = 0.05;
             C.PhysicalParameters.mu_B = 0.05;
 
@@ -65,7 +67,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.Material = new Solid {
                 Viscosity = 0.1,
                 Lame2 = 1000,
-                Density = 0.1
+                //Density = 0.1
+                Density = 100
             };
             #endregion
 
@@ -73,8 +76,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===============
             #region grid
 
-            double xLeft = -5;
-            double xRight = 5;
+            double xLeft = -3;
+            double xRight = 8;
             double ySize = 2;
 
             //*
@@ -123,12 +126,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
             Func<double[], double> Phi1Func = delegate (double[] X) {
                 if(X[0] < 0 && X[1] < 0.9) {
                     //y = 0.11
-                    return -(X[0]).Pow2() + 0.11 * 0.11;
+                    return -(X[0]).Pow2() + 0.1 * 0.1;
                 }
                 if(X[0] > 0 && X[1] < 0.9) {
-                    return -(X[0]).Pow2() + 0.11 * 0.11;
+                    return -(X[0]).Pow2() + 0.1 * 0.1;
                 }
-                return -((X[0]).Pow2() + (X[1] - 0.9).Pow2()) + 0.11 * 0.11;
+                return -((X[0]).Pow2() + (X[1] - 0.9).Pow2()) + 0.1 * 0.1;
             };
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
@@ -136,25 +139,29 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
 
             double R(double t) {
-                if(t < 1) {
+                if(t <= 1) {
                     return (35 + (-84 + (70 - 20 * t) * t) * t) * t * t * t * t;
                 } else {
                     return 1;
                 }
             }
 
-            double d = 0.3;
+            //double d = 0.3;
+            double d = 0.2;
 
 
             double G(double y, double t) {
                 if(y >= d)
-                    return R(t);
+                    //return R(t);
+                    return 1;
                 else
-                    return (1 - ((y - d) / d) * ((y - d) / d)) * R(t);
+                    //return (1 - ((y - d) / d) * ((y - d) / d)) * R(t);
+                    return (y / d) * (y / d);
             }
 
 
-            double vmax = 2;
+            //double vmax = 2;
+            double vmax = 1;
             double inflowX(double[] x, double t) {
                 return vmax * R(t) * G(x[1], t);
             }
@@ -175,7 +182,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", inflowX);
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityY#A", inflowY);
             //dtC.AddBoundaryValue("velocity_inlet_left", "VelocityY#B", inflowY);
-            C.AddBoundaryValue("pressure_outlet_right");
+            //C.AddBoundaryValue("pressure_outlet_right");
 
             #endregion
 
@@ -200,7 +207,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 2 });
-            C.AMR_startUpSweeps = 1;
+            C.AMR_startUpSweeps = 2;
 
             #endregion
 
@@ -220,8 +227,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 30;
-            C.NoOfTimesteps = 10000;
+            C.Endtime = 20;
+            C.NoOfTimesteps = 2000;
             C.saveperiod = 1;
 
             #endregion
