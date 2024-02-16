@@ -3751,14 +3751,9 @@ namespace ApplicationWithIDT {
             OpWithTemp.TemporalOperator = TempOp;
             OpWithTemp.Commit();
 
-            //init an appropriate timeStepper            
-            var xdgtimestepping = new XdgTimestepping(
-                                OpWithTemp,
-                                ConVars, residuals,
-                                TimeSteppingScheme.RK_ImplicitEuler,
-                                null, LevelSetHandling.None,
-                                this.MultiGridOperatorConfig, CurrentAgglo,
-                                this.Control.LinearSolver, this.Control.NonLinearSolver);
+            //init an appropriate timeStepper
+            var xdgtimestepping = new XdgTimestepping(OpWithTemp, ConVars, residuals,TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold:CurrentAgglo);
+
 
             //get a starting Timestepsize
             double dt = Control.IG_dt_Start;
