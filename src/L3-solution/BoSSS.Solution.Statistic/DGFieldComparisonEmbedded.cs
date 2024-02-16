@@ -426,7 +426,7 @@ namespace BoSSS.Solution.Statistic {
                 int i = 1;
                 foreach (var timestep in timestepS) {
                     //Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID);
-                    fields.Add(timestep.Fields);
+                    fields.Add(timestep.Fields.Where(f => FieldsToCompare.Contains(f.Identification)));
                     i++;
                     //Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
                 }
