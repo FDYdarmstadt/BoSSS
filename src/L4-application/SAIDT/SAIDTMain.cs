@@ -27,7 +27,6 @@ namespace SAIDT {
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. `cs:SAIDT.SAIDTHardCodedControl.CurvedShock_Eccomas22()` </param>
         static void Main(string[] args) {
-            //SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SInglePhaseFieldLS();
             //SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22();
             SAIDTMain._Main(args, false, () => new SAIDTMain());
         }
