@@ -118,7 +118,7 @@ namespace BUIDT
         /// - initially a curved level Set is initialized
         /// TODO: Add section from paper, after publication
         public static BUIDTControl StraightShockCurvedStart_Eccomas22(string dbPath=null, int MaxIterations=50, int dgDegree=0, int numOfCellsX=10,
-        int numOfCellsY=10, Linearization linearization=Linearization.FD, int lsDegree = 2,  int ImmediatePlotPeriod = -1, double agg = 0.4, GetLevelSet getLevelSet=GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType=OptiLevelSetType.SplineLevelSet)
+        int numOfCellsY=10, Linearization linearization=Linearization.FD, int lsDegree = 1,  int ImmediatePlotPeriod = -1, double agg = 0.4, GetLevelSet getLevelSet=GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType=OptiLevelSetType.SplineLevelSet)
         {
             var c = BUIDTHardCodedControl.BaseControl(
                     dbPath: dbPath,
