@@ -3737,34 +3737,28 @@ namespace ApplicationWithIDT {
             Console.WriteLine("...Finished");
 
         }
+        /// <summary>
+        /// Does implicit time stepping using implicit euler and adaptive time steps
+        /// Goal: find steady state
+        /// </summary>
+        /// <param name="ConVars"> Conservative Variables </param>
+        /// <param name="residuals">Residual fields</param>
         void DoImplicitTimeStepping(XDGField[] ConVars, XDGField[] residuals) {
-
-            var tp = new Tecplot(LsTrk.GridDat, 3);
-
-            tp.PlotFields($"ComputeP0Solution_{0}", LsTrk.Regions.Time, new DGField[] { LevelSet, LevelSetTwo, ConVars[0], ConVars[1], ConVars[2], ConVars[3], residuals[0], residuals[1], residuals[2], residuals[3] });
 
             //init an operator with temp operator
             var OpWithTemp = XSpatialOperator.CloneAs();
             var TempOp = new ConstantXTemporalOperator(OpWithTemp);
             OpWithTemp.TemporalOperator = TempOp;
-
-            //foreach(var kv in this.MassScale) {
-            //    TempOp.DiagonalScale[temp_trk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
-            //}
             OpWithTemp.Commit();
-            //init an appropriate timeStepper            
-            var xdgtimestepping = new XdgTimestepping(
-                                OpWithTemp,
-                                ConVars, residuals,
-                                TimeSteppingScheme.RK_ImplicitEuler,
-                                null, LevelSetHandling.None,
-                                this.MultiGridOperatorConfig, this.Control.AgglomerationThreshold,
-                                this.Control.LinearSolver, this.Control.NonLinearSolver);
+
+            //init an appropriate timeStepper
+            var xdgtimestepping = new XdgTimestepping(OpWithTemp, ConVars, residuals,TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold:CurrentAgglo);
+
 
             //get a starting Timestepsize
             double dt = Control.IG_dt_Start;
-            //double dt = 0.1;
-            //an adaptive function
+
+            //function to adapt timestep (using some predefined threshholds)
             void AdaptTS(double nu) {
                 //adaptive Time stepping
                 if(nu < Control.IG_nu_Min) {
@@ -3777,26 +3771,33 @@ namespace ApplicationWithIDT {
             }
             
             //choose max iter and initialize counter
-            int maxIt = 100;
-            int it = 0;
+            int maxIt = 200;
+            int it = 0; // counter
 
+            //get resiudal and solution as vector
             var SolVec = new CoordinateVector(ConVars);
+            var ResVec = new CoordinateVector(residuals);
+
+            //backup for solution
             var u_n0 = new double[SolVec.Length];
             u_n0.SetV(SolVec);
-
-            var ResVec = new CoordinateVector(residuals);
+            
+            // eval inital residual
             Eval_r = XSpatialOperator.GetEvaluatorEx(LsTrk, ConVars, null, ResidualMap);
             Eval_r.Evaluate(1.0, 0.0, ResVec);
+
+            //agglomerate residual
             MultiphaseAgglomerator = LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, GetGlobalQuadOrder(), CurrentAgglo, ExceptionOnFailedAgglomeration: false);
             MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), ResVec, ResidualMap, new CoordinateMapping(ConVars));
-            tp.PlotFields($"ComputeP0Solution_{it}", LsTrk.Regions.Time, new DGField[] { LevelSet, LevelSetTwo, ConVars[0], ConVars[1], ConVars[2], ConVars[3], residuals[0], residuals[1], residuals[2], residuals[3] });
+            
+            // while residual big, time step small and it < maxIt do timestepping
             while(ResVec.MPI_L2Norm() > 1e-12 && it < maxIt && dt <= Math.Max(1e06, Control.IG_dt_Start)) {
-                //xdgtimestepping.Solve(tmp_trk.Regions.Time, dt);
-
+                
+                // try implicit timestep, if fail make dt smaller
                 try {
-
                     var succes = xdgtimestepping.Solve(LsTrk.Regions.Time, dt);
                 } catch {
+                    //reset solution
                     SolVec = new CoordinateVector(ConVars);
                     SolVec.SetV(u_n0);
                     Console.WriteLine($"time step dt ={dt} breaks operator and is shortened to {dt * Control.IG_beta}");
@@ -3804,12 +3805,14 @@ namespace ApplicationWithIDT {
                     continue;
                 }
 
-
+                //obtain the step (delta u) and calc norm
                 double[] delta_u = new double[SolVec.Count];
                 SolVec = new CoordinateVector(ConVars);
                 delta_u.AccV(1.0, SolVec);
                 delta_u.AccV(-1.0, u_n0);
                 var norm = delta_u.L2Norm();
+
+                // infinity norm
                 double MaxAbs(double[] u) {
                     for(int i = 0; i < u.Length; i++) {
                         u[i] = u[i].Abs();
@@ -3817,21 +3820,24 @@ namespace ApplicationWithIDT {
                     return u.Max();
                 }
 
-                
+                //normalize delta u by 1/|u|_infty or 1e-3
                 delta_u.ScaleV(1 / Math.Max(MaxAbs(u_n0), 1e-3));
                 var nu = MaxAbs(delta_u);
 
+                //compute agglomerated residual
                 Eval_r = XSpatialOperator.GetEvaluatorEx(LsTrk, ConVars, null, ResidualMap);
                 ResVec = new CoordinateVector(residuals);
                 Eval_r.Evaluate(1.0, 0.0, ResVec);
                 MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), ResVec, ResidualMap, new CoordinateMapping(ConVars));
+                
+                // print result
                 Console.WriteLine($"It {it}: ||r||={ResVec.MPI_L2Norm()}, ||du||={norm}, ||nu|| = {nu}, dt={dt}");
 
-
+                //adapt time step
                 AdaptTS(nu);
                 u_n0.SetV(SolVec);
                 it++;
-                tp.PlotFields($"ComputeP0Solution_{it}", LsTrk.Regions.Time, new DGField[] { LevelSet, LevelSetTwo, ConVars[0], ConVars[1], ConVars[2], ConVars[3], residuals[0], residuals[1], residuals[2], residuals[3] });
+                //tp.PlotFields($"ComputeP0Solution_{it}", LsTrk.Regions.Time, new DGField[] { LevelSet, LevelSetTwo, ConVars[0], ConVars[1], ConVars[2], ConVars[3], residuals[0], residuals[1], residuals[2], residuals[3] });
 
             }
 

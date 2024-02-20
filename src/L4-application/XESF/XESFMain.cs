@@ -437,9 +437,9 @@ namespace XESF
                         break;
                 }
                 this.Op_obj.Commit();
+                this.XSpatialOperator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 this.XSpatialOperator.Commit();
             }
-
             if (Control.GetInitialValue == GetInitialValue.FromP0Timestepping)
             {
                 ComputeP0Solution(); //needs to be done here as operator is now assembled
