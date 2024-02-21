@@ -6404,6 +6404,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
             C.PlotAgglomeration = true;
             C.NoOfTimesteps = 10;
+            C.PostprocessingModules.Add(new Logging.CondLogger());
             return C;
         }
 
