@@ -34,6 +34,9 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
     /// </summary>
     [Serializable]
     public class CondLogger : CondLogger<XNSE_Control> {
+        public CondLogger() {
+            SolverStage = 2;
+        }
     }
 
     /// <summary>
@@ -47,7 +50,6 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// filename
         /// </summary>
         protected override string LogFileName => "CondNumbers";
-
 
         /// <summary>
         /// CSV header
