@@ -2369,7 +2369,8 @@ namespace BoSSS.Solution {
                     // setup of logging
                     foreach (var l in PostprocessingModules) {
                         l.Setup(this);
-                        l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
+                        if (l.SolverStage != 2) //Check if the module is designed to run before or after the solver routine
+                            l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
                     }
 
 
@@ -2397,7 +2398,8 @@ namespace BoSSS.Solution {
 
 
                         foreach (var l in PostprocessingModules) {
-                            l.DriverTimestepPostProcessing(i, physTime);
+                            if (l.SolverStage != 1) //Check if the module is designed to run before or after the solver routine
+                                l.DriverTimestepPostProcessing(i, physTime);
                         }
 
                         ITimestepInfo tsi = null;

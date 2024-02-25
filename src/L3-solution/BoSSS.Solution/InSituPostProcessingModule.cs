@@ -242,6 +242,10 @@ namespace BoSSS.Solution {
         [DataMember]
         public int LogPeriod = 1;
 
-
+        /// <summary>
+        /// Pre-solver or post-solver (0: both, 1: only pre-solver and 2: only post-solver )
+        /// </summary>
+        [DataMember]
+        public int SolverStage = 0;
     }
 }
