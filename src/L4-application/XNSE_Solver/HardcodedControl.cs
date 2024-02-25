@@ -6413,7 +6413,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PlotAgglomeration = true;
             C.NoOfTimesteps = 10;
             C.AgglomerationThreshold = 0;
-            C.CalculateConditionNumber = AppControl._ConditionStudy.OperatorandMass;
+            //C.CalculateConditionNumber = AppControl._ConditionStudy.OperatorandMass;
 
             return C;
         }
