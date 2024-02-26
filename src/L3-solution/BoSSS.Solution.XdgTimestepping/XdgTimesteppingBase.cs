@@ -704,7 +704,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 ana.CalculateGlobals = calculateGlobals;
 
-                //check if expensive stencilCondNumbers are required
+                ana.CalculateMassMatrix = calculateMassMatrix;
                 if (plotStencilCondNumViz == true || calculateStencils == true) {
                     ana.CalculateStencils = true;
                 } else {

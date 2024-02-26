@@ -946,7 +946,23 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             set;
         }
 
+        /// <summary>
+        /// true, if mass matrix condition numbers should be computed
+        /// </summary>
+        public bool CalculateMassMatrix {
+            get;
+            set;
+        }
 
+        /// <summary>
+        /// true, if stencil condition numbers should be visualized (tec-plot)
+        /// </summary>
+        public bool PlotStencilCondNumViz {
+            get;
+            set;
+        }
+
+        
         /// <summary>
         /// Various condition numbers w.r.t. different <see cref="MultigridOperator.Mode"/> are preconditioned, organized in a dictionary to create a regression over multiple meshes
         /// </summary>
@@ -1005,8 +1021,20 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                                                           //double CondNo = this.Cond2Matlab();
                                                           //double CondNo = this.CondLAPACK();
                     Ret.Add("TotCondNo-" + VarNames, CondNo);
+
+                    if (CalculateMassMatrix) {
+                        var condNoMassMtx = CondMassMatrix();
+                        Ret.Add("MassMtxCondNo", condNoMassMtx);
+                    }
+
                     stpw.Stop();
                     Console.WriteLine("- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
+                }
+
+
+                if (CalculateStencils) {
+                    var stencilCondNumbers = CalculateStencilNumbers();
+                    Ret.AddRange(stencilCondNumbers);
                 }
 
                 //var pair = this.Eigenval();
@@ -1024,7 +1052,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Stencil condition numbers, organized in a dictionary to create a regression over multiple meshes
         /// </summary>
-        public IDictionary<string, double> CalculateStencilNumbers(bool plotStencilNumbers = false, bool calculatemassMatrix = false) {
+        public IDictionary<string, double> CalculateStencilNumbers() {
             using (new FuncTrace()) {
                 var Ret = new Dictionary<string, double>();
 
@@ -1084,7 +1112,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 double[] bcnMass = null;
                 //Stencil condition number for mass matrix (MaMa)
-                if (calculatemassMatrix) {
+                if (CalculateMassMatrix) {
                     stpw.Start();
                     bcnMass = this.StencilCondNumbers('M');
                     stpw.Stop();
@@ -1111,7 +1139,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 Console.WriteLine("StencilCondNumbers- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
 
-                if (plotStencilNumbers) {
+                if (PlotStencilCondNumViz) {
                     var StencilCondNoVizS = new List<DGField>();
 
                     SinglePhaseField OpStencilCondNo = new SinglePhaseField(new Basis(grd, 0), "OpStencilCondNo-" + VarNames);
@@ -1120,7 +1148,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     StencilCondNoVizS.Add(OpStencilCondNo);
 
-                    if (calculatemassMatrix) {
+                    if (CalculateMassMatrix) {
                         SinglePhaseField MaMaStencilCondNo = new SinglePhaseField(new Basis(grd, 0), "MaMaStencilCondNo-" + VarNames);
                         for (int j = 0; j < bcnMass.Length; j++)
                             MaMaStencilCondNo.SetMeanValue(j, bcnMass[j]);
