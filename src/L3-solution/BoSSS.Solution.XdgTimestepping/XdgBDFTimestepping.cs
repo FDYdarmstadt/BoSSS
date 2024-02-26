@@ -934,10 +934,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                             throw new ApplicationException();
                         updateAgglom = true;
                     } else {
-                        if (m_CurrentAgglomeration == null)
+                        if (m_CurrentAgglomeration == null) { 
                             Console.WriteLine("Current agglomeration cannot be found: please check the details");
-                            Console.WriteLine("(If you are estimating condition number via operator analsis routine, you can ignore this.)");
-
+                            Console.WriteLine("(If you are estimating condition number via operator analysis routine, you can ignore this.)");
+                        }
                         //throw new ApplicationException(); //this error looks like not compatible with the operator analysis routine (it will call agglomeration in the below anyway)
                     }
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
