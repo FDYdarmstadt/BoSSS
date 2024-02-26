@@ -38,6 +38,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Application.XNSE_Solver.Loadbalancing;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using MathNet.Numerics.LinearAlgebra.Factorization;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -6404,7 +6405,9 @@ namespace BoSSS.Application.XNSE_Solver {
             var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
             C.PlotAgglomeration = true;
             C.NoOfTimesteps = 10;
-            C.PostprocessingModules.Add(new Logging.CondLogger());
+            var config = new OperatorAnalysisConfig();
+            config.CalculateMassMatrix = true;
+            C.PostprocessingModules.Add(new Logging.CondLogger(config));
             return C;
         }
 
