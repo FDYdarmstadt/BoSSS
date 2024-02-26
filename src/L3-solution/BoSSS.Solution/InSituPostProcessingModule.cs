@@ -120,7 +120,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Driver routine for the application to call the post-processing
         /// </summary>
-        public void DriverTimestepPostProcessing(int iTimestep, double PhysTime) {
+        virtual public void DriverTimestepPostProcessing(int iTimestep, double PhysTime) {
             if(iTimestep % LogPeriod == 0) {
                 PerformTimestepPostProcessing(iTimestep, PhysTime);
 
