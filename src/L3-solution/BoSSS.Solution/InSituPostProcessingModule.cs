@@ -170,6 +170,15 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// writes a string line to the current log
+        /// </summary>
+        protected void AppendLineToLog(string s) {
+            if (this.SolverMain.MPIRank != 0) return;
+              Log.Write(s + "\n");
+            ColumnCounter++;
+        }
+
+        /// <summary>
         /// appends a floating-point number to the current log
         /// </summary>
         protected void AppendToLog(double d) {
