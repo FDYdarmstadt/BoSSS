@@ -153,6 +153,11 @@ namespace BoSSS.Solution {
         /// Only attainable for very small systems, maybe up to 10000 DOFs.
         /// </summary>
         public bool CalculateGlobalConditionNumbers = true;
+
+        /// <summary>
+        /// Calculate the condition numbers for the mass matrix in addition to the operator matrix
+        /// </summary>
+        public bool CalculateMassMatrix = false;
     }
 
 
