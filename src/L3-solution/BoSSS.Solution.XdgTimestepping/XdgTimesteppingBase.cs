@@ -705,6 +705,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 ana.CalculateGlobals = calculateGlobals;
 
                 ana.CalculateMassMatrix = calculateMassMatrix;
+
+                ana.PlotStencilCondNumViz = plotStencilCondNumViz;
+
+                //check if stencilCondNumbers are required
                 if (plotStencilCondNumViz == true || calculateStencils == true) {
                     ana.CalculateStencils = true;
                 } else {
@@ -720,14 +724,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
 
-                if (calculateMassMatrix) {
-                    var condNoMassMtx = ana.CondMassMatrix();
-                    Ret.Add("MassMtxCondNo", condNoMassMtx);
-                }
-
-                if (plotStencilCondNumViz) {
-                    StencilCondNoVizS.Add(ana.StencilCondNumbersV());
-                }
 
                 /*
                 {
