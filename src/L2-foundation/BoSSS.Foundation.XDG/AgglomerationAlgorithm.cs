@@ -1763,48 +1763,122 @@ namespace BoSSS.Foundation.XDG {
                 m_aggGroups = new List<AgglomerationGroup>();
 
                 var possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList(); //cells requiring topology change cannot be a target at any point
+                bool globalAgg = true;
 
-                // create only local groups
-                while (possibleGroupTargets.Count > 0) { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
-                    int cellNumberWithMaxVolume = possibleGroupTargets
-                            .Select(p => new { CellNumber = p, CellVolume = CellVolumes[p] })
-                            .OrderByDescending(p => p.CellVolume)
-                            .First()
-                            .CellNumber;
+                marker = "grp";
 
-                    var aggGroupLoop = new AgglomerationGroup(cellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
-                    m_aggGroups.Add(aggGroupLoop);
+                if (globalAgg) {
+                    //create global groups (costly as the remaining cells are usually close to each other but results in unique agg. mapping)
+                    while (possibleGroupTargets.Count.MPIMax() > 0) { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
 
-                    m_CellsNeedChainAgglomeration.Remove(cellNumberWithMaxVolume);
-                    bool anyUpdates = true;
+                        //choose the local biggest cell
+                        var cellWithMaxVolume = possibleGroupTargets
+                                .Select(p => new { CellNumber = p, CellVolume = CellVolumes[p] })
+                                .OrderByDescending(p => p.CellVolume)
+                                .FirstOrDefault(); //due to MPIAllGatherO trivial or non-trivial every processor needs to send data
 
-                    while (anyUpdates) {
-                        var intersection = aggGroupLoop.GetNeighbors.Intersect(m_CellsNeedChainAgglomeration);
-                        anyUpdates = intersection.Any();
-                        foreach (int cell in intersection) {
-                            aggGroupLoop.Add(cell);
-                            m_CellsNeedChainAgglomeration.Remove(cell);
+                        int localCellNumberWithMaxVolume = cellWithMaxVolume.CellNumber;
+
+                        //convert the local number to the global and then create a new tuple with it
+                        var globalCellNumberWithMaxVolume = grdDat.CellPartitioning.i0 + (long)localCellNumberWithMaxVolume;
+                        var cellWithMaxVolumeGlobal = new { GlobalCellNumber = globalCellNumberWithMaxVolume, CellVolume = cellWithMaxVolume.CellVolume };
+
+                        //Gather all the biggest cells from each processor and choose the global biggest (cells can have the same volume so use global cell index as a second criterion)
+                        var cellWithMaxVolumeArray = cellWithMaxVolumeGlobal.MPIAllGatherO();
+                        var cellWithGlobalMaxVolume = cellWithMaxVolumeArray.OrderByDescending(c => c.CellVolume).ThenBy(c => c.GlobalCellNumber).First();
+
+                        //check if this processor has the biggest cell
+                        if (cellWithGlobalMaxVolume.GlobalCellNumber == globalCellNumberWithMaxVolume) {
+                            if (possibleGroupTargets.Count == 0)
+                                return;
+
+                            //mark the cell as candidate
+                            var aggGroupLoop = new AgglomerationGroup(localCellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
+                            m_aggGroups.Add(aggGroupLoop);
+
+                            m_CellsNeedChainAgglomeration.Remove(localCellNumberWithMaxVolume);
+                            bool anyUpdates = true;
+
+                            while (anyUpdates) {
+                                var intersection = aggGroupLoop.GetNeighbors.Intersect(m_CellsNeedChainAgglomeration);
+                                anyUpdates = intersection.Any();
+                                foreach (int cell in intersection) {
+                                    aggGroupLoop.Add(cell);
+                                    m_CellsNeedChainAgglomeration.Remove(cell);
+                                }
+                            }
+
+                            // add groups into the pairs list
+                            AgglomerationPairs.AddRange(aggGroupLoop.GetAggPairs);
+                            if (aggGroupLoop.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
+                                m_failCells.AddRange(aggGroupLoop.GetCells);
+                            }
+                        }
+
+
+
+                        //re-run chain agglomerations to attach source cells from other processors
+                        SearchChainAgglomeration_Mk3(m_CellsNeedChainAgglomeration, AggCandidates, AggSourcesWithExternalCell);
+
+                        possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
+                    }
+
+                    // So far if a cell that requires topology change cannot be mapped, this means a topologicalFailure
+                    m_failCells.AddRange(m_CellsNeedChainAgglomeration);
+                    var topologicalFailures = m_failCells.Intersect(CellsRequireTopologyChanges);
+                    if (topologicalFailures.Any())
+                        topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
+
+                    // Debugging info
+                    if (m_aggGroups.Any() && PlotAgglomeration) { 
+                        m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(), ".txt");
+
+                    }
+
+                } else {
+                    // create only local groups
+                    while (possibleGroupTargets.Count > 0) { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
+                        int cellNumberWithMaxVolume = possibleGroupTargets
+                                .Select(p => new { CellNumber = p, CellVolume = CellVolumes[p] })
+                                .OrderByDescending(p => p.CellVolume)
+                                .First()
+                                .CellNumber;
+
+                        var aggGroupLoop = new AgglomerationGroup(cellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
+                        m_aggGroups.Add(aggGroupLoop);
+
+                        m_CellsNeedChainAgglomeration.Remove(cellNumberWithMaxVolume);
+                        bool anyUpdates = true;
+
+                        while (anyUpdates) {
+                            var intersection = aggGroupLoop.GetNeighbors.Intersect(m_CellsNeedChainAgglomeration);
+                            anyUpdates = intersection.Any();
+                            foreach (int cell in intersection) {
+                                aggGroupLoop.Add(cell);
+                                m_CellsNeedChainAgglomeration.Remove(cell);
+                            }
+                        }
+                        possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
+                    }
+
+                    // So far if a cell that requires topology change cannot be mapped, this means a topologicalFailure
+                    m_failCells.AddRange(m_CellsNeedChainAgglomeration);
+                    var topologicalFailures = m_failCells.Intersect(CellsRequireTopologyChanges);
+                    if (topologicalFailures.Any())
+                        topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
+
+                    // Debugging info
+                    if (m_aggGroups.Any() && PlotAgglomeration)
+                        m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(), ".txt");
+
+                    // add groups into the pairs list
+                    foreach (var group in m_aggGroups) {
+                        AgglomerationPairs.AddRange(group.GetAggPairs);
+                        if (group.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
+                            m_failCells.AddRange(group.GetCells);
                         }
                     }
-                    possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
-                }
 
-                // So far if a cell that requires topology change cannot be mapped, this means a topologicalFailure
-                m_failCells.AddRange(m_CellsNeedChainAgglomeration);
-                var topologicalFailures = m_failCells.Intersect(CellsRequireTopologyChanges);
-                if (topologicalFailures.Any())
-                    topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
-
-                // Debugging info
-                if (m_aggGroups.Any() && PlotAgglomeration)
-                    m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(),".txt");
-
-                // add groups into the pairs list
-                foreach (var group in  m_aggGroups) {
-                    AgglomerationPairs.AddRange(group.GetAggPairs); 
-                    if (group.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
-                        m_failCells.AddRange(group.GetCells);
-                    }
                 }
 
                 // In case of still failed cases
@@ -1867,7 +1941,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-
+        string marker = "";
 
         protected virtual void SearchChainAgglomeration_Mk3(List<int> CellsNeedChainAgglomeration, BitArray AggCandidates,
             BitArray AggSourcesWithExternalCell
@@ -2090,7 +2164,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             if (ChainAgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
-                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("ChainAgglomerationPairs" + Tag + spId.ToString(), ".txt");
+                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady(marker  + "ChainAgglomerationPairs" + Tag + spId.ToString(), ".txt");
 
         }
 
