@@ -736,14 +736,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //k++;
             }
 
-            if (StencilCondNoVizS.Count > 0) {
-                var LevelSets = m_LsTrk.LevelSetHistories;
+            //if (StencilCondNoVizS.Count > 0) {
+            //    var LevelSets = m_LsTrk.LevelSetHistories;
 
-                foreach (var levelSet in LevelSets) {
-                    StencilCondNoVizS.Add((LevelSet)levelSet.Current);
-                }
-                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
-            }
+            //    foreach (var levelSet in LevelSets) {
+            //        StencilCondNoVizS.Add((LevelSet)levelSet.Current);
+            //    }
+            //    Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
+            //}
 
             return Ret;
         }
