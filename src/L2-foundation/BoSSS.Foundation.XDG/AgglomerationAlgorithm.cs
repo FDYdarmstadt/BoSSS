@@ -193,6 +193,16 @@ namespace BoSSS.Foundation.XDG {
             public List<CellAgglomerator.AgglomerationPair> GetAggPairs {
                 get {
                     var AggPairs = new List<CellAgglomerator.AgglomerationPair>();
+                    AggPairs.Add(new CellAgglomerator.AgglomerationPair() {
+                        jCellTarget = jCellGroupTarget,
+                        jCellSource = jCellGroupTarget,
+                        OwnerRank4Target = OwnerRank4GroupTarget,
+                        OwnerRank4Source = OwnerRank4GroupTarget,
+                        posTarget = m_grdDat.Cells.GetCenter(jCellGroupTarget),
+                        fracTarget = m_CellVolumes[jCellGroupTarget],
+                        AgglomerationLevel = 0 //OwnerRank4GroupTarget == Source.rank ? 0 : 1
+                    });
+
 
                     foreach (var Source in Sources) {
                         AggPairs.Add(new CellAgglomerator.AgglomerationPair() {
@@ -1794,9 +1804,7 @@ namespace BoSSS.Foundation.XDG {
                         var cellWithGlobalMaxVolume = cellWithMaxVolumeArray.OrderByDescending(c => c.CellVolume).ThenBy(c => c.GlobalCellNumber).First();
 
                         //check if this processor has the biggest cell
-                        if (cellWithGlobalMaxVolume.GlobalCellNumber == globalCellNumberWithMaxVolume) {
-                            if (possibleGroupTargets.Count == 0)
-                                return;
+                        if (cellWithGlobalMaxVolume.GlobalCellNumber == globalCellNumberWithMaxVolume && possibleGroupTargets.Count != 0) {
 
                             //mark the cell as candidate
                             var aggGroupLoop = new AgglomerationGroup(localCellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
@@ -1816,11 +1824,10 @@ namespace BoSSS.Foundation.XDG {
 
                             // add groups into the pairs list
                             AgglomerationPairs.AddRange(aggGroupLoop.GetAggPairs);
-                            if (aggGroupLoop.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
-                                m_failCells.AddRange(aggGroupLoop.GetCells);
-                            }
+                            //if (aggGroupLoop.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
+                            //    m_failCells.AddRange(aggGroupLoop.GetCells);
+                            //}
                         }
-
 
 
                         //re-run chain agglomerations to attach source cells from other processors
@@ -1886,6 +1893,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                 }
+                AgglomerationPairs = AgglomerationPairs.Where(p => p.jCellSource != p.jCellTarget).ToList(); //remove self mapped elements due to the agglomeration groups
 
                 // In case of still failed cases
                 #region AgglomerationKatastrophe               
