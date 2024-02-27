@@ -1773,7 +1773,7 @@ namespace BoSSS.Foundation.XDG {
 
                         //choose the local biggest cell
                         var cellWithMaxVolume = possibleGroupTargets
-                                .Select(p => new { CellNumber = p, CellVolume = CellVolumes[p] })
+                                .Select(p =>  ( CellNumber: p, CellVolume: CellVolumes[p] ))
                                 .OrderByDescending(p => p.CellVolume)
                                 .FirstOrDefault(); //due to MPIAllGatherO trivial or non-trivial every processor needs to send data
 
