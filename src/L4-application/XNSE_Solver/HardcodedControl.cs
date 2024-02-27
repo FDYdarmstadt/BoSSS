@@ -6215,6 +6215,118 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
+        //test if source-to-source  agglomeration groups can be formed (test case does not have a physical meaning)
+        public static XNSE_Control TwoTorusesAggTestCase(int k = 2, int Res = 20, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g = -9.81) {
+            XNSE_Control C = new XNSE_Control();
+            int SpaceDim = 2;
+            //C.DbPath = @"C:\debug_db";
+            C.ProjectName = "XNSE-Torus";
+            C.ProjectDescription = "agglomeration test";
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+            C.savetodb = false;
+
+            // Simulation settings
+            // ==============
+            int NoOfTimeSteps = 10;
+            bool Steady = false;
+            double bigR = 0.26;
+            double smallR = 0.22;
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 0;
+
+            //bool IncludeConvection = true;
+            var LeftCenter = new double[] { -0.5, 0 };
+            var RightCenter = new double[] { 0.5, 0.0 };
+
+            C.SessionName = $"2DTorus_k{k}_Res{Res}_AMR{AMR}_LS{LSMethod}";
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, false, IncompressibleBcType.Pressure_Outlet);
+            C.GridPartType = GridPartType.Hilbert;
+            C.DynamicLoadBalancing_On = false;
+
+            // Physical Parameters
+            // =================== 
+            // Bo = 250?, Re = 35?
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 100;
+            C.PhysicalParameters.mu_A = 0.01;
+            C.PhysicalParameters.mu_B = 0.1;
+            C.PhysicalParameters.Sigma = 0.097;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+
+            // DG degrees
+            // ==========
+            C.SetFieldOptions(k, Math.Max(k, 2));
+
+            //level-set for two toruses
+            string LeftTorus = $"-Math.Sqrt( (Math.Sqrt((X[0] -({LeftCenter[0]}))*(X[0] -({LeftCenter[0]})) + (X[1]- ({LeftCenter[1]}))*(X[1]- ({LeftCenter[1]}))  ) - {bigR}) * (Math.Sqrt((X[0] -({LeftCenter[0]}))*(X[0] -({LeftCenter[0]})) + (X[1]- ({LeftCenter[1]}))*(X[1]- ({LeftCenter[1]}))  ) - {bigR}) ) + {smallR}";
+            string RightTorus = $"-Math.Sqrt( (Math.Sqrt((X[0] -({RightCenter[0]}))*(X[0] -({RightCenter[0]})) + (X[1]- ({RightCenter[1]}))*(X[1]- ({RightCenter[1]}))  ) - {bigR}) * (Math.Sqrt((X[0] -({RightCenter[0]}))*(X[0] -({RightCenter[0]})) + (X[1]- ({RightCenter[1]}))*(X[1]- ({RightCenter[1]}))  ) - {bigR}) ) + {smallR}";
+
+            string code = $"(X) => Math.Max(" + LeftTorus + " , " + RightTorus + "  ) ";
+
+            var my_formula = new Formula(code);
+
+            //Phi
+            //.UseImmersedBoundary = true;
+            C.AddInitialValue("Phi", new Formula(code)); //
+
+
+            C.UseImmersedBoundary = false;
+            C.PlotAgglomeration = true;
+            C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            C.AddBoundaryValue("Pressure_Outlet");
+
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = 0.95;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
+
+
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.AdaptiveMeshRefinement = AMR;
+            if (AMR) {
+                C.SetMaximalRefinementLevel(1);
+                C.AMR_startUpSweeps = 1;
+            }
+
+            // Timestepping
+            // ============
+            double dt = -1;
+            if (Steady) {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                dt = 1000;
+                C.NoOfTimesteps = 1;
+            } else {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+                dt = 1;
+                C.NoOfTimesteps = NoOfTimeSteps;
+            }
+            C.TimeSteppingScheme = TimeSteppingScheme.ExplicitEuler; //BD4
+            C.dtFixed = dt;
+            C.SkipSolveAndEvaluateResidual = true;
+            //C.SessionName = "SolverOn_" + C.SessionName;
+            return C;
+        }
+
 
         public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g = -9.81) {
             XNSE_Control C = new XNSE_Control();
