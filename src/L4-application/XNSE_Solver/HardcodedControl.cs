@@ -6216,7 +6216,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         //test if source-to-source  agglomeration groups can be formed (test case does not have a physical meaning)
-        public static XNSE_Control TwoTorusesAggTestCase(int k = 2, int Res = 20, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g = -9.81) {
+        public static XNSE_Control TwoTorusesAggTestCase(int k = 1, int Res = 20, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true) {
             XNSE_Control C = new XNSE_Control();
             int SpaceDim = 2;
             //C.DbPath = @"C:\debug_db";
@@ -6234,6 +6234,8 @@ namespace BoSSS.Application.XNSE_Solver {
             double smallR = 0.22;
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 0;
+            C.DynamicLoadBalancing_On = true;
+            C.DynamicLoadBalancing_Period = 1; //Make it challenging by changing the decomposition every timestep
 
             //bool IncludeConvection = true;
             var LeftCenter = new double[] { -0.5, 0 };
@@ -6241,8 +6243,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.SessionName = $"2DTorus_k{k}_Res{Res}_AMR{AMR}_LS{LSMethod}";
             C.GridFunc = GridFuncFactory(SpaceDim, Res, false, IncompressibleBcType.Pressure_Outlet);
-            C.GridPartType = GridPartType.Hilbert;
-            C.DynamicLoadBalancing_On = false;
+            C.GridPartType = GridPartType.METIS;
 
             // Physical Parameters
             // =================== 
