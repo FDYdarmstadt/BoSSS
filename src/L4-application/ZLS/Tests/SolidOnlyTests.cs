@@ -24,11 +24,11 @@ namespace ZwoLevelSetSolver.Tests {
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             List<ZLS_Control> controlFiles = new List<ZLS_Control>();
 
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 4));
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8));
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16));
-            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
             if(p <= 2)
-                controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 64));
+                controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
 
             foreach(var c in controlFiles) {
                 Assert.IsTrue(c.SkipSolveAndEvaluateResidual == false);

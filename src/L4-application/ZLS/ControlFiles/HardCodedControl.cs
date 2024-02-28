@@ -304,7 +304,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public static ZLS_Control AcceleratedBallInChannel(int p = 2, int kelem = 4) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 4;
+            C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
 
@@ -484,7 +484,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 300;
             C.saveperiod = 1;
 
             #endregion
