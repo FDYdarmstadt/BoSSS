@@ -28,6 +28,7 @@ using ilPSP.Utils;
 using System.Diagnostics;
 using System.CodeDom;
 using BoSSS.Solution.Tecplot;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -252,56 +253,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="MultigridOperator.FreeMeanValue"/>
         /// </param>        
         protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output, double HomotopyValue, bool ApplyRef = false) {
-            if (alpha != 1.0)
-                throw new NotSupportedException("some moron has removed this");
+            using (var tr = new FuncTrace()) {
+                if (alpha != 1.0)
+                    throw new NotSupportedException("some moron has removed this");
 
-            SetHomotopyValue(HomotopyValue);
+                SetHomotopyValue(HomotopyValue);
 
-            // the real call:
-            this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var abstractOp);
-            if (DummyMtx != null)
-                // only evaluation ==> OpMatrix must be null
-                throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
-            this.AbstractOperator = abstractOp;
+                // the real call:
+                this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var abstractOp);
+                if (DummyMtx != null)
+                    // only evaluation ==> OpMatrix must be null
+                    throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
+                this.AbstractOperator = abstractOp;
 
 #if DEBUG
             const int TEST_INTERVALL = 10;
 #else
-            const int TEST_INTERVALL = 1000;
+                const int TEST_INTERVALL = 1000;
 #endif
-            if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
+                if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
 
-                // Comparison of linearization and evaluation:
-                // -------------------------------------------
-                //
-                // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
-                //     f(u) ≈ M(u0)*u + b(u0),
-                // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
-                // The relation between the BoSSS-representation and the Taylor series is
-                //     M(u0) = ∂f(u0),
-                //     b(u0) = f(u0) - ∂f(u0)*u0.
-                // Therefore, we check that
-                //     M(u0)*u0 + b(u0) = f(u0).
-                //
+                    // Comparison of linearization and evaluation:
+                    // -------------------------------------------
+                    //
+                    // Note that, in BoSSS, currently the Linearization of f(u) around u0 is defines as
+                    //     f(u) ≈ M(u0)*u + b(u0),
+                    // instead of the typical Taylor series representation f(u) ≈ f(u0) + ∂f(u0)*(u-u0).
+                    // The relation between the BoSSS-representation and the Taylor series is
+                    //     M(u0) = ∂f(u0),
+                    //     b(u0) = f(u0) - ∂f(u0)*u0.
+                    // Therefore, we check that
+                    //     M(u0)*u0 + b(u0) = f(u0).
+                    //
 
 
-                this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
-                var Check = OpAffine.CloneAs();
-                LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
+                    this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
+                    var Check = OpAffine.CloneAs();
+                    LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
 
-                var err = Check.CloneAs();
-                err.AccV(-1.0, OpEvalRaw);
-                double l2_err = err.MPI_L2Norm();
-                double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
-                
-                if (l2_err > comp) {
-                    Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
-                    //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
-				}
+                    var err = Check.CloneAs();
+                    err.AccV(-1.0, OpEvalRaw);
+                    double l2_err = err.MPI_L2Norm();
+                    double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+
+                    if (l2_err > comp) {
+                        tr.Error($"Mismatch between operator linearization and evaluation at evaluation {EvaluationCounter}: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
+                        //Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
+                        //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
+                    }
+                }
+                EvaluationCounter++;
+
+                CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
             }
-            EvaluationCounter++;
-
-            CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
         }
 
         int EvaluationCounter = 0;

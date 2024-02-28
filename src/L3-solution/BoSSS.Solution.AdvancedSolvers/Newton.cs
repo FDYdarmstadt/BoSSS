@@ -937,188 +937,192 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - Pawlowski et. al., 2008, Inexact Newton Dogleg Methods, SIAM Journal on Numerical Analysis, Vol. 46, No. 4, pp 2112-2132.
         /// </remarks>
         private void DogLeg(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] stepIN, double HomotopyValue, int NewtonIterCnt, ref double TrustRegionDelta) {
+            using (var tr = new FuncTrace()) {
 
-            // algorithm constants taken from [Pawlowski et. al. 2006]
-            // =======================================================
-            const double t = 1.0e-4;
-            const double delta_min = 1e-6;
-            const double delta_max = 1e10;
+                // algorithm constants taken from [Pawlowski et. al. 2006]
+                // =======================================================
+                const double t = 1.0e-4;
+                const double delta_min = 1e-6;
+                const double delta_max = 1e10;
 
-            // initial estimate of trust region width in first iteration
-            // =========================================================
-            if(NewtonIterCnt < 1)
-                throw new ArgumentException();
-            if(NewtonIterCnt == 1) {
-                double norm_step = stepIN.MPI_L2Norm();
-                if(norm_step < delta_min)
-                    TrustRegionDelta = 2 * delta_min;
-                else
-                    TrustRegionDelta = norm_step;
+                // initial estimate of trust region width in first iteration
+                // =========================================================
+                if (NewtonIterCnt < 1)
+                    throw new ArgumentException();
+                if (NewtonIterCnt == 1) {
+                    double norm_step = stepIN.MPI_L2Norm();
+                    if (norm_step < delta_min)
+                        TrustRegionDelta = 2 * delta_min;
+                    else
+                        TrustRegionDelta = norm_step;
 
-                TrustRegionDelta = Math.Min(delta_max, TrustRegionDelta);
-            }
-
-
-            // TODO change later: always use a very small initial trust region!
-            // TrustRegionDelta = TrustRegionDelta / 10;
-
-            if(TrustRegionDelta < delta_min || TrustRegionDelta > delta_max)
-                throw new ArithmeticException("trust region width out of allowed range");
-
-            // compute Cauchy point
-            // ====================
-            double[] stepCP;
-            {
-                // step 1: calculate direction of Cauchy point / direction of steepest decent
-                double[] dk = new double[CurSol.Length];
-                BlockMsrMatrix JacTransp = this.CurrentLin.OperatorMatrix.Transpose();
-                JacTransp.SpMV(-1.0, CurRes, 0.0, dk); // eventually, replace this by a SpMV - transpose
-
-
-                // step 2: computing Cauchy point
-                double[] Mdk = new double[dk.Length];
-                this.CurrentLin.OperatorMatrix.SpMV(1.0, dk, 0.0, Mdk);
-                double[] a = (new[] { CurRes.InnerProd(Mdk), Mdk.L2NormPow2() }).MPISum();
-
-                double lambda = -a[0] / Math.Max(double.Epsilon*100, a[1]);
-
-                stepCP = dk;
-                stepCP.ScaleV(lambda);
-                dk = null; // invalidate
-
-                // test:
-                double[] ResAtCP = CurRes.CloneAs();
-                this.CurrentLin.OperatorMatrix.SpMV(1.0, stepCP, 1.0, ResAtCP);
-
-                double ResNormAtCP = ResAtCP.MPI_L2Norm();
-                double ResNormAtX0 = CurRes.MPI_L2Norm();
-
-                Assert.LessOrEqual(ResNormAtCP, ResNormAtX0, "Something wrong in calculation of Cauchy Point -- residual of linear model increased.");
-            }
-
-            // using only Cauchy-Point
-            //var _NewSol = CurSol.CloneAs();
-            //_NewSol.AccV(1.0, stepCP);
-            //this.CurrentLin.TransformSolFrom(SolutionVec, _NewSol);
-            //return;
-
-            // find point on Dogleg curve, within the trust region
-            // ===================================================
-            double[] step = new double[stepIN.Length];
-            double l2_stepCP = stepCP.MPI_L2Norm();
-            double l2_stepIN = stepIN.MPI_L2Norm();
-            double[] NewSol;
-            void PointOnDogleg(double _TrustRegionDelta) {
-                if(l2_stepIN <= _TrustRegionDelta) {
-                    // use Newton Step
-                    //Console.WriteLine($"       -------- using Newton step (delta = {_TrustRegionDelta})");
-                    step.SetV(stepIN);
-                } else {
-                    if(l2_stepCP < _TrustRegionDelta) {
-                        // interpolate between Cauchy-point and Newton-step
-                        Console.WriteLine($"Info: Newton solver - between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
-                        Debug.Assert(l2_stepCP * 0.99999 <= _TrustRegionDelta); // Cauchy Point is INSIDE   trust region
-                        Debug.Assert(l2_stepIN * 1.00001 >= _TrustRegionDelta); // Newton Step  is OUTSIDE  trust region
-                        Debug.Assert(l2_stepCP <= l2_stepIN * 1.00001); // consequently, the Newton Step must be larger than the Cauchy point
-
-                        //double tau = (l2_stepCP - _TrustRegionDelta) / (l2_stepCP - l2_stepIN); // nominator and denominator must be negative!
-                        //                                                                        //double tau2 = (l2_stepCP + TrustRegionDelta) / (l2_stepCP - l2_stepIN); // other solution of quadratic problem, probably negative
-                        double tau;
-                        {
-                            double A = l2_stepCP, B = l2_stepIN, C = stepCP.MPI_ddot(stepIN);
-                            tau = (A.Pow2() - C + Math.Sqrt((A.Pow2() + B.Pow2() - 2 * C) * _TrustRegionDelta.Pow2() - A.Pow2() * B.Pow2() + C.Pow2()))
-                                / (A.Pow2() + B.Pow2() - 2 * C);
-                            if(!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
-                                throw new ArithmeticException();
-                        }
-                        // do interpolation
-                        step.SetV(stepCP, (1 - tau));
-                        step.AccV(tau, stepIN);
-                        Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "interpolation step went wrong");
-                    } else {
-                        // use reduced Cauchy point
-                        Console.WriteLine($"Info: Newton solver - using Cauchy point (delta = {_TrustRegionDelta})");
-                        Debug.Assert(l2_stepCP * 1.00001 >= _TrustRegionDelta); // Cauchy Point is outside trust region
-                        step.SetV(stepCP, alpha: (_TrustRegionDelta / l2_stepCP));
-                        Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "scaling step went wrong");
-                    }
+                    TrustRegionDelta = Math.Min(delta_max, TrustRegionDelta);
                 }
 
-                NewSol = CurSol.CloneAs();
-                NewSol.AccV(1.0, step);
-            }
 
-            PointOnDogleg(TrustRegionDelta);
+                // TODO change later: always use a very small initial trust region!
+                // TrustRegionDelta = TrustRegionDelta / 10;
 
-            // check and adapt trust region
-            // ============================
-            double l2_CurRes = CurRes.MPI_L2Norm();
+                if (TrustRegionDelta < delta_min || TrustRegionDelta > delta_max)
+                    throw new ArithmeticException("trust region width out of allowed range");
 
-            double[] temp = new double[CurRes.Length];
+                // compute Cauchy point
+                // ====================
+                double[] stepCP;
+                {
+                    // step 1: calculate direction of Cauchy point / direction of steepest decent
+                    double[] dk = new double[CurSol.Length];
+                    BlockMsrMatrix JacTransp = this.CurrentLin.OperatorMatrix.Transpose();
+                    JacTransp.SpMV(-1.0, CurRes, 0.0, dk); // eventually, replace this by a SpMV - transpose
 
-            // predicted residual reduction
-            double pred() {
 
-                temp.SetV(CurRes);
-                this.CurrentLin.OperatorMatrix.SpMV(1.0, step, 1.0, temp);
+                    // step 2: computing Cauchy point
+                    double[] Mdk = new double[dk.Length];
+                    this.CurrentLin.OperatorMatrix.SpMV(1.0, dk, 0.0, Mdk);
+                    double[] a = (new[] { CurRes.InnerProd(Mdk), Mdk.L2NormPow2() }).MPISum();
 
-                return l2_CurRes - temp.MPI_L2Norm();
-            }
+                    double lambda = -a[0] / Math.Max(double.Epsilon * 100, a[1]);
 
-            // actual residual reduction
-            double ared() {
-                this.CurrentLin.TransformSolFrom(SolutionVec, NewSol);
-                base.EvaluateOperator(1.0, SolutionVec.Fields, temp, HomotopyValue);
+                    stepCP = dk;
+                    stepCP.ScaleV(lambda);
+                    dk = null; // invalidate
 
-                return l2_CurRes - temp.MPI_L2Norm();
-            }
+                    // test:
+                    double[] ResAtCP = CurRes.CloneAs();
+                    this.CurrentLin.OperatorMatrix.SpMV(1.0, stepCP, 1.0, ResAtCP);
 
-            // trust region adaptation loop
-            double last_ared = ared();
-            double last_pred = pred();
-            while(last_ared < t * last_pred) {
-                double newTrustRegionDelta = TrustRegionDelta * 0.5;
-                if(newTrustRegionDelta <= delta_min)
-                    break;
+                    double ResNormAtCP = ResAtCP.MPI_L2Norm();
+                    double ResNormAtX0 = CurRes.MPI_L2Norm();
+
+                    Assert.LessOrEqual(ResNormAtCP, ResNormAtX0, "Something wrong in calculation of Cauchy Point -- residual of linear model increased.");
+                }
+
+                // using only Cauchy-Point
+                //var _NewSol = CurSol.CloneAs();
+                //_NewSol.AccV(1.0, stepCP);
+                //this.CurrentLin.TransformSolFrom(SolutionVec, _NewSol);
+                //return;
+
+                // find point on Dogleg curve, within the trust region
+                // ===================================================
+                double[] step = new double[stepIN.Length];
+                double l2_stepCP = stepCP.MPI_L2Norm();
+                double l2_stepIN = stepIN.MPI_L2Norm();
+                double[] NewSol;
+                void PointOnDogleg(double _TrustRegionDelta) {
+                    if (l2_stepIN <= _TrustRegionDelta) {
+                        // use Newton Step
+                        //Console.WriteLine($"       -------- using Newton step (delta = {_TrustRegionDelta})");
+                        step.SetV(stepIN);
+                    } else {
+                        if (l2_stepCP < _TrustRegionDelta) {
+                            // interpolate between Cauchy-point and Newton-step
+                            //Console.WriteLine($"Info: Newton solver - between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
+                            tr.Info($"Info: Newton solver - between Cauchy point and Newton step (delta = {_TrustRegionDelta})");
+                            Debug.Assert(l2_stepCP * 0.99999 <= _TrustRegionDelta); // Cauchy Point is INSIDE   trust region
+                            Debug.Assert(l2_stepIN * 1.00001 >= _TrustRegionDelta); // Newton Step  is OUTSIDE  trust region
+                            Debug.Assert(l2_stepCP <= l2_stepIN * 1.00001); // consequently, the Newton Step must be larger than the Cauchy point
+
+                            //double tau = (l2_stepCP - _TrustRegionDelta) / (l2_stepCP - l2_stepIN); // nominator and denominator must be negative!
+                            //                                                                        //double tau2 = (l2_stepCP + TrustRegionDelta) / (l2_stepCP - l2_stepIN); // other solution of quadratic problem, probably negative
+                            double tau;
+                            {
+                                double A = l2_stepCP, B = l2_stepIN, C = stepCP.MPI_ddot(stepIN);
+                                tau = (A.Pow2() - C + Math.Sqrt((A.Pow2() + B.Pow2() - 2 * C) * _TrustRegionDelta.Pow2() - A.Pow2() * B.Pow2() + C.Pow2()))
+                                    / (A.Pow2() + B.Pow2() - 2 * C);
+                                if (!(tau >= -0.00001 && tau <= 1.00001) || tau.IsNaN() || tau.IsInfinity())
+                                    throw new ArithmeticException();
+                            }
+                            // do interpolation
+                            step.SetV(stepCP, (1 - tau));
+                            step.AccV(tau, stepIN);
+                            Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "interpolation step went wrong");
+                        } else {
+                            // use reduced Cauchy point
+                            //Console.WriteLine($"Info: Newton solver - using Cauchy point (delta = {_TrustRegionDelta})");
+                            tr.Info($"Info: Newton solver - using Cauchy point (delta = {_TrustRegionDelta})");
+                            Debug.Assert(l2_stepCP * 1.00001 >= _TrustRegionDelta); // Cauchy Point is outside trust region
+                            step.SetV(stepCP, alpha: (_TrustRegionDelta / l2_stepCP));
+                            Debug.Assert(Math.Abs((step.MPI_L2Norm() / _TrustRegionDelta) - 1.0) <= 1.0e-3, "scaling step went wrong");
+                        }
+                    }
+
+                    NewSol = CurSol.CloneAs();
+                    NewSol.AccV(1.0, step);
+                }
 
                 PointOnDogleg(TrustRegionDelta);
 
-                TrustRegionDelta = Math.Max(delta_min, newTrustRegionDelta);
+                // check and adapt trust region
+                // ============================
+                double l2_CurRes = CurRes.MPI_L2Norm();
 
+                double[] temp = new double[CurRes.Length];
 
-                last_ared = ared();
-                last_pred = pred();
-            }
+                // predicted residual reduction
+                double pred() {
 
-            // final trust region update
-            // =========================
-            {
-                // taken from [Pawlovski et.al. 2006], section 2.4;
-                // originally from J. E. Dennis, Jr. and R. B. Schnabel. Numerical Methods for Unconstrained Optimization and Nonlinear Equations. Series in Automatic Computation. Prentice-Hall, Englewood Cliffs, NJ, 1983.
+                    temp.SetV(CurRes);
+                    this.CurrentLin.OperatorMatrix.SpMV(1.0, step, 1.0, temp);
 
-                const double rho_s = 0.1;
-                const double rho_e = 0.75;
-                const double beta_s = 0.25;
-                const double beta_e = 4.0;
-
-                if(last_ared / last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
-                    TrustRegionDelta = Math.Max(l2_stepIN, delta_min);
-                } else if(last_ared / last_pred < rho_s) {
-                    TrustRegionDelta = Math.Max(beta_s * TrustRegionDelta, delta_min); // shrinking
-                } else if(last_ared / last_pred > rho_e) {
-                    TrustRegionDelta = Math.Min(beta_e * TrustRegionDelta, delta_max); // enhancing
+                    return l2_CurRes - temp.MPI_L2Norm();
                 }
+
+                // actual residual reduction
+                double ared() {
+                    this.CurrentLin.TransformSolFrom(SolutionVec, NewSol);
+                    base.EvaluateOperator(1.0, SolutionVec.Fields, temp, HomotopyValue);
+
+                    return l2_CurRes - temp.MPI_L2Norm();
+                }
+
+                // trust region adaptation loop
+                double last_ared = ared();
+                double last_pred = pred();
+                while (last_ared < t * last_pred) {
+                    double newTrustRegionDelta = TrustRegionDelta * 0.5;
+                    if (newTrustRegionDelta <= delta_min)
+                        break;
+
+                    PointOnDogleg(TrustRegionDelta);
+
+                    TrustRegionDelta = Math.Max(delta_min, newTrustRegionDelta);
+
+
+                    last_ared = ared();
+                    last_pred = pred();
+                }
+
+                // final trust region update
+                // =========================
+                {
+                    // taken from [Pawlovski et.al. 2006], section 2.4;
+                    // originally from J. E. Dennis, Jr. and R. B. Schnabel. Numerical Methods for Unconstrained Optimization and Nonlinear Equations. Series in Automatic Computation. Prentice-Hall, Englewood Cliffs, NJ, 1983.
+
+                    const double rho_s = 0.1;
+                    const double rho_e = 0.75;
+                    const double beta_s = 0.25;
+                    const double beta_e = 4.0;
+
+                    if (last_ared / last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
+                        TrustRegionDelta = Math.Max(l2_stepIN, delta_min);
+                    } else if (last_ared / last_pred < rho_s) {
+                        TrustRegionDelta = Math.Max(beta_s * TrustRegionDelta, delta_min); // shrinking
+                    } else if (last_ared / last_pred > rho_e) {
+                        TrustRegionDelta = Math.Min(beta_e * TrustRegionDelta, delta_max); // enhancing
+                    }
+                }
+
+
+
+                // return updated solution
+                // =======================
+
+                // remark: 'SolutionVec' should be up to date due to the last call to 'ared()'
+
+                //this.CurrentLin.TransformSolFrom(SolutionVec, NewSol);
+                return;
             }
-
-
-
-            // return updated solution
-            // =======================
-
-            // remark: 'SolutionVec' should be up to date due to the last call to 'ared()'
-
-            //this.CurrentLin.TransformSolFrom(SolutionVec, NewSol);
-            return;
         }
 
 

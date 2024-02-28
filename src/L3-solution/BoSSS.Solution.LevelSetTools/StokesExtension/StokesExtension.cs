@@ -330,8 +330,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
 
             // plotting for debug reasons
-            Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
-            timestepNo++;
+            //Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
+            //timestepNo++;
         }
     }
 }
