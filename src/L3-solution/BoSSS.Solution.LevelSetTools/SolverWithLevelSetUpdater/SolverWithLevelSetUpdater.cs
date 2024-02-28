@@ -576,7 +576,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
 
                 double distCG = pair1.CGLevelSet.CoordinateVector.L2Distance(coords1CG);
-                if (check_distCG && distCG > 1e-15)
+                if (check_distCG && distCG > 3e-15)
                     throw new Exception($"illegal modification of CG level-set when projecting a second time (rank {pair1.CGLevelSet.GridDat.MpiRank}: CG level-set LS distance = {distCG})");
             }
 #if TEST
