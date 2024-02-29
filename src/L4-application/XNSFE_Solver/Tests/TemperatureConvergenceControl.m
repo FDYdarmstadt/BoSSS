@@ -2,7 +2,7 @@ clc
 clear all
 close all
 
-%%
+%% calculate the solution for a homogenous Poisson problem based on "Handbook of linear partial differential equations for engineers and scientists"; Polyanin, Nazaikinskii, p. 788
 [R,Phi] = meshgrid(linspace(0,0.8,100), linspace(0,2*pi,1000));
 
 figure;
