@@ -15,13 +15,14 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public Continuity(string spcName, int D, Solid material) {
             this.spcName = spcName;
-            if(false) {
+            if(true) {
                 for(int i = 0; i < D; ++i) {
                     string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
                     AddVariableNames(velocity);
                     var divergence1 = new Divergence(spcName, velocity, i);
                     AddComponent(divergence1);
                 }
+                AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / material.Lame2 - 1.0 / material.Viscosity));
             } else {
                 string[] displacement = ZwoLevelSetSolver.VariableNames.DisplacementVector(D);
                 for(int i = 0; i < D; ++i) {

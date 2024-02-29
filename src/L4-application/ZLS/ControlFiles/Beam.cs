@@ -1,5 +1,4 @@
-﻿
-using BoSSS.Application.XNSE_Solver;
+﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -54,10 +53,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===================
             #region physics
 
-            //C.PhysicalParameters.rho_A = 0.1;
-            //C.PhysicalParameters.rho_B = 0.1;
-            C.PhysicalParameters.rho_A = 1.0;
-            C.PhysicalParameters.rho_B = 1.0;
+            C.PhysicalParameters.rho_A = 0.1;
+            C.PhysicalParameters.rho_B = 0.1;
             C.PhysicalParameters.mu_A = 0.05;
             C.PhysicalParameters.mu_B = 0.05;
 
@@ -67,8 +64,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.Material = new Solid {
                 Viscosity = 0.1,
                 Lame2 = 1000,
-                //Density = 0.1
-                Density = 100
+                Density = 0.1
             };
             #endregion
 
@@ -146,21 +142,17 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 }
             }
 
-            //double d = 0.3;
             double d = 0.2;
 
 
             double G(double y, double t) {
                 if(y >= d)
-                    //return R(t);
                     return 1;
                 else
-                    //return (1 - ((y - d) / d) * ((y - d) / d)) * R(t);
-                    return (y / d) * (y / d);
+                    return (1 - ((y - d) / d) * ((y - d) / d));
             }
 
 
-            //double vmax = 2;
             double vmax = 1;
             double inflowX(double[] x, double t) {
                 return vmax * R(t) * G(x[1], t);
@@ -182,7 +174,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", inflowX);
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityY#A", inflowY);
             //dtC.AddBoundaryValue("velocity_inlet_left", "VelocityY#B", inflowY);
-            //C.AddBoundaryValue("pressure_outlet_right");
+            C.AddBoundaryValue("pressure_outlet_right");
 
             #endregion
 

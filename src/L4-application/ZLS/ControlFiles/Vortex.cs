@@ -52,6 +52,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = true;
 
             C.Material = new ConvergenceTest();
+            C.Material.Viscosity = 1e-6;
 
             #endregion
 
@@ -102,8 +103,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AddInitialValue("Phi", new Formula("X => -1"));
             C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
-            C.AddInitialValue("VelocityX#C", Vx);
-            C.AddInitialValue("VelocityY#C", Vy);
+            C.AddInitialValue("GravityX#A", Vx);
+            C.AddInitialValue("GravityY#A", Vy);
+            C.AddInitialValue("GravityX#B", Vx);
+            C.AddInitialValue("GravityY#B", Vy);
+            C.AddInitialValue("GravityX#C", Vx);
+            C.AddInitialValue("GravityY#C", Vy);
 
             #endregion
 
@@ -141,8 +146,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region time
 
             //C.CheckJumpConditions = true;
-            C.NoOfTimesteps = 200;
-            double dt = 5e-2;
+            C.NoOfTimesteps = 300;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
@@ -197,7 +202,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
             C.Material = new ConvergenceTest();
-            C.Material.Viscosity = 0;
+            C.Material.Viscosity = 1e-6;
 
             #endregion
 
