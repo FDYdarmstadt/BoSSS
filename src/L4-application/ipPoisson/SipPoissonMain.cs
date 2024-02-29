@@ -274,7 +274,7 @@ namespace BoSSS.Application.SipPoisson {
         /// dependent variable
         /// </summary>
         [InstantiateFromControlFile("T", "T", IOListOption.ControlFileDetermined)]
-        protected SinglePhaseField T;
+        internal SinglePhaseField T;
 
         /// <summary>
         /// exact solution, to determine L2-Error, see also <see cref="SipControl.ExactSolution_provided"/>.

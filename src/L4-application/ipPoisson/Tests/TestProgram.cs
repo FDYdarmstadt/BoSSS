@@ -23,6 +23,7 @@ using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Gnuplot;
+using BoSSS.Solution.Statistic;
 using ilPSP;
 using MPI.Wrappers;
 using NUnit.Framework;
@@ -345,6 +346,29 @@ namespace BoSSS.Application.SipPoisson.Tests {
 #endif
 
 
+        /// <summary>
+        /// Convergence against exact solution on a 2D half circular OGrid.
+        /// </summary>
+        [Test()]
+        public static void TestOperatorConvergenceCustom([Values(2, 3)] int dgDeg) {
+
+
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = new int[] { 2, 3, 5, 9, 17 };
+               
+                foreach (int res in ResS) {
+                    var C = SipHardcodedControl.HalfCircle(res, dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.ImmediatePlotPeriod = 1;
+                    C.SuperSampling = 1;
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
+            }
+
+            SipSolverConvergenceTest(Controls, false, new double[] { dgDeg + 0.5 });
+        }
 
         /// <summary>
         /// Convergence against exact solution on a 2D square.
@@ -380,8 +404,9 @@ namespace BoSSS.Application.SipPoisson.Tests {
             var CS = _CS.ToArray();
             int NoOfMeshes = CS.Length;
 
-            double[] hS = new double[NoOfMeshes];
-            MultidimensionalArray errorS = MultidimensionalArray.Create(NoOfMeshes, 1);
+            int NoOfDataPoints = useExactSolution ? NoOfMeshes : NoOfMeshes - 1;
+            double[] hS = new double[NoOfDataPoints];
+            MultidimensionalArray errorS = MultidimensionalArray.Create(NoOfDataPoints, 1);
             string[] Names = new[] { "u" };
 
             SipPoissonMain[] solvers = new SipPoissonMain[NoOfMeshes];
@@ -414,14 +439,36 @@ namespace BoSSS.Application.SipPoisson.Tests {
             } else {
                 if (NoOfMeshes < 3)
                     throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
-                throw new NotImplementedException("todo");
+
+
+                Console.WriteLine("Running ipPoisson Convergence Tests");
+                List<IEnumerable<DGField>> solutionOnDifferentResolutions = new List<IEnumerable<DGField>>();
+                foreach (var C in _CS) {
+                    using (var solver = new SipPoissonMain()) {
+                        solver.Init(C);
+                        solver.RunSolverMode();
+                        solutionOnDifferentResolutions.Add(new DGField[] { solver.T });
+                    }
+                }
+
+                Dictionary<string, double[]> errorSS;
+                double[] hSS;
+                try {
+                    DGFieldComparison.ComputeErrors(solutionOnDifferentResolutions, out hSS, out var DOFs, out errorSS, NormType.L2_embedded);
+                } catch (Exception e) {
+                    if (e is NotImplementedException || e is ArgumentException) {
+                        Console.WriteLine("Grids not embedded, trying L2_approximate");
+                        DGFieldComparison.ComputeErrors(solutionOnDifferentResolutions, out hSS, out var DOFs, out errorSS, NormType.L2_approximate);
+                    } else {
+                        throw;
+                    }
+                }
+
+                errorS.ExtractSubArrayShallow(-1,0).SetVector(errorSS["T"]);
+                hS = hSS;
             }
 
-
-            //hS = hS.Take(hS.Length - 1).ToArray();
-
-            
-
+            //hS = hS.Take(hS.Length - 1).ToArray();    
 
             for (int i = 0; i < errorS.GetLength(1); i++) {
                 var slope = hS.LogLogRegressionSlope( errorS.GetColumn(i));
