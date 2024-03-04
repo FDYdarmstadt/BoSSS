@@ -120,7 +120,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Driver routine for the application to call the post-processing
         /// </summary>
-        public void DriverTimestepPostProcessing(int iTimestep, double PhysTime) {
+        virtual public void DriverTimestepPostProcessing(int iTimestep, double PhysTime) {
             if(iTimestep % LogPeriod == 0) {
                 PerformTimestepPostProcessing(iTimestep, PhysTime);
 
@@ -166,6 +166,15 @@ namespace BoSSS.Solution {
             if (ColumnCounter > 0)
                 Log.Write(ColumnSeperator);
             Log.Write(s);
+            ColumnCounter++;
+        }
+
+        /// <summary>
+        /// writes a string line to the current log
+        /// </summary>
+        protected void AppendLineToLog(string s) {
+            if (this.SolverMain.MPIRank != 0) return;
+              Log.Write(s + "\n");
             ColumnCounter++;
         }
 
@@ -242,6 +251,10 @@ namespace BoSSS.Solution {
         [DataMember]
         public int LogPeriod = 1;
 
-
+        /// <summary>
+        /// Pre-solver or post-solver (0: both, 1: only pre-solver and 2: only post-solver )
+        /// </summary>
+        [DataMember]
+        public int SolverStage = 0;
     }
 }
