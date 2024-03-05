@@ -267,7 +267,15 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        /// <summary>
+        /// species, for which the agglomeration graph is determined
+        /// </summary>
+        public SpeciesId spId {
+            get;
+            private set;
+        }
 
+        string Tag;
 
         /// <summary>
         /// The cell agglomerator v2 (without explicit cycle detection)
@@ -277,14 +285,18 @@ namespace BoSSS.Foundation.XDG {
         /// Local pairs
         /// <see cref="AgglomerationPair"/>)
         /// </param>
+        /// <param name="__spId">speciesId</param>
+        /// <param name="_tag">tag</param>
         /// <remarks>
         /// The cell agglomerator checks possible problems in the agglomeration pairs coming from <see cref="AgglomerationAlgorithm"/> (Mk3) and then exchange local pairs with targetRanks.
         /// </remarks>
-        public CellAgglomerator(GridData g, IEnumerable<AgglomerationPair> AgglomerationPairs) {
+        public CellAgglomerator(GridData g, IEnumerable<AgglomerationPair> AgglomerationPairs, SpeciesId __spId, string _tag) {
             using (new FuncTrace()) {
 
                 // check and init
                 // ==============
+                spId = __spId;
+                Tag = string.IsNullOrEmpty(_tag) ? "" : _tag + "_";
 
                 MPICollectiveWatchDog.Watch();
                 this.GridDat = g;
@@ -412,12 +424,15 @@ namespace BoSSS.Foundation.XDG {
                 int MaxLevel = Level.Count() > 0 ? Level.Max() : 0;
                 MaxLevel = MPIExtensions.MPIMax(MaxLevel);
 
+                AggPairs.SaveToTextFileDebugUnsteadyNumbered("aaPairs" + Tag + spId.ToString(), ".txt");
+
+
                 // re-assign the agglomeration levels (notice AgglomerationPairs are struct (value type variable)
-                for (int iPair = 0; iPair < AggPairs.Count; iPair++) { // loop over pairs...
-                    var currentPair = AggPairs[iPair];
-                    currentPair.AgglomerationLevel = Level[iPair];
-                    AggPairs[iPair] = currentPair;
-                }
+                //for (int iPair = 0; iPair < AggPairs.Count; iPair++) { // loop over pairs...
+                //    var currentPair = AggPairs[iPair];
+                //    currentPair.AgglomerationLevel = Level[iPair];
+                //    AggPairs[iPair] = currentPair;
+                //}
 
                 // mark and check all edges which are used for agglomeration
                 // =========================================================
@@ -484,7 +499,7 @@ namespace BoSSS.Foundation.XDG {
 
                     ai.AgglomerationEdges = new EdgeMask(g, AgglomerationEdgesBitMask);
                     ai.AgglomerationPairs = AggPairs.ToArray();
-
+                    ai.AgglomerationPairs.SaveToTextFileDebugUnsteadyNumbered("aiPairs" + Tag + spId.ToString(), ".txt");
                     // at this point, because jAggSource must be local, the agglomerations are unique over all MPI processors.
                     this.TotalNumberOfAgglomerations = NoLocalAggPairs.MPISum();
                 }
@@ -1170,7 +1185,7 @@ namespace BoSSS.Foundation.XDG {
                 this.InitCouplingMatrices(MaxDegree);
 
                 BlockMsrMatrix CompleteMtx = null;
-                for(int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) { // loop over agglomeration level...
+                for (int AggLevel = this.AggInfo.MaxLevel; AggLevel >= 0; AggLevel--) { // loop over agglomeration level...
 
                     
                     // alloc matrix for the current agglomeration level
@@ -1256,7 +1271,7 @@ namespace BoSSS.Foundation.XDG {
                     // combine the matrix for the current agg. level 'LevelMtx' with the complete matrix
                     // ---------------------------------------------------------------------------------
 
-                    if(AggLevel == 0) {
+                    if(AggLevel == this.AggInfo.MaxLevel) {
                         CompleteMtx = LevelMtx;
                     } else {
                         if(MakeInPlace) {
@@ -1377,7 +1392,7 @@ namespace BoSSS.Foundation.XDG {
                 CellAgglomerator.AgglomerationPair[] AggPairs = this.AggInfo.AgglomerationPairs;
 
                 // loop over agglomeration levels: 
-                for (int AggLevel = this.AggInfo.MaxLevel; AggLevel >= 0; AggLevel--) {
+                for (int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) {
 
                     // MPI exchange
                     if (this.AggInfo.InterProcessAgglomeration) {
@@ -1553,7 +1568,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             // loop over agglomeration levels: 
-            for (int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) {
+            for (int AggLevel = this.AggInfo.MaxLevel; AggLevel >= 0; AggLevel--) {
 
                 // MPI exchange of blocks 
                 // =======================

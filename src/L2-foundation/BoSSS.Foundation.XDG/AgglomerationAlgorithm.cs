@@ -1116,6 +1116,7 @@ namespace BoSSS.Foundation.XDG {
                             jCellTarget = jGlbTarg,
                             OwnerRank4Source = AggPair.OwnerRank4Source,
                             OwnerRank4Target = AggPair.OwnerRank4Target,
+                            AgglomerationLevel = AggPair.AgglomerationLevel,
                             posTarget = AggPair.posTarget,
                             fracTarget = AggPair.fracTarget
                         });
@@ -1163,6 +1164,7 @@ namespace BoSSS.Foundation.XDG {
                             jCellTarget = jAggTarget,
                             OwnerRank4Source = rap.OwnerRank4Source,
                             OwnerRank4Target = rap.OwnerRank4Target,
+                            AgglomerationLevel = rap.AgglomerationLevel,
                             posTarget = rap.posTarget,
                             fracTarget = rap.fracTarget,
                         });
@@ -1950,6 +1952,7 @@ namespace BoSSS.Foundation.XDG {
                 // ================
                 this.AgglomerationPairs = AgglomerationPairs.Select(pair => (pair.jCellSource, pair.jCellTarget)).ToArray();
                 this.AgglomerationPairsWithRanks = AgglomerationPairs.ToArray();
+                //AgglomerationPairs.SaveToTextFileDebugUnsteadyNumbered("aaPairs" + Tag + spId.ToString(), ".txt");
                 //DoAggPairsMPIexchangeForGhostCells(AgglomerationPairs, ref m_AggPairsOnNeighborPairs);
                 // this.AgglomerationPairsWithRanks.m_AggPairsWithExtNeighborPairs.Where(p => p.OwnerRank4Source == myMpiRank || p.OwnerRank4Target == myMpiRank).ToArray(););
             }
@@ -2070,7 +2073,7 @@ namespace BoSSS.Foundation.XDG {
                                 } else {
                                     possibleTarget = jCellNeigh;  //if not, pair jCell with jNeigh (which is also TargetPair.jCellSource). This cell will behave like a "carrying" cell which ultimately would lead to the target cell
                                     targetRank = TargetPair.OwnerRank4Source;
-                                    AggLevel = TargetPair.AgglomerationLevel;
+                                    AggLevel = TargetPair.AgglomerationLevel +1;
                                     Debug.Assert(jCellNeigh == TargetPair.jCellSource);
                                 }
 
