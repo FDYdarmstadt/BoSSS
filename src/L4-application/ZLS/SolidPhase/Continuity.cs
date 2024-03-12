@@ -23,6 +23,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     AddComponent(divergence1);
                 }
                 AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / material.Lame2 - 1.0 / material.Viscosity));
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / (material.Viscosity)));
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1000));
             } else {
                 string[] displacement = ZwoLevelSetSolver.VariableNames.DisplacementVector(D);
                 for(int i = 0; i < D; ++i) {

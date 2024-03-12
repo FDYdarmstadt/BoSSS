@@ -52,7 +52,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = true;
 
             C.Material = new ConvergenceTest();
-            C.Material.Viscosity = 1e-6;
+            //C.Material.Viscosity = 1e-6;
+            C.Material.Viscosity = 1e-1;
+            C.Material.Lame2 = 10.0/3.0;
 
             #endregion
 
@@ -69,17 +71,18 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 grd.EdgeTagNames.Add(1, "wall");
+                grd.EdgeTagNames.Add(2, "freeslip");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
 
-                    if (Math.Abs(X[1] + 1) <= 1.0e-8)
+                    if(Math.Abs(X[1] + 1) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[1] - 1) <= 1.0e-8)
+                    if(Math.Abs(X[1] - 1) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + 1) <= 1.0e-8)
+                    if(Math.Abs(X[0] + 1) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] - 1) <= 1.0e-8)
+                    if(Math.Abs(X[0] - 1) <= 1.0e-8)
                         et = 1;
 
                     return et;
@@ -103,12 +106,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AddInitialValue("Phi", new Formula("X => -1"));
             C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
-            C.AddInitialValue("GravityX#A", Vx);
-            C.AddInitialValue("GravityY#A", Vy);
-            C.AddInitialValue("GravityX#B", Vx);
-            C.AddInitialValue("GravityY#B", Vy);
-            C.AddInitialValue("GravityX#C", Vx);
-            C.AddInitialValue("GravityY#C", Vy);
+            C.AddInitialValue("VelocityX#C", Vx);
+            C.AddInitialValue("VelocityY#C", Vy);
 
             #endregion
 
@@ -146,7 +145,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region time
 
             //C.CheckJumpConditions = true;
-            C.NoOfTimesteps = 300;
+            C.NoOfTimesteps = 50;
+            //double dt = 5e-2;
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -158,6 +158,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             return C;
         }
+
 
         public static ZLS_Control SteadyVortex(int p = 2, int kelem = 16)
         {
@@ -202,7 +203,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
             C.Material = new ConvergenceTest();
-            C.Material.Viscosity = 1e-6;
+            C.Material.Viscosity = 1e-3;
 
             #endregion
 

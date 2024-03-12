@@ -16,7 +16,7 @@ namespace ZwoLevelSetSolver.Tests {
 
 
         [Test]
-        public static void RotationConvergenceTest([Values(2, 3, 4)] int p = 2
+        public static void RotationConvergenceTest([Values(1, 2, 3, 4)] int p = 2
             ) {
             double dt = 1.0e200;
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest
@@ -41,7 +41,7 @@ namespace ZwoLevelSetSolver.Tests {
 
             controlFiles.SolverConvergenceTest_Experimental("SolidSolverConvP" + p,
                 (VariableNames.DisplacementX, NormType.L2_embedded, p - 1.5, 0, 100000),
-                (VariableNames.DisplacementY, NormType.L2_embedded, p - 1.5, 0, 100000),
+                (VariableNames.DisplacementY, NormType.L2_embedded, p - 1.5, 0, 100000)
                 //(BoSSS.Solution.NSECommon.VariableNames.Pressure, NormType.L2noMean_embedded, p - 1.5, 0, 100000)
                 // in a steady-state setting, the velocity is 0.0; therefore, we cannot measure convergence
                 //(BoSSS.Solution.NSECommon.VariableNames.VelocityX, p - 1.2, NormType.L2_embedded),
@@ -58,8 +58,8 @@ namespace ZwoLevelSetSolver.Tests {
         public static void RunSolver([Values(2)] int p = 2,
                                     [Values(16)] int res = 16) {
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RunSolver
-            
-            var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, res);
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            var C = ZwoLevelSetSolver.ControlFiles.Vortex.UnsteadyVortex(p, res);
             C.SkipSolveAndEvaluateResidual = false;
             C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 0.0;
@@ -79,7 +79,7 @@ namespace ZwoLevelSetSolver.Tests {
 
             //C.dtFixed = 0.1;
             //C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
-            
+
 
             using(var q = new ZLS()) {
                 q.Init(C);
