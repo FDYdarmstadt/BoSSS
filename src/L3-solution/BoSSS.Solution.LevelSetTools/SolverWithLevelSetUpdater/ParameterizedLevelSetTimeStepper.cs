@@ -12,6 +12,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.LevelSetTools.ParameterizedLevelSet;
 using BoSSS.Foundation.Quadrature;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
@@ -53,7 +54,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
             double[] ParamValues1 = new double[CoeffValues1.Length];
             for (int i = 0; i < CoeffValues1.Length; i++) {
-                ParamValues1[i] = CoeffValues1[i] * dt + ParamValues0[i]; // Multiply each element by the scalar
+                 ParamValues1[i] = CoeffValues1[i] * dt + ParamValues0[i]; // Multiply each element by the scalar
             }
 
 
@@ -265,21 +266,33 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             //double time0 = 0;
             //double time1 = time0 + timeStep;
 
-            double SquareRoot = (EllipsePar0[0].Pow2() - x.Pow2()).Sqrt(); //sqrt(a^2 - x^2)
-                                                                           //Console.WriteLine("SquareRoot = " + SquareRoot);
+            //double SquareRoot = (EllipsePar0[0].Pow2() - x.Pow2()).Sqrt(); //sqrt(a^2 - x^2)
+            //                                                               //Console.WriteLine("SquareRoot = " + SquareRoot);
 
-            //double[] Velocity = new double[Dim] {x, y};
-            //double[] Grad = new double[Dim] {-x * EllipsePar0[1]  / ( EllipsePar0[0] * SquareRoot), 1.0};
+            ////double[] Velocity = new double[Dim] {x, y};
+            //double Gradx =  -x * EllipsePar0[1] / (EllipsePar0[0] * SquareRoot);
+            //double Grady = 1.0;
+            ////Debugger.Launch();
+            //double Grad = (Gradx.Pow2() + Grady.Pow2()).Sqrt();
 
-            double term1 = -EllipseCoeff[2] * timeStep / timeStep;
-            double term2 = EllipseCoeff[1] * timeStep / (timeStep * EllipsePar0[0]) * SquareRoot;
-            double term3 = EllipsePar0[1] * x.Pow2() * EllipseCoeff[0] * timeStep / (timeStep * EllipsePar0[0].Pow2() * SquareRoot);
+            //double term1 = -EllipseCoeff[2];
+            //double term2 = EllipseCoeff[1] / EllipsePar0[0] * SquareRoot;
+            //double term3 = EllipsePar0[1] * x.Pow2() * EllipseCoeff[0]  / ( EllipsePar0[0].Pow2() * SquareRoot);
 
-            //Console.WriteLine($"functerm { term1},{-0.2 * EllipseCoeff[2]},{term2} {0.2 * EllipseCoeff[1] * SquareRoot / EllipsePar0[0] } ");
-            //return (EllipseCoeff[0] - 1.0) * x.Pow2() + EllipseCoeff[2];
-            //return -2 * EllipseCoeff[2] + 2 * EllipseCoeff[1] * SquareRoot / EllipsePar0[0] + 1.0 + 2 * EllipsePar0[1] * x.Pow2() * EllipseCoeff[0] / (EllipsePar0[0].Pow2() * SquareRoot);
-            //return term1 + term2 + term3 + Velocity[0] * Grad[0] + Velocity[1] * Grad[1];
-            return term1 + term2 + term3 + force;
+            if (EllipsePar0[1] == 0) {
+                double term1 = -EllipseCoeff[2];
+                double Grad = 1;
+                return term1 + force * Grad;
+            } else {
+                double SquareRoot = (EllipsePar0[1].Pow2() * (1 - x.Pow2() / EllipsePar0[0].Pow2())).Sqrt();
+
+                double term1 = -EllipseCoeff[2] + (EllipsePar0[1] * EllipseCoeff[1] * EllipsePar0[0] * (EllipsePar0[0].Pow2() - x.Pow2()) + x.Pow2() * EllipsePar0[0].Pow2() * EllipseCoeff[0]) / (SquareRoot * EllipsePar0[0].Pow2() * EllipsePar0[0]);
+                double Gradx = -EllipsePar0[1].Pow2() * x / (EllipsePar0[0].Pow2() * SquareRoot);
+                double Grady = 1.0;
+                double Grad = (Gradx.Pow2() + Grady.Pow2()).Sqrt();
+                return term1 + force * Grad;
+            }
+            
         }
         /// <summary>
         /// 

@@ -262,7 +262,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
-            _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\CapillaryRise_studyDB";
+            _DbPath = @"\\dc3\userspace\shishkina\cluster\\CapillaryRise_0";
 
             // basic database options
             // ======================

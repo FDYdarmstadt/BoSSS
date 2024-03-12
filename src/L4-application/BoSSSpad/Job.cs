@@ -1563,7 +1563,6 @@ namespace BoSSS.Application.BoSSSpad {
                 // ================
                 // status
                 // ================
-
                 var stat = GetStatus(true);
                 if (stat != JobStatus.Unknown) {
                     int sc = this.SubmitCount;
@@ -1575,6 +1574,11 @@ namespace BoSSS.Application.BoSSSpad {
                         return;
                     }
                 }
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 63a3266241 (attempt to fix b problems)
 
                 if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
                     Console.WriteLine($"BoSSSpad is configured to run from a backup, `RunWorkflowFromBackup` = {BoSSSshell.WorkflowMgm.RunWorkflowFromBackup} ; ");
@@ -1586,7 +1590,6 @@ namespace BoSSS.Application.BoSSSpad {
                 // ========================================================================
 
                 Console.WriteLine($"Deploying job {this.Name} ... ");
-
                 // some database syncing might be necessary 
                 FiddleControlFile(AssignedBatchProc);
 
