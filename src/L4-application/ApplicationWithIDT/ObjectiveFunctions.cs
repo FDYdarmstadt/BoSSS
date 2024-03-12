@@ -9,23 +9,34 @@ using Newtonsoft.Json.Linq;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform;
+using ilPSP.Tracing;
 
 namespace ApplicationWithIDT {
 
-
+    /// <summary>
+    /// Interface for the Constrained Optimzation Problem 
+    /// 
+    ///  min            f(u,phi)
+    ///  subject to     r(u,phi)=0
+    /// 
+    /// solved by the ApplicationWithIDT solver, where f:R^{N_u}xR^{N_phi}->R is the objective function and r:R^{N_u}xR^{N_phi}->R^{N_u} the constraint. 
+    /// Furthermore, the objective is assumed to be f=||F^T*F || for some  F:R^{N_u}xR^{N_phi}->R^m. By lack of wording the word "objective function" is also used for F in the code.
+    /// </summary>
     public interface IOptProb {
-        public void EvalObjective<V>(V obj_out, XDGField[] ConservativeFields) where V : IList<double>;
-        public void EvalConstraint<V>(V cons_out, XDGField[] ConservativeFields) where V : IList<double>;
-        public void EvalConsAndObj<V>(V obj_out, V cons_out, XDGField[] ConservativeFields) where V : IList<double>;
-        public int GetObjLength(XDGField[] ConservativeFields);
-        public MsrMatrix GetObjJacobian(XDGField[] ConservativeFields, LinearizationHint lHint);
-        public MsrMatrix GetConsJacobian(XDGField[] ConservativeFields, LinearizationHint lHint);
-        public XDGField[] CreateObjField(XDGField[] ConservativeFields);
-        public (MsrMatrix,MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint);
-        public XDifferentialOperatorMk2 GetConsOperator();
+        public void EvalObjective<V>(V obj_out, XDGField[] ConservativeFields) where V : IList<double>; //evaluates F
+        public void EvalConstraint<V>(V cons_out, XDGField[] ConservativeFields) where V : IList<double>; //evaluates r
+        public void EvalConsAndObj<V>(V obj_out, V cons_out, XDGField[] ConservativeFields) where V : IList<double>; //evaluates both (sometimes r is a subset of F)
+        public int GetObjLength(XDGField[] ConservativeFields); // gets the length of F(u,phi)
+        public MsrMatrix GetObjJacobian(XDGField[] ConservativeFields, LinearizationHint lHint); //gets the Jacobian dFdU (only w.r.t. u)
+        public MsrMatrix GetConsJacobian(XDGField[] ConservativeFields, LinearizationHint lHint); //gets the Jacobain drdU (only w.r.t. u)
+        public XDGField[] CreateObjField(XDGField[] ConservativeFields); // creats a XDGField that storing the vector F(u,phi)
+        public (MsrMatrix,MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint); //computes both Jacobian (sometims drdU is asubset of F)
+        public XDifferentialOperatorMk2 GetConsOperator(); //get spatial operator for constraint r
     }
 
-
+    /// <summary>
+    /// Base class for most Optimization Problems defined here
+    /// </summary>
     public abstract class OptProbBase:IOptProb {
 
         public OptProbBase(XDifferentialOperatorMk2 Op_cons, XDifferentialOperatorMk2 Op_obj) {
@@ -145,14 +156,20 @@ namespace ApplicationWithIDT {
             return Jobj;
         }
         public (MsrMatrix, MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint) {
-            MsrMatrix Jobj = GetObjJacobian(ConservativeFields, lHint);
-            MsrMatrix Jcons;
-            if(is_GetConsFromObj) {
-                Jcons = GetConsFromObj(Jobj, ConservativeFields);
-            } else {
-                Jcons = GetConsJacobian(ConservativeFields,lHint);
+            using (new FuncTrace())
+            {
+                MsrMatrix Jobj = GetObjJacobian(ConservativeFields, lHint);
+                MsrMatrix Jcons;
+                if (is_GetConsFromObj)
+                {
+                    Jcons = GetConsFromObj(Jobj, ConservativeFields);
+                }
+                else
+                {
+                    Jcons = GetConsJacobian(ConservativeFields, lHint);
+                }
+                return (Jobj, Jcons);
             }
-            return (Jobj, Jcons);
         }
 
         public abstract XDGField[] CreateObjField(XDGField[] ConservativeFields);

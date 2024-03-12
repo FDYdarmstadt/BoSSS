@@ -13,7 +13,7 @@ using ilPSP.LinSolvers;
 namespace ApplicationWithIDT.OptiLevelSets {
     /// <summary>
     /// Defines an interface for the representation of the Level Set targeted by the optimizer.
-    /// - In order to spare work each Level Set representation is projected onto a DG Level Set linked to all solver routines, this needs to be done every-time before a boss routing (e.g. residual evaluation is needed).
+    /// - In order to spare work, each Level Set representation is projected onto a DG Level Set linked to all solver routines, this needs to be done every-time before a boSSS routine is used (e.g. residual evaluation is needed).
     /// </summary>
     public interface IOptiLevelSet : ICloneable {
         /// <summary>
