@@ -230,7 +230,14 @@ namespace XESF
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(this.Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, Control.MachNumber, gridData.SpatialDimension), material));
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new GodunovFlux(this.Control, boundaryMap, new EulerEnergyComponent(), material));
                     break;
+                case ConvectiveBulkFluxes.CentralFlux:
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new CentralDensityFlux(boundaryMap, material));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new CentralMomentumFlux(boundaryMap, material,0));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new CentralMomentumFlux(boundaryMap, material, 1));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new CentralEnergyFlux(boundaryMap, material));
+                    break;
                 default:
+                    
                     throw new NotImplementedException("The convectiveBulkFlux you chose is not implemented");
             }
 

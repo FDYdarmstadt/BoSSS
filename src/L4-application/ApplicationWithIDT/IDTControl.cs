@@ -13,9 +13,14 @@ using System.Runtime.Serialization;
 
 
 namespace ApplicationWithIDT {
+    /// <summary>
+    /// Defines the base Control object class used in the ApplicationWithIDT solvers.
+    /// </summary>
     public class IDTControl : CompressibleControl {
 
-
+        /// <summary>
+        /// Creates Default IDTControl
+        /// </summary>
         public IDTControl() {
             InitialValueFunctionsPerSpecies = new Dictionary<string, Func<double[], double>>();
             InitialValueFunctionsPerSpecies.Add("L", x => 0);
@@ -30,13 +35,6 @@ namespace ApplicationWithIDT {
             this.SpeciesTable[0, 1] = "R";
             this.SpeciesTable[1, 0] = "A";
             this.SpeciesTable[1, 1] = "B";
-            //this.QueryHandler.AddQuery("Gamma
-            //this.QueryHandler.AddQuery("Gamma", delegate (IApplication<AppControl> app, double time) { return this.gamma; });
-            //this.QueryHandler.AddQuery("Alpha", delegate (IApplication<AppControl> app, double time) { return this.alpha; });
-            //this.QueryHandler.AddQuery("Mu", delegate (IApplication<AppControl> app, double time) { return this.mu; });
-            //this.QueryHandler.AddQuery("EnrichedResidualNorm", delegate (IApplication<AppControl> app, double time) { return this.obj_f; });
-            //this.QueryHandler.AddQuery("ResidualNorm", delegate (IApplication<AppControl> app, double time) { return this.res_l2; });
-            //this.QueryHandler.AddQuery("AlphaMin", delegate (IApplication<AppControl> app, double time) { return this.Control.Alpha_Min; });
 
         }
 
