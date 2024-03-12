@@ -1170,6 +1170,7 @@ namespace BoSSS.Foundation.IO {
         public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true, NormType normType = NormType.L2_approximate) {
             ISessionInfo[] _session = sessions.ToArray();
             ITimestepInfo[] _timesteps = sessions.Select(s => s.Timesteps.Last()).ToArray();
+            //Debugger.Launch();
             return _timesteps.ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof, normType);
         }
 
