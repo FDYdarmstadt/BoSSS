@@ -489,7 +489,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
-            C.NoOfTimesteps = 100;
+            C.NoOfTimesteps = 50;
             C.saveperiod = 1;
 
             #endregion
