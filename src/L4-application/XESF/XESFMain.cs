@@ -262,6 +262,7 @@ namespace XESF
                     }
                     break;
                 case ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var:
+                case ConvectiveInterfaceFluxes.OptimizedHLLCWall:
                     switch (Control.FluxVersion)
                     {
                         case FluxVersion.NonOptimized:
