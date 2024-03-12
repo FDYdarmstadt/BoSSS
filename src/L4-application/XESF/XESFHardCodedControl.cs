@@ -1186,12 +1186,14 @@ namespace XESF {
         /// <param name="iTermN"></param>
         /// <returns></returns>
         public static XESFControl XDGBS_Cluster(bool aRI = false, double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 22, string dbPath = null,
-            int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
+            int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int wallflux = 0, int bulkflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
             
             {
             var fphiTypes = new FphiType[] { FphiType.None, FphiType.CurvatureAll, FphiType.CurvatureCut, FphiType.PerssonSensorCut, FphiType.PerssonSensorAll };
             var OProblems = new OptProblemType[] { OptProblemType.FullEnRes, OptProblemType.EnResOnlyNearBand, OptProblemType.RankineHugoniotFull, OptProblemType.RankineHugoniotOnlyInterface };
             var IFluxes = new ConvectiveInterfaceFluxes[] { ConvectiveInterfaceFluxes.GodunovInterface,ConvectiveInterfaceFluxes.RoeInterface, ConvectiveInterfaceFluxes.CentralFluxInterface, ConvectiveInterfaceFluxes.OptimizedHLLCInterface };
+            var wallFluxes = new ConvectiveInterfaceFluxes[] { ConvectiveInterfaceFluxes.OptimizedHLLCWall, ConvectiveInterfaceFluxes.RoeWall};
+            var bulkFluxes = new ConvectiveBulkFluxes[] { ConvectiveBulkFluxes.OptimizedHLLC, ConvectiveBulkFluxes.Roe, ConvectiveBulkFluxes.CentralFlux, ConvectiveBulkFluxes.Godunov};
             var ITerStrats = new TerminationStrategy[] { TerminationStrategy.Skyline, TerminationStrategy.SkylineWithDifferntTermNs }; // not needed right now but stays in case....
             var TermNArrays = new int[][] { new int[] { TermN, TermN, TermN, TermN, TermN, TermN }, new int[] { TermN, TermN, 5, 5, 5, 5 } };
             var MinPIterArrays = new int[][] { new int[] { 30, 30, 10, 10, 10, 10 }, new int[] { 30, 20, 5, 5, 5, 5 } };
@@ -1210,6 +1212,8 @@ namespace XESF {
                 PlotInterval: plotInterval,
                 optprob: OProblems[iProb],
                 interfaceFluxLS2: IFluxes[iflux],
+                interfaceFluxLS1: wallFluxes[wallflux],
+                bulkFlux: bulkFluxes[bulkflux],
                 terStrat: ITerStrats[terStrat],
                 gammaMin: gammaMin,
                 tALNRs: tALNRArrays[itALNR],
@@ -1219,9 +1223,9 @@ namespace XESF {
                 MaxReInits: MaxReinitArrays[iRI],
                 ReInitTols: ReInitTolsArray[iRIT],
                 fphitype:fphiTypes[iFphi]
-                ) ;
+                ); ;
             //c.SaveMatrices = true;
-                c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iProb{iProb}-iFlux{iflux}-FphiType{iFphi}-aRI_{aRI}");
+                c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iPrb{iProb}-iFlx{iflux}-wFLx{wallflux}-bFlx{bulkflux}-Fphi{iFphi}");
             return c;
         }
         /// <summary>
