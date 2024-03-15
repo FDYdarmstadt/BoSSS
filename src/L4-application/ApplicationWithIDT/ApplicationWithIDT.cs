@@ -487,128 +487,147 @@ namespace ApplicationWithIDT {
             //if(CurrentAgglo > 0 && TimestepNo % Control.ImmediatePlotPeriod ==0 && Control.ImmediatePlotPeriod!= -1) {
             //    MultiphaseAgglomerator.PlotAgglomerationPairs(Control.ProjectName + "_aggloMap" + "_" + CurrentStepNo);
             //}
+            using (new FuncTrace())
+            {
+                if (TimestepNo == 1)
+                {
+                    //set initial kappa
+                    //compute using kappa=1
+                    kappa = 1;
+                    var f_phi_vec = ComputeFphi();
+                    f_phi = f_phi_vec.InnerProd(f_phi_vec);
+                    if (f_phi > 1e-10)
+                    {
+                        kappa = Math.Sqrt(obj_f / f_phi_vec.InnerProd(f_phi_vec));
+                    }
+                    else
+                    {
+                        kappa = 1e3;
+                    }
+                    Kappas.Add(kappa);
 
-            if(TimestepNo == 1) {
-                //set initial kappa
-                //compute using kappa=1
-                kappa = 1;
-                var f_phi_vec = ComputeFphi();
-                f_phi = f_phi_vec.InnerProd(f_phi_vec);
-                if(f_phi > 1e-10) {
-                    kappa = Math.Sqrt(obj_f / f_phi_vec.InnerProd(f_phi_vec));
-                } else {
-                    kappa = 1e3;
+                    Console.WriteLine($"Initial Value : l2: |r|= {string.Format("{0:#.#######E+00}", res_l2)}, |f_err|={string.Format("{0:#.#######E+00}", obj_f)}, | f_phi |={string.Format("{0:#.#######E+00}", f_phi)},");
+                    UpdateAgglomerator();
                 }
-                Kappas.Add(kappa);
 
-                Console.WriteLine($"Initial Value : l2: |r|= {string.Format("{0:#.#######E+00}", res_l2)}, |f_err|={string.Format("{0:#.#######E+00}", obj_f)}, | f_phi |={string.Format("{0:#.#######E+00}", f_phi)},");
+                // potentially change basis
+                switch (Control.solRunType)
+                {
+                    case SolverRunType.PContinuation:
+                        ChangeOfBasis();
+                        break;
+                }
+
+                //reinitialization if p>0
+                Reinitialization();
+
+                Console.WriteLine("");
+                Console.WriteLine($"Starting Opt-Iter No.{TimestepNo}: ");
+
+                //backup of state and Level Set
+                createBackUp();
+
+                //just to be safe, project spline Level Set on LsTBO
+                if (LevelSetOpti is SplineOptiLevelSet spliny)
+                {
+                    LsTBO.Clear();
+                    LsTBO.ProjectFromForeignGrid(1.0, spliny);
+                }
+
+                //Compute/Assemble linear System LHS*(stepIN;lambda)=RHS
+                ComputeSystem();
+                //solve it for step: (stepIN;lambda)
+                SolveSystem();
+
+                //save step to XDGField
+                var StepOptiLevelSet = GetStepOptiLevelSet(stepIN);
+                SaveStepToField(stepIN, StepOptiLevelSet);
+
+                // makes the step continues if SinglePhaseField as OptiLevelSet is used
+                //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
+                //    // Does a continuity projection (hopefully) of the step
+                //    MakeLevelSetContinous(StepOptiLevelSet);
+                //    SaveStepFieldToStep(stepIN, StepOptiLevelSet);
+                //    var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
+                //    SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
+                //}
+
+                var orgStep = stepIN.CloneAs();
+                // 
+                try
+                {
+                    SQPStep();
+                }
+                catch
+                {
+                    // if something goes wrong here plot the failed state
+                    try
+                    {
+                        UpdateDerivedVariables();
+                        this.PlotCurrentState(0.0, 666, this.Control.SuperSampling);
+                    }
+                    catch
+                    {
+                        this.PlotCurrentState(0.0, 666, this.Control.SuperSampling);
+                    }
+                    throw;
+                }
+
+                ComputeAndWriteResiduals();
+                WriteStuffAndAddToLists(TimestepNo);
+                CmpRegParam();
+                CurrentStepNo++;
+                LsTrk.PushStacks();
+                //this is called only due to plotting reasons
+                if (ConservativeFields[0].Basis.Degree > 0)
+                {
+                    GetPerssonSensor(true);
+                }
+                //Check for termination or Increase of P degree
+                CheckTermination();
                 UpdateAgglomerator();
+                // must return something (normally the time step)
+                return 0;
             }
-
-            // potentially change basis
-            switch(Control.solRunType) {
-                case SolverRunType.PContinuation:
-                    ChangeOfBasis();
-                break;
-            }
-
-            //reinitialization if p>0
-            Reinitialization();
-            
-            Console.WriteLine("");
-            Console.WriteLine($"Starting Opt-Iter No.{TimestepNo}: ");
-
-            //backup of state and Level Set
-            createBackUp();
-
-            //just to be safe, project spline Level Set on LsTBO
-            if(LevelSetOpti is SplineOptiLevelSet spliny) {
-                LsTBO.Clear();
-                LsTBO.ProjectFromForeignGrid(1.0, spliny);
-            }
-
-            //Compute/Assemble linear System LHS*(stepIN;lambda)=RHS
-            ComputeSystem();
-            //solve it for step: (stepIN;lambda)
-            SolveSystem();
-
-            //save step to XDGField
-            var StepOptiLevelSet = GetStepOptiLevelSet(stepIN);
-            SaveStepToField(stepIN, StepOptiLevelSet);
-
-            // makes the step continues if SinglePhaseField as OptiLevelSet is used
-            //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
-            //    // Does a continuity projection (hopefully) of the step
-            //    MakeLevelSetContinous(StepOptiLevelSet);
-            //    SaveStepFieldToStep(stepIN, StepOptiLevelSet);
-            //    var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
-            //    SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
-            //}
-
-            var orgStep = stepIN.CloneAs();
-            // 
-            try {
-                SQPStep();
-            } catch {
-                // if something goes wrong here plot the failed state
-                try {
-                    UpdateDerivedVariables();
-                    this.PlotCurrentState(0.0, 666, this.Control.SuperSampling);
-                } catch {
-                    this.PlotCurrentState(0.0, 666, this.Control.SuperSampling);
-                }
-                throw;
-            }
-
-            ComputeAndWriteResiduals();
-            WriteStuffAndAddToLists(TimestepNo);
-            CmpRegParam();
-            CurrentStepNo++;
-            LsTrk.PushStacks();
-            //this is called only due to plotting reasons
-            if(ConservativeFields[0].Basis.Degree > 0 ) {
-                GetPerssonSensor(true);
-            }
-            //Check for termination or Increase of P degree
-            CheckTermination();
-            UpdateAgglomerator();
-            // must return something (normally the time step)
-            return 0;
         }
 
         //Changes the Basis of the current solution, making it one DG higher 
         public void ChangeOfBasis() {
-            int CurrentDeg = ConservativeFields[0].Basis.Degree;
-            if(IncreaseDegreeNextTS  && CurrentDeg < Control.SolDegree) {
+            using (new FuncTrace())
+            {
+                int CurrentDeg = ConservativeFields[0].Basis.Degree;
+                if (IncreaseDegreeNextTS && CurrentDeg < Control.SolDegree)
                 {
-                    Console.WriteLine("################################################################################################");
-                    Console.WriteLine("################################################################################################");
-                    Console.WriteLine("###########################                                      #####################################################################");
-                    Console.WriteLine("###########################      Changing polynomial degree      #########################################");
-                    Console.WriteLine("###########################                                      #####################################################################");
-                    Console.WriteLine($"###########################             From {CurrentDeg} to {CurrentDeg + 1}              #########################################");
-                    Console.WriteLine("###########################                                      #####################################################################");
-                    Console.WriteLine("################################################################################################");
-                    Console.WriteLine("################################################################################################");
+                    {
+                        Console.WriteLine("################################################################################################");
+                        Console.WriteLine("################################################################################################");
+                        Console.WriteLine("###########################                                      #####################################################################");
+                        Console.WriteLine("###########################      Changing polynomial degree      #########################################");
+                        Console.WriteLine("###########################                                      #####################################################################");
+                        Console.WriteLine($"###########################             From {CurrentDeg} to {CurrentDeg + 1}              #########################################");
+                        Console.WriteLine("###########################                                      #####################################################################");
+                        Console.WriteLine("################################################################################################");
+                        Console.WriteLine("################################################################################################");
 
-                    //change to Degree +1
-                    CurrentDeg = CurrentDeg + 1;
-                    ChangeTOBasisofDegree(CurrentDeg);
-                    
-                    //increase Current Minimal iTerations by the respective Minimal iterations wanted for the polynomial degree
+                        //change to Degree +1
+                        CurrentDeg = CurrentDeg + 1;
+                        ChangeTOBasisofDegree(CurrentDeg);
 
-                    CurMinIter = CurrentStepNo + Control.minimalSQPIterations[CurrentDeg];
-                    ReiniTMaxIter = CurrentStepNo + Control.ReiniTMaxIters[CurrentDeg];
-                    
-                    IncreaseDegreeNextTS = false;
-                    Console.WriteLine("");
-                    Console.Write("OpEval after change:");
-                    ComputeAndWriteResiduals();
-                    Console.WriteLine("");
-                    Console.WriteLine($" current DGdegree={CurrentDeg}, min It.:{Control.minimalSQPIterations[CurrentDeg]}, MaxReInit:{Control.ReiniTMaxIters[CurrentDeg]}, ReInitTol:{Control.reInitTols[CurrentDeg]}," +
-                        $" TermN:{GetCurrentTermN()}, tALNR:{Control.tALNRs[CurrentDeg]} ");
-                    Console.WriteLine("");
-                    Console.WriteLine("################################################################################################");
+                        //increase Current Minimal iTerations by the respective Minimal iterations wanted for the polynomial degree
+
+                        CurMinIter = CurrentStepNo + Control.minimalSQPIterations[CurrentDeg];
+                        ReiniTMaxIter = CurrentStepNo + Control.ReiniTMaxIters[CurrentDeg];
+
+                        IncreaseDegreeNextTS = false;
+                        Console.WriteLine("");
+                        Console.Write("OpEval after change:");
+                        ComputeAndWriteResiduals();
+                        Console.WriteLine("");
+                        Console.WriteLine($" current DGdegree={CurrentDeg}, min It.:{Control.minimalSQPIterations[CurrentDeg]}, MaxReInit:{Control.ReiniTMaxIters[CurrentDeg]}, ReInitTol:{Control.reInitTols[CurrentDeg]}," +
+                            $" TermN:{GetCurrentTermN()}, tALNR:{Control.tALNRs[CurrentDeg]} ");
+                        Console.WriteLine("");
+                        Console.WriteLine("################################################################################################");
+                    }
                 }
             }
         }
@@ -1305,9 +1324,12 @@ namespace ApplicationWithIDT {
         /// <param name="timestepno">time step number</param>
         /// <param name="t">physical time</param>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
-            // Make sure that all derived variables are updated before saving
-            UpdateDerivedVariables();
-            return base.SaveToDatabase(timestepno, t);
+            using (new FuncTrace())
+            {
+                // Make sure that all derived variables are updated before saving
+                UpdateDerivedVariables();
+                return base.SaveToDatabase(timestepno, t);
+            }
         }
 
         /// <summary>
@@ -1733,7 +1755,7 @@ namespace ApplicationWithIDT {
         ///  5. grad_f is computed and put together in the RHS variable
         /// </summary>
         public void ComputeSystem() {
-            using (new FuncTrace())
+            using (var f=new FuncTrace())
             {
                 LHS.Clear();
                 RHS.Clear();
@@ -1783,62 +1805,67 @@ namespace ApplicationWithIDT {
                 //// assemble R_{phi} (part of objective function corresponding to Level Set)
                 ///*******************************/
                 (double[] f_phi_vec, MsrMatrix Jf_phi) = ComputeFphiandJFphi();
+                
+                using (new BlockTrace("Blocks Of LHS",f))
+                {
+                    //***************************** */
+                    //// Set the Blocks of LHS
+                    //***************************** */
+                    int length_l = (int)Jobj_phi.NoOfCols;
+                    int noOfRowsB = length_r + length_l;
+                    // get helper object for assembling
+                    MatrixAssembler assembler = new MatrixAssembler(noOfRowsB + length_R + length_r);
+                    //Assemble J_r
+                    assembler.AccBlock(Jr_U, Jr, 0, 0);
+                    assembler.AccBlock(Jr_phi, Jr, 0, length_r);
+                    //upper right block
+                    assembler.AccBlock(Jr.Transpose(), LHS, 0, noOfRowsB);
+                    //down left block
+                    assembler.AccBlock(Jr, LHS, noOfRowsB, 0);
+                    //assemble Jobj first
+                    assembler.AccBlock(Jobj_U, Jobj, 0, 0);
+                    assembler.AccBlock(Jobj_phi, Jobj, 0, length_r);
+                    //upper left block
+                    assembler.AccBlock(Jobj.Transpose() * Jobj, LHS, 0, 0);
+                    //Regularization
+                    MsrMatrix reg = this.LevelSetOpti.GetRegMatrix();
+                    reg.Scale(gamma);
+                    assembler.AccBlock(reg, LHS, length_r, length_r);
+                    //Fphi contribution
+                    assembler.AccBlock(Jf_phi.Transpose() * Jf_phi, LHS, length_r, length_r);
 
-
-                //***************************** */
-                //// Set the Blocks of LHS
-                //***************************** */
-                int length_l = (int)Jobj_phi.NoOfCols;
-                int noOfRowsB = length_r + length_l;
-                // get helper object for assembling
-                MatrixAssembler assembler = new MatrixAssembler(noOfRowsB + length_R + length_r);
-                //Assemble J_r
-                assembler.AccBlock(Jr_U, Jr, 0, 0);
-                assembler.AccBlock(Jr_phi, Jr, 0, length_r);
-                //upper right block
-                assembler.AccBlock(Jr.Transpose(), LHS, 0, noOfRowsB);
-                //down left block
-                assembler.AccBlock(Jr, LHS, noOfRowsB, 0);
-                //assemble Jobj first
-                assembler.AccBlock(Jobj_U, Jobj, 0, 0);
-                assembler.AccBlock(Jobj_phi, Jobj, 0, length_r);
-                //upper left block
-                assembler.AccBlock(Jobj.Transpose() * Jobj, LHS, 0, 0);
-                //Regularization
-                MsrMatrix reg = this.LevelSetOpti.GetRegMatrix();
-                reg.Scale(gamma);
-                assembler.AccBlock(reg, LHS, length_r, length_r);
-                //Fphi contribution
-                assembler.AccBlock(Jf_phi.Transpose() * Jf_phi, LHS, length_r, length_r);
+                }
 
 
                 //***************************** */
                 //// compute RHS
                 //***************************** */
-
-                //calculate Grad f
-                Jobj.Transpose().SpMV(1, obj_f_vec, 0, gradf);
-
-                // add f_phi
-                double[] gradfphi = new double[length_l];
-                Jf_phi.Transpose().SpMV(1, f_phi_vec, 0, gradfphi);
-
-                // add gradient of f
-                for (int i = length_r; i < gradf.Length; i++)
+                using (new BlockTrace("RHS compuation", f))
                 {
-                    gradf[i] = gradf[i] + gradfphi[i - length_r];
-                }
-                gradf_U.SetSubVector(gradf, 0, length_r);
-                for (int i = 0; i < gradf.Length; i++)
-                {
-                    RHS[i] = gradf[i];
-                }
+                    int length_l = (int)Jobj_phi.NoOfCols;
+                    //calculate Grad f
+                    Jobj.Transpose().SpMV(1, obj_f_vec, 0, gradf);
 
-                // add residual r(z)
-                double[] res = ResidualVector.ToArray();
-                RHS.SetSubVector(res, gradf.Length, length_r);
-                RHS.ScaleV(-1.0);
+                    // add f_phi
+                    double[] gradfphi = new double[length_l];
+                    Jf_phi.Transpose().SpMV(1, f_phi_vec, 0, gradfphi);
 
+                    // add gradient of f
+                    for (int i = length_r; i < gradf.Length; i++)
+                    {
+                        gradf[i] = gradf[i] + gradfphi[i - length_r];
+                    }
+                    gradf_U.SetSubVector(gradf, 0, length_r);
+                    for (int i = 0; i < gradf.Length; i++)
+                    {
+                        RHS[i] = gradf[i];
+                    }
+
+                    // add residual r(z)
+                    double[] res = ResidualVector.ToArray();
+                    RHS.SetSubVector(res, gradf.Length, length_r);
+                    RHS.ScaleV(-1.0);
+                }
 
                 if (Control.SaveMatrices)
                 {
