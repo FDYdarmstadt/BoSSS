@@ -1044,47 +1044,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 else
                     OpMatrix = null;
 
-                /*
-                void FillMatrixWithRandomShit(BlockMsrMatrix OpMtx) {
-                    Random rnd = new Random();
-                    double[] buf = 10000.ForLoop(i => rnd.NextDouble());
-
-                    int c = 0;
-                    int J = this.m_LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-                    var bs = CurrentStateMapping.BasisS;
-                    for(int row_j = 0; row_j < J; row_j++) {
-                        this.m_LsTrk.GridDat.GetCellNeighbours(row_j, GetCellNeighbours_Mode.ViaEdges, out int[] Neighs, out _);
-                        row_j.AddToArray(ref Neighs);
-
-                        foreach(int col_j in Neighs) {
-                            for(int rowVar = 0; rowVar < bs.Count; rowVar++) {
-                                for(int colVar = 0; colVar < bs.Count; colVar++) {
-                                    int N = bs[rowVar].GetLength(row_j);
-                                    int M = bs[colVar].GetLength(col_j);
-
-                                    for(int n = 0; n < N; n++) {
-                                        for(int m = 0; m < M; m++) {
-                                            long iRow = CurrentStateMapping.GlobalUniqueCoordinateIndex(rowVar, row_j, n);
-                                            long iCol = CurrentStateMapping.GlobalUniqueCoordinateIndex(colVar, col_j, m);
-
-                                            OpMtx[iRow, iCol] = buf[c];
-                                            c++;
-                                            if(c >= buf.Length)
-                                                c = 0;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-                if(OpMatrix != null) {
-                    FillMatrixWithRandomShit(OpMatrix);
-                }
-                //*/
-
+                
                 // clear affine part
                 double[] OpAffine = new double[CurrentStateMapping.LocalLength];
 
