@@ -134,7 +134,7 @@ namespace BoSSS.Application.XDGTest {
             LevelSetDistancce = new SinglePhaseField(new Basis(this.GridData, 0), "LevelSetDistancce");
         }
 
-        protected override int BurstSave => 2;
+        protected override int BurstSaves => 2;
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }

@@ -27,7 +27,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace SAIDT.Fluxes {
-    class ScalarAdvectionUpwindFlux : ISpeciesFilter, IEdgeForm, IVolumeForm {
+    class ScalarAdvectionUpwindFlux : ISpeciesFilter, IEdgeForm, IVolumeForm,IMultitreadSafety {
         public double cL;
         public double cR;
         public double x0;
@@ -105,6 +105,16 @@ namespace SAIDT.Fluxes {
             return -1 * (output * (Vector)GradV);
         }
 
+        public IEquationComponent CloneForThread()
+        {
+            return new ScalarAdvectionUpwindFlux(this.spc, this.cL, this.cR, this.x0, this.FlowFunc, this.DirichletBoundaryMap);
+        }
+
+        public object GetPadlock()
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -121,5 +131,7 @@ namespace SAIDT.Fluxes {
         public TermActivationFlags VolTerms => TermActivationFlags.UxGradV;
 
         public IList<string> ParameterOrdering => null;
+
+        public bool IsMultithreadSafe => false;
     }
 }
