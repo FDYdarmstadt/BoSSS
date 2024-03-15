@@ -18,6 +18,7 @@ using ApplicationWithIDT.OptiLevelSets;
 using MathNet.Numerics.Interpolation;
 using System.Linq;
 using NUnit.Framework;
+using System.Diagnostics.Metrics;
 
 namespace XESF.Tests
 {
@@ -92,7 +93,47 @@ namespace XESF.Tests
         #endregion
 
 
-
+        public static void XDGBowShockFromOldRun(
+            string dbPath=@"\\dc3\userspace\sebastian\cluster\XESF_BowShock_ConvStudy2_12022024", 
+            string sessId= "b9f34fb7-0e80-45d9-9669-737e2900cf84",
+            string gridId= "f9f4e736-496c-4740-a79f-c07dfdbcddc7", 
+            int tsNumber=161,int dgDegree_start=1)
+        {
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            using (var p = new XESFMain())
+            {
+                var C = XESFHardCodedControl.XDGBowShock_TwoLs_LSFromDB(
+                    dgDegreeStart:dgDegree_start,
+                    optiLSDegree: 3,
+                    lsTwoDegree: 3,
+                    lsOneDegree: 3,
+                    dbPath: dbPath,
+                    restart: true,
+                    sessId:sessId,
+                    gridId:gridId,
+                    tsNumber:tsNumber,
+                    initialValue: GetInitialValue.FromDBXDG,
+                    MaxIterations: 200,
+                    agg: 0.4,
+                    solverRunType: SolverRunType.PContinuation,
+                    MinPIter: new int[] { 20, 20, 20, 20, 20, 20 },
+                    applyReInit: false,
+                    ReInitTols: new double[] { 0, -1e-1, -0.25, -((double)1) / 9, -((double)1) / 16 },
+                    MaxReInits: new int[] { 0, 30, 30, 30, 30 },
+                    PlotInterval: 1,
+                    bulkFlux: ConvectiveBulkFluxes.OptimizedHLLC,
+                    interfaceFluxLS1: ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
+                    interfaceFluxLS2: ConvectiveInterfaceFluxes.RoeInterface,
+                    FluxVersion: XESF.Fluxes.FluxVersion.Optimized
+                ); ;
+                p.Init(C);
+                p.RunSolverMode();
+                var tol = 1e-02;
+                p.DerivedVariableToXDGFieldMap.TryGetValue(XESF.Variables.XESFVariables.Enthalpy_Error, out XDGField EE);
+                Assert.IsTrue((EE.L2NormAllSpecies() < tol), $"the L2 Enthalpy Error is greater than {tol} (EE={EE.L2NormAllSpecies()}");
+            }
+        }
         /// <summary>
         /// BowShock, where the initial conditions and LevelSet are loaded from a Database, mostly an AV run
         /// </summary>
@@ -115,7 +156,7 @@ namespace XESF.Tests
                     agg: 0.4,
                     numOfCellsX: xCells,
                     numOfCellsY: yCells,
-                    solverRunType: SolverRunType.Staggerd,
+                    solverRunType: SolverRunType.PContinuation,
                     MinPIter: new int[] { 20, 20, 20, 20, 20, 20 },
                     applyReInit: false,
                     ReInitTols: new double[] { 0, -1e-1, -0.25, -((double)1)/9, -((double)1) / 16 },

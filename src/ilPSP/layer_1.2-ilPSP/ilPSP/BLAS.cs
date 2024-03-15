@@ -678,7 +678,7 @@ namespace ilPSP.Utils {
         }
         
         /// <summary>
-        /// <paramref name="a"/> = <paramref name="alpha"/>*<paramref name="B"/>
+        /// this = <paramref name="alpha"/>*<paramref name="B"/>
         /// </summary>
         static public void SetV<T, V>(this T a, V B, double alpha = 1.0)
             where T : IList<double>
