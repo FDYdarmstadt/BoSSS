@@ -880,10 +880,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 {
                     var physParams = this.Control.PhysicalParameters;
                     if (physParams.Sigma != 0) {
-                        double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin * (p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                        //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin / (double)(p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                        double dt_cap = XNSEUtils.GetCapillaryTimeStep(physParams.rho_A, physParams.rho_B, physParams.Sigma, hmin, p);
                         if (dt_cap < dt) {
-                            dt = Math.Min(dt_cap, dt);
-                            Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                            //dt = Math.Min(dt_cap, dt);
+                            //Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                            Console.WriteLine("Warning: time step size larger than capillary timestep restriction {0}", dt_cap);
                         }
                     }
                 }

@@ -1553,5 +1553,13 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
+        static public double GetCapillaryTimeStep(double rhoA, double rhoB, double sigma, double hmin, int LSdegree) {
+
+            double dt_sigma = Math.Sqrt((rhoA + rhoB) * Math.Pow(hmin / (double)(LSdegree + 1), 3.0) / (2 * Math.PI * Math.Abs(sigma)));
+
+            return dt_sigma;
+        }
+
+
     }
 }
