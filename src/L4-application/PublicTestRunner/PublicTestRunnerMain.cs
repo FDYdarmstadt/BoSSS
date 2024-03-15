@@ -769,8 +769,7 @@ namespace PublicTestRunner {
         /// to distinct the internalTestRunner
         /// </summary>
         public static string RunnerPrefix = "Pub";
-
-        
+               
 
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
