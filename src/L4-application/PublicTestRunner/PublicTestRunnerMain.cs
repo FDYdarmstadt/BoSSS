@@ -842,25 +842,54 @@ namespace PublicTestRunner {
                 // ===================================
                 // phase 1: discover tests
                 // ===================================
-                Debugger.Launch();
+                //Debugger.Launch();
                 BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
+                //if(bpc.DeployRuntime == false) {
+                //    //
+                //    // DeployRuntime is false: 
+                //    // this means that no copy (of the native libraries) occurs for the **individual** jobs
+                //    // The TestRunner, however copies it centrally, at once, to ensure that it is running using the most recent binaries
+                //    //
+
+                    
+
+                    
+                //} else {
+                //    //
+                //    // DeployRuntime is true:
+                //    // the native libraries will be copied to the **working directory**
+                //    // since the manged assemblies might be in an other directory (if `(TestTypeProvider.CopyManagedAssembliesCentraly == true`), 
+                //    // Now, per default the native libraries will searched in the assembly directory.
+                //    // Therefore, we have to define to search for in the local 
+                //    // 
+
+                //    NativeOverride = "./" + suffix;
+                //}
+                
+                // deployment of assemblies
                 string NativeOverride;
-                if(bpc.DeployRuntime == false) {
-                    //
-                    // DeployRuntime is false: 
-                    // this means that no copy (of the native libraries) occurs for the **individual** jobs
-                    // The TestRunner, however copies it centrally, at once, to ensure that it is running using the most recent binaries
-                    //
+                string RelManagedPath;
+                if(TestTypeProvider.CopyManagedAssembliesCentraly) {
+                    string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
+                    DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
+                    ManagedOverride.Create();
+                    TestTypeProvider.GetType().Assembly.DeployAt(ManagedOverride);
 
-                    string suffix = bpc.RuntimeLocation.IsEmptyOrWhite() ? "amd64" : bpc.RuntimeLocation?.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries)?.Last();
-
-
-                    var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_" + suffix));
-                    _NativeOverride.Create();
+                    RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
 
                     if (!bpc.RuntimeLocation.IsEmptyOrWhite()) {
+                    
+                        // 
+                        // since we deploy the **managed** assemblies to an alternative location,
+                        // we should also deploy the **native binaries**.
+                        //
+
+                        string suffix = bpc.RuntimeLocation.IsEmptyOrWhite() ? "amd64" : bpc.RuntimeLocation?.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries)?.Last();
+                        var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_" + suffix));
+                        _NativeOverride.Create();
+
                         string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
                         string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
                         MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
@@ -871,30 +900,18 @@ namespace PublicTestRunner {
                             NativeOverride = _NativeOverride.FullName;
                         }
                     } else {
-                        NativeOverride = null;    
+
+                        // not enough info to deploy the binaries;
+                        // we just can hope that on the cluster the BOSSS_INSTALL var is correctly set up.
+
+                        NativeOverride = null;
                     }
+
+
+
                 } else {
-                    string suffix = bpc.RuntimeLocation.IsEmptyOrWhite() ? "amd64" : bpc.RuntimeLocation?.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries)?.Last();
-                    NativeOverride = "./" + suffix;
-                }
-                
-                // deployment of assemblies
-                string RelManagedPath;
-                if(TestTypeProvider.CopyManagedAssembliesCentraly) {
-                    string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
-                    DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
-                    ManagedOverride.Create();
-                    TestTypeProvider.GetType().Assembly.DeployAt(ManagedOverride);
-
-                    RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
-                } else {
-                    //
-                    // DeployRuntime is true:
-                    // 
-                    //
-
-
-                    RelManagedPath = "./amd64";
+                    NativeOverride = null; 
+                    RelManagedPath = "./" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
                 }
                 
 

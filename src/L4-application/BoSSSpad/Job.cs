@@ -538,8 +538,7 @@ namespace BoSSS.Application.BoSSSpad {
             string[] args = new string[] {
                 "--control", "control.obj",
                 "--prjnmn", PrjName,
-                "--sesnmn", this.Name,
-                "--num_threads", this.NumberOfThreads.ToString()
+                "--sesnmn", this.Name
             };
             if (m_ctrl_index >= 0) {
                 ArrayTools.Cat(args, "--pstudy_case", m_ctrl_index.ToString());
@@ -580,7 +579,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IDictionary<string, string> EnvironmentVars {
             get {
-                m_EnvironmentVars["OMP_NUM_THREADS"] = this.NumberOfThreads.ToString();
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 return m_EnvironmentVars;
             }
         }
@@ -1204,11 +1203,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public int NumberOfThreads {
             get {
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 return m_NumberOfThreads;
             }
             set {
                 if(value <= 0) 
                     throw new ArgumentOutOfRangeException("number of threads must be at least 1");
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 TestActivation();
                 m_NumberOfThreads = value;
             }
@@ -1855,7 +1856,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // Collect files
                 List<string> files = new List<string>();
                 using (new BlockTrace("ASSEMBLY_COLLECTION", tr)) {
-                    if(EntryAssemblyRedirection == null) {
+                    if(EntryAssemblyRedirection.IsEmptyOrWhite()) {
                         //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                         files.AddRange(GetManagedFileList());
                     } else {
@@ -1917,12 +1918,17 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // deploy runtime
                 using (new BlockTrace("DEPLOY_RUNTIME", tr)) {
+
                     if (AssignedBatchProc.DeployRuntime == true) {
-                        string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                        var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation));
-                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.Parent.FullName, DeployDir, BosssBinNative.Name);
-                        Console.WriteLine("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
-                        tr.Info("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                        if (!EntryAssemblyRedirection.IsEmptyOrWhite()) {
+                            Console.WriteLine("Skipping copy of native libs, since 'EntryAssemblyRedirection' = " + EntryAssemblyRedirection);
+                        } else {
+                            string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                            var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation));
+                            MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.Parent.FullName, DeployDir, BosssBinNative.Name);
+                            Console.WriteLine("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                            tr.Info("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                        }
                     }
                 }
 
