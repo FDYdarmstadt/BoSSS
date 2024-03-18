@@ -842,7 +842,7 @@ namespace PublicTestRunner {
                 // ===================================
                 // phase 1: discover tests
                 // ===================================
-
+                Debugger.Launch();
                 BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
@@ -853,10 +853,14 @@ namespace PublicTestRunner {
                     // this means that no copy (of the native libraries) occurs for the **individual** jobs
                     // The TestRunner, however copies it centrally, at once, to ensure that it is running using the most recent binaries
                     //
-                    var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
+
+                    string suffix = bpc.RuntimeLocation.IsEmptyOrWhite() ? "amd64" : bpc.RuntimeLocation?.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries)?.Last();
+
+
+                    var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_" + suffix));
                     _NativeOverride.Create();
 
-                    if (bpc.RuntimeLocation != null) {
+                    if (!bpc.RuntimeLocation.IsEmptyOrWhite()) {
                         string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
                         string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
                         MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
@@ -870,7 +874,8 @@ namespace PublicTestRunner {
                         NativeOverride = null;    
                     }
                 } else {
-                    NativeOverride = null;
+                    string suffix = bpc.RuntimeLocation.IsEmptyOrWhite() ? "amd64" : bpc.RuntimeLocation?.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries)?.Last();
+                    NativeOverride = "./" + suffix;
                 }
                 
                 // deployment of assemblies
@@ -883,7 +888,13 @@ namespace PublicTestRunner {
 
                     RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
                 } else {
-                    RelManagedPath = null;
+                    //
+                    // DeployRuntime is true:
+                    // 
+                    //
+
+
+                    RelManagedPath = "./amd64";
                 }
                 
 
