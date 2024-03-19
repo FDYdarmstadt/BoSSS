@@ -38,6 +38,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Application.XNSE_Solver.Loadbalancing;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using MathNet.Numerics.LinearAlgebra.Factorization;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -1835,7 +1836,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -3156,7 +3157,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
             C.LSunderrelax = 0.7;
 
@@ -3421,7 +3422,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 4;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -4054,7 +4055,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -4355,7 +4356,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
@@ -4579,7 +4580,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
@@ -4802,7 +4803,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -5914,7 +5915,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = compMode;
@@ -6097,7 +6098,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.TimesteppingMode = compMode;
@@ -6211,6 +6212,119 @@ namespace BoSSS.Application.XNSE_Solver {
                         new Formula(code)
                         );
             C.NoOfTimesteps = 100;
+            return C;
+        }
+
+        //test if source-to-source  agglomeration groups can be formed (test case does not have a physical meaning)
+        public static XNSE_Control TwoTorusesAggTestCase(int k = 1, int Res = 20, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true) {
+            XNSE_Control C = new XNSE_Control();
+            int SpaceDim = 2;
+            //C.DbPath = @"C:\debug_db";
+            C.ProjectName = "XNSE-Torus";
+            C.ProjectDescription = "agglomeration test";
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+            C.savetodb = false;
+
+            // Simulation settings
+            // ==============
+            int NoOfTimeSteps = 10;
+            bool Steady = false;
+            double bigR = 0.26;
+            double smallR = 0.22;
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 0;
+            C.DynamicLoadBalancing_On = true;
+            C.DynamicLoadBalancing_Period = 1; //Make it challenging by changing the decomposition every timestep
+
+            //bool IncludeConvection = true;
+            var LeftCenter = new double[] { -0.5, 0 };
+            var RightCenter = new double[] { 0.5, 0.0 };
+
+            C.SessionName = $"2DTorus_k{k}_Res{Res}_AMR{AMR}_LS{LSMethod}";
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, false, IncompressibleBcType.Pressure_Outlet);
+            C.GridPartType = GridPartType.METIS;
+
+            // Physical Parameters
+            // =================== 
+            // Bo = 250?, Re = 35?
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 100;
+            C.PhysicalParameters.mu_A = 0.01;
+            C.PhysicalParameters.mu_B = 0.1;
+            C.PhysicalParameters.Sigma = 0.097;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+
+            // DG degrees
+            // ==========
+            C.SetFieldOptions(k, Math.Max(k, 2));
+
+            //level-set for two toruses
+            string LeftTorus = $"-Math.Sqrt( (Math.Sqrt((X[0] -({LeftCenter[0]}))*(X[0] -({LeftCenter[0]})) + (X[1]- ({LeftCenter[1]}))*(X[1]- ({LeftCenter[1]}))  ) - {bigR}) * (Math.Sqrt((X[0] -({LeftCenter[0]}))*(X[0] -({LeftCenter[0]})) + (X[1]- ({LeftCenter[1]}))*(X[1]- ({LeftCenter[1]}))  ) - {bigR}) ) + {smallR}";
+            string RightTorus = $"-Math.Sqrt( (Math.Sqrt((X[0] -({RightCenter[0]}))*(X[0] -({RightCenter[0]})) + (X[1]- ({RightCenter[1]}))*(X[1]- ({RightCenter[1]}))  ) - {bigR}) * (Math.Sqrt((X[0] -({RightCenter[0]}))*(X[0] -({RightCenter[0]})) + (X[1]- ({RightCenter[1]}))*(X[1]- ({RightCenter[1]}))  ) - {bigR}) ) + {smallR}";
+
+            string code = $"(X) => Math.Max(" + LeftTorus + " , " + RightTorus + "  ) ";
+
+            var my_formula = new Formula(code);
+
+            //Phi
+            //.UseImmersedBoundary = true;
+            C.AddInitialValue("Phi", new Formula(code)); //
+
+
+            C.UseImmersedBoundary = false;
+            C.PlotAgglomeration = true;
+            C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            C.AddBoundaryValue("Pressure_Outlet");
+
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = 0.95;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
+
+
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.AdaptiveMeshRefinement = AMR;
+            if (AMR) {
+                C.SetMaximalRefinementLevel(1);
+                C.AMR_startUpSweeps = 1;
+            }
+
+            // Timestepping
+            // ============
+            double dt = -1;
+            if (Steady) {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                dt = 1000;
+                C.NoOfTimesteps = 1;
+            } else {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+                dt = 1;
+                C.NoOfTimesteps = NoOfTimeSteps;
+            }
+            C.TimeSteppingScheme = TimeSteppingScheme.ExplicitEuler; //BD4
+            C.dtFixed = dt;
+            C.SkipSolveAndEvaluateResidual = true;
+            //C.SessionName = "SolverOn_" + C.SessionName;
             return C;
         }
 
@@ -6395,11 +6509,33 @@ namespace BoSSS.Application.XNSE_Solver {
         public static XNSE_Control VanishingRotatingCircle() {
             // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
             var C = RotatingTiltedXRigid(1, 20, 2, false, shape: Shape.Sphere,  RotAxis: "z", SolverOn: true, rateOfRadius: -4);
+            C.PlotAgglomeration = true;
             C.NoOfTimesteps = 100;
             return C;
         }
 
-        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true, double rateOfRadius = 0.0) {
+        public static XNSE_Control RotatingPopcorn() {
+            var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 10;
+            var config = new OperatorAnalysisConfig();
+            config.CalculateMassMatrix = true;
+            C.PostprocessingModules.Add(new Logging.CondLogger(config));
+            return C;
+        }
+
+        public static XNSE_Control InfiniteConditionNumberTorus() {
+            // this test case was resulting in infinite condition numbers
+            var C = RotatingTiltedXRigid(2, 128, 2, false, shape: Shape.Torus, RotAxis: "z", SolverOn: false, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 10;
+            C.AgglomerationThreshold = 0;
+            //C.CalculateConditionNumber = AppControl._ConditionStudy.OperatorandMass;
+
+            return C;
+        }
+
+        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true, double rateOfRadius = 0.0, double partRad = 0.39) {
             XNSE_Control C = new XNSE_Control();
 
             // Simulation Settings
@@ -6435,13 +6571,18 @@ namespace BoSSS.Application.XNSE_Solver {
             const double Re = 1000;
             double muA = 0.01;
 
-            double partRad = 0.39;
+            //double partRad = 0.39;
             double d_hyd = 2 * partRad;
-            double anglev = Re * muA / rhoA / d_hyd;
-            double VelocityIn = Re * muA / rhoA / d_hyd;
+            double VelocityMax = Re * muA / rhoA / d_hyd;
+            double anglev = VelocityMax / partRad;
+
+            // The longest arm from the center of rotation is larger than the given parameter partRad for the popcorn case.
+            if (shape == Shape.Popcorn)
+                anglev = anglev / 1.39;
+
             double[] pos = new double[SpaceDim];
             double ts = 2 * Math.PI / anglev / NoOfTimeSteps; //   1 revolution around its rot. axis
-            Console.WriteLine("Angular Velocity: {0}", anglev);
+            Console.WriteLine("VelocityMax: {0} Angular Velocity: {1}", VelocityMax, anglev);
 
             C.PhysicalParameters.IncludeConvection = IncludeConvection;
             C.PhysicalParameters.Material = true;

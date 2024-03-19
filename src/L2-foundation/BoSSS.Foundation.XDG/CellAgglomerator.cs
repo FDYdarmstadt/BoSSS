@@ -61,6 +61,16 @@ namespace BoSSS.Foundation.XDG {
             public int OwnerRank4Target;
 
             /// <summary>
+            /// position of the target cell
+            /// </summary>
+            public Vector posTarget;
+
+            /// <summary>
+            /// position of the target cell
+            /// </summary>
+            public double fracTarget;
+
+            /// <summary>
             /// local cell index of agglomeration source cell (the cell which is eliminated)
             /// </summary>
             public int jCellSource;

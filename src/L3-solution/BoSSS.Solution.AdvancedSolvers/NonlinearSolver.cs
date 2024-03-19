@@ -270,6 +270,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             const int TEST_INTERVALL = 1000;
 #endif
             if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
+
                 // Comparison of linearization and evaluation:
                 // -------------------------------------------
                 //
