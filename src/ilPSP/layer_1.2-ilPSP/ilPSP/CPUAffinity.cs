@@ -1,4 +1,5 @@
-﻿using MPI.Wrappers;
+﻿using ilPSP.Tracing;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,90 +39,87 @@ namespace ilPSP.Utils {
         /// <param name="CPUlist">e.g., return value from <see cref="GetAffinity"/></param>
         /// <returns></returns>
         public static int SetOMP_PLACESFromCPUList(int iThreads, IEnumerable<int> CPUlist) {
+            using (var tr = new FuncTrace()) {
 
+                var GlobalCPUlist = CpuListOnSMP(CPUlist);
 
-            var GlobalCPUlist = CpuListOnSMP(CPUlist);
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
 
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
-
-            int SMPsize = ilPSP.Environment.MPIEnv.ProcessesOnMySMP; // number of MPI ranks on compute node
-            int SMPrank = ilPSP.Environment.MPIEnv.ProcessRankOnSMP;
-            string OMP_PLACES;
-            int MaxNumOMPThreads;
-            if (CPUlist.SetEquals(GlobalCPUlist)) {
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // the same CPU list for all ranks on the SMP node
-                // give to each process its
-                // dedicated portion of CPUs
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //
-                // (It seems, OpenMP is not smart enough to negotiate thread ownership on one SMP node;
-                // some locking was observed, i.e., it seems that multiple ranks on one SMP node try to grab the same CPU.)
-                //
-
-
-                var subGroup = CPUlist.ToArray().GetSubVector(SMPrank*iThreads, iThreads);
-                var sanSubGroup = SanitzeGroup(subGroup);
-
-
-                OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
-                MaxNumOMPThreads= sanSubGroup.Count();
-
-                /*
-
-                if (CPUlist.Count < iThreads*SMPsize) {
-                    throw new NotSupportedException($"Less CPU's reserved by MS HPC ({CPUlist.Count}) than required; number of threads: ({SMPsize}*{iThreads} = {SMPsize*iThreads})");
-                }
-                if (allInOneGroup) {
+                int SMPsize = ilPSP.Environment.MPIEnv.ProcessesOnMySMP; // number of MPI ranks on compute node
+                int SMPrank = ilPSP.Environment.MPIEnv.ProcessRankOnSMP;
+                string OMP_PLACES;
+                int MaxNumOMPThreads;
+                if (CPUlist.SetEquals(GlobalCPUlist)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // all CPU's in one CPU group: all processors may use all CPU's
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-                    OMP_PLACES = CPUlist.ToConcatString("{", ",", "}");
-                    MaxNumOMPThreads = CPUlist.Count();
-
-                } else {
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // CPU's span over different groups: give to each process its
+                    // the same CPU list for all ranks on the SMP node
+                    // give to each process its
                     // dedicated portion of CPUs
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    //
+                    // (It seems, OpenMP is not smart enough to negotiate thread ownership on one SMP node;
+                    // some locking was observed, i.e., it seems that multiple ranks on one SMP node try to grab the same CPU.)
+                    //
 
-                    var subGroup = CPUlist.GetSubVector(SMPrank*iThreads, iThreads);
+
+                    var subGroup = CPUlist.ToArray().GetSubVector(SMPrank*iThreads, iThreads);
                     var sanSubGroup = SanitzeGroup(subGroup);
 
 
                     OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
                     MaxNumOMPThreads= sanSubGroup.Count();
+
+                    /*
+
+                    if (CPUlist.Count < iThreads*SMPsize) {
+                        throw new NotSupportedException($"Less CPU's reserved by MS HPC ({CPUlist.Count}) than required; number of threads: ({SMPsize}*{iThreads} = {SMPsize*iThreads})");
+                    }
+                    if (allInOneGroup) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // all CPU's in one CPU group: all processors may use all CPU's
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                        OMP_PLACES = CPUlist.ToConcatString("{", ",", "}");
+                        MaxNumOMPThreads = CPUlist.Count();
+
+                    } else {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // CPU's span over different groups: give to each process its
+                        // dedicated portion of CPUs
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        var subGroup = CPUlist.GetSubVector(SMPrank*iThreads, iThreads);
+                        var sanSubGroup = SanitzeGroup(subGroup);
+
+
+                        OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
+                        MaxNumOMPThreads= sanSubGroup.Count();
+                    }
+                    */
+                } else {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // MS HPC gave us different groups for each process
+                    // use the entire group for this process and hope that Windows is smart enough
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    if (CPUlist.Count() < iThreads) {
+                        throw new NotSupportedException($"Less CPU's reserved by MS HPC ({CPUlist.Count()}) than required; number of threads: ({iThreads})");
+                    }
+
+
+                    var sanSubGroup = SanitzeGroup(CPUlist);
+                    OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
+                    MaxNumOMPThreads= sanSubGroup.Count();
                 }
-                */
-        } else {
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // MS HPC gave us different groups for each process
-                // use the entire group for this process and hope that Windows is smart enough
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                if (CPUlist.Count() < iThreads) {
-                    throw new NotSupportedException($"Less CPU's reserved by MS HPC ({CPUlist.Count()}) than required; number of threads: ({iThreads})");
-                }
+                tr.Info($"R{MPIrank}, SMP rank {SMPrank}: setting OMP_PLACES = {OMP_PLACES}, MaxNumOMPThreads = {MaxNumOMPThreads}");
 
-
-                var sanSubGroup = SanitzeGroup(CPUlist);
-                OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
-                MaxNumOMPThreads= sanSubGroup.Count();
+                System.Environment.SetEnvironmentVariable("OMP_PLACES", OMP_PLACES);
+                System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
+                return MaxNumOMPThreads;
             }
-
-            var bkup = ilPSP.Environment.StdoutOnlyOnRank0;
-            ilPSP.Environment.StdoutOnlyOnRank0 = false;
-            Console.WriteLine($"R{MPIrank}, SMP rank {SMPrank}: setting OMP_PLACES = {OMP_PLACES}");
-            ilPSP.Environment.StdoutOnlyOnRank0 = bkup;
-
-            System.Environment.SetEnvironmentVariable("OMP_PLACES", OMP_PLACES);
-            System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
-            return MaxNumOMPThreads;
         }
-
         /// <summary>
         /// Collects the CPU indices of all processes running on the same node.
         /// </summary>
