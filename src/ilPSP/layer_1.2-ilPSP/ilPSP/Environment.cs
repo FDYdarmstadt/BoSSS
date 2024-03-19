@@ -366,7 +366,7 @@ namespace ilPSP {
                 }
 
                 if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
-                    Console.WriteLine("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+                    tr.Info("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
                     MaxNumOpenMPthreads = CPUAffinityWindows.SetOMP_PLACESfromCCPVar(NumThreads);
                 } else {
                     MaxNumOpenMPthreads = CPUAffinity.CpuListOnSMP(ReservedCPUs).Length;
