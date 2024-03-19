@@ -842,7 +842,7 @@ namespace PublicTestRunner {
                 // ===================================
                 // phase 1: discover tests
                 // ===================================
-                //Debugger.Launch();
+                Debugger.Launch();
                 BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
@@ -911,7 +911,7 @@ namespace PublicTestRunner {
 
                 } else {
                     NativeOverride = null; 
-                    RelManagedPath = "./" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
+                    RelManagedPath = null; //The job manager will deploy the assemblies
                 }
                 
 
