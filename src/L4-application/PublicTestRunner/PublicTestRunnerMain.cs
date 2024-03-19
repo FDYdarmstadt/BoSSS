@@ -842,31 +842,10 @@ namespace PublicTestRunner {
                 // ===================================
                 // phase 1: discover tests
                 // ===================================
-                Debugger.Launch();
+                //Debugger.Launch();
                 BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
-                // deployment of native libraries
-                //if(bpc.DeployRuntime == false) {
-                //    //
-                //    // DeployRuntime is false: 
-                //    // this means that no copy (of the native libraries) occurs for the **individual** jobs
-                //    // The TestRunner, however copies it centrally, at once, to ensure that it is running using the most recent binaries
-                //    //
-
-                    
-
-                    
-                //} else {
-                //    //
-                //    // DeployRuntime is true:
-                //    // the native libraries will be copied to the **working directory**
-                //    // since the manged assemblies might be in an other directory (if `(TestTypeProvider.CopyManagedAssembliesCentraly == true`), 
-                //    // Now, per default the native libraries will searched in the assembly directory.
-                //    // Therefore, we have to define to search for in the local 
-                //    // 
-
-                //    NativeOverride = "./" + suffix;
-                //}
+                
                 
                 // deployment of assemblies
                 string NativeOverride;
