@@ -193,7 +193,7 @@ namespace BUIDT {
 
                     break;
                     default:
-                    LevelSetOpti.ProjectFromFunction(Control.InitialShockPostion);
+                    LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                     break;
                 }
 

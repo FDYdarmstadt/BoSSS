@@ -21,11 +21,16 @@ namespace ApplicationWithIDT {
             InitialValueFunctionsPerSpecies.Add("L", x => 0);
             InitialValueFunctionsPerSpecies.Add("R", x => 0);
             quadOrderFunc = (int[] A, int[] B, int[] C) => Math.Abs(A.Max()) + Math.Abs(C.Max()) + Math.Max(this.LevelSetDegree, this.LevelSetTwoDegree);
-            staggeredTimeSteps = new int[] { 20, 20, 20, 20 };
+            FixedSQPIterations = new int[] { 20, 20, 20, 20 };
             this.NonLinearSolver = new NonLinearSolverConfig();
             this.NonLinearSolver.MaxSolverIterations = 10;
             this.NonLinearSolver.ConvergenceCriterion = 1e-08;
             this.NonLinearSolver.verbose = false;
+            this.SpeciesTable[0, 0] = "L";
+            this.SpeciesTable[0, 1] = "R";
+            this.SpeciesTable[1, 0] = "A";
+            this.SpeciesTable[1, 1] = "B";
+            //this.QueryHandler.AddQuery("Gamma
             //this.QueryHandler.AddQuery("Gamma", delegate (IApplication<AppControl> app, double time) { return this.gamma; });
             //this.QueryHandler.AddQuery("Alpha", delegate (IApplication<AppControl> app, double time) { return this.alpha; });
             //this.QueryHandler.AddQuery("Mu", delegate (IApplication<AppControl> app, double time) { return this.mu; });
@@ -45,6 +50,10 @@ namespace ApplicationWithIDT {
         /// </summary>
         public int LevelSetDegree { get; set; } = 1;
 
+        /// <summary>
+        /// here one can add a value that will be used to normalized the <field,spc> combination
+        /// </summary>
+        public Dictionary<Tuple<string, string>, double> BaseFlowPerSpeciesAndField { get; set; } = null;
 
         /// <summary>
         /// Function determining the QuadOrderdegree
@@ -107,13 +116,15 @@ namespace ApplicationWithIDT {
 
         #region Level Set Stuff
         public bool IsTwoLevelSetRun { get; set; } = true;
-        public Func<double[], double> InitialShockPostion { get; set; } = x => 0.5 - x[0];
+        public Func<double[], double> LevelSetTwoInitialValue { get; set; } = x => 0.5 - x[0];
         public string[] SpeciesToEvaluate { get; set; } = null;
         public string[,] SpeciesTable { get; set; } = new string[2, 2];
         public string LsOne_NegSpecies { get; set; } = "V";
         public string LsOne_PosSpecies { get; set; } = "L";
         public string LsTwo_NegSpecies { get; set; } = "L";
         public string LsTwo_PosSpecies { get; set; } = "R";
+        public string[,] LsOne_SpeciesPairs { get; set; } = new string[,] { { "L", "R" } };
+        public string[,] LsTwo_SpeciesPairs { get; set; } = new string[,] { { "L", "R" } };
         public bool WriteLSCoordinates { get; set; } = false;
         public Func<IGrid> LevelSetGridFunc { get; set; }
         public bool OptiLSIsOrthonormal { get; set; } = false;
@@ -145,7 +156,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Position of LevelSetOne, only needed when two LevelSets are used
         /// </summary>
-        public Func<double[], double> LevelSetPos { get; set; } = null;
+        public Func<double[], double> LevelSetOneInitialValue { get; set; } = null;
         public string ShockLevelSet_Db { get; set; } = null;
         public Tuple<Guid, TimestepNumber> ShockLevelSet_Info { get; set; } = null;
         public string ShockLevelSet_FieldName { get; set; } = null;
@@ -155,10 +166,8 @@ namespace ApplicationWithIDT {
         public Tuple<Guid, TimestepNumber> ShockLevelSet_RestartInfo { get; set; } = null;
         #endregion
 
-
-
         /// <summary>
-        /// Adaptive Regularization Params
+        /// Adaptive regularization parameters
         /// </summary>
         public int L { get; set; } = 1;
         public double sigma_1 { get; set; } = 1e-2;
@@ -169,13 +178,16 @@ namespace ApplicationWithIDT {
         public double Gamma_Min { get; set; } = 1e-4;
         public double Gamma_Start { get; set; } = 1;
 
+        /// <summary>
+        /// level set quality parameters
+        /// </summary>
         public double Kappa_Xi { get; set; } = 1;
         public double Kappa_M { get; set; } = 100;
         public double Kappa_Min { get; set; } = 1e-10;
         public double Kappa_v { get; set; } = 0.5;
 
         /// <summary>
-        /// Globalization Parameters
+        /// Globalization parameters
         /// </summary>
         public double Alpha_Min { get; set; } = 1e-8;
         public double Alpha_Start { get; set; } = 1;
@@ -185,7 +197,7 @@ namespace ApplicationWithIDT {
         public double Mu_Rho { get; internal set; } = 0.95;
 
         /// <summary>
-        /// Reinitialization params
+        /// Reinitialization parameters
         /// </summary>
         public bool ApplyReiInit { get; set; } = true;
         public double reInit_c1 { get; set; } = -2e-1; // c_6 close to eq. (65) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
@@ -196,7 +208,7 @@ namespace ApplicationWithIDT {
         public double[] reInitTols { get; set; } = new double[] { -2e-1,-2e-1,0,0,0,0};
 
         /// <summary>
-        /// Staggered Solver
+        /// Staggered solver
         /// </summary>
         public SolverRunType solRunType { get; set; } = SolverRunType.Standard;
         //public StaggerdRunConfig staggerdRunConfig { get; set; } = StaggerdRunConfig.ConstantTimesteps;
@@ -235,25 +247,55 @@ namespace ApplicationWithIDT {
         /// Merit Function used in GLobalization algorithm
         /// </summary>
         public MeritFunctionType MeritFunctionType { get; set; } = MeritFunctionType.FullyL2Merit;
+        
 
-        public ReInitMode reInitMode { get; set; } = ReInitMode.OneTolForEachP;
-
+        /// <summary>
+        /// enum to choose optimization problem which is solved
+        /// </summary>
         public OptProblemType optProblemType { get; set; } = OptProblemType.FullEnRes;
-
+        /// <summary>
+        /// enum to choose f_phi 
+        /// </summary>
         public FphiType fphiType { get; set; } = FphiType.None;
 
-        public int[] staggeredTimeSteps { get; set; } = null;
+        /// <summary>
+        /// params needed if Initial guess is obtained via implicit timestepping 
+        /// </summary>
         public double IG_dt_Start { get; set; } = 1e-03;
         public double IG_beta { get; set; } = 0.2;
         public double IG_nu_Min { get; set; } =0.05;
         public double IG_nu_Max { get; set; } = 0.1;
         public double IG_alpha { get; set; } = 2;
         public double ConvCrit { get; set; } = 0;
-        public int[] MinPIter { get; set; } = new int[] { 30, 30, 10, 10, 10 ,10,10,10, 10 };
-        public int MaxIter { get; set; } = 200;
+
+        /// <summary>
+        /// enum to control different setups for reinitialization 
+        /// </summary>
+        public ReInitMode reInitMode { get; set; } = ReInitMode.OneTolForEachP;
+        /// <summary>
+        /// Prescribes fixed amount of iterations for every p-continuation level
+        /// </summary>
+        public int[] FixedSQPIterations { get; set; } = null;
+        /// <summary>
+        /// Prescribes minimum amount of iteration for every p-contiuation level
+        /// </summary>
+        public int[] minimalSQPIterations { get; set; } = new int[] { 30, 30, 10, 10, 10 ,10,10,10, 10 };
+        /// <summary>
+        /// Maximum number of total SQP Iterations
+        /// </summary>
+        public int MaxIterations { get; set; } = 200;
+        /// <summary>
+        /// maximum number of iterations for each p-continuation level which allow for reinitialization
+        /// </summary>
         public int[] ReiniTMaxIters { get; set; } = new int[] { 30, 20, 5, 5, 5 ,5,5,5,5};
+
+        /// <summary>
+        /// params needed for termination
+        /// </summary>
         public int[] TerminationMinNs { get; set; } = new int[] { 8, 8, 8, 8, 8 ,8,8,8,8};
         public double[] tALNRs { get; set; } = new double[] { 1.005, 1.005, 1.001, 1.01, 1.01, 1.01, 1.01, 1.01, 1.01 };
+        public bool PartiallyFixLevelSetForSpaceTime { get; set; } = false;
+        public bool SaveMatrices { get; set; } = false;
     }
         /// <summary>
         /// this enum controls were we get the initial value from
@@ -344,7 +386,7 @@ namespace ApplicationWithIDT {
     /// </summary>
     public enum SolverRunType {
         Standard,
-        Staggerd,
+        PContinuation,
         Unsteady
     }
     /// <summary>

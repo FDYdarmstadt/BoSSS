@@ -71,6 +71,10 @@ namespace CNS {
         [ExclusiveLowerBound(0.0)]
         public double CFLFraction;
 
+        public Func<double[], double> InitialPressurePertubation;
+        public Func<double[], double> InitialDensityPertubation;
+        public Func<double[], double> InitialVelocityXPertubation;
+        public double shockPosition=1.0;
 
 
         /// <summary>

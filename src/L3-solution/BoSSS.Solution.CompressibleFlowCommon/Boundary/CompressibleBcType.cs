@@ -56,6 +56,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <summary>
         /// %
         /// </summary>
-        ringleb
+        ringleb,
+
+        /// <summary>
+        /// %
+        /// </summary>
+        spaceTimeBoundary
     }
 }
