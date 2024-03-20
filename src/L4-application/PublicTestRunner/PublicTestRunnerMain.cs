@@ -84,6 +84,11 @@ namespace PublicTestRunner {
         /// Uses the <see cref="Job.EntryAssemblyRedirection"/> - hack;
         /// </summary>
         bool CopyManagedAssembliesCentraly { get; } 
+
+        /// <summary>
+        /// Number of tries when a job fails
+        /// </summary>
+        int RetryCount { get; }
     }
 
     /// <summary>
@@ -219,6 +224,8 @@ namespace PublicTestRunner {
         }
 
         virtual public bool CopyManagedAssembliesCentraly => true;
+
+        virtual public int RetryCount => 3;
     }
 
     /// <summary>
@@ -980,7 +987,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, t.NumThreads, NativeOverride, RelManagedPath, cnt);
+                            var j = SubmitJob(t.ass, t.testname, t.shortname, TestTypeProvider.RetryCount, bpc, t.depfiles, DateNtime, t.NoOfProcs, t.NumThreads, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1297,6 +1304,7 @@ namespace PublicTestRunner {
         static public (Job j, string resultFile, string name) SubmitJob(
             Assembly a,
             string TestName, string Shortname,
+            int RetryCount,
             BatchProcessorClient bpc,
             string[] AdditionalFiles,
             string prefix,
@@ -1338,7 +1346,7 @@ namespace PublicTestRunner {
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
                 j.SessionReqForSuccess = false;
-                j.RetryCount = 3;
+                j.RetryCount = RetryCount;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
