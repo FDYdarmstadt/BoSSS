@@ -1355,6 +1355,9 @@ namespace PublicTestRunner {
                 if(BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_RUNTESTFROMBACKUP.txt"), "BOSSS_RUNTESTFROMBACKUP.txt"));
                 }
+                if (BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER_ENVVAR) {
+                    j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt"), "BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt"));
+                }
                 if (nativeOverride != null) {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
                 }
@@ -1598,6 +1601,7 @@ namespace PublicTestRunner {
 
 
         static public bool BOSSS_RUNTESTFROMBACKUP_ENVVAR = false;
+        static public bool BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER_ENVVAR = false;
 
         /// <summary>
         /// the real main-function
@@ -1636,10 +1640,15 @@ namespace PublicTestRunner {
                 return -7777;
             }
 
-            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsNonEmpty()) {
                 BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
                 File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Hello, Suckers!");
                 Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
+            }
+            if (System.Environment.GetEnvironmentVariable("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER").IsNonEmpty()) {
+                BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER_ENVVAR = true;
+                File.WriteAllText("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt", "Hello, Suckers!");
+                Console.WriteLine("trying to forward the BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER hack via additional deployment files...");
             }
 
             BoSSS.Solution.Application.InitMPI();
