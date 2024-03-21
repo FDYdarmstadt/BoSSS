@@ -83,7 +83,12 @@ namespace PublicTestRunner {
         /// If true, the managed assemblies are not copied for every job; there is only a single copy to reduce IO load.
         /// Uses the <see cref="Job.EntryAssemblyRedirection"/> - hack;
         /// </summary>
-        bool CopyManagedAssembliesCentraly { get; } 
+        bool CopyManagedAssembliesCentrally { get; } 
+
+        /// <summary>
+        /// If true, the deployment directories are deleted for jobs which finished successfully
+        /// </summary>
+        bool DeleteSuccessfulTestFiles { get; }
 
         /// <summary>
         /// Number of tries when a job fails
@@ -223,9 +228,11 @@ namespace PublicTestRunner {
             return repoRoot;
         }
 
-        virtual public bool CopyManagedAssembliesCentraly => true;
+        virtual public bool CopyManagedAssembliesCentrally => true;
 
         virtual public int RetryCount => 3;
+
+        virtual public bool DeleteSuccessfulTestFiles => true;
     }
 
     /// <summary>
@@ -857,7 +864,7 @@ namespace PublicTestRunner {
                 // deployment of assemblies
                 string NativeOverride;
                 string RelManagedPath;
-                if(TestTypeProvider.CopyManagedAssembliesCentraly) {
+                if(TestTypeProvider.CopyManagedAssembliesCentrally) {
                     string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
                     DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
                     ManagedOverride.Create();
