@@ -252,7 +252,7 @@ namespace PublicTestRunner {
 
         /// <summary>
         /// supposed to ignore tests depending on files in the source code repo;
-        /// thereby, we can run the test runner from outside the source repositiory.
+        /// thereby, we can run the test runner from outside the source repository.
         /// </summary>
         static bool ignore_tests_w_deps = false;
 
@@ -1093,16 +1093,17 @@ namespace PublicTestRunner {
                                         }
                                     }
                                     // delete deploy directory
-                                    using(new BlockTrace("delete_deploy_dir", trr)) {
-                                        if(s == JobStatus.FinishedSuccessful) {
-                                            try {
-                                                Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
-                                            } catch(Exception e) {
-                                                Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                                    if (TestTypeProvider.DeleteSuccessfulTestFiles) {
+                                        using (new BlockTrace("delete_deploy_dir", trr)) {
+                                            if (s == JobStatus.FinishedSuccessful) {
+                                                try {
+                                                    Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
+                                                } catch (Exception e) {
+                                                    Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                                                }
                                             }
                                         }
                                     }
-
 
                                     // move job to 'finished' list
                                     var X = (jj.job, jj.ResFile, jj.testname, s);
