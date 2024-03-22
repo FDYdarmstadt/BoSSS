@@ -65,7 +65,7 @@ namespace ValidationTestRunner {
             DirectoryInfo repoRoot;
             try {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                repoRoot = dir.Parent.Parent.Parent.Parent.Parent.Parent.Parent.Parent;
+                repoRoot = dir.Parent.Parent.Parent.Parent.Parent.Parent.Parent;
 
                 var publicDir = repoRoot.GetDirectories("public").SingleOrDefault();
                 if(publicDir == null)
