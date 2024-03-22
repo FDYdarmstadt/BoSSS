@@ -1493,8 +1493,6 @@ namespace PublicTestRunner {
                     }
 
 
-
-
                     Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     Console.WriteLine("All Here.");
