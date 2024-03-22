@@ -330,18 +330,18 @@ namespace XESTSF {
                 switch(Control.ConvectiveInterfaceFlux_LsOne) {
                     case ConvectiveInterfaceFluxes.OptimizedHLLCInterface:
                     throw new NotImplementedException();
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Density, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Energy, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Density, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Energy, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec));
                     break;
 
                     case ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var:
                     throw new NotImplementedException();
-                    //var Sdensityflux = new XDGShock.Fluxes.OptimizedHLLCDensityFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Density, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
-                    //var SmomXflux = new XDGShock.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
-                    //var SmomYflux = new XDGShock.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
-                    //var Senergyflux = new XDGShock.Fluxes.OptimizedHLLCEnergyFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Energy, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var Sdensityflux = new XESF.Fluxes.OptimizedHLLCDensityFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Density, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var SmomXflux = new XESF.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var SmomYflux = new XESF.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var Senergyflux = new XESF.Fluxes.OptimizedHLLCEnergyFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Energy, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
                     //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new SPInterfaceFlux((ILevelSetForm)Sdensityflux, 0));
                     //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new SPInterfaceFlux((ILevelSetForm)SmomXflux, 1));
                     //int next_comp = 2;
@@ -354,10 +354,10 @@ namespace XESTSF {
 
                     case ConvectiveInterfaceFluxes.GodunovInterface:
                     throw new NotImplementedException();
-                    //var Sdensityflux2 = new XDGShock.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Density, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
-                    //var SmomXflux2 = new XDGShock.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
-                    //var SmomYflux2 = new XDGShock.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
-                    //var Senergyflux2 = new XDGShock.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Energy, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var Sdensityflux2 = new XESF.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XESF.Fluxes.FluxVariables.Density, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var SmomXflux2 = new XESF.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var SmomYflux2 = new XESF.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
+                    //var Senergyflux2 = new XESF.Fluxes.GodunovFlux_Interface(LsTrk, this.Control, boundaryMap, material, XESF.Fluxes.FluxVariables.Energy, levelSetIndex: 0, negSpecies: negSpec, posSpecies: posSpec);
                     //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new SPInterfaceFlux((ILevelSetForm)Sdensityflux2, 0));
                     //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new SPInterfaceFlux((ILevelSetForm)SmomXflux2, 1));
                     //int next_comp2 = 2;
@@ -441,17 +441,17 @@ namespace XESTSF {
                     string posSpec = Control.LsTwo_SpeciesPairs[i, 1];
                     switch(Control.ConvectiveInterfaceFlux_LsTwo) {
                     case ConvectiveInterfaceFluxes.OptimizedHLLCInterface:
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Density, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new XDGShock.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Energy, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Density, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new XESF.Fluxes.OptimizedHLLCFlux_XDG_Interface(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Energy, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
                     //break;
 
                     case ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var:
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new XDGShock.Fluxes.OptimizedHLLCDensityFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Density, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new XDGShock.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new XDGShock.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
-                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new XDGShock.Fluxes.OptimizedHLLCEnergyFlux_XDG_Wall(LsTrk, boundaryMap, material, XDGShock.Fluxes.FluxVariables.Energy, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new XESF.Fluxes.OptimizedHLLCDensityFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Density, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new XESF.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 0, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new XESF.Fluxes.OptimizedHLLCMomentumFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Momentum, 1, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
+                    //this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new XESF.Fluxes.OptimizedHLLCEnergyFlux_XDG_Wall(LsTrk, boundaryMap, material, XESF.Fluxes.FluxVariables.Energy, levelSetIndex: 1, negSpecies: negSpec, posSpecies: posSpec));
                     //break;
 
                     //case ConvectiveInterfaceFluxes.OptimizedHLLCWall:
@@ -957,7 +957,7 @@ namespace XESTSF {
                 case GetLevelSet.FromReconstruction:
 
                 DatabaseInfo dbi = DatabaseInfo.Open(Control.ShockLevelSet_Db);
-                //DatabaseInfo dbi = DatabaseInfo.Open(@"C:\BoSSS-experimental\internal\src\private-mag\XDGShock\Tests\bosss_db_levelSets.zip");
+                //DatabaseInfo dbi = DatabaseInfo.Open(@"C:\BoSSS-experimental\internal\src\private-mag\XESF\Tests\bosss_db_levelSets.zip");
                 ISessionInfo si = dbi.Controller.GetSessionInfo(Control.ShockLevelSet_Info.Item1);
                 if(Control.ShockLevelSet_Info.Item2.MajorNumber < 0.0) {
                     tsiFromDb = si.Timesteps.Last();
@@ -967,7 +967,7 @@ namespace XESTSF {
 
                 // Check if grid from shock level set reconstruction equals current grid
                 if(tsiFromDb.Grid.ID != this.GridData.GridID) {
-                    Console.WriteLine("Different grids used for LEVEL SET RECONSTRUCTION and XDGShock");
+                    Console.WriteLine("Different grids used for LEVEL SET RECONSTRUCTION and XESF");
                     IGrid grid = dbi.Controller.DBDriver.LoadGrid(tsiFromDb.GridID, dbi);
 
                     // Load grid and shock level set field

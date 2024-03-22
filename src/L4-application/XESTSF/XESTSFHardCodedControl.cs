@@ -7,9 +7,10 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using static BoSSS.Solution.CompressibleFlowCommon.CompressibleHelperFunc;
 using ilPSP;
 using ilPSP.Utils;
-using XDGShock.Variables;
 using XESF.Fluxes;
+using XESF.Variables;
 using XESTSF.Variables;
+
 using ApplicationWithIDT.OptiLevelSets;
 using System.Reflection.PortableExecutable;
 
@@ -90,7 +91,7 @@ namespace XESTSF {
             }
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.AddVariable(XDGShockVariables.LevelSet, lsDegree);
+            c.AddVariable(XESFVariables.LevelSet, lsDegree);
             #endregion 
 
             #region Fluxes
@@ -301,28 +302,28 @@ namespace XESTSF {
             // Boundary conditions in PRIMITIVE variables
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#L", (X, t) => bnd_vals(new double[] { X[0], t }, 0));
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#R", (X, t) => bnd_vals(new double[] { X[0], t }, 0));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#L", (X, t) => bnd_vals(new double[] { X[0], t }, 1));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#R", (X, t) => bnd_vals(new double[] { X[0], t }, 1));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#L", (X, t) => bnd_vals(new double[] { X[0], t }, 2));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#R", (X, t) => bnd_vals(new double[] { X[0], t }, 2));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#L", (X, t) => bnd_vals(new double[] { X[0], t }, 1));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#R", (X, t) => bnd_vals(new double[] { X[0], t }, 1));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#L", (X, t) => bnd_vals(new double[] { X[0], t }, 2));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#R", (X, t) => bnd_vals(new double[] { X[0], t }, 2));
 
             //// Initial conditions in PRIMITIVE variables 
             if(withLevelSet) {
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", (X) => densityL);
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#L", (X) => velocityL);
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#L", (X) => pressureL);
+                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#L", (X) => velocityL);
+                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#L", (X) => pressureL);
 
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#R", (X) => densityR);
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#R", (X) => velocityR);
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#R", (X) => pressureR);
+                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#R", (X) => velocityR);
+                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#R", (X) => pressureR);
             } else {
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", (X) => bnd_vals(X, 0));
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#L", (X) => bnd_vals(X, 1));
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#L", (X) => bnd_vals(X, 2));
+                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#L", (X) => bnd_vals(X, 1));
+                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#L", (X) => bnd_vals(X, 2));
 
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#R", (X) => bnd_vals(X, 0));
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#R", (X) => bnd_vals(X, 1));
-                c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#R", (X) => bnd_vals(X, 2));
+                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#R", (X) => bnd_vals(X, 1));
+                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#R", (X) => bnd_vals(X, 2));
             }
             #endregion
 
@@ -335,6 +336,27 @@ namespace XESTSF {
 
             return c;
         }
+        /// <summary>
+        /// Simple stationary shock wave at position 0.1 on a 9x10 grid with xMin=-1 and xMax=+1
+        /// </summary>
+        /// <param name="MaxIterations"></param>
+        /// <param name="dgDegree"></param>
+        /// <param name="numOfCellsX"></param>
+        /// <param name="numOfCellsY"></param>
+        /// <param name="PlotInterval"></param>
+        /// <param name="dbPath"></param>
+        /// <param name="lsDegree"></param>
+        /// <param name="bulkFlux"></param>
+        /// <param name="interfaceFluxLS1"></param>
+        /// <param name="shocksetup"></param>
+        /// <param name="optiLevelSetType"></param>
+        /// <param name="optiLSDegree"></param>
+        /// <param name="initialValue"></param>
+        /// <param name="iVFromShockRelations"></param>
+        /// <param name="agg"></param>
+        /// <param name="globalization"></param>
+        /// <param name="meritFunctionType"></param>
+        /// <returns></returns>
         public static XESTSFControl StationaryShockWave(int MaxIterations = 100, int dgDegree = 0, int numOfCellsX = 9,
         int numOfCellsY = 10, int PlotInterval = 1,
         string dbPath = null, int lsDegree = 3, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.Roe,
@@ -392,7 +414,7 @@ namespace XESTSF {
             c.IsTwoLevelSetRun = false;
 
             c.LevelSetDegree = lsDegree;
-            c.AddVariable(XDGShockVariables.LevelSet, lsDegree);
+            c.AddVariable(XESFVariables.LevelSet, lsDegree);
 
             c.SpeciesTable[0, 0] = "L";
             c.SpeciesTable[1, 0] = "R";
@@ -550,10 +572,10 @@ namespace XESTSF {
             
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#L", (X, t) => X[0]<x_s? densityLeft : densityRight);
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#R", (X, t) => X[0] < x_s ? densityLeft : densityRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#L", (X, t) => X[0] < x_s ? velocityXLeft: velocityXRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#R", (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#L", (X, t) => X[0] < x_s ? pressureLeft:pressureRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#R", (X, t) => X[0] < x_s ? pressureLeft:pressureRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#L", (X, t) => X[0] < x_s ? velocityXLeft: velocityXRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#R", (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#L", (X, t) => X[0] < x_s ? pressureLeft:pressureRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#R", (X, t) => X[0] < x_s ? pressureLeft:pressureRight);
 
 
             double exact_sol(double[] X, int component) {
@@ -585,13 +607,13 @@ namespace XESTSF {
 
             //// Initial conditions in PRIMITIVE variables -- Pre Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => exact_sol(X, 0));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#L", X => exact_sol(X, 1));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#L", X => exact_sol(X, 3));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#L", X => exact_sol(X, 1));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#L", X => exact_sol(X, 3));
 
             //// Initial conditions in PRIMITIVE variables -- Post Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#R", X => exact_sol(X, 0));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#R", X => exact_sol(X, 1));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#R", X => exact_sol(X, 3));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#R", X => exact_sol(X, 1));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#R", X => exact_sol(X, 3));
             
             #endregion
 
@@ -615,7 +637,7 @@ namespace XESTSF {
         }
 
         /// <summary>
-        /// this is only for testing,
+        /// Stationary shock wave employing two level Sets (only for testing, if it still works with a dummy levelset)
         /// </summary>
         /// <param name="MaxIterations"></param>
         /// <param name="dgDegree"></param>
@@ -692,8 +714,8 @@ namespace XESTSF {
             c.IsTwoLevelSetRun = true;
 
             c.LevelSetDegree = lsDegree;
-            c.AddVariable(XDGShockVariables.LevelSet, 1);
-            c.AddVariable(XDGShockVariables.LevelSetTwo, lsDegree); 
+            c.AddVariable(XESFVariables.LevelSet, 1);
+            c.AddVariable(XESFVariables.LevelSetTwo, lsDegree); 
 
             string RALS = "A";
             string LALS = "B";
@@ -868,15 +890,15 @@ namespace XESTSF {
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#" + LALS, (X, t) => X[0] < x_s ? densityLeft : densityRight);
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#" + LARS, (X, t) => X[0] < x_s ? densityLeft : densityRight);
 
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#" + RALS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#" + RARS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#" + LALS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#" + LARS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#" + RALS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#" + RARS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#" + LALS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#" + LARS, (X, t) => X[0] < x_s ? velocityXLeft : velocityXRight);
             
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#" + LALS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#" + LARS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#" + RALS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#" + RARS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#" + LALS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#" + LARS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#" + RALS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#" + RARS, (X, t) => X[0] < x_s ? pressureLeft : pressureRight);
 
             //Func<double[], int, double> exact_sol = delegate (double[] X, int component) {
             //    //if(X[0] > 0.5 + (X[1] / LevelSet1Prime)) { //wedge -X[0] + 0.5 + (X[1] / LevelSet1Prime)
@@ -998,43 +1020,43 @@ namespace XESTSF {
 
             ////// Initial conditions in PRIMITIVE variables -- Pre Shock
             //c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + RALS, X => exact_sol(X, 0));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + RALS, X => exact_sol(X, 1));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#"+ RALS, X => exact_sol(X, 3));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + RALS, X => exact_sol(X, 1));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#"+ RALS, X => exact_sol(X, 3));
 
             ////// Initial conditions in PRIMITIVE variables -- Post Shock
             //c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + RARS, X => exact_sol(X, 0));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + RARS, X => exact_sol(X, 1));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#" + RARS, X => exact_sol(X, 3));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + RARS, X => exact_sol(X, 1));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#" + RARS, X => exact_sol(X, 3));
 
             ////// Initial conditions in PRIMITIVE variables -- Pre Shock
             //c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + LALS, X => exact_sol(X, 0));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + LALS, X => exact_sol(X, 1));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#" +LALS, X => exact_sol(X, 3));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + LALS, X => exact_sol(X, 1));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#" +LALS, X => exact_sol(X, 3));
 
             ////// Initial conditions in PRIMITIVE variables -- Post Shock
             //c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + LARS, X => exact_sol(X, 0));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + LARS, X => exact_sol(X, 1));
-            //c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#" + LARS, X => exact_sol(X, 3));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + LARS, X => exact_sol(X, 1));
+            //c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#" + LARS, X => exact_sol(X, 3));
 
             //// Initial conditions in PRIMITIVE variables -- Pre Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + RALS, X => exact_sol_sd(X, 0, RALS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + RALS, X => exact_sol_sd(X, 1, RALS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#" + RALS, X => exact_sol_sd(X, 2, RALS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + RALS, X => exact_sol_sd(X, 1, RALS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#" + RALS, X => exact_sol_sd(X, 2, RALS));
 
             //// Initial conditions in PRIMITIVE variables -- Post Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + RARS, X => exact_sol_sd(X, 0, RARS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + RARS, X => exact_sol_sd(X, 1, RARS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#" + RARS, X => exact_sol_sd(X, 2, RARS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + RARS, X => exact_sol_sd(X, 1, RARS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#" + RARS, X => exact_sol_sd(X, 2, RARS));
 
             //// Initial conditions in PRIMITIVE variables -- Pre Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + LALS, X => exact_sol_sd(X, 0, LALS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + LALS, X => exact_sol_sd(X, 1, LALS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#" + LALS, X => exact_sol_sd(X, 2, LALS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + LALS, X => exact_sol_sd(X, 1, LALS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#" + LALS, X => exact_sol_sd(X, 2, LALS));
 
             //// Initial conditions in PRIMITIVE variables -- Post Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + LARS, X => exact_sol_sd(X, 0, LARS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + LARS, X => exact_sol_sd(X, 1, LARS));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#" + LARS, X => exact_sol_sd(X, 2, LARS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#" + LARS, X => exact_sol_sd(X, 1, LARS));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#" + LARS, X => exact_sol_sd(X, 2, LARS));
 
 
             #endregion
@@ -1133,8 +1155,8 @@ namespace XESTSF {
             c.IsTwoLevelSetRun = true;
 
             c.LevelSetDegree = lsDegree;
-            c.AddVariable(XDGShockVariables.LevelSet, 1); // this is the levelset for the contact discontinuity
-            c.AddVariable(XDGShockVariables.LevelSetTwo, lsDegree); // this is the levelSet used for the shock wave
+            c.AddVariable(XESFVariables.LevelSet, 1); // this is the levelset for the contact discontinuity
+            c.AddVariable(XESFVariables.LevelSetTwo, lsDegree); // this is the levelSet used for the shock wave
 
             ///Left side of the Contact Discontinuity the are rarefaction waves also....???????
             //c.SpeciesTable[0, 0] = "LCLS"; // left side of both the Contact discontinuity && the shock wave
@@ -1162,7 +1184,7 @@ namespace XESTSF {
             c.OptiLevelSetDegree = optiLSDegree;
             #endregion
 
-            //shockLevelSet_Db = @"C:\BoSSS-experimental\internal\src\private-mag\XDGShock\Tests\bosss_db_levelSets.zip";
+            //shockLevelSet_Db = @"C:\BoSSS-experimental\internal\src\private-mag\XESF\Tests\bosss_db_levelSets.zip";
 
 
             #region Fluxes
@@ -1270,12 +1292,12 @@ namespace XESTSF {
             c.AddBoundaryValue("AdiabaticSlipWall", CompressibleVariables.Density + "#LCLS", (X, t) => exact_sol(new double[] { X[0], t }, 0));
             c.AddBoundaryValue("AdiabaticSlipWall", CompressibleVariables.Density + "#RCLS", (X, t) => exact_sol(new double[] { X[0], t }, 0));
             c.AddBoundaryValue("AdiabaticSlipWall", CompressibleVariables.Density + "#RCRS", (X, t) => exact_sol(new double[] { X[0], t }, 0));
-            c.AddBoundaryValue("AdiabaticSlipWall", XDGShockVariables.Velocity.xComponent + "#LCLS", (X, t) => exact_sol(new double[] { X[0], t }, 1));
-            c.AddBoundaryValue("AdiabaticSlipWall", XDGShockVariables.Velocity.xComponent + "#RCLS", (X, t) => exact_sol(new double[] { X[0], t }, 1));
-            c.AddBoundaryValue("AdiabaticSlipWall", XDGShockVariables.Velocity.xComponent + "#RCRS", (X, t) => exact_sol(new double[] { X[0], t }, 1));
-            c.AddBoundaryValue("AdiabaticSlipWall", XDGShockVariables.Pressure + "#LCLS", (X, t) => exact_sol(new double[] { X[0], t }, 2));
-            c.AddBoundaryValue("AdiabaticSlipWall", XDGShockVariables.Pressure + "#RCLS", (X, t) => exact_sol(new double[] { X[0], t }, 2));
-            c.AddBoundaryValue("AdiabaticSlipWall", XDGShockVariables.Pressure + "#RCRS", (X, t) => exact_sol(new double[] { X[0], t }, 2));
+            c.AddBoundaryValue("AdiabaticSlipWall", XESFVariables.Velocity.xComponent + "#LCLS", (X, t) => exact_sol(new double[] { X[0], t }, 1));
+            c.AddBoundaryValue("AdiabaticSlipWall", XESFVariables.Velocity.xComponent + "#RCLS", (X, t) => exact_sol(new double[] { X[0], t }, 1));
+            c.AddBoundaryValue("AdiabaticSlipWall", XESFVariables.Velocity.xComponent + "#RCRS", (X, t) => exact_sol(new double[] { X[0], t }, 1));
+            c.AddBoundaryValue("AdiabaticSlipWall", XESFVariables.Pressure + "#LCLS", (X, t) => exact_sol(new double[] { X[0], t }, 2));
+            c.AddBoundaryValue("AdiabaticSlipWall", XESFVariables.Pressure + "#RCLS", (X, t) => exact_sol(new double[] { X[0], t }, 2));
+            c.AddBoundaryValue("AdiabaticSlipWall", XESFVariables.Pressure + "#RCRS", (X, t) => exact_sol(new double[] { X[0], t }, 2));
 
 
             //   double density_Right = (gamma + 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) / ((gamma - 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) + 2.0);
@@ -1351,18 +1373,18 @@ namespace XESTSF {
 
             //// Initial conditions in PRIMITIVE variables -- LCLS
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#LCLS", X => exact_sol_sd(X, 0, "LCLS"));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#LCLS", X => exact_sol_sd(X, 1, "LCLS"));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#LCLS", X => exact_sol_sd(X, 2, "LCLS"));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#LCLS", X => exact_sol_sd(X, 1, "LCLS"));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#LCLS", X => exact_sol_sd(X, 2, "LCLS"));
 
             //// Initial conditions in PRIMITIVE variables -- RCLS
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#RCLS", X => exact_sol_sd(X, 0, "RCLS"));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#RCLS", X => exact_sol_sd(X, 1, "RCLS"));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#RCLS", X => exact_sol_sd(X, 2, "RCLS"));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#RCLS", X => exact_sol_sd(X, 1, "RCLS"));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#RCLS", X => exact_sol_sd(X, 2, "RCLS"));
 
             //// Initial conditions in PRIMITIVE variables -- RCRS
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#RCRS", X => exact_sol_sd(X, 0, "RCRS"));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#RCRS", X => exact_sol_sd(X, 1, "RCRS"));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#RCRS", X => exact_sol_sd(X, 2, "RCRS"));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#RCRS", X => exact_sol_sd(X, 1, "RCRS"));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#RCRS", X => exact_sol_sd(X, 2, "RCRS"));
 
             #endregion
 
@@ -1387,7 +1409,29 @@ namespace XESTSF {
         }
 
 
-
+        /// <summary>
+        /// Shu Osher problem.
+        /// </summary>
+        /// <param name="DgDegree_start"></param>
+        /// <param name="endTime"></param>
+        /// <param name="MaxIterations"></param>
+        /// <param name="dgDegree"></param>
+        /// <param name="numOfCellsX"></param>
+        /// <param name="numOfCellsT"></param>
+        /// <param name="PlotInterval"></param>
+        /// <param name="withDirichletBoundaryFunc"></param>
+        /// <param name="dbPath"></param>
+        /// <param name="lsDegree"></param>
+        /// <param name="bulkFlux"></param>
+        /// <param name="interfaceFluxLS1"></param>
+        /// <param name="optiLevelSetType"></param>
+        /// <param name="optiLSDegree"></param>
+        /// <param name="initialValue"></param>
+        /// <param name="iVFromShockRelations"></param>
+        /// <param name="agg"></param>
+        /// <param name="globalization"></param>
+        /// <param name="meritFunctionType"></param>
+        /// <returns></returns>
         public static XESTSFControl ShuOsher1D(int DgDegree_start=1,double endTime=1.1, int MaxIterations = 100, int dgDegree = 3, int numOfCellsX = 9,
         int numOfCellsT = 10, int PlotInterval = -1, bool withDirichletBoundaryFunc=false,
         string dbPath = null, int lsDegree = 3, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.Roe,
@@ -1447,7 +1491,7 @@ namespace XESTSF {
             c.IsTwoLevelSetRun = false;
 
             c.LevelSetDegree = lsDegree;
-            c.AddVariable(XDGShockVariables.LevelSet, lsDegree);
+            c.AddVariable(XESFVariables.LevelSet, lsDegree);
 
             c.SpeciesTable[0, 0] = "L";
             c.SpeciesTable[1, 0] = "R";
@@ -1553,21 +1597,21 @@ namespace XESTSF {
 
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#L", (X, t) => X[0] < x_s(0) ? densityLeft(X[0]) : densityRight(X[0]));
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#R", (X, t) => X[0] < x_s(0) ? densityLeft(X[0]) : densityRight(X[0]));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#L", (X, t) => X[0] < x_s(0) ? velocityXLeft(X[0]) : velocityXRight(X[0]));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#R", (X, t) => X[0] < x_s(0) ? velocityXLeft(X[0]) : velocityXRight(X[0]));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#L", (X, t) => X[0] < x_s(0) ? pressureLeft(X[0]) : pressureRight(X[0]));
-            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#R", (X, t) => X[0] < x_s(0) ? pressureLeft(X[0]) : pressureRight(X[0]));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#L", (X, t) => X[0] < x_s(0) ? velocityXLeft(X[0]) : velocityXRight(X[0]));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#R", (X, t) => X[0] < x_s(0) ? velocityXLeft(X[0]) : velocityXRight(X[0]));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#L", (X, t) => X[0] < x_s(0) ? pressureLeft(X[0]) : pressureRight(X[0]));
+            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#R", (X, t) => X[0] < x_s(0) ? pressureLeft(X[0]) : pressureRight(X[0]));
 
 
             //// Initial conditions in PRIMITIVE variables -- Pre Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => densityLeft(X[0]));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#L",X=>velocityXLeft(X[0]));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#L", X => pressureLeft(X[0]));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#L",X=>velocityXLeft(X[0]));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#L", X => pressureLeft(X[0]));
 
             //// Initial conditions in PRIMITIVE variables -- Post Shock
             c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#R", X => densityRight(X[0]));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#R", X => velocityXRight(X[0]));
-            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#R", X => pressureRight(X[0]));
+            c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#R", X => velocityXRight(X[0]));
+            c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#R", X => pressureRight(X[0]));
 
             #endregion
 
@@ -1580,376 +1624,6 @@ namespace XESTSF {
 
             return c;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //----------------------------------------------------------------------------------------------------------------------------------------------------------------//
-            /// 1D shu osher problem (complex interaction of waves & shocks):-
-            /// taking a case in which a normal stationary shock & a moving shock interacts
-            /// in the domain lets say a stationary normal shock is present from starting (means left side supersonic & rightside is subsonic)
-            /// now a moving shock is introduced at left boundary moving towards the first one
-            /// after some time interaction will happen and new waves will be created depending on the strength of both shock
-            /// if the moving shock is stronger then it is most likely to have a merged shock after interaction, which moves at some speed
-            /// if the moving shock is weak then it is most likely to create a rarefaction wave and a moving shock travelling in opposite direction.
-            /// levelset for mving shock is a must, for stading normal shock if we use then it will provide detailed result
-            /// so taking two level set
-
-            //        public static XESTSFControl XDG_1D_shu_osher_TwoLs_Base(int MaxIterations = 100, int dgDegree = 3, int numOfCellsX = 20,
-            //        int numOfCellsT = 20, int PlotInterval = 1,
-            //        string dbPath = null, int lsDegree = 1, int lsDegreeTwo = 3, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.Roe,
-            //        ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
-            //        ConvectiveInterfaceFluxes interfaceFluxLS2 = ConvectiveInterfaceFluxes.RoeInterface,
-            //        GetLevelSet shocksetup = GetLevelSet.FromParams, OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
-            //        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit
-            //) {
-            //            var c = new XESTSFControl();
-
-            //            #region DBStuff and Plotting
-            //            c.DbPath = dbPath;
-            //            c.savetodb = true;
-            //            if(dbPath == null)
-            //                c.savetodb = false;
-            //            c.NoOfTimesteps = MaxIterations;
-            //            c.ImmediatePlotPeriod = PlotInterval;
-            //            if(dgDegree == 0 && numOfCellsX < 10 && numOfCellsT < 10) {
-            //                c.SuperSampling = 4;
-            //            } else {
-            //                c.SuperSampling = 3;
-            //            }
-
-            //            #endregion
-
-            //            #region SQP constants/parameters
-
-            //            // Solver Type
-            //            c.solRunType = SolverRunType.Standard;
-            //            c.DgDegree_Start = 0;
-            //            c.SolDegree = dgDegree;
-            //            // ### Time config ###
-            //            c.NoOfTimesteps = MaxIterations;
-
-            //            // Adaptive Regularization
-            //            c.Gamma_Start = 1;
-            //            c.Gamma_Max = 1;
-            //            c.Gamma_Min = 1e-06;
-            //            c.tauGamma = 1.5;
-            //            c.L = 1;
-            //            c.sigma_1 = 1e-2;
-            //            c.sigma_2 = 1e-1;
-
-            //            //Globalization Parameters
-            //            c.GlobalizationStrategy = globalization;
-            //            c.MeritFunctionType = meritFunctionType;
-            //            c.Alpha_Start = 1;
-            //            c.Alpha_Min = 1e-08;
-            //            c.MinPIter = new int[] { 20, 20, 20, 20, 20, 20 };
-            //            c.reInitTols = new double[] { 0, -0.6, -1, -2, -2, -2 };
-            //            c.ReiniTMaxIters = new int[] { 0, 15, 15, 15, 15, 15 };
-
-            //            c.fphiType = FphiType.CurvatureAll;
-            //            #endregion
-
-            //            #region LevelSetStuff
-
-            //            // ### Agglomeration and quadrature ###
-            //            c.AgglomerationThreshold = agg;
-            //            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
-
-            //            c.IsTwoLevelSetRun = true;
-
-            //            c.LevelSetDegree = lsDegree;
-            //            c.AddVariable(XDGShockVariables.LevelSet, lsDegree); // this is the levelset for the moving shock wave
-            //            c.AddVariable(XDGShockVariables.LevelSetTwo, lsDegreeTwo); // this is the levelSet used for the standing shock wave
-
-
-            //            c.SpeciesTable[0, 0] = "LMLS"; // left side of both the moving shock wave && the standing shock wave
-            //            c.SpeciesTable[1, 0] = "RMLS"; // right side of the moving shock wave && left side of the standing shock wave
-            //            c.SpeciesTable[1, 1] = "RMRS"; // right side of both the moving shock wave && the standing shock wave
-            //            c.SpeciesTable[0, 1] = "LMRS"; // left side of the moving shock wave && right side of the standing shock (empty)
-            //            c.LsOne_NegSpecies = "LMLS";
-            //            c.LsOne_PosSpecies = "RMLS";
-            //            c.LsTwo_NegSpecies = "RMLS";
-            //            c.LsTwo_PosSpecies = "RMRS";
-            //            c.SpeciesToEvaluate = new string[] { "LMLS", "RMLS", "RMRS", "LMRS" };
-
-            //            c.LevelSetTwoDegree = lsDegree;
-            //            c.OptiLevelSetType = optiLevelSetType;
-            //            c.OptiLevelSetDegree = optiLSDegree;
-            //            #endregion
-
-            //            //shockLevelSet_Db = @"C:\BoSSS-experimental\internal\src\private-mag\XDGShock\Tests\bosss_db_levelSets.zip";
-
-
-            //            #region Fluxes
-            //            //// ### Fluxes ###
-            //            c.ConvectiveBulkFlux = bulkFlux;
-            //            c.ConvectiveInterfaceFlux_LsOne = interfaceFluxLS1;
-            //            c.ConvectiveInterfaceFlux_LsTwo = interfaceFluxLS2;
-            //            c.MassMatrixShapeandDependence = BoSSS.Solution.XdgTimestepping.MassMatrixShapeandDependence.IsNonIdentity;
-            //            #endregion
-
-            //            #region Grid
-            //            double xMin = 0;
-            //            double xMax = 1;
-            //            double tMin = 0;
-            //            double tMax = 0.2;
-
-            //            //todo: check bc
-            //            c.GridFunc = delegate {
-            //                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-            //                double[] tNodes = GenericBlas.Linspace(tMin, tMax, numOfCellsT + 1);
-            //                GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, tNodes, periodicX: false, periodicY: false);
-
-            //                grid.EdgeTagNames.Add(1, "SupersonicInlet");
-            //                grid.EdgeTagNames.Add(2, "SubsonicOutlet");
-            //                grid.EdgeTagNames.Add(3, "SupersonicOutlet");
-            //                grid.DefineEdgeTags(delegate (double[] X) {
-            //                    if(Math.Abs(X[0] - xMax) < 1e-14) {    // Right boundary
-            //                        return 2;
-            //                    } else if(Math.Abs(X[0] - xMin) < 1e-14) { // Left boundary
-            //                        return 1;
-            //                    } else if(Math.Abs(X[1] - tMax) < 1e-14) { // top boundary
-            //                        return 3;
-            //                    } else { //bottom boundary
-            //                        return 1;
-            //                    }
-            //                });
-            //                return grid;
-            //            };
-
-            //            #endregion
-
-            //            #region Initial Position of LevelSets
-
-
-            //            /// the normal shock standing at the X = 0.4
-            //            /// so the LS2 => X - 0.4
-            //            /// 
-            //            /// the moving shock wave is
-            //            /// At t = 0, the moving shock wave is at x = 0 with velocity Vs = 1500 m/s (taking strong shock)
-            //            /// so the LS1 => X - (Vs)*t
-            //            /// 
-            //            //TODO: set right functions and describe
-
-            //            //c.IsTwoLevelSetRun = false;
-            //            //// level set 1
-
-
-
-            //            double Mach_left = 2;
-            //            double Vs = 1500;
-            //            double density_left = 1;
-            //            double pressure_left = 1;
-            //            double gamma = IdealGas.Air.HeatCapacityRatio;
-            //            double c1 = Math.Sqrt(gamma * pressure_left * 100000 / density_left);
-            //            double velocity_left = Mach_left * c1;
-
-
-
-            //            double density_right = (gamma + 1) * Mach_left * Mach_left / (2 + (gamma - 1) * Mach_left * Mach_left) * density_left;
-            //            double pressure_right = (1 + 2 * gamma / (gamma + 1) * (Mach_left * Mach_left - 1)) * pressure_left;
-            //            double velocity_right = (2 + (gamma - 1) * Mach_left * Mach_left) / ((gamma + 1) * Mach_left * Mach_left) * velocity_left;
-            //            double c2 = Math.Sqrt(gamma * pressure_right / density_right);
-
-
-            //            c.LevelSetOneInitalValue = delegate (double[] X) {
-            //                if(X[0] < 0.4) {
-            //                    return X[0] - Vs * X[1];
-            //                } else {
-            //                    return X[0] - Vms * X[1];
-            //                }
-            //            };
-
-
-            //            //// level set 2
-            //            ///TODO add full shock solution
-
-            //            c.LevelSetTwoInitialValue = delegate (double[] X) {
-            //                if(X[1] * (c1 + velocity_left) < 0.4) {
-            //                    return 0.4;
-            //                } else {
-            //                    return 0.4 + (k * amplitude_p_hat * Math.Sin(omega * X[1]) / (omega * omega * density_left));
-            //                }
-            //            };
-
-            //            ///k*amplitude_p_hat*Math.PI*Math.Cos(-omega*(X[1] + (X[0]/(c1+velocity_left))))/(omega*omega*density_left);
-            //            #endregion
-
-            //            #region Inital Values for Solution + Boundary Values
-            //            c.SolDegree = dgDegree;
-            //            c.GetInitialValue = initialValue;
-            //            c.EquationOfState = IdealGas.Air;
-
-            //            //c.ReynoldsNumber = 1.0;
-            //            //c.PrandtlNumber = 0.71;
-
-            //            c.AddVariable(XESTSFVariables.Velocity.xComponent, dgDegree);
-            //            c.AddVariable(XESTSFVariables.Pressure, dgDegree);
-            //            c.AddVariable(XESTSFVariables.Enthalpy, dgDegree);
-            //            c.AddVariable(XESTSFVariables.LocalMachNumber, dgDegree);
-            //            c.AddVariable(CompressibleVariables.Density, dgDegree);
-            //            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
-            //            //c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
-            //            c.AddVariable(CompressibleVariables.Energy, dgDegree);
-
-            //            //TODO: rescale
-            //            // Boundary conditions
-
-
-            //            double momentumX_left = density_left * velocity_left;
-            //            double innerEnergy_left = pressure_left / (gamma - 1);
-            //            double kineticEnergy_left = 0.5 * density_left * velocity_left * velocity_left;
-            //            double totalEnergy_left = innerEnergy_left + kineticEnergy_left;
-
-
-
-            //            /// the acoustic fluctuations left side of the shock
-            //            /// the angular frequency remains same after interaction with the shock
-            //            /// but wave number & speed of the acoustic wave propogation changes after shock interaction
-            //            // -----------------------------------------------------------------------
-            //            ///pressure_fluctuation_left = amplitude_p_hat * Math.Cos(k * X[0] - (omega) * (X[1] + ((X[0]) / (c1 + velocity_left))));
-            //            ///density_fluctuation_left = pressure_fluctuation_left / (c1*c1)
-            //            ///velocity_fluctuation_left = k * pressure_fluctuation_left / (omega*density_left)
-
-            //            // Boundary conditions in PRIMITIVE variables
-            //            //TODO: adjust for new sub-domain names and correct values ?????????
-            //            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#A", (X, t) => exact_sol(new double[] { X[0], t }, 0));
-            //            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#" + LALS, (X, t) => exact_sol(new double[] { X[0], t }, 0));
-            //            c.AddBoundaryValue("SubsonicOutlet", CompressibleVariables.Density + "#B", (X, t) => exact_sol(new double[] { X[0], t }, 0));
-            //            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#" + RARS, (X, t) => exact_sol(new double[] { X[0], t }, 1));
-            //            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Velocity.xComponent + "#L", (X, t) => exact_sol(new double[] { X[0], t }, 1));
-            //            c.AddBoundaryValue("SubsonicOutlet", XDGShockVariables.Velocity.xComponent + "#B", (X, t) => exact_sol(new double[] { X[0], t }, 1));
-            //            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#" + RARS, (X, t) => exact_sol(new double[] { X[0], t }, 0));
-            //            c.AddBoundaryValue("SupersonicInlet", XDGShockVariables.Pressure + "#L", (X, t) => exact_sol(new double[] { X[0], t }, 0));
-            //            c.AddBoundaryValue("SubsonicOutlet", XDGShockVariables.Pressure + "#B", (X, t) => exact_sol(new double[] { X[0], t }, 0));
-
-
-            //            //   double density_Right = (gamma + 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) / ((gamma - 1.0) * Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) + 2.0);
-            //            //   double pressure_Right = 1.0 + (2.0 * gamma * (Mach * Mach * Math.Sin(shock_angle_radial) * Math.Sin(shock_angle_radial) - 1.0)) / (gamma + 1.0);
-
-            //            // calculate Velocity via Transformation matrix
-
-            //            double innerEnergy_right = pressure_right / (gamma - 1);
-            //            double kineticEnergy_right = 0.5 * density_right * (velocity_right * velocity_right);
-            //            double totalEnergy_right = innerEnergy_right + kineticEnergy_right;
-
-
-            //            //TODO: put the exact solution
-            //            double exact_sol(double[] X, int component) {
-
-            //                if(X[0] < (c1 + velocity_left) * X[1] && X[0] < 0.4) { // acoustic is passed & pre shock //LALS
-            //                    exact_sol_sd(X, component, "A");
-
-            //                } else if(X[0] > (c1 + velocity_left) * X[1] && X[0] < 0.4) { // acoustic is not passed & pre Shock //RALS
-            //                    exact_sol_sd(X, component, "B");
-
-            //                } else if(X[0] > (c2 + velocity_right) * X[1] && X[0] > 0.4) { // acoustic is not passed & post Shock  //RARS
-            //                    exact_sol_sd(X, component, "R");
-
-            //                } else if(X[0] < (c2 + velocity_right) * X[1] && X[0] > 0.4) { // acoustic is passed & post Shock  //LARS
-            //                    exact_sol_sd(X, component, "L");
-            //                }
-
-            //                return 0;
-            //            }
-            //            double exact_sol_sd(double[] X, int component, string subdomain) {
-
-            //                if(subdomain == "A") { // acoustic is passed & pre shock //LALS
-            //                    if(component == 0) {
-            //                        return density_left + amplitude_p_hat * Math.Cos(k * X[0] - (omega) * (X[1] + ((X[0]) / (c1 + velocity_left)))) / (c1 * c1);
-            //                    } else if(component == 1) {
-            //                        return velocity_left - k * amplitude_p_hat * Math.Sin(k * X[0] - (omega) * (X[1] + ((X[0]) / (c1 + velocity_left)))) / (omega * density_left);
-            //                    } else if(component == 2) {
-            //                        return pressure_left + amplitude_p_hat * Math.Cos(k * X[0] - (omega) * (X[1] + ((X[0]) / (c1 + velocity_left))));
-            //                    }
-            //                } else if(subdomain == "B") { // acoustic is not passed & pre Shock //RALS
-            //                    if(component == 0) {
-            //                        return density_left;
-            //                    } else if(component == 1) {
-            //                        return velocity_left;
-            //                    } else if(component == 2) {
-            //                        return pressure_left;
-            //                    }
-
-            //                } else if(subdomain == "R") { // acoustic is not passed & post Shock  //RARS
-            //                    if(component == 0) {
-            //                        return density_right;
-            //                    } else if(component == 1) {
-            //                        return velocity_right;
-            //                    } else if(component == 2) {
-            //                        return pressure_right;
-            //                    }
-
-            //                } else if(subdomain == "L") { // acoustic is passed & post Shock  //LARS
-            //                    if(component == 0) {
-            //                        return density_right + amplitude_p_hat * Math.Cos((omega / (c2 + velocity_right)) * X[0] - (omega) * (X[1] + ((X[0]) / (c2 + velocity_right)))) / (c2 * c2);
-            //                    } else if(component == 1) {
-            //                        return velocity_right - (omega / (c2 + velocity_right)) * amplitude_p_hat * Math.Sin((omega / (c2 + velocity_right)) * X[0] - (omega) * (X[1] + ((X[0]) / (c2 + velocity_right)))) / (omega * density_right);
-            //                    } else if(component == 2) {
-            //                        return pressure_right + amplitude_p_hat * Math.Cos((omega / (c2 + velocity_right)) * X[0] - (omega) * (X[1] + ((X[0]) / (c2 + velocity_right))));
-            //                    }
-            //                }
-
-            //                return 0;
-            //            }
-
-            //            //TODO: adjust for new sub-domain names and add exact solution
-
-            //            //// Initial conditions in PRIMITIVE variables -- Pre Shock & acoustic is passed = LALS
-            //            c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#" + RARS, X => exact_sol_sd(X, 0, "A"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#" + RARS, X => exact_sol_sd(X, 1, "A"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#A", X => exact_sol_sd(X, 2, "A"));
-
-            //            //// Initial conditions in PRIMITIVE variables -- Pre Shock & acoustic is not passed = RALS
-            //            c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => exact_sol_sd(X, 0, "B"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#L", X => exact_sol_sd(X, 1, "B"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#L", X => exact_sol_sd(X, 2, "B"));
-
-            //            //// Initial conditions in PRIMITIVE variables -- Post Shock & acoustic is passed = LARS
-            //            c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => exact_sol_sd(X, 0, "L"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#L", X => exact_sol_sd(X, 1, "L"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#L", X => exact_sol_sd(X, 2, "L"));
-
-            //            //// Initial conditions in PRIMITIVE variables -- Post Shock & acoustic is not passed = RARS
-            //            c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => exact_sol_sd(X, 0, "L"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Velocity.xComponent + "#L", X => exact_sol_sd(X, 1, "L"));
-            //            c.InitialValues_Evaluators.Add(XDGShockVariables.Pressure + "#L", X => exact_sol_sd(X, 2, "L"));
-
-
-            //            #endregion
-
-            //            #region Queries
-            //            //var enthalpy_inflow = (gamma) / (gamma - 1) + 0.5 * velocityX * velocityX;
-            //            //c.Queries.Add("L2ErrorEntropyL", XESFQueries.L2Error("h", "L", referenceSolution: (X, t) => enthalpy_inflow));
-            //            //c.Queries.Add("L2ErrorEntropyR", XESFQueries.L2Error("h", "R", referenceSolution: (X, t) => enthalpy_inflow));
-            //            //c.Queries.Add("L2NormDensity", QueryLibrary.L2Norm(CompressibleVariables.Density));
-            //            //c.Queries.Add("L2NormMomentumX", QueryLibrary.L2Norm(CompressibleVariables.Momentum[0]));
-            //            //c.Queries.Add("L2NormEnergy", QueryLibrary.L2Norm(CompressibleVariables.Energy));
-            //            #endregion
-
-            //            #region Project Information
-            //            c.ProjectName = "XDG_1D_shu_osher_TwoLs";
-            //            c.SessionName = string.Format("XDG_1D_shu_osher_TwoLs_p{0}_xCells{1}_tCells{2}_iterations{3}_lSDegree{4}_Glob{5}_agg{6}_",
-            //                dgDegree, numOfCellsX, numOfCellsT, interfaceFluxLS2.ToString(), c.NoOfTimesteps, optiLSDegree, globalization.ToString(), agg);
-
-            //            #endregion
-
-            //            return c;
-
-            //        }
-
-
-
     }
 }
 
