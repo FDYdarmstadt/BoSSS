@@ -26,7 +26,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
 
-            int D = 3;
+            //int D = 3;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -51,12 +51,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             #endregion
 
-            if(D == 3) {
-                C.FieldOptions.Add("DisplacementZ", new FieldOpts() {
-                    Degree = p,
-                    SaveToDB = FieldOpts.SaveToDBOpt.FALSE
-                });
-            }
+            //if(D == 3) {
+            //    C.FieldOptions.Add("DisplacementZ", new FieldOpts() {
+            //        Degree = p,
+            //        SaveToDB = FieldOpts.SaveToDBOpt.FALSE
+            //    });
+            //}
 
             // Physical Parameters
             // ===================
