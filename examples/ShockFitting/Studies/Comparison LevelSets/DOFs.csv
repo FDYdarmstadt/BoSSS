@@ -1,0 +1,5 @@
+nCells;SinglePhaseField;SplineLevelSet;SpecFemField
+4;40;6;25
+16;160;10;81
+64;640;18;289
+256;2560;34;1089
