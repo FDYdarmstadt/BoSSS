@@ -49,7 +49,7 @@ namespace XESF {
         /// <param name="meritFunctionType"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        public static XESFControl XDGWedgeFlow_TwoLs_Base(int MaxIterations=20, int dgDegree=0, int numOfCellsX=15,
+        public static XESFControl XDGWedgeFlow_TwoLs_Base(int MaxIterations=80, int dgDegree=0, int numOfCellsX=15,
         int numOfCellsY=10, double wedge_angle = 10,double initialAngle_shockLS = 32, int PlotInterval=-1,
         string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
