@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.DotNet.Interactive.Formatting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -267,6 +268,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// The demanded execution time for the job manager (relevant for Slurm clients <see cref="BoSSS.Solution.Control.AppControl.SessionName"/>)
+        /// Slurm queues are dependent on the execution time, so if it is too long. It can be in back in the queue. 
+        /// </summary>
+        public string ExecutionTime {
+            set;
+            get;
+        }
+
+        /// <summary>
         /// Adds a text file to <see cref="AdditionalDeploymentFiles"/>.
         /// </summary>
         /// <param name="Content">Content of the text file.</param>
@@ -387,6 +397,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 Foundation.Grid.IGrid g = m_ctrl.GridFunc();
                 Guid id = dbi.SaveGrid(ref g);
+
+                Console.WriteLine($"Using grid {id} at {dbi.Path}.");
 
                 m_ctrl.GridFunc = null;
                 m_ctrl.GridGuid = id;
@@ -567,6 +579,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IDictionary<string, string> EnvironmentVars {
             get {
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
                 return m_EnvironmentVars;
             }
         }
@@ -1176,10 +1189,33 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfMPIProcs;
             }
             set {
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException("number of MPI processes must be at least 1");
                 TestActivation();
                 m_NumberOfMPIProcs = value;
             }
         }
+
+        int m_NumberOfThreads = 4;
+
+        /// <summary>
+        /// Number of threads for each MPI rank
+        /// </summary>
+        public int NumberOfThreads {
+            get {
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
+                return m_NumberOfThreads;
+            }
+            set {
+                if(value <= 0) 
+                    throw new ArgumentOutOfRangeException("number of threads must be at least 1");
+                m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
+                TestActivation();
+                m_NumberOfThreads = value;
+            }
+        }
+
+
 
         bool m_UseComputeNodesExclusive = false;
 
@@ -1494,6 +1530,8 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
+
+
                 // ================
                 // status
                 // ================
@@ -1509,10 +1547,9 @@ namespace BoSSS.Application.BoSSSpad {
                         return;
                     }
                 }
-             
 
 
-
+               
                 // ========================================================================
                 // finally, it might be necessary to submit the job to the batch processor. 
                 // ========================================================================
@@ -1521,6 +1558,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // some database syncing might be necessary 
                 FiddleControlFile(AssignedBatchProc);
+
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();
@@ -1818,7 +1856,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // Collect files
                 List<string> files = new List<string>();
                 using (new BlockTrace("ASSEMBLY_COLLECTION", tr)) {
-                    if(EntryAssemblyRedirection == null) {
+                    if(EntryAssemblyRedirection.IsEmptyOrWhite()) {
                         //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                         files.AddRange(GetManagedFileList());
                     } else {
@@ -1880,12 +1918,17 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // deploy runtime
                 using (new BlockTrace("DEPLOY_RUNTIME", tr)) {
+
                     if (AssignedBatchProc.DeployRuntime == true) {
-                        string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                        var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation));
-                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.Parent.FullName, DeployDir, BosssBinNative.Name);
-                        Console.WriteLine("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
-                        tr.Info("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                        if (!EntryAssemblyRedirection.IsEmptyOrWhite()) {
+                            Console.WriteLine("Skipping copy of native libs, since 'EntryAssemblyRedirection' = " + EntryAssemblyRedirection);
+                        } else {
+                            string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                            var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation));
+                            MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.Parent.FullName, DeployDir, BosssBinNative.Name);
+                            Console.WriteLine("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                            tr.Info("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                        }
                     }
                 }
 

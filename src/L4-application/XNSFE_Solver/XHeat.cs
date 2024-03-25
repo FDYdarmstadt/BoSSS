@@ -100,6 +100,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             //final settings
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.IsLinear = true;
+            XOP.FluxesAreNOTMultithreadSafe = false;
             XOP.Commit();
 
             return XOP;

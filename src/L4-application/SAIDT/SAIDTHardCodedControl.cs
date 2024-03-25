@@ -157,9 +157,9 @@ namespace SAIDT {
 
             //set up the initial guess for the Spline level Set (if chosen)
             if(c.OptiLevelSetType == OptiLevelSetType.SplineLevelSet) {
-                c.InitialShockPostion = x => 0.1 + 0.7 * x[1] - x[1] * x[1] + 0.7 * x[1] * x[1] * x[1];
+                c.LevelSetTwoInitialValue = x => 0.1 + 0.7 * x[1] - x[1] * x[1] + 0.7 * x[1] * x[1] * x[1];
             } else {
-                c.InitialShockPostion = x => x[0] - 0.1 - 0.7 * x[1] + x[1] * x[1] - 0.7 * x[1] * x[1] * x[1];
+                c.LevelSetTwoInitialValue = x => x[0] - 0.1 - 0.7 * x[1] + x[1] * x[1] - 0.7 * x[1] * x[1] * x[1];
             }
             #endregion
             c.GetInitialValue = GetInitialValue.FromP0Timestepping;
@@ -223,16 +223,16 @@ namespace SAIDT {
             if(isFarConfig) {
                 
                 if(optiLevelSetType == OptiLevelSetType.SplineLevelSet) {
-                    c.InitialShockPostion = x => 0.2 + x[1] * 0.2 * x[1] * x[1] * 0.5;
+                    c.LevelSetTwoInitialValue = x => 0.2 + x[1] * 0.2 * x[1] * x[1] * 0.5;
                 } else {
-                    c.InitialShockPostion = x => x[0] -(0.2 + x[1] * 0.2 * x[1] * x[1] * 0.5);
+                    c.LevelSetTwoInitialValue = x => x[0] -(0.2 + x[1] * 0.2 * x[1] * x[1] * 0.5);
                 }
                 
             } else {
                 if(optiLevelSetType == OptiLevelSetType.SplineLevelSet) {
-                    c.InitialShockPostion = x => 0.2 + x[1] * 0.6;
+                    c.LevelSetTwoInitialValue = x => 0.2 + x[1] * 0.6;
                 } else {
-                    c.InitialShockPostion = x => x[0] - 0.2 - x[1] * 0.6;
+                    c.LevelSetTwoInitialValue = x => x[0] - 0.2 - x[1] * 0.6;
                 }
             }
             c.UseP0ProjectionAsInitialValue = true;
@@ -303,9 +303,9 @@ namespace SAIDT {
             };
 
             if(c.OptiLevelSetType == OptiLevelSetType.SplineLevelSet) {
-                c.InitialShockPostion = x => 0.5 / (2 * Math.PI) * Math.Sin(2 * Math.PI * x[1]) +0.24 +0.1 * x[1];
+                c.LevelSetTwoInitialValue = x => 0.5 / (2 * Math.PI) * Math.Sin(2 * Math.PI * x[1]) +0.24 +0.1 * x[1];
             } else {
-                c.InitialShockPostion = x => x[0] - 0.5 / (2 * Math.PI) * Math.Sin(2 * Math.PI * x[1]) - 0.24 - 0.1 * x[1];
+                c.LevelSetTwoInitialValue = x => x[0] - 0.5 / (2 * Math.PI) * Math.Sin(2 * Math.PI * x[1]) - 0.24 - 0.1 * x[1];
             }
             c.UseP0ProjectionAsInitialValue = true;
             c.NonlinearQuadratureDegree = LSDegree * 4 > 20 ? 20 : LSDegree * 4;

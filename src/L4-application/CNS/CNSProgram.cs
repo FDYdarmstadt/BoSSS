@@ -36,6 +36,8 @@ using System.Linq;
 using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
 using BoSSS.Solution.LoadBalancing;
+using BoSSS.Solution.Utils;
+using CNS.Tests;
 
 namespace CNS {
 
@@ -51,25 +53,14 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //Application.InitMPI(args);
+            Application.InitMPI(args);
+            CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro2AllButRusanovTest(Convection.ConvectiveFluxTypes.HLL);
+            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexOneStepGaussAndStokesNoAgglomerationTest();
+            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicInletBoundaryCondition1D();
+            //CNS.Tests.DiffusiveFlux.SIPGConsistency.SIPGconsistencyTest(1);
             //DeleteOldPlotFiles();
-            //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
-
-            //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
-            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
-
-            //int numOfCellsX = 8;
-            //int numOfCellsY = 16;
-            //var cIBMBowShock = ControlExamples_Supersonic.IBMBowShock(
-            //    dbPath: @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\BoSSS\experimental\internal\src\private-seb\Notebooks\XESF\BowShock\BowShock_P0_db", savePeriod: 1000, dgDegree: 0, CFLFraction: 0.1, explicitScheme: 1, explicitOrder: 1,
-            //    endTime: 32, numOfCellsX: numOfCellsX, numOfCellsY: numOfCellsY);
-
-
-            //var pCNS = new CNS.Program<CNS.IBM.IBMControl>();
-            //pCNS.Init(cIBMBowShock);
-            //pCNS.RunSolverMode();
-
+            //AcousticWaveShockInteraction.Test00();
             //Debug.Assert(false, "remove me");
             //return;
 
@@ -218,7 +209,7 @@ namespace CNS {
                 if (gridUpdateData == null) {
                     // Do not change these settings upon repartitioning
                     ResLogger.WriteResidualsToTextFile = true;
-                    ResLogger.WriteResidualsToConsole = false;
+                    ResLogger.WriteResidualsToConsole = true;
                 }
                 residualLoggers = Control.ResidualLoggerType.Instantiate(
                     this,
@@ -266,6 +257,49 @@ namespace CNS {
 #endif
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
+
+                //Erase artificial acoustic wave
+                //if(TimestepNo == 20000 )//|| TimestepNo == 29000 ||TimestepNo == 39000 || TimestepNo == 49000)
+                //{
+                //    Console.WriteLine("################## Doing a projection to erase the artificial acoustic wave !!!!!#########################");
+                //    foreach( DGField var in WorkingSet.ConservativeVariables)
+                //    {
+                //        var copyVar = var.CloneAs();
+                //        double cellSize = var.Basis.GridDat.iGeomCells.h_min.Min();
+                //        int dgDegree = var.Basis.Degree;
+
+                //        // Function for smoothing the initial and top boundary conditions
+                //        double SmoothJump(double distance)
+                //        {
+                //            // smoothing should be in the range of h/p
+                //            double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+
+                //            return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+                //        }
+                //        double valR = 0.0;
+                //        double shockPosition = 0.0;
+                //        if (Control is CNSControl cnscontrol)
+                //        {
+                //            valR = copyVar.ProbeAt(new double[] { cnscontrol.shockPosition + 0.1, 0.015 });
+                //            shockPosition = cnscontrol.shockPosition;
+                //        }
+                //        Func<double[],double> func = delegate (double[] X)
+                //        {
+                //            double ret = 0.0;
+                //            if (X[0]< shockPosition+0.1)
+                //            {
+                //                ret= copyVar.ProbeAt(X);
+                //            }
+                //            else
+                //            {
+                //                ret = valR;
+                //            }
+                //            return ret;
+                //        };
+                //        var.Clear();
+                //        var.ProjectField(func);
+                //    }
+                //}
 
                 // Update shock-capturing variables before performing a time step
                 // as the time step constraints (could) depend on artificial viscosity.

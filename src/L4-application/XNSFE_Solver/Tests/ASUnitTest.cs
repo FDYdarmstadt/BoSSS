@@ -37,6 +37,9 @@ using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.Gnuplot;
 using System.Diagnostics;
+//using BoSSS.Foundation.Quadrature;
+//using ilPSP.LinSolvers.MUMPS;
+using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -225,6 +228,203 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             //var Tst = new SteadyStateEvaporationTest(rawangle * Math.PI / 180.0);
             //var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2, nonlinsolver: nonlinsolver);
             //XNSFESolverTest(Tst, C);
+        }
+
+        /// <summary>
+        /// A simple Shear flow with interfacial slip and evaporation
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.InterfaceSlipTest"/>.
+        /// 
+        /// NOTE: something about this test is fishy; it seems to fail on certain machines, especially when multi-threading is activated.
+        /// However, it also fails in non-multithreaded execution on certain computers,
+        /// e.g., it passes on an i7-6700 and  i7-9700K, but fails on i7-11800H.
+        /// </summary>
+        [Test]
+        public static void InterfaceSlipTestLin(
+#if DEBUG
+            [Values(3)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver,
+            [Values(1.0, double.PositiveInfinity)] double slipI,
+            [Values(0.143)] double viscosityratio,
+            [Values(1.2)] double massflux
+#else
+            [Values(3, 4)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
+            [Values(1.0, 0.143)] double viscosityratio,
+            [Values(0.0, 0.27, 1.2)] double massflux
+#endif
+            ) {
+            var Tst = new InterfaceSlipTestLin(angle, slipI, viscosityratio, massflux);
+
+            if (deg == 3 && slipI == 0) {
+                //Note (fk,24jan24)
+                //Ich habe mal die Fehler aus mehreren Runs gesammelt.
+                //Die Gemeinsamkeit scheint zu sein, 
+                //Param 1: es tritt nur bei DG-Grad 3 auftritt(und nicht bei 4);
+                //                Param 8: es tritt nur bei slipI = 0 auf.
+                //                (Param 2-- 7 werden im Test gar nicht nicht variiere, sondern sind immer[0.0d, FullySymmetric, 0.0d, Saye, Newton]).
+                //                //                   1 2    3              4    5    7      7    8      9
+                //                InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 1.2d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 1.0d, 1.2d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 0.27d)
+                //InterfaceSlipTestLin(3, 0.0d, FullySymmetric, 0.0d, Saye, Newton, 0.0d, 0.143d, 1.2d)
+
+
+
+                ilPSP.Environment.NumThreads = 1;
+
+
+            }
+            //Quadrature_Settings.ENABLE_MULTITHREAD_CHECKING = true;
+
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, nonlinsolver: nonlinsolver);
+            C.PhysicalParameters.slipI = Tst.slipI;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
+
+            XNSFESolverTest(Tst, C);
+        }
+
+        /// <summary>
+        /// A simple Shear flow with interfacial slip and evaporation
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.InterfaceSlipTest"/>
+        /// </summary>
+        [Test]
+        public static void InterfaceSlipTestNonLin(
+#if DEBUG
+            [Values(3)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver,
+            [Values(1.0, double.PositiveInfinity)] double slipI,
+            [Values(0.143)] double viscosityratio,
+            [Values(1.2)] double massflux
+#else
+            [Values(3)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
+            [Values(1.0, 0.143)] double viscosityratio,
+            [Values(0.27, 1.2)] double massflux
+#endif
+            ) {
+            var Tst = new InterfaceSlipTestNonLin(angle, slipI, viscosityratio, massflux);
+
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, nonlinsolver: nonlinsolver, GridResolution: 3);
+            C.PhysicalParameters.slipI = Tst.slipI;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
+
+            XNSFESolverTest(Tst, C);
+        }
+
+        /// <summary>
+        /// A simple Shear flow with interfacial slip and evaporation, test scaling
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.InterfaceSlipTest"/>
+        /// Different setups <paramref name="setup"/> possible:
+        /// 0: linear (no convection no recoil pressure)
+        /// 1: semilinear (no ceonvection)
+        /// 2: nonlinear (full complexity) - currently disabled, the scaling is not achieved as in <see cref="XNSFEScalingTest(int, int, bool)"/>
+        /// </summary>
+        #if !DEBUG
+        [Test]
+        #endif
+        public static void InterfaceSlipTestScaling(
+            [Values(2, 3)] int deg,
+            [Values(0, 1)] byte setup,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(1.0)] double slipI,
+            [Values(1.21)] double viscosityratio,
+            [Values(0.27)] double massflux
+            ) {
+
+            IXNSFETest Tst;
+            switch (setup) {
+                case 0:
+                    Tst = new InterfaceSlipTestLin(angle, slipI, viscosityratio, massflux);
+                    break;
+                case 1:
+                    Tst = new InterfaceSlipTestLin(angle, slipI, viscosityratio, massflux);
+                    break;
+                case 2:
+                    Tst = new InterfaceSlipTestNonLin(angle, slipI, viscosityratio, massflux);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            var LaLa = new List<XNSFE_Control>();
+            foreach (var Res in new[] { 1, 3, 5, 7, 9 }) {
+                var C = TstObj2CtrlObj(Tst, deg, 0.1,
+                    vmode: vmode,
+                    GridResolution: Res,
+                    SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
+                    CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.Saye);
+
+                if(setup == 0) {
+                    C.IncludeRecoilPressure = false; // disable recoil, the exact coded solution is not analytical for that case, so the residuals wont be close to zero.
+                }
+
+                C.SkipSolveAndEvaluateResidual = true;
+                C.PhysicalParameters.slipI = ((ISlipTest)Tst).slipI;
+
+                LaLa.Add(C);
+            }
+
+            // somehow some stencil scaling are negative, but we allow this.
+            var config = new ConditionNumberScalingTest.Config() { plot = true, title = "InterfaceSlipScalingTest-p" + deg + "-Setup" + setup };
+            config.ExpectedSlopes[ConditionNumberScalingTest.Config.TotCondNo] = (XAxisDesignation.Grid_1Dres, 2.4, 1.5);
+            config.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_innerUncut] = (XAxisDesignation.Grid_1Dres, 0.5, -1.0);
+            config.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_innerCut] = (XAxisDesignation.Grid_1Dres, 0.5, -1.0);
+            config.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_bndyUncut] = (XAxisDesignation.Grid_1Dres, 0.5, -1.0);
+            config.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_bndyCut] = (XAxisDesignation.Grid_1Dres, 0.5, -1.0);
+
+            ConditionNumberScalingTest.Perform(LaLa, config);
         }
 
         private static void XHeatSolverTest(IXHeatTest Tst, XNSFE_Control C) {

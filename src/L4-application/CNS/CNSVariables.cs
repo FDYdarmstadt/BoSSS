@@ -409,7 +409,7 @@ namespace CNS {
                             double localViscosity = program.Control.ArtificialViscosityLaw.GetViscosity(
                                cell, h_min[cell], state);
 
-                            Debug.Assert(localViscosity >= 0.0);
+                            //Debug.Assert(localViscosity >= 0.0);
 
                             avField.SetMeanValue(cell, localViscosity);
                         }

@@ -340,7 +340,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.CheckJumpConditions = true;
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = compMode;
@@ -690,7 +690,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -958,7 +958,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -1181,7 +1181,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -1400,7 +1400,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
@@ -1637,7 +1637,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;

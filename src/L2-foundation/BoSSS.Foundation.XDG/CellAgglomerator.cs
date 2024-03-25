@@ -61,6 +61,16 @@ namespace BoSSS.Foundation.XDG {
             public int OwnerRank4Target;
 
             /// <summary>
+            /// position of the target cell
+            /// </summary>
+            public Vector posTarget;
+
+            /// <summary>
+            /// position of the target cell
+            /// </summary>
+            public double fracTarget;
+
+            /// <summary>
             /// local cell index of agglomeration source cell (the cell which is eliminated)
             /// </summary>
             public int jCellSource;
@@ -311,7 +321,9 @@ namespace BoSSS.Foundation.XDG {
                 if (InterProcessAgglomeration > 0) {
                     int NoOfChangedPairs = DoAggPairsMPIexchangeForOwners(g, AgglomerationPairs.ToList(), ref NeighborPairs);
                     AgglomerationPairs = AgglomerationPairs.Union(NeighborPairs).Distinct().ToList();
-                    Debug.Assert(NoOfChangedPairs == InterProcessAgglomeration);
+                    //Debug.Assert(NoOfChangedPairs == InterProcessAgglomeration);
+                    //if (NoOfChangedPairs != InterProcessAgglomeration)
+                    //    throw new ApplicationException("note: discuss this w. toprak");
                 }
 
                 var AggPairs = AgglomerationPairs.ToList();

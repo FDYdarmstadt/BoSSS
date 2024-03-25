@@ -154,10 +154,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         void ComputeNonAgglomeratedMetrics() {
             using(var tr = new FuncTrace()) {
-#if TEST
-                MPICollectiveWatchDog.WatchAtRelease();
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-#endif
+                MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
+
                 var gd = XDGSpaceMetrics.GridDat;
                 int JE = gd.iLogicalCells.Count;
                 int J = gd.iLogicalCells.NoOfLocalUpdatedCells;

@@ -149,10 +149,20 @@ namespace BoSSS.Solution {
         public bool CalculateStencilConditionNumbers = true;
 
         /// <summary>
+        /// Visualization option for stencil condition number <see cref="CalculateStencilConditionNumbers"/>
+        /// </summary>
+        public bool PlotStencilConditionNumbers = false;
+
+        /// <summary>
         /// Global condition number using MATLAB: very expensive, much more than actual solution of the system.
         /// Only attainable for very small systems, maybe up to 10000 DOFs.
         /// </summary>
         public bool CalculateGlobalConditionNumbers = true;
+
+        /// <summary>
+        /// Calculate the condition numbers for the mass matrix in addition to the operator matrix
+        /// </summary>
+        public bool CalculateMassMatrix = false;
     }
 
 

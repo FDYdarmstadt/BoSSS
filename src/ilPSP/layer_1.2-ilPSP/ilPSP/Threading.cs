@@ -46,7 +46,7 @@ namespace ilPSP.Threading {
     /// <param name="i0">start index, inclusive</param>
     /// <param name="iE">end index, exclusive</param>
     /// <returns>
-    /// the result of the threac
+    /// the result of the reduction
     /// </returns>
     public delegate T ReduceForParallel<T>(int i0, int iE) where T : struct;
 
@@ -187,14 +187,14 @@ namespace ilPSP.Threading {
                 m_exc[i] = null;
             }
 
-            //System.Threading.ThreadPool.SetMinThreads(N-1, 0);
-            //System.Threading.ThreadPool.SetMaxThreads(N-1, 0);
+            System.Threading.ThreadPool.SetMinThreads(N-1, 0);
+            System.Threading.ThreadPool.SetMaxThreads(N-1, 0);
             for (int i = 1; i < N; i++) {
                 System.Threading.ThreadPool.QueueUserWorkItem(Worker, new int[] { i, N });
             }
 
             try {
-                Worker(new int[] { 0, N }); // run the 0-th pice of work in the current thread !
+                Worker(new int[] { 0, N }); // run the 0-th piece of work in the current thread !
             } catch (Exception _e) {
                 m_exc[0] = _e;
             }
@@ -208,7 +208,7 @@ namespace ilPSP.Threading {
             m_CurrentWorker = null;
             for (int i = 0; i < N; i++) {
                 if (m_exc[i] != null)
-                    throw new ApplicationException("at least one thread (" + i + " of " + N + " throwed an exception;", m_exc[i]);
+                    throw new ApplicationException("at least one thread (" + i + " of " + N + " threw an exception;", m_exc[i]);
             }
 
             //long end;

@@ -62,8 +62,15 @@ namespace BoSSS.Foundation {
         public void GetExtrapolationMatrices(int[,] CellPairs, MultidimensionalArray M, MultidimensionalArray Minv = null) {
             // turn of instrumentation:
             // this method is called on a per-cell basis, so instrumentation causes to much overhead.
-            var tracerStateBkup = Tracer.InstrumentationSwitch;
-            Tracer.InstrumentationSwitch = false;
+
+
+            bool tracerStateBkup = false;
+
+            if (ilPSP.Environment.InParallelSection == false) {
+                tracerStateBkup = Tracer.InstrumentationSwitch;
+                Tracer.InstrumentationSwitch = false;
+            }
+
 
             var m_Context = this.GridDat;
             int N = this.Length;
@@ -104,7 +111,7 @@ namespace BoSSS.Foundation {
                     throw new ArgumentOutOfRangeException("Cell index out of range.");
                 if (jCell1 < 0 || jCell1 >= JE)
                     throw new ArgumentOutOfRangeException("Cell index out of range.");
-                if(jCell0 >= J && jCell1 >= J)
+                if (jCell0 >= J && jCell1 >= J)
                     throw new ArgumentOutOfRangeException("At least one of the two cells must be locally updated.");
 
                 bool swap;
@@ -131,7 +138,7 @@ namespace BoSSS.Foundation {
 
                 /*{
                     Debug.Assert(jCell0 < J);
-                  
+
                     // compile a quadrature rule:
                     // -----------------------------------------------
                     // Don't use the CellQuadratureScheme, because to date this costs in the order of number of cells
@@ -196,7 +203,7 @@ namespace BoSSS.Foundation {
                         _basicQr));
 
                     // we project the basis function from 'jCell0' onto 'jCell1'
-                    CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
+                    var q = CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
                         _quadRule, // integrate over target cell
                         delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                             NodeSet nodes_Cell1 = QR.Nodes;
@@ -223,7 +230,11 @@ namespace BoSSS.Foundation {
                             var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
                             _M_tmp.Clear();
                             _M_tmp.Acc(1.0, res);
-                        }).Execute();
+                        });
+
+
+                    q.Execute();
+
 
                     //// compute the inverse
                     //_M_tmp.InvertTo(_Minv_tmp);
@@ -255,7 +266,10 @@ namespace BoSSS.Foundation {
             }
 
 
-            Tracer.InstrumentationSwitch = tracerStateBkup; // restore previous state of tracer.
+
+            if (ilPSP.Environment.InParallelSection == false) {
+                Tracer.InstrumentationSwitch = tracerStateBkup; // restore previous state of tracer.
+            }
         }
 
         /// <summary>

@@ -291,6 +291,17 @@ namespace ilPSP {
             if (m_LockedForever)
                 throw new ApplicationException("illegal call - object is locked.");
 
+            ApplyAllInternal(op); // op might modify this arrays content
+        }
+
+
+        /// <summary>
+        /// Used by <see cref="ApplyAll(Action{int[], double})"/>, which can also be executed on locked arrays
+        /// </summary>
+        /// <param name="op">
+        /// must promise not to change the content if <see cref="m_LockedForever"/> is true
+        /// </param>
+        private void ApplyAllInternal(ApplyAllOperation op) {
             // special treatment for empty arrays
             for (int i = this.Dimension - 1; i >= 0; i--) {
                 if (this.GetLength(i) <= 0)
@@ -337,17 +348,20 @@ namespace ilPSP {
         /// applies the action <paramref name="op"/> to all entries of this array
         /// </summary>
         public void ApplyAll(Action<int[], double> op) {
-            bool oldState = this.m_LockedForever;
-            this.m_LockedForever = false;
-            try {
-                ApplyAll(delegate(int[] i, ref double d) {
+            //bool oldState = this.m_LockedForever;
+            //this.m_LockedForever = false;
+            //try {
+
+
+            ApplyAllInternal(delegate(int[] i, ref double d) {
+                    // do not modify `d`
                     op(i, d);
                 });
-            } catch(Exception e) {
-                throw e;
-            } finally {
-                this.m_LockedForever = oldState;
-            }
+            //} catch(Exception e) {
+            //    throw e;
+            //} finally {
+            //    this.m_LockedForever = oldState;
+            //}
         }
 
 
@@ -376,7 +390,8 @@ namespace ilPSP {
         /// array
         /// </summary>
         unsafe private void ApplyAllRec(int dim, int* index, int[] _index, int index_lin, double* pStorage, ApplyAllOperation op) {
-            Debug.Assert(!m_LockedForever, "illegal call - object is locked.");
+            //Debug.Assert(!m_LockedForever, "illegal call - object is locked.");
+
             int L = this.GetLength(dim);
             int C = this.GetCycle(dim);
             if (dim == m_Dimension - 1) {

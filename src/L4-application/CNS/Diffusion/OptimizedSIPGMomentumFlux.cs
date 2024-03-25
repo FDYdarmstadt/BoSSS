@@ -26,13 +26,25 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
+using static BoSSS.Solution.GridImport.Gambit.GambitNeutral;
 
 namespace CNS.Diffusion {
 
     /// <summary>
     /// Implements an optimized version of the part of the SIPG Flux specific to the momentum equations.
     /// </summary>
-    class OptimizedSIPGMomentumFlux : INonlinear2ndOrderForm {
+    class OptimizedSIPGMomentumFlux : INonlinear2ndOrderForm, IMultitreadSafety {
+
+        public IEquationComponent CloneForThread() {
+            return null;
+        }
+
+        public object GetPadlock() {
+            return config; // the more 'global' the padlock object is, the better the lock
+        }
+
+        public bool IsMultithreadSafe => false;
+
 
         private CNSControl config;
 

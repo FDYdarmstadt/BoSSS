@@ -26,7 +26,7 @@ namespace ilPSP.LinSolvers.monkey.CL
     /// </summary>
     public class clEnvironment
     {
-        internal MPIEnviroment MpiEnv;
+        internal MPIEnvironment MpiEnv;
         internal cl_device_id device;
         internal cl_context context;
 
@@ -62,7 +62,7 @@ namespace ilPSP.LinSolvers.monkey.CL
         /// Creates OpenCL environment on this process
         /// </summary>
         /// <param name="_MpiEnv">MPI environment of this process</param>
-        public clEnvironment(MPIEnviroment _MpiEnv)
+        public clEnvironment(MPIEnvironment _MpiEnv)
         {
             MpiEnv = _MpiEnv;
 

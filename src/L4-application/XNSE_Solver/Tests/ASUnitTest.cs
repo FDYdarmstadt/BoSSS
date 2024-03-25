@@ -37,7 +37,6 @@ using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
@@ -890,6 +889,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0)] double angle,
+            [Values(true, false)] bool IncludeConvection, 
             [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
 #else
@@ -897,11 +897,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection, 
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
 #endif      
             ) {
-            var Tst = new ChannelTest(angle);
+            var Tst = new ChannelTest(angle, IncludeConvection);
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);
 
@@ -986,8 +987,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.PostprocessingModules.Add(pp);
             C.SkipSolveAndEvaluateResidual = true;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 0;
+            //C.AdaptiveMeshRefinement = true;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            //C.AMR_startUpSweeps = 1;
+
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 0;
 
             XNSESolverTest(Tst, C);
 
@@ -1264,6 +1269,48 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = $"Scaling{spatialDimension}DRotTorus-p{deg}-Agg{AgglomerationTreshold}" });
+        }
+
+        /// <summary>
+        /// A simple Shear flow with interfacial slip
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.InterfaceSlipTest"/>
+        /// </summary>
+        [Test]
+        public static void InterfaceSlipTest(
+#if DEBUG
+            [Values(2)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(1.0, double.PositiveInfinity)] double slipI,
+            [Values(0.143)] double viscosityratio
+#else
+            [Values(2, 3, 4)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
+            [Values(1.0, 0.143, 13.0)] double viscosityratio
+#endif      
+            ) {
+            var Tst = new InterfaceSlipTest(angle, slipI, viscosityratio);
+
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, nonlinsolver: nonlinsolver);
+            C.PhysicalParameters.slipI = Tst.slipI;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+
+            XNSESolverTest(Tst, C);
         }
 
         /// <summary>

@@ -28,7 +28,7 @@ using BoSSS.Platform.LinAlg;
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
-    class NonlinVolumeFormVectorizer : INonlinVolumeForm_GradV, INonlinVolumeForm_V {
+    class NonlinVolumeFormVectorizer : INonlinVolumeForm_GradV, INonlinVolumeForm_V, IMultitreadSafety {
 
         public TermActivationFlags VolTerms {
             get;
@@ -96,6 +96,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             double _V = 1.0;
 
 #if DEBUG
+            //
+            // see `EquationComponentArgMapping.cs`, ll 188:
+            // in DEBUG mode, we **always** use the vectorizer, even if we have a vectorized implementation.
+            // however, what it actually does is a comparison of the vectorized and non-vectorized implementation.
+            //
+
+
             MultidimensionalArray f_check = null;
 
             if (volForm is INonlinVolumeForm_V volForm_) {
@@ -137,7 +144,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
 
@@ -260,15 +267,72 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
+        }
+
+        bool m_IsMultithreadSafe;
+
+        public bool IsMultithreadSafe {
+            get {
+                SetupMultithread();
+                return m_IsMultithreadSafe;
+            }
+        }
+
+        bool m_SetupMultithread_executed = false;
+
+        void SetupMultithread() {
+            if (m_SetupMultithread_executed == true)
+                return;
+            m_SetupMultithread_executed = true;
+
+            if (this.volForm is IMultitreadSafety ms) {
+                if (ms.IsMultithreadSafe) {
+                    // nothing to do
+                    m_IsMultithreadSafe = true;
+                } else {
+                    var clone = (IVolumeForm)ms.CloneForThread();
+                    if (clone != null) {
+                        this.volForm = clone;
+                        m_IsMultithreadSafe = true;
+                    } else {
+                        m_IsMultithreadSafe = false;
+                    }
+                }
+
+                m_SetupMultithread_executed = true;
+            } else {
+                // per default we just assume nothing goes wrong.
+                m_IsMultithreadSafe = true;
+            }
+
+
+
+        }
+
+
+        public IEquationComponent CloneForThread() {
+            SetupMultithread();
+            if (this.m_IsMultithreadSafe == true)
+                return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
+            else
+                return null;
+        }
+
+        public object GetPadlock() {
+            SetupMultithread();
+            if (this.volForm is IMultitreadSafety ms)
+                return ms.GetPadlock();
+            else
+                return this.volForm;
         }
 
     }
 
 
-    class NonlinEdgeFormVectorizer : INonlinEdgeForm_V, INonlinEdgeForm_GradV {
+    class NonlinEdgeFormVectorizer : INonlinEdgeForm_V, INonlinEdgeForm_GradV, IMultitreadSafety {
 
         public NonlinEdgeFormVectorizer(IEdgeForm __edgeForm) {
             this.BoundaryEdgeTerms = __edgeForm.BoundaryEdgeTerms;
@@ -425,7 +489,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             if (fin_check != null) {
                 double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
                 double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);
-                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
 
             }
 #endif
@@ -508,7 +572,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) { 
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1); 
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
         }
@@ -623,7 +687,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             if (fin_check != null) {
                 double fin_RelErr = fin_check.L2Dist(fin) / Math.Max(Math.Max(fin.L2Norm(), fin_check.L2Norm()), 1);
                 double fot_RelErr = fot_check.L2Dist(fot) / Math.Max(Math.Max(fot.L2Norm(), fot_check.L2Norm()), 1);               
-                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14);
+                Debug.Assert(fin_RelErr < 1e-14 && fot_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
 
             }
 #endif
@@ -708,9 +772,62 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #if DEBUG
             if (f_check != null) {
                 double f_RelErr = f_check.L2Dist(f) / Math.Max(f.L2Norm(), 1);              
-                Debug.Assert(f_RelErr < 1e-14);
+                Debug.Assert(f_RelErr < 1e-14, "comparison between vectorized and basic implementation failed");
             }
 #endif
+        }
+
+        bool m_IsMultithreadSafe;
+
+        public bool IsMultithreadSafe {
+            get {
+                SetupMultithread();
+                return m_IsMultithreadSafe;
+            }
+        }
+
+        bool m_SetupMultithread_executed = false;
+
+        void SetupMultithread() {
+            if (m_SetupMultithread_executed == true)
+                return;
+            m_SetupMultithread_executed = true;
+
+            if (this.edgeForm is IMultitreadSafety ms) {
+                if (ms.IsMultithreadSafe) {
+                    // nothing to do
+                    m_IsMultithreadSafe = true;
+                } else {
+                    var clone = (IEdgeForm)ms.CloneForThread();
+                    if (clone != null) {
+                        this.edgeForm = clone;
+                        m_IsMultithreadSafe = true;
+                    } else {
+                        m_IsMultithreadSafe = false;
+                    }
+                }
+
+                m_SetupMultithread_executed = true;
+            } else {
+                // per default we just assume nothing goes wrong.
+                m_IsMultithreadSafe = true;
+            }
+        }
+
+        public IEquationComponent CloneForThread() {
+            SetupMultithread();
+            if (this.m_IsMultithreadSafe == true)
+                return this; // it's not necessary to clone the vectorizer, since these guys are anyway created for each thread
+            else
+                return null;
+        }
+
+        public object GetPadlock() {
+            SetupMultithread();
+            if (this.edgeForm is IMultitreadSafety ms)
+                return ms.GetPadlock();
+            else
+                return this.edgeForm;
         }
     }
 }

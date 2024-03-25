@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.XDG {
             double NewbornAndDecasedThreshold = 1.0e-6,
             string Tag = null
             ) {
-            
+            MPICollectiveWatchDog.Watch(token: 169);
             return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
                 __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold, Tag);
         }

@@ -2985,15 +2985,22 @@ namespace ilPSP {
                         throw new ArgumentException("Illegal Matrix Norm Specifier.");
 
                     LAPACK.F77_LAPACK.DGETRF(ref N, ref N, A, ref LDA, IPIV, out INFO);
-                    if(INFO > 0)
+                    if (INFO > 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
                         return double.PositiveInfinity;
-
-                    if(INFO != 0)
+                    }
+                    if (INFO != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
                         throw new ArithmeticException("LAPACK DGETRF info is " + INFO);
-                    
+                    }
                     LAPACK.F77_LAPACK.DGECON_(ref NORM, ref N, A, ref LDA, ref ANORM, ref RCOND, work, Iwork, ref INFO);
-                    if(INFO != 0)
+                    if (INFO != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
                         throw new ArithmeticException("LAPACK DGECON info is " + INFO);
+                    }
                 }
 
                 TempBuffer.FreeTempBuffer(i0);
