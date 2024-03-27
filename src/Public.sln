@@ -195,6 +195,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SAIDT", "L4-application\SAI
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApplicationWithIDT", "L4-application\ApplicationWithIDT\ApplicationWithIDT.csproj", "{70DE6B02-49F2-4087-9A18-138AF05BDC50}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ValidationTestRunner", "L4-application\ValidationTestRunner\ValidationTestRunner.csproj", "{37B63ECD-0BEE-452B-9CE2-18B294A1C12B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -676,6 +678,12 @@ Global
 		{70DE6B02-49F2-4087-9A18-138AF05BDC50}.Release|Any CPU.Build.0 = Release|Any CPU
 		{70DE6B02-49F2-4087-9A18-138AF05BDC50}.TEST|Any CPU.ActiveCfg = Debug|Any CPU
 		{70DE6B02-49F2-4087-9A18-138AF05BDC50}.TEST|Any CPU.Build.0 = Debug|Any CPU
+		{37B63ECD-0BEE-452B-9CE2-18B294A1C12B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37B63ECD-0BEE-452B-9CE2-18B294A1C12B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37B63ECD-0BEE-452B-9CE2-18B294A1C12B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37B63ECD-0BEE-452B-9CE2-18B294A1C12B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37B63ECD-0BEE-452B-9CE2-18B294A1C12B}.TEST|Any CPU.ActiveCfg = Debug|Any CPU
+		{37B63ECD-0BEE-452B-9CE2-18B294A1C12B}.TEST|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -769,6 +777,7 @@ Global
 		{86AE8743-7761-43C6-A13F-D3BFD19B4BA2} = {B09404D1-0006-4CFA-9365-34F3870CAB52}
 		{60754E2C-56B8-4959-B164-15C30D1DF931} = {B09404D1-0006-4CFA-9365-34F3870CAB52}
 		{70DE6B02-49F2-4087-9A18-138AF05BDC50} = {B09404D1-0006-4CFA-9365-34F3870CAB52}
+		{37B63ECD-0BEE-452B-9CE2-18B294A1C12B} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}

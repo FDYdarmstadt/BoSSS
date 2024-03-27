@@ -155,7 +155,7 @@ namespace BoSSS.Foundation.XDG {
             double[] oldTs__AgglomerationTreshold = null,
             double NewbornAndDecasedThreshold = 1.0e-6, string Tag = null
             ) {
-            MPICollectiveWatchDog.Watch();
+            MPICollectiveWatchDog.Watch(token: 158);
             if (__AgglomerationTreshold < 0.0 || __AgglomerationTreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
 
@@ -267,7 +267,7 @@ namespace BoSSS.Foundation.XDG {
                     AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
                 }
                 Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
-                AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
+                AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt",true);
             }
 
             // compute metrics of AGGLOMERATED cut cells

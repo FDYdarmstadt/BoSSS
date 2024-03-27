@@ -123,7 +123,7 @@ namespace ilPSP.Connectors.Matlab {
             MatlabExecuteable = null;  //"D:\\cygwin64\\bin\\bash.exe";
 
             try {
-                TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex-new");
+                TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex-" + System.Environment.UserName); // temp dir path is separate for each user => exclusivity within a user is sufficient
             } catch(Exception ee) {
                 Console.Error.WriteLine("BatchmodeConnector, static ctor:" + ee);
                 TempDirMutex = null; 

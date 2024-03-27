@@ -184,7 +184,7 @@ namespace SAIDT {
                 case OptiLevelSetType.SinglePhaseField:
                 case OptiLevelSetType.SpecFemField:
                 case OptiLevelSetType.SplineLevelSet:
-                LevelSetOpti.ProjectFromFunction(Control.InitialShockPostion);
+                LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                 break;
                 case OptiLevelSetType.GlobalLevelSet:
                 break;

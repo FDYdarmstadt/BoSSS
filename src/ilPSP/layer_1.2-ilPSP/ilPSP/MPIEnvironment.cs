@@ -30,7 +30,7 @@ namespace ilPSP {
     /// <summary>
     /// the issue of this class is to answer 
     /// </summary>
-    public class MPIEnviroment {
+    public class MPIEnvironment {
 
         MPI_Comm m_mpi_comm;
 
@@ -45,7 +45,7 @@ namespace ilPSP {
         /// <summary>
         /// ctor
         /// </summary>
-        public MPIEnviroment() {
+        public MPIEnvironment() {
             m_mpi_comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out m_MPISize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out m_MPI_Rank);

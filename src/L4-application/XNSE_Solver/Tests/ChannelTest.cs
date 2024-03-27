@@ -64,9 +64,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public bool IncludeConvection {
-            get {
-                return true;
-            }
+            get;
+            private set;
         }
 
         /// <summary>
@@ -91,11 +90,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
-        public ChannelTest(double angle) {
+        public ChannelTest(double angle, bool includeConvection) {
             //double angle = 0.0;
             //double angle = 60.0 * Math.PI / 180.0;
             ROT = AffineTrafo.Some2DRotation(angle);
             ROTinv = ROT.Invert();
+            this.IncludeConvection = includeConvection;
         }
 
         AffineTrafo ROT;

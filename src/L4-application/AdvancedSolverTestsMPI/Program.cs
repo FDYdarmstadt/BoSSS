@@ -31,7 +31,7 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec, 4);
             //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var, 4);
             //AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.all, 2, 4);
-            AdvancedSolverTestsMPI.Solver.SchwarzForCoarseMeshTest.TestInit(XDGusage.all, 2, 4, 2, 2);
+            AdvancedSolverTestsMPI.Solver.SchwarzForCoarseMeshTest.TestInit(XDGusage.all, 2, 4, -1, 1);
             //AdvancedSolverTests.Solver.addSchwarzTest.RunTest();
             //AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.none, 2, 4);
 

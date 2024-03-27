@@ -25,6 +25,9 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using NUnit.Framework;
+using System.Configuration;
+using System.Xml.Serialization;
 
 namespace BoSSS.Foundation {
 
@@ -225,6 +228,12 @@ namespace BoSSS.Foundation {
                         }
                     }
                 }
+            }
+
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                return new ProjectionQuadrature(this.m_Owner, this.m_alpha, this.m_func, this.m_compositeRule) {
+                    m_func2 = this.m_func2
+                };
             }
         }
 
@@ -948,8 +957,20 @@ namespace BoSSS.Foundation {
             long globalID, globalIndex;
             bool inside, dummy;
             Basis.GridDat.LocatePoint(_inp, out globalID, out globalIndex, out inside, out dummy);
-            if (!inside)
-                throw new ArgumentException("specified point is outside of grid");
+            
+            //exception if point is not inside grid.
+            if (!inside )
+            {
+                string outputString = "x=[" + _inp[0];
+                for(int i = 1; i < _inp.Length; i++)
+                {
+                    outputString = outputString + "," + _inp[i];
+                }
+                outputString = outputString + "]";
+                throw new ArgumentException($"specified point {outputString} is outside of grid");
+            }
+               
+                
 
             // process which own the cell
             int ownerProc = Basis.GridDat.CellPartitioning.FindProcess((int)globalIndex);
@@ -979,6 +1000,58 @@ namespace BoSSS.Foundation {
             value = value.MPIBroadcast(ownerProc);
             return value;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parametrization"></param>
+        /// <param name="nRef"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public double[] EvaluateAlongCurve(Func<double, double[]> parametrization, int nRef,double min, double max)
+        {
+            int D = this.GridDat.SpatialDimension;
+            double[] xMin = parametrization(min);
+            if (xMin.Length != D) {
+                throw new NotSupportedException("wrong output dimension of parametrization - must be " + D);
+
+            }
+            if (nRef<2)
+            {
+                throw new NotSupportedException("nRef smaller than two");
+            }
+            double[] result = new double[nRef];
+            double[] x;
+            for (int n=0;n<nRef;n++)
+            {
+                double scale1 = ((double)nRef - 1 - n) / (nRef - 1);
+                double scale2 = ((double)n) / (nRef - 1);
+                x = parametrization(min * scale1 + max * scale2);
+                result[n] = this.ProbeAt(x);               
+            }
+            return result;
+        }
+        /// <summary>
+        /// Evaluates along a line prescribed by two points
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <param name="nRef"></param>
+        /// <returns></returns>
+        public double[] EvaluateAlongLine(double[] p1, double[] p2, int nRef)
+        {
+            Func<double, double[]> prm = delegate (double t)
+            {
+                double[] ret = new double[p1.Length];
+                ret.AccV(1 - t, p1);
+                ret.AccV(t, p2);
+                return ret;
+            };
+            return EvaluateAlongCurve(prm, nRef,0,1);
+        }
+
+
 
         /// <summary>
         /// adds a vector to the coordinates vector of this field;

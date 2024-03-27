@@ -32,6 +32,7 @@ namespace BoSSS.Application.TutorialTests {
     /// Runs all the worksheets contained in the BoSSS handbook.
     /// </summary>
     [TestFixture]
+    [NUnitNumThreads(1)]
     static public class AllUpTest {
 
         

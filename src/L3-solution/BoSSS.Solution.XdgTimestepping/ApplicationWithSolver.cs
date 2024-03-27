@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
-    /// Not intended for direct usage, use <see cref="XdgApplicationWithSollver{T}"/> or <see cref="DgApplicationWithSollver{T}"/> instead.
+    /// Not intended for direct usage, use <see cref="XdgApplicationWithSolver{T}"/> or <see cref="DgApplicationWithSolver{T}"/> instead.
     /// Base-class for applications with a monolithic operator and a time-integrator.
     /// </summary>
     abstract public class ApplicationWithSolver<T> : Application<T>
@@ -247,14 +247,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        // <summary>
+        /// <summary>
         /// Number of time-steps required for restart, e.g. 1 for Runge-Kutta and implicit/explicit Euler, 2 for BDF2, etc.
         /// </summary>
-        protected override int BurstSave {
+        protected override int BurstSaves {
             get {
                 int Timestepping_bs;
                 if(Timestepping != null) {
-                    Timestepping_bs = Timestepping.BurstSave;
+                    Timestepping_bs = Timestepping.BurstSaves;
                 } else {
                     string schStr = Control.TimeSteppingScheme.ToString().ToLower();
                     if(schStr.StartsWith("bdf")) {
@@ -264,7 +264,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
 
-                return Math.Max(Timestepping_bs, this.Control.BurstSave);
+                return Math.Max(Timestepping_bs, this.Control.BurstSaves);
             }
         }
 
@@ -307,8 +307,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
-                if (Timestepping.m_BDF_Timestepper != null)
-                    Timestepping.m_BDF_Timestepper.SingleInit();
 
 
             } else {
@@ -324,6 +322,232 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException();
 
             }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepNo"></param>
+        protected override void AfterSolverCreation(double phystime, int TimestepNo) {
+
+            if (Timestepping.m_BDF_Timestepper != null) {
+                if (this.Control.RestartInfo != null) { // for loading restart we only allow for <see cref="BDFDelayedInitLoadRestart"/>
+                    Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
+                    Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
+                         // delegate for the initialization of previous timesteps from restart session
+                         BDFDelayedInitLoadRestart);
+                } else {
+                    if (this.Control.MultiStepInit) {
+                        Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
+                        Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
+                            // delegate for the initialization of previous timesteps from an analytic solution
+                            BDFDelayedInitSetIntial);
+                    } else {
+                        Timestepping.m_BDF_Timestepper.SingleInit();
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from an analytic solution
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="Time"></param>
+        /// <param name="St"></param>
+        protected virtual void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
+            throw new NotImplementedException("initialization of previous timesteps from an analytic solution not implemented!");
+        }
+
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from restart session
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="time"></param>
+        /// <param name="St"></param>
+        protected virtual void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
+
+            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
+
+            ITimestepInfo tsi_toLoad = null;
+            if (TimestepIndex < 0) {
+                throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
+            } else {
+                ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
+                var tsi_atTimestepIndex = reloadSession.Timesteps.Where(t => t.TimeStepNumber.MajorNumber == TimestepIndex);
+                if (tsi_atTimestepIndex.Count() == 1)
+                    tsi_toLoad = tsi_atTimestepIndex.Single();
+                else if (tsi_atTimestepIndex.Count() > 1) {// in case of amr
+                    foreach (var tsi in tsi_atTimestepIndex) {
+                        if (tsi.Grid.Equals(this.Grid)) {
+                            tsi_toLoad = tsi;
+                        }
+                    }
+                }
+                    
+            }
+
+            if (tsi_toLoad == null)
+                throw new ArgumentOutOfRangeException("No corresponding timestep to load");
+
+            //Console.WriteLine($"tsi_toLoad = " + tsi_toLoad.ToString());
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+
+            // solution
+            // --------
+            St = CurrentState.Fields.Select(dgf => dgf.CloneAs()).ToArray();
+            foreach (var Dgf in St) {
+                if (Dgf is XDGField) {
+                    ((XDGField)Dgf).UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+                } else {
+                    // should not really matter, 
+                    // the agglomeration of newborn cells should take care of it!
+                }
+            }
+
+            if (RollingSave)
+                rollingSavesTsi.Add(Tuple.Create(TimestepIndex, tsi_toLoad, false));
+
+        }
+
+
+
+        /// <summary>
+        /// in case of AMR previous time steps may live on an invalid grid, therefore we need to save the fields used for restarting the timestepper on the new valid grid.
+        /// </summary>
+        /// <param name="timeStepInt"></param>
+        /// <param name="physTime"></param>
+        /// <param name="dt"></param>
+        /// <param name="runNextLoop"></param>
+        /// <param name="gridChanged"></param>
+        protected override void SaveApplicationToDatabase(int timeStepInt, double physTime, bool runNextLoop, bool gridChanged) {
+            base.SaveApplicationToDatabase(timeStepInt, physTime, runNextLoop, gridChanged);
+
+            int BurstIndex = -1;
+            for (int sb = 0; sb < this.BurstSaves; sb++) {
+                if ((timeStepInt + sb) % SavePeriod == 0) {
+                    BurstIndex = sb;
+                    break;
+                }
+            }
+
+            if (gridChanged && Timestepping.m_BDF_Timestepper != null && BurstSaves > 1) {
+
+                var BDFtimestepper = Timestepping.m_BDF_Timestepper;
+                int S = BDFtimestepper.GetNumberOfStages;
+
+                List<Tuple<int,ITimestepInfo, bool>> adaptedRestartInfo = new List<Tuple<int, ITimestepInfo, bool>>();
+
+                if ((BurstIndex >= 0 && BurstIndex < this.BurstSaves - 1)  || !runNextLoop) {
+
+                    for (int ts = 1; ts < S - BurstIndex; ts++) {
+                        
+                        var tsi = saveRestartInfoToDatabase(physTime, timeStepInt, ts);
+                        //Console.WriteLine($"timestep: {tsi} saved");
+                        adaptedRestartInfo.Add(Tuple.Create(timeStepInt - ts, tsi, false));
+
+                    }
+                }
+
+                if (RollingSave) {
+
+                    int rsIndex = 1;
+                    for (int ts = 1; ts < S; ts++) {
+                        var ari_ts = adaptedRestartInfo.Where(rsi => rsi.Item1 == timeStepInt - ts);
+                        if (ari_ts.Count() == 0) {
+                            // delete rolling save (if not in burst range), get restartInfo from timestepper and save adapted timestep
+                            var update_rsTsi = rollingSavesTsi[rsIndex];
+
+                            //bool deleteTS = true;
+                            //for (int sb = 0; sb < this.BurstSaves; sb++) {
+                            //    if ((update_rsTsi.Item1 + sb) % SavePeriod == 0) {
+                            //        deleteTS = false;
+                            //    }
+                            //}
+
+                            if (update_rsTsi.Item3 && DatabaseDriver.FsDriver != null && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                                if (MPIRank == 0) {
+                                    this.CurrentSessionInfo.RemoveTimestep(update_rsTsi.Item2.ID);
+                                    ((DatabaseController)this.m_Database.Controller).DeleteTimestep(update_rsTsi.Item2, false);
+                                    //Console.WriteLine($"timestep: {update_rsTsi.Item2} deleted");
+                                }
+                            }
+                            var tsi = saveRestartInfoToDatabase(physTime, timeStepInt, ts);
+                            //Console.WriteLine($"timestep: {tsi} saved");
+                            rollingSavesTsi[rsIndex] = Tuple.Create(timeStepInt - ts, tsi, true);
+                            //Console.WriteLine($"timestep: {tsi} added to rollingSaves[{rsIndex}] (deleteTs = true)");
+
+                        } else if (ari_ts.Count() == 1) {
+                            // get restartinfo from burst saves
+                            rollingSavesTsi[rsIndex] = ari_ts.Single();
+                            //Console.WriteLine($"timestep: {ari_ts.Single()} added to rollingSaves[{rsIndex}] (deleteTs = {ari_ts.Single().Item3})");
+
+                        } else
+                            throw new ArgumentException($"There are more than one rolling saves for timestepnumber = {timeStepInt - ts}");
+
+                        rsIndex -= 1;
+                    }
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// save some previous timestep from the timestepper 
+        /// </summary>
+        /// <param name="physTime"></param>
+        /// <param name="timeStepInt"></param>
+        /// <param name="historyIndex"></param>
+        /// <returns></returns>
+        private ITimestepInfo saveRestartInfoToDatabase(double physTime, int timeStepInt, int historyIndex) {
+
+            ICollection<DGField>[] restartFields;
+            if (Timestepping.m_BDF_Timestepper != null)
+                restartFields = Timestepping.m_BDF_Timestepper.GetRestartInfos();
+            else
+                throw new ArgumentNullException();
+
+            if (restartFields == null)
+                return null;
+
+            var tsn = new TimestepNumber(new int[] { timeStepInt - historyIndex, 1 });
+            double time = physTime - (historyIndex * this.Control.GetFixedTimestep());
+
+            ITimestepInfo tsi;
+            if (restartFields[historyIndex - 1].Where(stf => stf is XDGField).Any()) {
+
+                var ls = this.IOFields.Single(iof => iof.Identification == "Phi");
+                SinglePhaseField lsBkUp = new SinglePhaseField(ls.Basis);
+                lsBkUp.Acc(1.0, ls);
+
+                ICollection<DGField> restartIOFields = new List<DGField>();
+                foreach (DGField rf in restartFields[historyIndex - 1]) {
+
+                    if (rf.Identification == "Phi") {
+                        ls.Clear();
+                        ls.Acc(1.0, rf);
+                        restartIOFields.Add(ls);
+                    } else {
+                        restartIOFields.Add(rf);
+                    }
+
+                }
+
+                tsi = SaveFieldsToDatabase(restartIOFields, tsn, time);
+
+                ls.Clear();
+                ls.Acc(1.0, lsBkUp);
+
+            } else {
+                tsi = SaveFieldsToDatabase(restartFields[historyIndex - 1], tsn, time);
+            }
+
+            return tsi;
         }
 
 

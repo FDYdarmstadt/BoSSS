@@ -62,6 +62,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Path to the ssh client which should be used on the local system for the connection; if not specified, just `ssh` will be used.
+        /// </summary>
+        [DataMember]
+        public string SshClientExeToUse { 
+            get; 
+            set; 
+        }
+
+        /// <summary>
         /// Preferred SSH authentication method: path to private key file on local system
         /// </summary>
         [DataMember]
@@ -153,14 +162,14 @@ namespace BoSSS.Application.BoSSSpad {
                     // SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
                     if (PrivateKeyFilePath != null) {
                         var pkf = new PrivateKeyFile(PrivateKeyFilePath);
-                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, pkf);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, pkf, SshClientExeToUse);
                     } else if (Password != null) {
-                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password, SshClientExeToUse);
                     } else if (Password == null) {
                         Console.WriteLine();
                         Console.WriteLine("Please enter your password...");
                         Password = ReadPassword();
-                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password, SshClientExeToUse);
                     } else {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
                     }
@@ -243,6 +252,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
 
+        
         /// <summary>
         /// If set, SLURM may send email notifications for the current job
         /// </summary>
@@ -251,6 +261,7 @@ namespace BoSSS.Application.BoSSSpad {
             set;
             get;
         }
+        
 
         /// <summary>
         /// .
@@ -393,10 +404,6 @@ namespace BoSSS.Application.BoSSSpad {
         //    }
         //}
 
-        /// <summary>
-        /// Sets debug flag for Mono
-        /// </summary>
-        public bool MonoDebug = false;
 
         /// <summary>
         ///
@@ -427,8 +434,9 @@ namespace BoSSS.Application.BoSSSpad {
             string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
             string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
-            string executiontime = this.ExecutionTime;
+            string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
             int MPIcores = myJob.NumberOfMPIProcs;
+            int NumThreads = myJob.NumberOfThreads;
             //string userName = Username;
             string startupstring;
             //string quote = "\"";
@@ -439,17 +447,15 @@ namespace BoSSS.Application.BoSSSpad {
             //} else {
             //    memPerCPU = "5000";
             //}
-            string email = Email;
-
+            
             using (var str = new StringWriter()) {
-                if (MPIcores > 1) {
-                    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
-                } else {
-                    str.Write($"{base.DotnetRuntime} ");
-                }
-                if (MonoDebug) {
-                    str.Write("-v --debug ");
-                }
+                str.Write($"srun {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
+                //if (MPIcores > 1) {
+                //    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
+                //} else {
+                //    str.Write($"{base.DotnetRuntime} ");
+                //}
+
                 str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
                 //str.Write(" ");
                 //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
@@ -479,8 +485,9 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
-                if (!email.IsEmptyOrWhite()) {
-                    sw.WriteLine("#SBATCH --mail-user=" + email);
+                sw.WriteLine("#SBATCH -c " + NumThreads);
+                if (!this.Email.IsEmptyOrWhite()) {
+                    sw.WriteLine("#SBATCH --mail-user=" + this.Email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
                 foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {

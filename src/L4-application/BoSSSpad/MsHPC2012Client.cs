@@ -164,6 +164,8 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             base.RuntimeLocation = "win\\amd64";
+
+            m_AdditionalEnvironmentVars.Add("OMP_PROC_BIND", "spread");
         }
 
 
@@ -230,14 +232,29 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
-        /*
+
         /// <summary>
-        /// Unsafely stored password
+        /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
         /// </summary>
         [DataMember]
-        public string Password;
-        */
+        public int NumOfAdditionalServiceCores = 0;
 
+        /// <summary>
+        /// Additional number of cores (for all jobs with only one MPI rank) which are allocated for 'service', independent of the MPI Size;
+        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// </summary>
+        [DataMember]
+        public int NumOfAdditionalServiceCoresMPISerial = 0;
+
+
+        /// <summary>
+        /// Additional number of cores which are allocated for 'service';
+        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// </summary>
+        [DataMember]
+        public int NumOfServiceCoresPerMPIprocess = 0;
+
+       
         /// <summary>
         /// Active directory computer name of head node
         /// </summary>
@@ -432,7 +449,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // Get Exit code from task
                 // =======================
                 //
-                // Note: in our simoplified interface, we only have one task per job
+                // Note: in our simplified interface, we only have one task per job
 
                 int? exitcode = null;
                 if (state == JobState.Canceled || state == JobState.Failed || state == JobState.Finished) {
@@ -687,16 +704,21 @@ namespace BoSSS.Application.BoSSSpad {
             string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             string JobName = myJob.Name;
 
+            int MPISz = myJob.NumberOfMPIProcs;
+
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores = myJob.NumberOfMPIProcs;
+            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
+            
+            
             bool SingleNode = this.SingleNode;
-            string UserName = this.Username;
             var Priority = this.DefaultJobPriority;
+            string user = this.Username;
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                str.Write("mpiexec ");
+                str.Write($"mpiexec -n {MPISz} ");
+                //str.Write($"mpiexec ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);
@@ -708,17 +730,10 @@ namespace BoSSS.Application.BoSSSpad {
                 CommandLine = str.ToString();
             }
 
-            string user = this.Username;
 
             string WorkDirectory = DeploymentDirectory;
             string StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
             string StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
-
-
-            string Nodes = "";
-            if (this.ComputeNodes != null) {
-                Nodes = ComputeNodes.ToConcatString("", ",", "");
-            }
 
 
 
@@ -739,7 +754,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine($"	 JobTemplate=\"Default\" ");
                 stw.WriteLine($"	 Priority=\"{Priority}\" ");
                 if (this.ComputeNodes != null)
-                    stw.WriteLine($"	 RequestedNodes=\"{Nodes}\" ");
+                    stw.WriteLine($"	 RequestedNodes=\"{ComputeNodes.ToConcatString("", ",", "")}\" ");
                 stw.WriteLine($"	 AutoCalculateMax=\"false\" ");
                 stw.WriteLine($"	 AutoCalculateMin=\"false\" ");
                 stw.WriteLine($"	 MinCores=\"{NumberOfCores}\" ");
@@ -758,14 +773,25 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine($"			  MinCores=\"{NumberOfCores}\" ");
                 stw.WriteLine($"			  MaxCores=\"{NumberOfCores}\" ");
                 stw.WriteLine($"			  Type=\"Basic\">");
-                if (myJob.EnvironmentVars.Count > 0) {
+                if(myJob.EnvironmentVars.Count() + this.AdditionalEnvironmentVars.Count() > 0) {
                     stw.WriteLine($"            <EnvironmentVariables>");
-                    foreach (var kv in myJob.EnvironmentVars) {
+
+                    void WriteEnvVar(string name, string value) {
                         stw.WriteLine($"                <Variable>");
-                        stw.WriteLine($"                    <Name>{kv.Key}</Name>");
-                        stw.WriteLine($"                    <Value>{kv.Value}</Value>");
+                        stw.WriteLine($"                    <Name>{name}</Name>");
+                        stw.WriteLine($"                    <Value>{value}</Value>");
                         stw.WriteLine($"                </Variable>");
                     }
+
+                    foreach (var kv in myJob.EnvironmentVars) {
+                        WriteEnvVar(kv.Key, kv.Value);
+                    }
+
+                    foreach (var kv in this.AdditionalEnvironmentVars) {
+                        WriteEnvVar(kv.Key, kv.Value);
+                    }
+
+
                     stw.WriteLine($"			</EnvironmentVariables>");
                 }
                 stw.WriteLine($"        </Task>");
@@ -777,6 +803,20 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
         }
+
+        [NonSerialized]
+        Dictionary<string, string> m_AdditionalEnvironmentVars = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Additional environment variables for the process. 
+        /// </summary>
+        [DataMember]
+        public IDictionary<string, string> AdditionalEnvironmentVars {
+            get {
+                return m_AdditionalEnvironmentVars;
+            }
+        }
+
 
         /// <summary>
         /// Synchronous wrapper around process execution, 

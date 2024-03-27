@@ -44,6 +44,46 @@ namespace BoSSS.Foundation {
         IList<string> ParameterOrdering { get; }
     }
 
+    /// <summary>
+    /// Some optional methods a flux could implement to help the quadrature kernel with thread synchronization in multi-thread-parallelization
+    /// - if some flux or source function (e.g. <see cref="IVolumeForm.VolumeForm"/> or <see cref="IBoundaryEdgeForm.BoundaryEdgeForm"/>) is typically safe in the following circumstances:
+    ///   - for write/access it uses only local variables (i.e., declared within the function/method) 
+    ///   - for member variables (i.e., declared within the class), it only makes read-access
+    /// - on the other hand, if a function makes **write access to class member variables it is not save** for multi-thread-execution.
+    /// In the latter case
+    /// - the component should inform the quadrature kernel that it is not save, by setting <see cref="IsMultithreadSafe"/> to false.
+    ///   in this case, synchronization is turned on.
+    /// - if <see cref="CloneForThread"/> returns non-null, the clone will be used for any thread and one clone will be used for every thread. 
+    /// For the sake of code readability and maybe for performance reasons, it is not recommended that flux function implement their own `lock`-statements for thread-synchronization.
+    /// </summary>
+    public interface IMultitreadSafety : IEquationComponent {
+        
+        /// <summary>
+        /// Tells the integration kernel whether this component 
+        /// - (true) is safe to use in a multi-thread-parallelization or
+        /// - (false) requires synchronization. In this case, the quadrature kernels ensure, that the flux functions are only called one at a time.
+        /// </summary>
+        bool IsMultithreadSafe { get; }
+
+        /// <summary>
+        /// If <see cref="IsMultithreadSafe"/> is false, then
+        /// - this method might return null; in this case, the calls to flux functions are synchronized across multiple threads
+        /// - to improve parallel performance, the method might return a clone; then a separate clone will be used for each thread and synchronization will be turned off.
+        /// </summary>
+        /// <returns></returns>
+        IEquationComponent CloneForThread();
+
+
+        /// <summary>
+        /// In the case of an equation component which requires thread synchronization, i.e.
+        /// - <see cref="IsMultithreadSafe"/> is false and
+        /// - <see cref="CloneForThread"/> returns null
+        /// this method must return some object which can be used for an exclusive lock to perform the synchronization;
+        /// Typically, this can be the equation component object itself, i.e., the method might return the `this` reference.
+        /// </summary>
+        object GetPadlock();
+    }
+
 
     /// <summary>
     /// imposes constraints (e.g. DG polynomial degree grater than 0) on the DG polynomial degree of a discretization

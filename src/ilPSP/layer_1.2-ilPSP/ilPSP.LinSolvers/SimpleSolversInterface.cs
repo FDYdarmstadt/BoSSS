@@ -123,12 +123,15 @@ namespace ilPSP.LinSolvers {
     {
             var SolverFallbackSeq = new Func<ISparseSolver>[] {
                 () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver() { Parallelism = Parallelism.OMP },
+                () => new ilPSP.LinSolvers.MUMPS.MUMPSSolver() { Parallelism = Parallelism.MPI },
                 () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver() { Parallelism = Parallelism.SEQ },
                 () => new ilPSP.LinSolvers.MUMPS.MUMPSSolver() { Parallelism = Parallelism.SEQ }
             };
 
             if (Matrix.MPI_Comm.Equals(csMPI.Raw._COMM.SELF)) // solve matrices on SELF always sequentially!
-                SolverFallbackSeq = SolverFallbackSeq.Skip(1).ToArray();
+                SolverFallbackSeq = SolverFallbackSeq.Skip(2).ToArray();
+            else
+                SolverFallbackSeq = SolverFallbackSeq.Take(3).ToArray();
 
 
             //*
