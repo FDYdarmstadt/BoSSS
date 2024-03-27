@@ -71,6 +71,14 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("WeakVsSuperweak/WeakVsSuperweak.ipynb")]
+        [Test]
+        static public void Run__WeakVsSuperweak() {
+            //--test=BoSSS.Application.TutorialTests.AllUpTest.WeakVsSuperweak
+            RunWorksheet("WeakVsSuperweak/WeakVsSuperweak.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
         [Test]
         static public void Run__CsharpAndBoSSSpad() {
