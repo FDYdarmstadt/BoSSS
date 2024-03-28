@@ -362,7 +362,7 @@ namespace XESTSF {
         string dbPath = null, int lsDegree = 3, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.Roe,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
         GetLevelSet shocksetup = GetLevelSet.FromParams, OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit
         ) {
             var c = new XESTSFControl();
 
@@ -662,7 +662,7 @@ namespace XESTSF {
         string dbPath = null, int lsDegree = 3, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.Roe,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
         GetLevelSet shocksetup = GetLevelSet.FromParams, OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit
         ) {
             var c = new XESTSFControl();
 
@@ -1097,7 +1097,7 @@ namespace XESTSF {
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
         ConvectiveInterfaceFluxes interfaceFluxLS2 = ConvectiveInterfaceFluxes.RoeInterface,
         GetLevelSet shocksetup = GetLevelSet.FromParams, OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit
         ) {
             var c = new XESTSFControl();
 
@@ -1437,7 +1437,7 @@ namespace XESTSF {
         string dbPath = null, int lsDegree = 3, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.Roe,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
         OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit
         ) {
             var c = new XESTSFControl();
 

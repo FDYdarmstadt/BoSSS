@@ -244,7 +244,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Merit Function used in GLobalization algorithm
         /// </summary>
-        public MeritFunctionType MeritFunctionType { get; set; } = MeritFunctionType.FullyL2Merit;
+        public MeritFunctionType MeritFunctionType { get; set; } = MeritFunctionType.L2Merit;
         
 
         /// <summary>
@@ -369,8 +369,8 @@ namespace ApplicationWithIDT {
     /// the enum controls the Merit Function the globalization uses
     /// </summary>
     public enum MeritFunctionType {
-        ExactMerit,
-        FullyL2Merit
+        L1Merit,
+        L2Merit
     }
     /// <summary>
     /// This enum controls where we get the grid from

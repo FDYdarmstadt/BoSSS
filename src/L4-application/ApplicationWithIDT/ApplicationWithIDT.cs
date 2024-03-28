@@ -71,6 +71,7 @@ namespace ApplicationWithIDT {
         public XDGField[] obj_f_fields { get; set; }
         public XDGField[] Residuals { get; set; }
         public XDGField[] UBackup { get; set; }
+        public XDGField[] AgglomeratedUBackup { get; set; }
         #endregion
         #region LevelSets
         public LevelSet LevelSet { get; set; }
@@ -172,6 +173,9 @@ namespace ApplicationWithIDT {
         #region Arrays
         public double[] gradf_U { get; set; }
         public double[] gradf { get; set; }
+        public double[] JacR0TimesStep { get; set; }
+        public double[] JacR1TimesStep { get; set; }
+        public double[] JacR0TimesR0 { get; set; }
         public double[] RHS { get; set; }
         public double[] stepIN { get; set; }
         public double[] stepIN_agg { get; set; }
@@ -436,7 +440,79 @@ namespace ApplicationWithIDT {
 
                 break;
             }
-            
+            Console.WriteLine("*****************************************************************************************");
+            Console.WriteLine("*  X   X   DDD   GGG   -   III  SSS  TTTTT  *");
+            Console.WriteLine("*   X X    D  D G      -    I  S      T     *");
+            Console.WriteLine("*    X     D  D G  GG  -    I   SSS   T     *      XDG Implicit Shock Tracking Solver    ");
+            Console.WriteLine("*   X X    D  D G   G  -    I      S  T     *");
+            Console.WriteLine("*  X   X   DDD   GGG   -   III  SSS   T     *");
+            Console.WriteLine("*****************************************************************************************");
+            Console.WriteLine($"*  ");
+            Console.WriteLine($"*  Solver:                             {this.GetType().ToString()}");
+            Console.WriteLine($"*  optimization problem:               {Control.optProblemType}");
+            Console.WriteLine($"*  merit function:                     {Control.MeritFunctionType}");
+            Console.WriteLine($"*  level set type:                     {Control.OptiLevelSetType}");
+            Console.WriteLine($"*  solver type:                        {Control.solRunType}");
+            Console.WriteLine($"*  f_phi type:                         {Control.fphiType}");
+            Console.WriteLine($"*  Globalization Strategy:             {Control.GlobalizationStrategy}");
+            Console.WriteLine($"*  ");
+            Console.WriteLine("******************************* Params ************************************************");
+            Console.WriteLine($"*  Solution Degree:                    {Control.SolDegree}");
+            Console.WriteLine($"*  OptiLevelSet Degree:                {Control.OptiLevelSetDegree}");
+            Console.WriteLine($"*  Level Set Degree:                   {Control.LevelSetDegree}");
+            Console.WriteLine($"*  Level Set Two Degree:               {Control.LevelSetTwoDegree}");
+            Console.WriteLine($"*  Max Iterations:                     {Control.MaxIterations}");
+            //Console.WriteLine($"*  Linear Solver:                      {Control.LinearSolver?.GetType().ToString() ?? "None"}");
+            Console.WriteLine($"*  Agglomeration Threshold:            {Control.AgglomerationThreshold}");
+            //Console.WriteLine($"*  Is Far Config:                      {Control.isFarConfig}");
+            Console.WriteLine($"*  Regularization Params:");
+            Console.WriteLine($"*    Gamma Max:                        {Control.Gamma_Max}");
+            Console.WriteLine($"*    Gamma Min:                        {Control.Gamma_Min}");
+            Console.WriteLine($"*    Gamma Start:                      {Control.Gamma_Start}");
+            Console.WriteLine($"*  Globalization Params:");
+            Console.WriteLine($"*    Alpha Min:                        {Control.Alpha_Min}");
+            Console.WriteLine($"*    Alpha Start:                      {Control.Alpha_Start}");
+            Console.WriteLine($"*    Mu Start:                         {Control.Mu_Start}");
+            Console.WriteLine($"*    Mu Max:                           {Control.Mu_Max}");
+            Console.WriteLine($"*    Mu Omega:                         {Control.Mu_Omega}");
+            Console.WriteLine($"*    Mu Rho:                           {Control.Mu_Rho}");
+            Console.WriteLine($"*  Level Set penalty Params:");
+            Console.WriteLine($"*    Kappa Xi:                         {Control.Kappa_Xi}");
+            Console.WriteLine($"*    Kappa M:                          {Control.Kappa_M}");
+            Console.WriteLine($"*    Kappa Min:                        {Control.Kappa_Min}");
+            Console.WriteLine($"*    Kappa v:                          {Control.Kappa_v}");
+            Console.WriteLine($"*  Reinitialization Params:");
+            Console.WriteLine($"*    Apply ReiInit:                    {Control.ApplyReiInit}");
+            Console.WriteLine($"*    c1:                               {Control.reInit_c1}");
+            Console.WriteLine($"*    c2:                               {Control.reInit_c2}");
+            Console.WriteLine($"*    c3:                               {Control.reInit_c3}");
+            Console.WriteLine($"*  Adaptive Regularization Params:");
+            Console.WriteLine($"*    L:                                {Control.L}");
+            Console.WriteLine($"*    sigma_1:                          {Control.sigma_1}");
+            Console.WriteLine($"*    sigma_2:                          {Control.sigma_2}");
+            Console.WriteLine($"*    tauGamma:                         {Control.tauGamma}");
+            //Console.WriteLine("****************************** Initialization & Level Set Config *************************");
+            //Console.WriteLine($"*  Level Set One Initial Value:        {(Control.LevelSetOneInitialValue != null ? "Defined" : "None")}");
+            //Console.WriteLine($"*  LsOne NegSpecies:                   {Control.LsOne_NegSpecies}");
+            //Console.WriteLine($"*  LsOne PosSpecies:                   {Control.LsOne_PosSpecies}");
+            //Console.WriteLine($"*  LsTwo NegSpecies:                   {Control.LsTwo_NegSpecies}");
+            //Console.WriteLine($"*  LsTwo PosSpecies:                   {Control.LsTwo_PosSpecies}");
+            //Console.WriteLine($"*  LsOne Species Pairs:                {Control.LsOne_SpeciesPairs.GetLength(0)} Pairs Defined");
+            //Console.WriteLine($"*  LsTwo Species Pairs:                {Control.LsTwo_SpeciesPairs.GetLength(0)} Pairs Defined");
+            //Console.WriteLine($"*  Write LS Coordinates:               {Control.WriteLSCoordinates}");
+            //Console.WriteLine($"*  OptiLevelSet Parameters Defined:    {Control.OptiLevelSet_ParamNames?.Count ?? 0}");
+            //Console.WriteLine($"*  Near Region Width:                  {Control.NearRegionWidth}");
+            //Console.WriteLine($"*  Flux s_alpha:                       {Control.flux_s_alpha}");
+            //Console.WriteLine("****************************** Data Bases ****************************************");
+
+            //Console.WriteLine($"*  Mesh Path:                          {Control.MeshPath ?? "None"}");
+            //Console.WriteLine($"*  Shock Level Set Db:                 {Control.ShockLevelSet_Db ?? "None"}");
+            //Console.WriteLine($"*  Shock Level Set Use Shock Grid:     {Control.ShockLevelSet_UseShockGrid}");
+            //Console.WriteLine($"*  Shock Level Set Seed From Db:       {Control.ShockLevelSet_SeedFromDb}");
+            //Console.WriteLine($"*  Partially Fix Level Set Space Time: {Control.PartiallyFixLevelSetForSpaceTime}");
+            //Console.WriteLine($"*  Save Matrices:                      {Control.SaveMatrices}");
+            //Console.WriteLine("*****************************************************************************************");
+
 
         }
 
@@ -524,7 +600,7 @@ namespace ApplicationWithIDT {
                 Console.WriteLine("");
                 Console.WriteLine($"Starting Opt-Iter No.{TimestepNo}: ");
 
-                //backup of state and Level Set
+                //backup of non-agglomerated state and Level Set
                 createBackUp();
 
                 //just to be safe, project spline Level Set on LsTBO
@@ -818,7 +894,7 @@ namespace ApplicationWithIDT {
         /// <exception cref="ArgumentException"></exception>
         private void ChooseMeritFunction() {
             switch(Control.MeritFunctionType) {
-                case MeritFunctionType.ExactMerit:
+                case MeritFunctionType.L1Merit:
                 ///// <summary>
                 ///// computes the merit function for a step s (used for Globalization)
                 ///// $$ f_m(s) = 0.5*\Vert R(z_k + s) \Vert^2 + \mu \Vert r(z_k + s) \Vert_1$$
@@ -830,7 +906,7 @@ namespace ApplicationWithIDT {
                     double[] resStep = new double[(int)ResidualMap.TotalLength];
                     bool succes = AccumulateStep(step, m_alpha);
 
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
 
                     ComputeResiduals(objStep, resStep);
                     double[] f_phi_vec = ComputeFphi();
@@ -838,7 +914,7 @@ namespace ApplicationWithIDT {
                     for(int i = 0; i < resStep.Length; i++) {
                         resStep_l1 += resStep[i].Abs();
                     }
-                    resetStep(); // by resetting we also transform from source to agg
+                    resetStep(); // reset the step
                     return 0.5 * (objStep.InnerProd(objStep)+ f_phi_vec.InnerProd(f_phi_vec)) + mu * resStep_l1;
                 };
 
@@ -860,16 +936,31 @@ namespace ApplicationWithIDT {
                 /// /// </summary>
                 predictedMerit = delegate (double m_alpha, double[] step, double beta) {
 
-                    //stepUphi.SetSubVector(step, 0, (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength());
-                    double gradfTimesStep = gradf.InnerProd(step);
-                    return 0.5 * obj_f * obj_f + mu * res_l1 + beta * m_alpha * (gradfTimesStep - mu * res_l1);
+                    stepUphi.SetSubVector(step, 0, (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength());
+                    double gradfTimesStep = gradf.InnerProd(stepUphi);
+                    //Jr.Transpose().SpMV(mu * beta, ResidualVector, 0, merit_del);
+                    //merit_del.AccV(beta, gradf);
+                    double resJacRTimesStep_l1 = 0;
+                    res_l1 = 0;
+                    for (int i = 0; i < JacR0TimesStep.Length; i++)
+                    {
+                        res_l1 += ResidualVector[i].Abs();
+                        resJacRTimesStep_l1 += JacR0TimesStep[i].Abs();
+                    }
+                    return 0.5 * obj_f * obj_f + mu * res_l1 + beta * m_alpha * (gradfTimesStep + mu * resJacRTimesStep_l1);
+
+                    //return 0.5 * obj_f * obj_f + mu * res_l1 + beta * m_alpha * (gradfTimesStep - mu * res_l1);
                 };
 
                 break;
-                case MeritFunctionType.FullyL2Merit:
+                case MeritFunctionType.L2Merit:
                 predictedMerit = delegate (double alpha, double[] step, double beta) {
                     stepUphi.SetSubVector(step, 0, (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength());
-                    return 0.5 * (mu * res_l2 * res_l2 + obj_f * obj_f) + stepUphi.InnerProd(merit_del);
+                    double gradfTimesStep = gradf.InnerProd(stepUphi);
+                    //Jr.Transpose().SpMV(mu * beta, ResidualVector, 0, merit_del);
+                    //merit_del.AccV(beta, gradf);
+                    return 0.5 * obj_f * obj_f + mu * res_l2 + beta * m_alpha * (gradfTimesStep + mu * JacR0TimesStep.L2Norm());
+                    //return 0.5 * obj_f * obj_f + mu * res_l2 * res_l2 + beta * m_alpha * (gradfTimesStep + mu * JacR0TimesR0.InnerProd(stepUphi));
                 };
                 /// <summary>
                 /// computes the l2 merit function for a step s and an alpha (used for Globalization)
@@ -880,12 +971,13 @@ namespace ApplicationWithIDT {
                     double[] resStep = new double[(int)ResidualMap.TotalLength];
                     bool succes = AccumulateStep(step, alpha);
                     double[] f_phi_vec = ComputeFphi();
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
 
                     ComputeResiduals(objStep, resStep);
 
-                    resetStep(); // by resetting we also transform from source to agg
-                    return (0.5 * (mu * resStep.InnerProd(resStep) + objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec)));
+                    resetStep(); // reset the step
+                    return 0.5 * ( objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec))+ mu * resStep.L2Norm();
+                    //return (0.5 * (mu * resStep.InnerProd(resStep) + objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec)));
                 };
                 break;
                 default:
@@ -944,11 +1036,9 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Computes both Residuals using the fields, that are also plotted and saves them to the variables res_l2 and obj_f
         /// </summary>
-        public void ComputeResiduals() {
+        public (double _res_l2, double _obj_f, double _res_L2) ComputeResiduals() {
             ComputeResiduals(obj_f_vec, ResidualVector);
-            res_l2 = ResidualVector.MPI_L2Norm();
-            obj_f = obj_f_vec.MPI_L2Norm();
-            res_L2 = L2Norm(Residuals);
+            return (ResidualVector.MPI_L2Norm(), obj_f_vec.MPI_L2Norm(), L2Norm(Residuals));
             //en_res_L2 = L2Norm(obj_f_fields);
         }
         /// <summary>
@@ -1010,7 +1100,7 @@ namespace ApplicationWithIDT {
 
             TransformFromAggToSourceSpace();
 
-            ComputeResiduals();
+            (res_l2, obj_f, res_L2) = ComputeResiduals();
             var kappa_copy = kappa;
             kappa = 1;
             var f_phi_vec = ComputeFphi();
@@ -1124,8 +1214,12 @@ namespace ApplicationWithIDT {
                 }
                 CmpLineSearchResidualWeight();
                 CmpFphiWeight();
-                TransformFromSourceToAggSpace();
-                createBackUp();
+                
+                //agglomerated the solution vector
+                //TransformFromSourceToAggSpace();
+                //and make a backup
+                //createAgglomeratedBackUp();
+                
             }
         }
         /// <summary>
@@ -1778,6 +1872,10 @@ namespace ApplicationWithIDT {
                 //***************************** */
                 (Jobj_U, Jr_U) = Oproblem.GetJacobians(ConservativeFields, XSpatialOperator.LinearizationHint);
                 Oproblem.EvalConsAndObj(obj_f_vec, ResidualVector, ConservativeFields);
+                res_l2 = ResidualVector.MPI_L2Norm();
+
+                resetStep();
+                (res_l2, obj_f, res_L2) = ComputeResiduals();
 
                 //***************************** */
                 //// Compute Jobj_phi & Jr_phi
@@ -1862,9 +1960,12 @@ namespace ApplicationWithIDT {
                     }
 
                     // add residual r(z)
-                    double[] res = ResidualVector.ToArray();
-                    RHS.SetSubVector(res, gradf.Length, length_r);
+                    RHS.SetSubVector(ResidualVector.ToArray(), gradf.Length, length_r);
                     RHS.ScaleV(-1.0);
+
+                    //compute jacobian times residual (needed in line search)
+                    JacR0TimesR0 = new double[gradf.Length];
+                    Jr.Transpose().SpMV(1, ResidualVector, 0, JacR0TimesR0);
                 }
 
                 if (Control.SaveMatrices)
@@ -2091,6 +2192,21 @@ namespace ApplicationWithIDT {
             }
             LevelSetOptiBackup = LevelSetOpti.CloneAs();
         }
+
+        /// <summary>
+        /// This method creates a backup of all the agglomerated state variables and the levelset
+        /// </summary>
+        public void createAgglomeratedBackUp()
+        {
+            levelSetBackup = LsTBO.CloneAs();
+            AgglomeratedUBackup = new XDGField[ConservativeFields.Length];
+            for (int i = 0; i < ConservativeFields.Length; i++)
+            {
+                AgglomeratedUBackup[i] = new XDGField(ConservativeFields[i].Basis, ConservativeFields[i].Identification + "_copy");
+                AgglomeratedUBackup[i].CoordinateVector.SetV(ConservativeFields[i].CoordinateVector);
+            }
+            LevelSetOptiBackup = LevelSetOpti.CloneAs();
+        }
         /// <summary>
         /// this method resets the actual state to the backup
         /// </summary>
@@ -2102,6 +2218,23 @@ namespace ApplicationWithIDT {
             LsTrk.UpdateTracker(CurrentStepNo);  
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 ConservativeFields[i].CopyFrom(UBackup[i]);
+            }
+            LevelSetOpti.CopyParamsFrom(LevelSetOptiBackup);
+        }
+        /// <summary>
+        /// this method resets the actual state to the agglomerated backup and the levelset
+        /// </summary>
+        public void resetStepAgglomerated()
+        {
+            if (levelSetBackup == null || AgglomeratedUBackup == null)
+            {
+                throw new NotSupportedException("cannot reset with not backup available");
+            }
+            LsTBO.CopyFrom(levelSetBackup);
+            LsTrk.UpdateTracker(CurrentStepNo);
+            for (int i = 0; i < ConservativeFields.Length; i++)
+            {
+                ConservativeFields[i].CopyFrom(AgglomeratedUBackup[i]);
             }
             LevelSetOpti.CopyParamsFrom(LevelSetOptiBackup);
         }
@@ -2620,7 +2753,8 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
-                    ComputeResiduals();
+
+                    (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     resetStep();
                 }
                 catch (Exception e)
@@ -2640,7 +2774,7 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
-                    ComputeResiduals();
+                    (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     resetStep();
                 }
                 catch (Exception e)
@@ -2682,7 +2816,8 @@ namespace ApplicationWithIDT {
 
                     TransformFromAggToSourceSpace();
 
-                    ComputeResiduals();
+
+                    (double _resl2, double _obj, double _resL2) = ComputeResiduals();
 
                     Plot(0.0, 1000 + i + 1);
                     resetStep();
@@ -2780,23 +2915,33 @@ namespace ApplicationWithIDT {
 
             
         }
+        public void TransformStepFromAggToSourceSpace(double[] vector)
+        {
+
+            CoordinateVector SolutionVec = new CoordinateVector(ConservativeFields);
+            var dummy = ConservativeFields.CloneNonshallow();
+            CoordinateVector vec= new CoordinateVector(dummy);
+            vec.SetV(vector.GetSubVector(0, vec.Length));
+            if (CurrentAgglo > 0)
+            {
+                if (MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0)
+                {
+                    MultiphaseAgglomerator.Extrapolate(vec.Mapping);//reset ConservativeFields into non-agglomerated form
+                }
+            }
+            vector.SetSubVector(vec.ToArray(), 0, vec.Length);
+        }
         /// <summary>
-        /// Transform the solutionVector into AggSpace (from the non-agglomerated)
+        /// Transform the solutionVector into AggSpace (from the non-agglomerated into the agglomerated)
         /// </summary>
         public void TransformFromSourceToAggSpace() {
             if(CurrentAgglo > 0) {
                 if(MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0) {
                     CoordinateVector SolutionVec = new CoordinateVector(ConservativeFields);
-
                     var SolutionVec_agglo = new double[multOp.Mapping.TotalLength];
-                    //double[] v = new double[SolutionVec.Count];
-                    //LeftMul.SpMV(1.0, SolutionVec, 0.0, v);
-                    //SolutionVec.SetV(v);
+                    multOp.TransformSolInto(SolutionVec, SolutionVec_agglo); //this gives a shorter vector
+                    multOp.TransformSolFrom(SolutionVec, SolutionVec_agglo); //this makes the vector have the right length
 
-                    multOp.TransformSolInto(SolutionVec, SolutionVec_agglo);
-                    multOp.TransformSolFrom(SolutionVec, SolutionVec_agglo);
-
-                    //Debug.Assert(v.RoughlyEquals(SolutionVec, 1e-10));
                 }
             }
 
@@ -2827,30 +2972,46 @@ namespace ApplicationWithIDT {
 
 
                 //Evaluate the Operator at the Current state (normally this evaluation is done in RunSolverOneStep)
-                TransformFromAggToSourceSpace();
-                ComputeResiduals();
-
+                (res_l2, obj_f, res_L2) = ComputeResiduals();
+                //resetStep();
+                //TransformFromAggToSourceSpace();
+                //(res_l2, obj_f, res_L2) = ComputeResiduals(); 
+                //double merit_0=res_l2 + obj_f;
                 //Goes Back to NonAggSpace
-                resetStep();
+                //resetStepAgglomerated();
 
-                /// Generate the Merit Functions (don't know if this can be done once per SImulation run or has to be done every time step
                 /// pre calculate things later used to calculate the predicted merit function
-                switch (Control.MeritFunctionType)
-                {
-                    case MeritFunctionType.ExactMerit:
-                        res_l1 = 0;
-                        for (int i = 0; i < ResidualVector.Length; i++)
-                        {
-                            res_l1 += ResidualVector[i].Abs();
-                        }
-                        break;
-                    case MeritFunctionType.FullyL2Merit:
-                        Jr.Transpose().SpMV(mu * beta, ResidualVector, 0, merit_del);
-                        merit_del.AccV(beta, gradf);
-                        break;
-                    default: throw new Exception("you need to choose a MeritFunctionType");
+                //switch (Control.MeritFunctionType)
+                //{
+                //    case MeritFunctionType.L1Merit:
+                //        res_l1 = 0;
+                //        for (int i = 0; i < ResidualVector.Length; i++)
+                //        {
+                //            res_l1 += ResidualVector[i].Abs();
+                //        }
+                //        break;
+                //    case MeritFunctionType.L2Merit:
+                //        Jr.Transpose().SpMV(mu * beta, ResidualVector, 0, merit_del);
+                //        merit_del.AccV(beta, gradf);
+                //        break;
+                //    default: throw new Exception("you need to choose a MeritFunctionType");
 
-                }
+                //}
+                //transform everything back to non-agglomerated
+                int length_R = (int)obj_f_map.TotalLength;
+                int length_r = (int)UnknownsMap.TotalLength; // needs to be modified if more than one field is simulated
+                int length_l = LevelSetOpti.GetLength();
+
+                stepUphi.SetSubVector(stepIN, 0, (int)UnknownsMap.TotalLength + LevelSetOpti.GetLength());
+
+                JacR0TimesStep = new double[length_r];
+                Jr.SpMV(1.0, stepUphi, 0.0, JacR0TimesStep);
+
+                TransformStepFromAggToSourceSpace(gradf);
+                TransformStepFromAggToSourceSpace(JacR0TimesR0);
+                TransformStepFromAggToSourceSpace(JacR0TimesStep);
+                TransformStepFromAggToSourceSpace(stepIN);
+
 
                 ///Safe Guard: see if step breaks operator or induces LevelSet CFL, if so, shorten the step 
                 AccumulateInitialStep(stepIN, tau);
@@ -2858,9 +3019,7 @@ namespace ApplicationWithIDT {
                 double[] temp = new double[RHS.Length];
                 double[] step = new double[stepIN.Length];
 
-                int length_R = (int)obj_f_map.TotalLength;
-                int length_r = (int)UnknownsMap.TotalLength; // needs to be modified if more than one field is simulated
-                int length_l = LevelSetOpti.GetLength();
+
 
 
                 switch (Control.GlobalizationStrategy)
@@ -4028,8 +4187,8 @@ namespace ApplicationWithIDT {
                     ConservativeFields[i].Clear();
                     ConservativeFields[i].AccLaidBack(1.0, ConsFieldsTS[i]);
                 }
-                
-                ComputeResiduals();
+
+                (res_l2, obj_f, res_L2) = ComputeResiduals();
 
                 residuals.Add(res_l2);
                 enrichedResiduals.Add(obj_f);

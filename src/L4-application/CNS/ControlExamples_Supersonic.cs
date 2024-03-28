@@ -5362,7 +5362,7 @@ namespace CNS {
 
             return c;
         }
-        public static IBMControl IBMWedgeFlow(string dbPath = null, int PrintInterval = 1000,int savePeriod = 100, int dgDegree = 0, 
+        public static IBMControl IBMWedgeFlow(int refineCells=4, bool is_uniformgrid=true, string dbPath = null, int PrintInterval = 1000,int savePeriod = 100, int dgDegree = 0, 
             double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, 
             int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 8.0, string restart = "False", 
             int numOfCellsX = 20, int numOfCellsY = 80, double? lambdaMax = null)
@@ -5425,6 +5425,68 @@ namespace CNS {
                     }
                     double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                     GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                    if (!is_uniformgrid){ /// creates a grid with more refined cells in the shock region
+                        double xMin = 0.0, xMax = 1.5, yMin = 0.0, yMax = 1.0;
+                        int baseCellsX = 15, baseCellsY = 10; // Example resolution
+                        GridCommons.GridBox baseGrid = new GridCommons.GridBox(xMin, yMin, xMax, yMax, baseCellsX, baseCellsY);
+
+                        // Assuming you've identified a refinement area along the ray
+                        double refineXMin = 1.0, refineXMax = 1.1; // Example values based on ray calculation
+                        double refineYMin = 0.0, refineYMax = 0.1; // Example values based on ray calculation
+
+
+                        List<GridCommons.GridBox> gBoxes = new List<GridCommons.GridBox>(); gBoxes.Add(baseGrid);
+                        double shock_angle_exact = 39.3139318;
+                        double shock_angle_radial = shock_angle_exact * Math.PI / 180.0; // when we want to project the initial solution we need to use the exact angle in the calculations
+                        double shockSlope = 1/Math.Tan(shock_angle_radial);
+                        double tStep = 0.01; // Small step for incrementing 't' to find intersections
+                        double tMax = Math.Max(xMax - 1.0, shockSlope * yMax); // Max 't' to keep ray within grid bounds
+                        double cellSizeX = 0.1, cellSizeY = 0.1;
+
+                        HashSet<(int, int)> intersectedCells = new HashSet<(int, int)>(); // To avoid duplicates
+
+                        for (double t = 0; t <= tMax; t += tStep)
+                        {
+                            double x = 0.5 + t-0.05;
+                            double y = t / shockSlope;
+
+                            // Calculate which cell (i, j) the point (x, y) falls into
+                            int i = (int)((x - xMin) / cellSizeX);
+                            int j = (int)((y - yMin) / cellSizeY);
+
+                            // Add the cell to the set of intersected cells
+                            intersectedCells.Add((i, j));
+                        }
+                        for (double t = 0; t <= tMax; t += tStep)
+                        {
+                            double x = 0.5 + t+0.05;
+                            double y = t / shockSlope;
+
+                            // Calculate which cell (i, j) the point (x, y) falls into
+                            int i = (int)((x - xMin) / cellSizeX);
+                            int j = (int)((y - yMin) / cellSizeY);
+
+                            // Add the cell to the set of intersected cells
+                            intersectedCells.Add((i, j));
+                        }
+                        foreach (var pair in intersectedCells)
+                        {
+                            // Create a refined GridBox for the identified area
+                            int i = pair.Item1; int j = pair.Item2;
+                            refineXMin = xMin + 0.1 * i;
+                            refineYMin = yMin + 0.1 * j;
+                            if ((refineXMin <= xMax - 0.09) && (refineYMin <= yMax - 0.09))
+                            {
+                                GridCommons.GridBox refinedArea = new GridCommons.GridBox(refineXMin, refineYMin, refineXMin + 0.1, refineYMin + 0.1, refineCells, refineCells);
+                                gBoxes.Add(refinedArea);
+                            }
+                        }
+                        grid = Grid2D.HangingNodes2D(false, false, gBoxes.ToArray());
+                    }
+
+
+
+
 
                     grid.EdgeTagNames.Add(1, "SupersonicInlet");
                     grid.EdgeTagNames.Add(2, "SupersonicOutlet");
@@ -5489,7 +5551,6 @@ namespace CNS {
             c.AgglomerationThreshold = 0.3;
             c.SaveAgglomerationPairs = false;
             c.AddVariable(IBMVariables.LevelSet, levelSetDegree);
-
             bool AV;
             if (dgDegree > 0)
             {
@@ -5542,6 +5603,7 @@ namespace CNS {
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(CNSVariables.Enthalpy, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
 
             c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
             c.AddVariable(CNSVariables.Rank, 0);
@@ -5606,31 +5668,7 @@ namespace CNS {
             c.ProjectName = "IBMWedgeFlow";
 
             // Session name
-            string tempSessionName;
-            if (c.ExplicitScheme == ExplicitSchemes.RungeKutta)
-            {
-                if (dgDegree == 0)
-                {
-                    tempSessionName = string.Format("IBMWedgeFlow_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_agg{5}",
-                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, c.AgglomerationThreshold);
-                }
-                else
-                {
-                    tempSessionName = string.Format("IBMWedgeFlow_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_RK{4}_s0={5:0.0E-00}_lambdaMax{6}_agg{7}_RESTART12",
-                        dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, sensorLimit, lambdaMax, c.AgglomerationThreshold);
-                }
-            }
-            else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth)
-            {
-                tempSessionName = string.Format("IBMWedgeFlow_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
-                    dgDegree, sensorLimit, CFLFraction, explicitOrder);
-            }
-            else
-            {
-                tempSessionName = string.Format("IBMWedgeFlow_p{0}_xCells{1}_yCells{2}_CFLFrac{3}_ALTS{4}_{5}_re{6}_subs{7}_s0={8:0.0E-00}_lambdaMax{9}",
-                    dgDegree, numOfCellsX, numOfCellsY, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, sensorLimit, lambdaMax);
-            }
-            c.SessionName = tempSessionName;
+            c.SessionName = $"IBMWedgeFlow_p{dgDegree}_xCells{numOfCellsX}_yCells{numOfCellsY}_isUniform_{is_uniformgrid}_ref{refineCells}";
 
             return c;
         }

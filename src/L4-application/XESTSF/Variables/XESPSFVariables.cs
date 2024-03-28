@@ -21,13 +21,6 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.CompressibleFlowCommon;
 using ilPSP;
-using MathNet.Numerics;
-using MPI.Wrappers;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using XESF.TimeStepping;
 using static BoSSS.Solution.CompressibleFlowCommon.Variable;
 
 namespace XESTSF.Variables {
