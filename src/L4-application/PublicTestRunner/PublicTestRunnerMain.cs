@@ -232,7 +232,7 @@ namespace PublicTestRunner {
 
         virtual public int RetryCount => 3;
 
-        virtual public bool DeleteSuccessfulTestFiles => true;
+        virtual public bool DeleteSuccessfulTestFiles => false;
     }
 
     /// <summary>
