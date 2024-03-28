@@ -573,7 +573,7 @@ namespace XESTSF {
             //// Cell agglomerator (cell length scales are needed for diffusive AV fluxes)
             UpdateAgglomerator();
 
-            ComputeResiduals();
+            (res_l2, obj_f, res_L2) = ComputeResiduals();
 
             InitResNorm = res_l2;
             Init_obj_f = obj_f;

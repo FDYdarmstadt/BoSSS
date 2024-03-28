@@ -49,6 +49,7 @@ namespace XESF
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args)
         {
+            //IDTTestRunner.RunTests();
             //XESF.Tests.XESFTestProgram.XDGBowShockFromOldRun(tsNumber:161);
             //XESF.Tests.XESFTestProgram.XDGBowShockFromDB(5, 16, 1, 0);
             XESFMain._Main(args, false, () => new XESFMain());
@@ -484,7 +485,7 @@ namespace XESF
             //// Cell agglomerator (cell length scales are needed for diffusive AV fluxes)
             UpdateAgglomerator();
 
-            ComputeResiduals();
+            (res_l2, obj_f, res_L2) = ComputeResiduals();
 
             //obj_f = obj_f_vec.MPI_L2Norm();
             //Eval_r = XSpatialOperator.GetEvaluatorEx(LsTrk, ConservativeFields, null, ResidualMap);
@@ -1351,9 +1352,10 @@ namespace XESF
     {
         public static void RunTests()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads:1);
             XESFMain.DeleteOldPlotFiles();
             List<string> fails = new List<string>();
+
             try { SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22(); } catch { fails.Add("SAIDTTestProgram.CurvedShock_Eccomas22"); }
             try { BUIDT.Tests.BUIDTTestProgram.StraightShockCurvedStart_Eccomas22(); } catch { fails.Add("BUIDTTestProgram.StraightShockCurvedStart_Eccomas22()"); }
             try { XESF.Tests.XESFTestProgram.XDG_SWF_OneLs_Cart(); } catch { fails.Add("XESFTestProgram.XDG_SWF_OneLs_Cart"); }

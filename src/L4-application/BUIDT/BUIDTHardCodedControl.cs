@@ -326,7 +326,7 @@ namespace BUIDT
             //    return mu1 * SmoothedHeaviSide(ShockSpeed(X[1]) - X[0]) + mu2 * (X[0] - 1) * (1 - SmoothedHeaviSide(X[0] - ShockSpeed(X[1]))) / (mu2 * X[1] + 1);
             //}
 
-            c.MeritFunctionType = MeritFunctionType.FullyL2Merit;
+            c.MeritFunctionType = MeritFunctionType.L2Merit;
             c.DirichletBoundaryMap = x => ExactSolUnsmooth(x);
             c.ApplyReiInit = applyReInit;
             c.OptiLevelSetType = optiLevelSetType;

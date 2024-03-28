@@ -139,7 +139,7 @@ namespace SAIDT {
             #endregion
 
             #region  Compute Residual and Derived Quantities
-            ComputeResiduals();
+            (res_l2, obj_f, res_L2) = ComputeResiduals();
             InitResNorm = res_l2;
             Init_obj_f = obj_f;
             ResNorms.Add(res_l2);

@@ -32,7 +32,7 @@ namespace SAIDT {
         /// <param name="meritFunctionType"></param>
         /// <returns></returns>
         public static SAIDTControl BaseControl(string dbPath, int MaxIterations, int dgDegree, int numOfCellsX,
-        int numOfCellsY, int ImmediatePlotPeriod = -1, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, bool ApplyReInit = true, MeritFunctionType meritFunctionType = MeritFunctionType.FullyL2Merit) {
+        int numOfCellsY, int ImmediatePlotPeriod = -1, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, bool ApplyReInit = true, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit) {
 
 
             var c = new SAIDTControl();
@@ -193,7 +193,7 @@ namespace SAIDT {
         public static SAIDTControl StraightShock(string dbPath = null, int MaxIterations = 50, int dgDegree = 0, int numOfCellsX = 10,
         int numOfCellsY = 10,
         int OptiNumOfCellsX = 1,
-        int OptiNumOfCellsY = 1, int ImmediatePlotPeriod = -1, double agg = 0.0, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int LSDegree = 1, bool withReInit = true, MeritFunctionType meritFunctionType=MeritFunctionType.FullyL2Merit,bool isFarConfig =false) {
+        int OptiNumOfCellsY = 1, int ImmediatePlotPeriod = -1, double agg = 0.0, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int LSDegree = 1, bool withReInit = true, MeritFunctionType meritFunctionType=MeritFunctionType.L1Merit,bool isFarConfig =false) {
             var c = SAIDTHardCodedControl.BaseControl(
                     dbPath: dbPath,
                     MaxIterations: MaxIterations,

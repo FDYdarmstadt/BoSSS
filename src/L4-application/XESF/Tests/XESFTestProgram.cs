@@ -22,9 +22,10 @@ using System.Diagnostics.Metrics;
 
 namespace XESF.Tests
 {
+    [TestFixture]
     public static class XESFTestProgram
             {
-        [TestFixture]
+        
         #region NUnit stuff
         [OneTimeSetUp]
         static public void Init()

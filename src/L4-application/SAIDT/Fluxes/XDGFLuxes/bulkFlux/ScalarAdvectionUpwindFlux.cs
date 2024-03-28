@@ -22,6 +22,7 @@ using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 using ilPSP.Utils;
+using MathNet.Numerics.Distributions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,17 +32,26 @@ namespace SAIDT.Fluxes {
         public double cL;
         public double cR;
         public double x0;
+        double s_alpha = 10;
+        bool is_nf_smth;
 
         public Func<double[], double> DirichletBoundaryMap;
         public Func<double, double> FlowFunc;
 
-        public ScalarAdvectionUpwindFlux(string spc, double x0, double cL, double cR, Func<double, double> FlowFunc, Func<double[], double> bndrymap) {
+        public ScalarAdvectionUpwindFlux(string spc, double x0, double cL, double cR, Func<double, double> FlowFunc, Func<double[], double> bndrymap,double s_alpha=10, bool is_nf_smth=false) {
             this.cL = cL;
             this.cR = cR;
             this.spc = spc;
             this.x0 = x0;
             this.FlowFunc = FlowFunc;
             this.DirichletBoundaryMap = bndrymap;
+            this.s_alpha=s_alpha;
+            this.is_nf_smth= is_nf_smth;
+        }
+
+        double SmoothedHeaviSide(double x)
+        {
+            return 1 / (1 + Math.Exp(-2 * s_alpha * x));
         }
         public Vector FlowField(double[] X) {
             var flowfield = new Vector(2);
@@ -80,10 +90,20 @@ namespace SAIDT.Fluxes {
         protected double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
             Vector n = new Vector(normal);
             var flowfield = FlowField(x);
-            if(flowfield * n > 0)
-                return (flowfield * Uin[0]) * n;
+            double beta_n = flowfield * n;
+            double ret;
+            if (is_nf_smth)
+            {
+                ret = (flowfield * Uin[0]) * n * SmoothedHeaviSide(beta_n) + (flowfield * Uout[0]) * n * (1 - SmoothedHeaviSide(beta_n));
+            }
             else
-                return (flowfield * Uout[0]) * n;
+            {
+                if (beta_n > 0)
+                    ret = beta_n * Uin[0];
+                else
+                    ret = beta_n* Uout[0];
+            }
+            return ret;
         }
 
         protected void Flux(double time, double[] x, double[] U, double[] output) {
