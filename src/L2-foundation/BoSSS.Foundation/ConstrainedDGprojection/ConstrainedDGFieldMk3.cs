@@ -199,7 +199,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// </summary>
         protected void SetDGCoordinatesOnce(DGField orgDGField, CellMask mask) {
             // get DG-coordinates (change of basis for projection on a higher polynomial degree)
-            foreach(int j in mask.ItemEnum) {
+            m_Coordinates.ClearEntries();
+            foreach (int j in mask.ItemEnum) {
                 int N = Math.Min(orgDGField.Basis.GetLength(j), this.m_Basis.GetLength(j));
                 for(int n = 0; n < N; n++) {
                     m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = orgDGField.Coordinates[j, n];
@@ -730,6 +731,14 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             MPICollectiveWatchDog.Watch();
             //Console.WriteLine("update internal projection field");
             internalProjection.Clear();
+            if (comm == csMPI.Raw._COMM.WORLD) {
+                internalProjection.MPIExchange();
+            } else if (comm == csMPI.Raw._COMM.SELF) {
+                // noop
+            } else {
+                throw new NotImplementedException("only supported for WORLD and SELF communicator");
+            }
+
             int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
             internalProjection._Acc(1.0, m_Coordinates, 0, stride, true);
             if(comm == csMPI.Raw._COMM.WORLD) {

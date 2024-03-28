@@ -126,6 +126,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         ESDIRK_32 = 1132,
 
         /// <summary>
+        /// (Implicit) Diagonally implicit Runge-Kutta, 6-stage 4nd order, first stage explicit (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_22"/>
+        /// </summary>
+        ESDIRK_64 = 1164,
+
+        /// <summary>
         /// (Implicit) Diagonally implicit Runge-Kutta, 3-stage 3rd order (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_33"/>
         /// </summary>
         SDIRK_33 = 1033,
@@ -300,7 +305,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
-
+            
             if (_Parameters.IsNullOrEmpty())
                 this.Parameters = op.InvokeParameterFactory(Fields);
             else
@@ -503,6 +508,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 rksch = RungeKuttaScheme.SDIRK_22;
             else if (Scheme == TimeSteppingScheme.ESDIRK_32)
                 rksch = RungeKuttaScheme.ESDIRK_32;
+            else if (Scheme == TimeSteppingScheme.ESDIRK_64)
+                rksch = RungeKuttaScheme.ESDIRK_64;
             else if (Scheme == TimeSteppingScheme.SDIRK_33)
                 rksch = RungeKuttaScheme.SDIRK_33;
             else if (Scheme == TimeSteppingScheme.SDIRK_43)
@@ -571,7 +578,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var gDat = (GridData) _gDat;
             var DummyLevSet = new LevelSet(new Basis(gDat, 1), "DummyPhi");
             DummyLevSet.AccConstant(-1.0);
-            LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new[] { "A", "B" }, DummyLevSet);
+            LsTrk = new LevelSetTracker(gDat, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, 1, new[] { "A", "B" }, DummyLevSet);
             LsTrk.UpdateTracker(0.0, __NearRegionWith: 0);
 
             var spcA = LsTrk.GetSpeciesId("A");
@@ -836,7 +843,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
         public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config, IEnumerable<int[]> VarGroups = null) {
-            return TimesteppingBase.OperatorAnalysis(VarGroups, calculateGlobals: config.CalculateGlobalConditionNumbers, calculateStencils:config.CalculateStencilConditionNumbers);
+            return TimesteppingBase.OperatorAnalysis(VarGroups, calculateGlobals: config.CalculateGlobalConditionNumbers, calculateStencils:config.CalculateStencilConditionNumbers, calculateMassMatrix: config.CalculateMassMatrix, plotStencilCondNumViz: config.PlotStencilConditionNumbers);
         }
 
         public XdgBDFTimestepping m_BDF_Timestepper;
@@ -998,10 +1005,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         
-        // <summary>
+        /// <summary>
         /// Number of timesteps required for restart, e.g. 1 for Runge-Kutta and implicit/explicit Euler, 2 for BDF2, etc.
         /// </summary>
-        public int BurstSave {
+        public int BurstSaves {
             get {
                 if(m_RK_Timestepper != null) {
                     Debug.Assert(m_BDF_Timestepper == null);

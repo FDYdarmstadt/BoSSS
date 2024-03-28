@@ -14,6 +14,7 @@ using System.Linq;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Control;
 using ilPSP.Tracing;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     
@@ -292,7 +293,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 // add velocity parameter:
                 var levelSetVelocity = GetLevelSetVelocity(iLevSet);
-                if(levelSetVelocity != null) {
+                if(levelSetVelocity != null && Control.Get_Option_LevelSetEvolution(iLevSet) != LevelSetEvolution.None) {
                     if(!ArrayTools.ListEquals(levelSetVelocity.ParameterNames,
                         BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)))) {
                         throw new ApplicationException($"Parameter names for the level-set velocity provider for level-set #{iLevSet} ({LevelSetCG}) does not comply with convention.");
@@ -553,14 +554,30 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             if (L == null) {
                 var pair1 = LsUpdater.LevelSets.First().Value;
                 var oldCoords1 = pair1.DGLevelSet.CoordinateVector.ToArray();
-                this.LsUpdater.Update(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
+                CellMask Near = this.LsTrk.Regions.GetSpeciesRestrictedNearMask4LevSet(0, 1);
+                double res1 = this.LsUpdater.Update(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
+
                 double dist1 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
                 if (dist1 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
-                this.LsUpdater.Update(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // und doppelt hält besser ;)
+
+                var coords1CG = pair1.CGLevelSet.CoordinateVector.ToArray();
+                CellMask Near1 = this.LsTrk.Regions.GetSpeciesRestrictedNearMask4LevSet(0, 1);
+                bool check_distCG = true;
+                if (!Near.SequenceEqual(Near1)) {
+                    Console.WriteLine("Warning: Initial projection mask changed. Second projection will not result in the same projection! -> initial lax DG-projection not sufficint enough ... skiping CG LS distance");
+                    check_distCG = false;
+                }
+
+                double res2 = this.LsUpdater.Update(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // und doppelt hält besser ;)
+
                 double dist2 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
                 if (dist2 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
+
+                double distCG = pair1.CGLevelSet.CoordinateVector.L2Distance(coords1CG);
+                if (check_distCG && distCG > 3e-15)
+                    throw new Exception($"illegal modification of CG level-set when projecting a second time (rank {pair1.CGLevelSet.GridDat.MpiRank}: CG level-set LS distance = {distCG})");
             }
 #if TEST
             var MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");

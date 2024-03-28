@@ -23,7 +23,7 @@ build:
       - src/L4-application/PublicTestRunner/bin/Release/net6.0
     expire_in: 2 days
     
-test:
+TutorialTests:
   stage: test
   before_script:
     - cd src/L4-application/PublicTestRunner
@@ -34,6 +34,8 @@ test:
   tags:
     - C#7.0
     - big_server    
+  variables:
+    OMP_NUM_THREADS: 1
   script:
     -  dir PublicTestRunner*
     - ./PublicTestRunner.exe nunit3 TutorialTests --result=result.xml    
@@ -47,6 +49,50 @@ test:
     paths:
       - src/L4-application/PublicTestRunner/bin/Release/net6.0/*.html
     expire_in: 2 days
+   
+ValidationTestsLocal:
+  stage: test
+  variables:
+    OMP_NUM_THREADS: 1  
+  script:
+      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net6.0
+      - dir ValidationTestRunner*
+      - $Env:BOSSS_RUNTESTFROMBACKUP = "yesofcourse"
+      - ./ValidationTestRunner.exe runjobmanager ValidationTestRunner\\*WorksheetTests_Local* queue#0
+      - ls result*.xml
+      - ls *.html
+  dependencies:
+    - build
+  needs:
+    - build  
+  artifacts:
+    reports:
+      junit: public/src/L4-application/ValidationTestRunner/bin/Release/net6.0/result*.xml
+    paths:
+      - src/L4-application/ValidationTestRunner/bin/Release/net6.0/*.html
+    expire_in: 2 days
+
+ValidationTestsLichtenberg:
+  stage: test
+  variables:
+    OMP_NUM_THREADS: 1  
+  script: 
+      - cd public/src/L4-application/ValidationTestRunner/bin/Release/net6.0
+      - export BOSSS_RUNTESTFROMBACKUP=yesofcourse
+      - dotnet ValidationTestRunner.dll runjobmanager ValidationTestRunner\\WorksheetTests_Lichtenberg.* queue#2
+      - ls result*.xml
+      - ls *.html     
+  dependencies:
+    - build
+  needs:
+    - build  
+  artifacts:
+    reports:
+      junit: public/src/L4-application/ValidationTestRunner/bin/Release/net6.0/result*.xml
+    paths:
+      - src/L4-application/ValidationTestRunner/bin/Release/net6.0/*.html
+    expire_in: 2 days
+
     
 
 # ============================================================

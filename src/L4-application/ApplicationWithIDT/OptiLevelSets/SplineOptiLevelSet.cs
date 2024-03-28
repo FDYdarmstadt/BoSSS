@@ -672,7 +672,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             return m_AllParams.Lengths[0];
         }
 
-        public void SetParam(int index, double val) {
+        public virtual void SetParam(int index, double val) {
             m_AllParams[index] = val;
         }
         /// <summary>
