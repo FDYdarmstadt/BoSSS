@@ -119,7 +119,7 @@ namespace ilPSP.Utils {
         /// Luckily, MS HPC typically defines the Environment variable `CCP_AFFINITY`;
         /// We are going to use this 
         /// </summary>
-        public static int SetOMP_PLACESfromCCPVar(int iThreads) {
+        public static int SetOMP_PLACESfromCCPVar(int NumThreads) {
 
             // Check if CCP_AFFINITY is defined and defined on all ranks
             // =========================================================
@@ -139,7 +139,7 @@ namespace ilPSP.Utils {
 
             if (glCCP_AFFINITY_DEFINED == false)
                 // make all processors on system available for OpenMP
-                return System.Environment.ProcessorCount;
+                return NumThreads;
 
             Console.WriteLine($"R{MPIrank}, rank on node {ilPSP.Environment.MPIEnv.ProcessRankOnSMP}: CCP_AFFINITY = {CCP_AFFINITY}");
 
@@ -148,7 +148,7 @@ namespace ilPSP.Utils {
             // ===================
 
 
-             var affGroup = CCP_AFFINITY.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+            var affGroup = CCP_AFFINITY.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
 
             var CPUlist = new List<int>();
             int iGroup = 0;
@@ -169,7 +169,7 @@ namespace ilPSP.Utils {
             //bool allInOneGroup = groupOccupied.Where(bg => bg).Count() == 1;
 
             
-            return CPUAffinity.SetOMP_PLACESFromCPUList(iThreads, CPUlist.ToArray());
+            return CPUAffinity.SetOMP_PLACESFromCPUList(NumThreads, CPUlist.ToArray());
         }
 
 

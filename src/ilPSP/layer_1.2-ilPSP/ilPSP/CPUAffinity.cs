@@ -137,7 +137,7 @@ namespace ilPSP.Utils {
 
             var r = new HashSet<int>();
             for(int i = 0; i < CPUList.Length; i++) {
-                if (GlobalSMPRank[i] == mySMPRank) { // onl add if on this SMP (compute Node)
+                if (GlobalSMPRank[i] == mySMPRank) { // only add if on this SMP (compute Node)
                     r.Add(CPUList[i]);
                 }
             }
