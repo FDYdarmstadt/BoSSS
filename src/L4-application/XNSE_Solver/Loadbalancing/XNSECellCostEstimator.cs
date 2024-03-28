@@ -60,7 +60,7 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         /// </summary>
         public (CutStateClassifier.CellTypeFlags CellType, int Weight)[] TypeToWgt {
             get {
-                typeToWgt = typeToWgt ?? new[] {
+                typeToWgt = typeToWgt ?? new (CutStateClassifier.CellTypeFlags CellType, int Weight)[] {
                 //(CutStateClassifier.CellTypeFlags.Void, 0), As void does not impact weights, it is unnecessary to include it in calculations.
                 (CutStateClassifier.CellTypeFlags.Ordinary, 10),
                 (CutStateClassifier.CellTypeFlags.Cut, (int)Math.Pow(2, 10))

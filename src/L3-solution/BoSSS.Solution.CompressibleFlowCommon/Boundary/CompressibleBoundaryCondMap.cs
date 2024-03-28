@@ -270,6 +270,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                         GetVelocityBoundaryValueFunction(EdgeTag, hashPlusSpecies),
                         GetBoundaryValueFunction(EdgeTag, "p" + hashPlusSpecies));
 
+                case CompressibleBcType.spaceTimeBoundary:
+                    return new SpaceTimeBoundaryCondition(material);
+
                 case CompressibleBcType.supersonicOutlet:
                     return new SupersonicOutlet(material);
 

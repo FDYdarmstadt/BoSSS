@@ -434,7 +434,7 @@ namespace BoSSS.Application.BoSSSpad {
             string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
             string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
-            string executiontime = this.ExecutionTime;
+            string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
             int MPIcores = myJob.NumberOfMPIProcs;
             int NumThreads = myJob.NumberOfThreads;
             //string userName = Username;

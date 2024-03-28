@@ -74,7 +74,33 @@ namespace BoSSS.Application.XNSE_Solver {
                 solver.RunSolverMode();
             }
         }
-        
+
+        /// <summary>
+        /// This test case checks the source to source cell agglomeration with METIS domain decomposition
+        /// </summary>
+        [Test]
+        public static void SourceToSourceAgglomerationMETIS() {
+            var C = HardcodedControl.TwoTorusesAggTestCase();
+            C.GridPartType = GridPartType.METIS;
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        /// <summary>
+        /// This test case checks the source to source cell agglomeration with Hilbert curves
+        /// </summary>
+        [Test]
+        public static void SourceToSourceAgglomerationHILBERT() {
+            var C = HardcodedControl.TwoTorusesAggTestCase();
+            C.GridPartType = GridPartType.Hilbert;
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
         /// <summary>
         /// Initiates all the test cases
         /// </summary>

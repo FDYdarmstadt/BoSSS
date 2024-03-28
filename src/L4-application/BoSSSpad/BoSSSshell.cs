@@ -7,6 +7,7 @@ using BoSSS.Solution.GridImport;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
+using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
@@ -14,6 +15,7 @@ using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
 using Microsoft.DotNet.Interactive.Formatting;
+using NUnit.Framework.Internal;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -78,10 +80,9 @@ namespace BoSSS.Application.BoSSSpad {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
+            BoSSS.Solution.Application.InitMPI();
             bool InBatchMode = !System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName).IsEmptyOrWhite();
             BoSSS.Solution.Application.InitMPI( num_threads: (InBatchMode ? 1 : null));
-            //Debugger.Launch();
-            
 
 
             CallRandomStuff();
