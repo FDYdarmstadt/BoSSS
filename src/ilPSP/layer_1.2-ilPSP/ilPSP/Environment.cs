@@ -369,7 +369,10 @@ namespace ilPSP {
                     System.Environment.SetEnvironmentVariable("KMP_AFFINITY", "verbose,respect");
                     tr.Info("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
                     MaxNumOpenMPthreads = CPUAffinity.CpuListOnSMP(ReservedCPUs).Length;
-                    MaxNumOpenMPthreads = CPUAffinityWindows.SetOMP_PLACESfromCCPVar(NumThreads);
+                    tr.Info("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+
+                    MaxNumOpenMPthreads = NumThreads;// CPUAffinityWindows.SetOMP_PLACESfromCCPVar(NumThreads);
+                    tr.Info($"MaxNumOMPThreads = {MaxNumOpenMPthreads}, NumThreads = {NumThreads}");
                 } else {
                     MaxNumOpenMPthreads = CPUAffinity.CpuListOnSMP(ReservedCPUs).Length;
                     //MaxNumOpenMPthreads = NumThreads;
@@ -549,18 +552,16 @@ namespace ilPSP {
 
                 (double minTime, double avgTime, double maxTime) TimeRef0 = (0, 0, 0);
                 if (Rank == 0) {
+                    tr.Info("Now, doing reference run on rank 0...");
                     TimeRef0 = GEMMbench();
-
-                    //Console.WriteLine($"Ref run: (min|avg|max) : (\t{TimeRef0.minTime:0.###E-00} |\t{TimeRef0.avgTime:0.###E-00} |\t{TimeRef0.maxTime:0.###E-00})");
+                    tr.Info($"Ref run: (min|avg|max) : (\t{TimeRef0.minTime:0.###E-00} |\t{TimeRef0.avgTime:0.###E-00} |\t{TimeRef0.maxTime:0.###E-00})");
                 }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 var TimeRef = TimeRef0.MPIBroadcast(0);
 
                 for (int ranksToBench = 0; ranksToBench < MpiSz; ranksToBench++) {
-                    //if (Rank == 0) {
-                    //    Console.WriteLine("Now, doing work on " + (ranksToBench + 1) + " ranks ...");
-                    //}
+                    tr.Info("Now, doing work on " + (ranksToBench + 1) + " ranks ...");
 
                     (double minTime, double avgTime, double maxTime) TimeX = (BLAS.MachineEps, BLAS.MachineEps, BLAS.MachineEps);
                     if (Rank <= ranksToBench) {
@@ -576,6 +577,7 @@ namespace ilPSP {
                     if (minFactor.MPIMax() > 10 || maxFactor.MPIMax() > 5 || avgFactor.MPIMax() > 10) {
 
                         string scaling = $"R{Rank}: {ranksToBench + 1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
+                        tr.Info("Scaling involving " + (ranksToBench + 1) + " ranks: " + scaling);
                         Console.WriteLine("Suspicious OpenMP runtime behavior: " + scaling);
 
                         //if(avgFactor > 7)
