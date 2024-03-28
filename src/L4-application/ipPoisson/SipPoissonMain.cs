@@ -61,23 +61,19 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            
+            /*
 
 
-            //InitMPI(args);
+            InitMPI(args);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
             
-            /*
-             * int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
-            //int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
             int Rank;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
-            Console.WriteLine($"Stressing with {MpiSz}x{Nothreads}");
-            
 
-
+            int Nothreads = ilPSP.Environment.NumThreads;
+             
 
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
@@ -86,38 +82,20 @@ namespace BoSSS.Application.SipPoisson {
 
             //Process proc = Process.GetCurrentProcess();
             var CPUidxs = ilPSP.Utils.CPUAffinity.GetAffinity();
-            Console.WriteLine("r" + Rank + $"  Affinity to {CPUidxs.Count()} cores: {CPUidxs.ToConcatString("", ", ", ";")}");
+            Console.WriteLine("r" + Rank + $" Windows Affinity to {CPUidxs.Count()} cores: {CPUidxs.ToConcatString("", ", ", ";")}");
 
             //proc.ProcessorAffinity = (IntPtr) 0xFFFFFFFFFFFF;
             //Console.WriteLine("r" + Rank + $"  Reset Affinity {proc.ProcessorAffinity:X}");
-
-            
-
-            
+                        
 
 
             ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
 
-
-            {
-                
-                // Get all environment variables
-                IDictionary environmentVariables = System.Environment.GetEnvironmentVariables();
-
-                
-
-                using (var stw = new StreamWriter("envvar" + Rank + ".txt")) {
-                    foreach (DictionaryEntry variable in environmentVariables) {
-                        stw.WriteLine($"Rank {Rank}: {variable.Key} = {variable.Value}");
-                    }
-
-                }
-
-            }
+           
 
             //SetOMPAffinity(Nothreads, Rank, MpiSz, false);
-            ilPSP.Environment.InitThreading(false, Nothreads);
+            //ilPSP.Environment.InitThreading(false, Nothreads);
 
 
 
@@ -244,7 +222,7 @@ namespace BoSSS.Application.SipPoisson {
 
             }
 
-            */
+            //*/
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
