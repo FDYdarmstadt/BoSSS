@@ -436,6 +436,8 @@ namespace ApplicationWithIDT {
 
                 break;
             }
+            Console.WriteLine("");
+            Console.WriteLine("");
             Console.WriteLine("*****************************************************************************************");
             Console.WriteLine("*  X   X   DDD   GGG   -   III  SSS  TTTTT  *");
             Console.WriteLine("*   X X    D  D G      -    I  S      T     *");
@@ -444,13 +446,15 @@ namespace ApplicationWithIDT {
             Console.WriteLine("*  X   X   DDD   GGG   -   III  SSS   T     *");
             Console.WriteLine("*****************************************************************************************");
             Console.WriteLine($"*  ");
-            Console.WriteLine($"*  Solver:                             {this.GetType().ToString()}");
+            Console.WriteLine($"*  solver:                             {this.GetType().ToString()}");
+            Console.WriteLine($"*  project:                            {this.Control.ProjectName}");
+            Console.WriteLine($"*  session:                            {this.Control.SessionName}");
             Console.WriteLine($"*  optimization problem:               {Control.optProblemType}");
             Console.WriteLine($"*  merit function:                     {Control.MeritFunctionType}");
             Console.WriteLine($"*  level set type:                     {Control.OptiLevelSetType}");
             Console.WriteLine($"*  solver type:                        {Control.solRunType}");
             Console.WriteLine($"*  f_phi type:                         {Control.fphiType}");
-            Console.WriteLine($"*  Globalization Strategy:             {Control.GlobalizationStrategy}");
+            Console.WriteLine($"*  globalization strategy:             {Control.GlobalizationStrategy}");
             Console.WriteLine($"*  ");
             Console.WriteLine("******************************* Params ************************************************");
             Console.WriteLine($"*  Solution Degree:                    {Control.SolDegree}");
