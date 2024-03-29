@@ -25,11 +25,7 @@ using ApplicationWithIDT.OptiLevelSets;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Gnuplot;
-using BoSSS.Application.BoSSSpad;
-using CNS.Source;
-using System.Threading.Tasks;
-using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
-using static System.CommandLine.Help.DefaultHelpText;
+
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -2629,7 +2625,7 @@ namespace ApplicationWithIDT {
                 try {
 
 
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
 
                     double[] obj_f = new double[obj_f_vec.Length];
                     double[] res = new double[ResidualVector.Length];
@@ -2814,7 +2810,7 @@ namespace ApplicationWithIDT {
                 try {
                     LsTrk.UpdateTracker(CurrentStepNo);
 
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
 
 
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
@@ -4161,9 +4157,9 @@ namespace ApplicationWithIDT {
                 var fields = timestep.Fields.ToList();
                 LsTBO.Clear();
                 if(Control.IsTwoLevelSetRun) {
-                    LsTBO.CoordinateVector.SetV(timestep.GetField("levelSetTwo").CoordinateVector);
+                    LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSetTwo")).CoordinateVector);
                 } else {
-                    LsTBO.CoordinateVector.SetV(timestep.GetField("levelSet").CoordinateVector);
+                    LsTBO.CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("levelSet")).CoordinateVector);
                 }
                 LsTrk.UpdateTracker(0.0);
 
@@ -4171,17 +4167,17 @@ namespace ApplicationWithIDT {
                 var l = ConservativeFields.Length;
                 XDGField[] ConsFieldsTS = new XDGField[l];
                 if(l==1) {
-                    ConsFieldsTS[0] = new XDGField(new XDGBasis(LsTrk, timestep.GetField("c").Basis.Degree));
-                    ConsFieldsTS[0].CoordinateVector.SetV(timestep.GetField("c").CoordinateVector);
+                    ConsFieldsTS[0] = new XDGField(new XDGBasis(LsTrk, timestep.Fields.Single(f => f.Identification.Equals("c")).Basis.Degree));
+                    ConsFieldsTS[0].CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("c")).CoordinateVector);
                 } else {
-                    ConsFieldsTS[0] = new XDGField(new XDGBasis(LsTrk, timestep.GetField("rho").Basis.Degree));
-                    ConsFieldsTS[1] = new XDGField(new XDGBasis(LsTrk, timestep.GetField("rho").Basis.Degree));
-                    ConsFieldsTS[2] = new XDGField(new XDGBasis(LsTrk, timestep.GetField("rho").Basis.Degree));
-                    ConsFieldsTS[3] = new XDGField(new XDGBasis(LsTrk, timestep.GetField("rho").Basis.Degree));
-                    ConsFieldsTS[0].CoordinateVector.SetV(timestep.GetField("rho").CoordinateVector);
-                    ConsFieldsTS[1].CoordinateVector.SetV(timestep.GetField("m0").CoordinateVector);
-                    ConsFieldsTS[2].CoordinateVector.SetV(timestep.GetField("m1").CoordinateVector);
-                    ConsFieldsTS[3].CoordinateVector.SetV(timestep.GetField("rhoE").CoordinateVector);
+                    ConsFieldsTS[0] = new XDGField(new XDGBasis(LsTrk, timestep.Fields.Single(f => f.Identification.Equals("rho")).Basis.Degree));
+                    ConsFieldsTS[1] = new XDGField(new XDGBasis(LsTrk, timestep.Fields.Single(f => f.Identification.Equals("rho")).Basis.Degree));
+                    ConsFieldsTS[2] = new XDGField(new XDGBasis(LsTrk, timestep.Fields.Single(f => f.Identification.Equals("rho")).Basis.Degree));
+                    ConsFieldsTS[3] = new XDGField(new XDGBasis(LsTrk, timestep.Fields.Single(f => f.Identification.Equals("rho")).Basis.Degree));
+                    ConsFieldsTS[0].CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("rho")).CoordinateVector);
+                    ConsFieldsTS[1].CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("m0")).CoordinateVector);
+                    ConsFieldsTS[2].CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("m1")).CoordinateVector);
+                    ConsFieldsTS[3].CoordinateVector.SetV(timestep.Fields.Single(f => f.Identification.Equals("rhoE")).CoordinateVector);
                 }
                 for(int i = 0; i < ConservativeFields.Length; i++) {
                     ConservativeFields[i].Clear();
@@ -4247,7 +4243,7 @@ namespace ApplicationWithIDT {
         public Plot2Ddata GetResEnthalpyPlot(ISessionInfo si, double EEN) {
             var EE = new List<double>();
             foreach(var timestep in si.Timesteps) {
-                EE.Add(((XDGField)timestep.GetField("h_err")).L2NormAllSpecies() / EEN);
+                EE.Add(((XDGField)timestep.Fields.Single(f => f.Identification.Equals("h_err"))).L2NormAllSpecies() / EEN);
             }
             GetPlotTable(obj_f_vals, "obj_f_vals", ResNorms, "ResNorms", EE, "EnthalpyError");
             return GetPlot(obj_f_vals, "||R(z)||", ResNorms, "||r(z)||", EE, "||h_{err}||");
@@ -4301,7 +4297,7 @@ namespace ApplicationWithIDT {
         //public Plot2Ddata GetResEnthalpyPlot(ISessionInfo si, double EEN) {
         //    var EE = new List<double>();
         //    foreach(var time step in si.Timesteps) {
-        //        EE.Add(((XDGField)timestep.GetField("h_err")).L2NormAllSpecies() / EEN);
+        //        EE.Add(((XDGField)timestep.Fields.Single(f => f.Identification.Equals("h_err")).L2NormAllSpecies() / EEN);
         //    }
         //    GetPlotTable(obj_f_vals, "obj_f_vals", ResNorms, "ResNorms", EE, "EnthalpyError");
         //}

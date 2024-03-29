@@ -633,7 +633,7 @@ namespace XESTSF {
                 case GetInitialValue.FromDBXDG:
                 DatabaseInfo dbi = DatabaseInfo.Open(Control.ShockLevelSet_Db);
                 ISessionInfo si = dbi.Controller.GetSessionInfo(Control.ShockLevelSet_Info.Item1);
-                tsiFromDb = Control.IVTimestepNumber >= si.Timesteps.Count ? si.Timesteps.Last() : si.Timesteps.Pick(Control.IVTimestepNumber);//if(Control.ShockLevelSet_Info.Item2.MajorNumber < 0.0) {
+                tsiFromDb = Control.IVTimestepNumber >= si.Timesteps.Count ? si.Timesteps.Last() : si.Timesteps.ElementAt(Control.IVTimestepNumber);//if(Control.ShockLevelSet_Info.Item2.MajorNumber < 0.0) {
                 //    tsiFromDb = si.Timesteps.Last();
                 //} else {
                 //    throw new NotSupportedException("Currently, only the last time step can be used.");
@@ -642,7 +642,7 @@ namespace XESTSF {
                 case GetInitialValue.FromAVRun:
                 DatabaseInfo dbi_2 = DatabaseInfo.Open(Control.SeedFromAV_Db);
                 ISessionInfo si_2 = dbi_2.Controller.GetSessionInfo(Control.SeedFromAV_Db_Info.Item1);
-                tsiFromDb = Control.IVTimestepNumber >= si_2.Timesteps.Count ? si_2.Timesteps.Last() : si_2.Timesteps.Pick(Control.IVTimestepNumber);
+                tsiFromDb = Control.IVTimestepNumber >= si_2.Timesteps.Count ? si_2.Timesteps.Last() : si_2.Timesteps.ElementAt(Control.IVTimestepNumber);
                 //if(Control.SeedFromAV_Db_Info.Item2.MajorNumber < 0.0) {
                 //    tsiFromDb = si_2.Timesteps.Last();
                 //} else {
@@ -980,7 +980,7 @@ namespace XESTSF {
                         ShockLevelSetField = new SinglePhaseField(new Basis(this.GridData, Control.LevelSetDegree), "shockLevelSetField");
                     }
 
-                    ShockLevelSetField.ProjectFromForeignGrid(1.0, (ConventionalDGField)fieldsFromDb.Pick(1));
+                    ShockLevelSetField.ProjectFromForeignGrid(1.0, (ConventionalDGField)fieldsFromDb.ElementAt(1));
 
                 } else {
                     ShockLevelSetField = (SinglePhaseField)dbi.Controller.DBDriver.LoadFields(tsiFromDb, this.GridData, new string[] { Control.ShockLevelSet_FieldName }).Single();
