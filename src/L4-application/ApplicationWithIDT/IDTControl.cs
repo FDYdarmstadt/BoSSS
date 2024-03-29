@@ -244,7 +244,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Merit Function used in GLobalization algorithm
         /// </summary>
-        public MeritFunctionType MeritFunctionType { get; set; } = MeritFunctionType.L2Merit;
+        public MeritFunctionType MeritFunctionType { get; set; } = MeritFunctionType.L1Merit;
         
 
         /// <summary>
