@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Security.Cryptography.X509Certificates;
-using BoSSS.Application.BoSSSpad;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -13,8 +7,6 @@ using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 using ilPSP.Utils;
-using XESF.Fluxes;
-using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
 
 namespace XESTSF.Fluxes {
     public abstract class RoeSTBaseFlux : IEdgeForm, IVolumeForm, ISupportsJacobianComponent {
