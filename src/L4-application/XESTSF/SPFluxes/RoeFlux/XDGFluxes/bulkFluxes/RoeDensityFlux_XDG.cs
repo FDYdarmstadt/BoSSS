@@ -14,18 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Application.BoSSSpad;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-using ilPSP;
-using ilPSP.Utils;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace XESTSF.Fluxes {
 
