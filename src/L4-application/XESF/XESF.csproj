@@ -28,7 +28,6 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
-    <ProjectReference Include="..\..\L4-application\BoSSSpad\BoSSSpad.csproj" />
     <ProjectReference Include="..\ApplicationWithIDT\ApplicationWithIDT.csproj" />
     <ProjectReference Include="..\BUIDT\BUIDT.csproj" />
     <ProjectReference Include="..\SAIDT\SAIDT.csproj" />
