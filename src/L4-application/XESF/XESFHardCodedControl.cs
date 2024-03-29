@@ -460,8 +460,8 @@ namespace XESF {
         int numOfCellsY=10, double initialAngle_shockLS=32, int PlotInterval=-1,
         string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
-        XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromParams, OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L2Merit
+        XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int optiLSDegree = 1,
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L2Merit
         ) {
 
 
