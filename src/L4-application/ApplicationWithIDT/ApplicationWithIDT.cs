@@ -50,11 +50,6 @@ namespace ApplicationWithIDT {
     /// 
     /// Main Method is RunSolverOneStep
     /// 
-    /// TODO:
-    /// - Remove legacy code
-    /// - Introduce as many default parameters as possible in IDTControl
-    /// - Clean up
-    /// - More Documentation
     /// </summary>
     public abstract class ApplicationWithIDT<T> : Application<T>
         where T : IDTControl, new() {
