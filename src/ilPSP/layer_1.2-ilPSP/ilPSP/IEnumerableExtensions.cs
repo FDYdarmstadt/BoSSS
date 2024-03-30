@@ -675,6 +675,14 @@ namespace ilPSP {
             return true;
         }
 
+
+        /// <summary>
+        /// Negation of <see cref="IsEmptyOrWhite(string)"/>
+        /// </summary>
+        public static bool IsNonEmpty(this string s) {
+            return !s.IsEmptyOrWhite();
+        }
+
         /// <summary>
         /// Tests if a string is null/empty or contains only whitespaces.
         /// </summary>

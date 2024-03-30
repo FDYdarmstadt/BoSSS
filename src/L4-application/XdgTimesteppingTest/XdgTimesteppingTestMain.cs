@@ -43,6 +43,7 @@ using System.Collections;
 using Newtonsoft.Json;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
     public class XdgTimesteppingMain : BoSSS.Solution.XdgTimestepping.XdgApplicationWithSolver<XdgTimesteppingTestControl> {
@@ -51,6 +52,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
+
             //InitMPI();
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt02(TimeSteppingScheme.RK1, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023(TimeSteppingScheme.RK_IMEX3, 8);
@@ -167,17 +169,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             */
         }
 
-        protected override void SetInitial(double t) {
-            base.SetInitial(t);
 
-            this.CreateEquationsAndSolvers(null);
-
-            if(this.Control.MultiStepInit == true) {
+        protected override void AfterSolverCreation(double phystime, int TimestepNo) {
+            if (this.Control.MultiStepInit == true) {
                 int CallCount = 0;
 
 
 
-                if(base.Timestepping.m_RK_Timestepper != null) {
+                if (base.Timestepping.m_RK_Timestepper != null) {
                     this.Phi.ProjectField(X => this.Control.Phi(X, 0.0));
                     this.LsTrk.UpdateTracker(0.0);
                     u.Clear();
@@ -186,9 +185,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 }
 
-                if(base.Timestepping.m_BDF_Timestepper != null) {
+                if (base.Timestepping.m_BDF_Timestepper != null) {
 
-                    base.Timestepping.m_BDF_Timestepper.MultiInit(t, 0, this.Control.GetFixedTimestep(),
+                    base.Timestepping.m_BDF_Timestepper.MultiInit(phystime, 0, this.Control.GetFixedTimestep(),
                         delegate (int TimestepIndex, double Time, DGField[] St) {
 
                             Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
@@ -199,13 +198,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                             this.Phi.ProjectField(X => this.Control.Phi(X, Time));
 
                             // HMF hacks
-                            if((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+                            if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
                                 throw new ApplicationException("Illegal HMF configuration.");
-                            if(this.Control.CircleRadius != null) {
+                            if (this.Control.CircleRadius != null) {
                                 ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
                             }
 
-                            if(CallCount == 0) {
+                            if (CallCount == 0) {
                                 this.LsTrk.UpdateTracker(Time);
                             } else {
                                 this.LsTrk.UpdateTracker(Time, incremental: true);
@@ -224,16 +223,85 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                         });
                 }
             } else {
-                this.Phi.ProjectField(X => this.Control.Phi(X, t));
-                this.LsTrk.UpdateTracker(t);
+                this.Phi.ProjectField(X => this.Control.Phi(X, phystime));
+                this.LsTrk.UpdateTracker(phystime);
                 u.Clear();
-                u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, t)));
-                u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, t)));
+                u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, phystime)));
+                u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, phystime)));
 
-                if(base.Timestepping.m_BDF_Timestepper != null)
+                if (base.Timestepping.m_BDF_Timestepper != null)
                     base.Timestepping.m_BDF_Timestepper.SingleInit();
             }
         }
+
+
+        //protected override void SetInitial(double t) {
+        //    base.SetInitial(t);
+
+        //    this.CreateEquationsAndSolvers(null);
+
+        //    if(this.Control.MultiStepInit == true) {
+        //        int CallCount = 0;
+
+
+
+        //        if(base.Timestepping.m_RK_Timestepper != null) {
+        //            this.Phi.ProjectField(X => this.Control.Phi(X, 0.0));
+        //            this.LsTrk.UpdateTracker(0.0);
+        //            u.Clear();
+        //            u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, 0.0)));
+        //            u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, 0.0)));
+
+        //        }
+
+        //        if(base.Timestepping.m_BDF_Timestepper != null) {
+
+        //            base.Timestepping.m_BDF_Timestepper.MultiInit(t, 0, this.Control.GetFixedTimestep(),
+        //                delegate (int TimestepIndex, double Time, DGField[] St) {
+
+        //                    Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
+
+        //                    // level-set
+        //                    // ---------
+
+        //                    this.Phi.ProjectField(X => this.Control.Phi(X, Time));
+
+        //                    // HMF hacks
+        //                    if((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+        //                        throw new ApplicationException("Illegal HMF configuration.");
+        //                    if(this.Control.CircleRadius != null) {
+        //                        ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
+        //                    }
+
+        //                    if(CallCount == 0) {
+        //                        this.LsTrk.UpdateTracker(Time);
+        //                    } else {
+        //                        this.LsTrk.UpdateTracker(Time, incremental: true);
+        //                    }
+
+        //                    CallCount++;
+
+        //                    // solution
+        //                    // --------
+
+        //                    XDGField _u = (XDGField)St[0];
+        //                    _u.Clear();
+        //                    _u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, Time)));
+        //                    _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, Time)));
+
+        //                });
+        //        }
+        //    } else {
+        //        this.Phi.ProjectField(X => this.Control.Phi(X, t));
+        //        this.LsTrk.UpdateTracker(t);
+        //        u.Clear();
+        //        u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, t)));
+        //        u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, t)));
+
+        //        if(base.Timestepping.m_BDF_Timestepper != null)
+        //            base.Timestepping.m_BDF_Timestepper.SingleInit();
+        //    }
+        //}
 
 
 

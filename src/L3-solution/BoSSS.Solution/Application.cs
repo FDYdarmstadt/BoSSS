@@ -1845,6 +1845,51 @@ namespace BoSSS.Solution {
             }
         }
 
+
+        /// <summary>
+        /// If data logging is turned on, saves all fields in
+        /// <param name="fieldsToSave"/> to the database 
+        /// </summary>
+        /// <param name="t">
+        /// time value which will be associated with the field
+        /// </param>
+        /// <param name="timestepno">time-step number</param>
+        protected virtual ITimestepInfo SaveFieldsToDatabase(ICollection<DGField> fieldsToSave, TimestepNumber timestepno, double t) {
+            using (var ht = new FuncTrace()) {
+
+                if (DatabaseDriver.FsDriver == null)
+                    return null;
+                if (this.CurrentSessionInfo.ID.Equals(Guid.Empty))
+                    return null;
+
+                TimestepInfo tsi = new TimestepInfo(t, this.CurrentSessionInfo, timestepno, fieldsToSave);
+                //Exception e = null;
+                try {
+                    this.DatabaseDriver.SaveTimestep(tsi);
+                } catch (Exception ee) {
+                    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.StackTrace);
+                    //tsi = null;
+                    //e = ee;
+
+                    if (ContinueOnIOError) {
+                        Console.WriteLine("Ignoring IO error: " + DateTime.Now);
+
+                    } else {
+                        throw ee;
+                    }
+
+                    tsi = null;
+                }
+
+                // e.ExceptionBcast();
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                return tsi;
+            }
+        }
+
+
         /// <summary>
         /// Calculation is not stopped if an I/O exception is thrown in <see cref="SaveToDatabase(TimestepNumber, double)"/>,
         /// see also <see cref="AppControl.ContinueOnIoError"/>.
@@ -1968,6 +2013,15 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
+        /// called after <see cref="CreateEquationsAndSolvers"/> for time-dependent initialization routines (e.g. delayed BDF-timestepper)
+        /// </summary>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepNo"></param>
+        protected virtual void AfterSolverCreation(double phystime, int TimestepNo) { 
+        }
+
+
+        /// <summary>
         /// sets initial values as defined in the control file. Override this
         /// method to set initial values for the fields;
         /// </summary>
@@ -2037,7 +2091,11 @@ namespace BoSSS.Solution {
                 }
 
                 if (LsTrk != null) {
-                    LsTrk.UpdateTracker(time);
+                    int[] AllowedLSMovement = new int[LsTrk.NoOfLevelSets];
+                    for (int i = 0; i < AllowedLSMovement.Length; i++) {
+                        AllowedLSMovement[i] = LsTrk.NearRegionWidth + 1;
+                    }
+                    LsTrk.UpdateTracker(time, __LevSetAllowedMovement: AllowedLSMovement);  // disable CFL-check for first time (setInitial is called after initial AMR and depending on the projected LS the near region may change more than the allowed movement)
                     LsTrk.UpdateTracker(time); // doppeltes Update h�lt besser; 
                 }
 
@@ -2117,9 +2175,9 @@ namespace BoSSS.Solution {
         /// Number of Consecutive timesteps which are saved -- this is intended to be used by BDF or Adams-Bashforth time integrators which require multiple time steps
         /// (e.g. 3 to save time-step 98, 99, 100 for a save-period of 100;)
         /// </summary>
-        protected virtual int BurstSave {
+        protected virtual int BurstSaves {
             get {
-                return Math.Max(1, this.Control.BurstSave);
+                return Math.Max(1, this.Control.BurstSaves);
             }
         }
 
@@ -2225,8 +2283,10 @@ namespace BoSSS.Solution {
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
+
                 //tr.InfoToConsole = true;
-                var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
+                rollingSavesTsi = new List<Tuple<int, ITimestepInfo, bool>>();
+
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -2254,58 +2314,51 @@ namespace BoSSS.Solution {
 
                 m_queryHandler.QueryResults.Clear();
 
+
                 if (this.Control.RestartInfo != null) {
                     CreateEquationsAndSolvers(null);
+                    AfterSolverCreation(physTime, i0.MajorNumber);
+
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                     if(LsTrk != null) {
-                        if(LsTrk.Regions.Time != physTime)
+                        if (LsTrk.Regions.Time != physTime) {
                             LsTrk.UpdateTracker(physTime);
-                        LsTrk.PushStacks();
+                            //LsTrk.PushStacks();
+                        }
                     }
                 }
+
 
                 // =========================================================
                 // Adaptive-Mesh-Refinement and/or load balancing on startup
                 // =========================================================
 
+                if (this.Control.RestartInfo == null) {
 
-                // load balancing solo
-                tr.Info("DynamicLoadBalancing_RedistributeAtStartup = " + this.Control.DynamicLoadBalancing_RedistributeAtStartup);
-                tr.Info("AdaptiveMeshRefinement = " + this.Control.AdaptiveMeshRefinement);
-                if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
-                    PlotAndSave(physTime, i0, rollingSavesTsi);
-                    MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
-                    PlotAndSave(physTime, i0, rollingSavesTsi);
-                }
-                          
+                    // load balancing solo
+                    tr.Info("DynamicLoadBalancing_RedistributeAtStartup = " + this.Control.DynamicLoadBalancing_RedistributeAtStartup);
+                    tr.Info("AdaptiveMeshRefinement = " + this.Control.AdaptiveMeshRefinement);
+                    if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
+                        PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(0)));
+                        MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                        PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(1)));
+                    }                       
 
-                // load balancing and adaptive mesh refinement
-                if (this.Control.AdaptiveMeshRefinement) {
-                    
-                    // unprocessed initial value IO
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+                    // load balancing and adaptive mesh refinement
+                    if (this.Control.AdaptiveMeshRefinement) {
 
-                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
-                    if (this.RollingSave)
-                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr));
+                        // unprocessed initial value IO
+                        PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(0)));   // save the initial value
 
+                        bool initialRedist = false;
+                        for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                            initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
 
-                    bool initialRedist = false;
-                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
-                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
-
-                        if (initialRedist == true) {
-
-                            if (this.Control.ImmediatePlotPeriod > 0)
-                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
-
-                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
-                            if (this.RollingSave)
-                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr);
-
+                            if (initialRedist == true) 
+                                PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(s)));   // save the AMR'ed initial value
+                       
                         }
                     }
                 }
@@ -2318,13 +2371,14 @@ namespace BoSSS.Solution {
 
                 if (this.Control.RestartInfo == null) {
                     CreateEquationsAndSolvers(null);
-                }
-                {
+                    AfterSolverCreation(physTime, i0.MajorNumber);
+
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                     if (LsTrk != null)
                         LsTrk.PushStacks();
+
                 }
                 // ========================================================================
                 // initial value IO:
@@ -2334,12 +2388,8 @@ namespace BoSSS.Solution {
                 // ========================================================================
 
 
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+                PlotAndSave(physTime, i0, rollingSavesTsi);  // save the initial value
 
-                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
-                if (this.RollingSave)
-                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
                 // =========================================
                 // Adaptive-Mesh-Refinement on startup
@@ -2369,7 +2419,8 @@ namespace BoSSS.Solution {
                     // setup of logging
                     foreach (var l in PostprocessingModules) {
                         l.Setup(this);
-                        l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
+                        if (l.SolverStage != 2) //Check if the module is designed to run before or after the solver routine
+                            l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
                     }
 
 
@@ -2377,9 +2428,11 @@ namespace BoSSS.Solution {
                         return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
                     }
 
+                    bool gridChanged; 
+
                     for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
-                        this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        gridChanged = this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
@@ -2388,7 +2441,8 @@ namespace BoSSS.Solution {
                         tr.LogMemoryStat();
                         physTime += dt;
 
-                        if(LsTrk != null) {
+
+                        if (LsTrk != null) {
                             if(LsTrk.Regions.Time != physTime) {
                                 // correct the level-set tracker time if some solver did not correctly updated it.
                                 LsTrk.UpdateTracker(physTime);
@@ -2397,46 +2451,13 @@ namespace BoSSS.Solution {
 
 
                         foreach (var l in PostprocessingModules) {
-                            l.DriverTimestepPostProcessing(i, physTime);
+                            if (l.SolverStage != 1) //Check if the module is designed to run before or after the solver routine
+                                l.DriverTimestepPostProcessing(i, physTime);
                         }
 
-                        ITimestepInfo tsi = null;
 
-                        if (this.BurstSave < 1) {
-                            throw new NotSupportedException("misconfiguration of burst save variable.");
-                        }
-                        
+                        SaveApplicationToDatabase(i, physTime, RunLoop(i + 1), gridChanged);
 
-                        for (int sb = 0; sb < this.BurstSave; sb++) {
-                            if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
-                                tsi = SaveToDatabase(i, physTime);
-                                this.ProfilingLog();
-                                break;
-                            }
-                        }
-                        
-                        if (this.RollingSave) {
-                            if (tsi == null) {
-                                tsi = SaveToDatabase(i, physTime);
-                            }
-                            rollingSavesTsi.Add(Tuple.Create(i, tsi));
-
-                            while (rollingSavesTsi.Count > this.BurstSave) { // delete overdue rolling timesteps...
-                                var top_i_tsi = rollingSavesTsi[0];
-
-                                rollingSavesTsi.RemoveAt(0);
-
-                                if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
-                                    if (DatabaseDriver.FsDriver != null &&
-                                        !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                                        if (MPIRank == 0) {
-                                            this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
-                                            ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
-                                        }
-                                    }
-                                }
-                            }
-                        }
 
                         if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
@@ -2490,14 +2511,93 @@ namespace BoSSS.Solution {
             }
         }
 
-        private void PlotAndSave(double TS, TimestepNumber TSno, List<Tuple<int, ITimestepInfo>> rollingSavesSammeldingens) {
+        /// <summary>
+        /// used for initial plot and save routine (mesh adaption and load balancing)
+        /// </summary>
+        /// <param name="pT"></param>
+        /// <param name="TSnum"></param>
+        /// <param name="rollingSavesSammeldingens"></param>
+        private void PlotAndSave(double pT, TimestepNumber TSnum, List<Tuple<int, ITimestepInfo, bool>> rollingSavesSammeldingens = null) {
             if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                PlotCurrentState(TS, new TimestepNumber(TSno.Numbers.Cat(0)), this.Control.SuperSampling);
+                PlotCurrentState(pT, TSnum, this.Control.SuperSampling);
 
-            var ts0amr = SaveToDatabase(new TimestepNumber(TSno.Numbers.Cat(0)), TS); // save the initial value
-            if (this.RollingSave)
-                rollingSavesSammeldingens.Add(Tuple.Create(0, ts0amr));
+            var tsi = SaveToDatabase(TSnum, pT);
+            if (rollingSavesSammeldingens != null && this.RollingSave)
+                rollingSavesSammeldingens.Add(Tuple.Create(TSnum.MajorNumber, tsi, false));
         }
+
+
+        /// <summary>
+        /// List of currently saved rolling TimestepInfos
+        /// </summary>
+        protected List<Tuple<int, ITimestepInfo, bool>> rollingSavesTsi;
+
+
+        /// <summary>
+        /// summarizes the various save routines <see cref="BurstSaves"/> and <see cref="RollingSave"/> for the application 
+        /// intended to be overridden for additional save routines in derived applications
+        /// </summary>
+        /// <param name="timeStepInt"></param>
+        /// <param name="physTime"></param>
+        /// <param name="runNextLoop"></param>
+        /// <param name="gridChanged"></param>
+        protected virtual void SaveApplicationToDatabase(int timeStepInt, double physTime, bool runNextLoop, bool gridChanged) {
+
+            ITimestepInfo tsi = null;
+
+            if (this.BurstSaves < 1) {
+                throw new NotSupportedException("misconfiguration of burst save variable.");
+            }
+
+
+            for (int sb = 0; sb < this.BurstSaves; sb++) {
+                if ((timeStepInt + sb) % SavePeriod == 0 || (!runNextLoop && sb == 0)) {
+                    tsi = SaveToDatabase(timeStepInt, physTime);
+                    //Console.WriteLine($"timestep: {tsi} saved");
+                    this.ProfilingLog();
+                    break;
+                }
+            }
+
+
+            if (this.RollingSave) {
+                bool deleteTS = false;
+                if (tsi == null) {
+                    tsi = SaveToDatabase(timeStepInt, physTime);
+                    deleteTS = true;
+                    //Console.WriteLine($"timestep: {tsi} saved");
+                }
+                rollingSavesTsi.Add(Tuple.Create(timeStepInt, tsi, deleteTS));
+                //Console.WriteLine($"timestep: {tsi} added to rollingSaves (deleteTs = {deleteTS})");
+
+                while (rollingSavesTsi.Count > this.BurstSaves) { // delete overdue rolling timesteps...
+                    var top_i_tsi = rollingSavesTsi[0];
+
+                    rollingSavesTsi.RemoveAt(0);
+                    //Console.WriteLine($"timestep: {top_i_tsi} removed from rollingSaves (deleteTs = {top_i_tsi.Item3})");
+
+                    //bool deleteTS = true;
+                    //for (int sb = 0; sb < this.BurstSaves; sb++) {
+                    //    if ((top_i_tsi.Item1 + sb) % SavePeriod == 0) { // && (top_i_tsi.Item1 / SavePeriod) == (timeStepInt / SavePeriod)) {
+                    //        deleteTS = false;
+                    //    }
+                    //}
+
+                    if (top_i_tsi.Item3) { // ...only if they should not be saved anyway
+                        if (DatabaseDriver.FsDriver != null &&
+                            !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                            if (MPIRank == 0) {
+                                this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                //Console.WriteLine($"timestep: {top_i_tsi.Item2} deleted");
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
 
         /// <summary>
         /// Main routine for dynamic load balancing and adaptive mesh refinement.
@@ -2508,12 +2608,16 @@ namespace BoSSS.Solution {
         /// </returns>
         virtual protected bool MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
 
-            DoMeshAdaption(TimeStepNo, physTime);
-            DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation);
+            bool gridChanged = false;
+
+            gridChanged |= DoMeshAdaption(TimeStepNo, physTime);
+            gridChanged |= DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation);
 
             //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true); 
             //PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
-            return true;
+
+            return gridChanged;
+
         }
 
         /// <summary>
