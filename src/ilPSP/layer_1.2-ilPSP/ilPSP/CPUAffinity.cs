@@ -114,7 +114,7 @@ namespace ilPSP.Utils {
 
             var bkup = ilPSP.Environment.StdoutOnlyOnRank0;
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
-            Console.WriteLine($"R{MPIrank}, SMP rank {SMPrank}: setting OMP_PLACES = {OMP_PLACES}");
+            //Console.WriteLine($"R{MPIrank}, SMP rank {SMPrank}: setting OMP_PLACES = {OMP_PLACES}");
             ilPSP.Environment.StdoutOnlyOnRank0 = bkup;
 
             System.Environment.SetEnvironmentVariable("OMP_PLACES", OMP_PLACES);

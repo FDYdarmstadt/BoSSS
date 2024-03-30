@@ -426,9 +426,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool FailOnSolverFail = true;
 
 
-        /// <summary>
-        /// See <see cref="TimestepperInit"/>
-        /// </summary>
+        ///// <summary>
+        ///// See <see cref="TimestepperInit"/>
+        ///// </summary>
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
@@ -437,7 +437,7 @@ namespace BoSSS.Application.XNSE_Solver {
         ///// </summary>
         //public int incrementTimesteps = 1;
 
-       
+
         /// <summary>
         /// array of additional parameter values for some testcases
         /// </summary>

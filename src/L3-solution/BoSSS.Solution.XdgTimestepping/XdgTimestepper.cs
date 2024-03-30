@@ -305,7 +305,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
-
+            
             if (_Parameters.IsNullOrEmpty())
                 this.Parameters = op.InvokeParameterFactory(Fields);
             else
@@ -843,7 +843,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
         public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config, IEnumerable<int[]> VarGroups = null) {
-            return TimesteppingBase.OperatorAnalysis(VarGroups, calculateGlobals: config.CalculateGlobalConditionNumbers, calculateStencils:config.CalculateStencilConditionNumbers);
+            return TimesteppingBase.OperatorAnalysis(VarGroups, calculateGlobals: config.CalculateGlobalConditionNumbers, calculateStencils:config.CalculateStencilConditionNumbers, calculateMassMatrix: config.CalculateMassMatrix, plotStencilCondNumViz: config.PlotStencilConditionNumbers);
         }
 
         public XdgBDFTimestepping m_BDF_Timestepper;
@@ -1005,10 +1005,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         
-        // <summary>
+        /// <summary>
         /// Number of timesteps required for restart, e.g. 1 for Runge-Kutta and implicit/explicit Euler, 2 for BDF2, etc.
         /// </summary>
-        public int BurstSave {
+        public int BurstSaves {
             get {
                 if(m_RK_Timestepper != null) {
                     Debug.Assert(m_BDF_Timestepper == null);

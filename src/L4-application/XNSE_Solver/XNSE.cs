@@ -75,13 +75,14 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            
+
             //ilPSP.Environment.NumThreads = 8;
             //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, false, 3);
+            ////BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            ////DeleteOldPlotFiles();
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
             /*
@@ -602,13 +603,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+            } else {
+                if (this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton)
+                    throw new ApplicationException("illegal configuration");
                 opFactory.AddEquation(new NavierStokes_Newton("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes_Newton("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else {
-                throw new NotSupportedException();
-            }
+            } 
+
             opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, config));
         }
 
@@ -711,8 +713,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
-                if(Control.FailOnSolverFail && !success)
+                if (Control.FailOnSolverFail && !success) {
+                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling);
+                    SaveToDatabase(TimestepNo, phystime);
                     throw new ArithmeticException("Solver did not converge.");
+                }
 
                 return dt;
             }
@@ -885,6 +890,42 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
         }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from an analytic solution
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="Time"></param>
+        /// <param name="St"></param>
+        protected override void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
+            using (new FuncTrace()) {
+                Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
+
+                // level-set
+                // ---------
+                this.LsUpdater.LevelSets["Phi"].DGLevelSet.ProjectField(X => this.Control.Phi(X, Time));
+                //this.LsUpdater.LevelSets[0].CGLevelSet..ProjectField(X => this.Control.Phi(X, Time));
+
+                //this.LsTrk.UpdateTracker(Time, incremental: true);
+
+                // solution
+                // --------
+                int D = this.LsTrk.GridDat.SpatialDimension;
+
+                for (int d = 0; d < D; d++) {
+                    XDGField _u = (XDGField)St[d];
+                    _u.Clear();
+                    _u.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionVelocity["A"][d](X, Time));
+                    _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionVelocity["B"][d](X, Time)));
+                }
+                XDGField _p = (XDGField)St[D];
+                _p.Clear();
+                _p.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionPressure["A"](X, Time));
+                _p.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionPressure["B"](X, Time)));
+            }
+        }
+
 
 
     }

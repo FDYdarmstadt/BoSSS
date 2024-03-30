@@ -267,7 +267,7 @@ namespace BoSSS.Foundation.XDG {
                     AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
                 }
                 Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
-                AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
+                AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt",true);
             }
 
             // compute metrics of AGGLOMERATED cut cells

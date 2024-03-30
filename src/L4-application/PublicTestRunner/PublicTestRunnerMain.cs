@@ -83,7 +83,17 @@ namespace PublicTestRunner {
         /// If true, the managed assemblies are not copied for every job; there is only a single copy to reduce IO load.
         /// Uses the <see cref="Job.EntryAssemblyRedirection"/> - hack;
         /// </summary>
-        bool CopyManagedAssembliesCentraly { get; } 
+        bool CopyManagedAssembliesCentrally { get; } 
+
+        /// <summary>
+        /// If true, the deployment directories are deleted for jobs which finished successfully
+        /// </summary>
+        bool DeleteSuccessfulTestFiles { get; }
+
+        /// <summary>
+        /// Number of tries when a job fails
+        /// </summary>
+        int RetryCount { get; }
     }
 
     /// <summary>
@@ -218,7 +228,11 @@ namespace PublicTestRunner {
             return repoRoot;
         }
 
-        virtual public bool CopyManagedAssembliesCentraly => true;
+        virtual public bool CopyManagedAssembliesCentrally => true;
+
+        virtual public int RetryCount => 3;
+
+        virtual public bool DeleteSuccessfulTestFiles => true;
     }
 
     /// <summary>
@@ -238,7 +252,7 @@ namespace PublicTestRunner {
 
         /// <summary>
         /// supposed to ignore tests depending on files in the source code repo;
-        /// thereby, we can run the test runner from outside the source repositiory.
+        /// thereby, we can run the test runner from outside the source repository.
         /// </summary>
         static bool ignore_tests_w_deps = false;
 
@@ -772,8 +786,7 @@ namespace PublicTestRunner {
         /// to distinct the internalTestRunner
         /// </summary>
         public static string RunnerPrefix = "Pub";
-
-        
+               
 
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
@@ -843,21 +856,33 @@ namespace PublicTestRunner {
                 // ===================================
                 // phase 1: discover tests
                 // ===================================
-
+                //Debugger.Launch();
                 BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
-                // deployment of native libraries
+                
+                
+                // deployment of assemblies
                 string NativeOverride;
-                if(bpc.DeployRuntime == false) {
-                    //
-                    // DeployRuntime is false: 
-                    // this means that no copy (of the native libraries) occurs for the **individual** jobs
-                    // The TestRunner, however copies it centrally, at once, to ensure that it is running using the most recent binaries
-                    //
-                    var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
-                    _NativeOverride.Create();
+                string RelManagedPath;
+                if(TestTypeProvider.CopyManagedAssembliesCentrally) {
+                    string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
+                    DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
+                    ManagedOverride.Create();
+                    TestTypeProvider.GetType().Assembly.DeployAt(ManagedOverride);
 
-                    if (bpc.RuntimeLocation != null) {
+                    RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
+
+                    if (!bpc.RuntimeLocation.IsEmptyOrWhite()) {
+                    
+                        // 
+                        // since we deploy the **managed** assemblies to an alternative location,
+                        // we should also deploy the **native binaries**.
+                        //
+
+                        string suffix = bpc.RuntimeLocation.IsEmptyOrWhite() ? "amd64" : bpc.RuntimeLocation?.Split(new char[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries)?.Last();
+                        var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_" + suffix));
+                        _NativeOverride.Create();
+
                         string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
                         string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
                         MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
@@ -868,23 +893,18 @@ namespace PublicTestRunner {
                             NativeOverride = _NativeOverride.FullName;
                         }
                     } else {
-                        NativeOverride = null;    
-                    }
-                } else {
-                    NativeOverride = null;
-                }
-                
-                // deployment of assemblies
-                string RelManagedPath;
-                if(TestTypeProvider.CopyManagedAssembliesCentraly) {
-                    string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
-                    DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
-                    ManagedOverride.Create();
-                    TestTypeProvider.GetType().Assembly.DeployAt(ManagedOverride);
 
-                    RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
+                        // not enough info to deploy the binaries;
+                        // we just can hope that on the cluster the BOSSS_INSTALL var is correctly set up.
+
+                        NativeOverride = null;
+                    }
+
+
+
                 } else {
-                    RelManagedPath = null;
+                    NativeOverride = null; 
+                    RelManagedPath = null; //The job manager will deploy the assemblies
                 }
                 
 
@@ -974,7 +994,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, t.NumThreads, NativeOverride, RelManagedPath, cnt);
+                            var j = SubmitJob(t.ass, t.testname, t.shortname, TestTypeProvider.RetryCount, bpc, t.depfiles, DateNtime, t.NoOfProcs, t.NumThreads, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1073,16 +1093,17 @@ namespace PublicTestRunner {
                                         }
                                     }
                                     // delete deploy directory
-                                    using(new BlockTrace("delete_deploy_dir", trr)) {
-                                        if(s == JobStatus.FinishedSuccessful) {
-                                            try {
-                                                Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
-                                            } catch(Exception e) {
-                                                Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                                    if (TestTypeProvider.DeleteSuccessfulTestFiles) {
+                                        using (new BlockTrace("delete_deploy_dir", trr)) {
+                                            if (s == JobStatus.FinishedSuccessful) {
+                                                try {
+                                                    Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
+                                                } catch (Exception e) {
+                                                    Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                                                }
                                             }
                                         }
                                     }
-
 
                                     // move job to 'finished' list
                                     var X = (jj.job, jj.ResFile, jj.testname, s);
@@ -1291,6 +1312,7 @@ namespace PublicTestRunner {
         static public (Job j, string resultFile, string name) SubmitJob(
             Assembly a,
             string TestName, string Shortname,
+            int RetryCount,
             BatchProcessorClient bpc,
             string[] AdditionalFiles,
             string prefix,
@@ -1332,7 +1354,7 @@ namespace PublicTestRunner {
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
                 j.SessionReqForSuccess = false;
-                j.RetryCount = 3;
+                j.RetryCount = RetryCount;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
@@ -1340,6 +1362,9 @@ namespace PublicTestRunner {
                 }
                 if(BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_RUNTESTFROMBACKUP.txt"), "BOSSS_RUNTESTFROMBACKUP.txt"));
+                }
+                if (BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER_ENVVAR) {
+                    j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt"), "BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt"));
                 }
                 if (nativeOverride != null) {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
@@ -1468,8 +1493,6 @@ namespace PublicTestRunner {
                     }
 
 
-
-
                     Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     Console.WriteLine("All Here.");
@@ -1584,6 +1607,7 @@ namespace PublicTestRunner {
 
 
         static public bool BOSSS_RUNTESTFROMBACKUP_ENVVAR = false;
+        static public bool BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER_ENVVAR = false;
 
         /// <summary>
         /// the real main-function
@@ -1622,10 +1646,15 @@ namespace PublicTestRunner {
                 return -7777;
             }
 
-            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsNonEmpty()) {
                 BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
                 File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Hello, Suckers!");
                 Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
+            }
+            if (System.Environment.GetEnvironmentVariable("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER").IsNonEmpty()) {
+                BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER_ENVVAR = true;
+                File.WriteAllText("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt", "Hello, Suckers!");
+                Console.WriteLine("trying to forward the BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER hack via additional deployment files...");
             }
 
             BoSSS.Solution.Application.InitMPI();

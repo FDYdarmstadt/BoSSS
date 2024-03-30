@@ -29,7 +29,7 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// An orthonormal, modal basis \f$ \phi_{j,n} \f$ for a DG approximation of absolute degree <see cref="Degree"/>.
+    /// An orthonormal, modal basis $` \phi_{j,n} $` for a DG approximation of absolute degree <see cref="Degree"/>.
     /// </summary>
     public partial class Basis {
 
