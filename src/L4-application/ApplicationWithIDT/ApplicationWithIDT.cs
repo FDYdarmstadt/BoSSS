@@ -541,10 +541,7 @@ namespace ApplicationWithIDT {
             this.m_RegisteredFields.Add(personField);
 
 
-#if DEBUG
-            //this.m_IOFields.AddRange(ConservativeFieldsReinitialized);
-            //this.m_RegisteredFields.AddRange(ConservativeFieldsReinitialized);
-#endif
+
         }
 
         /// <summary>
@@ -604,12 +601,16 @@ namespace ApplicationWithIDT {
                     LsTBO.Clear();
                     LsTBO.ProjectFromForeignGrid(1.0, spliny);
                 }
-
                 //Compute/Assemble linear System LHS*(stepIN;lambda)=RHS
                 ComputeSystem();
+                //agglomerate the solution vector
+                TransformFromSourceToAggSpace();
+                //and make a backup
+                createAgglomeratedBackUp();
+
+
                 //solve it for step: (stepIN;lambda)
                 SolveSystem();
-
                 //save step to XDGField
                 var StepOptiLevelSet = GetStepOptiLevelSet(stepIN);
                 SaveStepToField(stepIN, StepOptiLevelSet);
@@ -645,6 +646,7 @@ namespace ApplicationWithIDT {
                 }
 
                 ComputeAndWriteResiduals();
+                //TransformFromSourceToAggSpace();
                 WriteStuffAndAddToLists(TimestepNo);
                 CmpRegParam();
                 CurrentStepNo++;
@@ -903,13 +905,15 @@ namespace ApplicationWithIDT {
 
                     //TransformFromAggToSourceSpace();
 
+                    TransformFromAggToSourceSpace();
                     ComputeResiduals(objStep, resStep);
+                    
                     double[] f_phi_vec = ComputeFphi();
                     double resStep_l1 = 0;
                     for(int i = 0; i < resStep.Length; i++) {
                         resStep_l1 += resStep[i].Abs();
                     }
-                    resetStep(); // reset the step
+                    resetStepAgglomerated();
                     return 0.5 * (objStep.InnerProd(objStep)+ f_phi_vec.InnerProd(f_phi_vec)) + mu * resStep_l1;
                 };
 
@@ -967,10 +971,10 @@ namespace ApplicationWithIDT {
                     bool succes = AccumulateStep(step, alpha);
                     double[] f_phi_vec = ComputeFphi();
                     //TransformFromAggToSourceSpace();
-
+                    TransformFromAggToSourceSpace();
                     ComputeResiduals(objStep, resStep);
+                    resetStepAgglomerated();
 
-                    resetStep(); // reset the step
                     return 0.5 * ( objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec))+ mu * resStep.L2Norm();
                     //return (0.5 * (mu * resStep.InnerProd(resStep) + objStep.InnerProd(objStep) + f_phi_vec.InnerProd(f_phi_vec)));
                 };
@@ -1033,6 +1037,8 @@ namespace ApplicationWithIDT {
         /// </summary>
         public (double _res_l2, double _obj_f, double _res_L2) ComputeResiduals() {
             ComputeResiduals(obj_f_vec, ResidualVector);
+
+            AgglomerateOnlyResiduals();
             return (ResidualVector.MPI_L2Norm(), obj_f_vec.MPI_L2Norm(), L2Norm(Residuals));
             //en_res_L2 = L2Norm(obj_f_fields);
         }
@@ -1093,9 +1099,11 @@ namespace ApplicationWithIDT {
         /// </summary>
         public void ComputeAndWriteResiduals() {
 
-            //TransformFromAggToSourceSpace();
+            TransformFromAggToSourceSpace();
 
             (res_l2, obj_f, res_L2) = ComputeResiduals();
+            AgglomerateOnlyResiduals();
+
             var kappa_copy = kappa;
             kappa = 1;
             var f_phi_vec = ComputeFphi();
@@ -1169,14 +1177,6 @@ namespace ApplicationWithIDT {
                         }
                     }
                 }
-#if DEBUG
-            //RHS.CheckForNanOrInfV();
-            //LHS.CheckForNanOrInfM();
-            //double minEig;
-            //double[] VEig = new double[RHS.Length];
-            //(minEig, VEig)=LHS.MinimalEigen();
-            //var conditionNumber = LHS.condestArnoldi();
-#endif
 
                 try
                 {
@@ -1186,34 +1186,12 @@ namespace ApplicationWithIDT {
                 }
                 catch (Exception e)
                 {
-#if DEBUG
-                //this.PlotCurrentState(0.0, 666, this.Control.SuperSampling);
-                //Console.WriteLine("LHSInf=" + LHS.InfNorm());
-                //Console.WriteLine("dR0dUInf=" + Jr_U.InfNorm());
-                //Console.WriteLine("dR0dPhiInf=" + Jr_phi.InfNorm());
-                //Console.WriteLine("dR1dUInf=" + Jobj_U.InfNorm());
-                //Console.WriteLine("dR1dPhiInf=" + Jobj_phi.InfNorm());
-                //try {
-                //    Console.WriteLine("LHSMinEIg=" + LHS.MinimalEigen());
-                //    Console.WriteLine("LHSMaxEIg=" + LHS.MaximalEigen());
-                //    Console.WriteLine("dR0dUMinEIg=" + Jr_U.MinimalEigen());
-                //    Console.WriteLine("dR0dUMaximalEIg=" + Jr_U.MaximalEigen());
-                //} catch {
-                //    Console.WriteLine("Exception thrown From MinEig, but we continue...");
-                //}
-                //Console.WriteLine("RHSNorm=" + RHS.L2Norm());
-                //Console.WriteLine("gradfNorm=" + gradf.L2Norm());
-                //Console.WriteLine("residualNorm=" + ResidualVector.L2Norm());
-#endif
                     Console.WriteLine("Exception: " + e.ToString() + " From DirectSOlver Thrown, but we continue...");
                 }
                 CmpLineSearchResidualWeight();
                 CmpFphiWeight();
                 
-                //agglomerated the solution vector
-                //TransformFromSourceToAggSpace();
-                //and make a backup
-                //createAgglomeratedBackUp();
+
                 
             }
         }
@@ -1495,6 +1473,11 @@ namespace ApplicationWithIDT {
                         LevelSetOpti.ProjectOntoLevelSet(LsTBO);
                         LsTrk.UpdateTracker(CurrentStepNo);
                         Oproblem.EvalConsAndObj(obj_vec_eps2, r_vec_eps2, ConservativeFields);
+                        //reset
+                        LevelSetOpti.SetParam(n_param, x);
+                        LsTBO.CopyFrom(phi0backup);
+                        LsTrk.UpdateTracker(CurrentStepNo);
+
                     }
                     catch
                     {
@@ -1520,7 +1503,6 @@ namespace ApplicationWithIDT {
                             Jr[iRow, n_param] = val;
                         }
                     }
-
 
                 }
                 return (Jr,Jobj);
@@ -1834,6 +1816,22 @@ namespace ApplicationWithIDT {
                 }
             }
         }
+
+        public void AgglomerateOnlyResiduals()
+        {
+            using (new FuncTrace())
+            {
+                if (CurrentAgglo > 0.0)
+                {
+                    if (MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0)
+                    {
+                        MultiphaseAgglomerator.ManipulateMatrixAndRHS(default (MsrMatrix), ResidualVector, new CoordinateMapping(ConservativeFields), new CoordinateMapping(ConservativeFields));
+                        MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), obj_f_vec, new CoordinateMapping(obj_f_fields), new CoordinateMapping(ConservativeFields));
+                        
+                    }
+                }
+            }
+        }
         /// <summary>
         /// Assembles Left- and Right Hand side 
         /// To do so 
@@ -1869,9 +1867,8 @@ namespace ApplicationWithIDT {
                 Oproblem.EvalConsAndObj(obj_f_vec, ResidualVector, ConservativeFields);
                 res_l2 = ResidualVector.MPI_L2Norm();
 
-                resetStep();
+                //resetStep();
                 (res_l2, obj_f, res_L2) = ComputeResiduals();
-
                 //***************************** */
                 //// Compute Jobj_phi & Jr_phi
                 //***************************** */
@@ -1887,18 +1884,16 @@ namespace ApplicationWithIDT {
                     //AllthePossibleStepsPlot();
                     //throw new Exception("Error in FD Computation");
                 }
-
+                
 
                 //***************************** */
                 //// Agglomerate Jobj,Jr and obj_vec,r before multiplication
                 //***************************** */
                 AgglomerateJacobiansAndResiduals();
-
                 //*******************************/
                 //// assemble R_{phi} (part of objective function corresponding to Level Set)
                 ///*******************************/
                 (double[] f_phi_vec, MsrMatrix Jf_phi) = ComputeFphiandJFphi();
-                
                 using (new BlockTrace("Blocks Of LHS",f))
                 {
                     //***************************** */
@@ -2485,9 +2480,6 @@ namespace ApplicationWithIDT {
 
                             double ALNR = LastAverageNormReduction();
                             tr.Info($"LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
-#if TEST
-                        ALNR = 0;
-#endif
                             // continue until the solver stalls
                             if(ALNR <= tALNR) {
                                 Console.WriteLine();
@@ -2539,11 +2531,6 @@ namespace ApplicationWithIDT {
             int counter1 = 0;
             int counter2 = 0;
             m_alpha = Control.Alpha_Start;
-#if DEBUG
-            //Create second Backup Debugging
-            //double[] rho_backup = new double[UBackup[0].CoordinateVector.Length];
-            //rho_backup.SetV(UBackup[0].CoordinateVector);
-#endif
 
 #region LevelSetCFL
             // we will check the LevelSetCFL not with the original LevelSetTrecker but with a nonShallow Copy
@@ -2599,19 +2586,9 @@ namespace ApplicationWithIDT {
                     counter1++;
                     //tp.PlotFields("BackUp" + "_" + 1, 0.0, list);
                 }
-                resetStep();
+                resetStepAgglomerated();
             }
 
-            //if(counter1 > 0) {
-            //    //Console.WriteLine("step induces LevelSetCFL and had to be shortened by" + Math.Pow(tau, counter1));
-            //    Console.WriteLine("step induces LevelSetCFL and had to be shortened to alpha =" + m_alpha);
-            //}
-
-#if DEBUG
-            //if(!rho_backup.SequenceEqual(UBackup[0].CoordinateVector)) {
-            //    throw new Exception("WTF");
-            //}
-#endif
 #endregion
             //so now we should have a step that doesn't throw any LevelSetCFLException so we can compute it
             success = !AccumulateStep(step_t, m_alpha);
@@ -2630,6 +2607,7 @@ namespace ApplicationWithIDT {
                     double[] res = new double[ResidualVector.Length];
                     //Eval_R = XSpatialOperator.GetEvaluatorEx(LsTrk, ConservativeFields, null, obj_f_map);
                     //Eval_R.Evaluate(1.0, 0.0, en_res);
+                    TransformFromAggToSourceSpace();
                     ComputeResiduals(obj_f, res);
                     if(obj_f.MPI_L2Norm().IsNaN()) {
                         throw new NotFiniteNumberException("enriched residual norm is NaN");
@@ -2644,7 +2622,7 @@ namespace ApplicationWithIDT {
                     } else {
                         Console.WriteLine($"alpha, ||R1||  {m_alpha}, Error ");
                     }
-                    resetStep();
+                    resetStepAgglomerated();
                     counter2++;
                     m_alpha *= tau; //further reduce m_alpha if Exception is thrown
                     success = AccumulateStep(step_t, m_alpha);
@@ -2666,12 +2644,8 @@ namespace ApplicationWithIDT {
             //    Console.WriteLine("step breaks Operator and had to be shortened to alpha=" + m_alpha);
             //}
 #endregion
-            resetStep();
-#if DEBUG
-            //if(!rho_backup.SequenceEqual(UBackup[0].CoordinateVector)) {
-            //    throw new Exception("WTF");
-            //}
-#endif
+            resetStepAgglomerated();
+
             ////Finally the variables are reseted and the step is scaled with the m_alpha obtained 
             //if(m_alpha < 1) {
             //    step_t.ScaleV(m_alpha);
@@ -2748,16 +2722,17 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
-
+                    TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
-                    resetStep();
+                    AgglomerateOnlyResiduals();
+                    resetStepAgglomerated();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("Exception at right fd of n_param = " +n_param + ": ");
                     Console.WriteLine(e.ToString());
                     Console.WriteLine("");
-                    resetStep();
+                    resetStepAgglomerated();
                 }
                 Plot(0.0, 1000 + (n_param + 1));
 
@@ -2769,15 +2744,17 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
+                    TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
-                    resetStep();
+                    AgglomerateOnlyResiduals();
+                    resetStepAgglomerated();
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("Exception at left fd of n_param = " + n_param + ": ");
                     Console.WriteLine(e.ToString());
                     Console.WriteLine("");
-                    resetStep();
+                    resetStepAgglomerated();
                 }
                 Plot(0.0, 1000 - (n_param + 1));
 
@@ -2811,17 +2788,16 @@ namespace ApplicationWithIDT {
 
                     //TransformFromAggToSourceSpace();
 
-
+                    TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
-
                     Plot(0.0, 1000 + i + 1);
-                    resetStep();
+                    resetStepAgglomerated();
                 } catch (Exception e){
                     Console.WriteLine("Exception at alpha = "+ alpha_p +": ");
                     Console.WriteLine(e.ToString());
                     Console.WriteLine("");
                     Plot(0.0, 1000 + i + 1);
-                    resetStep();
+                    resetStepAgglomerated();
                     m_alpha *= tau; //further reduce m_alpha if Exception is thrown
                 }
             }
@@ -2879,7 +2855,7 @@ namespace ApplicationWithIDT {
                 LsTrk.UpdateTracker(CurrentStepNo);
                 //UpdateAgglomerator();   
             } catch { //if Exception is called no step is computed
-                resetStep();
+                resetStepAgglomerated();
                 //tp.PlotFields("BackUp" + "_" + 1, 0.0,list);
 
                 return false;
@@ -2964,10 +2940,10 @@ namespace ApplicationWithIDT {
                 double beta = 1e-4;
                 double alpha_min = Control.Alpha_Min;
                 bool succes = false;
-
-
+                TransformFromAggToSourceSpace();
                 //Evaluate the Operator at the Current state (normally this evaluation is done in RunSolverOneStep)
                 (res_l2, obj_f, res_L2) = ComputeResiduals();
+                resetStepAgglomerated();
                 //resetStep();
                 //TransformFromAggToSourceSpace();
                 //(res_l2, obj_f, res_L2) = ComputeResiduals(); 
@@ -3002,10 +2978,10 @@ namespace ApplicationWithIDT {
                 JacR0TimesStep = new double[length_r];
                 Jr.SpMV(1.0, stepUphi, 0.0, JacR0TimesStep);
 
-                TransformStepFromAggToSourceSpace(gradf);
-                TransformStepFromAggToSourceSpace(JacR0TimesR0);
-                TransformStepFromAggToSourceSpace(JacR0TimesStep);
-                TransformStepFromAggToSourceSpace(stepIN);
+                //TransformStepFromAggToSourceSpace(gradf);
+                //TransformStepFromAggToSourceSpace(JacR0TimesR0);
+                //TransformStepFromAggToSourceSpace(JacR0TimesStep);
+                //TransformStepFromAggToSourceSpace(stepIN);
 
 
                 ///Safe Guard: see if step breaks operator or induces LevelSet CFL, if so, shorten the step 
@@ -3179,21 +3155,6 @@ namespace ApplicationWithIDT {
                             {
                                 Console.Write("");
                             }
-#if DEBUG
-                        //Plot and Delete the step
-                        //var success = AccumulateStep(stepIN, m_alpha);
-                        //if(Control.AgglomerationThreshold > 0) {
-                        //    if(MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0) {
-                        //        TransformFromAggToSourceSpace();    //go back into non agglomerated Space
-                        //    }
-                        //}
-                        //PlotCurrentState(Control.ProjectName + "_" + (CurrentStepNo + 1));
-                        //var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                        //foreach(var pltFile in dir.GetFiles("*" + Control.ProjectName + "_" + (CurrentStepNo + 1) + ".plt")) {
-                        //    pltFile.Delete();
-                        //}
-                        //resetStep(); // by resetting we also transform from source to agg
-#endif
                             if (last_ared < last_pred)
                             {
                                 succes = AccumulateStep(stepIN, m_alpha);
@@ -3203,7 +3164,7 @@ namespace ApplicationWithIDT {
                             else
                             {
                                 //reset (only if the loop continues)
-                                resetStep();
+                                resetStepAgglomerated();
                                 if (m_alpha * tau > alpha_min)
                                 {
                                     m_alpha = m_alpha * tau; //continues loop
@@ -3284,7 +3245,7 @@ namespace ApplicationWithIDT {
                             else
                             {
                                 //reset (only if the loop continues)
-                                resetStep();
+                                resetStepAgglomerated();
                                 if (m_alpha * tau > alpha_min)
                                 {
                                     m_alpha = m_alpha * tau; //continues loop
@@ -3418,18 +3379,7 @@ namespace ApplicationWithIDT {
                     }
                     //set the average 
                     shadowCopy.SetMeanValue(cell.Item1, average);
-#if DEBUG // Sanity check if average is higher or lower extremal value on Patch
-                    //double[] minOverPatch = new double[PatchMask.NoOfItemsLocally];
-                    //double[] maxOverPatch = new double[PatchMask.NoOfItemsLocally];
-                    //shadow.GetCellwiseExtremalValues(minOverPatch, maxOverPatch, PatchMask, (x) => x);
-                    //var max = maxOverPatch.Max();
-                    //var min = minOverPatch.Min();
-                    //if (average < min || average >max) {
-                    //    Console.WriteLine("oh No");
-                    //}
-                    //Assert.GreaterOrEqual( average, min);
-                    //Assert.LessOrEqual(average, max );
-#endif
+
                 }
             }
 
