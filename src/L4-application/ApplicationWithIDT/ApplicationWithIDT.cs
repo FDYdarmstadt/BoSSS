@@ -1093,7 +1093,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public void ComputeAndWriteResiduals() {
 
-            TransformFromAggToSourceSpace();
+            //TransformFromAggToSourceSpace();
 
             (res_l2, obj_f, res_L2) = ComputeResiduals();
             var kappa_copy = kappa;
