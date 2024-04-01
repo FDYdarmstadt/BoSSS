@@ -39,7 +39,7 @@ namespace XESF.Tests
         }
         #endregion
 
-        #region SupersonicWedgeFlow using two LS on a Cartesian Mesh
+        #region SupersonicWedgeFlow using two LS on a Cartesian mesh
         [Test]
         public static void XDG_SWF_TwoLs()
         {
