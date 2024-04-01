@@ -55,7 +55,7 @@ namespace XESF {
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
         ConvectiveInterfaceFluxes interfaceFluxLS2 = ConvectiveInterfaceFluxes.GodunovInterface,
         XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L2Merit, OptProblemType optprob = OptProblemType.FullEnRes, FphiType fphitype = FphiType.None) {
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit, OptProblemType optprob = OptProblemType.FullEnRes, FphiType fphitype = FphiType.None) {
 
 
             XESFControl c = new XESFControl();
@@ -461,7 +461,7 @@ namespace XESF {
         string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
         XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L2Merit
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit
         ) {
 
 
@@ -862,7 +862,7 @@ namespace XESF {
         string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.GodunovInterface,
         XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.1, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L2Merit,
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.1, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit,
         string meshPath = @"..\..\..\Meshes\WFExactMesh4Elements.msh") {
 
             XESFControl c = new XESFControl();
@@ -1373,7 +1373,7 @@ namespace XESF {
          OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, double[] tALNRs = null, int[] TermNs = null, int[] MaxReInits = null, double[] ReInitTols = null, double gammaMax = 1, double gammaMin = 1e-2,
         GetInitialValue initialValue = GetInitialValue.FromDBSinglePhase, bool iVFromShockRelations = false,
         double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch,
-        MeritFunctionType meritFunctionType = MeritFunctionType.L2Merit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
+        MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
         int[] staggeredTS = null, bool applyReInit = false, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints, bool restart = false, string sessId = null, string gridId = null, int tsNumber = 0) {
             XESFControl c = new XESFControl();
 
@@ -1702,7 +1702,7 @@ namespace XESF {
         OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, double[] tALNRs = null, int[] TermNs = null, int[] MaxReInits = null, double[] ReInitTols = null, double gammaMax = 1, double gammaMin = 1e-2,
        GetInitialValue initialValue = GetInitialValue.FromDBSinglePhase, bool iVFromShockRelations = false,
        double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch,
-       MeritFunctionType meritFunctionType = MeritFunctionType.L2Merit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
+       MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
        int[] staggeredTS = null, bool applyReInit = true, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints) {
             XESFControl c = new XESFControl();
 
