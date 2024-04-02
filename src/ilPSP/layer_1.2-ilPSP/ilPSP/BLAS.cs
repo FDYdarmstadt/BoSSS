@@ -1097,7 +1097,7 @@ namespace ilPSP.Utils {
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
                 case Parallelism.SEQ: return new string[] { "PARDISO2_seq.dll", "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
-                case Parallelism.OMP: return new string[] { "PARDISO2_omp.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                case Parallelism.OMP: return new string[] { "PARDISO3_omp.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
