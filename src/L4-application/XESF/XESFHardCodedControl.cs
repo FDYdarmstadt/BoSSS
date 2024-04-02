@@ -79,6 +79,9 @@ namespace XESF {
             c.NoOfTimesteps = MaxIterations;
 
             //Globalization Parameters
+            c.solRunType = dgDegree > 0 ? SolverRunType.PContinuation : SolverRunType.Standard;
+            c.DgDegree_Start = 0;
+            
             c.GlobalizationStrategy = globalization;
             c.MeritFunctionType = meritFunctionType;
             c.minimalSQPIterations = new int[] { 25, 25, 25, 0, 0 };
@@ -194,8 +197,8 @@ namespace XESF {
 
             
             // ### Wedge Level set function ###
-            c.LevelSetOneInitialValue = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / 0.17632698070846498); };
-
+            c.LevelSetOneInitialValue = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / LevelSet1Prime); };
+            optiLSDegree = lsDegree;
             //// Shock level set
             //c.LevelSetOneInitialValue = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
             c.GetLevelSet = shocksetup;
@@ -1233,7 +1236,7 @@ namespace XESF {
             return c;
         }
         public static XESFControl XDGWS_Cluster(double agg = 0.4, int numY = 10, string dbPath = null,
-            int numX = 15, int plotInterval = -1, int iProb = 0, int iflux = 0, int wallflux = 0, int bulkflux = 0, int iFphi = 0, int dgDegree=0, double initialAngle_shockLS=32)
+            int numX = 15, int plotInterval = -1, int iProb = 0, int iflux = 0, int wallflux = 0, int bulkflux = 0, int iFphi = 0, int dgDegree = 0, double initialAngle_shockLS = 32, double wedge_angle = 10, int lsdegree = 1, GetInitialValue getInitialValue=GetInitialValue.FromFunctionPerSpecies)
 
         {
             var fphiTypes = new FphiType[] { FphiType.None, FphiType.CurvatureAll, FphiType.CurvatureCut, FphiType.PerssonSensorCut, FphiType.PerssonSensorAll };
@@ -1242,6 +1245,7 @@ namespace XESF {
             var wallFluxes = new ConvectiveInterfaceFluxes[] { ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var, ConvectiveInterfaceFluxes.RoeWall };
             var bulkFluxes = new ConvectiveBulkFluxes[] { ConvectiveBulkFluxes.OptimizedHLLC, ConvectiveBulkFluxes.Roe, ConvectiveBulkFluxes.CentralFlux, ConvectiveBulkFluxes.Godunov };
             var c = XDGWedgeFlow_TwoLs_Base(
+                wedge_angle:wedge_angle,
                 agg: agg,
                 numOfCellsX: numX, numOfCellsY: numY,
                 dbPath: dbPath,
@@ -1252,10 +1256,12 @@ namespace XESF {
                 bulkFlux: bulkFluxes[bulkflux],
                 fphitype: fphiTypes[iFphi],
                 dgDegree:dgDegree,
-                initialAngle_shockLS: initialAngle_shockLS
+                lsDegree: lsdegree,
+                initialAngle_shockLS: initialAngle_shockLS,
+                initialValue:getInitialValue
                 ); ;
             //c.SaveMatrices = true;
-            c.SessionName = string.Format($"XDGWS-{numX}x{numY}-agg{agg}-iPrb{iProb}-iFlx{iflux}-wFLx{wallflux}-bFlx{bulkflux}-Fphi{iFphi}");
+            c.SessionName = string.Format($"XDGWS-{numX}x{numY}-agg{agg}-iPrb{iProb}-iFlx{iflux}-wFLx{wallflux}-bFlx{bulkflux}-Fphi{iFphi}-wA{wedge_angle}");
             return c;
         }
         /// <summary>
