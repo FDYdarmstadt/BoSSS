@@ -50,6 +50,7 @@ namespace XESF
         static void Main(string[] args)
         {
             //IDTTestRunner.RunTests();
+            //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
             //XESF.Tests.XESFTestProgram.XDGBowShockFromOldRun(tsNumber:161);
             //XESF.Tests.XESFTestProgram.XDGBowShockFromDB(5, 16, 1, 0);
             XESFMain._Main(args, false, () => new XESFMain());

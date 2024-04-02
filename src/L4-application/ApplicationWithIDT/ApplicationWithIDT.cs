@@ -15,6 +15,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Solution.LevelSetTools;
@@ -25,7 +27,7 @@ using ApplicationWithIDT.OptiLevelSets;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Gnuplot;
-
+using System.Diagnostics;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -240,6 +242,10 @@ namespace ApplicationWithIDT {
         /// </summary>
         public int ReiniTMaxIter { get; private set; }
 
+        /// <summary>
+        /// Initial objective value
+        /// </summary>
+        public double time_to_compute_objf { get; set; }
         #endregion
         #region Member Methods
         /// <summary>
@@ -2206,6 +2212,7 @@ namespace ApplicationWithIDT {
             }
             LsTBO.CopyFrom(levelSetBackup);
             LsTrk.UpdateTracker(CurrentStepNo);  
+            UpdateAgglomerator();
             for(int i = 0; i < ConservativeFields.Length; i++) {
                 ConservativeFields[i].CopyFrom(UBackup[i]);
             }
@@ -2222,6 +2229,7 @@ namespace ApplicationWithIDT {
             }
             LsTBO.CopyFrom(levelSetBackup);
             LsTrk.UpdateTracker(CurrentStepNo);
+            UpdateAgglomerator();
             for (int i = 0; i < ConservativeFields.Length; i++)
             {
                 ConservativeFields[i].CopyFrom(AgglomeratedUBackup[i]);
@@ -2534,7 +2542,7 @@ namespace ApplicationWithIDT {
 
 #region LevelSetCFL
             // we will check the LevelSetCFL not with the original LevelSetTrecker but with a nonShallow Copy
-            // This is dirty but causing the LevelSetCFL with the original LevelSetTracker breaks everything 
+            // Reason: causing the LevelSetCFL with the original LevelSetTracker breaks everything 
             LevelSet LevelSet_copy;
             LevelSetTracker LsTrk_copy;
 
@@ -2589,37 +2597,62 @@ namespace ApplicationWithIDT {
                 resetStepAgglomerated();
             }
 
-#endregion
-            //so now we should have a step that doesn't throw any LevelSetCFLException so we can compute it
+            #endregion
+            // measure computation of Residuals for the smallest alpha
+            {
+                success = !AccumulateStep(step_t, Control.Alpha_Min);
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                // measure
+                double[] obj_f = new double[obj_f_vec.Length];
+                double[] res = new double[ResidualVector.Length];
+                TransformFromAggToSourceSpace();
+                ComputeResiduals(obj_f, res);
+                stopwatch.Stop();
+                time_to_compute_objf = stopwatch.ElapsedMilliseconds;
+                resetStepAgglomerated();
+            }
+            //Now we should have a step that doesn't throw any LevelSetCFLException so we can compute it
+            //this.PlotCurrentState(0, 5);
             success = !AccumulateStep(step_t, m_alpha);
 #region Operator Exceptions
-            //next we want to find a step which doesn't break our operator
-            //So this loop gives us a Step which doesn't break the operator (e.g. negative rho/pressure etc...)
-            
+            //This loop gives us a Step which doesn't break the operator (e.g. negative rho/pressure etc...)
             while(success == false) {
                 success = true;
-                try {
-
-
-                    //TransformFromAggToSourceSpace();
-
+                try
+                { //try to compute the residuals
                     double[] obj_f = new double[obj_f_vec.Length];
                     double[] res = new double[ResidualVector.Length];
-                    //Eval_R = XSpatialOperator.GetEvaluatorEx(LsTrk, ConservativeFields, null, obj_f_map);
-                    //Eval_R.Evaluate(1.0, 0.0, en_res);
+                    //this.PlotCurrentState(1, 5);
                     TransformFromAggToSourceSpace();
-                    ComputeResiduals(obj_f, res);
+                    //this.PlotCurrentState(2, 5);
+                    Task potentiallyDeadlockedTask = Task.Run(() =>
+                    {
+                        // function that might cause a deadlock
+                        ComputeResiduals(obj_f, res);
+                    });
+
+                    //give it 10 times more time than for a Residual computation measured above
+                    bool completed = potentiallyDeadlockedTask.Wait(TimeSpan.FromMilliseconds(time_to_compute_objf * 10)); 
+
+                    // if not completed throw TimeoutException
+                    if (!completed)
+                    {
+                        throw new TimeoutException("Residual computation to long and probably in a deadlock");
+                    }
+                    
                     if(obj_f.MPI_L2Norm().IsNaN()) {
                         throw new NotFiniteNumberException("enriched residual norm is NaN");
                     }
-                    //double[] res = new double[ResidualVector.Length];
-                    //Eval_r = XSpatialOperator.GetEvaluatorEx(LsTrk, ConservativeFields, null, ResidualMap);
-                    //Eval_r.Evaluate(1.0, 0.0, res);
 
-                } catch (Exception e) {
+                } catch (Exception e) { //if error is thrown reset the step
                     if(e is NotFiniteNumberException) {
                         Console.WriteLine($"alpha, ||R1||  {m_alpha}, NaN ");
-                    } else {
+                    } else if (e is TimeoutException)
+                    {
+                        Console.WriteLine($"alpha, ||R1||  {m_alpha}, TimeOut ");
+                    }
+                    else
+                    {
                         Console.WriteLine($"alpha, ||R1||  {m_alpha}, Error ");
                     }
                     resetStepAgglomerated();
@@ -2639,18 +2672,8 @@ namespace ApplicationWithIDT {
                 throw new Exception("step needed to be shortened to much (m_alpha < alpha_min)");
             }
 
-            //if(counter2 > 0) {
-            //    //Console.WriteLine("step breaks Operator and had to be shortened to alpha=" + Math.Pow(tau, counter1 + counter2));
-            //    Console.WriteLine("step breaks Operator and had to be shortened to alpha=" + m_alpha);
-            //}
 #endregion
             resetStepAgglomerated();
-
-            ////Finally the variables are reseted and the step is scaled with the m_alpha obtained 
-            //if(m_alpha < 1) {
-            //    step_t.ScaleV(m_alpha);
-            //}
-
         }
         public void AllthePossibleStepsPlot(double eps=1e-8)
         {
@@ -2683,7 +2706,7 @@ namespace ApplicationWithIDT {
             double dx_left;
 
             // epsilon
-            //project OptiLevelSet onto XDGLevelSet
+            //project OptiLevelSet onto internal DGLevelSet
             LevelSetOpti.ProjectOntoLevelSet(LsTBO);
             LsTrk.UpdateTracker(CurrentStepNo);
             LevelSet phi0backup = new LevelSet(new Basis(LsTBO.GridDat.Grid, LsTBO.Basis.Degree), "LevelSetbackup");
@@ -2843,13 +2866,6 @@ namespace ApplicationWithIDT {
             }
 
             LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-            //var tp = new Tecplot(GridData, 4);
-            //tp = new Tecplot(GridData, 4);
-
-            //List<DGField> list = new List<DGField>();
-            //list.AddRange(UBackup);
-            //list.Add(LsTBO);
-            //tp.PlotFields("BackUp" + "_" + 0, 0.0, list);
 
             try {
                 LsTrk.UpdateTracker(CurrentStepNo);
@@ -2869,22 +2885,16 @@ namespace ApplicationWithIDT {
         /// Transform the solutionVector back into the original Space (Non-agglomerated)
         /// </summary>
         public void TransformFromAggToSourceSpace() {
-
-            //CoordinateVector SolutionVec = new CoordinateVector(ConservativeFields);
-            //double[] v = new double[SolutionVec.Count];
-            ////CoordinateVector SolutionVec_agg = new CoordinateVector(ConservativeFields);
-            ////SolutionVec_agg.Clear();
-            //LeftMul.Transpose().SpMV(1.0, SolutionVec, 0.0, v);
-            //SolutionVec.SetV(v);
-            //UpdateEnrichedFields();
             if(CurrentAgglo > 0) {
                 if(MultiphaseAgglomerator.TotalNumberOfAgglomerations > 0) {
                     MultiphaseAgglomerator.Extrapolate(new CoordinateMapping(ConservativeFields));//reset ConservativeFields into non-agglomerated form
+                    //UpdateAgglomerator();
+                    //MultiphaseAgglomerator.Extrapolate(new CoordinateMapping(ConservativeFields));//reset ConservativeFields into non-agglomerated form
                 }
             }
-                   
-
             
+
+                   
         }
         public void TransformStepFromAggToSourceSpace(double[] vector)
         {
@@ -2919,9 +2929,9 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
-        /// This method serves as a globalization to this solver.Starting with the computed step s^{IN} and depending on the globalization chosen a new step s
+        /// This method serves as a globalization to this solver. Starting with the computed step s^{IN} and depending on the globalization chosen a new step s
         /// is computed which either satisfies the condition of sufficient decrease
-        /// $$ f_m(z_k +s) \leq f_m(z_k) + s^T f_M'(z_k) $$ 
+        /// $$ f_m(z_k +s) \leq f_m(z_k) + s^T f_M'(z_k), $$ 
         /// or was shortened by $alpha_min$.
         /// 
         /// The globalization strategies implemented so far:
@@ -2943,31 +2953,7 @@ namespace ApplicationWithIDT {
                 TransformFromAggToSourceSpace();
                 //Evaluate the Operator at the Current state (normally this evaluation is done in RunSolverOneStep)
                 (res_l2, obj_f, res_L2) = ComputeResiduals();
-                resetStepAgglomerated();
-                //resetStep();
-                //TransformFromAggToSourceSpace();
-                //(res_l2, obj_f, res_L2) = ComputeResiduals(); 
-                //double merit_0=res_l2 + obj_f;
-                //Goes Back to NonAggSpace
-                //resetStepAgglomerated();
-
-                /// pre calculate things later used to calculate the predicted merit function
-                //switch (Control.MeritFunctionType)
-                //{
-                //    case MeritFunctionType.L1Merit:
-                //        res_l1 = 0;
-                //        for (int i = 0; i < ResidualVector.Length; i++)
-                //        {
-                //            res_l1 += ResidualVector[i].Abs();
-                //        }
-                //        break;
-                //    case MeritFunctionType.L2Merit:
-                //        Jr.Transpose().SpMV(mu * beta, ResidualVector, 0, merit_del);
-                //        merit_del.AccV(beta, gradf);
-                //        break;
-                //    default: throw new Exception("you need to choose a MeritFunctionType");
-
-                //}
+                resetStepAgglomerated();                
                 //transform everything back to non-agglomerated
                 int length_R = (int)obj_f_map.TotalLength;
                 int length_r = (int)UnknownsMap.TotalLength; // needs to be modified if more than one field is simulated
@@ -2978,20 +2964,11 @@ namespace ApplicationWithIDT {
                 JacR0TimesStep = new double[length_r];
                 Jr.SpMV(1.0, stepUphi, 0.0, JacR0TimesStep);
 
-                //TransformStepFromAggToSourceSpace(gradf);
-                //TransformStepFromAggToSourceSpace(JacR0TimesR0);
-                //TransformStepFromAggToSourceSpace(JacR0TimesStep);
-                //TransformStepFromAggToSourceSpace(stepIN);
-
-
                 ///Safe Guard: see if step breaks operator or induces LevelSet CFL, if so, shorten the step 
                 AccumulateInitialStep(stepIN, tau);
 
                 double[] temp = new double[RHS.Length];
                 double[] step = new double[stepIN.Length];
-
-
-
 
                 switch (Control.GlobalizationStrategy)
                 {
@@ -3118,25 +3095,6 @@ namespace ApplicationWithIDT {
                             //Console.WriteLine("try delta=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
                         }
                         succes = AccumulateStep(step, 1.0);
-                        // //Final Trust-region update
-                        // {
-                        //     // taken from [Pawlovski et.al. 2006], section 2.4;
-                        //     // originally from J. E. Dennis, Jr. and R. B. Schnabel. Numerical Methods for Unconstrained Optimization and Nonlinear Equations. Series in Automatic Computation. Prentice-Hall, Englewood Cliffs, NJ, 1983.
-
-                        //     const double rho_s = 0.1;
-                        //     const double rho_e = 0.75;
-                        //     const double beta_s = 0.25;
-                        //     const double beta_e = 4.0;
-
-                        //     if(last_ared / last_pred < rho_s && l2_stepIN < TrustRegionDelta) {
-                        //         TrustRegionDelta = Math.Max(l2_stepIN, delta_min);
-                        //     } else if(last_ared / last_pred < rho_s) {
-                        //         TrustRegionDelta = Math.Max(beta_s * TrustRegionDelta, delta_min); // shrinking
-                        //     } else if(last_ared / last_pred > rho_e) {
-                        //         TrustRegionDelta = Math.Min(beta_e * TrustRegionDelta, delta_max); // enhancing
-                        //     }
-                        // }
-                        //stepIN.SetV(step);
                         stepIN.SetV(step);
                         return TrustRegionDelta;
                     #endregion
