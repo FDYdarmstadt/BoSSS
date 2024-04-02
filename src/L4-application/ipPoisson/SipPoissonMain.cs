@@ -48,6 +48,11 @@ using System.ComponentModel;
 namespace BoSSS.Application.SipPoisson {
 
 
+    static class  BoSSSmkl {
+        
+    }
+
+
     /// <summary>
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
     /// </summary>
@@ -61,7 +66,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            /*
+            
 
 
             InitMPI(args);
@@ -120,13 +125,35 @@ namespace BoSSS.Application.SipPoisson {
             var start = DateTime.Now;
             var timeout = new TimeSpan(hours: 0, minutes: 50, seconds: 1);
             Stopwatch s0 = new Stopwatch();
-            int cnt = 0;
+            int cnt = -1;
             while (true) {
-                if (DateTime.Now - start > timeout) {
-                    FinalizeMPI();
-                    return;
+                var duration = DateTime.Now - start;
+                if (duration > timeout) {
+                    //FinalizeMPI();
+                    //return;
+                    break;
                 }
 
+                {
+                    cnt = (int) Math.Round(duration.TotalSeconds / 15);
+                    if(cnt < 0 ) 
+                        cnt = 0;
+                    Console.WriteLine("count = " + cnt);
+
+                    int[] CPUs;
+                    if (duration.TotalSeconds < 1*60) {
+                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+                    } else if (duration.TotalSeconds < 2*60) {
+                        CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
+                    } else if (duration.TotalSeconds < 3*60) {
+                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
+                    } else {
+                        CPUs = new int[] { 2, 3, 4, 5, 6, 8, 10 };
+                    }
+                    Console.WriteLine($"Binding to {CPUs.Length} CPUs/cores");
+                    ilPSP.MKLservice.BindOMPthreads(CPUs);
+                }
+            
 
                 //cnt++;
                 //if (cnt > 2) {
@@ -231,6 +258,7 @@ namespace BoSSS.Application.SipPoisson {
             });
         }
 
+        /*
         private static void SetOMPAffinity(int Nothreads, int Rank, int Size, bool Global) {
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
@@ -245,7 +273,7 @@ namespace BoSSS.Application.SipPoisson {
 
             ilPSP.Environment.StdoutOnlyOnRank0 = true;
         }
-
+        */
 
 #pragma warning disable 649
         /// <summary>
