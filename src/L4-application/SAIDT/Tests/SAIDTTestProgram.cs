@@ -61,7 +61,7 @@ namespace SAIDT.Tests {
                     numOfCellsX:10,
                     numOfCellsY: 10,
                     agg: 0.2,
-                    ImmediatePlotPeriod: 1,
+                    ImmediatePlotPeriod: -1,
                     optiLevelSetType: OptiLevelSetType.SplineLevelSet,
                     LSDegree: 3,
                     withReInit: true,
