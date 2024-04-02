@@ -175,9 +175,75 @@ namespace ilPSP.Utils {
             }
 
         }
-        
 
-      
+
+        /// <summary>
+        /// When MS HPC server is used, it seems to be necessary to define the `OMP_PLACES` environment variable.
+        /// Otherwise, it seems that many OpenMP-threads (PARDISO, BLAS) seem to concentrate on the same cores.
+        /// While C#-threads seem to respect the core affinity set by the HPC server, the OpenMP-threads don't care.
+        /// 
+        /// Luckily, MS HPC typically defines the Environment variable `CCP_AFFINITY`;
+        /// We are going to use this 
+        /// </summary>
+        public static int SetKMP_AFFINITYfromCCPVar(int NumThreads) {
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
+                // Check if CCP_AFFINITY is defined and defined on all ranks
+                // =========================================================
+
+                string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
+
+                bool CCP_AFFINITY_DEFINED = (CCP_AFFINITY != null);
+                bool glCCP_AFFINITY_DEFINED = CCP_AFFINITY_DEFINED.MPIOr();
+                tr.Info($"Variable 'CCP_AFFINITY' is set to {CCP_AFFINITY}; defines on all ranks? {glCCP_AFFINITY_DEFINED}");
+
+                if (glCCP_AFFINITY_DEFINED != CCP_AFFINITY_DEFINED) {
+                    string errMsg = $"`CCP_AFFINITY` defined on some ranks, but not on all; defined on {MPIrank}? {CCP_AFFINITY_DEFINED}, globally? {glCCP_AFFINITY_DEFINED}";
+                    tr.Error(errMsg);
+                    throw new ApplicationException(errMsg);
+                }
+
+                if (glCCP_AFFINITY_DEFINED == false)
+                    // make all processors on system available for OpenMP
+                    return NumThreads;
+
+                tr.Info($"R{MPIrank}, rank on node {ilPSP.Environment.MPIEnv.ProcessRankOnSMP}: CCP_AFFINITY = {CCP_AFFINITY}");
+
+
+                // decode the variable
+                // ===================
+
+
+                var affGroup = CCP_AFFINITY.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+
+                var CPUlist = new List<int>();
+                int iGroup = 0;
+                var groupOccupied = new List<bool>();
+                foreach (string aff in affGroup) {
+                    //
+                    // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
+                    //
+
+                    var groupCPUs = CheckCpuAffinity(new UIntPtr(Convert.ToUInt64(aff, 16)), iGroup, 64); // always 64 procs per group!!!
+                    groupOccupied.Add(groupCPUs.Count() > 0);
+                    CPUlist.AddRange(groupCPUs);
+                    iGroup++;
+
+                }
+                CPUlist.Sort();
+
+                //bool allInOneGroup = groupOccupied.Where(bg => bg).Count() == 1;
+
+
+                return CPUAffinity.SetKMP_AFFINITYFromCPUList(NumThreads, CPUlist.ToArray());
+            }
+
+        }
+
+
+
 
         static IEnumerable<int> CheckCpuAffinity(UIntPtr mask, int iProcessorGroup, int procsPerGroup) {
             var res = new List<int>();

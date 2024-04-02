@@ -367,9 +367,15 @@ namespace ilPSP {
 
                 if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     System.Environment.SetEnvironmentVariable("KMP_AFFINITY", "verbose,respect");
+
+
+
                     tr.Info("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
                     MaxNumOpenMPthreads = CPUAffinity.CpuListOnSMP(ReservedCPUs).Length;
                     tr.Info("Affinity reported from Win32 API: " + ReservedCPUs.ToConcatString("", ", ", ";"));
+
+                    //CPUAffinityWindows.SetKMP_AFFINITYfromCCPVar(NumThreads);
+
 
                     MaxNumOpenMPthreads = NumThreads;// CPUAffinityWindows.SetOMP_PLACESfromCCPVar(NumThreads);
                     tr.Info($"MaxNumOMPThreads = {MaxNumOpenMPthreads}, NumThreads = {NumThreads}");
