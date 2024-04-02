@@ -202,9 +202,6 @@ namespace ApplicationWithIDT {
             obj_out.ScaleV(0.0);
             var Eval_R = Op_cons.GetEvaluatorEx(LsTrk, ConservativeFields, null, obj_map);
             Eval_R.Evaluate(1.0, 0.0, obj_out);
-            //if(CurrentAgglo > 0) {
-            //    MultiphaseAgglomerator.ManipulateMatrixAndRHS(default(MsrMatrix), obj_out, obj_map, cons_map);
-            //}
         }
 
         public override void GetConsFromObj<V>(V obj, V cons_out, XDGField[] ConservativeFields) {

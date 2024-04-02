@@ -50,8 +50,8 @@ namespace XESF.Tests
                 var C = XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base(
                     optiLSDegree: 1,
                     lsDegree: 1,
-                    shocksetup: ApplicationWithIDT.GetLevelSet.FromParams,
-                    optiLevelSetType: OptiLevelSetType.GlobalLevelSet,
+                    shocksetup: ApplicationWithIDT.GetLevelSet.FromFunction,
+                    optiLevelSetType: OptiLevelSetType.SplineLevelSet,
                     initialValue: ApplicationWithIDT.GetInitialValue.FromFunctionPerSpecies,
                     MaxIterations: 200,
                     dgDegree: 0,
@@ -67,8 +67,8 @@ namespace XESF.Tests
                     );
                 p.Init(C);
                 p.RunSolverMode();
-                var tol1 = 1e-02;
-                var tol2 = 2.5;
+                var tol1 = 1e-07;
+                var tol2 = 1e-07;
                 Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol2 && p.ResidualVector.MPI_L2Norm() < tol1), $"the L2 Error is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
             }
         }
