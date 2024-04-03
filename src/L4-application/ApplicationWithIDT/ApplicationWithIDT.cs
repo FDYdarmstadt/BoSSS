@@ -28,6 +28,7 @@ using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Gnuplot;
 using System.Diagnostics;
+using BoSSS.Solution.Control;
 
 namespace ApplicationWithIDT {
     /// <summary>
@@ -3755,11 +3756,14 @@ namespace ApplicationWithIDT {
             //init an operator with temp operator
             var OpWithTemp = XSpatialOperator.CloneAs();
             var TempOp = new ConstantXTemporalOperator(OpWithTemp);
+            OpWithTemp.AgglomerationThreshold = Control.AgglomerationThreshold;
             OpWithTemp.TemporalOperator = TempOp;
             OpWithTemp.Commit();
             UpdateAgglomerator();
             //init an appropriate timeStepper
-            var xdgtimestepping = new XdgTimestepping( OpWithTemp, ConVars, residuals,TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold:CurrentAgglo);
+            NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
+            NonLinearSolver.MaxSolverIterations = 10;
+            var xdgtimestepping = new XdgTimestepping( OpWithTemp, ConVars, residuals,TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold:CurrentAgglo, NonLinearSolver:NonLinearSolver);
 
 
             //get a starting Timestepsize

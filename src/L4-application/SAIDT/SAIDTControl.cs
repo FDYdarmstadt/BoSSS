@@ -10,6 +10,7 @@ namespace SAIDT
         /// </summary>
         public SAIDTControl()
         {
+            this.GetInitialValue = GetInitialValue.OneFullNewtonStep;
         }
         public double LeftValue { get; set; }
         public double RightValue { get; set; }

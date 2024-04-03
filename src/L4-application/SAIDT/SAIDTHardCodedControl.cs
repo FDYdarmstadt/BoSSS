@@ -68,7 +68,6 @@ namespace SAIDT {
             c.SolDegree = dgDegree;
             #endregion
             #region Initial Guess for state 
-            c.GetInitialValue = GetInitialValue.FromFunctionPerSpecies;
             c.InitialValueFunctionsPerSpecies.Clear();
             c.InitialValueFunctionsPerSpecies.Add("L", x => x[0] < 0.5 * x[1] ?1 : 0);
             c.InitialValueFunctionsPerSpecies.Add("R", x => x[0] < 0.5 * x[1] ? 1 : 0);
@@ -162,7 +161,7 @@ namespace SAIDT {
                 c.LevelSetTwoInitialValue = x => x[0] - 0.1 - 0.7 * x[1] + x[1] * x[1] - 0.7 * x[1] * x[1] * x[1];
             }
             #endregion
-            c.GetInitialValue = GetInitialValue.FromP0Timestepping;
+            c.GetInitialValue = GetInitialValue.OneFullNewtonStep;
             Func<double, double> exactShock = t => t*t*t-3.0/2.0*t*t+0.5*t+0.25;
             c.InitialValueFunctionsPerSpecies.Clear();
             c.InitialValueFunctionsPerSpecies.Add("L", x => exactShock(x[1])-x[0]  > 0 ? 1 : 0);

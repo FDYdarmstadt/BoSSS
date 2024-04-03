@@ -82,6 +82,7 @@ namespace BUIDT.Tests
                     getLevelSet: GetLevelSet.FromFunction,
                     solverRunType: SolverRunType.PContinuation
                     ) ;
+                //C.GetInitialValue = GetInitialValue.FromP0Timestepping;
                 p.Init(C);
                 p.RunSolverMode();
                 Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < 5e-01 && p.ResidualVector.MPI_L2Norm() < 5e-02), System.String.Format("the L2 Error is greater than 1e-02,1e-01 (Residual {0}, Enriched Residual {1}", p.ResidualVector.MPI_L2Norm(), p.obj_f_vec.MPI_L2Norm()));
