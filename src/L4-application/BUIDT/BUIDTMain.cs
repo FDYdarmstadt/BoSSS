@@ -119,12 +119,17 @@ namespace BUIDT {
             r_JacobiOperator = XSpatialOperator.GetJacobiOperator(SpatialDimension: 2);
             R_JacobiOperator = XSpatialOperator.GetJacobiOperator(SpatialDimension: 2);
 
-
-            //now that the operator is assembled we can compute the p0 solution
-            if(Control.UseP0ProjectionAsInitialGuess) {
-                ComputeP0Solution();
+            switch (Control.GetInitialValue)
+            {
+                case GetInitialValue.FromP0Timestepping:
+                    ComputeP0Solution();
+                    break;
+                case GetInitialValue.OneFullNewtonStep:
+                    ComputeP0SolutionOneNewtonStep();
+                    break;
+                default:
+                    break;
             }
-
 
             //init OptProblem
             ChooseOptProblem();
@@ -143,10 +148,11 @@ namespace BUIDT {
         public Type GetSolverType() {
             return typeof(BUIDTMain);
         }
-        /// <summary>
-        /// Approximates the linear P=0 problem, doing one Newton step. 
-        /// </summary>
-        public void ComputeP0Solution() {
+        ///// <summary>
+        ///// Approximates the linear P=0 problem, doing one Newton step. 
+        ///// </summary>
+        public void ComputeP0SolutionOneNewtonStep()
+        {
 
             // Clear fields (just to be sure)
             this.Concentration.Clear();

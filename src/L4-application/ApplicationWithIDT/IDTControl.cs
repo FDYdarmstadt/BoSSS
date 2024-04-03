@@ -35,7 +35,7 @@ namespace ApplicationWithIDT {
             this.SpeciesTable[0, 1] = "R";
             this.SpeciesTable[1, 0] = "A";
             this.SpeciesTable[1, 1] = "B";
-
+            base.NoOfMultigridLevels = 1;
         }
 
         //[ExclusiveLowerBound(0.0)]
@@ -305,6 +305,7 @@ namespace ApplicationWithIDT {
         FromDB_Partial_SeedInflowExactly,
         FromAVRun,
         FromP0Timestepping,
+        OneFullNewtonStep,
     }
     /// <summary>
     /// this enum controls the Globalization Strategy
