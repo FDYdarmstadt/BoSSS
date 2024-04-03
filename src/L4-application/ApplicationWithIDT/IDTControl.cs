@@ -203,7 +203,7 @@ namespace ApplicationWithIDT {
         public double reInit_c3 { get; set; } = 1e-2; // c_8 close to eq. (70) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
         public double Kappa { get; set; } = 0.5;
 
-        public double[] reInitTols { get; set; } = new double[] { -2e-1,-2e-1,0,0,0,0};
+        public double[] reInitTols { get; set; } = new double[] { -2e-1, -2e-1, -2e-1, -2e-1, -2e-1, 0 };
 
         /// <summary>
         /// Staggered solver

@@ -911,9 +911,7 @@ namespace ApplicationWithIDT {
                     double[] resStep = new double[(int)ResidualMap.TotalLength];
                     bool succes = AccumulateStep(step, m_alpha);
 
-                    //TransformFromAggToSourceSpace();
-
-                    //TransformFromAggToSourceSpace();
+                    TransformFromAggToSourceSpace();
                     ComputeResiduals(objStep, resStep);
                     
                     double[] f_phi_vec = ComputeFphi();
@@ -978,8 +976,7 @@ namespace ApplicationWithIDT {
                     double[] resStep = new double[(int)ResidualMap.TotalLength];
                     bool succes = AccumulateStep(step, alpha);
                     double[] f_phi_vec = ComputeFphi();
-                    //TransformFromAggToSourceSpace();
-                    //TransformFromAggToSourceSpace();
+                    TransformFromAggToSourceSpace();
                     ComputeResiduals(objStep, resStep);
                     resetStepAgglomerated();
 
@@ -1107,7 +1104,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public void ComputeAndWriteResiduals() {
 
-            //TransformFromAggToSourceSpace();
+            TransformFromAggToSourceSpace();
 
             (res_l2, obj_f, res_L2) = ComputeResiduals();
             AgglomerateOnlyResiduals();
@@ -2523,16 +2520,20 @@ namespace ApplicationWithIDT {
             }
 
             #endregion
+            //PlotCurrentState(0, 5);
             success = !AccumulateStep(step_t, m_alpha);
-#region Operator Exceptions
+            //PlotCurrentState(2, 5);
+            #region Operator Exceptions
             //This loop gives us a Step which doesn't break the operator (e.g. negative rho/pressure etc...)
-            while(success == false) {
+            while (success == false) {
                 success = true;
                 try
                 { //try to compute the residuals
                     double[] obj_f = new double[obj_f_vec.Length];
                     double[] res = new double[ResidualVector.Length];
 
+                    TransformFromAggToSourceSpace();
+                    
                     ComputeResiduals(obj_f, res);
 
                     if (obj_f.MPI_L2Norm().IsNaN()) {
@@ -2640,7 +2641,7 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
-                    //TransformFromAggToSourceSpace();
+                    TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     AgglomerateOnlyResiduals();
                     resetStepAgglomerated();
@@ -2662,7 +2663,7 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
-                    //TransformFromAggToSourceSpace();
+                    TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     AgglomerateOnlyResiduals();
                     resetStepAgglomerated();
@@ -2705,9 +2706,7 @@ namespace ApplicationWithIDT {
                 try {
                     LsTrk.UpdateTracker(CurrentStepNo);
 
-                    //TransformFromAggToSourceSpace();
-
-                    //TransformFromAggToSourceSpace();
+                    TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     Plot(0.0, 1000 + i + 1);
                     resetStepAgglomerated();
@@ -2739,7 +2738,9 @@ namespace ApplicationWithIDT {
                 ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += m_alpha * step_t[stepIndex];
             }
 
-            TransformFromAggToSourceSpace();
+            //TransformFromAggToSourceSpace();
+
+            
             /// Level Set Update
             //special treatment for space time level sets
             if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
@@ -2765,7 +2766,7 @@ namespace ApplicationWithIDT {
 
             try {
                 LsTrk.UpdateTracker(CurrentStepNo);
-                UpdateAgglomerator();   
+                //UpdateAgglomerator();   
             } catch { //if Exception is called no step is computed
                 resetStepAgglomerated();
                 //tp.PlotFields("BackUp" + "_" + 1, 0.0,list);
@@ -3756,9 +3757,9 @@ namespace ApplicationWithIDT {
             var TempOp = new ConstantXTemporalOperator(OpWithTemp);
             OpWithTemp.TemporalOperator = TempOp;
             OpWithTemp.Commit();
-
+            UpdateAgglomerator();
             //init an appropriate timeStepper
-            var xdgtimestepping = new XdgTimestepping(OpWithTemp, ConVars, residuals,TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold:CurrentAgglo);
+            var xdgtimestepping = new XdgTimestepping( OpWithTemp, ConVars, residuals,TimeSteppingScheme.RK_ImplicitEuler, _AgglomerationThreshold:CurrentAgglo);
 
 
             //get a starting Timestepsize

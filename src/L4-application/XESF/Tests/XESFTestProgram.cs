@@ -43,7 +43,7 @@ namespace XESF.Tests
         [Test]
         public static void XDG_SWF_TwoLs()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads:1); //fails if more than 1 thread is chosen
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
@@ -77,7 +77,7 @@ namespace XESF.Tests
         [Test]
         public static void XDG_SWF_OneLs_Cart()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
@@ -97,27 +97,41 @@ namespace XESF.Tests
             }
         }
         #endregion
-
-        public static void XDG_SWF_TwoLs_HighOrder() { 
-        BoSSS.Solution.Application.InitMPI();
+        public static void XDGBowShockFromDB()
+        {
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            using (var p = new XESFMain())
+            {
+                var C = XESFHardCodedControl.XDGBS_Local(
+                    plotInterval: 1
+                    );
+                C.GetInitialValue = GetInitialValue.FromP0Timestepping;
+                p.Init(C);
+                p.RunSolverMode();
+            }
+        }
+        public static void XDG_SWF_TwoLs_HighOrder()
+        {
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
                 var C = XESFHardCodedControl.XDGWS_Cluster(
                     dgDegree: 3,
                     lsdegree: 3,
-                    getInitialValue:GetInitialValue.FromP0Timestepping,
-                    wedge_angle:35,
-                    plotInterval:1
+                    getInitialValue: GetInitialValue.FromP0Timestepping,
+                    wedge_angle: 35,
+                    plotInterval: 1
                     );
 
-        p.Init(C);
+                p.Init(C);
                 p.RunSolverMode();
                 var tol = 1e-07;
-        Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol && p.ResidualVector.MPI_L2Norm() < tol), $"the L2 Error is greater than {tol} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+                Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol && p.ResidualVector.MPI_L2Norm() < tol), $"the L2 Error is greater than {tol} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
 
             }
-}
+        }
 /// <summary>
 /// Helper function to store interpolating points of an SplineLevelSet
 /// </summary>

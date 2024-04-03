@@ -1192,8 +1192,8 @@ namespace XESF {
         /// <param name="itMinPIter"></param>
         /// <param name="iTermN"></param>
         /// <returns></returns>
-        public static XESFControl XDGBS_Cluster(bool aRI = false, double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 22, string dbPath = null,
-            int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int wallflux = 0, int bulkflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
+        public static XESFControl XDGBS_Cluster(double gammaMax = 1, bool aRI = false, double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 16, string dbPath = null,
+            int numX = 5, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int wallflux = 0, int bulkflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
             
             {
             var fphiTypes = new FphiType[] { FphiType.None, FphiType.CurvatureAll, FphiType.CurvatureCut, FphiType.PerssonSensorCut, FphiType.PerssonSensorAll };
@@ -1209,6 +1209,7 @@ namespace XESF {
             var ReInitTolsArray = new double[][] { new double[] { -2e-1, -2e-1, -2e-1, -3e-1, -4e-1, 0 },new double[] { -2e-1, -2e-1, -2e-1, -2e-1, -2e-1, -2e-1 }, new double[] { -1, -0.2, -0.3, -0.4, -0.5 }, new double[] { -1, -0.2, -0.4, -0.6, -0.8} };
 
             var c = XDGBowShock_TwoLs_LSFromDB(
+                gammaMax:gammaMax,
                 agg: agg,
                 numOfCellsX: numX, numOfCellsY: numY,
                 dgDegreeStart: DegS, dgDegreeEnd: DegE,
@@ -1284,7 +1285,7 @@ namespace XESF {
         /// <param name="iTermN"></param>
         /// <returns></returns>
         public static XESFControl XDGBS_Local(double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 10, int cflux = 0,
-            int numY = 22, int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR = 0, int itMinPIter = 0, int iTermN = 0) { 
+            int numY = 16, int numX = 5, int DegE = 3, int DegS = 0, int plotInterval = -1, int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR = 0, int itMinPIter = 0, int iTermN = 0) { 
 
 
            
@@ -1304,11 +1305,10 @@ namespace XESF {
                 //shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
                 //pointPath: @"C:\experimental\internal\src\private-mag\XDGShock\Tests\BowShockPoints.txt",
                 initialValue: GetInitialValue.FromDBSinglePhase,
-                ///Home PC
-                shockLevelSet_Db: @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\Databases\bosss_db_levelSets\bosss_db_levelSets",
+                                ///Home PC
                 shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
-                pointPath: @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\BoSSS\experimental\internal\src\private-mag\XDGShock\Tests\BowShockPoints.txt",
-                //initialValue: GetInitialValue.FromDBSinglePhase,PlotInterval: plotInterval,
+                pointPath: @".\..\..\..\BowShockPoints.txt",
+                shockLevelSet_Db: @".\..\..\..\bosss_db_levelSets.zip",//initialValue: GetInitialValue.FromDBSinglePhase,PlotInterval: plotInterval,
                 interfaceFluxLS2: IFluxes[iflux],
                 bulkFlux: CFluxes[cflux],
                 terStrat: ITerStrats[terStrat],
