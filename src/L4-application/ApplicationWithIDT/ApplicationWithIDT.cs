@@ -2765,7 +2765,7 @@ namespace ApplicationWithIDT {
 
             try {
                 LsTrk.UpdateTracker(CurrentStepNo);
-                //UpdateAgglomerator();   
+                UpdateAgglomerator();   
             } catch { //if Exception is called no step is computed
                 resetStepAgglomerated();
                 //tp.PlotFields("BackUp" + "_" + 1, 0.0,list);
