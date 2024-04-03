@@ -456,6 +456,8 @@ namespace ApplicationWithIDT {
             Console.WriteLine($"*  solver type:                        {Control.solRunType}");
             Console.WriteLine($"*  f_phi type:                         {Control.fphiType}");
             Console.WriteLine($"*  globalization strategy:             {Control.GlobalizationStrategy}");
+            Console.WriteLine($"*  initial value from:                 {Control.GetInitialValue}");
+            
             Console.WriteLine($"*  ");
             Console.WriteLine("******************************* Params ************************************************");
             Console.WriteLine($"*  Solution Degree:                    {Control.SolDegree}");

@@ -98,12 +98,32 @@ namespace XESF.Tests
         }
         #endregion
 
-        /// <summary>
-        /// Helper function to store interpolating points of an SplineLevelSet
-        /// </summary>
-        /// <param name="p"></param>
-        /// <param name="filename"></param>
-        public static void SaveIsoContourToTextFile(XESFMain p, string filename)
+        public static void XDG_SWF_TwoLs_HighOrder() { 
+        BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            using (var p = new XESFMain())
+            {
+                var C = XESFHardCodedControl.XDGWS_Cluster(
+                    dgDegree: 3,
+                    lsdegree: 3,
+                    getInitialValue:GetInitialValue.FromP0Timestepping,
+                    wedge_angle:35,
+                    plotInterval:1
+                    );
+
+        p.Init(C);
+                p.RunSolverMode();
+                var tol = 1e-07;
+        Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol && p.ResidualVector.MPI_L2Norm() < tol), $"the L2 Error is greater than {tol} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+
+            }
+}
+/// <summary>
+/// Helper function to store interpolating points of an SplineLevelSet
+/// </summary>
+/// <param name="p"></param>
+/// <param name="filename"></param>
+public static void SaveIsoContourToTextFile(XESFMain p, string filename)
         {
             if (p.LevelSetOpti is SplineOptiLevelSet spliny)
             {
