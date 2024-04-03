@@ -25,10 +25,16 @@ namespace ilPSP {
 
         public unsafe delegate int _BoSSS_bind_omp_threads(int NumThreads, int* CPUindices);
 
+        public unsafe delegate int _BoSSS_set_dynamic(int boolDynThreads);
+
+        public unsafe delegate int _BoSSS_get_dynamic(int* boolDynThreads);
+
 
 #pragma warning disable        649
         _BoSSS_set_num_threads BoSSS_set_num_threads;
         _BoSSS_bind_omp_threads BoSSS_bind_omp_threads;
+        _BoSSS_set_dynamic BoSSS_set_dynamic;
+        _BoSSS_get_dynamic BoSSS_get_dynamic;
 #pragma warning restore 649
 
 
@@ -43,12 +49,41 @@ namespace ilPSP {
             }
         }
 
-        public static void BindOMPthreads(int[] CPUindices) {
-            unsafe {
-                fixed (int* cores = CPUindices) {
-                    int NumCpus = CPUindices.Length;
-                    instance.BoSSS_bind_omp_threads(NumCpus, cores);
+        /// <summary>
+        /// Setting/Getting the state of OpenMP dynamic thread allocation 
+        /// (internal control variable `omp_get_dynamic`, overrifed the bahavor of OMP_DYNAMIC environment variable)
+        /// </summary>
+        public static bool Dynamic {
+            get {
+                unsafe {
+                    int ret = 0;
+                    instance.BoSSS_get_dynamic(&ret);
+                    return ret != 0;
                 }
+            }
+            set {
+                instance.BoSSS_set_dynamic(value ? 1 : 0);
+            }
+
+        }
+
+        public static void BindOMPthreads(int[] CPUindices) {
+            int ret;
+            int NumCpus = CPUindices.Length;
+            unsafe {
+                int* __CPUindices = stackalloc int[NumCpus];
+                for (int i = 0; i < NumCpus; i++)
+                    __CPUindices[i] = CPUindices[i]; // we need to make a copy to write a proper error message in the fail case.
+                ret = instance.BoSSS_bind_omp_threads(NumCpus, __CPUindices); // `__CPUindices` is used for input and output;
+
+                for (int i = 0; i < NumCpus; i++) {
+                    Console.Error.WriteLine($"Error binding OMP thread #{i} to CPU #{CPUindices[i]}: kmp_set_affinity return code {__CPUindices[i]}");
+                }
+
+                if(ret != 0) {
+                    Console.Error.WriteLine($"BoSSS_bind_omp_threads returned {ret}.")
+                }
+
             }
         }
 

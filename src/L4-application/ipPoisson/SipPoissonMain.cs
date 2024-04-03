@@ -67,7 +67,7 @@ namespace BoSSS.Application.SipPoisson {
         static void Main(string[] args) {
 
             
-
+            /*
 
             InitMPI(args);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
@@ -189,7 +189,7 @@ namespace BoSSS.Application.SipPoisson {
                 var AnrmG = AnrmLoc.MPISum().Sum();
                 var BnrmG = BnrmLoc.MPISum().Sum();
                 var CnrmG = CnrmLoc.MPISum().Sum();
-                */
+                
                 //Console.WriteLine("A norm: " + AnrmG);
                 //Console.WriteLine("B norm: " + BnrmG);
                 //Console.WriteLine("C norm: " + CnrmG);
