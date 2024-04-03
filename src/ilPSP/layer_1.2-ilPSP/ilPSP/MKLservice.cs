@@ -36,8 +36,10 @@ namespace ilPSP {
 
 
         public static void SetNumThreads(int nth) {
-            unsafe {
-                instance.BoSSS_set_num_threads(&nth);
+            if (nth > 1000000) {
+                unsafe {
+                    instance.BoSSS_set_num_threads(&nth);
+                }
             }
         }
 
