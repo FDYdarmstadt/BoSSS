@@ -142,7 +142,7 @@ namespace BoSSS.Application.SipPoisson {
 
                     int[] CPUs;
                     if (duration.TotalSeconds < 1*60) {
-                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 88 };
                     } else if (duration.TotalSeconds < 2*60) {
                         CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
                     } else if (duration.TotalSeconds < 3*60) {
