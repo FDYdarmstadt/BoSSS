@@ -142,18 +142,22 @@ namespace BoSSS.Application.SipPoisson {
 
                     int[] CPUs;
                     if (duration.TotalSeconds < 1*60) {
-                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+                        //CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+                        CPUs = 40.ForLoop(i => i + 4);
                     } else if (duration.TotalSeconds < 2*60) {
-                        CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
+                        //CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
+                        CPUs = 40.ForLoop(i => i + 4 + 64);
                     } else if (duration.TotalSeconds < 3*60) {
-                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
+                        //CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
+                        CPUs = ArrayTools.Cat(42.ForLoop(i => i + 2), 42.ForLoop(i => i + 64 + 2));
                     } else {
-                        CPUs = new int[] { 2, 3, 4, 5, 6, 8, 10 };
+                        //CPUs = new int[] { 64, 65, 66, 70, 71, 72 };
+                        CPUs = 4.ForLoop(i => i*2 + 4);
                     }
                     Console.WriteLine($"Binding to {CPUs.Length} CPUs/cores");
                     ilPSP.MKLservice.BindOMPthreads(CPUs);
                 }
-            
+
 
                 //cnt++;
                 //if (cnt > 2) {
@@ -164,7 +168,7 @@ namespace BoSSS.Application.SipPoisson {
                 //    SetAffinity(Nothreads, 0);
                 //}
 
-
+                /*
                 s0.Reset();
                 s0.Start();
                 var AnrmLoc = new double[A.Length];
@@ -185,10 +189,10 @@ namespace BoSSS.Application.SipPoisson {
                 var AnrmG = AnrmLoc.MPISum().Sum();
                 var BnrmG = BnrmLoc.MPISum().Sum();
                 var CnrmG = CnrmLoc.MPISum().Sum();
-
-                Console.WriteLine("A norm: " + AnrmG);
-                Console.WriteLine("B norm: " + BnrmG);
-                Console.WriteLine("C norm: " + CnrmG);
+                */
+                //Console.WriteLine("A norm: " + AnrmG);
+                //Console.WriteLine("B norm: " + BnrmG);
+                //Console.WriteLine("C norm: " + CnrmG);
                 s0.Stop();
                 Console.WriteLine("   MPIsum time: " + s0.Elapsed.TotalSeconds);
 
