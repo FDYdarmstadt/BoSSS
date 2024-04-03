@@ -913,7 +913,7 @@ namespace ApplicationWithIDT {
 
                     //TransformFromAggToSourceSpace();
 
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
                     ComputeResiduals(objStep, resStep);
                     
                     double[] f_phi_vec = ComputeFphi();
@@ -979,7 +979,7 @@ namespace ApplicationWithIDT {
                     bool succes = AccumulateStep(step, alpha);
                     double[] f_phi_vec = ComputeFphi();
                     //TransformFromAggToSourceSpace();
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
                     ComputeResiduals(objStep, resStep);
                     resetStepAgglomerated();
 
@@ -1107,7 +1107,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public void ComputeAndWriteResiduals() {
 
-            TransformFromAggToSourceSpace();
+            //TransformFromAggToSourceSpace();
 
             (res_l2, obj_f, res_L2) = ComputeResiduals();
             AgglomerateOnlyResiduals();
@@ -1323,70 +1323,6 @@ namespace ApplicationWithIDT {
                 }
                 UpdateDerivedVariables();
                 plotDriver.PlotFields(Control.ProjectName + "_" + timestepNo, physTime, m_IOFields);
-
-                #region Debugging: write residuals to text file
-                // Sample points
-                //int noOfPoints = 16;
-                //double[] nodes = GenericBlas.Linspace(-1.8, -0.3, noOfPoints);
-                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
-                //for (int i = 0; i < noOfPoints; i++) {
-                //    points[i, 0] = nodes[i];
-                //    points[i, 1] = -0.65;
-                //}
-
-                //// FieldEvaluation
-                //MultidimensionalArray results = MultidimensionalArray.Create(noOfPoints, Residuals.Length);
-                //for (int i = 0; i < Residuals.Length; i++) {
-                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
-                //    fieldEvaluator.Evaluate(1.0, Residuals, points, 0.0, results);
-                //}
-
-                //// StreamWriter
-                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("Residuals{0}.txt", timestepNo))) {
-                //    //Console.WriteLine("x \t y \t result");
-                //    sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
-                //    string resultLine;
-                //    for (int i = 0; i < noOfPoints; i++) {
-                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + results[i, 0] + "\t" + results[i, 1] + "\t" + results[i, 2] + "\t" + results[i, 3] + "\t";
-                //        //Console.WriteLine(resultLine);
-                //        sw.WriteLine(resultLine);
-                //    }
-                //    sw.Flush();
-                //}
-                #endregion
-
-                #region Debugging: write DG fields to text file
-                //// Sample points
-                //int noOfPoints = 16;
-                //double[] nodes = GenericBlas.Linspace(-1.8, -0.3, noOfPoints);
-                //MultidimensionalArray points = MultidimensionalArray.Create(noOfPoints, 2);
-                //for (int i = 0; i < noOfPoints; i++) {
-                //    points[i, 0] = nodes[i];
-                //    points[i, 1] = -0.65;
-                //}
-
-                //// FieldEvaluation
-                //MultidimensionalArray resultsFields = MultidimensionalArray.Create(noOfPoints, ConservativeFields.Length);
-                //for (int i = 0; i < ConservativeFields.Length; i++) {
-                //    FieldEvaluation fieldEvaluator = new FieldEvaluation((GridData)this.GridData);
-                //    fieldEvaluator.Evaluate(1.0, this.ConservativeFields, points, 0.0, resultsFields);
-                //}
-
-                //// StreamWriter
-                //using (System.IO.StreamWriter sw = new System.IO.StreamWriter(String.Format("DGFields{0}.txt", timestepNo))) {
-                //    //Console.WriteLine("x \t y \t result");
-                //    //sw.WriteLine("x \t y \t rho \t xMom \t yMom \t rhoE");
-                //    string resultLine;
-                //    for (int i = 0; i < noOfPoints; i++) {
-                //        resultLine = points[i, 0] + "\t" + points[i, 1] + "\t" + resultsFields[i, 0] + "\t" + resultsFields[i, 1] + "\t" + resultsFields[i, 2] + "\t" + resultsFields[i, 3] + "\t";
-                //        //Console.WriteLine(resultLine);
-                //        sw.WriteLine(resultLine);
-                //    }
-                //    sw.Flush();
-                //}
-                //Density.CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", timestepNo));
-                //Energy.CoordinateVector.SaveToTextFile(String.Format("EnergyCoordVec_{0}.txt", timestepNo));
-                #endregion
             }
         }
 
@@ -1880,9 +1816,7 @@ namespace ApplicationWithIDT {
                 //***************************** */
                 //// Compute Jobj_phi & Jr_phi
                 //***************************** */
-                //obj_f_vec.SaveToTextFile("obj_f_vec_beforeFD.txt");
-                //LsTBO.CoordinateVector.SaveToTextFile(@"C:\Users\sebastian\Documents\Forschung" + $"\\LSCoord_p{Control.SolDegree}_TS{CurrentStepNo}.txt");
-                try
+               try
                 {
                     (Jr_phi, Jobj_phi) = FD_LevelSet();
                 }
@@ -1890,7 +1824,6 @@ namespace ApplicationWithIDT {
                 {
                     Console.WriteLine("Error in FD Level Set");
                     //AllthePossibleStepsPlot();
-                    //throw new Exception("Error in FD Computation");
                 }
                 
 
@@ -2577,16 +2510,6 @@ namespace ApplicationWithIDT {
                 }
                 //project onto LevelSet object 
                 LevelSetOpti.ProjectOntoLevelSet(LevelSet_copy);
-
-                //var tp = new Tecplot(GridData, 4);
-                //tp = new Tecplot(GridData, 4);
-
-                //List<DGField> list = new List<DGField>();
-                //list.AddRange(UBackup);
-                //list.Add(LevelSet_copy);
-
-                //tp.PlotFields("BackUp" + "_" + 0, 0.0, list);
-
                 try {
                     LsTrk_copy.UpdateTracker(CurrentStepNo, Control.NearRegionWidth);
                 } catch { //if Exception is called no step is computed
@@ -2600,21 +2523,6 @@ namespace ApplicationWithIDT {
             }
 
             #endregion
-            // measure computation of Residuals for the smallest alpha
-            {
-                success = !AccumulateStep(step_t, Control.Alpha_Min);
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                // measure
-                double[] obj_f = new double[obj_f_vec.Length];
-                double[] res = new double[ResidualVector.Length];
-                TransformFromAggToSourceSpace();
-                ComputeResiduals(obj_f, res);
-                stopwatch.Stop();
-                time_to_compute_objf = stopwatch.ElapsedMilliseconds;
-                resetStepAgglomerated();
-            }
-            //Now we should have a step that doesn't throw any LevelSetCFLException so we can compute it
-            //this.PlotCurrentState(0, 5);
             success = !AccumulateStep(step_t, m_alpha);
 #region Operator Exceptions
             //This loop gives us a Step which doesn't break the operator (e.g. negative rho/pressure etc...)
@@ -2624,25 +2532,10 @@ namespace ApplicationWithIDT {
                 { //try to compute the residuals
                     double[] obj_f = new double[obj_f_vec.Length];
                     double[] res = new double[ResidualVector.Length];
-                    //this.PlotCurrentState(1, 5);
-                    TransformFromAggToSourceSpace();
-                    //this.PlotCurrentState(2, 5);
-                    Task potentiallyDeadlockedTask = Task.Run(() =>
-                    {
-                        // function that might cause a deadlock
-                        ComputeResiduals(obj_f, res);
-                    });
 
-                    //give it 10 times more time than for a Residual computation measured above
-                    bool completed = potentiallyDeadlockedTask.Wait(TimeSpan.FromMilliseconds(time_to_compute_objf * 10)); 
+                    ComputeResiduals(obj_f, res);
 
-                    // if not completed throw TimeoutException
-                    if (!completed)
-                    {
-                        throw new TimeoutException("Residual computation to long and probably in a deadlock");
-                    }
-                    
-                    if(obj_f.MPI_L2Norm().IsNaN()) {
+                    if (obj_f.MPI_L2Norm().IsNaN()) {
                         throw new NotFiniteNumberException("enriched residual norm is NaN");
                     }
 
@@ -2747,7 +2640,7 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     AgglomerateOnlyResiduals();
                     resetStepAgglomerated();
@@ -2769,7 +2662,7 @@ namespace ApplicationWithIDT {
                 try
                 {
                     LsTrk.UpdateTracker(CurrentStepNo);
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     AgglomerateOnlyResiduals();
                     resetStepAgglomerated();
@@ -2803,7 +2696,8 @@ namespace ApplicationWithIDT {
                     UnknownsMap.LocalFieldCoordinateIndex(stepIndex, out int iField, out int jCell, out int nMode);
                     ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += alpha_p * step_t[stepIndex];
                 }
-                for(int j = 0; j < LevelSetOpti.GetLength(); j++) {
+                TransformFromAggToSourceSpace();
+                for (int j = 0; j < LevelSetOpti.GetLength(); j++) {
                     LevelSetOpti.AccToParam(j, alpha_p * step_t[j + length_r]);
                 }
                 LevelSetOpti.ProjectOntoLevelSet(LsTBO);
@@ -2813,7 +2707,7 @@ namespace ApplicationWithIDT {
 
                     //TransformFromAggToSourceSpace();
 
-                    TransformFromAggToSourceSpace();
+                    //TransformFromAggToSourceSpace();
                     (double _resl2, double _obj, double _resL2) = ComputeResiduals();
                     Plot(0.0, 1000 + i + 1);
                     resetStepAgglomerated();
@@ -2845,10 +2739,10 @@ namespace ApplicationWithIDT {
                 ConservativeFields[iField].CoordinateVector[jCell * ConservativeFields[iField].Basis.DOFperSpeciesPerCell * LsTrk.TotalNoOfSpecies + nMode] += m_alpha * step_t[stepIndex];
             }
 
-
+            TransformFromAggToSourceSpace();
             /// Level Set Update
             //special treatment for space time level sets
-            if(Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
+            if (Control.PartiallyFixLevelSetForSpaceTime && LevelSetOpti is SplineOptiLevelSet splineLS)
             {
                 double yMin = splineLS.y.Min(); //lower boundary of space time domain
                 for (int i = 0; i < LevelSetOpti.GetLength(); i++)
