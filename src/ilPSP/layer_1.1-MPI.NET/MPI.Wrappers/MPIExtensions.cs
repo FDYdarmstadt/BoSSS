@@ -691,7 +691,7 @@ namespace MPI.Wrappers {
                 //
                 // compute bit-wise equality of (a1, a2, ... , aN) as
                 //   ( a1 & a2 & ... & aN ) | ( !a1 & !a2 & ... & !aN )
-                // (the sum-aproach which was here before can have round-of errors);
+                // (the sum-approach which was here before can have over or underflow);
                 //
 
                 ulong* pInp = (ulong*)(&i);
@@ -801,14 +801,16 @@ namespace MPI.Wrappers {
                     check[i] = true;
             }
 
-            int[] R = new int[iAry.Length];
+            int[] Rmin = new int[iAry.Length];
+            int[] Rmax = new int[iAry.Length];
             unsafe {
-                fixed(int* loc = iAry, glob = R) {
-                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), iAry.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
+                fixed(int* loc = iAry, globMin = Rmin, globMax = Rmax) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(globMin)), iAry.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, comm);
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(globMax)), iAry.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, comm);
                 }
             }
             for(int k = 0; k < iAry.Length; k++) {
-                check[k] = R[k] == iAry[k]*sz ? true : false;
+                check[k] = (Rmin[k] == iAry[k]) && (Rmax[k] == iAry[k]);
             }
             return check;
         }
