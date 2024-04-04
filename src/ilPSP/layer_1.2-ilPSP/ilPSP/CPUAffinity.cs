@@ -1,9 +1,12 @@
 ﻿using ilPSP.Tracing;
 using MPI.Wrappers;
+using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 
 namespace ilPSP.Utils {
@@ -19,28 +22,67 @@ namespace ilPSP.Utils {
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
         public static IEnumerable<int> GetAffinity() {
-
-            //Console.WriteLine("bootstrapping necessary.");
+            IEnumerable<int> ret;
+            int NumProcs;
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
-                return CPUAffinityWindows.GetAffinity();
-
+                ret = CPUAffinityWindows.GetAffinity();
+                NumProcs = CPUAffinityWindows.TotalNumberOfCPUs;
             } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                return CPUAffinityLinux.GetAffinity();
+                ret = CPUAffinityLinux.GetAffinity();
+                NumProcs = System.Environment.ProcessorCount;
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
 
+            foreach (int iCPU in ret) {
+                if (iCPU >= NumProcs) {
+                    throw new ApplicationException($"Got affinity to CPU #{iCPU}, but system reports at maximum {NumProcs} CPUs.");
+                }
+            }
+            return ret;
         }
+
+        /// <summary>
+        /// Deals with a special kink of handing CPU indices to Intel OpenMP on Windows:
+        /// - On Windows, E.g. a system with 96 CPUs is organized into two groups of 48 CPUs.
+        /// - Normally, the CPUs in the first group are 0 to 47, second group is 48 to 95, etc.
+        /// - OpenMP, however, starts each group at a multiple of 64: fist group is 0 to 47, second is 64 to 111, ...
+        /// On other systems, there is nothing to do.
+        /// </summary>
+        public static IEnumerable<int> ToOpenMpCPUindices(IEnumerable<int> cpuList) {
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                int NumberOfCPUsPerGroup = CPUAffinityWindows.NumberOfCPUsPerGroup;
+
+                var ret = new List<int>();
+                foreach(int iCPU in cpuList) {
+                    int iGroup = iCPU / NumberOfCPUsPerGroup;
+                    int iWithinGroup = iCPU % NumberOfCPUsPerGroup;
+
+                    ret.Add(iGroup*64 + iWithinGroup); // 
+                }
+
+                return ret.ToArray();
+
+            } else {
+                return cpuList;
+            }
+
+        }
+
+
+
+
+
+
 
         /// <summary>
         /// Configuration of OpenMP Environment variable `OMP_PLACES` to a given CPU affinity.
         /// </summary>
-        /// <param name="iThreads">number of threads on MPI rank</param>
         /// <param name="CPUlist">e.g., return value from <see cref="GetAffinity"/></param>
         /// <returns></returns>
-        public static int SetOMP_PLACESFromCPUList(int iThreads, IEnumerable<int> CPUlist) {
+        public static int SetOMP_PLACESFromCPUList(IEnumerable<int> CPUlist) {
             using (var tr = new FuncTrace()) {
-
+                /*
                 var GlobalCPUlist = CpuListOnSMP(CPUlist);
 
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
@@ -96,7 +138,7 @@ namespace ilPSP.Utils {
                         OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
                         MaxNumOMPThreads= sanSubGroup.Count();
                     }
-                    */
+                     * /
                 } else {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // MS HPC gave us different groups for each process
@@ -112,7 +154,15 @@ namespace ilPSP.Utils {
                     OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
                     MaxNumOMPThreads= sanSubGroup.Count();
                 }
+                */
 
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
+                int SMPrank = ilPSP.Environment.MPIEnv.ProcessRankOnSMP;
+
+                var sanSubGroup = SanitzeGroup(ToOpenMpCPUindices(CPUlist));
+                int MaxNumOMPThreads = sanSubGroup.Count();
+
+                var OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
                 tr.Info($"R{MPIrank}, SMP rank {SMPrank}: setting OMP_PLACES = {OMP_PLACES}, MaxNumOMPThreads = {MaxNumOMPThreads}");
 
                 System.Environment.SetEnvironmentVariable("OMP_PLACES", OMP_PLACES);
@@ -129,78 +179,17 @@ namespace ilPSP.Utils {
         /// <returns></returns>
         public static int SetKMP_AFFINITYFromCPUList(int iThreads, IEnumerable<int> CPUlist) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
-                var GlobalCPUlist = CpuListOnSMP(CPUlist);
-
+                
+                
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
-
-                int SMPsize = ilPSP.Environment.MPIEnv.ProcessesOnMySMP; // number of MPI ranks on compute node
                 int SMPrank = ilPSP.Environment.MPIEnv.ProcessRankOnSMP;
-                string KMP_AFFINITY_proclist;
-                int MaxNumOMPThreads;
-                if (CPUlist.SetEquals(GlobalCPUlist)) {
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // the same CPU list for all ranks on the SMP node
-                    // give to each process its
-                    // dedicated portion of CPUs
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    //
-                    // (It seems, OpenMP is not smart enough to negotiate thread ownership on one SMP node;
-                    // some locking was observed, i.e., it seems that multiple ranks on one SMP node try to grab the same CPU.)
-                    //
 
+                var sanSubGroup = ToOpenMpCPUindices(CPUlist);
+                int MaxNumOMPThreads = sanSubGroup.Count();
 
-                    var subGroup = CPUlist.ToArray().GetSubVector(SMPrank * iThreads, iThreads);
-                    var sanSubGroup = SanitzeGroup(subGroup);
+                string KMP_AFFINITY_proclist = sanSubGroup.ToConcatString("[", ",", "]");
+                    
 
-
-                    KMP_AFFINITY_proclist = sanSubGroup.ToConcatString("[", ",", "]");
-                    MaxNumOMPThreads = sanSubGroup.Count();
-
-                    /*
-
-                    if (CPUlist.Count < iThreads*SMPsize) {
-                        throw new NotSupportedException($"Less CPU's reserved by MS HPC ({CPUlist.Count}) than required; number of threads: ({SMPsize}*{iThreads} = {SMPsize*iThreads})");
-                    }
-                    if (allInOneGroup) {
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // all CPU's in one CPU group: all processors may use all CPU's
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-                        OMP_PLACES = CPUlist.ToConcatString("{", ",", "}");
-                        MaxNumOMPThreads = CPUlist.Count();
-
-                    } else {
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // CPU's span over different groups: give to each process its
-                        // dedicated portion of CPUs
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                        var subGroup = CPUlist.GetSubVector(SMPrank*iThreads, iThreads);
-                        var sanSubGroup = SanitzeGroup(subGroup);
-
-
-                        OMP_PLACES = sanSubGroup.ToConcatString("{", ",", "}");
-                        MaxNumOMPThreads= sanSubGroup.Count();
-                    }
-                    */
-                } else {
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // MS HPC gave us different groups for each process
-                    // use the entire group for this process and hope that Windows is smart enough
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                    if (CPUlist.Count() < iThreads) {
-                        throw new NotSupportedException($"Less CPU's reserved by MS HPC ({CPUlist.Count()}) than required; number of threads: ({iThreads})");
-                    }
-
-
-                    var sanSubGroup = SanitzeGroup(CPUlist);
-                    KMP_AFFINITY_proclist = sanSubGroup.ToConcatString("{", ",", "}");
-                    MaxNumOMPThreads = sanSubGroup.Count();
-                }
 
                 string KMP_AFFINITY = $"verbose,proclist={KMP_AFFINITY_proclist},explicit";
 
@@ -214,10 +203,22 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Collects the CPU indices of all processes running on the same node.
         /// </summary>
-        public static int[] CpuListOnSMP(IEnumerable<int> __CPUlist) {
+        /// <param name="__CPUlist">
+        /// list of reserved CPU's indices for the current MPI process
+        /// </param>
+        /// <param name="allequal">
+        /// if true, all MPI ranks on the current Compute Node are assigned to the same CPUs.
+        /// </param>
+        /// <param name="allequal">
+        /// if true, all MPI ranks on the current Compute Node have exclusive sets of CPUs.
+        /// </param>        /// <returns>
+        /// list of CPU indices for all MPI processes running on the current Symmetric-Multi-Threading (SMT) Node (aka. the current Computer)
+        /// </returns>
+        public static int[] CpuListOnSMP(IEnumerable<int> __CPUlist, out bool disjoint, out bool allequal) {
             int mySMPRank = ilPSP.Environment.MPIEnv.SMPrank;
+            int SizeOnSMP = ilPSP.Environment.MPIEnv.ProcessesOnMySMP;
 
-            int[] CPUList = __CPUlist.ToArray();
+            int[] CPUList = __CPUlist.ToSet().ToArray();
             int[] SMPRank = new int[CPUList.Length]; 
             SMPRank.SetAll(mySMPRank);
 
@@ -225,11 +226,27 @@ namespace ilPSP.Utils {
             var GlobalSMPRank = SMPRank.MPIAllGather();
 
             var r = new HashSet<int>();
+            disjoint = true;
             for(int i = 0; i < CPUList.Length; i++) {
                 if (GlobalSMPRank[i] == mySMPRank) { // only add if on this SMP (compute Node)
-                    r.Add(CPUList[i]);
+
+
+                    bool added = r.Add(GlobalCPUList[i]);
+
+                    if(added == false)
+                        // CPU was already added from some other rank;
+                        disjoint = false;
                 }
             }
+
+            allequal = GlobalCPUList.SetEquals(CPUList);
+
+            if(SizeOnSMP == 1) {
+                Debug.Assert(allequal == true);
+                Debug.Assert(disjoint== true);
+                disjoint = false;
+            }
+
 
             var rr = r.ToArray();
             Array.Sort(rr);
@@ -241,30 +258,33 @@ namespace ilPSP.Utils {
         /// make sure the selected cores for OMP_PLACES are in one CPU group; 
         /// it does not seem to work to specify OMP_PLACES across different CPU groups
         /// </summary>
-        static int[] SanitzeGroup(IEnumerable<int> group) {
+        static IEnumerable<int> SanitzeGroup(IEnumerable<int> CPUlist) {
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                var CPUsPerGroup = new Dictionary<int, List<int>>();
+                foreach (int iCPU in CPUlist) {
+                    int iGroup = iCPU / 64;
 
-            var CPUsPerGroup = new Dictionary<int, List<int>>();
-            foreach (int iCPU in group) {
-                int iGroup = iCPU / 64;
+                    if (!CPUsPerGroup.TryGetValue(iGroup, out var CPUpg)) {
+                        CPUpg = new List<int>();
+                        CPUsPerGroup.Add(iGroup, CPUpg);
+                    }
 
-                if (!CPUsPerGroup.TryGetValue(iGroup, out var CPUpg)) {
-                    CPUpg = new List<int>();
-                    CPUsPerGroup.Add(iGroup, CPUpg);
+                    CPUpg.Add(iCPU);
                 }
 
-                CPUpg.Add(iCPU);
-            }
-
-            // select the largest possible group for OpenMP
-            int[] ret = new int[0];
-            foreach (var kv in CPUsPerGroup) {
-                if (kv.Value.Count > ret.Length) {
-                    kv.Value.Sort();
-                    ret = kv.Value.ToArray();
+                // select the largest possible group for OpenMP
+                int[] ret = new int[0];
+                foreach (var kv in CPUsPerGroup) {
+                    if (kv.Value.Count > ret.Length) {
+                        kv.Value.Sort();
+                        ret = kv.Value.ToArray();
+                    }
                 }
-            }
 
-            return ret;
+                return ret;
+            } else {
+                return CPUlist;
+            }
         }
 
 

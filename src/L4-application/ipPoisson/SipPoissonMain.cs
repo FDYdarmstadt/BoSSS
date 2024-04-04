@@ -67,9 +67,9 @@ namespace BoSSS.Application.SipPoisson {
         static void Main(string[] args) {
 
             
-            /*
+            
 
-            InitMPI(args);
+            /*InitMPI(args, num_threads:4);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
             
             int MpiSz;

@@ -77,11 +77,12 @@ namespace ilPSP {
                 ret = instance.BoSSS_bind_omp_threads(NumCpus, __CPUindices); // `__CPUindices` is used for input and output;
 
                 for (int i = 0; i < NumCpus; i++) {
-                    Console.Error.WriteLine($"Error binding OMP thread #{i} to CPU #{CPUindices[i]}: kmp_set_affinity return code {__CPUindices[i]}");
+                    if(__CPUindices[i] != 0)
+                        Console.Error.WriteLine($"Error binding OMP thread #{i} to CPU #{CPUindices[i]}: kmp_set_affinity return code {__CPUindices[i]}");
                 }
 
                 if(ret != 0) {
-                    Console.Error.WriteLine($"BoSSS_bind_omp_threads returned {ret}.")
+                    Console.Error.WriteLine($"BoSSS_bind_omp_threads returned {ret}.");
                 }
 
             }
