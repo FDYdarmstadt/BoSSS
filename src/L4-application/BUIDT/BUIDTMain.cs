@@ -17,7 +17,7 @@ using System;
 namespace BUIDT {
     /// <summary>
     /// Implements XDG space-timeBurgers equation in (1D in space) which is solved by the routines defined in <see cref="ApplicationWithIDT"/>
-    /// Naming: BU(rgers) - I(implict) - D(iscontinuity) - T(racking)
+    /// Naming: BU(rgers) - I(mplict) - D(iscontinuity) - T(racking)
     /// 
     /// Concrete configurations of solver (initial guess, optimization parameters,...) are set in a <see cref="BUIDTControl.cs"/> object, e.g. boundary conditions are set by the property <see cref="IDTControl.DirichletBoundaryMap"/>
     /// Fluxes are implemented in <see cref="BUIDT.Fluxes"/>, so far only upwind flux is supported
@@ -137,7 +137,7 @@ namespace BUIDT {
             InitializeMatricesAndVectors();
             //// Cell agglomerator (cell length scales are needed for diffusive AV fluxes)
             UpdateAgglomerator();
-            ComputeResiduals();
+            (res_l2,obj_f,res_L2)=ComputeResiduals();
             InitResNorm = res_l2;
             Init_obj_f = obj_f;
             ResNorms.Add(res_l2);
