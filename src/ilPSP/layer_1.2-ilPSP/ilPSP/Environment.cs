@@ -254,7 +254,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                SetOMPbinding();
+                //SetOMPbinding();
             }
         }
 
@@ -284,7 +284,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    SetOMPbinding();
+                    //SetOMPbinding();
                 }
             }
         }
@@ -312,7 +312,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                SetOMPbinding();
+                //SetOMPbinding();
             }
         }
 
@@ -473,10 +473,10 @@ namespace ilPSP {
         private static void SetOMPbinding() {
             using (new FuncTrace("SetOMPbinding")) {
                 if (ReservedCPUsForThisRank != null) {
-                    Stopwatch sw = Stopwatch.StartNew();
+                    //Stopwatch sw = Stopwatch.StartNew();
                     MKLservice.BindOMPthreads(CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank).ToArray());
-                    sw.Stop();
-                    Console.WriteLine("Time to call BindOMPthreads: " + sw.Elapsed.TotalSeconds);
+                    //sw.Stop();
+                    //Console.WriteLine("Time to call BindOMPthreads: " + sw.Elapsed.TotalSeconds);
                 } else {
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.Dynamic = true;
