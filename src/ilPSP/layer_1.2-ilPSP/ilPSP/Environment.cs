@@ -375,6 +375,8 @@ namespace ilPSP {
                 }
 
                 tr.Info("Finally, setting number of OpenMP and Parallel Task Library threads to " + NumThreads);
+                if (NumThreads == 6)
+                    Debugger.Launch();
 
                 if (NumThreads <= 0)
                     throw new NotSupportedException($"Number of threads must be at least 1; set to {NumThreads}");
@@ -406,12 +408,12 @@ namespace ilPSP {
                         ReservedCPUs = _ReservedCPUs;
                     }
                 }
+                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ", ", "]")}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
                 if (disjoint == true && allequal == true) {
                     throw new ApplicationException("Error in algorithm.");
                 }
-
 
 
                 if (allequal) {
@@ -432,7 +434,7 @@ namespace ilPSP {
 
                     ReservedCPUsForThisRank = ReservedCPUs.ToArray();
                     if (ReservedCPUsForThisRank.Count() < NumThreads) {
-                        tr.Error($"Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {ReservedCPUsForThisRank.ToConcatString("", ", ", ";")}");
+                        tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {ReservedCPUsForThisRank.ToConcatString("[", ", ", "]")}");
                     }
 
                     MaxNumOpenMPthreads = Math.Min(ReservedCPUsForThisRank.Count(), NumThreads);

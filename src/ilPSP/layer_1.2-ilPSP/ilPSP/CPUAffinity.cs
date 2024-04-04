@@ -227,7 +227,7 @@ namespace ilPSP.Utils {
 
             var r = new HashSet<int>();
             disjoint = true;
-            for(int i = 0; i < CPUList.Length; i++) {
+            for(int i = 0; i < GlobalCPUList.Length; i++) {
                 if (GlobalSMPRank[i] == mySMPRank) { // only add if on this SMP (compute Node)
 
 
