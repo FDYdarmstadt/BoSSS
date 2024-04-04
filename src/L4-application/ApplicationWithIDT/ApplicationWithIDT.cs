@@ -582,7 +582,7 @@ namespace ApplicationWithIDT {
                         kappa = 1e3;
                     }
                     Kappas.Add(kappa);
-
+                    
                     Console.WriteLine($"Initial Value : l2: |r|= {string.Format("{0:#.#######E+00}", res_l2)}, |f_err|={string.Format("{0:#.#######E+00}", obj_f)}, | f_phi |={string.Format("{0:#.#######E+00}", f_phi)},");
                     UpdateAgglomerator();
                 }
@@ -3851,8 +3851,6 @@ namespace ApplicationWithIDT {
                 //tp.PlotFields($"ComputeP0Solution_{it}", LsTrk.Regions.Time, new DGField[] { LevelSet, LevelSetTwo, ConVars[0], ConVars[1], ConVars[2], ConVars[3], residuals[0], residuals[1], residuals[2], residuals[3] });
 
             }
-
-            Console.WriteLine("...Finished");
             
         }
         /// <summary>
