@@ -686,11 +686,29 @@ namespace MPI.Wrappers {
             if(sz <= 1)
                 return true;
 
-            ulong u_glob = ulong.MaxValue;
             unsafe {
-                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&u_glob)), 1, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.SUM, comm);
+
+                //
+                // compute bit-wise equality of (a1, a2, ... , aN) as
+                //   ( a1 & a2 & ... & aN ) | ( !a1 & !a2 & ... & !aN )
+                // (the sum-aproach which was here before can have round-of errors);
+                //
+
+                ulong* pInp = (ulong*)(&i);
+
+                ulong* inp2 = stackalloc ulong[2];
+                inp2[0] = *pInp;    
+                inp2[1] = ~(*pInp);
+                
+                ulong* glob1 = stackalloc ulong[2];
+
+                csMPI.Raw.Allreduce(((IntPtr)(inp2)), ((IntPtr)(glob1)), 2, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BAND, comm);
+
+                ulong bitWiseEq = glob1[0] | glob1[1]; // now, all bits must be true;
+
+
+                return bitWiseEq == ulong.MaxValue;
             }
-            return u_glob == i*sz ? true : false;
         }
 
         /// <summary>
@@ -744,14 +762,16 @@ namespace MPI.Wrappers {
                     check[i] = true;
             }
 
-            double[] R = new double[bAry.Length];
+            double[] Rmin = new double[bAry.Length];
+            double[] Rmax = new double[bAry.Length];
             unsafe {
-                fixed (void* loc = bAry, glob = R) {
-                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), bAry.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.SUM, comm);
+                fixed (void* loc = bAry, globMin = Rmin, globMax = Rmax) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(globMin)), bAry.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, comm);
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(globMax)), bAry.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, comm);
                 }
             }
             for (int k = 0; k < bAry.Length; k++) {
-                check[k] = R[k] == bAry[k]*sz ? true : false;
+                check[k] = (Rmin[k] == bAry[k]) && (Rmax[k] == bAry[k]);
             }
             return check;
         }
