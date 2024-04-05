@@ -68,7 +68,6 @@ namespace BoSSS.Application.SipPoisson {
 
             
             
-
             InitMPI(args, num_threads:4);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
             
@@ -135,40 +134,30 @@ namespace BoSSS.Application.SipPoisson {
                 }
 
                 {
-                    cnt = (int) Math.Round(duration.TotalSeconds / 15);
-                    if(cnt < 0 ) 
+                    cnt = (int)Math.Round(duration.TotalSeconds / 15);
+                    if (cnt < 0)
                         cnt = 0;
                     Console.WriteLine("count = " + cnt);
 
                     int[] CPUs;
-                    if (duration.TotalSeconds < 1*60) {
+                    if (duration.TotalSeconds < 1 * 60) {
                         //CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
                         CPUs = 40.ForLoop(i => i + 4);
-                    } else if (duration.TotalSeconds < 2*60) {
+                    } else if (duration.TotalSeconds < 2 * 60) {
                         //CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
                         CPUs = 40.ForLoop(i => i + 4 + 64);
-                    } else if (duration.TotalSeconds < 3*60) {
+                    } else if (duration.TotalSeconds < 3 * 60) {
                         //CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
                         CPUs = ArrayTools.Cat(42.ForLoop(i => i + 2), 42.ForLoop(i => i + 64 + 2));
                     } else {
                         //CPUs = new int[] { 64, 65, 66, 70, 71, 72 };
-                        CPUs = 4.ForLoop(i => i*2 + 4);
+                        CPUs = 4.ForLoop(i => i * 2 + 4);
                     }
                     Console.WriteLine($"Binding to {CPUs.Length} CPUs/cores");
                     ilPSP.MKLservice.BindOMPthreads(CPUs);
                 }
 
 
-                //cnt++;
-                //if (cnt > 2) {
-                //    Console.WriteLine("Now with proper affinity...");
-                //    SetAffinity(Nothreads, Rank);
-                //} else {
-                //    Console.WriteLine("Now with fucked-up affinity...");
-                //    SetAffinity(Nothreads, 0);
-                //}
-
-                
                 s0.Reset();
                 s0.Start();
                 var AnrmLoc = new double[A.Length];
@@ -190,9 +179,9 @@ namespace BoSSS.Application.SipPoisson {
                 var BnrmG = BnrmLoc.MPISum().Sum();
                 var CnrmG = CnrmLoc.MPISum().Sum();
                 
-                //Console.WriteLine("A norm: " + AnrmG);
-                //Console.WriteLine("B norm: " + BnrmG);
-                //Console.WriteLine("C norm: " + CnrmG);
+                Console.WriteLine("A norm: " + AnrmG);
+                Console.WriteLine("B norm: " + BnrmG);
+                Console.WriteLine("C norm: " + CnrmG);
                 s0.Stop();
                 Console.WriteLine("   MPIsum time: " + s0.Elapsed.TotalSeconds);
 
@@ -245,7 +234,6 @@ namespace BoSSS.Application.SipPoisson {
                             }
                         }
                         
-
                     });
                     s0.Stop();
                     Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
@@ -262,22 +250,7 @@ namespace BoSSS.Application.SipPoisson {
             });
         }
 
-        /*
-        private static void SetOMPAffinity(int Nothreads, int Rank, int Size, bool Global) {
-            ilPSP.Environment.StdoutOnlyOnRank0 = false;
-
-            string omp_places;
-            if(!Global)
-                omp_places = $"{{{Nothreads*Rank}:{Nothreads}}}";
-            else
-                omp_places = $"{{0:{Nothreads*Size}}}";
-            System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
-            System.Environment.SetEnvironmentVariable("OMP_PLACES", omp_places);
-            Console.WriteLine($"R{Rank}: OMP_PLACES = {omp_places}");
-
-            ilPSP.Environment.StdoutOnlyOnRank0 = true;
-        }
-        */
+       
 
 #pragma warning disable 649
         /// <summary>
