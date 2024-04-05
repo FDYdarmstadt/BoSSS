@@ -43,7 +43,7 @@ namespace XESF.Tests
         [Test]
         public static void XDG_SWF_TwoLs()
         {
-            BoSSS.Solution.Application.InitMPI(num_threads:1); //fails if more than 1 thread is chosen
+            BoSSS.Solution.Application.InitMPI(num_threads:1); //fails if more than 1 thread is chosenm problem with OpenMP
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
