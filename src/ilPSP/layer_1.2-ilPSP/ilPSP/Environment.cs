@@ -402,7 +402,7 @@ namespace ilPSP {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Running on MS HPC Cluster, which defines the `CCP_AFFINITY` variable
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+                        tr.Info($"CCP_AFFINITY is set as '{System.Environment.GetEnvironmentVariable("CCP_AFFINITY")}'");
 
                         var _ReservedCPUs = CPUAffinityWindows.Decode_CCP_AFFINITY();
                         bool eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
@@ -416,6 +416,8 @@ namespace ilPSP {
                         }
                         tr.Info("Win32 reports same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
                         ReservedCPUs = _ReservedCPUs;
+                    } else {
+                        tr.Info($"CCP_AFFINITY not set");
                     }
                 }
                 tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ", ", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
