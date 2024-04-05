@@ -67,9 +67,12 @@ namespace BoSSS.Application.SipPoisson {
         static void Main(string[] args) {
 
             /*
-            Debugger.Launch();
+            
+            
+            //Debugger.Launch();
             InitMPI(args, num_threads:4);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
+
             
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
@@ -140,18 +143,18 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("count = " + cnt);
 
                     int[] CPUs;
-                    if (duration.TotalSeconds < 1 * 60) {
-                        //CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-                        CPUs = 40.ForLoop(i => i + 4);
-                    } else if (duration.TotalSeconds < 2 * 60) {
-                        //CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
-                        CPUs = 40.ForLoop(i => i + 4 + 64);
-                    } else if (duration.TotalSeconds < 3 * 60) {
-                        //CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
-                        CPUs = ArrayTools.Cat(42.ForLoop(i => i + 2), 42.ForLoop(i => i + 64 + 2));
+                    if (duration.TotalSeconds < 1*60) {
+                        CPUs = new int[] { 4, 5, 6, 7, 8, 9, 10, 11 };
+                        //CPUs = 40.ForLoop(i => i + 4);
+                    } else if (duration.TotalSeconds < 2*60) {
+                        CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
+                        //CPUs = 40.ForLoop(i => i + 4 + 64);
+                    } else if (duration.TotalSeconds < 3*60) {
+                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
+                        //CPUs = ArrayTools.Cat(42.ForLoop(i => i + 2), 42.ForLoop(i => i + 64 + 2));
                     } else {
+                        CPUs = 4.ForLoop(i => i*2 + 4);
                         //CPUs = new int[] { 64, 65, 66, 70, 71, 72 };
-                        CPUs = 4.ForLoop(i => i * 2 + 4);
                     }
                     Console.WriteLine($"Binding to {CPUs.Length} CPUs/cores");
                     ilPSP.MKLservice.BindOMPthreads(CPUs);
