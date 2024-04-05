@@ -325,6 +325,11 @@ namespace ilPSP {
 
         static IEnumerable<int> ReservedCPUsOnSMP = null;
 
+        public static bool MpiJobOwnsEntireComputer => ReservedCPUsOnSMP.Count() == CPUAffinity.TotalNumberOfCPUs;
+        
+        public static bool MpiRnkOwnsEntireComputer => ReservedCPUsInitially.Count() == CPUAffinity.TotalNumberOfCPUs;
+
+
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
@@ -426,6 +431,9 @@ namespace ilPSP {
                 }
 
                 
+
+                tr.Info($"MpiJobOwnsEntireComputer = {MpiJobOwnsEntireComputer}, RnkJobOwnsEntireComputer = {MpiRnkOwnsEntireComputer}");
+
                 if (allequal) {
                     if (ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
                         //
@@ -436,9 +444,6 @@ namespace ilPSP {
                         ReservedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(MPIEnv.ProcessRankOnSMP * NumThreads, NumThreads);
                         MaxNumOpenMPthreads = ReservedCPUsOnSMP.Count();
                     }
-
-
-
 
                 } else if (disjoint) {
 
@@ -472,15 +477,17 @@ namespace ilPSP {
 
         private static void SetOMPbinding() {
             using (new FuncTrace("SetOMPbinding")) {
-                if (ReservedCPUsForThisRank != null) {
-                    //Stopwatch sw = Stopwatch.StartNew();
-                    MKLservice.BindOMPthreads(CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank).ToArray());
-                    //sw.Stop();
-                    //Console.WriteLine("Time to call BindOMPthreads: " + sw.Elapsed.TotalSeconds);
-                } else {
+                if (ReservedCPUsForThisRank == null
+                    || MpiRnkOwnsEntireComputer) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // In these cases, we might just let the OpenMP threads float
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.Dynamic = true;
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
+                } else {
+                    MKLservice.BindOMPthreads(CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank.Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray());
                 }
             }
         }
