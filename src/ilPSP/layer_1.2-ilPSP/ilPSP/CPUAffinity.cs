@@ -42,6 +42,17 @@ namespace ilPSP.Utils {
             return ret;
         }
 
+        static public int TotalNumberOfCPUs {
+            get {
+                if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                    return CPUAffinityWindows.TotalNumberOfCPUs;
+                } else {
+                    return System.Environment.ProcessorCount;
+                }
+            }
+        }
+
+
         /// <summary>
         /// Deals with a special kink of handing CPU indices to Intel OpenMP on Windows:
         /// - On Windows, E.g. a system with 96 CPUs is organized into two groups of 48 CPUs.
