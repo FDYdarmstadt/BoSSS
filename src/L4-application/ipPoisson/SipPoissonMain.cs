@@ -70,7 +70,9 @@ namespace BoSSS.Application.SipPoisson {
             
             
             //Debugger.Launch();
-            InitMPI(args, num_threads:6);
+            InitMPI(args, num_threads:4);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
+
             
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
