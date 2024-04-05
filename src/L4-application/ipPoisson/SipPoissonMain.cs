@@ -69,7 +69,7 @@ namespace BoSSS.Application.SipPoisson {
             
             
 
-            /*InitMPI(args, num_threads:4);
+            InitMPI(args, num_threads:4);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
             
             int MpiSz;
@@ -168,7 +168,7 @@ namespace BoSSS.Application.SipPoisson {
                 //    SetAffinity(Nothreads, 0);
                 //}
 
-                /*
+                
                 s0.Reset();
                 s0.Start();
                 var AnrmLoc = new double[A.Length];
@@ -244,7 +244,7 @@ namespace BoSSS.Application.SipPoisson {
                                 _A[iRow, iCol] = Acc;
                             }
                         }
-                        ilPSP.Utils.CPUAffinityWindows.HelloGroup();
+                        
 
                     });
                     s0.Stop();
