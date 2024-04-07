@@ -41,9 +41,13 @@ namespace ilPSP.LinSolvers.PARDISO {
             if (ilPSP.Environment.MaxNumOpenMPthreads <= 1 && par == Parallelism.OMP)
                 // redirect if we should only one OpenMP thread.
                 par = Parallelism.SEQ;
-            switch(par) {
+            if (ilPSP.Environment.OpenMPenabled == false && par == Parallelism.OMP)
+                // redirect if we should only one OpenMP thread.
+                par = Parallelism.SEQ;
+
+            switch (par) {
                 case Parallelism.OMP:
-                liborder = new string[] { "PARDISO2_omp.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                liborder = new string[] { "PARDISO3_omp.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 break;
 
                 case Parallelism.SEQ:

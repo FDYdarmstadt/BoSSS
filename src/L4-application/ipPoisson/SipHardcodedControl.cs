@@ -247,8 +247,8 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 4, string blapath = null, double xStretch = 1.0, double yStretch = 1.0, double zStretch = 1.0) {
-            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2, solver:BoSSS.Solution.Control.LinearSolverCode.exp_Kcycle_schwarz)'
+        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 4, double xStretch = 1.0, double yStretch = 1.0, double zStretch = 1.0) {
+            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2)'
             int xRes = (int)Math.Pow(2, PowRes);
             int yRes = (int)Math.Pow(2, PowRes);
             int zRes = (int)Math.Pow(2, PowRes);

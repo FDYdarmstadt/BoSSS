@@ -668,6 +668,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 bmc.Execute(false);
 
                 double condestFull = output[0, 0];
+                var allValues = condestFull.MPIAllGather();
                 Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
                 
 
