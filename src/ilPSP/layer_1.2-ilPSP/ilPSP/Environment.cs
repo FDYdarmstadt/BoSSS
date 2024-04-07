@@ -326,8 +326,8 @@ namespace ilPSP {
         static IEnumerable<int> ReservedCPUsOnSMP = null;
 
         public static bool MpiJobOwnsEntireComputer => ReservedCPUsOnSMP.Count() == CPUAffinity.TotalNumberOfCPUs;
-        
-        public static bool MpiRnkOwnsEntireComputer => ReservedCPUsInitially.Count() == CPUAffinity.TotalNumberOfCPUs;
+
+        public static bool MpiRnkOwnsEntireComputer => MpiJobOwnsEntireComputer && MPIEnv.ProcessesOnMySMP == 1;
 
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
@@ -477,6 +477,8 @@ namespace ilPSP {
             }
         }
 
+        static Random rnd = new Random();
+
         private static void SetOMPbinding() {
             using (var tr = new FuncTrace("SetOMPbinding")) {
                 tr.InfoToConsole = true;
@@ -489,10 +491,30 @@ namespace ilPSP {
                     tr.Info($"Floating OpenMP configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ", ", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     // just hope that dynamic thread will avoid the deadlocks.
-                    MKLservice.Dynamic = true;
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
+                    MKLservice.Dynamic = true;
                 } else {
-                    var OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank.Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray();
+                    int[] OpenMPcpuIdx;
+
+                    int L = ReservedCPUsForThisRank.Count();
+                    int Nt = Math.Min(NumThreads, MaxNumOpenMPthreads);
+
+                    if (L > Nt) {
+
+                        int skip = rnd.Next(0, L - Nt + 1);
+                        if (skip + Nt > L) {
+                            throw new ApplicationException("skipping done wrong");
+                        }
+
+
+                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank.Skip(skip).Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray();
+
+
+
+                    } else {
+                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank).ToArray();
+                    }
+                    
                     tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ", ", "]")} configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ", ", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     MKLservice.BindOMPthreads(OpenMPcpuIdx);
