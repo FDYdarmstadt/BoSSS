@@ -66,11 +66,11 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            /*
             
             
-            //Debugger.Launch();
-            InitMPI(args, num_threads:4);
+            
+            Debugger.Launch();
+            InitMPI(args);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
 
             
