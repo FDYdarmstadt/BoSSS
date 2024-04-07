@@ -9,6 +9,7 @@ namespace BUIDT
     {
         public BUIDTControl()
         {
+            this.GetInitialValue = GetInitialValue.OneFullNewtonStep;
         }
         public override Type GetSolverType() {
             return typeof(BUIDTMain);
@@ -21,10 +22,6 @@ namespace BUIDT
         /// on-off switch for smoothed upwind flux
         /// </summary>
         public bool is_nf_smth { get; set; } = true;
-        /// <summary>
-        /// switch for initial guess: true means, that Initial Guess is obtained from p0 projection of exact solution
-        /// </summary>
-        public bool UseP0ProjectionAsInitialGuess { get; set; }
         /// <summary>
         /// SLSPointPath for initial Guess of Spline Level Set
         /// </summary>

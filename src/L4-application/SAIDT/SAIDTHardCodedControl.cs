@@ -32,7 +32,7 @@ namespace SAIDT {
         /// <param name="meritFunctionType"></param>
         /// <returns></returns>
         public static SAIDTControl BaseControl(string dbPath, int MaxIterations, int dgDegree, int numOfCellsX,
-        int numOfCellsY, int ImmediatePlotPeriod = -1, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, bool ApplyReInit = true, MeritFunctionType meritFunctionType = MeritFunctionType.FullyL2Merit) {
+        int numOfCellsY, int ImmediatePlotPeriod = -1, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, bool ApplyReInit = true, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit) {
 
 
             var c = new SAIDTControl();
@@ -68,7 +68,6 @@ namespace SAIDT {
             c.SolDegree = dgDegree;
             #endregion
             #region Initial Guess for state 
-            c.GetInitialValue = GetInitialValue.FromFunctionPerSpecies;
             c.InitialValueFunctionsPerSpecies.Clear();
             c.InitialValueFunctionsPerSpecies.Add("L", x => x[0] < 0.5 * x[1] ?1 : 0);
             c.InitialValueFunctionsPerSpecies.Add("R", x => x[0] < 0.5 * x[1] ? 1 : 0);
@@ -162,7 +161,7 @@ namespace SAIDT {
                 c.LevelSetTwoInitialValue = x => x[0] - 0.1 - 0.7 * x[1] + x[1] * x[1] - 0.7 * x[1] * x[1] * x[1];
             }
             #endregion
-            c.GetInitialValue = GetInitialValue.FromP0Timestepping;
+            c.GetInitialValue = GetInitialValue.OneFullNewtonStep;
             Func<double, double> exactShock = t => t*t*t-3.0/2.0*t*t+0.5*t+0.25;
             c.InitialValueFunctionsPerSpecies.Clear();
             c.InitialValueFunctionsPerSpecies.Add("L", x => exactShock(x[1])-x[0]  > 0 ? 1 : 0);
@@ -193,7 +192,7 @@ namespace SAIDT {
         public static SAIDTControl StraightShock(string dbPath = null, int MaxIterations = 50, int dgDegree = 0, int numOfCellsX = 10,
         int numOfCellsY = 10,
         int OptiNumOfCellsX = 1,
-        int OptiNumOfCellsY = 1, int ImmediatePlotPeriod = -1, double agg = 0.0, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int LSDegree = 1, bool withReInit = true, MeritFunctionType meritFunctionType=MeritFunctionType.FullyL2Merit,bool isFarConfig =false) {
+        int OptiNumOfCellsY = 1, int ImmediatePlotPeriod = -1, double agg = 0.0, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int LSDegree = 1, bool withReInit = true, MeritFunctionType meritFunctionType=MeritFunctionType.L1Merit,bool isFarConfig =false) {
             var c = SAIDTHardCodedControl.BaseControl(
                     dbPath: dbPath,
                     MaxIterations: MaxIterations,
