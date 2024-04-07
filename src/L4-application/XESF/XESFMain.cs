@@ -49,8 +49,10 @@ namespace XESF
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args)
         {
-            //XESF.Tests.XESFTestProgram.XDGBowShockFromOldRun(tsNumber:161);
-            //XESF.Tests.XESFTestProgram.XDGBowShockFromDB(5, 16, 1, 0);
+            //IDTTestRunner.RunTests();
+            //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
+            //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs_HighOrder();
+            //XESF.Tests.XESFTestProgram.XDGBowShockFromDB();
             XESFMain._Main(args, false, () => new XESFMain());
         }
 
@@ -230,7 +232,14 @@ namespace XESF
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(this.Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, Control.MachNumber, gridData.SpatialDimension), material));
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new GodunovFlux(this.Control, boundaryMap, new EulerEnergyComponent(), material));
                     break;
+                case ConvectiveBulkFluxes.CentralFlux:
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new CentralDensityFlux(boundaryMap, material));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new CentralMomentumFlux(boundaryMap, material,0));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new CentralMomentumFlux(boundaryMap, material, 1));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new CentralEnergyFlux(boundaryMap, material));
+                    break;
                 default:
+                    
                     throw new NotImplementedException("The convectiveBulkFlux you chose is not implemented");
             }
 
@@ -255,6 +264,7 @@ namespace XESF
                     }
                     break;
                 case ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var:
+                case ConvectiveInterfaceFluxes.OptimizedHLLCWall:
                     switch (Control.FluxVersion)
                     {
                         case FluxVersion.NonOptimized:
@@ -476,7 +486,7 @@ namespace XESF
             //// Cell agglomerator (cell length scales are needed for diffusive AV fluxes)
             UpdateAgglomerator();
 
-            ComputeResiduals();
+            (res_l2, obj_f, res_L2) = ComputeResiduals();
 
             //obj_f = obj_f_vec.MPI_L2Norm();
             //Eval_r = XSpatialOperator.GetEvaluatorEx(LsTrk, ConservativeFields, null, ResidualMap);
@@ -644,12 +654,12 @@ namespace XESF
                 case GetInitialValue.FromDBXDG:
                     DatabaseInfo dbi = DatabaseInfo.Open(Control.ShockLevelSet_Db);
                     ISessionInfo si = dbi.Controller.GetSessionInfo(Control.ShockLevelSet_Info.Item1);
-                    tsiFromDb = Control.IVTimestepNumber >= si.Timesteps.Count ? si.Timesteps.Last() : si.Timesteps.Pick(Control.IVTimestepNumber);
+                    tsiFromDb = Control.IVTimestepNumber >= si.Timesteps.Count ? si.Timesteps.Last() : si.Timesteps.ElementAt(Control.IVTimestepNumber);
                     break;
                 case GetInitialValue.FromAVRun:
                     DatabaseInfo dbi_2 = DatabaseInfo.Open(Control.SeedFromAV_Db);
                     ISessionInfo si_2 = dbi_2.Controller.GetSessionInfo(Control.SeedFromAV_Db_Info.Item1);
-                    tsiFromDb = Control.IVTimestepNumber >= si_2.Timesteps.Count ? si_2.Timesteps.Last() : si_2.Timesteps.Pick(Control.IVTimestepNumber);
+                    tsiFromDb = Control.IVTimestepNumber >= si_2.Timesteps.Count ? si_2.Timesteps.Last() : si_2.Timesteps.ElementAt(Control.IVTimestepNumber);
                     break;
                 default:
                     break;
@@ -1010,7 +1020,7 @@ namespace XESF
                             ShockLevelSetField = new SinglePhaseField(new Basis(this.GridData, Control.LevelSetDegree), "shockLevelSetField");
                         }
 
-                        ShockLevelSetField.ProjectFromForeignGrid(1.0, (ConventionalDGField)fieldsFromDb.Pick(1));
+                        ShockLevelSetField.ProjectFromForeignGrid(1.0, (ConventionalDGField)fieldsFromDb.ElementAt(1));
 
                     }
                     else
@@ -1343,9 +1353,10 @@ namespace XESF
     {
         public static void RunTests()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads:1);
             XESFMain.DeleteOldPlotFiles();
             List<string> fails = new List<string>();
+
             try { SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22(); } catch { fails.Add("SAIDTTestProgram.CurvedShock_Eccomas22"); }
             try { BUIDT.Tests.BUIDTTestProgram.StraightShockCurvedStart_Eccomas22(); } catch { fails.Add("BUIDTTestProgram.StraightShockCurvedStart_Eccomas22()"); }
             try { XESF.Tests.XESFTestProgram.XDG_SWF_OneLs_Cart(); } catch { fails.Add("XESFTestProgram.XDG_SWF_OneLs_Cart"); }
