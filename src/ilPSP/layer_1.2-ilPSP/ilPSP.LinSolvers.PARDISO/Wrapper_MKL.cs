@@ -66,10 +66,10 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public Wrapper_MKL(Parallelism par) : base(
             SelectLibrary(par),
-            new string[3][][],
-            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
-            new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix },
-            new int[] { -1, -1, -1 }) {
+            new string[2][][],
+            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
+            new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
+            new int[] { -1, -1 }) {
 
             
         }
