@@ -59,7 +59,7 @@ namespace BoSSS.Application.SipPoisson {
     public class SipPoissonMain : Application<SipControl> {
 
 
-
+        
         /// <summary>
         /// Main routine
         /// </summary>
@@ -68,7 +68,7 @@ namespace BoSSS.Application.SipPoisson {
 
             
             
-            
+            /*
             Debugger.Launch();
             InitMPI(args);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
