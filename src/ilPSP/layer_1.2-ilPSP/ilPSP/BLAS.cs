@@ -1088,8 +1088,8 @@ namespace ilPSP.Utils {
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         public static PlatformID[] GetPlatformID(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
-                case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
@@ -1104,8 +1104,8 @@ namespace ilPSP.Utils {
 
         public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
-                case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
