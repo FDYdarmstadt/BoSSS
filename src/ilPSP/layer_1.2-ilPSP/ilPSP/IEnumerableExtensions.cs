@@ -774,14 +774,16 @@ namespace ilPSP {
                     stw.Write(firstSign);
                 int L = ie.Count();
                 int cnt = 0;
-                foreach(var o in ie) {
-                    if (o != null)
-                        stw.Write(o);
-                    else
-                        stw.Write("Null");
-                    if(cnt < (L - 1))
-                        stw.Write(separator);
-                    cnt++;
+                if (ie != null) {
+                    foreach (var o in ie) {
+                        if (o != null)
+                            stw.Write(o);
+                        else
+                            stw.Write("Null");
+                        if (cnt < (L - 1))
+                            stw.Write(separator);
+                        cnt++;
+                    }
                 }
                 if(lastSign != null)
                     stw.Write(lastSign);

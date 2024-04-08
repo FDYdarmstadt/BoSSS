@@ -49,13 +49,13 @@ namespace XESF {
         /// <param name="meritFunctionType"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
-        public static XESFControl XDGWedgeFlow_TwoLs_Base(int MaxIterations=20, int dgDegree=0, int numOfCellsX=10,
+        public static XESFControl XDGWedgeFlow_TwoLs_Base(int MaxIterations=80, int dgDegree=0, int numOfCellsX=15,
         int numOfCellsY=10, double wedge_angle = 10,double initialAngle_shockLS = 32, int PlotInterval=-1,
         string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
         ConvectiveInterfaceFluxes interfaceFluxLS2 = ConvectiveInterfaceFluxes.GodunovInterface,
-        XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromParams, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit) {
+        XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, int optiLSDegree = 1,
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit, OptProblemType optprob = OptProblemType.FullEnRes, FphiType fphitype = FphiType.None) {
 
 
             XESFControl c = new XESFControl();
@@ -79,9 +79,16 @@ namespace XESF {
             c.NoOfTimesteps = MaxIterations;
 
             //Globalization Parameters
+            c.solRunType = dgDegree > 0 ? SolverRunType.PContinuation : SolverRunType.Standard;
+            c.DgDegree_Start = 0;
+            
             c.GlobalizationStrategy = globalization;
             c.MeritFunctionType = meritFunctionType;
             c.minimalSQPIterations = new int[] { 25, 25, 25, 0, 0 };
+            c.reInitTols = new double[] { 0, -1.5, -2, -3, -4, -5 };
+            
+            c.optProblemType = optprob;
+            c.fphiType = fphitype;
 
             #endregion
 
@@ -190,8 +197,8 @@ namespace XESF {
 
             
             // ### Wedge Level set function ###
-            c.LevelSetOneInitialValue = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / 0.17632698070846498); };
-
+            c.LevelSetOneInitialValue = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / LevelSet1Prime); };
+            optiLSDegree = lsDegree;
             //// Shock level set
             //c.LevelSetOneInitialValue = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
             c.GetLevelSet = shocksetup;
@@ -267,7 +274,7 @@ namespace XESF {
             c.AddVariable(XESFVariables.Velocity.yComponent, dgDegree);
             c.AddVariable(XESFVariables.Pressure, dgDegree);
             //c.AddVariable(XESFVariables.PressureStep, dgDegree); here we have some bug
-
+            c.AddVariable(XESFVariables.Entropy, dgDegree);
             c.AddVariable(XESFVariables.Enthalpy, dgDegree);
             c.AddVariable(XESFVariables.LocalMachNumber, dgDegree);
             c.AddVariable(CompressibleVariables.Density, dgDegree);
@@ -455,9 +462,9 @@ namespace XESF {
         public static XESFControl XDGWedgeFlow_OneLs_Rotation(int MaxIterations=100, int dgDegree=0, int numOfCellsX=10,
         int numOfCellsY=10, double initialAngle_shockLS=32, int PlotInterval=-1,
         string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
-        ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.GodunovInterface,
-        XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromParams, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int optiLSDegree = 1,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit
+        ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.RoeInterface,
+        XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int optiLSDegree = 1,
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = true, double agg = 0.4, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit
         ) {
 
 
@@ -858,7 +865,7 @@ namespace XESF {
         string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
         ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.GodunovInterface,
         XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, GetLevelSet shocksetup = GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet,
-        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.1, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit,
+        GetInitialValue initialValue = GetInitialValue.FromFunctionPerSpecies, bool iVFromShockRelations = false, double agg = 0.1, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch, MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit,
         string meshPath = @"..\..\..\Meshes\WFExactMesh4Elements.msh") {
 
             XESFControl c = new XESFControl();
@@ -1185,13 +1192,15 @@ namespace XESF {
         /// <param name="itMinPIter"></param>
         /// <param name="iTermN"></param>
         /// <returns></returns>
-        public static XESFControl XDGBS_Cluster(bool aRI = false, double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 22, string dbPath = null,
-            int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
+        public static XESFControl XDGBS_Cluster(double gammaMax = 1, bool aRI = false, double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 16, string dbPath = null,
+            int numX = 5, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int wallflux = 0, int bulkflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
             
             {
             var fphiTypes = new FphiType[] { FphiType.None, FphiType.CurvatureAll, FphiType.CurvatureCut, FphiType.PerssonSensorCut, FphiType.PerssonSensorAll };
             var OProblems = new OptProblemType[] { OptProblemType.FullEnRes, OptProblemType.EnResOnlyNearBand, OptProblemType.RankineHugoniotFull, OptProblemType.RankineHugoniotOnlyInterface };
             var IFluxes = new ConvectiveInterfaceFluxes[] { ConvectiveInterfaceFluxes.GodunovInterface,ConvectiveInterfaceFluxes.RoeInterface, ConvectiveInterfaceFluxes.CentralFluxInterface, ConvectiveInterfaceFluxes.OptimizedHLLCInterface };
+            var wallFluxes = new ConvectiveInterfaceFluxes[] { ConvectiveInterfaceFluxes.OptimizedHLLCWall, ConvectiveInterfaceFluxes.RoeWall};
+            var bulkFluxes = new ConvectiveBulkFluxes[] { ConvectiveBulkFluxes.OptimizedHLLC, ConvectiveBulkFluxes.Roe, ConvectiveBulkFluxes.CentralFlux, ConvectiveBulkFluxes.Godunov};
             var ITerStrats = new TerminationStrategy[] { TerminationStrategy.Skyline, TerminationStrategy.SkylineWithDifferntTermNs }; // not needed right now but stays in case....
             var TermNArrays = new int[][] { new int[] { TermN, TermN, TermN, TermN, TermN, TermN }, new int[] { TermN, TermN, 5, 5, 5, 5 } };
             var MinPIterArrays = new int[][] { new int[] { 30, 30, 10, 10, 10, 10 }, new int[] { 30, 20, 5, 5, 5, 5 } };
@@ -1200,6 +1209,7 @@ namespace XESF {
             var ReInitTolsArray = new double[][] { new double[] { -2e-1, -2e-1, -2e-1, -3e-1, -4e-1, 0 },new double[] { -2e-1, -2e-1, -2e-1, -2e-1, -2e-1, -2e-1 }, new double[] { -1, -0.2, -0.3, -0.4, -0.5 }, new double[] { -1, -0.2, -0.4, -0.6, -0.8} };
 
             var c = XDGBowShock_TwoLs_LSFromDB(
+                gammaMax:gammaMax,
                 agg: agg,
                 numOfCellsX: numX, numOfCellsY: numY,
                 dgDegreeStart: DegS, dgDegreeEnd: DegE,
@@ -1210,6 +1220,8 @@ namespace XESF {
                 PlotInterval: plotInterval,
                 optprob: OProblems[iProb],
                 interfaceFluxLS2: IFluxes[iflux],
+                interfaceFluxLS1: wallFluxes[wallflux],
+                bulkFlux: bulkFluxes[bulkflux],
                 terStrat: ITerStrats[terStrat],
                 gammaMin: gammaMin,
                 tALNRs: tALNRArrays[itALNR],
@@ -1219,9 +1231,38 @@ namespace XESF {
                 MaxReInits: MaxReinitArrays[iRI],
                 ReInitTols: ReInitTolsArray[iRIT],
                 fphitype:fphiTypes[iFphi]
-                ) ;
+                ); ;
             //c.SaveMatrices = true;
-                c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iProb{iProb}-iFlux{iflux}-FphiType{iFphi}-aRI_{aRI}");
+                c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iPrb{iProb}-iFlx{iflux}-wFLx{wallflux}-bFlx{bulkflux}-Fphi{iFphi}");
+            return c;
+        }
+        public static XESFControl XDGWS_Cluster(double agg = 0.4, int numY = 10, string dbPath = null,
+            int numX = 15, int plotInterval = -1, int iProb = 0, int iflux = 0, int wallflux = 0, int bulkflux = 0, int iFphi = 0, int dgDegree = 0, double initialAngle_shockLS = 32, double wedge_angle = 10, int lsdegree = 1, GetInitialValue getInitialValue=GetInitialValue.FromFunctionPerSpecies)
+
+        {
+            var fphiTypes = new FphiType[] { FphiType.None, FphiType.CurvatureAll, FphiType.CurvatureCut, FphiType.PerssonSensorCut, FphiType.PerssonSensorAll };
+            var OProblems = new OptProblemType[] { OptProblemType.FullEnRes, OptProblemType.EnResOnlyNearBand, OptProblemType.RankineHugoniotFull, OptProblemType.RankineHugoniotOnlyInterface };
+            var IFluxes = new ConvectiveInterfaceFluxes[] { ConvectiveInterfaceFluxes.GodunovInterface, ConvectiveInterfaceFluxes.RoeInterface, ConvectiveInterfaceFluxes.CentralFluxInterface, ConvectiveInterfaceFluxes.OptimizedHLLCInterface };
+            var wallFluxes = new ConvectiveInterfaceFluxes[] { ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var, ConvectiveInterfaceFluxes.RoeWall };
+            var bulkFluxes = new ConvectiveBulkFluxes[] { ConvectiveBulkFluxes.OptimizedHLLC, ConvectiveBulkFluxes.Roe, ConvectiveBulkFluxes.CentralFlux, ConvectiveBulkFluxes.Godunov };
+            var c = XDGWedgeFlow_TwoLs_Base(
+                wedge_angle:wedge_angle,
+                agg: agg,
+                numOfCellsX: numX, numOfCellsY: numY,
+                dbPath: dbPath,
+                PlotInterval: plotInterval,
+                optprob: OProblems[iProb],
+                interfaceFluxLS2: IFluxes[iflux],
+                interfaceFluxLS1: wallFluxes[wallflux],
+                bulkFlux: bulkFluxes[bulkflux],
+                fphitype: fphiTypes[iFphi],
+                dgDegree:dgDegree,
+                lsDegree: lsdegree,
+                initialAngle_shockLS: initialAngle_shockLS,
+                initialValue:getInitialValue
+                ); ;
+            //c.SaveMatrices = true;
+            c.SessionName = string.Format($"XDGWS-{numX}x{numY}-agg{agg}-iPrb{iProb}-iFlx{iflux}-wFLx{wallflux}-bFlx{bulkflux}-Fphi{iFphi}-wA{wedge_angle}");
             return c;
         }
         /// <summary>
@@ -1244,7 +1285,7 @@ namespace XESF {
         /// <param name="iTermN"></param>
         /// <returns></returns>
         public static XESFControl XDGBS_Local(double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 10, int cflux = 0,
-            int numY = 22, int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR = 0, int itMinPIter = 0, int iTermN = 0) { 
+            int numY = 16, int numX = 5, int DegE = 3, int DegS = 0, int plotInterval = -1, int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR = 0, int itMinPIter = 0, int iTermN = 0) { 
 
 
            
@@ -1264,11 +1305,10 @@ namespace XESF {
                 //shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
                 //pointPath: @"C:\experimental\internal\src\private-mag\XDGShock\Tests\BowShockPoints.txt",
                 initialValue: GetInitialValue.FromDBSinglePhase,
-                ///Home PC
-                shockLevelSet_Db: @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\Databases\bosss_db_levelSets\bosss_db_levelSets",
+                                ///Home PC
                 shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
-                pointPath: @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\BoSSS\experimental\internal\src\private-mag\XDGShock\Tests\BowShockPoints.txt",
-                //initialValue: GetInitialValue.FromDBSinglePhase,PlotInterval: plotInterval,
+                pointPath: @".\..\..\..\BowShockPoints.txt",
+                shockLevelSet_Db: @".\..\..\..\bosss_db_levelSets.zip",//initialValue: GetInitialValue.FromDBSinglePhase,PlotInterval: plotInterval,
                 interfaceFluxLS2: IFluxes[iflux],
                 bulkFlux: CFluxes[cflux],
                 terStrat: ITerStrats[terStrat],
@@ -1339,7 +1379,7 @@ namespace XESF {
          OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, double[] tALNRs = null, int[] TermNs = null, int[] MaxReInits = null, double[] ReInitTols = null, double gammaMax = 1, double gammaMin = 1e-2,
         GetInitialValue initialValue = GetInitialValue.FromDBSinglePhase, bool iVFromShockRelations = false,
         double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch,
-        MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
+        MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
         int[] staggeredTS = null, bool applyReInit = false, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints, bool restart = false, string sessId = null, string gridId = null, int tsNumber = 0) {
             XESFControl c = new XESFControl();
 
@@ -1469,7 +1509,7 @@ namespace XESF {
 
             /// ### Fluxes ###
             c.ConvectiveBulkFlux = bulkFlux;
-            c.ConvectiveInterfaceFlux_LsOne = ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var;
+            c.ConvectiveInterfaceFlux_LsOne = interfaceFluxLS1;
             c.ConvectiveInterfaceFlux_LsTwo = interfaceFluxLS2;
 
             //c.MassMatrixShapeandDependence = BoSSS.Solution.XdgTimestepping.MassMatrixShapeandDependence.IsNonIdentity;
@@ -1668,7 +1708,7 @@ namespace XESF {
         OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet, double[] tALNRs = null, int[] TermNs = null, int[] MaxReInits = null, double[] ReInitTols = null, double gammaMax = 1, double gammaMin = 1e-2,
        GetInitialValue initialValue = GetInitialValue.FromDBSinglePhase, bool iVFromShockRelations = false,
        double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch,
-       MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
+       MeritFunctionType meritFunctionType = MeritFunctionType.L1Merit, SolverRunType solverRunType = SolverRunType.PContinuation, int[] MinPIter = null, TerminationStrategy terStrat = TerminationStrategy.Skyline,
        int[] staggeredTS = null, bool applyReInit = true, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints) {
             XESFControl c = new XESFControl();
 

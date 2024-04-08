@@ -59,9 +59,12 @@
     <ProjectReference Include="..\..\Utils\btail\btail.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
+    <ProjectReference Include="..\ApplicationWithIDT\ApplicationWithIDT.csproj" />
+    <ProjectReference Include="..\BUIDT\BUIDT.csproj" />
     <ProjectReference Include="..\GridGen\GridGen.csproj" />
     <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj" />
     <ProjectReference Include="..\RheologySolver2\Rheology2.csproj" />
+    <ProjectReference Include="..\SAIDT\SAIDT.csproj" />
     <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj" />
@@ -83,6 +86,8 @@
     <ProjectReference Include="..\CNS\CNS.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj" />
+    <ProjectReference Include="..\XESF\XESF.csproj" />
+    <ProjectReference Include="..\XESTSF\XESTSF.csproj" />
     <ProjectReference Include="..\XNSEC2\XNSEC.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />

@@ -547,8 +547,6 @@ namespace BoSSS.Solution {
                 argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
             }
 
-            //opt.NumThreads = 
-            ilPSP.Environment.InitThreading(true, opt.NumThreads);
 
             if (!argsParseSuccess) {
                 MPI.Wrappers.csMPI.Raw.mpiFinalize();
@@ -571,6 +569,7 @@ namespace BoSSS.Solution {
                 m_Logger.Info("done.");
             }
 
+            ilPSP.Environment.InitThreading(true, opt.NumThreads);
 
             // load control file
             T ctrlV2 = null;
