@@ -69,6 +69,7 @@ namespace BoSSS.Application.SipPoisson {
             
             
             /*
+
             Debugger.Launch();
             InitMPI(args);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
