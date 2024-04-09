@@ -244,7 +244,7 @@ namespace SAIDT {
             c.OptiLevelSetDegree = LSDegree;
             c.LevelSetDegree = LSDegree;
             if(optiLevelSetType == OptiLevelSetType.SpecFemField) {
-                c.LevelSetDegree = LSDegree+1;
+                c.LevelSetDegree = LSDegree*2;
             }
             c.SessionName = string.Format("SAIDT-J{0}_p{1}_q{2}_{3}_{4}_isFarConfig{5}", numOfCellsX*numOfCellsY, dgDegree, LSDegree, optiLevelSetType, meritFunctionType,isFarConfig);
             return c;
