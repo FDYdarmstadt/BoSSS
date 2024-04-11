@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
         /// Header for the rising bubble log
         /// </summary>
         protected override void WriteHeader(TextWriter textWriter) {
-            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "time", "UxN_interface", "UxN_contactline", "UxN_boundary", "UxT_boundary", "theta");
+            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "time", "UxN_interface", "UxN_contactline", "UxN_boundary", "UxT_boundary", "theta");
             textWriter.WriteLine(header);
             Log.Flush();
         }
