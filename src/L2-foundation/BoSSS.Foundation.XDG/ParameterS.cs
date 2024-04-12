@@ -29,12 +29,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         public abstract DelParameterFactory Factory { get; }
 
         /// <summary>
-        /// Update of DG fields;
+        /// Update of DG fields; Note if a parameter only depends on the level set, the result of "BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.ILevelSetParameter.LevelSetParameterUpdate" should be cached and returned here.
         /// </summary>
-        virtual public DelPartialParameterUpdate Update { 
-            get { return null; }
-        }
-        
+        public abstract DelPartialParameterUpdate Update { get; }
+
     }
 
     

@@ -84,6 +84,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public override DelParameterFactory Factory => ParameterFactory;
 
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
+
         public FourierEvolver(string interfaceName, FourierLevelSet ls , FourierLevSetControl control, int curvatureDegree) {
             parameters = new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
             this.levelSetName = interfaceName;
@@ -98,10 +100,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.curvatureDegree = curvatureDegree;
         }
 
+        DualLevelSet m_levelset;
+        public void ParameterUpdate(
+           double time,
+           IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            LevelSetParameterUpdate(m_levelset, time, DomainVarFields, ParameterVarFields);
+        }
+
         public void LevelSetParameterUpdate(
             DualLevelSet levelSet,
             double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            m_levelset = levelSet;
             Fourier_Timestepper.updateFourierLevSet();
             VectorField<SinglePhaseField> filtLevSetGradient;
             SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];

@@ -456,9 +456,18 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override IList<string> ParameterNames => parameterNames;
 
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
+
+        DualLevelSet m_levelSet;
+        public void ParameterUpdate(double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            LevelSetParameterUpdate(m_levelSet, time, DomainVarFields, ParameterVarFields);
+        }
+
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            m_levelSet= levelSet;
             LevelSet Phi = levelSet.CGLevelSet;
             DGField[] Normals = new SinglePhaseField[D];
             for (int i = 0; i < D; ++i) {
@@ -554,6 +563,14 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override DelParameterFactory Factory => CurvatureFactory;
 
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
+
+        DualLevelSet m_levelSet;
+        public void ParameterUpdate(double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            LevelSetParameterUpdate(m_levelSet, time, DomainVarFields, ParameterVarFields);
+        }
+
         (string ParameterName, DGField ParamField)[] CurvatureFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             //Curvature
             (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[1];
@@ -583,6 +600,7 @@ namespace BoSSS.Solution.XNSECommon {
            double time,
            IReadOnlyDictionary<string, DGField> DomainVarFields,
            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            m_levelSet=phaseInterface;
             SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
             VectorField<SinglePhaseField> filtLevSetGradient;
             CurvatureAlgorithms.CurvatureDriver(
@@ -623,6 +641,8 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override IList<string> ParameterNames => name;
 
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
+
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             string name = BoSSS.Solution.NSECommon.VariableNames.MaxSigma;
             IGridData grid = DomainVarFields.FirstOrDefault().Value.GridDat;
@@ -631,8 +651,15 @@ namespace BoSSS.Solution.XNSECommon {
             return new (string ParameterName, DGField ParamField)[] { (name, sigmaField) };
         }
 
+        DualLevelSet m_levelSet;
+        public void ParameterUpdate(double time,
+            IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            LevelSetParameterUpdate(m_levelSet, time, DomainVarFields, ParameterVarFields);
+        }
+
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            m_levelSet = levelSet;
             DGField sigmaMax = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MaxSigma];
             LevelSetTracker lsTrkr = levelSet.Tracker;
 
