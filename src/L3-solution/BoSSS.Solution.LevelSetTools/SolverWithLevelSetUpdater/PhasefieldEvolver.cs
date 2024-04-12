@@ -1,5 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
@@ -8,7 +10,11 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.TimeStepping;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
+using MathNet.Numerics.Distributions;
+using MPI.Wrappers;
+using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +52,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.m_grd = grd;
             this.m_bndVals = control.BoundaryValues;
-            m_control = control;
+            m_control = control;           
         }
         AppControl m_control;
         IGridData m_grd;
@@ -91,24 +97,44 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         SinglePhaseField potential;
         SinglePhaseField[] extensionVelocity;
-        BDFTimestepper bdf;
-        private BDFTimestepper GetTimestepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
+        XdgTimestepping.XdgTimestepping timestepper;
+        private XdgTimestepping.XdgTimestepping GetTimestepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
 
             int D = this.m_grd.SpatialDimension;
             var m_bcMap = new BoundaryCondMap<BoundaryType>(this.m_grd, BoundaryTranslator(this.m_bndVals), "phi");
 
+            potential = new SinglePhaseField(levelSet.Basis, "mu");
+            var res_phi = new SinglePhaseField(levelSet.Basis, "Phasefield");
+            var res_mu = new SinglePhaseField(levelSet.Basis, "Potential");
+
             var diffOp = new DifferentialOperator(new string[] { "phi", "mu" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "Phasefield", "Potential" },
-                QuadOrderFunc.NonLinear(2));
+                QuadOrderFunc.NonLinear(3));
 
 
-            //diffOp.EquationComponents["Phasefield"].Add(new phi_Flux(D, m_bcMap));
-            diffOp.EquationComponents["Phasefield"].Add(new phi_Diffusion(D, 2.6, -0.1, 0.0, m_bcMap));
+            diffOp.EquationComponents["Phasefield"].Add(new phi_Flux(D, () => Velocity, m_bcMap));
+            diffOp.EquationComponents["Phasefield"].Add(new phi_Diffusion(D, 2.6, 0.001, 0.0, m_bcMap));
 
             diffOp.EquationComponents["Potential"].Add(new mu_Diffusion(D, 2.6, m_cahn, m_bcMap));
             diffOp.EquationComponents["Potential"].Add(new mu_Source());
 
+            //diffOp.ParameterFactories.Add(
+            //    (IReadOnlyDictionary<string, DGField> DomainVarFields) => {
+            //    DGField[] prms = Velocity.ToArray();
+
+            //    if (prms.Length != diffOp.ParameterVar.Count)
+            //        throw new ApplicationException("mismatch between params in the operator and allocated fields.");
+
+            //    var ret = new ValueTuple<string, DGField>[prms.Length];
+            //    for (int iParam = 0; iParam < prms.Length; iParam++) {
+            //        ret[iParam] = (diffOp.ParameterVar[iParam], prms[iParam] as DGField);
+            //    }
+
+            //    return ret;
+            //}
+                
+            //    );
 
             double[] MassScales = { 1.0, 0.0 };
             diffOp.TemporalOperator = new ConstantTemporalOperator(diffOp, MassScales);
@@ -116,8 +142,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             diffOp.IsLinear = false;
             diffOp.Commit();
 
-            var Timestepper = new BDFTimestepper(diffOp, new SinglePhaseField[] { levelSet, potential }, Velocity, 1, () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver(), false);
-            
+            //var Timestepper = new BDFTimestepper(diffOp, new SinglePhaseField[] { levelSet, potential }, Velocity, 1, () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver(), false);
+
+            XdgTimestepping.XdgTimestepping Timestepper = new XdgTimestepping.XdgTimestepping(
+                diffOp,
+                new List<SinglePhaseField> { levelSet, potential },
+                new List<SinglePhaseField> { res_phi, res_mu },
+                XdgTimestepping.TimeSteppingScheme.ImplicitEuler);
+
+            Timestepper.RegisterResidualLogger(new ResidualLogger(levelSet.GridDat.MpiRank, new DatabaseDriver(NullFileSystemDriver.Instance), Guid.Empty));
+
             return Timestepper;
 
         }
@@ -146,32 +180,97 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="DomainVarFields"></param>
         /// <param name="ParameterVarFields"></param>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            int D = levelSet.Tracker.GridDat.SpatialDimension;
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
 
-            SinglePhaseField[] meanVelocity = D.ForLoop(
-                d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
-                );
+                if(m_cahn == 0.0) {
+                    // interface thickness = f(pOrder, D), WIP
+                    double dInterface = 2.0 * Math.Pow(2.0, this.m_grd.SpatialDimension) / levelSet.DGLevelSet.Basis.Degree;
+                    // dInterface * 1/4.164 * hmin
+                    double hmin;
+                    // set the interface width based on the largest CutCell
+                    // for now just a rough estimate, based on global grid size
+                    hmin = this.m_grd.iGeomCells.h_max.Max();
+                    m_cahn = (1.0 / 4.164) * 1.0/10.0 * 8.0 / (2 + 1);//dInterface * (1.0 / 4.164) * hmin / Math.Sqrt(2);
+                }
 
-            if (extensionVelocity == null) {
-                extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
-            } else {
-                foreach (var f in extensionVelocity)
-                    f.Clear();
+                int D = levelSet.Tracker.GridDat.SpatialDimension;
+
+                SinglePhaseField[] meanVelocity = D.ForLoop(
+                    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
+                    );
+
+                if (extensionVelocity == null) {
+                    extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
+                } else {
+                    foreach (var f in extensionVelocity)
+                        f.Clear();
+                }
+
+                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, true, true);
+                ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+
+                if (timestepper == null) {
+                    //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
+                    timestepper = GetTimestepper(levelSet.DGLevelSet, extensionVelocity);
+                }
+                timestepper.LsTrk.UpdateTracker(time);
+
+                if (!ReferenceEquals(timestepper.CurrentState.Fields[0], levelSet.DGLevelSet)) {
+                    throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
+                }
+
+                bool success = timestepper.Solve(time, dt);
+                Tecplot.Tecplot.PlotFields(timestepper.CurrentState.Cat(extensionVelocity), "Phasefield", time, 2);
+
+                tr.Info("Phasefield evolver, total phi: " + LevelSetIntegral(levelSet.DGLevelSet));
             }
 
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, true);
-            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
-
-            // Here Phasefield Movement            
-            if (Phasefield == null) {
-                iTimestep = 0;
-                Phasefield = new Phasefield(null, levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
-                Phasefield.InitCH();
+            double LevelSetIntegral(DGField phi) {
+                // total concentration, careful above values are "old" when CorrectionTracker is not updated, this value is always "new"
+                double concentration = 0.0;
+                var tqs = new CellQuadratureScheme();
+                CellQuadrature.GetQuadrature(new int[] { 1 }, phi.GridDat,
+                    tqs.Compile(phi.GridDat, phi.Basis.Degree * 2 + 2),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        phi.Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for (int i = 0; i < Length; i++)
+                            concentration += ResultsOfIntegration[i, 0];
+                    }
+                ).Execute();
+                concentration = concentration.MPISum();
+                return concentration;
             }
 
-            Phasefield.UpdateFields(levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
-            Phasefield.MovePhasefield(iTimestep, dt, time);
-            iTimestep++;
+
+            //int D = levelSet.Tracker.GridDat.SpatialDimension;
+
+            //SinglePhaseField[] meanVelocity = D.ForLoop(
+            //    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
+            //    );
+
+            //if (extensionVelocity == null) {
+            //    extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
+            //} else {
+            //    foreach (var f in extensionVelocity)
+            //        f.Clear();
+            //}
+
+            //var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, true);
+            //ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+
+            //// Here Phasefield Movement            
+            //if (Phasefield == null) {
+            //    iTimestep = 0;
+            //    Phasefield = new Phasefield(null, levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
+            //    Phasefield.InitCH();
+            //}
+
+            //Phasefield.UpdateFields(levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
+            //Phasefield.MovePhasefield(iTimestep, dt, time);
+            //iTimestep++;
         }
 
         double m_cahn;

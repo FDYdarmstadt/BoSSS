@@ -373,7 +373,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            var r = new IEquationComponent[] { new jacobi_mu_Source(m_LevelSetName) };
+            var r = new IEquationComponent[] { new VolumeFormDifferentiator(this, SpatialDimension) };
             return r;
         }
 
