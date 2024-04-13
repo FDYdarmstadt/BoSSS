@@ -3,10 +3,86 @@ using BoSSS.Solution.XdgTimestepping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
+using static BoSSS.Solution.LevelSetTools.PhasefieldLevelSet.PhasefieldControl;
 
 namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
+
+    public class PhasefieldSettings {
+
+        /// <summary>
+        /// Some parameter of Cahn Hilliard equation
+        /// diff = (kappa*lambda)/epsilon
+        /// diffusivity
+        /// </summary>
+        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        [DataMember]
+        public double diff = 1e-3;
+
+        /// <summary>
+        /// Some parameter of Cahn Hilliard equation
+        /// Cahn´s Number, rule of thumb ~(1.0 / 4.164) * h * 8.0 / (p + 1);
+        /// </summary>
+        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        [DataMember]
+        public double cahn = 1.0;
+
+        /// <summary>
+        /// Timestepping scheme
+        /// </summary>
+        [DataMember]
+        public XdgTimestepping.TimeSteppingScheme TimeSteppingScheme = XdgTimestepping.TimeSteppingScheme.RK_ImplicitEuler;
+
+        /// <summary>
+        /// Correction to e.g. conserve area
+        /// </summary>
+        [DataMember]
+        public Correction CorrectionType = Correction.None;
+    }
+
+    /// <summary>
+    /// Model Type of Phasefield equation, see Halperin (1977)
+    /// </summary>
+    public enum ModelType {
+        /// <summary>
+        /// Order Parameter is nonconserved
+        /// </summary>
+        modelA,
+
+        /// <summary>
+        /// Order Parameter is conserved
+        /// </summary>
+        modelB,
+
+        /// <summary>
+        /// Mass is conserved
+        /// </summary>
+        modelC
+    }
+
+    /// <summary>
+    /// Type of algebraic correction that is performed
+    /// </summary>
+    public enum Correction {
+        /// <summary>
+        /// Mass of a phase is conserved
+        /// </summary>
+        Mass,
+
+        /// <summary>
+        /// Total Concentration is conserved
+        /// </summary>
+        Concentration,
+
+        /// <summary>
+        /// No algebraic correction
+        /// </summary>
+        None
+    }
+
+
     public class PhasefieldControl : AppControlSolver, ILevSetControl {
 
         /// <summary>
@@ -19,53 +95,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             TimesteppingMode = _TimesteppingMode.Transient;
 
             savetodb = false;
-        }
-
-
-        /// <summary>
-        /// Model Type of Phasefield equation, see Halperin (1977)
-        /// </summary>
-        public enum ModelType {
-            /// <summary>
-            /// Order Parameter is nonconserved
-            /// </summary>
-            modelA,
-
-            /// <summary>
-            /// Order Parameter is conserved
-            /// </summary>
-            modelB,
-
-            /// <summary>
-            /// Mass is conserved
-            /// </summary>
-            modelC
-        }
+        }     
 
         /// <summary>
         /// Set the <see cref="ModelType"/>
         /// </summary>
-        public ModelType ModTyp = ModelType.modelB;
-
-        /// <summary>
-        /// Type of algebraic correction that is performed
-        /// </summary>
-        public enum Correction {
-            /// <summary>
-            /// Mass of a phase is conserved
-            /// </summary>
-            Mass,
-
-            /// <summary>
-            /// Total Concentration is conserved
-            /// </summary>
-            Concentration,
-
-            /// <summary>
-            /// No algebraic correction
-            /// </summary>
-            None
-        }
+        public ModelType ModTyp = ModelType.modelB;        
 
         public Correction CorrectionType = Correction.None;
 

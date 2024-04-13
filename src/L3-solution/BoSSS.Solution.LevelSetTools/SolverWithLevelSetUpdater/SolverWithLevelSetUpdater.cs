@@ -259,6 +259,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.Phasefield: {
+                        if (this.Control.PhasefieldControl == null)
+                            throw new NullReferenceException("PhasefieldSettings have to be provided!");
+
                         var PhasefieldEvolver = new PhasefieldEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(), this.Control,
                             this.Control.AgglomerationThreshold, this.GridData);

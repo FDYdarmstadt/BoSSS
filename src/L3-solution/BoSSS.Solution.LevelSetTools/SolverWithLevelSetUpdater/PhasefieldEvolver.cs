@@ -17,6 +17,7 @@ using MPI.Wrappers;
 using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,7 +39,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         // <summary>
         /// ctor
         /// </summary>
-        public PhasefieldEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, AppControl control, double AgglomThreshold, IGridData grd) {
+        public PhasefieldEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, SolverWithLevelSetUpdaterControl control, double AgglomThreshold, IGridData grd) {
             for (int d = 0; d < D; d++) {
                 if (!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -54,7 +55,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.m_bndVals = control.BoundaryValues;
             m_control = control;           
         }
-        AppControl m_control;
+
+        SolverWithLevelSetUpdaterControl m_control;
         IGridData m_grd;
         int SpatialDimension;
         double AgglomThreshold;
@@ -62,7 +64,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         string levelSetName;
         string[] parameters;
         IncompressibleBoundaryCondMap bcmap;
-        Phasefield Phasefield;
 
         /// <summary>
         /// should only be the interface velocity vector; typically, a phase-averaged velocity.
@@ -75,8 +76,151 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => MassCorrection;
 
+        static Dictionary<string,double> mass;
+        /// <summary>
+        /// The order parameter is conserved, we can try and "lift" the interface to conserve the mass, i.e. the area of one phase.
+        /// Only alid when the mass of the phases doesnt change, not when evaporation or inflows of both phases are present.
+        /// </summary>
+        /// <param name="phaseInterface"></param>
+        /// <param name="time"></param>
+        /// <param name="dt"></param>
+        /// <param name="incremental"></param>
+        /// <param name="DomainVarFields"></param>
+        /// <param name="ParameterVarFields"></param>
+        public void MassCorrection(DualLevelSet phaseInterface,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            if (m_control.PhasefieldControl.CorrectionType != PhasefieldControl.Correction.Mass)
+                return;
+
+            using (FuncTrace ft = new FuncTrace()) {
+                if (mass == null) {
+                    mass = new Dictionary<string, double>();
+                    mass[phaseInterface.Identification] = ComputeMass(phaseInterface.Tracker); // based on cg level set, which is not yet updated!
+                }
+
+                var CorrectedDGLevelSet = phaseInterface.DGLevelSet.CloneAs();
+                var CorrectedLsTrk = new LevelSetTracker(phaseInterface.Tracker.GridDat, phaseInterface.Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, CorrectedDGLevelSet);
+
+                Queue<double> massNew = new Queue<double>();
+                massNew.Enqueue(ComputeMass(CorrectedLsTrk));
+                double massUncorrected = massNew.Peek();
+
+                double massDiff = massNew.Peek() - mass[phaseInterface.Identification];
+
+                int i = 0;
+                while (massDiff.Abs() > 1e-6) {
+
+                    // FD sensitivity of the mass/area
+                    double correction = Math.Sign(massDiff) * 1e-10;
+
+                    // take the correction guess and calculate a forward difference to approximate the derivative
+                    ProjectCorrection(CorrectedDGLevelSet, phaseInterface.DGLevelSet, correction);
+
+                    // update LsTracker
+                    CorrectedLsTrk.UpdateTracker(0.0);
+                    massNew.Enqueue(ComputeMass(CorrectedLsTrk));
+
+                    correction = -(massDiff) / ((-massNew.Dequeue() + massNew.Dequeue()) / (correction));
+
+                    double initial = massDiff;
+                    bool finished = false;
+                    int k = 0;
+                    //while (massDiff.Abs() - initial.Abs() >= 0.0 && step > 1e-12)
+                    while (!finished) {
+                        double step = Math.Pow(0.5, k);
+                        // compute and project 
+                        // step one calculate distance field phiDist = 0.5 * log(Max(1+c, eps)/Max(1-c, eps)) * sqrt(2) * Cahn
+                        // step two project the new phasefield phiNew = tanh((cDist + correction)/(sqrt(2) * Cahn))
+                        // ===================
+                        ProjectCorrection(CorrectedDGLevelSet, phaseInterface.DGLevelSet, correction * step);
+
+                        // update LsTracker
+                        CorrectedLsTrk.UpdateTracker(0.0);
+                        massNew.Enqueue(ComputeMass(CorrectedLsTrk));
+                        massDiff = massNew.Peek() - mass[phaseInterface.Identification];
+
+                        if (massDiff.Abs() < (1 - 1e-4 * step) * initial.Abs()) {
+                            finished = true;
+
+                            // update field
+                            phaseInterface.DGLevelSet.Clear();
+                            phaseInterface.DGLevelSet.Acc(1.0, CorrectedDGLevelSet);
+
+                            ft.Info($"" +
+                                $"converged with stepsize:  {step}, correction: {correction}\n" +
+                                $"                     dM:  {massDiff}");
+                            if (k > 0)
+                                ft.Info($"Finished Linesearch in {k} iterations");
+                        } else if (Math.Abs(correction * step) < 1e-15) {
+                            ft.Info($"Linesearch failed after {k} iterations");
+                            finished = true;
+                            massDiff = 0.0;
+                        } else {
+                            massNew.Dequeue();
+                            k++;
+                        }
+                    }
+                    i++;
+                }
+
+                ft.Info($"Performed Mass Correction in {i} iterations: \n" +
+                    $"\toriginal mass:      {mass[phaseInterface.Identification]:N6}\n" +
+                    $"\tuncorrected mass:   {massUncorrected:N6}\n" +
+                    $"\tcorrected mass:     {massNew.Dequeue():N6}");
+
+            }
+        }
+        
+        void ProjectCorrection(LevelSet PhiNew, LevelSet PhiOld, double correction) {
+            PhiNew.ProjectField(
+                (ScalarFunctionEx)delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) { // ScalarFunction2
+                    Debug.Assert(result.Dimension == 2);
+                    Debug.Assert(Len == result.GetLength(0));
+                    int K = result.GetLength(1); // number of nodes
+
+                    // evaluate Phi
+                    // -----------------------------
+                    PhiOld.Evaluate(j0, Len, NS, result);
+
+                    // compute the pointwise values of the new level set
+                    // -----------------------------
+
+                    result.ApplyAll(x => 0.5 * Math.Log(Math.Max(1 + x, 1e-10) / Math.Max(1 - x, 1e-10)) * Math.Sqrt(2) * m_control.PhasefieldControl.cahn);
+                    result.ApplyAll(x => Math.Tanh((x + correction) / (Math.Sqrt(2) * m_control.PhasefieldControl.cahn)));
+                }
+            );
+
+            //Tecplot.Tecplot.PlotFields(new DGField[] { PhiNew , PhiOld}, "Phasefield", 0.0, 2);
+        }
+
+        double ComputeMass(LevelSetTracker levelSetTracker) {
+            int order = 0;
+            // area of bubble
+            double area = 0.0;
+            SpeciesId spcId = levelSetTracker.SpeciesIdS[1];
+            var SchemeHelper = levelSetTracker.GetXDGSpaceMetrics(levelSetTracker.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+            var vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
+            CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat,
+                vqs.Compile(levelSetTracker.GridDat, order),
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                    EvalResult.SetAll(1.0);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < Length; i++)
+                        area += ResultsOfIntegration[i, 0];
+                }
+            ).Execute();
+            area = area.MPISum();
+
+            return area;
+        }
 
         /// <summary>
         /// Provides access to the internally constructed extension velocity.
@@ -112,29 +256,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 new string[] { "Phasefield", "Potential" },
                 QuadOrderFunc.NonLinear(3));
 
-
             diffOp.EquationComponents["Phasefield"].Add(new phi_Flux(D, () => Velocity, m_bcMap));
-            diffOp.EquationComponents["Phasefield"].Add(new phi_Diffusion(D, 2.6, 0.001, 0.0, m_bcMap));
+            diffOp.EquationComponents["Phasefield"].Add(new phi_Diffusion(D, 2.6, m_control.PhasefieldControl.diff, 0.0, m_bcMap));
 
-            diffOp.EquationComponents["Potential"].Add(new mu_Diffusion(D, 2.6, m_cahn, m_bcMap));
+            diffOp.EquationComponents["Potential"].Add(new mu_Diffusion(D, 2.6, m_control.PhasefieldControl.cahn, m_bcMap));
             diffOp.EquationComponents["Potential"].Add(new mu_Source());
-
-            //diffOp.ParameterFactories.Add(
-            //    (IReadOnlyDictionary<string, DGField> DomainVarFields) => {
-            //    DGField[] prms = Velocity.ToArray();
-
-            //    if (prms.Length != diffOp.ParameterVar.Count)
-            //        throw new ApplicationException("mismatch between params in the operator and allocated fields.");
-
-            //    var ret = new ValueTuple<string, DGField>[prms.Length];
-            //    for (int iParam = 0; iParam < prms.Length; iParam++) {
-            //        ret[iParam] = (diffOp.ParameterVar[iParam], prms[iParam] as DGField);
-            //    }
-
-            //    return ret;
-            //}
-                
-            //    );
 
             double[] MassScales = { 1.0, 0.0 };
             diffOp.TemporalOperator = new ConstantTemporalOperator(diffOp, MassScales);
@@ -148,7 +274,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 diffOp,
                 new List<SinglePhaseField> { levelSet, potential },
                 new List<SinglePhaseField> { res_phi, res_mu },
-                XdgTimestepping.TimeSteppingScheme.ImplicitEuler);
+                m_control.PhasefieldControl.TimeSteppingScheme);
 
             Timestepper.RegisterResidualLogger(new ResidualLogger(levelSet.GridDat.MpiRank, new DatabaseDriver(NullFileSystemDriver.Instance), Guid.Empty));
 
@@ -180,17 +306,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="DomainVarFields"></param>
         /// <param name="ParameterVarFields"></param>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            using (var tr = new FuncTrace()) {
-                if(m_cahn == 0.0) {
-                    // interface thickness = f(pOrder, D), WIP
-                    double dInterface = 2.0 * Math.Pow(2.0, this.m_grd.SpatialDimension) / levelSet.DGLevelSet.Basis.Degree;
-                    // dInterface * 1/4.164 * hmin
-                    double hmin;
-                    // set the interface width based on the largest CutCell
-                    // for now just a rough estimate, based on global grid size
-                    hmin = this.m_grd.iGeomCells.h_max.Max();
-                    m_cahn = (1.0 / 4.164) * 1.0/10.0 * 8.0 / (2 + 1);//dInterface * (1.0 / 4.164) * hmin / Math.Sqrt(2);
-                }
+            using (var tr = new FuncTrace()) {                
 
                 int D = levelSet.Tracker.GridDat.SpatialDimension;
 
@@ -241,79 +357,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 concentration = concentration.MPISum();
                 return concentration;
             }
-
-
-            //int D = levelSet.Tracker.GridDat.SpatialDimension;
-
-            //SinglePhaseField[] meanVelocity = D.ForLoop(
-            //    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
-            //    );
-
-            //if (extensionVelocity == null) {
-            //    extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
-            //} else {
-            //    foreach (var f in extensionVelocity)
-            //        f.Clear();
-            //}
-
-            //var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, true);
-            //ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
-
-            //// Here Phasefield Movement            
-            //if (Phasefield == null) {
-            //    iTimestep = 0;
-            //    Phasefield = new Phasefield(null, levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
-            //    Phasefield.InitCH();
-            //}
-
-            //Phasefield.UpdateFields(levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
-            //Phasefield.MovePhasefield(iTimestep, dt, time);
-            //iTimestep++;
-        }
-
-        double m_cahn;
-
-        /// <summary>
-        /// initialize the $tanh$ profile of the Phasefield from a signed distance level set
-        /// </summary>
-        /// <param name="levelSet"></param>
-        private void InitializePhasefield(LevelSet levelSet) {
-
-            SinglePhaseField phasefield = new SinglePhaseField(levelSet.Basis);
-
-            // interface thickness = f(pOrder, D), WIP
-            double dInterface = 2.0 * Math.Pow(2.0, this.m_grd.SpatialDimension) / levelSet.Basis.Degree;
-            // dInterface * 1/4.164 * hmin
-            double hmin;
-            // set the interface width based on the largest CutCell
-            // for now just a rough estimate, based on global grid size
-            hmin = this.m_grd.iGeomCells.h_max.Max();
-            m_cahn = dInterface * (1.0 / 4.164) * hmin / Math.Sqrt(2);
-
-            // compute and project 
-            // step one calculate distance field phiDist = 0.5 * log(Max(1+phi, eps)/Max(1-phi, eps)) * sqrt(2) * Cahn_old
-            // step two project the new phasefield phiNew = tanh(phiDist/(sqrt(2) * Cahn_new))
-            // here done in one step, with default quadscheme
-            // ===================
-            phasefield.ProjectField(
-                (ScalarFunctionEx)delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) { // ScalarFunction2
-                    int K = result.GetLength(1); // number of nodes
-
-                    // evaluate Phi
-                    // -----------------------------
-                    levelSet.Evaluate(j0, Len, NS, result);
-
-                    // compute the pointwise values of the new level set
-                    // -----------------------------
-
-                    result.ApplyAll(x => Math.Tanh(x/(Math.Sqrt(2) * m_cahn)));
-                }
-            );
-
-            levelSet.Clear();
-            levelSet.Acc(1.0, phasefield);
-
-            potential = new SinglePhaseField(levelSet.Basis);
         }
     }
 }

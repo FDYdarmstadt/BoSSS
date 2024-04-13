@@ -115,7 +115,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// Options for the initialization of the Phasefield Level-set
         /// </summary>
         [DataMember]
-        public PhasefieldControl PhasefieldControl;
+        public PhasefieldSettings PhasefieldControl;
 
 
         /// <summary>
