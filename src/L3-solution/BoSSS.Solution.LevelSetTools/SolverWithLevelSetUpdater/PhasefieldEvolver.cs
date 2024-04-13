@@ -181,8 +181,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="ParameterVarFields"></param>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
-
                 if(m_cahn == 0.0) {
                     // interface thickness = f(pOrder, D), WIP
                     double dInterface = 2.0 * Math.Pow(2.0, this.m_grd.SpatialDimension) / levelSet.DGLevelSet.Basis.Degree;
@@ -221,7 +219,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 }
 
                 bool success = timestepper.Solve(time, dt);
-                Tecplot.Tecplot.PlotFields(timestepper.CurrentState.Cat(extensionVelocity), "Phasefield", time, 2);
+                //Tecplot.Tecplot.PlotFields(timestepper.CurrentState.Cat(extensionVelocity), "Phasefield", time, 2);
 
                 tr.Info("Phasefield evolver, total phi: " + LevelSetIntegral(levelSet.DGLevelSet));
             }
