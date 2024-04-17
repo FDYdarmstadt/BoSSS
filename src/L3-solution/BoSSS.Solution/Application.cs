@@ -1934,17 +1934,23 @@ namespace BoSSS.Solution {
                     double dtMin = this.Control.dtMin;
                     if(dtMin > 0) {
                         if(time + dtMin == time) { // time is so advanced, that the timestep becomes invisible
+                            tr.Info($"Time for restart: time ({time}) is so advanced, that the timestep becomes invisible (time + dt = time, after round-off-errors), resetting time...");
                             MustResetTime = true;
                         }
                     }
                 }
 
-                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode) || MustResetTime) {
+                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode)) {
                     if (Convert.ToInt32(mode) == (int)AppControl._TimesteppingMode.Steady) {
-                        Console.WriteLine("Restarting from steady-state, resetting time ...");
-                        time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                        tr.Info("Restarting from steady-state, resetting time ...");
+                        MustResetTime = true;
                     }
                 }
+
+                if (MustResetTime) {
+                    time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                }
+                
 
                 if (tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
                     var tsiI = tp.GetInternal() as TimestepInfo;

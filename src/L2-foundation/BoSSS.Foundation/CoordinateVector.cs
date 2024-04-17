@@ -28,7 +28,7 @@ namespace BoSSS.Foundation {
     /// presents the DG coordinates of a list of <see cref="DGField"/>-objects
     /// as one one-dimensional vector, without allocating additional memory.
     /// </summary>
-    public class CoordinateVector : IList<double> {
+    public class CoordinateVector : IList<double>, ICloneable {
 
         bool m_PresentExternal = false;
 
@@ -656,6 +656,30 @@ namespace BoSSS.Foundation {
             return new MyEnumerator(this);
         }
 
+        public object Clone() {
+            return new CoordinateVector(this.Fields.Select(f => f.CloneAs()));
+        }
+
         #endregion
+
+        /// <summary>
+        /// reset <see cref="DGField.Identification"/>
+        /// </summary>
+        public void RenameFields(params string[] newName) {
+            if (newName.Length != this.Fields.Count)
+                throw new ArgumentException("mismatch in number of elements");
+            for (int i = 0; i< newName.Length; i++) {
+                this.Fields[i].Identification = newName[i];
+            }
+        }
+        
+        /// <summary>
+        /// reset <see cref="DGField.Identification"/>
+        /// </summary>
+        public void RenameFields(Func<int,string> idx2Name) {
+            for (int i = 0; i < Fields.Count; i++) {
+                this.Fields[i].Identification = idx2Name(i);
+            }
+        }
     }
 }
