@@ -46,6 +46,18 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// - Returns a value from a dictionary <paramref name="dict"/>, if <paramref name="key"/> is present; 
+        /// - returns null, if <paramref name="key"/> is not in the dictionary.
+        /// </summary>
+        public static U Get<T, U>(this IDictionary<T, U> dict, T key)
+            where U : class //
+        {
+            
+            dict.TryGetValue(key, out var val);
+            return val;
+        }
+
+        /// <summary>
         /// Checks whether all elements of the given sequence are uniform (or
         /// homogeneous) with respect to the given <paramref name="selector"/>.
         /// That is, it checks whether <paramref name="selector"/>(element)
