@@ -185,6 +185,10 @@ namespace ilPSP {
             set;
         } = 4;
 
+        /// <summary>
+        /// The maximum number of OpenMP threads on the entire computer (aka. Symmetric Multi Processing Node, SMP Node), among all MPI Ranks;
+        /// This is important if, e.g. in parallel PARDISO solves, the matrix is gathered on one MPI rank and all other Ranks pause;
+        /// </summary>
         public static int MaxNumOpenMPthreads { 
             get; 
             private set; 
@@ -361,7 +365,7 @@ namespace ilPSP {
         /// </summary>
         static System.Collections.Generic.IReadOnlyList<int> ReservedCPUsInitially = null;
 
-        static IEnumerable<int> ReservedCPUsForThisRank = null;
+        static IEnumerable<int> DedicatedCPUsForThisRank = null;
 
         static IEnumerable<int> ReservedCPUsOnSMP = null;
 
@@ -478,31 +482,55 @@ namespace ilPSP {
 
                 if (allequal) {
                     if (ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
-                        //
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Sufficient CPUs to give each MPI rank `NumThreads` CPUs
                         //
+                        // We might have more CPUs at hand than `NumThreads`;
+                        // But, despite havening more, we only want to use `NumThreads` CPUs, 
+                        // since the user only requested `NumThreads` CPUs
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                        int MaxSkip = ReservedCPUsOnSMP.Count() - NumThreads * MPIEnv.ProcessesOnMySMP;
+                        int skip;
+                        if (MaxSkip.MPIMax() > 0) {
+                            //
+                            // If we have more CPUs than requested, still do some shifting, to prevent using the same CPU over and over
+                            //
 
-                        ReservedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(MPIEnv.ProcessRankOnSMP * NumThreads, NumThreads);
-                        MaxNumOpenMPthreads = ReservedCPUsOnSMP.Count();
+                            if (MPIEnv.ProcessRankOnSMP == 0) {
+                                MaxSkip = rnd.Next(0, MaxSkip + 1);
+                            } else {
+                                MaxSkip = -1;
+                            }
+
+                            int[] _MaxSkip = new int[MPIEnv.NoOfSMPs];
+                            _MaxSkip[MPIEnv.SMPrank] = MaxSkip;
+                            _MaxSkip = _MaxSkip.MPIMax();
+                            skip = _MaxSkip[MPIEnv.SMPrank];
+                        } else {
+                            skip = 0;
+                        }
+
+                        DedicatedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(skip + MPIEnv.ProcessRankOnSMP * NumThreads, NumThreads);
+                        MaxNumOpenMPthreads = Math.Min(ReservedCPUsOnSMP.Count(), MPIEnv.ProcessRankOnSMP * NumThreads);
                     }
 
                 } else if (disjoint) {
 
-                    ReservedCPUsForThisRank = ReservedCPUs.ToArray();
-                    if (ReservedCPUsForThisRank.Count() < NumThreads) {
-                        tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {ReservedCPUsForThisRank.ToConcatString("[", ",", "]")}");
+                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
+                    if (DedicatedCPUsForThisRank.Count() < NumThreads) {
+                        tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")}");
                     }
 
-                    MaxNumOpenMPthreads = Math.Min(ReservedCPUsForThisRank.Count(), NumThreads);
+                    MaxNumOpenMPthreads = Math.Min(DedicatedCPUsForThisRank.Count(), NumThreads);
 
                 } else {
                     // just hope for the best
                     MKLservice.Dynamic = true;
                 }
 
-                if(ReservedCPUsForThisRank != null) {
-                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {ReservedCPUsForThisRank.ToConcatString("[", ",", "]")} for OpenMP.");
+                if(DedicatedCPUsForThisRank != null) {
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")} for OpenMP.");
                 } else {
                     tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
                 }
@@ -521,14 +549,14 @@ namespace ilPSP {
 
         private static void SetOMPbinding() {
             using (var tr = new FuncTrace("SetOMPbinding")) {
-                tr.InfoToConsole = false;
-                if (ReservedCPUsForThisRank == null
+                tr.InfoToConsole = true;
+                if (DedicatedCPUsForThisRank == null
                     || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    tr.Info($"Floating OpenMP configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+                    tr.Info($"Floating OpenMP configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
@@ -536,7 +564,7 @@ namespace ilPSP {
                 } else {
                     int[] OpenMPcpuIdx;
 
-                    int L = ReservedCPUsForThisRank.Count();
+                    int L = DedicatedCPUsForThisRank.Count();
                     int Nt = Math.Min(NumThreads, MaxNumOpenMPthreads);
 
                     if (L > Nt) {
@@ -547,15 +575,15 @@ namespace ilPSP {
                         }
 
 
-                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank.Skip(skip).Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray();
+                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(DedicatedCPUsForThisRank.Skip(skip).Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray();
 
 
 
                     } else {
-                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank).ToArray();
+                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(DedicatedCPUsForThisRank).ToArray();
                     }
                     
-                    tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+                    tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     MKLservice.BindOMPthreads(OpenMPcpuIdx);
                 }
