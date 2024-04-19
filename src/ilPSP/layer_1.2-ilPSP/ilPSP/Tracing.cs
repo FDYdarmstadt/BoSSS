@@ -587,6 +587,8 @@ namespace ilPSP.Tracing {
             LogMemtrace(WorkingSet_onEntry, ">", mcr);
         }
 
+        public bool IntermediateReportOfChildCalls = false;
+
 
         /// <summary>
         /// Message when the measurement is finished.
@@ -607,6 +609,14 @@ namespace ilPSP.Tracing {
 
                 try {
                     s_FtLogger.Info(str);
+
+                    if(IntermediateReportOfChildCalls) {
+                        using (var wrt = new StringWriter()) {
+                            MethodCallRecordExtension.GetMostExpensiveCalls(wrt, mcr);
+                            s_FtLogger.Info("Intermediate Report: " + mcr.ToString());
+                        }
+                    }
+
                 } catch (Exception nre) {
                     Console.Error.WriteLine("ERRROR (logging): " + nre.Message);
                     Console.Error.WriteLine(nre.StackTrace);

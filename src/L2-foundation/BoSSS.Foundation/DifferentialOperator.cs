@@ -31,6 +31,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using System.Diagnostics;
+using System.IO;
 
 namespace BoSSS.Foundation {
        
@@ -1603,7 +1604,7 @@ namespace BoSSS.Foundation {
 #endif
 
                     if(m_NonlinearVolume != null && DoVolume) {
-                        using(new BlockTrace("Volume_Integration_NonLin", tr)) {
+                        using(var bt = new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
                             m_NonlinearVolume.m_Output = output;
                             m_NonlinearVolume.m_alpha = alpha;
@@ -1612,7 +1613,7 @@ namespace BoSSS.Foundation {
                             m_NonlinearVolume.m_Output = null;
                             m_NonlinearVolume.m_alpha = 1.0;
 
-
+                            bt.IntermediateReportOfChildCalls = true;
                         }
 
                     }
@@ -1630,7 +1631,7 @@ namespace BoSSS.Foundation {
 
                     void CallEdge(Quadrature.NonLin.NECQuadratureEdge ne, string name) {
                         if(ne != null && DoEdge) {
-                            using(new BlockTrace(name, tr)) {
+                            using(var bt = new BlockTrace(name, tr)) {
 
                                 ne.m_Output = output;
                                 ne.m_alpha = alpha;
@@ -1646,6 +1647,8 @@ namespace BoSSS.Foundation {
                                 ne.m_outputBndEdge = null;
                                 ne.m_alpha = 1.0;
                                 ne.SubGridCellsMarker = null;
+
+                                bt.IntermediateReportOfChildCalls = true;
                             }
                         }
                     }
@@ -1811,55 +1814,13 @@ namespace BoSSS.Foundation {
                     DifferentialOperator _Owner = (DifferentialOperator)this.Owner;
                     
                     if(volRule.Any() && DoVolume) {
-                        using(new BlockTrace("Volume_Integration_(new)", tr)) {
-
-                            /*
-                            if (Matrix != null && AffineOffset != null) {
-                                for (int i = 0; i < 1; i++) {
-                                    Console.WriteLine($"   i = {i}");
-
-                                    double afferrNorm = 0, mtxerrNorm = 0;
-                                    for (int k = 0; k < 1; k++) {
-                                        var clMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
-                                        var clAffine = new double[AffineOffset.Count];
-                                        var mpMatrix = new MsrMatrix(Matrix.RowPartitioning, Matrix.ColPartition);
-                                        var mpAffine = new double[AffineOffset.Count];
-
-                                        Debugi.SkipComp = -1;
-                                        Debugi.CompCont = 0;
-                                        Debugi.printInfo = k == 0;
-                                        ilPSP.Environment.NumThreads = 1;
-                                        var clmtxBuilder = new LECVolumeQuadrature2<MsrMatrix, double[]>(_Owner);
-                                        clmtxBuilder.m_alpha = alpha;
-                                        clmtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, clMatrix, clAffine, time);
-
-                                        Debugi.SkipComp = -1;
-                                        Debugi.CompCont = 0;
-                                        //Debugi.printInfo = false;
-                                        ilPSP.Environment.NumThreads = 8;
-                                        var mpmtxBuilder = new LECVolumeQuadrature2<MsrMatrix, double[]>(_Owner);
-                                        mpmtxBuilder.m_alpha = alpha;
-                                        mpmtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, mpMatrix, mpAffine, time);
-
-
-                                        var errMtx = clMatrix.CloneAs();
-                                        errMtx.Acc(mpMatrix, -1.0);
-                                        mtxerrNorm += errMtx.InfNorm();
-
-                                        afferrNorm += clAffine.MPI_L2Dist(mpAffine);
-
-                                    }
-                                    Console.WriteLine($"   difference (i = {i}): {mtxerrNorm:0.####e-00}  {mtxerrNorm:0.####e-00}");
-                                    Console.Write("");
-                                }
-                            }
-                            //*/
-
+                        using(var bt = new BlockTrace("Volume_Integration_(new)", tr)) {
+                            
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
 
-                            //volRule.ToTextFileVolume(this.GridData as BoSSS.Foundation.Grid.Classic.GridData, "Volume.csv");
+                            bt.IntermediateReportOfChildCalls = true;
                         }
 
                     } else {
@@ -1871,12 +1832,16 @@ namespace BoSSS.Foundation {
                     // ----------------
                     
                     if(!edgeRule.IsNullOrEmpty() && DoEdge) {
-                        using(new BlockTrace("Edge_Integration_(new)", tr)) {
+                        using(var bt = new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+
+                            bt.IntermediateReportOfChildCalls = true;
                         }
                     }
+
+                    
                 }
             }
         }

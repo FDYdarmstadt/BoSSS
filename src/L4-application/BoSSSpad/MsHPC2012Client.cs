@@ -165,7 +165,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             base.RuntimeLocation = "win\\amd64";
 
-            m_AdditionalEnvironmentVars.Add("OMP_PROC_BIND", "spread");
+            //m_AdditionalEnvironmentVars.Add("OMP_PROC_BIND", "spread");
         }
 
 

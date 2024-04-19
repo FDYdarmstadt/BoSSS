@@ -59,7 +59,6 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            InitMPI();
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6);
             //throw new Exception("remove me");

@@ -227,6 +227,7 @@ namespace ilPSP {
 
             BLAS.ActivateOMP();
             LAPACK.ActivateOMP();
+            SetOMPbinding();
         }
 
 
@@ -254,7 +255,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                //SetOMPbinding();
+                SetOMPbinding();
             }
         }
 
@@ -284,10 +285,49 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    //SetOMPbinding();
+                    SetOMPbinding();
                 }
             }
         }
+
+        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
+            if (InParallelSection == true) {
+                body(fromInclusive, toExclusive);
+            } else {
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+                    void _body(int ithread) {
+                        int L = toExclusive - fromInclusive;
+                        int i0 = (L*ithread)/__Numthreads;
+                        int iE = (L*(ithread+1))/__Numthreads;
+
+                        body(i0, iE);
+                    }
+
+
+                    Parallel.For(0, __Numthreads, options, _body);
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                    SetOMPbinding();
+                }
+            }
+        }
+
 
         public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
             if (InParallelSection) {
@@ -312,7 +352,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                //SetOMPbinding();
+                SetOMPbinding();
             }
         }
 
@@ -413,7 +453,7 @@ namespace ilPSP {
                         bool eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
                         string listdiffs;
                         if (!eqalAff)
-                            listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ", ", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ", ", "]") + ")";
+                            listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ",", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ",", "]") + ")";
                         else
                             listdiffs = "";
                         if (eqalAff == false) {
@@ -425,7 +465,7 @@ namespace ilPSP {
                         tr.Info($"CCP_AFFINITY not set");
                     }
                 }
-                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ", ", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
+                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
                 if (disjoint == true && allequal == true) {
@@ -451,7 +491,7 @@ namespace ilPSP {
 
                     ReservedCPUsForThisRank = ReservedCPUs.ToArray();
                     if (ReservedCPUsForThisRank.Count() < NumThreads) {
-                        tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {ReservedCPUsForThisRank.ToConcatString("[", ", ", "]")}");
+                        tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {ReservedCPUsForThisRank.ToConcatString("[", ",", "]")}");
                     }
 
                     MaxNumOpenMPthreads = Math.Min(ReservedCPUsForThisRank.Count(), NumThreads);
@@ -471,7 +511,7 @@ namespace ilPSP {
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 SetOMPbinding();
-                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetAffinity().ToConcatString("[", ", ", "]"));
+                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetAffinity().ToConcatString("[", ",", "]"));
                 CheckOMPThreading();
                 StdoutOnlyOnRank0 = bkup;
             }
@@ -481,14 +521,14 @@ namespace ilPSP {
 
         private static void SetOMPbinding() {
             using (var tr = new FuncTrace("SetOMPbinding")) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 if (ReservedCPUsForThisRank == null
                     || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    tr.Info($"Floating OpenMP configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ", ", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+                    tr.Info($"Floating OpenMP configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
@@ -515,7 +555,7 @@ namespace ilPSP {
                         OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank).ToArray();
                     }
                     
-                    tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ", ", "]")} configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ", ", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+                    tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     MKLservice.BindOMPthreads(OpenMPcpuIdx);
                 }
@@ -523,15 +563,18 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// We are trying to identify if OpenMP-thread from different MPI ranks dead-lock each other;
+        /// We are trying to identify if external libraries from different MPI ranks dead-lock each other;
         /// Therefore:
         /// 1. A reference measurement of a GEMM operation is performed on rank 0
         /// 2. The same operation is then performed on rank [0], [0,1], [0,1,2], ...
         /// 3. The runtime measurements are then compared to the reference measurement
         /// 4. an exception is thrown if the parallel runs take much longer than the reference run
         /// </summary>
-        /// <exception cref="ApplicationException"></exception>
-        static void CheckOMPThreading() {
+        /// <returns>
+        /// A "blocking factor": describes how much slower an OpenMP operation becomes if it is performed by multiple threads.
+        /// The ideal factor is 1, i.e. no slow-down if multiple threads are active
+        /// </returns>
+        public static double CheckOMPThreading() {
             using (var tr = new FuncTrace()) {
                 /* SOME TESTS ON LICHTENBERG: 
                  * 
@@ -644,61 +687,29 @@ namespace ilPSP {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int Rank);
 
 
-                var A = MultidimensionalArray.Create(N, N);
-                var B = MultidimensionalArray.Create(N, N);
-                var C = MultidimensionalArray.Create(N, N);
 
-                A.Storage.FillRandom();
-                B.Storage.FillRandom();
-                C.Storage.FillRandom();
+                var GEMMbench = new GEMMbench(N, Runs);
 
 
-
-                (double minTime, double avgTime, double maxTime) GEMMbench() {
-                    double mintime = double.MaxValue;
-                    double maxtime = 0.0;
-
-                    var RunTimes = new System.Collections.Generic.List<double>();
-
-                    for (int i = 0; i < Runs; i++) {
-                        var start = DateTime.Now;
-                        A.GEMM(1.0, B, C, 0.1);
-                        var end = DateTime.Now;
-
-                        double secs = (end - start).TotalSeconds;
-
-                        RunTimes.Add(secs);
-                        mintime = Math.Min(mintime, secs);
-                        maxtime = Math.Max(maxtime, secs);
-                    }
-
-                    // remove the outliers before computing the average:
-                    RunTimes.Sort();
-                    RunTimes.RemoveAt(0);
-                    RunTimes.RemoveAt(RunTimes.Count - 1);
-                    double avgTime = RunTimes.Sum() / RunTimes.Count;
-
-                    avgTime /= Runs;
-
-                    return (mintime, avgTime, maxtime);
-                }
+                
 
                 (double minTime, double avgTime, double maxTime) TimeRef0 = (0, 0, 0);
                 if (Rank == 0) {
                     tr.Info("Now, doing reference run on rank 0...");
-                    TimeRef0 = GEMMbench();
+                    TimeRef0 = GEMMbench.Do();
                     tr.Info($"Ref run: (min|avg|max) : (\t{TimeRef0.minTime:0.###E-00} |\t{TimeRef0.avgTime:0.###E-00} |\t{TimeRef0.maxTime:0.###E-00})");
                 }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 var TimeRef = TimeRef0.MPIBroadcast(0);
 
+                double worstAvgFactor = 0;
                 for (int ranksToBench = 0; ranksToBench < MpiSz; ranksToBench++) {
                     tr.Info("Now, doing work on " + (ranksToBench + 1) + " ranks ...");
 
                     (double minTime, double avgTime, double maxTime) TimeX = (BLAS.MachineEps, BLAS.MachineEps, BLAS.MachineEps);
                     if (Rank <= ranksToBench) {
-                        TimeX = GEMMbench();
+                        TimeX = GEMMbench.Do(); 
                     }
 
 
@@ -713,6 +724,8 @@ namespace ilPSP {
                         tr.Info("Scaling involving " + (ranksToBench + 1) + " ranks: " + scaling);
                         Console.WriteLine("Suspicious OpenMP runtime behavior: " + scaling);
 
+                        worstAvgFactor = Math.Max(worstAvgFactor, avgFactor);
+
                         //if(avgFactor > 7)
                         //    throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
                     }
@@ -722,9 +735,86 @@ namespace ilPSP {
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 }
 
-
+                return worstAvgFactor;
             }
         }
+
+
+        class GEMMbench {
+
+            public GEMMbench(int N, int Runs) {
+                this.Runs = Runs;
+
+                A = MultidimensionalArray.Create(N, N);
+                B = MultidimensionalArray.Create(N, N);
+                C = MultidimensionalArray.Create(N, N);
+
+                A.Storage.FillRandom();
+                B.Storage.FillRandom();
+                C.Storage.FillRandom();
+            }
+
+            int Runs;
+
+            MultidimensionalArray A, B, C;
+
+            public (double minTime, double avgTime, double maxTime) Do() {
+                double mintime = double.MaxValue;
+                double maxtime = 0.0;
+
+                var RunTimes = new System.Collections.Generic.List<double>();
+
+                for (int i = 0; i < Runs; i++) {
+                    var start = DateTime.Now;
+                    A.GEMM(1.0, B, C, 0.1);
+                    var end = DateTime.Now;
+
+                    double secs = (end - start).TotalSeconds;
+
+                    RunTimes.Add(secs);
+                    mintime = Math.Min(mintime, secs);
+                    maxtime = Math.Max(maxtime, secs);
+                }
+
+                // remove the outliers before computing the average:
+                RunTimes.Sort();
+                RunTimes.RemoveAt(0);
+                RunTimes.RemoveAt(RunTimes.Count - 1);
+                double avgTime = RunTimes.Sum() / RunTimes.Count;
+
+                avgTime /= Runs;
+
+                return (mintime, avgTime, maxtime);
+            }
+        }
+
+        /// <summary>
+        /// Compares the runtime of serial Matrix-Matrix-Multiplication with parallel one.
+        /// </summary>
+        public static (double AbsScaling, double RelScaling) MeasureOpenMPAcceleration() {
+            using (var tr = new FuncTrace("MeasureOpenMPAcceleration")) {
+                if (OpenMPenabled == false) {
+                    return (0, -1);
+                }
+
+                MKLservice.SetNumThreads(NumThreads);
+
+                var gb = new GEMMbench(2048*2, 5);
+
+                DisableOpenMP();
+                var SerialTimes = gb.Do();
+                EnableOpenMP();
+
+                var ParallelTimes = gb.Do();
+
+                double Accel = SerialTimes.avgTime / ParallelTimes.avgTime;
+                double RelAccel = Accel / NumThreads;
+                tr.Info($"OpenMP acceleration of DGEMM using {NumThreads}: {Accel}, relative factor {RelAccel}");
+
+                return (Accel, RelAccel);
+            }
+        }
+
 
         /// <summary>
         /// true, if the code currently runs in multi-threaded; then, further spawning into sub-threads should not occur.
@@ -741,7 +831,7 @@ namespace ilPSP {
         static bool m_StdoutOnlyOnRank0 = false;
 
         /// <summary>
-        /// if true, the standard - output stream will not be visible on screen on processer with MPI rank 
+        /// if true, the standard - output stream will not be visible on screen on processor with MPI rank 
         /// unequal to 0.
         /// </summary>
         public static bool StdoutOnlyOnRank0 {

@@ -28,6 +28,7 @@ using System.Linq;
 using static MPI.Wrappers.Utils.DynLibLoader;
 using System.Threading;
 using System.Collections.Concurrent;
+using System.ComponentModel.Design;
 
 namespace ilPSP.Utils {
 
@@ -431,12 +432,13 @@ namespace ilPSP.Utils {
                 return;
             } else {
 
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    double a;
-                    a = DX[i * INCX];
-                    DX[i * INCX] = DY[i * INCY];
-                    DY[i * INCY] = a;
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++) {
+                        double a;
+                        a = DX[i * INCX];
+                        DX[i * INCX] = DY[i * INCY];
+                        DY[i * INCY] = a;
+                    }
                 });
             }
         }
@@ -544,9 +546,9 @@ namespace ilPSP.Utils {
                 // default branch
                 // ++++++++++++++
 
-                ilPSP.Environment.ParallelFor(0, N, delegate (int n) {
-                    //for (int n = 0; n < N; n++)
-                    Y[n * INCY] += X[n * INCX] * alpha;
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int n = i0; n < iE; n++)
+                        Y[n * INCY] += X[n * INCX] * alpha;
                 });
                 return;
             }
@@ -576,9 +578,9 @@ namespace ilPSP.Utils {
             where R : IList<int>
         {
             int L = index.Count;
-            ilPSP.Environment.ParallelFor(0, L, delegate (int i) {
-                //for (int i = 0; i < L; i++) {
-                a[index[i]] *= alpha;
+            ilPSP.Environment.ParallelFor(0, L, delegate (int i0, int iE) {
+                for (int i = i0; i < iE; i++) 
+                    a[index[i]] *= alpha;
             });
         }
 
@@ -623,12 +625,29 @@ namespace ilPSP.Utils {
         /// <param name="a"></param>
         /// <param name="seed">if negative, a time-dependent sees is used; otherwise, the seed value for the <see cref="Random"/> instance.</param>
         static public void FillRandom<T>(this T a, int seed = -1) where T : IList<double> {
-            Random rnd = seed >= 0 ? new Random(seed) : new Random();
             int L = a.Count;
-            
-            // default:
-            for (int i = 0; i < L; i++) {
-                a[i] = rnd.NextDouble();
+            if (seed >= 0) {
+                // must compute serial for deterministic result
+                Random rnd = seed >= 0 ? new Random(seed) : new Random();
+
+
+
+                // default:
+                for (int i = 0; i < L; i++) {
+                    a[i] = rnd.NextDouble();
+                }
+
+            } else {
+
+                ilPSP.Environment.ParallelFor(0, L, delegate (int i0, int iE) {
+
+                    Random rnd = new Random();
+
+                    // default:
+                    for (int i = i0; i < iE; i++) {
+                        a[i] = rnd.NextDouble();
+                    }
+                });
             }
         }
 
@@ -862,13 +881,9 @@ namespace ilPSP.Utils {
 
                 int N = acc_index.Count;
                 //var dir = new ConcurrentDictionary<int, List<int>>();
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //int ithread = Thread.CurrentThread.ManagedThreadId;
-                    //if(!dir.ContainsKey(ithread))
-                    //    dir.TryAdd(ithread, new List<int>());
-                    //dir[ithread].Add(i);
-
-                    acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for(int i = i0; i < iE; i++) 
+                        acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
                 });
 
                 //for (int i = 0; i < N; i++) {
@@ -878,25 +893,25 @@ namespace ilPSP.Utils {
             } else if( acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[acc_index[i] + acc_index_shift] += alpha*b[i + b_index_shift];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++)
+                        acc[acc_index[i] + acc_index_shift] += alpha*b[i + b_index_shift];
                 });
             } else if (acc_index == null && b_index != null) {
 
                 int N = b_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[i + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++)
+                        acc[i + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
                 });
             } else if (acc_index == null && b_index == null) {
                 int N = acc.Count;
                 if (acc.Count != b.Count)
                     throw new ArgumentOutOfRangeException("length of 'acc' and 'b' must match.");
 
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[i + acc_index_shift] += alpha * b[i + b_index_shift];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++)
+                        acc[i + acc_index_shift] += alpha * b[i + b_index_shift];
                 });
             } else {
                 throw new Exception("should never be reached");
@@ -926,33 +941,33 @@ namespace ilPSP.Utils {
                     throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
 
                 int N = acc_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++)
+                        acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
                 });
 
             } else if(acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(i + b_index_shift))];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++)
+                        acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(i + b_index_shift))];
                 });
             } else if (acc_index == null && b_index != null) {
 
                 int N = b_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(i + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++)
+                        acc[checked((int)(i + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
                 });
             } else if (acc_index == null && b_index == null) {
                 int N = acc.Count;
                 if (acc.Count != b.Count)
                     throw new ArgumentOutOfRangeException("length of 'acc' and 'b' must match.");
 
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(i + acc_index_shift))] += alpha * b[checked((int)(i + b_index_shift))];
+                ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                    for (int i = i0; i < iE; i++)
+                        acc[checked((int)(i + acc_index_shift))] += alpha * b[checked((int)(i + b_index_shift))];
                 });
             } else {
                 throw new Exception("should never be reached");
@@ -971,9 +986,9 @@ namespace ilPSP.Utils {
         {
             if(N < 0)
                 N = b.Count;
-            ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                //for (int i = 0; i < N; i++) {
-                acc[i * inc_acc + offset_acc] += alpha * b[i * inc_b + offset_b];
+            ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
+                for (int i = i0; i < iE; i++)
+                    acc[i * inc_acc + offset_acc] += alpha * b[i * inc_b + offset_b];
             });
         }
 

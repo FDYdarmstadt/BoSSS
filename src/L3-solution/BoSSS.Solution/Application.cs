@@ -3166,6 +3166,7 @@ namespace BoSSS.Solution {
             stw.WriteLine($"User Name  : {System.Environment.UserName}");
             stw.WriteLine($"MPI rank   : {this.MPIRank}");
             stw.WriteLine($"MPI size   : {this.MPISize}");
+            stw.WriteLine($"Num threads: {ilPSP.Environment.NumThreads}");
             stw.WriteLine($"GIT hash   : {GitCommitHash}");
 
             void TryWrite(string s, Func<object> o) {
@@ -3682,6 +3683,17 @@ namespace BoSSS.Solution {
         /// </summary>
         public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
             var R = Root;
+
+            if (ilPSP.Environment.OpenMPenabled) {
+                var acel = ilPSP.Environment.MeasureOpenMPAcceleration();
+                var blk = ilPSP.Environment.CheckOMPThreading();
+                wrt.WriteLine($"OpenMP scaling        : absolute: {acel.AbsScaling}, relative: {acel.RelScaling}");
+                wrt.WriteLine($"Hybrid Parallelization: OpenMP blocking: {blk}");
+    
+            } else {
+                wrt.WriteLine("No OpenMP acceleration measured, since OpenMP is disabled.");
+            }
+            wrt.WriteLine();
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
