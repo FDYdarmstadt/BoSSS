@@ -14,7 +14,7 @@ using ilPSP.LinSolvers;
 namespace ApplicationWithIDT.OptiLevelSets {
     /// <summary>
     /// Global Level Set
-    /// - defined by a global function phi(x,y)
+    /// - defined by a global function phi(x,y)= a_1 *f_1(x,y) + a_2*f_2(x,y) + .... with some DOFS (a_1,a_2,...) and custom basis functions (f_1,f_2,...)
     /// </summary>
     public class GlobalOptiLevelSet : IOptiLevelSet {
 

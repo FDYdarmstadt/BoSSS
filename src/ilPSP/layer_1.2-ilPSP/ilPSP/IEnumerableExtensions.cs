@@ -46,6 +46,18 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// - Returns a value from a dictionary <paramref name="dict"/>, if <paramref name="key"/> is present; 
+        /// - returns null, if <paramref name="key"/> is not in the dictionary.
+        /// </summary>
+        public static U Get<T, U>(this IDictionary<T, U> dict, T key)
+            where U : class //
+        {
+            
+            dict.TryGetValue(key, out var val);
+            return val;
+        }
+
+        /// <summary>
         /// Checks whether all elements of the given sequence are uniform (or
         /// homogeneous) with respect to the given <paramref name="selector"/>.
         /// That is, it checks whether <paramref name="selector"/>(element)
@@ -675,6 +687,14 @@ namespace ilPSP {
             return true;
         }
 
+
+        /// <summary>
+        /// Negation of <see cref="IsEmptyOrWhite(string)"/>
+        /// </summary>
+        public static bool IsNonEmpty(this string s) {
+            return !s.IsEmptyOrWhite();
+        }
+
         /// <summary>
         /// Tests if a string is null/empty or contains only whitespaces.
         /// </summary>
@@ -766,14 +786,16 @@ namespace ilPSP {
                     stw.Write(firstSign);
                 int L = ie.Count();
                 int cnt = 0;
-                foreach(var o in ie) {
-                    if (o != null)
-                        stw.Write(o);
-                    else
-                        stw.Write("Null");
-                    if(cnt < (L - 1))
-                        stw.Write(separator);
-                    cnt++;
+                if (ie != null) {
+                    foreach (var o in ie) {
+                        if (o != null)
+                            stw.Write(o);
+                        else
+                            stw.Write("Null");
+                        if (cnt < (L - 1))
+                            stw.Write(separator);
+                        cnt++;
+                    }
                 }
                 if(lastSign != null)
                     stw.Write(lastSign);

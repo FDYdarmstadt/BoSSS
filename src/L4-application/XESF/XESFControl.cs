@@ -16,6 +16,7 @@ using System.Linq;
 namespace XESF {
     public class XESFControl : IDTControl {
         public XESFControl():base() {
+            base.NoOfMultigridLevels = 1;
             base.quadOrderFunc = (int[] A, int[] B, int[] C) =>  Math.Abs(2*A.Max()) + Math.Abs(C.Max()) + Math.Max(this.LevelSetDegree,this.LevelSetTwoDegree);
         }
         public override Type GetSolverType() {

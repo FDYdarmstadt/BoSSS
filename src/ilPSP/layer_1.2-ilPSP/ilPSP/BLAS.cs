@@ -678,7 +678,7 @@ namespace ilPSP.Utils {
         }
         
         /// <summary>
-        /// <paramref name="a"/> = <paramref name="alpha"/>*<paramref name="B"/>
+        /// this = <paramref name="alpha"/>*<paramref name="B"/>
         /// </summary>
         static public void SetV<T, V>(this T a, V B, double alpha = 1.0)
             where T : IList<double>
@@ -1096,8 +1096,8 @@ namespace ilPSP.Utils {
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "PARDISO2_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
-                case Parallelism.OMP: return new string[] { "PARDISO2_omp.dll", "libBoSSSnative_omp.so" };
+                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.OMP: return new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }

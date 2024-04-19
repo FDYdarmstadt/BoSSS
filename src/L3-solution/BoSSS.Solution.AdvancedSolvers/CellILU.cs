@@ -1226,7 +1226,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ILU, in-place version, after book of Saad (p 303);
         /// This only considers the MPI-local part of the matrix, i.e. the ILU decomposition is MPI-rank diagonal.
         /// </summary>
-        static BlockMsrMatrix ComputeILU(int iluLevel, BlockMsrMatrix Mtx) {
+        public static BlockMsrMatrix ComputeILU(int iluLevel, BlockMsrMatrix Mtx) {
             using(var ft = new FuncTrace()) {
                 IBlockPartitioning part = Mtx._RowPartitioning;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
