@@ -11,6 +11,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -690,6 +691,15 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                                 if(JacobiParameterVars == null)
                                     JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
+
+                                // update parameters in JacobiParameterVars 
+                                foreach (DGField param in Parameters) {
+                                    int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => jpv.Identification.Equals(param.Identification));
+                                    //int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => ReferenceEquals(jpv, param));
+                                    if (ind > -1) {
+                                            this.JacobiParameterVars[ind] = param;
+                                    }
+                                }
 
                                 op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
 
