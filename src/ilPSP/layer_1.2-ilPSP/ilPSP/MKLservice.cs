@@ -18,16 +18,16 @@ namespace ilPSP {
 
 
 
-        /// <summary>
-        /// 
-        /// </summary>
+
         public unsafe delegate void _BoSSS_set_num_threads(int* nth);
 
         public unsafe delegate int _BoSSS_bind_omp_threads(int NumThreads, int* CPUindices);
 
         public unsafe delegate int _BoSSS_set_dynamic(int boolDynThreads);
 
-        public unsafe delegate int _BoSSS_get_dynamic(int* boolDynThreads);
+        public unsafe delegate void _BoSSS_get_dynamic(int* boolDynThreads);
+
+        public unsafe delegate int _BoSSS_get_max_threads();
 
 
 #pragma warning disable        649
@@ -35,17 +35,27 @@ namespace ilPSP {
         _BoSSS_bind_omp_threads BoSSS_bind_omp_threads;
         _BoSSS_set_dynamic BoSSS_set_dynamic;
         _BoSSS_get_dynamic BoSSS_get_dynamic;
+        _BoSSS_get_max_threads BoSSS_get_max_threads;
 #pragma warning restore 649
 
 
         public readonly static MKLservice instance = new MKLservice();
 
-
+        /// <summary>
+        /// Setting number of threads for MKL/OpenMP
+        /// </summary>
         public static void SetNumThreads(int nth) {
-            if (nth > 1000000) {
-                unsafe {
-                    instance.BoSSS_set_num_threads(&nth);
-                }
+            unsafe {
+                instance.BoSSS_set_num_threads(&nth);
+            }
+        }
+
+        /// <summary>
+        /// Not really sure?
+        /// </summary>
+        public static int GetMaxThreads() {
+            unsafe {
+                return instance.BoSSS_get_max_threads();
             }
         }
 

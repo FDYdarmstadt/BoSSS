@@ -549,14 +549,14 @@ namespace ilPSP {
 
         private static void SetOMPbinding() {
             using (var tr = new FuncTrace("SetOMPbinding")) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 if (DedicatedCPUsForThisRank == null
                     || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    tr.Info($"Floating OpenMP configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+                    //tr.Info($"Floating OpenMP configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
@@ -587,7 +587,7 @@ namespace ilPSP {
 
                     MKLservice.BindOMPthreads(OpenMPcpuIdx);
                 }
-            }
+            } //*/
         }
 
         /// <summary>
@@ -825,14 +825,16 @@ namespace ilPSP {
                     return (0, -1);
                 }
 
-                MKLservice.SetNumThreads(NumThreads);
+                //Console.WriteLine("OMP Max threads = " + MKLservice.GetMaxThreads() + ", BoSSS numth = " + NumThreads + ", BoSSS max omp = " + MaxNumOpenMPthreads);
+
 
                 var gb = new GEMMbench(2048*2, 5);
 
-                DisableOpenMP();
+                BLAS.ActivateSEQ();
                 var SerialTimes = gb.Do();
-                EnableOpenMP();
+                BLAS.ActivateOMP();
 
+                
                 var ParallelTimes = gb.Do();
 
                 double Accel = SerialTimes.avgTime / ParallelTimes.avgTime;
