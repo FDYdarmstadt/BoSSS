@@ -1301,7 +1301,7 @@ namespace ilPSP.Utils {
         }
 
         internal static void ActivateOMP() {
-            if (ilPSP.Environment.MaxNumOpenMPthreads > 1)
+            if (ilPSP.Environment.MaxNumOpenMPthreads > 1 && ilPSP.Environment.NumThreads > 1)
                 m_BLAS = m_omp_BLAS;
             else
                 m_BLAS = m_seq_BLAS;
