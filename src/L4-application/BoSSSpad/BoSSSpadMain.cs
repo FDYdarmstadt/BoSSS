@@ -188,7 +188,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // launch the app
             // ==============
-            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
+            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI(args);
 
             try {
                 switch (mode) {
