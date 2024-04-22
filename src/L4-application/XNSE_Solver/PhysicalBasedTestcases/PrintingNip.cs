@@ -55,12 +55,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.PrintingNip {
             }
         }
 
-        static public Formula Get_VelX(double Radius, double _delta, double RotVel) {
-            return new Formula("BoundaryValues.VelX", AdditionalPrefixCode: GetPrefixCode(Radius, _delta, RotVel));
+        static public Formula Get_VelX(double _delta, double RotVel, double Radius) {
+            return new Formula("BoundaryValues.VelX", AdditionalPrefixCode: GetPrefixCode(_delta, RotVel, Radius));
         }
 
-        static public Formula Get_VelY(double Radius, double _delta, double RotVel) {
-            return new Formula("BoundaryValues.VelY", AdditionalPrefixCode: GetPrefixCode(Radius, _delta, RotVel));
+        static public Formula Get_VelY(double _delta, double RotVel, double Radius) {
+            return new Formula("BoundaryValues.VelY", AdditionalPrefixCode: GetPrefixCode(_delta, RotVel, Radius));
         }
     }
     #endregion
