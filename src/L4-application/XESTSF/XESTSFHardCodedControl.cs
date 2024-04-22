@@ -144,12 +144,12 @@ namespace XESTSF {
                 = ComputeNormalShockWaveRelations(densityL, velocityL, pressureL, MachL, gamma);
 
             
-            Func<double, double> f_waveform = x => 0; //default no pertubation
+            Func<double, double> f_waveform = x => 0; //default no perturbation
             //Waveform
             if(waveform == "1sinus") { //one period of sinus
                 f_waveform = delegate (double X) {
                     if(wavePosition < X && X < wavePosition + waveLength) {
-                        return Math.Sin(2 * Math.PI * X / waveLength);
+                        return Math.Sin(2 * Math.PI * (X-wavePosition) / waveLength);
                     } else {
                         return 0;
                     }
@@ -157,7 +157,7 @@ namespace XESTSF {
             } else if(waveform == "halfsinus") { //half of period of sinus
                 f_waveform = delegate (double X) {
                     if(wavePosition < X && X < wavePosition + waveLength) {
-                        return Math.Sin(Math.PI * X / waveLength);
+                        return Math.Sin(Math.PI * (X - wavePosition) / waveLength);
                     } else {
                         return 0;
                     }
@@ -166,19 +166,19 @@ namespace XESTSF {
                 f_waveform = delegate (double X) {
                     if(shockPosition < wavePosition) {
                         if(wavePosition<X ) {
-                            return Math.Sin(2 * Math.PI * X / waveLength);
+                            return Math.Sin(2 * Math.PI * (X - wavePosition) / waveLength);
                         } else {
                             return 0;
                         }
                     } else {
                         if(wavePosition > X) {
-                            return Math.Sin(2 * Math.PI * X / waveLength);
+                            return Math.Sin(2 * Math.PI * (X - wavePosition) / waveLength);
                         } else {
                             return 0;
                         }
                     }
                 };
-            } else if(waveform == "bump") { //c ifnity bumb (differentiable everywhere)
+            } else if(waveform == "bump") { //c infinity bump (differentiable everywhere)
 
                 double L = waveLength / 2;
                 double bumpPos = wavePosition + L;

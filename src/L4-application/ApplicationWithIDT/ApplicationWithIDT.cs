@@ -760,6 +760,18 @@ namespace ApplicationWithIDT {
         public void InitializeLevelSets() {
 
             #region Create level set objects, and the level set tracker
+            // Enusre that for a SpecFemField the LevelSet contains the SpecFemSpace
+            if (Control.OptiLevelSetType == OptiLevelSetType.SpecFemField)
+            {
+                if (Control.IsTwoLevelSetRun)
+                {
+                    this.Control.LevelSetTwoDegree = this.Control.LevelSetTwoDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetTwoDegree;
+                }
+                else
+                {
+                    this.Control.LevelSetDegree = this.Control.LevelSetDegree < this.Control.OptiLevelSetDegree * 2 ? this.Control.OptiLevelSetDegree * 2 : this.Control.LevelSetDegree;
+                }
+            }
             // Level set one (usually the geometry)
             this.LevelSet = new LevelSet(new Basis(this.GridData, this.Control.LevelSetDegree), "levelSet");
             int lsNumber;
