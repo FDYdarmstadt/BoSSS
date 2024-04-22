@@ -460,8 +460,6 @@ namespace BoSSS.Application.XNSFE_Solver {
 
         public override DelParameterFactory Factory => Temperature0Factory;
 
-        public override DelPartialParameterUpdate Update => null;
-
         public Temperature0() {
         }
 

@@ -325,8 +325,6 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public override DelParameterFactory Factory => ParameterFactory;
-
-        public override DelPartialParameterUpdate Update => null;
     }
 
     /// <summary>
@@ -359,8 +357,6 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public override DelParameterFactory Factory => ParameterFactory;
-
-        public override DelPartialParameterUpdate Update => null;
     }
 
     /// <summary>
@@ -584,8 +580,6 @@ namespace BoSSS.Application.XNSEC {
 
         public override DelParameterFactory Factory => Temperature0Factory;
 
-        public override DelPartialParameterUpdate Update => null;
-
         public Temperature0() {
         }
 
@@ -605,8 +599,6 @@ namespace BoSSS.Application.XNSEC {
         public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0 };
 
         public override DelParameterFactory Factory => MassFraction0_0Factory;
-
-        public override DelPartialParameterUpdate Update => null;
 
         public MassFraction0_0() {
         }
