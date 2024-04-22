@@ -183,6 +183,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
             double[] Normal = cp.Normal;
+
             double presJump = (-curvature * sigma) * Normal[m_d];
 
             double FlxNeg = -0.5 * presJump;
@@ -243,9 +244,20 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             get { return TermActivationFlags.V; }
         }
 
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            throw new NotSupportedException();
+        }
+
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { this };
+            return new IEquationComponent[] { };
         }
     }
 
@@ -1402,7 +1414,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { this }; // at most linear at contact-lines
+            return new IEquationComponent[] { }; // only parameter dependent, not present in jacobian
         }
     }
 
