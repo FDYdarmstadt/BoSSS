@@ -1408,7 +1408,7 @@ namespace CNS {
                 {
                     if (wavePosition < X && X < wavePosition+waveLength)
                     {
-                        return Math.Sin(2 * Math.PI * X / waveLength);
+                        return Math.Sin(2 * Math.PI * (X-wavePosition) / waveLength);
                     }
                     else
                     {
@@ -1422,7 +1422,7 @@ namespace CNS {
                 {
                     if (wavePosition < X && X < wavePosition+waveLength)
                     {
-                        return Math.Sin(Math.PI * X / waveLength);
+                        return Math.Sin(Math.PI * (X - wavePosition) / waveLength);
                     }
                     else
                     {
@@ -1437,7 +1437,7 @@ namespace CNS {
                     {
                         if (wavePosition < X)
                         {
-                            return Math.Sin(2 * Math.PI * X / waveLength);
+                            return Math.Sin(2 * Math.PI * (X - wavePosition) / waveLength);
                         }
                         else
                         {
@@ -1448,7 +1448,7 @@ namespace CNS {
                     {
                         if (wavePosition > X)
                         {
-                            return Math.Sin(2 * Math.PI * X / waveLength);
+                            return Math.Sin(2 * Math.PI * (X - wavePosition) / waveLength);
                         }
                         else
                         {
