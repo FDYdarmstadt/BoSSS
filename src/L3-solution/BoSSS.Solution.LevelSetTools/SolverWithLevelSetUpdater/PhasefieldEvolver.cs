@@ -53,7 +53,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.m_grd = grd;
             this.m_bndVals = control.BoundaryValues;
-            m_control = control;           
+            m_control = control;
         }
 
         SolverWithLevelSetUpdaterControl m_control;
@@ -96,7 +96,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
-            if (m_control.PhasefieldControl.CorrectionType != PhasefieldControl.Correction.Mass)
+            if (m_control.PhasefieldControl.CorrectionType != Correction.Mass)
                 return;
 
             using (FuncTrace ft = new FuncTrace()) {
@@ -259,7 +259,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             diffOp.EquationComponents["Phasefield"].Add(new phi_Flux(D, () => Velocity, m_bcMap));
             diffOp.EquationComponents["Phasefield"].Add(new phi_Diffusion(D, 2.6, m_control.PhasefieldControl.diff, 0.0, m_bcMap));
 
-            diffOp.EquationComponents["Potential"].Add(new mu_Diffusion(D, 2.6, m_control.PhasefieldControl.cahn, m_bcMap));
+            diffOp.EquationComponents["Potential"].Add(new mu_Diffusion(D, 2.6, m_control.PhasefieldControl.cahn, m_bcMap, contactAngle: m_control.PhasefieldControl.theta));
             diffOp.EquationComponents["Potential"].Add(new mu_Source());
 
             double[] MassScales = { 1.0, 0.0 };

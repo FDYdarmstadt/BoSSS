@@ -30,7 +30,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
         public double cahn = 1.0;
 
         /// <summary>
-        /// Timestepping scheme
+        /// ContactAngle for walls
+        /// </summary>
+        [DataMember]
+        public Formula theta = new Formula("X => Math.PI/2.0");
+
+        /// <summary>
+        /// Timestepping scheme, use RK as the implementation does not remember "old" timesteps (necessary for BDF)
         /// </summary>
         [DataMember]
         public XdgTimestepping.TimeSteppingScheme TimeSteppingScheme = XdgTimestepping.TimeSteppingScheme.RK_ImplicitEuler;

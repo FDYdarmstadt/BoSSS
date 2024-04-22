@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP;
@@ -171,6 +172,24 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
 
+        bool IsInflow(ref CommonParamsBnd inp) {
+            BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
+            switch (edgeType) {
+                case BoundaryType.Wall:
+                case BoundaryType.Slip:
+                case BoundaryType.SlipSymmetry:
+                    // a Dicirchlet b.c. for 'c' mean a Neumann b.c. for 'phi'
+                    return false;
+
+                case BoundaryType.Inlet:
+                case BoundaryType.Outlet:
+                case BoundaryType.Outflow:
+                case BoundaryType.Pressure_Dirichlet:
+                default:
+                    return true;
+            }
+        }
+
         public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             // expand for treatment of input functions, for now hardcode to -1.0
             double UxN = 0;
@@ -179,10 +198,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             }
 
             double phi;
-            if (UxN >= 0) {
-                phi = _uIN[0];
+            if (IsInflow(ref inp)) {
+                if (UxN >= 0) {
+                    phi = _uIN[0];
+                } else {
+                    phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+                }
             } else {
-                phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+                phi = 0.0;
             }
 
             return phi * UxN * _vIN;
@@ -232,7 +255,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// </summary>
     public class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace {
 
-        public mu_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi")
+        public mu_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi", Formula contactAngle = null)
             : base(penalty_const, LevelSetName) // note: in the equation for 'mu', we have the Laplacian of 'phi'
         {
             m_D = D;
@@ -240,10 +263,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction[LevelSetName];
             m_LevelSetName = LevelSetName;
+            m_contactAngle = contactAngle ?? new Formula("X => Math.PI/2.0");
         }
 
         protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
         double m_cahn;
+        Formula m_contactAngle;
         int m_D;
         public override IList<string> ParameterOrdering => VariableNames.VelocityVector(m_D);
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
@@ -284,6 +309,18 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 case BoundaryType.Pressure_Dirichlet:
                 default:
                     return true;
+            }
+        }
+
+        bool IsContactLine(ref CommonParamsBnd inp) {
+            BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
+            switch (edgeType) {
+                case BoundaryType.Wall:
+                case BoundaryType.Slip:
+                    // only then a contact angle boundary condition is employed
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -331,11 +368,18 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 }
             } else {
 
-                double g_N = this.g_Neum(ref inp);
-
-                Acc += nuA * g_N * _vA * this.m_alpha;
+                if (IsContactLine(ref inp)) {
+                    Acc += -nuA * Math.Cos(m_contactAngle.Evaluate(inp.X, inp.time)) / (Math.Sqrt(2 * m_cahn)) * (1 - _uA[0].Pow2()) * _vA * this.m_alpha;
+                } else {
+                    Acc += 0.0;
+                }
             }
             return Acc;
+        }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var r = new IEquationComponent[] { new VolumeFormDifferentiator(this, SpatialDimension), new EdgeFormDifferentiator(this, SpatialDimension) };
+            return r;
         }
     }
     
