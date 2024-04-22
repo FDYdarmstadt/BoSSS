@@ -169,6 +169,8 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         public override IList<string> ParameterNames => parameterNames;
 
+        public override DelPartialParameterUpdate Update => null;
+
         double OrientationFunction(double[] X, double t) {
             double OrientationFunction = 0;
             for (int p = 0; p < Particles.Length; p++) {
