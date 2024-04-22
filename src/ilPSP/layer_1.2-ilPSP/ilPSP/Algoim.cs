@@ -28,1060 +28,13 @@ using System.Linq;
 using static MPI.Wrappers.Utils.DynLibLoader;
 using System.Threading;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
+using static ilPSP.Utils.UnsafeDBLAS;
+using static ilPSP.Utils.UnsafeAlgoim;
 
 namespace ilPSP.Utils {
 
-    /// <summary>
-    /// MPI-parallel variants of some BLAS functions
-    /// </summary>
-    public static class ParallelBlas {
 
-        ///// <summary>
-        ///// for the summation of one int, double, ..., over all MPI processors
-        ///// </summary>
-        //static public T MPI_Sum<T>(T x, MPI_Comm comm) 
-        //    where T : struct {
-
-        //    MPI_Datatype type;
-        //    Type t = typeof(T);
-        //    if(t==typeof(int))
-        //        type = csMPI.Raw.MPI_Datatype.MPI_INT;
-        //    else if(t==typeof(int))
-        //        type = csMPI.Raw.MPI_Datatype.MPI_DOUBLE;
-        //    else if(t==typeof(int))
-        //        type = csMPI.Raw.MPI_Datatype.MPI_FLOAT;
-        //    else if(t==typeof(int))
-        //        type = csMPI.Raw.MPI_Datatype.MPI_LONG_LONG;
-        //    else 
-        //        throw new NotSupportedException("this function is not supported for type " + t.Name);
-            
-        //    unsafe {
-        //        T outp = default(T);
-        //        csMPI.Raw.Allreduce((IntPtr)(&x), (IntPtr)(&outp), 1, csMPI.Raw.MPI_Datatype.MPI_DOUBLE, csMPI.Raw.MPI_OP.SUM, comm);
-        //        return outp;
-        //    }
-            
-        //}
-
-        /// <summary>
-        /// MPI-parallel scalar product
-        /// </summary>
-        static public double MPI_ddot<V,W>(this V vec1, W vec2, MPI_Comm comm) 
-            where V : IList<double> 
-            where W: IList<double> 
-        {
-            if (vec1.Count != vec2.Count)
-                throw new ArgumentException("vectors mus have the same lenght");
-            return ddot(vec1.Count, vec1, 1, vec2, 1, comm);
-        }
-
-        /// <summary>
-        /// MPI-parallel scalar product (on world communicator)
-        /// </summary>
-        static public double MPI_ddot<V,W>(this V vec, W vec2)
-            where V : IList<double>
-            where W : IList<double> {
-            return vec.MPI_ddot(vec2, csMPI.Raw._COMM.WORLD);
-        }
-
-
-        /// <summary>
-        /// MPI - parallel scalar product
-        /// </summary>
-        static public double ddot<TX, TY>(int N, TX x, int incx, TY y, int incy, MPI.Wrappers.MPI_Comm comm)
-            where TX : IList<double>
-            where TY : IList<double> {
-
-            if( incx*x.Count < N)
-                throw new ArgumentException("vector too short.","x");
-            if( incy*y.Count < N)
-                throw new ArgumentException("vector too short.","y");
-            
-            double locRes = 0;
-
-            double[] dx = x as double[];
-            double[] dy = y as double[];
-            if (dx != null && dy != null) {
-                // use dnese BLAS
-                locRes = BLAS.ddot(N, dx, incx, dy, incy);
-            } else {
-
-                ISparseVector<double> spx = x as ISparseVector<double>;
-                ISparseVector<double> spy = y as ISparseVector<double>;
-                IList<double> _y = y;
-                if (spy != null) {
-                    if (spx == null || spy.Sparsity < spx.Sparsity) {
-                        // y is sparser than x, use y !
-                        spx = spy;
-                        spy = null;
-                        _y = x;
-                        x = default(TX);
-                        y = default(TY);
-                        int buffy = incx;
-                        incx = incy;
-                        incy = buffy;
-                    }
-                }
-
-                if (spx != null) {
-                    // sparse implementation
-
-                    foreach (var entry in spx.SparseStruct) {
-                        int m = entry.Key % incx;
-                        if (m != 0)
-                            // entry is skipped by x-increment
-                            continue;
-
-                        int n = entry.Key / incx;
-
-                        locRes += entry.Value * _y[n * incy];
-                    }
-                } else {
-                    // default IList<double> - implementation
-                    for (int n = 0; n < N; n++) {
-                        locRes += x[n * incx] * y[n * incy];
-                    }
-
-                }
-            }
-
-            double globRes = double.NaN;
-            unsafe {
-                csMPI.Raw.Allreduce((IntPtr)(&locRes), (IntPtr)(&globRes), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, comm);
-            }
-            return globRes;
-        }
-
-        /// <summary>
-        /// MPI-parallel 2-norm
-        /// </summary>
-        static public double MPI_L2Norm<V>(this V vec, MPI_Comm comm) where V : IList<double> {
-            return drnm2(vec.Count, vec, 1, comm);
-        }
-
-        /// <summary>
-        /// MPI-parallel 2-norm (on world communicator)
-        /// </summary>
-        static public double MPI_L2Norm<V>(this V vec) where V : IList<double> {
-            return drnm2(vec.Count, vec, 1, csMPI.Raw._COMM.WORLD);
-        }
-
-
-        /// <summary>
-        /// MPI-parallel 2-norm
-        /// </summary>
-        static public double drnm2<TX>(int N, TX x, int incx, MPI_Comm comm) where TX : IList<double> {
-            double locRes = 0;
-
-            if(N > 0) {
-                // in MPI parallel mode, some vector might be actually of zero size on a certain processor
-
-                double[] dx = x as double[];
-                if(dx != null) {
-                    // double[] - implementation
-                    locRes = BLAS.dnrm2(N, dx, incx);
-                    locRes = locRes * locRes;
-                } else {
-                    ISparseVector<double> spx = x as ISparseVector<double>;
-
-                    if(spx != null) {
-                        // sparse implementation
-
-                        foreach(var entry in spx.SparseStruct) {
-                            int m = entry.Key % incx;
-                            if(m != 0)
-                                // entry is skipped by x-increment
-                                continue;
-
-                            double xi = entry.Value;
-                            locRes += xi * xi;
-                        }
-                    } else {
-                        // default implementation
-                        for(int n = 0; n < N; n++) {
-                            double xi = x[n * incx];
-                            locRes += xi * xi;
-                        }
-                    }
-                }
-
-            }
-
-            double globRes = double.NaN;
-            unsafe {
-                csMPI.Raw.Allreduce((IntPtr)(&locRes), (IntPtr)(&globRes), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, comm);
-            }
-            return Math.Sqrt(globRes);
-        }
-
-
-        /// <summary>
-        /// L2-distance
-        /// </summary>
-        static public double MPI_L2Dist<TX, TY>(this TX a, TY b)
-            where TX : IList<double>
-            where TY : IList<double> //
-        {
-            return Math.Sqrt(MPI_L2DistPow2(a, b));
-        }
-
-        /// <summary>
-        /// L2-distance
-        /// </summary>
-        static public double MPI_L2Dist<TX, TY>(this TX a, TY b, MPI_Comm comm)
-            where TX : IList<double>
-            where TY : IList<double> //
-        {
-            return Math.Sqrt(MPI_L2DistPow2(a, b, comm));
-        }
-
-        /// <summary>
-        /// L2-Norm to the power of 2
-        /// </summary>
-        static public double MPI_L2NormPow2<T>(this T a, MPI_Comm comm) where T : IList<double> {
-            double l = a.L2NormPow2();
-            double g = l.MPISum(comm);
-            return g;
-        }
-
-        /// <summary>
-        /// L2-Norm to the power of 2
-        /// </summary>
-        static public double MPI_L2NormPow2<T>(this T a) where T : IList<double> {
-            return MPI_L2NormPow2(a, csMPI.Raw._COMM.WORLD);
-        }
-
-        /// <summary>
-        /// L2-distance to the power of 2
-        /// </summary>
-        static public double MPI_L2DistPow2<TX, TY>(this TX a, TY b, MPI_Comm comm)
-            where TX : IList<double>
-            where TY : IList<double> //
-        {
-            double l = a.L2DistPow2(b);
-            double g = l.MPISum(comm);
-            return g;
-        }
-
-        /// <summary>
-        /// L2-distance to the power of 2
-        /// </summary>
-        static public double MPI_L2DistPow2<TX, TY>(this TX a, TY b)
-            where TX : IList<double>
-            where TY : IList<double> //
-        {
-            return MPI_L2DistPow2(a, b, csMPI.Raw._COMM.WORLD);
-        }
-
-        /// <summary>
-        /// l2 inner product
-        /// </summary>
-        static public double MPI_InnerProd<TX, TY>(this TX a, TY b, MPI_Comm comm)
-            where TX : IList<double>
-            where TY : IList<double> // 
-        {
-            double l = a.InnerProd(b);
-            double g = l.MPISum(comm);
-            return g;
-        }
-
-        /// <summary>
-        /// l2 inner product
-        /// </summary>
-        static public double MPI_InnerProd<TX, TY>(this TX a, TY b)
-            where TX : IList<double>
-            where TY : IList<double> // 
-        {
-            return a.MPI_InnerProd(b, csMPI.Raw._COMM.WORLD);
-        }
-    }
-
-    /// <summary>
-    /// some utility BLAS-style functions
-    /// </summary>
-    public static class GenericAlgoim {
-
-        /// <summary>
-        /// <see cref="BLAS.MachineEps"/>
-        /// </summary>
-        public static double MachineEps {
-            get {
-                //Console.WriteLine(typeof(System.Configuration.ApplicationSettingsBase));
-                return BLAS.MachineEps;
-            }    
-        }
-
-        
-        /// <summary>
-        /// Creates linear interpolated nodes between two points.
-        /// </summary>
-        /// <param name="a">minimum</param>
-        /// <param name="b">maximum</param>
-        /// <param name="n">number of nodes desired</param>
-        /// <returns>
-        /// an array of length <paramref name="n"/>,
-        /// with first entry equal to <paramref name="a"/>, 
-        /// last entry equal to <paramref name="b"/>, and 
-        /// all other points linear interpolated in between. 
-        /// </returns>
-        public static double[] Linspace(double a, double b, int n) {
-            if (a >= b)
-                throw new ArgumentException("minimum >= maximum");
-            if (n <= 1)
-                throw new ArgumentException("Number of nodes must be at least 2.");
-
-            double[] r = new double[n];
-            double dx = (b - a) / ((double)(n - 1));
-            for (int i = 0; i < n - 1; i++) {
-                r[i] = a + dx * ((double)i);
-            }
-            r[n - 1] = b;
-            return r;
-        }
-
-        /// <summary>
-        /// Random vector with <paramref name="n"/> entries.
-        /// </summary>
-        public static double[] RandomVec(int n, int seed = 0) {
-            Random rnd = new Random(seed);
-            double[] x0 = new double[n];
-            for(int l = 0; l < n; l++) {
-                x0[l] = rnd.NextDouble();
-            }
-            return x0;
-        }
-
-
-        /// <summary>
-        /// Creates logarithmically distributed nodes between two points.
-        /// </summary>
-        /// <param name="min">minimum</param>
-        /// <param name="max">maximum</param>
-        /// <param name="n">number of nodes desired</param>
-        /// <returns>an array of length <paramref name="n"/>,
-        /// with first entry equal to <paramref name="min"/>, 
-        /// last entry equal to <paramref name="max"/>, and 
-        /// all other points linear interpolated in between.</returns>
-        public static double[] Logspace(double min, double max, int n) {
-
-            double a = - Math.Log10(min) + Math.Log10(max);
-            double b = min;
-
-
-            double[] aa = Linspace(0, 1, n);
-            Debug.Assert(aa.Length == n);
-            aa[0] = min; // startpoint should be exact - avoid any round-off errors
-            for(int i = 1; i < n - 1; i++) {
-                aa[i] = b * Math.Pow(10, a * aa[i]);
-            }
-            aa[n - 1] = max; // endpoint should also be exact
-
-            Debug.Assert(Math.Abs(b * Math.Pow(10, a) - max) < Math.Abs(max) * 0.0001);
-
-            return aa;
-        }
-
-        /// <summary>
-        /// Nodes between two points, compressed at both ends
-        /// </summary>
-        /// <param name="l">lower limit.</param>
-        /// <param name="r">upper limit.</param>
-        /// <param name="a">scaling between linear ans sinus-mapping</param>
-        /// <param name="n">number of nodes</param>
-        /// <returns></returns>
-        public static double[] SinLinSpacing(double l, double r, double a, int n) {
-            if (a < 0)
-                throw new ArgumentOutOfRangeException();
-            if (a > 1)
-                throw new ArgumentOutOfRangeException();
-            if (l >= r)
-                throw new ArgumentOutOfRangeException();
-
-            double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
-            double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
-            double[] nodes = new double[n];
-
-            for (int i = 0; i < n; i++)
-                //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
-                nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i]) * a;
-
-            for (int i = 0; i < n; i++) {
-                nodes[i] = nodes[i] * (r - l) * 0.5 + (r + l) * 0.5;
-                //Debug.Assert(nodes[i] >= l);
-                //Debug.Assert(nodes[i] <= r);
-            }
-            return nodes;
-        }
-
-        /// <summary>
-        /// generic dswap
-        /// </summary>
-        static public void dswap<U, V>(int N, U DX, int INCX, V DY, int INCY) 
-            where U : IList<double>
-            where V : IList<double>
-        {
-            if(object.ReferenceEquals(DX, DY))
-                // while formally there is no problem that this should work, it seems much more likely
-                // that it's a bug.
-                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-           
-
-            if((DX is double[]) && (DY is double[])) {
-                BLAS.dswap(N, DX as double[], INCX, DY as double[], INCY);
-                return;
-            } else {
-
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    double a;
-                    a = DX[i * INCX];
-                    DX[i * INCX] = DY[i * INCY];
-                    DY[i * INCY] = a;
-                });
-            }
-        }
-
-
-        /// <summary>
-        /// blas dscal: <paramref name="X"/> = <paramref name="X"/>*<paramref name="alpha"/>;
-        /// </summary>
-        static public void dscal<T>(int N, double alpha, T X, int incx) where T : IList<double> {
-
-            ISparseVector<double> spx = X as ISparseVector<double>;
-            double[] arx = X as double[];
-
-
-            if (arx != null) {
-                // double - array -> use BLAS
-                // ++++++++++++++++++++++++++
-                BLAS.dscal(N, alpha, arx, incx);
-                return;
-            }
-
-            if (spx != null) {
-                // sparse vector -> compute only nonzero entries
-                // +++++++++++++++++++++++++++++++++++++++++++++
-
-                int[] idx = new int[spx.NonZeros];
-                spx.SparseStruct.Keys.CopyTo(idx, 0);
-
-                foreach (int i in idx) {
-                    int m = i % incx;
-                    if (m != 0)
-                        // entry is skipped by x-increment
-                        continue;
-
-                    spx[i] *= alpha;
-                }
-
-                return;
-
-            }
-
-
-            {
-                // reference version
-                // +++++++++++++++++
-
-                for (int i = 0; i < N; i += incx)
-                    X[i] *= alpha;
-            }
-        }
-
-
-        /// <summary>
-        /// blas daxpy: <paramref name="Y"/> = <paramref name="Y"/> + <paramref name="alpha"/>*<paramref name="X"/>;
-        /// </summary>
-        static public void daxpy<TX, TY>(int N,
-                         double alpha, TX X, int INCX,
-                         TY Y, int INCY)
-            where TX : IList<double>
-            where TY : IList<double> 
-        {
-            if(object.ReferenceEquals(X, Y))
-                // while formally there is no problem that this should work, it seems much more likely
-                // that it's a bug.
-                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-           
-            {
-                // sparse vector branch
-                // ++++++++++++++++++++
-                ISparseVector<double> spx = X as ISparseVector<double>;
-                if (spx != null) {
-
-
-                    foreach (var entry in spx.SparseStruct) {
-                        int m = entry.Key % INCX;
-                        if (m != 0)
-                            // entry is skipped by x-increment
-                            continue;
-
-                        int n = entry.Key / INCX;
-
-                        double xi = entry.Value;
-                        Y[n * INCY] += xi * alpha;
-                    }
-
-                    return;
-                }
-            }
-
-
-            {
-                // both arrays-branch -> use BLAS
-                // ++++++++++++++++++++++++++++++
-
-
-                double[] _XasDouble = X as double[];
-                double[] _YasDouble = Y as double[];
-                if (_XasDouble != null && _YasDouble != null) {
-                    BLAS.daxpy(N, alpha, _XasDouble, INCX, _YasDouble, INCY);
-                    return;
-                }
-
-            }
-            {
-                // default branch
-                // ++++++++++++++
-
-                ilPSP.Environment.ParallelFor(0, N, delegate (int n) {
-                    //for (int n = 0; n < N; n++)
-                    Y[n * INCY] += X[n * INCX] * alpha;
-                });
-                return;
-            }
-        }
-
-
-        /// <summary>
-        /// L2-Norm
-        /// </summary>
-        static public double L2Norm<T>(this T a) where T : IList<double> {
-            return Math.Sqrt(L2NormPow2(a));
-        }
-
-
-        /// <summary>
-        /// scales some vector <paramref name="a"/> by scalar <paramref name="alpha"/>.
-        /// </summary>
-        static public void ScaleV<T>(this T a, double alpha) where T : IList<double> {
-            GenericBlas.dscal(a.Count, alpha, a, 1);
-        }
-
-        /// <summary>
-        /// scales some vector <paramref name="a"/> by scalar <paramref name="alpha"/>.
-        /// </summary>
-        static public void ScaleV<T,R>(this T a, double alpha, R index)
-            where T : IList<double>
-            where R : IList<int>
-        {
-            int L = index.Count;
-            ilPSP.Environment.ParallelFor(0, L, delegate (int i) {
-                //for (int i = 0; i < L; i++) {
-                a[index[i]] *= alpha;
-            });
-        }
-
-        /// <summary>
-        /// for all indices <em>i</em>, this sets
-        /// <paramref name="a"/>[<em>i</em>] = <paramref name="b"/>[<em>i</em>] 
-        /// </summary>
-        static public void CopyEntries<T, R>(this T a, R b)
-            where T : IList<double>
-            where R : IList<double>
-        {
-            if(object.ReferenceEquals(a, b))
-                // while formally there is no problem that this should work, it seems much more likely
-                // that it's a bug.
-                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-           
-            a.ClearEntries();
-            a.AccV(1.0, b);
-        }
-
-        /// <summary>
-        /// clear all entries.
-        /// </summary>
-        static public void ClearEntries<T>(this T a) where T : IList<double> {
-            int L = a.Count;
-            if(a is Array) {
-                // optimized for arrays
-                Array.Clear(a as double[], 0, L);
-                return;
-            } 
-
-            // default:
-            for (int i = 0; i < L; i++) {
-                a[i] = 0.0;
-            }
-        }
-
-
-        /// <summary>
-        /// Fills an vector with random entries
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="seed">if negative, a time-dependent sees is used; otherwise, the seed value for the <see cref="Random"/> instance.</param>
-        static public void FillRandom<T>(this T a, int seed = -1) where T : IList<double> {
-            Random rnd = seed >= 0 ? new Random(seed) : new Random();
-            int L = a.Count;
-            
-            // default:
-            for (int i = 0; i < L; i++) {
-                a[i] = rnd.NextDouble();
-            }
-        }
-
-
-        /// <summary>
-        /// clear all entries.
-        /// </summary>
-        static public void ClearEntries<T,R>(this T a, R index) 
-            where T : IList<double>
-            where R : IList<int>
-        {
-            int L = index.Count;
-            for (int i = 0; i < L; i++) {
-                a[index[i]] = 0.0;
-            }
-        }
-
-        /// <summary>
-        /// clear all entries.
-        /// </summary>
-        static public void ClearEntries<T,R>(this T a, R index, long index_offset = 0) 
-            where T : IList<double>
-            where R : IList<long>
-        {
-            int L = index.Count;
-            for (int i = 0; i < L; i++) {
-                a[checked((int)(index[i] + index_offset))] = 0.0;
-            }
-        }
-
-        /// <summary>
-        /// <paramref name="a"/> = <paramref name="a"/> + <paramref name="alpha"/>*<paramref name="B"/>
-        /// </summary>
-        static public void AccV<T, V>(this T a, double alpha, V B)
-            where T : IList<double>
-            where V : IList<double> //
-        {
-            int N = a.Count;
-            if(B.Count != N)
-                throw new ArgumentException("element count must be equal");
-            if(object.ReferenceEquals(a, B))
-                // while formally there is no problem that this should work, it seems much more likely
-                // that it's a bug, i.e. the user called it un-intentionally. 
-                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-            
-            GenericBlas.daxpy(N, alpha, B, 1, a, 1);
-        }
-        
-        /// <summary>
-        /// this = <paramref name="alpha"/>*<paramref name="B"/>
-        /// </summary>
-        static public void SetV<T, V>(this T a, V B, double alpha = 1.0)
-            where T : IList<double>
-            where V : IList<double> //
-        {
-            int N = a.Count;
-            if(B.Count != N)
-                throw new ArgumentException("element count must be equal");
-            if(object.ReferenceEquals(a, B))
-                // while formally there is no problem that this should work, it seems much more likely
-                // that it's a bug, i.e. the user called it un-intentionally. 
-                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-            a.ClearEntries();
-            GenericBlas.daxpy(N, alpha, B, 1, a, 1);
-        }
-
-        /// <summary>
-        /// <paramref name="a"/> = <paramref name="a"/>*<paramref name="beta"/> + <paramref name="alpha1"/>*<paramref name="B1"/>
-        /// </summary>
-        static public void SumV<T, V1>(this T a, double beta, double alpha1, V1 B1)
-            where T : IList<double>
-            where V1 : IList<double>
-        {
-            if (beta != 1.0)
-                a.ScaleV(beta);
-            a.AccV(alpha1, B1);
-        }
-
-        /// <summary>
-        /// <paramref name="a"/> = <paramref name="a"/>*<paramref name="beta"/> + <paramref name="alpha1"/>*<paramref name="B1"/> + <paramref name="alpha2"/>*<paramref name="B2"/>
-        /// </summary>
-        static public void SumV<T, V1, V2>(this T a, double beta, double alpha1, V1 B1, double alpha2, V2 B2)
-            where T : IList<double>
-            where V1 : IList<double>
-            where V2 : IList<double> 
-        {
-            if(beta != 1.0)
-                a.ScaleV(beta);
-            a.AccV(alpha1, B1);
-            a.AccV(alpha2, B2);
-        }
-
-        /// <summary>
-        /// <paramref name="a"/> = <paramref name="a"/>*<paramref name="beta"/> + <paramref name="alpha1"/>*<paramref name="B1"/> + <paramref name="alpha2"/>*<paramref name="B2"/> + <paramref name="alpha3"/>*<paramref name="B3"/>
-        /// </summary>
-        static public void SumV<T, V1, V2, V3>(this T a, double beta, double alpha1, V1 B1, double alpha2, V2 B2, double alpha3, V3 B3)
-            where T : IList<double>
-            where V1 : IList<double>
-            where V2 : IList<double>
-            where V3 : IList<double> 
-        {
-            if (beta != 1.0)
-                a.ScaleV(beta);
-            a.AccV(alpha1, B1);
-            a.AccV(alpha2, B2);
-            a.AccV(alpha3, B3);
-        }
-
-        /// <summary>
-        /// <paramref name="a"/> = <paramref name="a"/>*<paramref name="beta"/> + <paramref name="alpha1"/>*<paramref name="B1"/> + <paramref name="alpha2"/>*<paramref name="B2"/> + <paramref name="alpha3"/>*<paramref name="B3"/> + <paramref name="alpha4"/>*<paramref name="B4"/>
-        /// </summary>
-        static public void SumV<T, V1, V2, V3, V4>(this T a, double beta, double alpha1, V1 B1, double alpha2, V2 B2, double alpha3, V3 B3, double alpha4, V4 B4)
-            where T : IList<double>
-            where V1 : IList<double>
-            where V2 : IList<double>
-            where V3 : IList<double>
-            where V4 : IList<double>
-        {
-            if (beta != 1.0)
-                a.ScaleV(beta);
-            a.AccV(alpha1, B1);
-            a.AccV(alpha2, B2);
-            a.AccV(alpha3, B3);
-            a.AccV(alpha4, B4);
-        }
-
-
-        /// <summary>
-        /// <paramref name="a"/> = <paramref name="a"/>*<paramref name="beta"/> + <paramref name="alpha1"/>*<paramref name="B1"/> + <paramref name="alpha2"/>*<paramref name="B2"/> + <paramref name="alpha3"/>*<paramref name="B3"/> + <paramref name="alpha4"/>*<paramref name="B4"/> + <paramref name="alpha5"/>*<paramref name="B5"/>
-        /// </summary>
-        static public void SumV<T, V1, V2, V3, V4, V5>(this T a, double beta, double alpha1, V1 B1, double alpha2, V2 B2, double alpha3, V3 B3, double alpha4, V4 B4, double alpha5, V5 B5)
-            where T : IList<double>
-            where V1 : IList<double>
-            where V2 : IList<double>
-            where V3 : IList<double>
-            where V4 : IList<double>
-            where V5 : IList<double>
-        {
-            if (beta != 1.0)
-                a.ScaleV(beta);
-            a.AccV(alpha1, B1);
-            a.AccV(alpha2, B2);
-            a.AccV(alpha3, B3);
-            a.AccV(alpha4, B4);
-            a.AccV(alpha5, B5);
-        }
-
-        /// <summary>
-        /// checks all entries for infinity or NAN - values, and
-        /// throws an <see cref="ArithmeticException"/> if found;
-        /// </summary>
-        static public int CheckForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null)
-            where T: IEnumerable<double> //
-        {
-            if(messageprefix == null)
-                messageprefix = "";
-
-            int cnt = 0;
-            int troubles = 0;
-            foreach (double a in v) {
-                
-                if (CheckForNan)
-                    if (double.IsNaN(a)) {
-                        troubles++;
-                        if(ExceptionIfFound) {
-                            throw new ArithmeticException($"{messageprefix}: NaN found at {cnt}-th entry.");
-                        } else {
-                            Console.Error.WriteLine($"{messageprefix}: NaN found at {cnt}-th entry.");
-                        }
-                    }
-
-                if (CheckForInf)
-                    if (double.IsInfinity(a)) {
-                        troubles++;
-                        if(ExceptionIfFound) {
-                            throw new ArithmeticException($"{messageprefix}: Inf found at {cnt}-th entry.");
-                        } else {
-                            Console.Error.WriteLine($"{messageprefix}: Inf found at {cnt}-th entry.");
-                        }
-                    }
-
-                cnt++;
-            }
-
-            return troubles;
-        }
-
-
-        /// <summary>
-        /// checks all entries for infinity or NAN - values, and
-        /// throws an <see cref="ArithmeticException"/> if found;
-        /// </summary>
-        static public bool ContainsNanOrInf<T>(this T v, bool CheckForInf = true, bool CheckForNan = true)
-            where T : IEnumerable<double> //
-        {
-
-            foreach (double a in v) {
-
-                if (CheckForNan)
-                    if (double.IsNaN(a)) {
-                        return true;
-                    }
-
-                if (CheckForInf)
-                    if (double.IsInfinity(a)) {
-                        return true;
-                    }
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// accumulation of subvectors
-        /// this[<paramref name="acc_index"/>[i]] = this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] + <paramref name="alpha"/>*<paramref name="b"/>[<paramref name="b_index"/>[i] + <paramref name="acc_index_shift"/>]
-        /// </summary>
-        static public void AccV<T, V, R, S>(this T acc, double alpha, V b, R acc_index, S b_index, int acc_index_shift = 0, int b_index_shift = 0)
-            where T : IList<double>
-            where V : IList<double> 
-            where R : IList<int>
-            where S : IList<int>
-        {
-            if(object.ReferenceEquals(acc, b))
-                // while formally there is no problem that this should work, it seems much more likely
-                // that it's a bug.
-                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-           
-
-            if(acc_index != null && b_index != null) {
-                if (acc_index.Count != b_index.Count)
-                    throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
-
-                int N = acc_index.Count;
-                //var dir = new ConcurrentDictionary<int, List<int>>();
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //int ithread = Thread.CurrentThread.ManagedThreadId;
-                    //if(!dir.ContainsKey(ithread))
-                    //    dir.TryAdd(ithread, new List<int>());
-                    //dir[ithread].Add(i);
-
-                    acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                });
-
-                //for (int i = 0; i < N; i++) {
-                //    acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                //}
-
-            } else if( acc_index != null && b_index == null) {
-
-                int N = acc_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[acc_index[i] + acc_index_shift] += alpha*b[i + b_index_shift];
-                });
-            } else if (acc_index == null && b_index != null) {
-
-                int N = b_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[i + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                });
-            } else if (acc_index == null && b_index == null) {
-                int N = acc.Count;
-                if (acc.Count != b.Count)
-                    throw new ArgumentOutOfRangeException("length of 'acc' and 'b' must match.");
-
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[i + acc_index_shift] += alpha * b[i + b_index_shift];
-                });
-            } else {
-                throw new Exception("should never be reached");
-            }
-
-
-        }
-
-        /// <summary>
-        /// accumulation of subvectors
-        /// this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] = this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] + <paramref name="alpha"/>*<paramref name="b"/>[<paramref name="b_index"/>[i] + <paramref name="acc_index_shift"/>]
-        /// </summary>
-        static public void AccVi64<T, V, R, S>(this T acc, double alpha, V b, R acc_index, S b_index, long acc_index_shift = 0, long b_index_shift = 0)
-            where T : IList<double>
-            where V : IList<double> 
-            where R : IList<long>
-            where S : IList<long>
-        {
-            if(object.ReferenceEquals(acc, b))
-                // while formally there is no problem that this should work, it seems much more likely
-                // that it's a bug.
-                throw new ArgumentException("Illegal use: reference-equality of input vectors -- this might be a mis-use instead of intention.");
-           
-
-            if(acc_index != null && b_index != null) {
-                if (acc_index.Count != b_index.Count)
-                    throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
-
-                int N = acc_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
-                });
-
-            } else if(acc_index != null && b_index == null) {
-
-                int N = acc_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(i + b_index_shift))];
-                });
-            } else if (acc_index == null && b_index != null) {
-
-                int N = b_index.Count;
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(i + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
-                });
-            } else if (acc_index == null && b_index == null) {
-                int N = acc.Count;
-                if (acc.Count != b.Count)
-                    throw new ArgumentOutOfRangeException("length of 'acc' and 'b' must match.");
-
-                ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                    //for (int i = 0; i < N; i++) {
-                    acc[checked((int)(i + acc_index_shift))] += alpha * b[checked((int)(i + b_index_shift))];
-                });
-            } else {
-                throw new Exception("should never be reached");
-            }
-
-
-        }
-
-
-        /// <summary>
-        /// accumulation of subvectors
-        /// </summary>
-        static public void AccV<T, V>(this T acc, double alpha, V b, int offset_acc = 0, int offset_b = 0, int inc_acc = 1, int inc_b = 1, int N = -1)
-            where T : IList<double>
-            where V : IList<double> // 
-        {
-            if(N < 0)
-                N = b.Count;
-            ilPSP.Environment.ParallelFor(0, N, delegate (int i) {
-                //for (int i = 0; i < N; i++) {
-                acc[i * inc_acc + offset_acc] += alpha * b[i * inc_b + offset_b];
-            });
-        }
-
-
-        /// <summary>
-        /// L2-distance
-        /// </summary>
-        static public double L2Dist<TX, TY>(this TX a, TY b)
-            where TX : IList<double>
-            where TY : IList<double> //
-        {
-            return Math.Sqrt(L2DistPow2(a, b));
-        }
-
-        /// <summary>
-        /// L2-Norm to the power of 2
-        /// </summary>
-        static public double L2NormPow2<T>(this T a) where T : IList<double> {
-            double ret = 0;
-            for (int i = a.Count - 1; i >= 0; i--) {
-                double ai = a[i];
-                ret += ai * ai;
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// L2-distance to the power of 2
-        /// </summary>
-        static public double L2DistPow2<TX, TY>(this TX a, TY b)
-            where TX : IList<double>
-            where TY : IList<double> {
-            Debug.Assert(a.Count == b.Count, "mismatch in vector length");
-            double ret = 0;
-            int I = a.Count;
-            for (int i = 0; i < I; i++) {
-                double ai = a[i] - b[i];
-                ret += ai * ai;
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// l2 inner product
-        /// </summary>
-        static public double InnerProd<TX, TY>(this TX a, TY b)
-            where TX : IList<double>
-            where TY : IList<double> {
-            Debug.Assert(a.Count == b.Count, "mismatch in vector length");
-            double ret = 0;
-            for (int i = a.Count - 1; i >= 0; i--) {
-                ret += a[i] * b[i];
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// Computes the angle, in radians, between the vectors 
-        /// (<paramref name="a"/>-<paramref name="c"/>) and (<paramref name="b"/>-<paramref name="c"/>).
-        /// </summary>
-        static public double Angle<TX, TC, TY>(TX a, TC c, TY b)
-            where TX : IList<double>
-            where TC : IList<double>
-            where TY : IList<double>
-        {
-            Debug.Assert(a.Count == b.Count, "mismatch in vector length");
-            Debug.Assert(a.Count == c.Count, "mismatch in vector length");
-            
-            double cos_alpha = 0, l1 = 0, l2 = 0;
-            for (int i = a.Count - 1; i >= 0; i--) {
-                double v1i = a[i] - c[i];
-                double v2i = b[i] - c[i];
-
-                l1 += v1i*v1i;
-                l2 += v2i*v2i;
-
-                cos_alpha += v1i*v2i;
-            }
-            cos_alpha *= 1.0/Math.Sqrt(l1*l2);
-
-            return Math.Acos(cos_alpha);
-        }
-
-        /// <summary>
-        /// Computes the angle, in radians, between the vectors 
-        /// <paramref name="a"/> and <paramref name="b"/>.
-        /// </summary>
-        static public double Angle<TX, TY>(TX a, TY b)
-            where TX : IList<double>
-            where TY : IList<double> //
-        {
-            Debug.Assert(a.Count == b.Count, "mismatch in vector length");
-            
-            double cos_alpha = 0, l1 = 0, l2 = 0;
-            for (int i = a.Count - 1; i >= 0; i--) {
-                double v1i = a[i];
-                double v2i = b[i];
-
-                l1 += v1i*v1i;
-                l2 += v2i*v2i;
-
-                cos_alpha += v1i*v2i;
-            }
-            cos_alpha *= 1.0/Math.Sqrt(l1*l2);
-
-            return Math.Acos(cos_alpha);
-        }
-    }
 
     internal class Algoim_Libstuff {
         // workaround for .NET bug:
@@ -1089,23 +42,20 @@ namespace ilPSP.Utils {
         public static PlatformID[] GetPlatformID(Parallelism par) {
             switch (par) {
                 case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
-                case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "PARDISO2_seq.dll", "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
-                case Parallelism.OMP: return new string[] { "PARDISO2_omp.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                case Parallelism.SEQ: return new string[] { "CppAlgoim.dll", "CppAlgoim.dll", "CppAlgoim.dll", "CppAlgoim.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
         public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
-                case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.SEQ: return new GetNameMangling[] { s => s, s => s, s => s, DynLibLoader.BoSSS_Prefix };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
@@ -1127,140 +77,81 @@ namespace ilPSP.Utils {
     /// subset of BLAS
     /// </summary>
     public sealed class UnsafeAlgoim : DynLibLoader {
-		
-		
 
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct QuadSchemeUnmanaged {
+            public int dimension;
+            public int size;
+            public IntPtr nodes;
+            public IntPtr weights;
+
+            // Method to free memory allocated for nodes and weights
+            public void FreeMemory() {
+                Marshal.FreeHGlobal(nodes);
+                Marshal.FreeHGlobal(weights);
+            }
+        }
+
+        // Define the QuadScheme struct in C# (memory management is handled automatically by the garbage collector)
+        public struct QuadScheme {
+            public int dimension;
+            public int size;
+            public double[] nodes;
+            public double[] weights;
+
+            // Constructor to create QuadScheme from QuadSchemeUnmanaged
+            public QuadScheme(QuadSchemeUnmanaged unmanagedQuadScheme) {
+                dimension = unmanagedQuadScheme.dimension;
+                size = unmanagedQuadScheme.size;
+
+                // Copy data from IntPtr to managed double[] arrays
+                nodes = new double[size];
+                Marshal.Copy(unmanagedQuadScheme.nodes, nodes, 0, size);
+
+                weights = new double[size];
+                Marshal.Copy(unmanagedQuadScheme.weights, weights, 0, size);
+            }
+        }
 
         /// <summary>
         /// ctor
         /// </summary>
         public UnsafeAlgoim(Parallelism par) :
-            base(BLAS_LAPACK_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
-                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) { }
+            base(Algoim_Libstuff.GetLibname(par),
+                 Algoim_Libstuff.GetPrequesiteLibraries(par),
+                 Algoim_Libstuff.GetGetNameMangling(par),
+                 Algoim_Libstuff.GetPlatformID(par),
+                 Algoim_Libstuff.GetPointerSizeFilter(par)) { }
 
-        
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate double _DDOT(ref int N, double* DX, ref int INCX, double* DY, ref int INCY);
-        
-
-#pragma warning disable        649
-        _DDOT   ddot;
-        _DNRM2  dnrm2;
-        _DSWAP  dswap;
-        _DGEMM  dgemm;
-        _SGEMM  sgemm;
-        _DGEMV dgemv;
-        _SGEMV  sgemv;
-        _DAXPY  daxpy;
-        _DSCAL  dscal;
+#pragma warning disable 649
+        _GetVolumeScheme GetVolumeScheme;
 #pragma warning restore 649
 
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _DDOT DDOT {
-            get { return ddot; }
-        }
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate double _DSWAP(ref int N, double* DX, ref int INCX, double* DY, ref int INCY);
+        // Defines a delegate that can point to the method matching its signature.
+        public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
 
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _DSWAP DSWAP {
-            get { return dswap; }
-        }
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate void _DGEMM(ref int TRANSA, ref int TRANSB,
-                                           ref int M, ref int N, ref int K,
-                                           ref double ALPHA,
-                                           double* A, ref int LDA,
-                                           double* B, ref int LDB,
-                                           ref double BETA,
-                                           double* C, ref int LDC);
-
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _DGEMM DGEMM {
-            get { return dgemm; }
-        }
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate void _SGEMM(ref int TRANSA, ref int TRANSB,
-                                           ref int M, ref int N, ref int K,
-                                           ref float ALPHA,
-                                           float* A, ref int LDA,
-                                           float* B, ref int LDB,
-                                           ref float BETA,
-                                           float* C, ref int LDC);
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _SGEMM SGEMM {
-            get { return sgemm; }
+        public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
+            get { return GetVolumeScheme; }
         }
 
 
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate void _DGEMV(ref int TRANSA,
-                                           ref int M, ref int N,
-                                           ref double ALPHA,
-                                           double* A, ref int LDA,
-                                           double* X, ref int INCX,
-                                           ref double BETA,
-                                           double* Y, ref int INCY);
+
+        //        /// <summary> FORTRAN BLAS routine </summary>
+        //        public unsafe delegate double _DDOT(ref int N, double* DX, ref int INCX, double* DY, ref int INCY);
 
 
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _DGEMV DGEMV {
-            get { return dgemv; }
-        }
+        //#pragma warning disable        649
+        //        _DDOT   ddot;
+        //#pragma warning restore 649
 
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate void _SGEMV(ref int TRANSA,
-                                           ref int M, ref int N,
-                                           ref float ALPHA,
-                                           float* A, ref int LDA,
-                                           float* X, ref int INCX,
-                                           ref float BETA,
-                                           float* Y, ref int INCY);
+        //        /// <summary> FORTRAN BLAS routine </summary>
+        //        public unsafe _DDOT DDOT {
+        //            get { return ddot; }
+        //        }
 
 
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _SGEMV SGEMV {
-            get { return sgemv; }
-        }
-
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate void _DAXPY(ref int N,
-                                           ref double DA, double* DX, ref int INCX,
-                                           double* DY, ref int INCY);
-
-
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _DAXPY DAXPY {
-            get { return daxpy; }
-        }
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate void _DSCAL(ref int n, ref double a, double* x, ref int incx);
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _DSCAL DSCAL {
-            get { return dscal; }
-        }
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe delegate double _DNRM2(ref int n, double* x, ref int incx);
-
-
-        /// <summary> FORTRAN BLAS routine </summary>
-        public unsafe _DNRM2 DNRM2 {
-            get { return dnrm2; }
-        }
     }
 
 
@@ -1285,247 +176,63 @@ namespace ilPSP.Utils {
             }
         }
 
-        public readonly static UnsafeDBLAS m_seq_BLAS;
-        public readonly static UnsafeDBLAS m_omp_BLAS;
+        public readonly static UnsafeAlgoim m_seq_Algoim;
+        public readonly static UnsafeAlgoim m_omp_Algoim;
 
-        static UnsafeDBLAS m_BLAS;
+        static UnsafeAlgoim m_Algoim;
 
+        public static QuadScheme GetSurfaceQuadratureRules() {
+
+            // Hardcoded example values
+            // Define points_1dy array
+            double[] points_1dy = { 4.0, 3.0, 4.0, 0.0, -1.0, 0.0, 4.0, 3.0, 4.0 };
+
+            // Define points_1dx array
+            double[] points_1dx = { -1.0, 0.0, 1.0 };
+            double[] l = new double[points_1dx.Length * 2];
+            Array.Copy(points_1dx, 0, l, 0, points_1dx.Length);
+            Array.Copy(points_1dx, 0, l, points_1dx.Length, points_1dx.Length);
+
+            int[] s = { 3, 3 };
+
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(2, 5, s, l, points_1dy);
+            Console.WriteLine("Algoim passed the quadscheme back");
+
+            QuadScheme ret = new QuadScheme(retC);
+            retC.FreeMemory();
+            return ret;
+        }
 
         /// <summary>Cos
         /// most native BLAS interface available
         /// </summary>
-        public static UnsafeDBLAS F77_BLAS { 
+        public static UnsafeAlgoim F77_BLAS { 
             get { 
-                return m_BLAS; 
+                return m_Algoim; 
             }
         }
 
-        internal static void ActivateOMP() {
-            if (ilPSP.Environment.MaxNumOpenMPthreads > 1)
-                m_BLAS = m_omp_BLAS;
-            else
-                m_BLAS = m_seq_BLAS;
-        }
+        //internal static void ActivateOMP() {
+        //    if (ilPSP.Environment.MaxNumOpenMPthreads > 1)
+        //        m_Algoim = m_omp_Algoim;
+        //    else
+        //        m_Algoim = m_seq_Algoim;
+        //}
+
         internal static void ActivateSEQ() {
-            m_BLAS = m_seq_BLAS;
+            m_Algoim = m_seq_Algoim;
         }
 
 
         /// <summary>
         /// static ctor
         /// </summary>
-        static BLAS() {
-            m_seq_BLAS = new UnsafeDBLAS(Parallelism.SEQ);
-            m_omp_BLAS = new UnsafeDBLAS(Parallelism.OMP);
-            m_BLAS = m_omp_BLAS;
-        }
-
-        /// <summary> FORTRAN-Style BLAS routine </summary>
-        static public double DDOT(ref int N, double[] DX, ref int INCX, double[] DY, ref int INCY) {
-            unsafe {
-                fixed (double* pDX = DX, pDY = DY) {
-                    return m_BLAS.DDOT(ref N, pDX, ref INCX, pDY, ref INCY);
-                }
-            }
-        }
-
-        /// <summary> C-Style BLAS routine </summary>
-        static public unsafe double ddot(int N, double* DX, int INCX, double* DY, int INCY) {
-            return m_BLAS.DDOT(ref N, DX, ref INCX, DY, ref INCX);
-        }
-
-        /// <summary> C-Style BLAS routine </summary>
-        static public double ddot(int N, double[] DX, int INCX, double[] DY, int INCY) {
-            return DDOT(ref N, DX, ref INCX, DY, ref INCX);
-        }
-
-        /// <summary> FORTRAN-Style BLAS routine </summary>
-        static public void DSWAP(ref int N, double[] DX, ref int INCX, double[] DY, ref int INCY) {
-            unsafe {
-                fixed (double* pDX = DX, pDY = DY) {
-                    m_BLAS.DSWAP(ref N, pDX, ref INCX, pDY, ref INCY);
-                }
-            }
-        }
-
-        /// <summary> C-Style BLAS routine </summary>
-        static public void dswap(int N, double[] DX, int INCX, double[] DY, int INCY) {
-            DSWAP(ref N, DX, ref INCX, DY, ref INCY);
-        }
-
-        /// <summary> C-Style BLAS routine </summary>
-        unsafe static public void dswap(int N, double* DX, int INCX, double* DY, int INCY) {
-            m_BLAS.DSWAP(ref N, DX, ref INCX, DY, ref INCY);
+        static Algoim() {
+            Console.WriteLine("Algoim ctor");
+            m_seq_Algoim = new UnsafeAlgoim(Parallelism.SEQ);
+            m_Algoim = m_seq_Algoim;
         }
 
 
-        /// <summary> FORTRAN-Style BLAS routine </summary>
-        static public void DGEMM(ref int TRANSA, ref int TRANSB,
-                                 ref int M, ref int N, ref int K,
-                                 ref double ALPHA,
-                                 double[] A, ref int LDA,
-                                 double[] B, ref int LDB,
-                                 ref double BETA,
-                                 double[] C, ref int LDC) {
-            unsafe {
-                fixed (double* pA = A, pB = B, pC = C) {
-                    m_BLAS.DGEMM(ref TRANSA, ref TRANSB,
-                                 ref M, ref N, ref K,
-                                 ref ALPHA,
-                                 pA, ref LDA,
-                                 pB, ref LDB,
-                                 ref BETA,
-                                 pC, ref LDC);
-                }
-            }
-        }
-
-        /// <summary>
-        /// native blas in C-stype
-        /// (matrices are still in FORTRAN order)
-        /// </summary>
-        unsafe static public void dgemm(int TRANSA, int TRANSB,
-                                        int M, int N, int K,
-                                        double ALPHA,
-                                        double* A, int LDA,
-                                        double* B, int LDB,
-                                        double BETA,
-                                        double* C, int LDC) {
-            unsafe {
-                m_BLAS.DGEMM(ref TRANSA, ref TRANSB,
-                             ref M, ref N, ref K,
-                             ref ALPHA,
-                             A, ref LDA,
-                             B, ref LDB,
-                             ref BETA,
-                             C, ref LDC);
-            }
-        }
-
-        /// <summary>
-        /// native blas in C-stype
-        /// (matrices are still in FORTRAN order)
-        /// </summary>
-        unsafe static public void dgemv(int TRANSA, 
-                                        int M, int N, 
-                                        double ALPHA,
-                                        double* A, int LDA,
-                                        double* X, int INCX,
-                                        double BETA,
-                                        double* Y, int INCY) {
-            unsafe {
-                m_BLAS.DGEMV(ref TRANSA,
-                             ref M, ref N, 
-                             ref ALPHA,
-                             A, ref LDA,
-                             X, ref INCX,
-                             ref BETA,
-                             Y, ref INCY);
-            }
-        }
-
-        /// <summary>
-        /// native blas in C-stype
-        /// (matrices are still in FORTRAN order)
-        /// </summary>
-        unsafe static public void sgemv(int TRANSA,
-                                        int M, int N,
-                                        float ALPHA,
-                                        float* A, int LDA,
-                                        float* X, int INCX,
-                                        float BETA,
-                                        float* Y, int INCY) {
-            unsafe {
-                m_BLAS.SGEMV(ref TRANSA,
-                             ref M, ref N,
-                             ref ALPHA,
-                             A, ref LDA,
-                             X, ref INCX,
-                             ref BETA,
-                             Y, ref INCY);
-            }
-        }
-
-
-        /// <summary>
-        /// C-style BLAS
-        /// </summary>
-        static public void daxpy(int N,
-                                 double DA, double[] DX, int INCX,
-                                 double[] DY, int INCY) {
-            DAXPY(ref N, ref DA, DX, ref INCX, DY, ref INCY);
-        }
-
-        /// <summary>
-        /// C-style BLAS
-        /// </summary>
-        unsafe static public void daxpy(int N,
-                                 double DA, double* DX, int INCX,
-                                 double* DY, int INCY) {
-            m_BLAS.DAXPY(ref N, ref DA, DX, ref INCX, DY, ref INCY);
-        }
-
-
-        /// <summary>
-        /// C-stype BLAS
-        /// </summary>
-        static public void dscal(int n, double a, double[] x, int incx) {
-            DSCAL(ref n, ref a, x, ref incx);
-        }
-
-        /// <summary>
-        /// C-stype BLAS
-        /// </summary>
-        unsafe static public void dscal(int n, double a, double* x, int incx) {
-            m_BLAS.DSCAL(ref n, ref a, x, ref incx);
-        }
-
-
-
-        /// <summary>
-        /// C-stype BLAS
-        /// </summary>
-        static public double dnrm2(int n, double[] x, int incx) {
-            return DNRM2(ref n, x, ref incx);
-        }
-        
-        /// <summary>
-        /// FORTRAN-style BLAS
-        /// </summary>
-        static public void DAXPY(ref int N,
-                                 ref double DA, double[] DX, ref int INCX,
-                                 double[] DY, ref int INCY) {
-            unsafe {
-                fixed (double* pDX = DX, pDY = DY) {
-                    m_BLAS.DAXPY(ref N, ref DA, pDX, ref INCX, pDY, ref INCY);
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// FORTRAN-stype BLAS
-        /// </summary>
-        static public void DSCAL(ref int n, ref double a, double[] x, ref int incx) {
-            unsafe {
-                fixed (double* px = x) {
-                    m_BLAS.DSCAL(ref n, ref a, px, ref incx);
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// FORTRAN-stype BLAS
-        /// </summary>
-        static public double DNRM2(ref int n, double[] x, ref int incx) {
-            unsafe {
-                fixed (double* px = x) {
-                    return m_BLAS.DNRM2(ref n, px, ref incx);
-                }
-            }
-        }
-
-        
     }
 }
