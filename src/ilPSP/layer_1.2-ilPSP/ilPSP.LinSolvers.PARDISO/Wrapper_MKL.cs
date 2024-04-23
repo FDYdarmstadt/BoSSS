@@ -106,14 +106,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         public unsafe _pardiso PARDISO { get { return pardiso; } }
 
 
-        static string WinMKL_lp64_mangling(string nmn) {
-            return "mkl_pds_lp64_" + nmn;
-        }
-
-        static string WinMKLmangling(string nmn) {
-            return "mkl_pds_" + nmn;
-        }
-
 
         /// <summary>
         /// converts PARDISO error code to an hopefully more-explaning error string (taken from the manual)

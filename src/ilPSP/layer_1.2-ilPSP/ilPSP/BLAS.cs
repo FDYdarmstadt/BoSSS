@@ -1346,12 +1346,12 @@ namespace ilPSP.Utils {
 
         /// <summary> C-Style BLAS routine </summary>
         static public unsafe double ddot(int N, double* DX, int INCX, double* DY, int INCY) {
-            return m_BLAS.DDOT(ref N, DX, ref INCX, DY, ref INCX);
+            return m_BLAS.DDOT(ref N, DX, ref INCX, DY, ref INCY);
         }
 
         /// <summary> C-Style BLAS routine </summary>
         static public double ddot(int N, double[] DX, int INCX, double[] DY, int INCY) {
-            return DDOT(ref N, DX, ref INCX, DY, ref INCX);
+            return DDOT(ref N, DX, ref INCX, DY, ref INCY);
         }
 
         /// <summary> FORTRAN-Style BLAS routine </summary>

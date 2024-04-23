@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -1019,17 +1020,17 @@ namespace PublicTestRunner {
                 // ===================================
 
 
-                var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
+                var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)>();
 
 
                 
                 using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
-                    (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
+                    (Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)[] UpdateFinishedJobs() {
                         using(var trr = new FuncTrace("UpdateFinishedJobs")) {
                             string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
 
-                            var RecentlyFinished = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
+                            var RecentlyFinished = new List<(Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)>();
 
                             for(int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
@@ -1092,6 +1093,24 @@ namespace PublicTestRunner {
                                             returnCode--;
                                         }
                                     }
+
+                                    OnlineProfiling[] profilings = null;
+                                    if (s == JobStatus.FinishedSuccessful) {
+                                        using (new BlockTrace("load_profilings", trr)) {
+                                            try {
+                                                string[] sourceFiles = Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "profiling_bin.*.txt");
+
+                                                profilings = new OnlineProfiling[sourceFiles.Length];
+                                                int rnk = 0;
+                                                foreach (var orig in sourceFiles) {
+                                                    profilings[rnk] = OnlineProfiling.Deserialize(orig);
+                                                }
+                                            } catch (IOException ioe) {
+                                                Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                                            }
+                                        }
+                                    }
+
                                     // delete deploy directory
                                     if (TestTypeProvider.DeleteSuccessfulTestFiles) {
                                         using (new BlockTrace("delete_deploy_dir", trr)) {
@@ -1106,7 +1125,7 @@ namespace PublicTestRunner {
                                     }
 
                                     // move job to 'finished' list
-                                    var X = (jj.job, jj.ResFile, jj.testname, s);
+                                    var X = (jj.job, jj.ResFile, jj.testname, s, profilings);
                                     AllFinishedJobs.Add(X);
                                     RecentlyFinished.Add(X);
 
@@ -1160,6 +1179,12 @@ namespace PublicTestRunner {
 
                     returnCode -= 1;
                 }
+
+                foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
+                    Console.WriteLine($"{jj.job.Name} // {jj.testname} : OpenMP profiling: {jj.profilings}");
+                }
+
+
 
                 int SuccessfulFinishedCount = 0;
                 foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
