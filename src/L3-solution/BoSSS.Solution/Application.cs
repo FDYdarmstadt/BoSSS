@@ -2320,12 +2320,8 @@ namespace BoSSS.Solution {
 
                 PlotAndSave(physTime, i0, rollingSavesTsi);  // save the initial value
 
-                using(var dummy = new BlockTrace("dummy", tr)) {
-                    dummy.Error("this is a test.");
-                }
-
+                
                 this.ProfilingLog();
-                System.Environment.Exit(2020);
 
                 // =========================================
                 // Adaptive-Mesh-Refinement on startup
