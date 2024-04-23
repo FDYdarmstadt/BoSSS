@@ -852,7 +852,7 @@ namespace BoSSS.Solution {
             }
 
             OnlineProfiling = new OnlineProfiling(this.Control);
-            ilPSP.MultithreadPerformanceEval.ExecuteBenchmarks();
+            //ilPSP.MultithreadPerformanceEval.ExecuteBenchmarks();
         }
 
         /// <summary>
@@ -2241,7 +2241,6 @@ namespace BoSSS.Solution {
                     }
                 }
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                ilPSP.MultithreadPerformanceEval.ExecuteBenchmarks();
                 m_queryHandler.QueryResults.Clear();
 
 

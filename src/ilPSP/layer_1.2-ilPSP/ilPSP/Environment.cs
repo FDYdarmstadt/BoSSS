@@ -376,7 +376,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 bool bkup = StdoutOnlyOnRank0;
                 StdoutOnlyOnRank0 = false;
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
@@ -549,7 +549,7 @@ namespace ilPSP {
 
         private static void SetOMPbinding() {
             using (var tr = new FuncTrace("SetOMPbinding")) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
@@ -585,7 +585,7 @@ namespace ilPSP {
                     //OpenMPcpuIdx = new[] { 0, 2, 4, 6, 8, 10, 12, 14 }; 
                     //OpenMPcpuIdx = new[] { 0, 1, 2, 3, 4, 5, 6, 7 };
 
-                    tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+                    //tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     MKLservice.BindOMPthreads(OpenMPcpuIdx);
                 }

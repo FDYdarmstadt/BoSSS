@@ -796,9 +796,6 @@ namespace ilPSP.Tracing {
                 double rT = (double)(this.ExclusiveTicks);
                 double rR = (double)(Root.TicksSpentInMethod);
                 double fraction = rT / rR;
-                if(fraction < 0) {
-                    Console.WriteLine("test");
-                }
                 return fraction;
             }
         }
