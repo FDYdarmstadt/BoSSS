@@ -4,6 +4,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -85,17 +86,17 @@ namespace ilPSP {
         /// <summary>
         /// Runtime for the 1024*1024 DGEMM measured on some reference machine
         /// </summary>
-        const double DGEMM1000_serialBaselineRuntime = 0.007252846666666667;
+        const double DGEMM1024_serialBaselineRuntime = 0.009044966666666666;
 
 
         static MultithreadPerformanceEval() {
             AllBenchmarks = new Dictionary<string, (Ibench, Func<Ibench, double>)> {
-                { "Serial-GEMMbsline", (new GEMMbench(1000, 5), bench => CompareAgainstBaselineValSerial(bench, DGEMM1000_serialBaselineRuntime)) },
-                { "OpenMP-GEMMbsline", (new GEMMbench(1000, 5), bench => CompareAgainstBaselineValParallel(bench, DGEMM1000_serialBaselineRuntime/ilPSP.Environment.NumThreads)) },
-                { "OpenMP-GEMMaccel", (new GEMMbench(2000, 5), MeasureAcceleration) },
-                { "OpenMP-GEMMblock", (new GEMMbench(2000, 5), CheckThreadBlocking) },
-                { "TPL-RNDaccel", (new TPLbench(2000, 5), MeasureAcceleration) },
-                { "TPL-RNDblock", (new TPLbench(2000, 5), CheckThreadBlocking) }
+                { "Serial-GEMMbsline", (new GEMMbench(1024, 5), bench => CompareAgainstBaselineValSerial(bench, DGEMM1024_serialBaselineRuntime)) },
+                { "OpenMP-GEMMbsline", (new GEMMbench(1024, 5), bench => CompareAgainstBaselineValParallel(bench, DGEMM1024_serialBaselineRuntime/ilPSP.Environment.NumThreads)) },
+                { "OpenMP-GEMMaccel", (new GEMMbench(1024, 5), MeasureAcceleration) },
+                { "OpenMP-GEMMblock", (new GEMMbench(1024, 5), CheckThreadBlocking) },
+                { "TPL-RNDaccel", (new TPLbench(1024, 5), MeasureAcceleration) },
+                { "TPL-RNDblock", (new TPLbench(1024, 5), CheckThreadBlocking) }
             };
 
         }
@@ -319,12 +320,12 @@ namespace ilPSP {
 
         static double CompareAgainstBaselineValSerial(Ibench b, double BaselineRuntime) {
             using (var tr = new FuncTrace("CompareAgainstBaselineValSerial")) {
-                 
+                //tr.InfoToConsole = true;
                 var SerialTimes = b.DoSerial();
 
 
 
-                double RelFactor = BaselineRuntime / SerialTimes.avgTime;
+                double RelFactor = SerialTimes.avgTime / BaselineRuntime;
                 tr.Info($"Reference machine comparison (serial) of {b.Name}: relative factor {RelFactor}; abs. runtime: {SerialTimes.avgTime}");
 
                 return RelFactor;
@@ -340,7 +341,7 @@ namespace ilPSP {
 
                 var ParallelTimes = b.DoParallel();
 
-                double RelFactor = BaselineRuntime / ParallelTimes.avgTime;
+                double RelFactor = ParallelTimes.avgTime / BaselineRuntime;
                 tr.Info($"Reference machine comparison ({Environment.NumThreads} threads) of {b.Name}: relative factor {RelFactor}; abs. runtime: {ParallelTimes.avgTime}");
 
                 return RelFactor;
@@ -471,12 +472,6 @@ namespace ilPSP {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int Rank);
 
 
-
-
-
-
-
-
                 (double minTime, double avgTime, double maxTime) TimeRef0 = (0, 0, 0);
                 if (Rank == 0) {
                     tr.Info("Now, doing reference run on rank 0...");
@@ -500,14 +495,14 @@ namespace ilPSP {
                     double minFactor = TimeX.minTime / TimeRef.minTime;
                     double avgFactor = TimeX.avgTime / TimeRef.avgTime;
                     double maxFactor = TimeX.maxTime / TimeRef.maxTime;
-
+                    worstAvgFactor = Math.Max(worstAvgFactor, avgFactor);
 
                     if (minFactor.MPIMax() > 10 || maxFactor.MPIMax() > 5 || avgFactor.MPIMax() > 10) {
 
                         string scaling = $"R{Rank}: {ranksToBench + 1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
                         tr.Info("Scaling involving " + (ranksToBench + 1) + " ranks: " + scaling);
                         
-                        worstAvgFactor = Math.Max(worstAvgFactor, avgFactor);
+                        
 
                         //if(avgFactor > 7)
                         //    throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);

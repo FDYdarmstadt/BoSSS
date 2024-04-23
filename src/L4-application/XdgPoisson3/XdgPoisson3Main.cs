@@ -322,9 +322,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             Tecplot.PlotFields(Fields, "grid" + timestepNo.ToString(), physTime, 0);
         }
 
-        protected override void Bye() {
-            this.OnlineProfiling.OnlinePerformanceLog.WriteStatistics(Console.Error);
-        }
+        //protected override void Bye() {
+        //    this.OnlineProfiling.OnlinePerformanceLog.WriteStatistics(Console.Error);
+        //}
 
     }
 
