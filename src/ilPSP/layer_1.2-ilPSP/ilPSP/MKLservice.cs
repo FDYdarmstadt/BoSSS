@@ -3,6 +3,7 @@ using MPI.Wrappers.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace ilPSP {
@@ -49,6 +50,12 @@ namespace ilPSP {
                 instance.BoSSS_set_num_threads(&nth);
             }
         }
+
+        [DllImport("libiomp5md.dll")]
+        public static extern void omp_set_num_threads(int nth);
+
+        [DllImport("libiomp5md.dll")]
+        public static extern int omp_get_num_threads();
 
         /// <summary>
         /// Not really sure?

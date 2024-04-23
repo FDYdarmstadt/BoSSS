@@ -784,6 +784,12 @@ namespace ilPSP {
             using(var stw = new StringWriter()) {
                 if(firstSign != null)
                     stw.Write(firstSign);
+                if(ie == null) {
+                    stw.Write(lastSign);
+                    return stw.ToString();
+                }
+
+
                 int L = ie.Count();
                 int cnt = 0;
                 if (ie != null) {
@@ -804,5 +810,49 @@ namespace ilPSP {
             }
         }
 
+
+        /// <summary>
+        /// Helps to print an enumeration of objects into a nice string, e.g. something like:
+        /// ```
+        ///   (obj1, obj2, obj3)
+        /// ```
+        /// </summary>
+        /// <param name="ie"></param>
+        /// <param name="firstSign">
+        /// first part of the return string
+        /// </param>
+        /// <param name="separator">
+        /// separator between elements
+        /// </param>
+        /// <param name="lastSign">
+        /// final part of the return string
+        /// </param>
+        /// <returns></returns>
+        public static string ToConcatString(this IEnumerable<double> ie, string firstSign, string separator, string lastSign, string format = "g7") {
+            using (var stw = new StringWriter()) {
+                if (firstSign != null)
+                    stw.Write(firstSign);
+                if (ie == null) {
+                    stw.Write(lastSign);
+                    return stw.ToString();
+                }
+
+                int L = ie.Count();
+                int cnt = 0;
+                if (ie != null) {
+                    foreach (var o in ie) {
+                        stw.Write(o.ToString(format));
+                        
+                        if (cnt < (L - 1))
+                            stw.Write(separator);
+                        cnt++;
+                    }
+                }
+                if (lastSign != null)
+                    stw.Write(lastSign);
+
+                return stw.ToString();
+            }
+        }
     }
 }
