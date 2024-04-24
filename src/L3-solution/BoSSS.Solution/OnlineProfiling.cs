@@ -470,6 +470,12 @@ namespace BoSSS.Solution {
         }
 
 
+        public override string ToString() {
+            using (var tw = new StringWriter()) {
+                WriteProfilingReport(tw);
+                return tw.ToString();
+            }
+        }
 
     }
 }
