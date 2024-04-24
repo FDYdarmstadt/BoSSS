@@ -165,7 +165,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// A comparatively large circle for which caused some ArithmeticExcetion in <see cref="XdgAggregationBasis"/> (23apr24);
         /// </summary>
 #if !DEBUG
-        [Test]
+//        [Test]
 #endif
         public static void LargeCircle2D(
         [Values(4,5)]

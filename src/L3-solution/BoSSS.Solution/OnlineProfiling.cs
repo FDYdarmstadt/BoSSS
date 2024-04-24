@@ -191,7 +191,9 @@ namespace BoSSS.Solution {
 
 
         private void WriteProfilingHeader(TextWriter stw) {
-            stw.WriteLine($"Date        : {this.AppStartTime}");
+            stw.WriteLine($"Start Time  : {this.AppStartTime}");
+            stw.WriteLine($"End Time    : {this.AppEndTime}");
+            stw.WriteLine($"Run Time    : {this.AppRunTime}");
             stw.WriteLine($"Computer    : {this.Computer} ");
             stw.WriteLine($"User Name   : {this.UserName}");
             stw.WriteLine($"MPI rank    : {MPIRank}");
