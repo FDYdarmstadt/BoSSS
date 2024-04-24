@@ -35,7 +35,7 @@ namespace ilPSP {
                 double[] res = br.Value.ToArray();
                 double avg = res.Sum()/res.Count();
                 double min = res.Min();
-                double max = res.Min();
+                double max = res.Max();
                 tw.Write($"[{min:g5} | {avg:g5} | {max:g5}]");
                 tw.Write("  ");
                 tw.Write(res.ToConcatString("[", ", ", "]", "g4"));
@@ -60,7 +60,15 @@ namespace ilPSP {
     /// </summary>
     public static class MultithreadPerformanceEval {
 
+        public const int MaxNumOfBenchmarks = 10;
+
+        static int ExeCount; 
+
         public static void ExecuteBenchmarks() {
+            if (ExeCount >= MaxNumOfBenchmarks)
+                return;
+            ExeCount++;
+                
             using (var tr = new FuncTrace("ExecuteBenchmarks")) {
                 foreach (var b in AllBenchmarks) {
                     if (Log.BenchResults == null)

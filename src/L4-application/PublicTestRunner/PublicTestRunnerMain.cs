@@ -1063,11 +1063,11 @@ namespace PublicTestRunner {
 
 
                                 if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
-                                    
 
+                                    bool reallyDelete = true;
 
                                     // message:
-                                    if(s == JobStatus.FinishedSuccessful)
+                                    if (s == JobStatus.FinishedSuccessful)
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
@@ -1093,7 +1093,7 @@ namespace PublicTestRunner {
                                             returnCode--;
                                         }
                                     }
-
+                                    
                                     OnlineProfiling[] profilings = null;
                                     if (s == JobStatus.FinishedSuccessful) {
                                         using (new BlockTrace("load_profilings", trr)) {
@@ -1108,6 +1108,10 @@ namespace PublicTestRunner {
                                                 foreach (var orig in sourceFiles) {
                                                     profilings[rnk] = OnlineProfiling.Deserialize(File.ReadAllText(orig));
                                                 }
+
+                                                if (DetectSlowBenchmark(profilings, out _))
+                                                    reallyDelete = false;
+
                                             } catch (Exception ioe) {
                                                 Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
                                             }
@@ -1117,7 +1121,7 @@ namespace PublicTestRunner {
                                     // delete deploy directory
                                     if (TestTypeProvider.DeleteSuccessfulTestFiles) {
                                         using (new BlockTrace("delete_deploy_dir", trr)) {
-                                            if (s == JobStatus.FinishedSuccessful) {
+                                            if (s == JobStatus.FinishedSuccessful && reallyDelete) {
                                                 try {
                                                     Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
                                                 } catch (Exception e) {
@@ -1242,26 +1246,33 @@ namespace PublicTestRunner {
             return returnCode;
         }
 
+        private static bool DetectSlowBenchmark(OnlineProfiling[] profilings, out Dictionary<string, double> worstBenchmarks) {
+            bool veryBadResultDetected = false;
+
+            worstBenchmarks = new Dictionary<string, double>();
+            foreach (var profiling in profilings) {
+                var BenchResults = profiling?.OnlinePerformanceLog?.BenchResults;
+
+                if (BenchResults != null) {
+                    foreach (var kv in BenchResults) {
+                        double worstRes = kv.Value.Min();
+                        if (worstBenchmarks.ContainsKey(kv.Key))
+                            worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
+                        if (worstRes < 0.1)
+                            veryBadResultDetected = true;
+                        worstBenchmarks[kv.Key] = worstRes;
+                    }
+                }
+            }
+
+            return veryBadResultDetected;
+        }
+
         private static string SummarizeProfilings(OnlineProfiling[] profilings) {
             string BenchmarkSummary;
             using (var stw = new StringWriter()) {
-                bool veryBadResultDetected = false;
 
-                var worstBenchmarks = new Dictionary<string, double>();
-                foreach (var profiling in profilings) {
-                    var BenchResults = profiling?.OnlinePerformanceLog?.BenchResults;
-
-                    if (BenchResults != null) {
-                        foreach (var kv in BenchResults) {
-                            double worstRes = kv.Value.Min();
-                            if (worstBenchmarks.ContainsKey(kv.Key))
-                                worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
-                            if (worstRes < 0.1)
-                                veryBadResultDetected = true;
-                            worstBenchmarks[kv.Key] = worstRes;
-                        }
-                    }
-                }
+                var veryBadResultDetected = DetectSlowBenchmark(profilings, out var worstBenchmarks);
 
                 if (veryBadResultDetected)
                     stw.Write("!!! SLOW BENCHMARK RESULT !!! ");
@@ -1280,7 +1291,7 @@ namespace PublicTestRunner {
 
                 if (veryBadResultDetected) {
                     stw.Write(" ");
-                    stw.Write(profilings.ToConcatString("[", " | ", " ]"));
+                    stw.Write(profilings.Select(p => p.OnlinePerformanceLog).ToConcatString("[", " | ", " ]"));
                 }
                 BenchmarkSummary = stw.ToString();
             }
