@@ -266,9 +266,9 @@ namespace BoSSS.Solution {
                     Console.Write(DateTime.Now);
                     Console.Write("  ");
                     if (size <= 1)
-                        Console.WriteLine("Running with 1 MPI process (single core)");
+                        Console.WriteLine($"Running with 1 MPI process (single core), {ilPSP.Environment.NumThreads} threads");
                     else
-                        Console.WriteLine("Running with " + size + " MPI processes ");
+                        Console.WriteLine($"Running with {size}*{ilPSP.Environment.NumThreads} MPI processes * threads");
 
                     Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
                     Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
