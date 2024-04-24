@@ -86,6 +86,12 @@ namespace BoSSS.Foundation.XDG {
             /// R. Saye, SIAM Journal on Scientific Computing, 2015
             /// </remarks>
             Saye,
+            /// <summary>
+            /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
+            /// obtained through recursive subdivision, as described in 
+            /// (Saye 2022)
+            /// </summary>
+            Algoim,
         }
 
         /// <summary>
@@ -421,6 +427,13 @@ namespace BoSSS.Foundation.XDG {
                             m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                             m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                             break;
+                        case MomentFittingVariants.Algoim:
+                            var algoimComboFactory = new Quadrature.AlgoimFactories(
+                                    this.m_LevelSetDatas[levSetIndex],
+                                    Kref);
+                            m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();
+                            m_SurfaceFactory[levSetIndex] = algoimComboFactory.GetSurfaceFactory();
+                            break;
                         default:
                             throw new NotSupportedException(String.Format(
                                 "Variant {0} not implemented.", CutCellQuadratureType));
@@ -572,6 +585,13 @@ namespace BoSSS.Foundation.XDG {
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                         m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
+                        break;
+                    case MomentFittingVariants.Algoim:
+                        var algoimComboFactory = new Quadrature.AlgoimFactories(
+                                this.m_LevelSetDatas[levSetIndex],
+                                Kref);
+                        m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();
+                        m_SurfaceFactory[levSetIndex] = algoimComboFactory.GetSurfaceFactory();
                         break;
                     default:
                         throw new NotSupportedException(String.Format(
