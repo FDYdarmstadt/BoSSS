@@ -35,7 +35,7 @@ using static ilPSP.Utils.UnsafeAlgoim;
 namespace ilPSP.Utils {
 
 
-
+    // Configurations for the DynLibLoader
     internal class Algoim_Libstuff {
         // workaround for .NET bug:
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
@@ -74,7 +74,7 @@ namespace ilPSP.Utils {
 
     
     /// <summary>
-    /// subset of BLAS
+    /// subset of Algoim
     /// </summary>
     public sealed class UnsafeAlgoim : DynLibLoader {
 
@@ -126,30 +126,21 @@ namespace ilPSP.Utils {
 
 #pragma warning disable 649
         _GetVolumeScheme GetVolumeScheme;
+        _GetSurfaceScheme GetSurfaceScheme;
 #pragma warning restore 649
 
         // Defines a delegate that can point to the method matching its signature.
         public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
+        public unsafe delegate QuadSchemeUnmanaged _GetSurfaceScheme(int dim, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
         public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
             get { return GetVolumeScheme; }
         }
 
-
-
-        //        /// <summary> FORTRAN BLAS routine </summary>
-        //        public unsafe delegate double _DDOT(ref int N, double* DX, ref int INCX, double* DY, ref int INCY);
-
-
-        //#pragma warning disable        649
-        //        _DDOT   ddot;
-        //#pragma warning restore 649
-
-        //        /// <summary> FORTRAN BLAS routine </summary>
-        //        public unsafe _DDOT DDOT {
-        //            get { return ddot; }
-        //        }
+        public unsafe _GetSurfaceScheme getUnmanagedSurfaceScheme {
+            get { return GetSurfaceScheme; }
+        }
 
 
     }
@@ -157,7 +148,7 @@ namespace ilPSP.Utils {
 
 
     /// <summary>
-    /// some parts of the BLAS interface, which are used by BoSSS;
+    /// some parts of the Algoim interface, which are used by BoSSS;
     /// </summary>
     static public class Algoim {
 
@@ -177,7 +168,7 @@ namespace ilPSP.Utils {
         }
 
         public readonly static UnsafeAlgoim m_seq_Algoim;
-        public readonly static UnsafeAlgoim m_omp_Algoim;
+        //public readonly static UnsafeAlgoim m_omp_Algoim;
 
         static UnsafeAlgoim m_Algoim;
 
@@ -195,29 +186,31 @@ namespace ilPSP.Utils {
 
             int[] s = { 3, 3 };
 
-            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(2, 5, s, l, points_1dy);
-            Console.WriteLine("Algoim passed the quadscheme back");
-
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceScheme(2, 5, s, l, points_1dy);
             QuadScheme ret = new QuadScheme(retC);
             retC.FreeMemory();
             return ret;
         }
 
-        /// <summary>Cos
-        /// most native BLAS interface available
-        /// </summary>
-        public static UnsafeAlgoim F77_BLAS { 
-            get { 
-                return m_Algoim; 
-            }
-        }
+        public static QuadScheme GetVolumeQuadratureRules() {
 
-        //internal static void ActivateOMP() {
-        //    if (ilPSP.Environment.MaxNumOpenMPthreads > 1)
-        //        m_Algoim = m_omp_Algoim;
-        //    else
-        //        m_Algoim = m_seq_Algoim;
-        //}
+            // Hardcoded example values
+            // Define points_1dy array
+            double[] points_1dy = { 4.0, 3.0, 4.0, 0.0, -1.0, 0.0, 4.0, 3.0, 4.0 };
+
+            // Define points_1dx array
+            double[] points_1dx = { -1.0, 0.0, 1.0 };
+            double[] l = new double[points_1dx.Length * 2];
+            Array.Copy(points_1dx, 0, l, 0, points_1dx.Length);
+            Array.Copy(points_1dx, 0, l, points_1dx.Length, points_1dx.Length);
+
+            int[] s = { 3, 3 };
+
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(2, 5, s, l, points_1dy);
+            QuadScheme ret = new QuadScheme(retC);
+            retC.FreeMemory();
+            return ret;
+        }
 
         internal static void ActivateSEQ() {
             m_Algoim = m_seq_Algoim;
@@ -228,7 +221,6 @@ namespace ilPSP.Utils {
         /// static ctor
         /// </summary>
         static Algoim() {
-            Console.WriteLine("Algoim ctor");
             m_seq_Algoim = new UnsafeAlgoim(Parallelism.SEQ);
             m_Algoim = m_seq_Algoim;
         }
