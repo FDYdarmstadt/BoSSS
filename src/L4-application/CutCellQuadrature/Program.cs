@@ -59,7 +59,9 @@ namespace CutCellQuadrature {
 
         EquivalentPolynomials,
 
-        SayeGaussRules
+        SayeGaussRules,
+
+        Algoim
     }
 
     public partial class Program : Application {
@@ -188,7 +190,7 @@ namespace CutCellQuadrature {
             //new SingleCubeSurfaceTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
-            //new TwoCircles2DVolume(GridSizes.Small),
+            new TwoCircles2DVolume(GridSizes.Small),
             //new TwoCircles2DSurface(GridSizes.Small),
             
             //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
@@ -270,7 +272,6 @@ namespace CutCellQuadrature {
 
         static void Main(string[] args) {
             InitMPI(args);
-            Console.WriteLine(Algoim.MachineEps);
 
             
 
@@ -393,7 +394,7 @@ namespace CutCellQuadrature {
 
             // Quadrature variant
 
-            Modes mode = Modes.SayeGaussRules;
+            Modes mode = Modes.Algoim;
             int[] orders = new int[] { 7};
 
             //Modes mode = Modes.HMFClassic;
@@ -825,7 +826,22 @@ namespace CutCellQuadrature {
                         edgeFactory = null;
                         break;
                     }
+                case Modes.Algoim: //
+{
+                        AlgoimFactories FactoryFactory = new AlgoimFactories(
+                                levelSetTracker.DataHistories[0].Current,
+                                this.Grid.RefElements[0]
+                            );
 
+                        if (testCase is ISurfaceTestCase) {
+                            volumeFactory = FactoryFactory.GetSurfaceFactory();
+                        } else {
+                            volumeFactory = FactoryFactory.GetVolumeFactory();
+                        }
+
+                        edgeFactory = null;
+                        break;
+                    }
                 case Modes.EquivalentPolynomials: //
                     {
                         var lineAndPointFactory = new LineAndPointQuadratureFactory(
