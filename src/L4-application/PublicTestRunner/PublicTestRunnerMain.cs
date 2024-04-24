@@ -1187,49 +1187,12 @@ namespace PublicTestRunner {
                 Console.WriteLine("--- Performance Benchmarks -------------------------------------------------------------------------");
                 foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
 
-                    string BenchmarkSummary;
-                    using (var stw = new StringWriter()) {
-                        bool veryBadResultDetected = false;
-
-                        var worstBenchmarks = new Dictionary<string, double>();
-                        foreach (var profiling in jj.profilings) {
-                            var BenchResults = profiling.OnlinePerformanceLog.BenchResults;
-
-                            foreach(var kv in BenchResults) {
-                                double worstRes = kv.Value.Min();
-                                if (worstBenchmarks.ContainsKey(kv.Key))
-                                    worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
-                                if (worstRes < 0.1)
-                                    veryBadResultDetected = true;
-                                worstBenchmarks[kv.Key] = worstRes;
-                            }
-                        }
-
-                        if (veryBadResultDetected)
-                            stw.Write("!!! SLOW BENCHMARK RESULT !!! ");
-                        int L = worstBenchmarks.Count;
-                        int l = 0;
-                        foreach(var worstRes in worstBenchmarks) {
-                            l++;
-                            stw.Write(worstRes.Key + ": " +  worstRes.Value.ToString("g4"));
-                            if (worstRes.Value < 0.1)
-                                stw.Write(" !!!");
-                            if (l < L)
-                                stw.Write(", ");
-                            else
-                                stw.Write(";");
-                        }
-
-                        if(veryBadResultDetected) {
-                            stw.Write(" ");
-                            stw.Write(jj.profilings.ToConcatString("[", " | ", " ]"));
-                        }
-                        BenchmarkSummary = stw.ToString();
+                    if (jj.profilings != null && jj.profilings.Any(prof => prof?.OnlinePerformanceLog != null)) {
+                        string BenchmarkSummary = SummarizeProfilings(jj.profilings);
+                        Console.WriteLine($"{jj.job.Name} : Online profiling: {BenchmarkSummary}");
                     }
-
-                    Console.WriteLine($"{jj.job.Name} : Online profiling: {BenchmarkSummary}");
                 }
-                
+
                 Console.WriteLine("--- Test Results -----------------------------------------------------------------------------------");
 
                 int SuccessfulFinishedCount = 0;
@@ -1277,6 +1240,52 @@ namespace PublicTestRunner {
             CloseTracing();
 
             return returnCode;
+        }
+
+        private static string SummarizeProfilings(OnlineProfiling[] profilings) {
+            string BenchmarkSummary;
+            using (var stw = new StringWriter()) {
+                bool veryBadResultDetected = false;
+
+                var worstBenchmarks = new Dictionary<string, double>();
+                foreach (var profiling in profilings) {
+                    var BenchResults = profiling?.OnlinePerformanceLog?.BenchResults;
+
+                    if (BenchResults != null) {
+                        foreach (var kv in BenchResults) {
+                            double worstRes = kv.Value.Min();
+                            if (worstBenchmarks.ContainsKey(kv.Key))
+                                worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
+                            if (worstRes < 0.1)
+                                veryBadResultDetected = true;
+                            worstBenchmarks[kv.Key] = worstRes;
+                        }
+                    }
+                }
+
+                if (veryBadResultDetected)
+                    stw.Write("!!! SLOW BENCHMARK RESULT !!! ");
+                int L = worstBenchmarks.Count;
+                int l = 0;
+                foreach (var worstRes in worstBenchmarks) {
+                    l++;
+                    stw.Write(worstRes.Key + ": " +  worstRes.Value.ToString("g4"));
+                    if (worstRes.Value < 0.1)
+                        stw.Write(" !!!");
+                    if (l < L)
+                        stw.Write(", ");
+                    else
+                        stw.Write(";");
+                }
+
+                if (veryBadResultDetected) {
+                    stw.Write(" ");
+                    stw.Write(profilings.ToConcatString("[", " | ", " ]"));
+                }
+                BenchmarkSummary = stw.ToString();
+            }
+
+            return BenchmarkSummary;
         }
 
         private static void LogResultFile(StreamWriter ot, Job j, string testname, string ResFile) {

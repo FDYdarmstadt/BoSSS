@@ -314,7 +314,7 @@ namespace ilPSP {
 
                 var ParallelTimes = gb.DoParallel();
 
-                double Accel = SerialTimes.avgTime / ParallelTimes.avgTime;
+                double Accel = SerialTimes.avgTime / ParallelTimes.avgTime; // kleine parallele Laufzeit == gut => große `Accel`
                 double RelAccel = Accel / NumThreads;
                 tr.Info($"Parallel acceleration of {gb.Name} using {NumThreads}: {Accel}, relative factor {RelAccel}");
 
@@ -330,7 +330,7 @@ namespace ilPSP {
 
 
 
-                double RelFactor = SerialTimes.avgTime / BaselineRuntime;
+                double RelFactor = BaselineRuntime / SerialTimes.avgTime; // große Laufzeit => Ergebnis < 1 => Underperfomer; kleine Laufzeit => Ergebnis > 1 => Overperformer
                 tr.Info($"Reference machine comparison (serial) of {b.Name}: relative factor {RelFactor}; abs. runtime: {SerialTimes.avgTime}");
 
                 return RelFactor;
@@ -346,7 +346,7 @@ namespace ilPSP {
 
                 var ParallelTimes = b.DoParallel();
 
-                double RelFactor = ParallelTimes.avgTime / BaselineRuntime;
+                double RelFactor = BaselineRuntime / ParallelTimes.avgTime; // große Laufzeit => Ergebnis < 1 => Underperfomer; kleine Laufzeit => Ergebnis > 1 => Overperformer
                 tr.Info($"Reference machine comparison ({Environment.NumThreads} threads) of {b.Name}: relative factor {RelFactor}; abs. runtime: {ParallelTimes.avgTime}");
 
                 return RelFactor;
@@ -498,7 +498,7 @@ namespace ilPSP {
 
 
                     double minFactor = TimeX.minTime / TimeRef.minTime;
-                    double avgFactor = TimeX.avgTime / TimeRef.avgTime;
+                    double avgFactor = TimeX.avgTime / TimeRef.avgTime; // TimeX klein == gut/schnell => Factor < 1; Muss also noch invertiert werden
                     double maxFactor = TimeX.maxTime / TimeRef.maxTime;
                     worstAvgFactor = Math.Max(worstAvgFactor, avgFactor);
 
@@ -518,7 +518,7 @@ namespace ilPSP {
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 }
 
-                return worstAvgFactor;
+                return 1/worstAvgFactor; // inversion, for return value: small factor = under-performance, large factor = over-performance;
             }
         }
 
