@@ -1099,11 +1099,14 @@ namespace PublicTestRunner {
                                         using (new BlockTrace("load_profilings", trr)) {
                                             try {
                                                 string[] sourceFiles = Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "profiling_bin.*.txt");
+                                                //if(sourceFiles.Length <= 0) {
+                                                //    Console.WriteLine(" ------------------ No benchmark file");
+                                                //}
 
                                                 profilings = new OnlineProfiling[sourceFiles.Length];
                                                 int rnk = 0;
                                                 foreach (var orig in sourceFiles) {
-                                                    profilings[rnk] = OnlineProfiling.Deserialize(orig);
+                                                    profilings[rnk] = OnlineProfiling.Deserialize(File.ReadAllText(orig));
                                                 }
                                             } catch (IOException ioe) {
                                                 Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
@@ -1180,11 +1183,54 @@ namespace PublicTestRunner {
                     returnCode -= 1;
                 }
 
+
+                Console.WriteLine("--- Performance Benchmarks -------------------------------------------------------------------------");
                 foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
-                    Console.WriteLine($"{jj.job.Name} // {jj.testname} : OpenMP profiling: {jj.profilings}");
+
+                    string BenchmarkSummary;
+                    using (var stw = new StringWriter()) {
+                        bool veryBadResultDetected = false;
+
+                        var worstBenchmarks = new Dictionary<string, double>();
+                        foreach (var profiling in jj.profilings) {
+                            var BenchResults = profiling.OnlinePerformanceLog.BenchResults;
+
+                            foreach(var kv in BenchResults) {
+                                double worstRes = kv.Value.Min();
+                                if (worstBenchmarks.ContainsKey(kv.Key))
+                                    worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
+                                if (worstRes < 0.1)
+                                    veryBadResultDetected = true;
+                                worstBenchmarks[kv.Key] = worstRes;
+                            }
+                        }
+
+                        if (veryBadResultDetected)
+                            stw.Write("!!! SLOW BENCHMARK RESULT !!! ");
+                        int L = worstBenchmarks.Count;
+                        int l = 0;
+                        foreach(var worstRes in worstBenchmarks) {
+                            l++;
+                            stw.Write(worstRes.Key + ": " +  worstRes.Value.ToString("g4"));
+                            if (worstRes.Value < 0.1)
+                                stw.Write(" !!!");
+                            if (l < L)
+                                stw.Write(", ");
+                            else
+                                stw.Write(";");
+                        }
+
+                        if(veryBadResultDetected) {
+                            stw.Write(" ");
+                            stw.Write(jj.profilings.ToConcatString("[", " | ", " ]"));
+                        }
+                        BenchmarkSummary = stw.ToString();
+                    }
+
+                    Console.WriteLine($"{jj.job.Name} : Online profiling: {BenchmarkSummary}");
                 }
-
-
+                
+                Console.WriteLine("--- Test Results -----------------------------------------------------------------------------------");
 
                 int SuccessfulFinishedCount = 0;
                 foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
@@ -1781,6 +1827,7 @@ namespace PublicTestRunner {
             //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
             //}
             //Debugger.Launch();
+           
 
             try {
                 return _Main(args, new PublicTests());

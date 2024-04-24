@@ -19,6 +19,11 @@ namespace ilPSP {
     [DataContract]
     public class OnlinePerformanceLog {
 
+        /// <summary>
+        /// Collected normalized benchmark results over the application runtime
+        /// - Key: benchmark name
+        /// - Value: normalized results, i.e. 1.0 represents expected behavior, smaller values denote under-performance, larger values denote over-performance
+        /// </summary>
         [DataMember]
         public Dictionary<string, List<double>> BenchResults;
 
