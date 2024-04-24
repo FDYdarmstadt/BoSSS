@@ -46,7 +46,15 @@ namespace BoSSS.Solution {
                 this.EnvironmentVars = _EnvironmentVars.ToArray();
             }
             AppDirectory = Directory.GetCurrentDirectory();
-            this.Ctrl = __ctrl;
+
+            bool serializationWorks = true;
+            try {
+                string check = __ctrl.Serialize();
+                AppControl.Deserialize(check);
+            } catch (Exception) {
+                serializationWorks = false;
+            }
+            this.Ctrl = serializationWorks ? __ctrl : null;
             CommandLine = Application.LatestCmdLineArgs?.CloneAs();
 
             OnlinePerformanceLog = ilPSP.MultithreadPerformanceEval.Log;
