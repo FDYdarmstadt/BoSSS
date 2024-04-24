@@ -1108,7 +1108,7 @@ namespace PublicTestRunner {
                                                 foreach (var orig in sourceFiles) {
                                                     profilings[rnk] = OnlineProfiling.Deserialize(File.ReadAllText(orig));
                                                 }
-                                            } catch (IOException ioe) {
+                                            } catch (Exception ioe) {
                                                 Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
                                             }
                                         }
