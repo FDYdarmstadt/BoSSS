@@ -139,7 +139,7 @@ namespace BoSSS.Solution {
                     profiling = formatter.Deserialize<OnlineProfiling>(reader);
                 }
 
-                profiling.RootCall.FixParrent();
+                profiling?.RootCall?.FixParrent();
 
                 return profiling;
             }
