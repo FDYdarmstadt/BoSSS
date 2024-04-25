@@ -36,7 +36,7 @@ namespace ilPSP.Utils {
 
             foreach (int iCPU in ret) {
                 if (iCPU >= NumProcs) {
-                    throw new ApplicationException($"Got affinity to CPU #{iCPU}, but system reports at maximum {NumProcs} CPUs.");
+                    Console.WriteLine($"Got affinity to CPU #{iCPU}, but system reports at maximum {NumProcs} CPUs.");
                 }
             }
             return ret;
@@ -47,7 +47,7 @@ namespace ilPSP.Utils {
                 if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     return CPUAffinityWindows.TotalNumberOfCPUs;
                 } else {
-                    return System.Environment.ProcessorCount;
+                    return CPUAffinityLinux.TotalNumberOfCPUs;
                 }
             }
         }
