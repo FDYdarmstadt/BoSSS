@@ -723,6 +723,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
         protected virtual List<DGField> GetInterfaceVelocity(){
+            MPICollectiveWatchDog.Watch();
             int D = this.GridData.SpatialDimension;
             var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             var PhysParam = this.Control.PhysicalParameters;
@@ -803,7 +804,10 @@ namespace BoSSS.Application.XNSE_Solver {
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
             double s = 0.5; // safety factor
+            int D = this.GridData.SpatialDimension;
 
+
+            int p = 0;
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             if (CC.NoOfItemsLocally > 0) {
@@ -816,10 +820,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // get level set degree
-                int p = 0;
                 try {
                     p = ((DGField)LsTrk.LevelSets[0]).Basis.Degree;
-                } catch {
+                }
+                catch {
                     Console.WriteLine("Cannot determine DG order of level set");
                 }
 
@@ -834,24 +838,21 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                     }
                 }
+            }
 
-                // level set cfl
-                {
-                    int D = this.GridData.SpatialDimension;
-                    IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
-                    if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
-                        // At this point the level set velocity is not updated to the correct value
-                        //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
+            // level set cfl
+            IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
 
-                        var LevelSetVelocity = GetInterfaceVelocity();
+                var LevelSetVelocity = GetInterfaceVelocity();
+                // At this point the level set velocity is not updated to the correct value
+                //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
 
-                        double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
-                        dt_cfl *= s / Math.Pow(p, 2);
-                        if (dt_cfl < dt) {
-                            dt = Math.Min(dt_cfl, dt);
-                            Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
-                        }
-                    }
+                double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
+                dt_cfl *= s / Math.Pow(p, 2);
+                if (dt_cfl < dt) {
+                    dt = Math.Min(dt_cfl, dt);
+                    Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
                 }
             }
 
