@@ -51,11 +51,11 @@ namespace ilPSP {
             }
         }
 
-        [DllImport("libiomp5md.dll")]
-        public static extern void omp_set_num_threads(int nth);
+        //[DllImport("libiomp5md.dll")]
+        //public static extern void omp_set_num_threads(int nth);
 
-        [DllImport("libiomp5md.dll")]
-        public static extern int omp_get_num_threads();
+        //[DllImport("libiomp5md.dll")]
+        //public static extern int omp_get_num_threads();
 
         /// <summary>
         /// Not really sure?
