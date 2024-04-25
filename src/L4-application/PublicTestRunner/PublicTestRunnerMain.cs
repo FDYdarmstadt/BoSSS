@@ -1291,7 +1291,7 @@ namespace PublicTestRunner {
 
                 if (veryBadResultDetected) {
                     stw.Write(" ");
-                    stw.Write(profilings.Select(p => p.OnlinePerformanceLog).ToConcatString("[", " | ", " ]"));
+                    stw.Write(profilings?.Select(p => p?.OnlinePerformanceLog).ToConcatString("[", " | ", " ]"));
                 }
                 BenchmarkSummary = stw.ToString();
             }
