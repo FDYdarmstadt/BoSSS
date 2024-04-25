@@ -23,17 +23,15 @@ namespace ilPSP.Utils {
         /// </summary>
         public static IEnumerable<int> GetAffinity() {
             IEnumerable<int> ret;
-            int NumProcs;
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                 ret = CPUAffinityWindows.GetAffinity();
-                NumProcs = CPUAffinityWindows.TotalNumberOfCPUs;
             } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
                 ret = CPUAffinityLinux.GetAffinity();
-                NumProcs = System.Environment.ProcessorCount;
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
 
+            int NumProcs = TotalNumberOfCPUs;
             foreach (int iCPU in ret) {
                 if (iCPU >= NumProcs) {
                     Console.WriteLine($"Got affinity to CPU #{iCPU}, but system reports at maximum {NumProcs} CPUs.");
@@ -46,8 +44,10 @@ namespace ilPSP.Utils {
             get {
                 if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     return CPUAffinityWindows.TotalNumberOfCPUs;
-                } else {
+                } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
                     return CPUAffinityLinux.TotalNumberOfCPUs;
+                } else {
+                    return System.Environment.ProcessorCount;
                 }
             }
         }

@@ -95,7 +95,7 @@ namespace ilPSP {
 
                 for (int i = 0; i < NumCpus; i++) {
                     if(__CPUindices[i] != 0)
-                        Console.Error.WriteLine($"Error binding OMP thread #{i} to CPU #{CPUindices[i]}: kmp_set_affinity return code {__CPUindices[i]}");
+                        Console.Error.WriteLine($"Error binding OMP thread #{i} to CPU #{CPUindices[i]}: thread #{i} return code {__CPUindices[i]}");
                 }
 
                 if(ret != 0) {

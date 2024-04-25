@@ -71,7 +71,7 @@ namespace ilPSP.Utils {
                         throw new InvalidOperationException("Failed to get processor count");
                     }
 
-                    Console.WriteLine("Linux No Of CPUS: " + processorCount);
+                    //Console.WriteLine("Linux No Of CPUS: " + processorCount);
                     return (int)processorCount;
                 } catch (Exception ex) {
                     Console.WriteLine("Error: " + ex.Message);

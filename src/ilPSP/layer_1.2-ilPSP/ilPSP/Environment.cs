@@ -376,12 +376,12 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using (var tr = new FuncTrace()) {
-                //tr.InfoToConsole = true;
+                tr.InfoToConsole = true;
                 bool bkup = StdoutOnlyOnRank0;
                 StdoutOnlyOnRank0 = false;
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
-
+                tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}");
 
                 // ===========================
                 // Determine Number of Threads
@@ -549,7 +549,7 @@ namespace ilPSP {
 
         private static void SetOMPbinding() {
             using (var tr = new FuncTrace("SetOMPbinding")) {
-                //tr.InfoToConsole = true;
+                tr.InfoToConsole = true;
                 if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
