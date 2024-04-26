@@ -19,7 +19,7 @@ namespace CNS.Tests
         {
             Application.InitMPI();
             //BoSSSpad.BoSSSshell.OpenOrCreateDatabase(dbPath);
-            var c = ControlExamples_Supersonic.AcousticWave(dbPath: null, perStartTime: 0.0, endTime: 32); 
+            var c = ControlExamples_Supersonic.AcousticWave(dbPath: null, perStartTime: 0.0, endTime: 32, waveLength:0.8); 
             var p = new CNSProgram();
             p.Init(c);
             p.RunSolverMode();
