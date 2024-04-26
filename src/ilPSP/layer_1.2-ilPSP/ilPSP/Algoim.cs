@@ -96,21 +96,21 @@ namespace ilPSP.Utils {
         // Define the QuadScheme struct in C# (memory management is handled automatically by the garbage collector)
         public struct QuadScheme {
             public int dimension;
-            public int size;
+            public int length;
             public double[] nodes;
             public double[] weights;
 
             // Constructor to create QuadScheme from QuadSchemeUnmanaged
             public QuadScheme(QuadSchemeUnmanaged unmanagedQuadScheme) {
                 dimension = unmanagedQuadScheme.dimension;
-                size = unmanagedQuadScheme.size;
+                length = unmanagedQuadScheme.size;
 
                 // Copy data from IntPtr to managed double[] arrays
-                nodes = new double[size];
-                Marshal.Copy(unmanagedQuadScheme.nodes, nodes, 0, size);
+                nodes = new double[length * dimension];
+                Marshal.Copy(unmanagedQuadScheme.nodes, nodes, 0, length * dimension);
 
-                weights = new double[size];
-                Marshal.Copy(unmanagedQuadScheme.weights, weights, 0, size);
+                weights = new double[length];
+                Marshal.Copy(unmanagedQuadScheme.weights, weights, 0, length);
             }
         }
 
