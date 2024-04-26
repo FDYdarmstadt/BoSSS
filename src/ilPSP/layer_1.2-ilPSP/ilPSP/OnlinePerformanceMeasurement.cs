@@ -211,7 +211,7 @@ namespace ilPSP {
                 this.Runs = Runs;
 
                 //A = MultidimensionalArray.Create(N, N);
-                N2 = N*N;
+                N2 = N*N*N;
 
                 
             }
@@ -245,9 +245,9 @@ namespace ilPSP {
                 double[] globAcc = new double[ilPSP.Environment.NumThreads];
                 ilPSP.Environment.ParallelFor(0, L, delegate (int iThread, int i0, int iE) {
                     double locAcc = 0;
-                    Random rnd = new Random();
+                    //Random rnd = new Random();
                     for (int i = i0; i < iE; i++) {
-                        locAcc += Math.Sin(i) + rnd.NextDouble();
+                        locAcc += Math.Sin(i);// + rnd.NextDouble();
                     }
                     globAcc[iThread] = locAcc;
                 }, enablePar:par);
@@ -292,6 +292,7 @@ namespace ilPSP {
         /// </summary>
         static double MeasureAcceleration(Ibench gb) {
             using (var tr = new FuncTrace("MeasureAcceleration")) {
+                tr.InfoToConsole = true; 
                 if (Environment.OpenMPenabled == false || Environment.NumThreads <= 1) {
                     return -1;
                 }
@@ -299,10 +300,11 @@ namespace ilPSP {
                 int NumThreads = Environment.NumThreads;
 
 
-              
 
+                Console.WriteLine($" ---- {gb.Name} serial ");
                 var SerialTimes = gb.DoSerial();
-                
+                Console.WriteLine($"                {SerialTimes.avgTime} sec");
+
 
                 //MKLservice.SetNumThreads(NumThreads);
                 //Console.WriteLine("OMP Max threads = " + MKLservice.GetMaxThreads() + ", BoSSS numth = " + NumThreads + ", BoSSS max omp = " + MaxNumOpenMPthreads + ", omp numth = " + MKLservice.omp_get_num_threads());
@@ -324,7 +326,9 @@ namespace ilPSP {
                 Console.WriteLine();
                 */
 
+                Console.WriteLine($" ---- {gb.Name} serial ");
                 var ParallelTimes = gb.DoParallel();
+                Console.WriteLine($"                {ParallelTimes.avgTime} sec");
 
                 double Accel = SerialTimes.avgTime / ParallelTimes.avgTime; // kleine parallele Laufzeit == gut => große `Accel`
                 double RelAccel = Accel / NumThreads;
