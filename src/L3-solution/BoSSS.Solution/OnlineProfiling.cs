@@ -57,7 +57,7 @@ namespace BoSSS.Solution {
             this.Ctrl = serializationWorks ? __ctrl : null;
             CommandLine = Application.LatestCmdLineArgs?.CloneAs();
 
-            OnlinePerformanceLog = ilPSP.MultithreadPerformanceEval.Log;
+            OnlinePerformanceLog = ilPSP.OnlinePerformanceMeasurement.Log;
         }
 
         [DataMember]
