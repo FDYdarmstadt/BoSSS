@@ -38,6 +38,7 @@ using BoSSS.Foundation.Grid.Classic;
 using System.Runtime.InteropServices;
 using ilPSP.Utils;
 using static ilPSP.Utils.UnsafeAlgoim;
+using System.Xml;
 
 namespace CutCellQuadrature {
 
@@ -990,6 +991,97 @@ namespace CutCellQuadrature {
                 }
             }
         }
+
+
+        public static void OutputQuadratureRuleAsVtpXML(MultidimensionalArray globalVertices, MultidimensionalArray weights, int dim, string filePath) {
+            if (dim != 2 && dim != 3) {
+                Console.Error.WriteLine("XML output is supported only for 2D and 3D schemes.");
+            }
+
+            try {
+                using (XmlWriter writer = XmlWriter.Create(filePath, new XmlWriterSettings { Indent = true })) {
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("VTKFile");
+                    writer.WriteAttributeString("type", "PolyData");
+                    writer.WriteAttributeString("version", "0.1");
+                    writer.WriteAttributeString("byte_order", "LittleEndian");
+
+                    writer.WriteStartElement("PolyData");
+                    writer.WriteStartElement("Piece");
+                    writer.WriteAttributeString("NumberOfPoints", weights.Length.ToString());
+                    writer.WriteAttributeString("NumberOfVerts", weights.Length.ToString());
+                    writer.WriteAttributeString("NumberOfLines", "0");
+                    writer.WriteAttributeString("NumberOfStrips", "0");
+                    writer.WriteAttributeString("NumberOfPolys", "0");
+
+                    // Points
+                    writer.WriteStartElement("Points");
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Float32");
+                    writer.WriteAttributeString("Name", "Points");
+                    writer.WriteAttributeString("NumberOfComponents", "3");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for (int i = 0; i < weights.Length; i++) {
+                        writer.WriteString($"{globalVertices[0,i,0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
+        }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // Points
+
+                    // Verts
+                    writer.WriteStartElement("Verts");
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Int32");
+                    writer.WriteAttributeString("Name", "connectivity");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for (int i = 0; i < weights.Length; i++) {
+                        writer.WriteString($"{i}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Int32");
+                    writer.WriteAttributeString("Name", "offsets");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for (int i = 1; i <= weights.Length; i++) {
+                        writer.WriteString($"{i}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // Verts
+
+                    // PointData
+                    writer.WriteStartElement("PointData");
+                    writer.WriteAttributeString("Scalars", "w");
+
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Float32");
+                    writer.WriteAttributeString("Name", "w");
+                    writer.WriteAttributeString("NumberOfComponents", "1");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for (int i = 0; i < weights.Length; i++) {
+                        writer.WriteString($"{weights[i]}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // PointData
+
+                    writer.WriteEndElement(); // Piece
+                    writer.WriteEndElement(); // PolyData
+                    writer.WriteEndElement(); // VTKFile
+
+                    writer.WriteEndDocument();
+                }
+            } catch (Exception ex) {
+                Console.WriteLine("Error opening file: " + ex.Message);
+            }
+        }
+
 
         private double PerformVolumeQuadrature(Modes mode, IQuadRuleFactory<QuadRule> factory, SubGrid cutCellGrid, int order, Stopwatch timer) {
             using (new FuncTrace()) {
