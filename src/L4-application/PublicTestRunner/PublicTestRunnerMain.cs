@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
@@ -262,11 +263,11 @@ namespace PublicTestRunner {
         /// finds all assemblies which potentially contain tests.
         /// </summary>
         static Assembly[] GetAllAssembliesForTests() {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 var R = new HashSet<Assembly>();
 
-                if(TestTypeProvider.FullTest != null) {
-                    foreach(var t in TestTypeProvider.FullTest) {
+                if (TestTypeProvider.FullTest != null) {
+                    foreach (var t in TestTypeProvider.FullTest) {
                         //Console.WriteLine("test type: " + t.FullName);
                         var a = t.Assembly;
                         //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
@@ -277,9 +278,9 @@ namespace PublicTestRunner {
 
 
 
-                if(discoverRelease) {
-                    if(TestTypeProvider.ReleaseOnlyTests != null) {
-                        foreach(var t in TestTypeProvider.ReleaseOnlyTests) {
+                if (discoverRelease) {
+                    if (TestTypeProvider.ReleaseOnlyTests != null) {
+                        foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
                             R.Add(t.Assembly);
                         }
                     }
@@ -290,11 +291,11 @@ namespace PublicTestRunner {
         }
 
 
-        
 
-        
 
-        
+
+
+
 
         //static bool IsReleaseOnlyAssembly
 
@@ -314,11 +315,11 @@ namespace PublicTestRunner {
                 }
             }
 
-            if(discoverRelease) {
-                if(TestTypeProvider.MpiReleaseOnlyTests != null) {
-                    foreach(var t in TestTypeProvider.MpiReleaseOnlyTests) {
+            if (discoverRelease) {
+                if (TestTypeProvider.MpiReleaseOnlyTests != null) {
+                    foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
                         bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                        if(!contains) {
+                        if (!contains) {
                             R.Add((t.type.Assembly, t.NoOfProcs));
                         }
                     }
@@ -373,7 +374,7 @@ namespace PublicTestRunner {
             return ret.ToArray();
         }
 
-        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test, int?[] NumThreads) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
+        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string, string[]> RequiredFiles4Test, int?[] NumThreads) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
             var r = new List<string>(); // full test names
             var n = new List<int?>(); // number of threads for test
             var l = new List<string>(); // short names 
@@ -477,7 +478,7 @@ namespace PublicTestRunner {
 
 
             // add assembly-global files for test, check uniqueness of filenames
-            foreach(var testname in d.Keys) {
+            foreach (var testname in d.Keys) {
                 var s = new List<string>();
                 s.AddRange(d[testname]);
                 s.AddRange(g);
@@ -554,7 +555,7 @@ namespace PublicTestRunner {
             }
         }
 
-        
+
         /// <summary>
         /// Decides whether an assembly <paramref name="a"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
         /// </summary>
@@ -565,7 +566,7 @@ namespace PublicTestRunner {
             foreach (var filter in sFilters) {
                 string modFilter;
                 bool expect = false;
-                if(filter.StartsWith("!")) {
+                if (filter.StartsWith("!")) {
                     modFilter = filter.Substring(1);
                     expect = false;
                 } else {
@@ -580,16 +581,16 @@ namespace PublicTestRunner {
             }
             return false;
         }
-        
 
-         /// <summary>
+
+        /// <summary>
         /// Decides whether an assembly <paramref name="m"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
         /// </summary>
         static bool FilterTestMethod(MethodInfo m, string AssemblyFilter) {
 
-            if(AssemblyFilter.IsEmptyOrWhite())
+            if (AssemblyFilter.IsEmptyOrWhite())
                 return true;
-            
+
             string FullName = m.DeclaringType.Name + "." + m.Name;
             Assembly a = m.DeclaringType.Assembly;
 
@@ -597,7 +598,7 @@ namespace PublicTestRunner {
             foreach (var filter in sFilters) {
                 string modFilter;
                 bool expect = false;
-                if(filter.StartsWith("!")) {
+                if (filter.StartsWith("!")) {
                     modFilter = filter.Substring(1);
                     expect = false;
                 } else {
@@ -608,14 +609,14 @@ namespace PublicTestRunner {
                 string[] AssemblyNMethodFilter = modFilter.Split("\\", StringSplitOptions.RemoveEmptyEntries);
                 string aFilter = AssemblyNMethodFilter[0];
 
-                if(aFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect) {
+                if (aFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect) {
 
-                    if(AssemblyNMethodFilter.Length < 2)
+                    if (AssemblyNMethodFilter.Length < 2)
                         return true;
 
                     string mfilter = AssemblyNMethodFilter[1];
 
-                    
+
                     if (mfilter.WildcardMatch(FullName) == expect)
                         return true;
 
@@ -632,22 +633,22 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("yaml subprogram must be executed serially");
             }
 
-            using(var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
                 // ===================================
                 // phase 1: submit jobs
                 // ===================================
 
 
-           
+
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 {
                     var assln = GetAllAssembliesForTests();
-                    if(assln != null) {
-                        foreach(var a in assln) {
+                    if (assln != null) {
+                        foreach (var a in assln) {
                             {
                                 var allTst4Assi = GetTestsInAssembly(a, null);
-                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1));
                                 }
                             }
@@ -656,14 +657,14 @@ namespace PublicTestRunner {
                 }
                 {
                     var ParAssln = GetAllMpiAssemblies();
-                    if(ParAssln != null) {
-                        foreach(var TT in ParAssln) {
+                    if (ParAssln != null) {
+                        foreach (var TT in ParAssln) {
                             {
 
                                 var a = TT.Asbly;
                                 var allTst4Assi = GetTestsInAssembly(a, null);
 
-                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs));
                                 }
                             }
@@ -673,7 +674,7 @@ namespace PublicTestRunner {
 
                 Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
                 int cnt = 0;
-                foreach(var t in allTests) {
+                foreach (var t in allTests) {
                     cnt++;
                     Console.WriteLine($"  #{cnt}: {t.testname}");
                     Console.WriteLine($"     {t.shortname}");
@@ -683,10 +684,10 @@ namespace PublicTestRunner {
                 Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
 
                 string yamlName;
-                 
+
                 yamlName = "jobs.yml";
 
-                using(var YAML = new StreamWriter(yamlName)) {
+                using (var YAML = new StreamWriter(yamlName)) {
                     YAML.WriteLine("################################################################################");
                     YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
                     YAML.WriteLine("# any modification might get over-written");
@@ -708,15 +709,12 @@ namespace PublicTestRunner {
                     YAML.WriteLine("  - test parallel");
                     YAML.WriteLine();
 
-                    if (allTests.Count == 0)
-                    {
+                    if (allTests.Count == 0) {
                         YAML.WriteLine("EmptyTest:");
                         YAML.WriteLine("  stage: test");
                         YAML.WriteLine("  script:");
                         YAML.WriteLine("    - echo \"Empty\"");
-                    }
-                    else
-                    {
+                    } else {
                         //Set job class
                         // ======================================================================
                         //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, ARTIFACT_REF_PATH
@@ -739,11 +737,9 @@ namespace PublicTestRunner {
 
                         cnt = 0;
                         var checkResFileName = new HashSet<string>();
-                        foreach (var t in allTests)
-                        {
+                        foreach (var t in allTests) {
 
-                            if (t.testname.Contains("TutorialTest"))
-                            {
+                            if (t.testname.Contains("TutorialTest")) {
                                 Console.WriteLine("skipping: " + t.testname);
                                 continue;
                             }
@@ -751,7 +747,7 @@ namespace PublicTestRunner {
 
                             if (t.NoOfProcs == 1)
                                 YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
-                            else 
+                            else
                                 YAML.WriteLine(DebugOrReleaseSuffix + "#p" + t.NoOfProcs + "#" + t.shortname + ":" + t.testname + ":");
                             YAML.WriteLine("   extends: .Test");
 
@@ -764,8 +760,7 @@ namespace PublicTestRunner {
                                 YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml'");
                             else
                                 YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml");
-                            if (t.NoOfProcs > 1)
-                            {
+                            if (t.NoOfProcs > 1) {
                                 YAML.WriteLine("   tags:");
                                 YAML.WriteLine($"    - {t.NoOfProcs}cores");
                             }
@@ -781,7 +776,25 @@ namespace PublicTestRunner {
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE);
         /// appending of the user name avoids "unauthorized access"-exceptions
         /// </summary>
-        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName);
+        static Mutex IOsyncMutex;
+
+        static PublicTestRunnerMain() {
+            Random rnd = new Random(Guid.NewGuid().GetHashCode());
+            string mutex_name = "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName;
+            for (int iRetry = 0; iRetry < 10; iRetry++) {
+                try {
+                    IOsyncMutex = new Mutex(false, mutex_name);
+                    break;
+                } catch (Exception) {
+                    Thread.Sleep(rnd.Next(1000));
+                    IOsyncMutex = null;
+                }
+            }
+
+            if(IOsyncMutex == null) {
+                Console.WriteLine("Unable to create mutex: " + mutex_name);
+            }
+        }
 
         /// <summary>
         /// to distinct the internalTestRunner
@@ -811,7 +824,7 @@ namespace PublicTestRunner {
             FileStream ServerMutex;
             string DateNtime = null;
             try {
-                IOsyncMutex.WaitOne();
+                IOsyncMutex?.WaitOne();
 
                 var rnd = new Random(DateTime.Now.Millisecond + typeof(PublicTestRunnerMain).Assembly.Location.GetHashCode() + Directory.GetCurrentDirectory().GetHashCode());
                 Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
@@ -840,7 +853,7 @@ namespace PublicTestRunner {
                 Console.Error.WriteLine("TERMINATING APPLICATION");
                 System.Environment.Exit(-666);
             } finally {
-                IOsyncMutex.ReleaseMutex();
+                IOsyncMutex?.ReleaseMutex();
             }
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile("JobManagerRun-" + DateNtime);
@@ -1046,8 +1059,8 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if (s == JobStatus.FailedOrCanceled) {
-                                    Console.WriteLine(" ------------------- Job Failed reason:");
+                                if (s == JobStatus.FailedOrCanceled || s == JobStatus.Unknown) {
+                                    Console.WriteLine($" ------------------- Job Failed ({jj.job.Name}) reason: {s}, Exit Code {jj.job?.LatestDeployment.ExitCode}");
                                     var s1 = jj.job.GetStatus(true);
                                     if (s1 != s) {
                                         Console.WriteLine("changed its mind to: " + s1);

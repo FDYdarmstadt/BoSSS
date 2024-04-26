@@ -224,6 +224,9 @@ namespace ilPSP {
         /// Enable/Re-enable the use of OpenMP in external libraries (mostly Intel MKL, which provides BLAS, LAPACK and PARDISO)
         /// </summary>
         public static void EnableOpenMP() {
+            if(DisableOpenMP_becauseIsSlow)
+                return; 
+
             if(OpenMPdisabled) {
                 MaxNumOpenMPthreads = backup_MaxNumOpenMPthreads;
                 OpenMPdisabled = false;
@@ -332,6 +335,44 @@ namespace ilPSP {
             }
         }
 
+        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int, int> body, bool enablePar = true) {
+            if (InParallelSection == true) {
+                body(0, fromInclusive, toExclusive);
+            } else {
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+                    void _body(int ithread) {
+                        int L = toExclusive - fromInclusive;
+                        int i0 = (L*ithread)/__Numthreads;
+                        int iE = (L*(ithread+1))/__Numthreads;
+
+                        body(ithread, i0, iE);
+                    }
+
+
+                    Parallel.For(0, __Numthreads, options, _body);
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                    SetOMPbinding();
+                }
+            }
+        }
+
 
         public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
             if (InParallelSection) {
@@ -382,7 +423,7 @@ namespace ilPSP {
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
                 tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}");
-                Debugger.Launch();
+                
                 // ===========================
                 // Determine Number of Threads
                 // ===========================
@@ -545,7 +586,7 @@ namespace ilPSP {
                
             }
 
-            System.Environment.Exit(-88);
+            //System.Environment.Exit(-99);
         }
 
         static Random rnd = new Random();
@@ -555,7 +596,7 @@ namespace ilPSP {
             
             using (var tr = new FuncTrace("SetOMPbinding")) {
                 tr.InfoToConsole = true;
-                /*if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
+                if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -565,7 +606,7 @@ namespace ilPSP {
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
                     MKLservice.Dynamic = true;
-                } else*/ {
+                } else {
                     int[] OpenMPcpuIdx;
 
                     int L = DedicatedCPUsForThisRank.Count();
@@ -593,16 +634,23 @@ namespace ilPSP {
                     //tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     if(OMPbindingStrategy == null) {
-                        OMPbindingStrategy = OnlinePerformanceMeasurement.FindBestOMPstrategy(OpenMPcpuIdx);
+                        OMPbindingStrategy = OnlinePerformanceMeasurement.FindBestOMPstrategy(OpenMPcpuIdx, out DisableOpenMP_becauseIsSlow);
+                        
                     }
-                    MKLservice.BindOMPthreads(OpenMPcpuIdx, OMPbindingStrategy.Value);
+
+                    if (DisableOpenMP_becauseIsSlow) {
+                        DisableOpenMP();
+                        CPUAffinity.SetAffinity(DedicatedCPUsForThisRank);
+                    } else {
+                        MKLservice.BindOMPthreads(OpenMPcpuIdx, OMPbindingStrategy.Value);
+                    }
                 }
             } 
             
         }
 
         static OMPbindingStrategy? OMPbindingStrategy;
-
+        static bool DisableOpenMP_becauseIsSlow = false;
    
         /// <summary>
         /// true, if the code currently runs in multi-threaded; then, further spawning into sub-threads should not occur.

@@ -246,7 +246,6 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             //*/
-            Debugger.Launch();
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
