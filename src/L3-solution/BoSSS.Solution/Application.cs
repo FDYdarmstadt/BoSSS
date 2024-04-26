@@ -3059,6 +3059,8 @@ namespace BoSSS.Solution {
         /// writes the profiling report 
         /// </summary>
         protected virtual void ProfilingLog() {
+            if (OnlineProfiling == null)
+                return; // for some reason (i.e., because only Dispose was called()) not initialized yet
             ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
             OnlineProfiling.AppEndTime = DateTime.Now;
             OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
