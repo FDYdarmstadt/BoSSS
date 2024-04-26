@@ -28,6 +28,10 @@ namespace ilPSP {
         public Dictionary<string, List<double>> BenchResults;
 
 
+        [DataMember]
+        public OMPbindingStrategy OMPbindingStrategy;
+
+
         public void WriteStatistics(TextWriter tw) {
             foreach(var br in BenchResults) {
                 tw.Write(br.Key);
@@ -211,7 +215,7 @@ namespace ilPSP {
                 this.Runs = Runs;
 
                 //A = MultidimensionalArray.Create(N, N);
-                N2 = N*N*N;
+                N2 = N*N;
 
                 
             }

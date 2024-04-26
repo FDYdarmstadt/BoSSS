@@ -1060,7 +1060,7 @@ namespace PublicTestRunner {
 
 
                                 if (s == JobStatus.FailedOrCanceled || s == JobStatus.Unknown) {
-                                    Console.WriteLine($" ------------------- Job Failed ({jj.job.Name}) reason: {s}, Exit Code {jj.job?.LatestDeployment.ExitCode}");
+                                    Console.WriteLine($" ------------------- Job Failed ({jj.job.Name}) reason: {s}, Exit Code {jj.job?.LatestDeployment.ExitCode}, {jj.job?.LatestDeployment.DeploymentDirectory}");
                                     var s1 = jj.job.GetStatus(true);
                                     if (s1 != s) {
                                         Console.WriteLine("changed its mind to: " + s1);
@@ -1286,6 +1286,8 @@ namespace PublicTestRunner {
             using (var stw = new StringWriter()) {
 
                 var veryBadResultDetected = DetectSlowBenchmark(profilings, out var worstBenchmarks);
+
+                stw.Write(profilings?.Select(prof => prof?.OnlinePerformanceLog?.OMPbindingStrategy).ToConcatString("[", " | ", " ]"));
 
                 if (veryBadResultDetected)
                     stw.Write("!!! SLOW BENCHMARK RESULT !!! ");
