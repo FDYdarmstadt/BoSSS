@@ -304,7 +304,7 @@ namespace BoSSS.Application.BoSSSpad {
                         tr.Info("found running.txt token");
                     } else {
                         // no 'isrunning.txt'-token and no 'exit.txt' token: job should be pending in queue
-                        tr.Info("jobb seems to be pending");
+                        tr.Info("job seems to be pending");
                         return (JobStatus.PendingInExecutionQueue, null);
 
                         //isRunning = false;

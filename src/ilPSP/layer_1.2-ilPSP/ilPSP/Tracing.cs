@@ -214,7 +214,7 @@ namespace ilPSP.Tracing {
         /// </summary>
         public void StdoutOnAllRanks() {
             m_StdoutOnlyOnRank0Bkup = ilPSP.Environment.StdoutOnlyOnRank0;
-            ilPSP.Environment.StdoutOnlyOnRank0 = true;
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
         }
 
         /// <summary>

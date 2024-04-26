@@ -45,7 +45,7 @@ namespace ilPSP.Utils {
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
         public static void SetAffinity(IEnumerable<int> CPUlist) {
-            int NumProcs;
+            
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                 CPUAffinityWindows.SetAffinity(CPUlist);
                 

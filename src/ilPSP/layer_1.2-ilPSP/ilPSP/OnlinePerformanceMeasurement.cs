@@ -70,6 +70,7 @@ namespace ilPSP {
             ExeCount++;
                 
             using (var tr = new FuncTrace("ExecuteBenchmarks")) {
+                tr.InfoToConsole = true;
                 foreach (var b in AllBenchmarks) {
                     if (Log.BenchResults == null)
                         Log.BenchResults = new Dictionary<string, List<double>>();
@@ -108,8 +109,8 @@ namespace ilPSP {
                 { "OpenMP-GEMMbsline", (new GEMMbench(1024, 5), bench => CompareAgainstBaselineValParallel(bench, DGEMM1024_serialBaselineRuntime/ilPSP.Environment.NumThreads)) },
                 { "OpenMP-GEMMaccel", (new GEMMbench(1024, 5), MeasureAcceleration) },
                 { "OpenMP-GEMMblock", (new GEMMbench(1024, 5), CheckThreadBlocking) },
-                { "TPL-RNDaccel", (new TPLbench(1024, 5), MeasureAcceleration) },
-                { "TPL-RNDblock", (new TPLbench(1024, 5), CheckThreadBlocking) }
+                { "TPL-TPLaccel", (new TPLbench(1024, 5), MeasureAcceleration) },
+                { "TPL-TPLblock", (new TPLbench(1024, 5), CheckThreadBlocking) }
             };
 
         }
@@ -209,16 +210,18 @@ namespace ilPSP {
             public TPLbench(int N, int Runs) {
                 this.Runs = Runs;
 
-                A = MultidimensionalArray.Create(N, N);
+                //A = MultidimensionalArray.Create(N, N);
+                N2 = N*N;
 
                 
             }
 
-            public string Name => "RND";
+            public string Name => "TPL";
 
             int Runs;
 
-            MultidimensionalArray A;
+            //MultidimensionalArray A;
+            int N2;
 
             public (double minTime, double avgTime, double maxTime) DoParallel() {
                 if (ilPSP.Environment.InParallelSection)
@@ -236,19 +239,20 @@ namespace ilPSP {
             /// <summary>
             /// Fills an vector with random entries
             /// </summary>
-            void FillRandomBench<T>(T a, bool par) where T : IList<double> {
-                int L = a.Count;
+            double BenchOp(bool par) {
+                int L = N2;
 
-                ilPSP.Environment.ParallelFor(0, L, delegate (int i0, int iE) {
-
+                double[] globAcc = new double[ilPSP.Environment.NumThreads];
+                ilPSP.Environment.ParallelFor(0, L, delegate (int iThread, int i0, int iE) {
+                    double locAcc = 0;
                     Random rnd = new Random();
-
-                    // default:
                     for (int i = i0; i < iE; i++) {
-                        a[i] = rnd.NextDouble();
+                        locAcc += Math.Sin(i) + rnd.NextDouble();
                     }
+                    globAcc[iThread] = locAcc;
                 }, enablePar:par);
 
+                return globAcc.Sum();
             }
 
             (double minTime, double avgTime, double maxTime) Do(bool par) {
@@ -259,7 +263,7 @@ namespace ilPSP {
 
                 for (int i = 0; i < Runs; i++) {
                     var start = DateTime.Now;
-                    FillRandomBench(A.Storage, par);
+                    BenchOp(par);
                     var end = DateTime.Now;
 
                     double secs = (end - start).TotalSeconds;
@@ -362,22 +366,22 @@ namespace ilPSP {
         }
 
 
-        static public OMPbindingStrategy FindBestOMPstrategy(int[] CPUIndices) {
+        static public OMPbindingStrategy FindBestOMPstrategy(int[] CPUIndices, out bool OMPisSlow) {
             OMPbindingStrategy[] strats = (OMPbindingStrategy[]) Enum.GetValues(typeof(OMPbindingStrategy));
             double[] performance = new double[strats.Length];
 
-            var bench = new GEMMbench(128, 5);
+            var bench = new GEMMbench(2048, 5);
 
-            double measure() {
-                double accel = MeasureAcceleration(bench).MPIMin();
-                double block = CheckThreadBlocking(bench);
-                Console.WriteLine($"[{accel:g4} | {block:g4}]");
+            for (int i = 0; i < strats.Length; i++) {
+                double measure() {
+                    double accel = MeasureAcceleration(bench).MPIMin();
+                    double block = CheckThreadBlocking(bench);
+                    Console.WriteLine($"strat {strats[i]} [{accel:g4} | {block:g4}]");
 
-                return Math.Min(accel, block);
-            }
+                    return Math.Min(accel, block);
+                }
 
 
-            for(int i = 0; i < strats.Length; i++) {
                 Console.WriteLine("-----------------------   Performance of strategy " +  strats[i] + ": ");
                 MKLservice.BindOMPthreads(CPUIndices, strats[i]);
                 performance[i] = measure();
@@ -386,6 +390,10 @@ namespace ilPSP {
 
             int IBest = performance.IndexOfMax();
             Console.WriteLine("selecting " + strats[IBest]);
+            OMPisSlow = performance[IBest]*CPUIndices.Length <= 0.8;
+            if (OMPisSlow) {
+                Console.WriteLine("Insufficient OpenMP acceleration // should be disabled!");
+            }
             return strats[IBest];
         }
 
