@@ -2344,7 +2344,7 @@ namespace BoSSS.Solution {
                 // Main/outmost time-stepping loop
                 // (in steady-state: only one iteration)
                 // =================================================================================
-                ilPSP.MultithreadPerformanceEval.ExecuteBenchmarks();
+                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 {
 
 
@@ -3059,7 +3059,7 @@ namespace BoSSS.Solution {
         /// writes the profiling report 
         /// </summary>
         protected virtual void ProfilingLog() {
-            ilPSP.MultithreadPerformanceEval.ExecuteBenchmarks();
+            ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
             OnlineProfiling.AppEndTime = DateTime.Now;
             OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
 

@@ -58,7 +58,7 @@ namespace ilPSP {
     /// evaluation of micro-benchmarks, to detect any problems with 
     /// computational performance.
     /// </summary>
-    public static class MultithreadPerformanceEval {
+    public static class OnlinePerformanceMeasurement {
 
         public const int MaxNumOfBenchmarks = 10;
 
@@ -102,7 +102,7 @@ namespace ilPSP {
         const double DGEMM1024_serialBaselineRuntime = 0.009044966666666666;
 
 
-        static MultithreadPerformanceEval() {
+        static OnlinePerformanceMeasurement() {
             AllBenchmarks = new Dictionary<string, (Ibench, Func<Ibench, double>)> {
                 { "Serial-GEMMbsline", (new GEMMbench(1024, 5), bench => CompareAgainstBaselineValSerial(bench, DGEMM1024_serialBaselineRuntime)) },
                 { "OpenMP-GEMMbsline", (new GEMMbench(1024, 5), bench => CompareAgainstBaselineValParallel(bench, DGEMM1024_serialBaselineRuntime/ilPSP.Environment.NumThreads)) },
@@ -360,6 +360,37 @@ namespace ilPSP {
                 return RelFactor;
             }
         }
+
+
+        static public OMPbindingStrategy FindBestOMPstrategy(int[] CPUIndices) {
+            OMPbindingStrategy[] strats = (OMPbindingStrategy[]) Enum.GetValues(typeof(OMPbindingStrategy));
+            double[] performance = new double[strats.Length];
+
+            var bench = new GEMMbench(128, 5);
+
+            double measure() {
+                double accel = MeasureAcceleration(bench).MPIMin();
+                double block = CheckThreadBlocking(bench);
+                Console.WriteLine($"[{accel:g4} | {block:g4}]");
+
+                return Math.Min(accel, block);
+            }
+
+
+            for(int i = 0; i < strats.Length; i++) {
+                Console.WriteLine("-----------------------   Performance of strategy " +  strats[i] + ": ");
+                MKLservice.BindOMPthreads(CPUIndices, strats[i]);
+                performance[i] = measure();
+                Console.WriteLine("                    =====");
+            }
+
+            int IBest = performance.IndexOfMax();
+            Console.WriteLine("selecting " + strats[IBest]);
+            return strats[IBest];
+        }
+
+
+
 
         /// <summary>
         /// We are trying to identify if external libraries from different MPI ranks dead-lock each other;

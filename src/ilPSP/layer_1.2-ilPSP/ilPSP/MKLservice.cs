@@ -7,6 +7,27 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace ilPSP {
+
+
+    public enum OMPbindingStrategy {
+        /// <summary>
+        /// <see cref="MKLservice.BindOMPthreads_1To1"/>
+        /// </summary>
+        OneToOne = 1,
+
+        /// <summary>
+        /// <see cref="MKLservice.BindOMPthreads_AllToAll"/>
+        /// </summary>
+        AllToAll = 2,
+
+        /// <summary>
+        /// <see cref="MKLservice.BindOMPthreads_CloneFromMainThread"/>
+        /// </summary>
+        CloneFromMain = 3
+
+    }
+
+
     public class MKLservice : DynLibLoader {
 
         public MKLservice() :
@@ -84,7 +105,17 @@ namespace ilPSP {
 
         }
 
-        public static void BindOMPthreads(int[] CPUindices) {
+        public static void BindOMPthreads(int[] CPUindices, OMPbindingStrategy strat) {
+            switch(strat) {
+                case OMPbindingStrategy.AllToAll: BindOMPthreads_AllToAll(CPUindices); break;
+                case OMPbindingStrategy.CloneFromMain: BindOMPthreads_CloneFromMainThread(CPUindices.Length); break;
+                case OMPbindingStrategy.OneToOne: BindOMPthreads_1To1(CPUindices); break;
+                default: throw new NotImplementedException();
+            }
+        }
+
+
+        public static void BindOMPthreads_1To1(int[] CPUindices) {
             int ret;
             int NumCpus = CPUindices.Length;
             unsafe {
@@ -99,6 +130,62 @@ namespace ilPSP {
                 }
 
                 if(ret != 0) {
+                    Console.Error.WriteLine($"BoSSS_bind_omp_threads returned {ret}.");
+                }
+
+            }
+        }
+
+        public static void BindOMPthreads_AllToAll(int[] CPUindices) {
+            int ret;
+            int NumThreads = CPUindices.Length;
+            //int[] _CPUindices = new int[(NumThreads + 1)*(NumThreads)];
+            unsafe {
+                //fixed (int* __CPUindices = _CPUindices) {
+                int* __CPUindices = stackalloc int[(NumThreads + 1)*(NumThreads)];
+
+                for (int i = 0; i < NumThreads; i++) {
+                    __CPUindices[i*(NumThreads + 1)] = -(NumThreads + 1);
+
+                    for (int j = 0; j < NumThreads; j++) {
+                        __CPUindices[i*(NumThreads + 1) + j + 1] = CPUindices[j];
+                    }
+                }
+
+
+                ret = instance.BoSSS_bind_omp_threads(NumThreads, __CPUindices); // `__CPUindices` is used for input and output;
+
+                for (int i = 0; i < NumThreads; i++) {
+                    if (__CPUindices[i*(NumThreads + 1) + 1] != 0)
+                        Console.Error.WriteLine($"Error binding OMP thread #{i} to CPU #{CPUindices[i]}: thread #{i} return code {__CPUindices[i*(NumThreads + 1) + 1]}");
+                }
+
+                if (ret != 0) {
+                    Console.Error.WriteLine($"BoSSS_bind_omp_threads returned {ret}.");
+                }
+
+
+            }
+        }
+
+        public static void BindOMPthreads_CloneFromMainThread(int NumThreads) {
+            int ret;
+            unsafe {
+                int* __CPUindices = stackalloc int[NumThreads];
+
+                for (int i = 0; i < NumThreads; i++) {
+                    __CPUindices[i] = -1222333444;
+                }
+
+
+                ret = instance.BoSSS_bind_omp_threads(NumThreads, __CPUindices); // `__CPUindices` is used for input and output;
+
+                for (int i = 0; i < NumThreads; i++) {
+                    if (__CPUindices[i] != 0)
+                        Console.Error.WriteLine($"Error binding OMP thread #{i} equally to main thread: thread #{i} return code {__CPUindices[i]}");
+                }
+
+                if (ret != 0) {
                     Console.Error.WriteLine($"BoSSS_bind_omp_threads returned {ret}.");
                 }
 

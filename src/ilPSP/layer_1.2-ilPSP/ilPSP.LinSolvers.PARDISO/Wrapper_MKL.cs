@@ -47,7 +47,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
             switch (par) {
                 case Parallelism.OMP:
-                liborder = new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                liborder = new string[] { "PARDISO2_omp.dll", "libBoSSSnative_omp.so" };
                 break;
 
                 case Parallelism.SEQ:

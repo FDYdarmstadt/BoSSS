@@ -377,12 +377,12 @@ namespace ilPSP {
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                bool bkup = StdoutOnlyOnRank0;
-                StdoutOnlyOnRank0 = false;
+                tr.StdoutOnAllRanks();
+
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
                 tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}");
-
+                Debugger.Launch();
                 // ===========================
                 // Determine Number of Threads
                 // ===========================
@@ -540,17 +540,22 @@ namespace ilPSP {
                 LAPACK.ActivateOMP();
                 SetOMPbinding();
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetAffinity().ToConcatString("[", ",", "]"));
-                MultithreadPerformanceEval.ExecuteBenchmarks();
-                StdoutOnlyOnRank0 = bkup;
+                OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                
+               
             }
+
+            System.Environment.Exit(-88);
         }
 
         static Random rnd = new Random();
 
         private static void SetOMPbinding() {
+            // just hope that dynamic thread will avoid the deadlocks.
+            
             using (var tr = new FuncTrace("SetOMPbinding")) {
                 tr.InfoToConsole = true;
-                if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
+                /*if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -560,7 +565,7 @@ namespace ilPSP {
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
                     MKLservice.Dynamic = true;
-                } else {
+                } else*/ {
                     int[] OpenMPcpuIdx;
 
                     int L = DedicatedCPUsForThisRank.Count();
@@ -587,10 +592,16 @@ namespace ilPSP {
 
                     //tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
-                    MKLservice.BindOMPthreads(OpenMPcpuIdx);
+                    if(OMPbindingStrategy == null) {
+                        OMPbindingStrategy = OnlinePerformanceMeasurement.FindBestOMPstrategy(OpenMPcpuIdx);
+                    }
+                    MKLservice.BindOMPthreads(OpenMPcpuIdx, OMPbindingStrategy.Value);
                 }
             } 
+            
         }
+
+        static OMPbindingStrategy? OMPbindingStrategy;
 
    
         /// <summary>
