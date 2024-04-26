@@ -1235,6 +1235,31 @@ namespace ilPSP {
 
 
         /// <summary>
+        /// Creates a n-dimensional array with all the possible combinations of elements in set x
+        /// </summary>
+        /// <remarks>increments with the order from the lowest to the highest dim </remarks>
+        public static MultidimensionalArray CreateCartesianPairProduct(double[] x, int n) {
+            if (n < 0)
+                throw new ArgumentOutOfRangeException();
+
+            int numberOfCombinations = (int)Math.Pow(x.Length,n); 
+            var r = Create(numberOfCombinations, n);
+
+            for (int i = 0; i < numberOfCombinations; i++) {
+                // Write i in base-(x.Length) notation and and assign the element of x w.r.t. each digit (last digit to first dimension).
+                // e.g. x.Length=3, d=2, i=0: base-2 notation= 0 0 => r[i,0]=x[0],  r[i,1]=x[0]
+                // e.g. x.Length=3, d=2, i=1: base-2 notation= 0 1 => r[i,0]=x[1],  r[i,1]=x[0]
+                int temp = i;
+                for (int j = 0; j < n; j++) {
+                    r[i, j] = x[temp % x.Length]; //assign the remainder-th element into i in component j
+                    temp /= x.Length;             //pass the division for the next dimension
+                }
+            }
+
+            return r;
+        }
+
+        /// <summary>
         /// Creates a wrapper for the given one-dimensional array. That is,
         /// the result will be a shallow 'copy' of
         /// <paramref name="wrappedArray"/>.
