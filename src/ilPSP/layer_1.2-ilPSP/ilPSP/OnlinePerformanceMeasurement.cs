@@ -74,7 +74,7 @@ namespace ilPSP {
             ExeCount++;
                 
             using (var tr = new FuncTrace("ExecuteBenchmarks")) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 foreach (var b in AllBenchmarks) {
                     if (Log.BenchResults == null)
                         Log.BenchResults = new Dictionary<string, List<double>>();
@@ -296,7 +296,7 @@ namespace ilPSP {
         /// </summary>
         static double MeasureAcceleration(Ibench gb) {
             using (var tr = new FuncTrace("MeasureAcceleration")) {
-                tr.InfoToConsole = false; 
+                //tr.InfoToConsole = false; 
                 if (Environment.OpenMPenabled == false || Environment.NumThreads <= 1) {
                     return -1;
                 }

@@ -290,7 +290,7 @@ namespace ilPSP.Utils {
         /// </summary>
         public static int SetKMP_AFFINITYfromCCPVar(int NumThreads) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 // Check if CCP_AFFINITY is defined and defined on all ranks
                 // =========================================================
 
