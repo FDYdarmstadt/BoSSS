@@ -3060,6 +3060,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual void ProfilingLog() {
             if (OnlineProfiling == null)
+                //OnlineProfiling = new OnlineProfiling(this.Control);
                 return; // for some reason (i.e., because only Dispose was called()) not initialized yet
             ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
             OnlineProfiling.AppEndTime = DateTime.Now;

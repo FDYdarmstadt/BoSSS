@@ -635,7 +635,7 @@ namespace ilPSP {
 
                     if(OMPbindingStrategy == null) {
                         OMPbindingStrategy = OnlinePerformanceMeasurement.FindBestOMPstrategy(OpenMPcpuIdx, out DisableOpenMP_becauseIsSlow);
-                        
+                        OnlinePerformanceMeasurement.Log.OMPbindingStrategy = OMPbindingStrategy.Value;
                     }
 
                     if (DisableOpenMP_becauseIsSlow) {
