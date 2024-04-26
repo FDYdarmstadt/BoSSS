@@ -292,7 +292,7 @@ namespace ilPSP {
         /// </summary>
         static double MeasureAcceleration(Ibench gb) {
             using (var tr = new FuncTrace("MeasureAcceleration")) {
-                tr.InfoToConsole = true; 
+                tr.InfoToConsole = false; 
                 if (Environment.OpenMPenabled == false || Environment.NumThreads <= 1) {
                     return -1;
                 }
@@ -301,9 +301,9 @@ namespace ilPSP {
 
 
 
-                Console.WriteLine($" ---- {gb.Name} serial ");
+                
                 var SerialTimes = gb.DoSerial();
-                Console.WriteLine($"                {SerialTimes.avgTime} sec");
+                tr.Info($"serial benchmark {gb.Name} : {SerialTimes.avgTime} sec");
 
 
                 //MKLservice.SetNumThreads(NumThreads);
@@ -326,9 +326,8 @@ namespace ilPSP {
                 Console.WriteLine();
                 */
 
-                Console.WriteLine($" ---- {gb.Name} serial ");
                 var ParallelTimes = gb.DoParallel();
-                Console.WriteLine($"                {ParallelTimes.avgTime} sec");
+                tr.Info($"parallel benchmark {gb.Name} : {ParallelTimes.avgTime} sec");
 
                 double Accel = SerialTimes.avgTime / ParallelTimes.avgTime; // kleine parallele Laufzeit == gut => große `Accel`
                 double RelAccel = Accel / NumThreads;
