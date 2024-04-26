@@ -192,7 +192,15 @@ namespace ilPSP.Utils {
             return ret;
         }
 
-        public static QuadScheme GetVolumeQuadratureRules() {
+        public static QuadScheme GetVolumeQuadratureRules(int dim, int q, int[] lengths, double[] x, double[] y) {
+
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(dim, q, lengths, x, y);
+            QuadScheme ret = new QuadScheme(retC);
+            retC.FreeMemory();
+            return ret;
+        }
+
+        public static QuadScheme GetVolumeQuadratureRulesTest() {
 
             // Hardcoded example values
             // Define points_1dy array
