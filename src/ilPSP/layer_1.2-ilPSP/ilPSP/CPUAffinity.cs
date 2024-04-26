@@ -42,6 +42,26 @@ namespace ilPSP.Utils {
             return ret;
         }
 
+        /// <summary>
+        /// Returns the list of CPU's to which the current process is assigned to;
+        /// Driver which calls either the respective Linux or Windows API functions.
+        /// </summary>
+        public static void SetAffinity(IEnumerable<int> CPUlist) {
+            int NumProcs;
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                CPUAffinityWindows.SetAffinity(CPUlist);
+                
+            } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
+                Console.WriteLine("not implementd");
+            } else {
+                throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
+            }
+
+         
+        }
+
+
+
         static public int TotalNumberOfCPUs {
             get {
                 if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
@@ -183,7 +203,7 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// Configuration of OpenMP Environment variable `OMP_PLACES` to a given CPU affinity.
+        /// Configuration of OpenMP Environment variable `KMP_AFFINITY` (Intel-OpenMP specific) to a given CPU affinity.
         /// </summary>
         /// <param name="iThreads">number of threads on MPI rank</param>
         /// <param name="CPUlist">e.g., return value from <see cref="GetAffinity"/></param>
