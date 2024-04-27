@@ -282,7 +282,7 @@ namespace CutCellQuadrature {
             foreach (double w in quadVol.weights)
                 totVol += w;
 
-            Console.WriteLine("Vol: " + totVol);
+            Console.WriteLine("Surf: " + totVol);
 
 
             //callAlgoim();
@@ -386,7 +386,7 @@ namespace CutCellQuadrature {
              */
 
             // Export options
-            int plotSuperSampling = 3;
+            int plotSuperSampling = 0;
             bool logVolumeNodes = true;
             int logVolumeNodes_selectedCell = -1;
             bool logSurfaceNodes = false;
@@ -396,7 +396,7 @@ namespace CutCellQuadrature {
             // Quadrature variant
 
             Modes mode = Modes.Algoim;
-            int[] orders = new int[] { 7};
+            int[] orders = new int[] { 2,3,4,5,6,7,8,9};
 
             //Modes mode = Modes.HMFClassic;
             //int[] orders = new int[] { 3, 4, 5, 6, 7, 8 };
