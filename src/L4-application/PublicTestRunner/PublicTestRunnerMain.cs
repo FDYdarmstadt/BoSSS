@@ -1120,6 +1120,7 @@ namespace PublicTestRunner {
                                                 int rnk = 0;
                                                 foreach (var orig in sourceFiles) {
                                                     profilings[rnk] = OnlineProfiling.Deserialize(File.ReadAllText(orig));
+                                                    rnk++;
                                                 }
 
                                                 if (DetectSlowBenchmark(profilings, out _))
