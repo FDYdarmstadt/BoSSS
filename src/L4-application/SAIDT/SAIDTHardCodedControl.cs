@@ -161,7 +161,7 @@ namespace SAIDT {
                 c.LevelSetTwoInitialValue = x => x[0] - 0.1 - 0.7 * x[1] + x[1] * x[1] - 0.7 * x[1] * x[1] * x[1];
             }
             #endregion
-            c.GetInitialValue = GetInitialValue.OneFullNewtonStep;
+            c.GetInitialValue = GetInitialValue.FromFunctionPerSpecies;
             Func<double, double> exactShock = t => t*t*t-3.0/2.0*t*t+0.5*t+0.25;
             c.InitialValueFunctionsPerSpecies.Clear();
             c.InitialValueFunctionsPerSpecies.Add("L", x => exactShock(x[1])-x[0]  > 0 ? 1 : 0);
@@ -208,7 +208,10 @@ namespace SAIDT {
             double xMax = 1.0;
             double yMin = 0;
             double yMax = 1.0;
-            
+            c.GetInitialValue = GetInitialValue.FromFunctionPerSpecies;
+            c.InitialValueFunctionsPerSpecies.Clear();
+            c.InitialValueFunctionsPerSpecies.Add("L", X => X[0] < 0.25 + 0.5 * X[1]? 1 :0);
+            c.InitialValueFunctionsPerSpecies.Add("R", X => X[0] < 0.25 + 0.5 * X[1] ? 1 : 0);
 
             c.LevelSetGridFunc = delegate {
                 double[] xNodes;
@@ -244,7 +247,7 @@ namespace SAIDT {
             c.OptiLevelSetDegree = LSDegree;
             c.LevelSetDegree = LSDegree;
             if(optiLevelSetType == OptiLevelSetType.SpecFemField) {
-                c.LevelSetDegree = LSDegree+1;
+                c.LevelSetDegree = LSDegree*2;
             }
             c.SessionName = string.Format("SAIDT-J{0}_p{1}_q{2}_{3}_{4}_isFarConfig{5}", numOfCellsX*numOfCellsY, dgDegree, LSDegree, optiLevelSetType, meritFunctionType,isFarConfig);
             return c;
