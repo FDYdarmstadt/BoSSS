@@ -18,6 +18,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static BoSSS.Foundation.XDG.Quadrature.HMF.LineAndPointQuadratureFactory;
 using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
+using static BoSSS.Foundation.XDG.Quadrature.SayeSquare;
 
 namespace BoSSS.Foundation.XDG.Quadrature {
 
@@ -55,6 +56,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             public RefElement RefElement => m_Owner.refElement;
 
+            int spaceDim => RefElement.SpatialDimension;
+
+
             public LevelSetTracker.LevelSetData lsData => m_Owner.lsData;
 
             public int[] GetCachedRuleOrders() {
@@ -73,7 +77,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 List<ChunkRulePair<QuadRule>> ret = new List<ChunkRulePair<QuadRule>>();
 
                 foreach (Chunk chunk in mask) {
-                    ret.Add(GetChunkRulePair(chunk));
+                    foreach (int cell in chunk.Elements) {
+                        var quadRule = calculateLSonCell(cell, RequestedOrder);
+                        //Algoim.GetVolumeQuadratureRules()
+                        ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
+
+                    }
                 }
 
                 //    quadRule.Nodes =;
@@ -86,43 +95,46 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             }
 
-            private ChunkRulePair<QuadRule> GetChunkRulePair(Chunk chunk) {
-                QuadRule quadRule = new QuadRule();
+            private IEnumerable<IChunkRulePair<QuadRule>> GetChunkRulePair(Chunk chunk, int RequestedOrder) {
+                List<ChunkRulePair<QuadRule>> ret = new List<ChunkRulePair<QuadRule>>();
+
+                //QuadRule quadRule = new QuadRule();
 
 
                 foreach (int cell in chunk.Elements) {
-                    var q = calculateLSonCell(cell);
+                    var quadRule = calculateLSonCell(cell, RequestedOrder);
                     //Algoim.GetVolumeQuadratureRules()
-
-                    quadRule = q;
+                    ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(chunk.i0), quadRule));
 
                 }
 
-                return new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(chunk.i0), quadRule);
+                return ret;  ;
 
             }
 
-            private QuadRule calculateLSonCell(int j0) {
-                double[] points = GenericBlas.Linspace(-1, 1, 3); //testing
-
-                MultidimensionalArray combinations = MultidimensionalArray.Create(points.Length * points.Length, 2);
-                combinations.SetAll(-1);
-
-                // Fill the array with all combinations of the points array
-                int index = 0;
-                for (int j = 0; j < points.Length; j++) {
-                    for (int i = 0; i < points.Length; i++) {
-                        combinations[index, 0] = points[i];
-                        combinations[index, 1] = points[j];
-                        //Console.WriteLine("combinations[" + index + ", 0]: " + combinations[index, 0]);
-                        //Console.WriteLine("combinations[" + index + ", 1]: " + combinations[index, 1]);
-
-                        index++;
+            public class ChebyshevPoints {
+                public static double[] Generate(int n) {
+                    if (n < 3) n = 3; // Ensure there are at least three points
+                    double[] points = new double[n];
+                    for (int i = 0; i < n; i++) {
+                        points[i] = Math.Cos(Math.PI * (2 * i + 1) / (2 * n));
                     }
+                    return points;
                 }
-                combinations.SaveToTextFile("combds.txt");
+            }
 
-                double[] x = new double[points.Length+ points.Length];
+            private QuadRule calculateLSonCell(int j0, int RequestedOrder) {
+                int n = (RequestedOrder + 3) ;
+                double[] points = GenericBlas.Linspace(-1, 1, Math.Max( n,3)); //testing
+
+                //double[] points = ChebyshevPoints.Generate(n);
+
+
+                int numberOfCombinations = (int)Math.Pow(points.Length, spaceDim); //Cartesian pair product for the points
+
+                MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(points, spaceDim);
+
+                //combinations.SaveToTextFile("combs.txt");
 
 
                 NodeSet NS = new NodeSet(RefElement, combinations, false);
@@ -139,26 +151,36 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 double[] y = new double[ret.Length];
 
                 for (int i = 0; i < ret.Length; i++) 
-                    y[i] = ret[0,i]; 
+                    y[i] = ret[0,i];
 
+                double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
 
-                Array.Copy(points, 0, x, 0, points.Length);
-                Array.Copy(points, 0, x, points.Length, points.Length);
-                int[] sizes = new int[] { 3, 3 };
+                    //new double[points.Length + points.Length];
+                //Array.Copy(points, 0, x, 0, points.Length);
+                //Array.Copy(points, 0, x, points.Length, points.Length);
+                //int[] sizes = new int[] { 3, 3 };
+                int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
 
-                var qsExample = Algoim.GetVolumeQuadratureRulesTest();
-
-                var qs = Algoim.GetVolumeQuadratureRules(2, 5, sizes, x, y);
+                var qs = Algoim.GetVolumeQuadratureRules(spaceDim, RequestedOrder, sizes, x, y);
+                //qs.OutputQuadratureRuleAsVtpXML("bosssj" + j0 + ".vtp");
                 //Console.WriteLine("qs.length = " + qs.length);
                 QuadRule quadRule = QuadRule.CreateEmpty(RefElement,qs.length, qs.dimension);
 
-                int ind = 0;
+                //for (int i = 0; i < q.length; i++) {
+                //    writer.WriteString($"{q.nodes[i * dim]} {q.nodes[i * dim + 1]} {(dim == 3 ? q.nodes[i * dim + 2] : 0.0)}\n");
+                //}
+
+                //int ind = 0;
                 for (int row = 0; row < qs.length; row++) {
                     quadRule.Weights[row] = qs.weights[row];
 
-                    for (int d = 0; d < qs.dimension; d++, ind++) // map 1d array back to 2d
-                    quadRule.Nodes[row, d] = qs.nodes[ind];
+                    for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
+                        int ind = row * qs.dimension +d;
+                        quadRule.Nodes[row, d] = qs.nodes[ind];
+                        //Console.WriteLine($"quadRule.Nodes[{row}, {d}] = qs.nodes[{ind}] = {qs.nodes[ind]} ");
+                    }
                 }
+                //quadRule.OutputQuadratureRuleAsVtpXML("quadRule" + j0 + ".vtp");
                 quadRule.Nodes.LockForever();
                 return quadRule;
             }
