@@ -73,6 +73,8 @@ namespace BoSSS.Application.DerivativeTest {
             DerivativeTestMain.GRID_FILE = null;
             Quadrature_Settings.CHUNK_LIMIT = bulksize_limit;
             Quadrature_Settings.ENABLE_MULTITHREAD_CHECKING = true;
+            Quadrature_Settings.MULTITHREAD_CHECKING_ABS_THRESHOLD = 1e-12;
+            Quadrature_Settings.MULTITHREAD_CHECKING_REL_THRESHOLD = 1e-10;
             DerivativeTestMain.TestFDJacobian = cache_size >= 1024 * 1024;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
