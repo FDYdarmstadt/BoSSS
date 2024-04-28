@@ -279,6 +279,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             using(XNSERO p = new XNSERO()) {
 
                 ilPSP.Environment.DisableOpenMP();
+                ilPSP.Environment.InitThreading(false, 1);
+
 
                 XNSERO_Control ctrl = XNSEROTest_Control.TestParticleInShearFlow();
                 p.Init(ctrl);
@@ -322,6 +324,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             using(XNSERO p = new XNSERO()) {
 
                 ilPSP.Environment.DisableOpenMP();
+                ilPSP.Environment.InitThreading(false, 1);
 
                 XNSERO_Control ctrl = XNSEROTest_Control.TestParticleInShearFlow_Phoretic(k: 2);
                 //var tempDB = CreateTempDatabase();
