@@ -764,22 +764,26 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             public TimeSpan RunTime {
                 get {
-                    if (m_RunTime != null)
-                        return m_RunTime.Value;
-
-                    var s = Status;
-
-                    if(s == JobStatus.FailedOrCanceled || s == JobStatus.InProgress) {
-                        m_RunTime = m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
-                        return m_RunTime.Value;
-                    }
-
-                    if(s == JobStatus.InProgress) {
-                        return m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
-                    }
-
-                    return new TimeSpan(0);
+                    return UpdateRunTime(Status);
                 }
+            }
+
+            private TimeSpan UpdateRunTime(JobStatus s) {
+                if (m_RunTime != null)
+                    return m_RunTime.Value;
+
+                
+
+                if (s == JobStatus.FailedOrCanceled || s == JobStatus.InProgress) {
+                    m_RunTime = m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                    return m_RunTime.Value;
+                }
+
+                if (s == JobStatus.InProgress) {
+                    return m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                }
+
+                return new TimeSpan(0);
             }
 
 
@@ -858,6 +862,7 @@ namespace BoSSS.Application.BoSSSpad {
                                 RememberCache(bpc_status, ExitCode);
                         }
 
+                        tr.Info($"Deployment: runtime = {UpdateRunTime(bpc_status)}");
                         tr.Info($"Deployment: {bpc_status}, exit code = {ExitCodeCache}");
                         return bpc_status;
                     }
