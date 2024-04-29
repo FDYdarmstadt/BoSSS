@@ -34,7 +34,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for (int i = 0; i < NoOfNodes; i++) {
                 double x = X[i, 0];
                 double y = X[i, 1];
-                phi[i] = y - yCenter + ySemiAxis * Math.Sqrt(1 - x.Pow2() / xSemiAxis.Pow2());
+                phi[i] = y - yCenter +  Math.Sqrt(ySemiAxis.Pow2() * (1 - x.Pow2() / xSemiAxis.Pow2()));
             }
         }
 
@@ -110,14 +110,32 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     throw new ApplicationException("level-set mismatch");
                 }
 
-                double forceX = ComputeForceX(levelSet, ParameterVarFields);
-                tr.Info("forceX = " + forceX);
+                var LsTrk = levelSet.Tracker;
+                int D = LsTrk.GridDat.SpatialDimension;
+                SinglePhaseField[] meanVelocity = D.ForLoop(
+                    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
+                    );
+
+                VectorField<SinglePhaseField> LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(
+                    d => new SinglePhaseField(levelSet.DGLevelSet.Basis)
+                    ));
+                LevSetGradient.Clear();
+                LevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+
+                IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSet.LevelSetIndex);
+                IEnumerable<SpeciesId> requiredSpeciesId = requiredSpecies.Select(spc => LsTrk.GetSpeciesId(spc));
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(requiredSpeciesId, m_HMForder, 1).XQuadSchemeHelper;
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, LsTrk.Regions.GetCutCellMask());
+                
+
+                //double forceX = ComputeForceX(levelSet, ParameterVarFields);
+                //tr.Info("forceX = " + forceX);
 
                 //Parameterized_TimeStepper.UpdateParameterizedLevelSet();
 
                 var quadScheme = levelSet.Tracker.GetXDGSpaceMetrics(levelSet.Tracker.SpeciesIdS, this.m_HMForder).XQuadSchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
 
-                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter, levelSet.CGLevelSet.GridDat, quadScheme, m_HMForder);
+                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, meanVelocity, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter, levelSet.CGLevelSet.GridDat, quadScheme, m_HMForder);
 
                 ls.xSemiAxis = Param1[0];
                 ls.ySemiAxis = Param1[1];
@@ -159,18 +177,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         }
 
                         var Normals = LsTrk.DataHistories[levelSet.LevelSetIndex][0].GetLevelSetNormals(QR.Nodes, j0, Length);
+                        
 
                         for (int j = 0; j < Length; j++) { // loop over cells
                             for (int k = 0; k < QR.NoOfNodes; k++) { // loop over nodes
 
                                 double acc = 0;
                                 for (int d = 0; d < D; d++) {
-                                    acc += VelocityValues[j, k, d] * Normals[j, k, d];//Normals[j, k, d]; LevelSetGradValues[j, k, d]
+                                    acc += VelocityValues[j, k, 1];//Normals[j, k, d]; LevelSetGradValues[j, k, d]
                                                                                                  //acc1 += LevelSetGradValues[j, k, d];
                                 }
                                 EvalResult[j, k, 0] = acc;
                             }
                         }
+                        
 
                         //EvalResult.ExtractSubArrayShallow(-1, -1, 0).Multiply(1.0,
                         //    VelocityValues, Normals, 0.0, "jk", "jkd", "jkd");
