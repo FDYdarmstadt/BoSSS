@@ -1231,6 +1231,51 @@ namespace PublicTestRunner {
                     OtherStatCount++;
                 }
 
+                // summary table
+                try {
+                    var resTable = new Dictionary<string, IList<object>>();
+                    const string jn = "JobName";
+                    const string tn = "TestName";
+                    const string st = "Status";
+                    const string rt = "RunTime";
+                    const string nd = "Ndeploy";
+                    const string os = "OMPstrat";
+                    
+
+                    resTable.Add(jn, new List<object>());
+                    resTable.Add(tn, new List<object>());
+                    resTable.Add(st, new List<object>());
+                    resTable.Add(rt, new List<object>());
+                    resTable.Add(nd, new List<object>());
+                    resTable.Add(os, new List<object>());
+
+                    foreach (var jj in AllOpenJobs) {
+                        resTable[jn].Add(jj.job.Name);
+                        resTable[tn].Add(jj.testname);
+                        resTable[st].Add(jj.job.Status);
+                        resTable[rt].Add(jj.job.LatestDeployment.RunTime.TotalSeconds);
+                        resTable[nd].Add(jj.job.AllDeployments.Count);
+
+                        string osString;
+                        try {
+                            osString = AllFinishedJobs.FirstOrDefault(jx => jx.testname == jj.testname).profilings?.Select(prf => prf?.OnlinePerformanceLog?.OMPbindingStrategy).ToConcatString("", "-", "");
+                            if (osString == null)
+                                osString = "NIX";
+                        } catch (Exception e) {
+                            Console.WriteLine(e);
+                            osString = "NIX";
+                        }
+                        resTable[os].Add(osString);
+                    }
+
+                    resTable.SaveToCSVFile("ResultTable.csv");
+                    File.Copy("ResultTable", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now + ".csv")
+                } catch (Exception e) {
+                    Console.WriteLine($"{e.Message}, {e.StackTrace}");
+                }
+
+
+
                 // very final message:
                 if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine("All tests/jobs finished successfully.");
