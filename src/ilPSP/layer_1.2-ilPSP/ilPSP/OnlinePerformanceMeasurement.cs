@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 
 namespace ilPSP {
 
@@ -337,6 +338,10 @@ namespace ilPSP {
                 double RelAccel = Accel / NumThreads;
                 tr.Info($"Parallel acceleration of {gb.Name} using {NumThreads}: {Accel}, relative factor {RelAccel}");
 
+                
+                //Tracer.Current.UpdateTime();
+                //MethodCallRecordExtension.GetMostExpensiveCalls(Console.Error, Tracer.Root);
+                //Console.Error.WriteLine(Tracer.Root.TimeExclusive);
                 return RelAccel;
             }
         }
