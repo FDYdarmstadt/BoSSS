@@ -249,7 +249,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// Timout for job-manager run
         /// </summary>
-        public static double TimeOutSec = 24 * 60 * 60; // 24 hours;
+        public static double TimeOutSec = 450 * 60; // ;
 
 
         /// <summary>
@@ -1081,9 +1081,9 @@ namespace PublicTestRunner {
 
                                     // message:
                                     if (s == JobStatus.FinishedSuccessful)
-                                        Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
+                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime +  ") // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
-                                        Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
+                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime +  ") // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
 
 
 
@@ -1214,19 +1214,19 @@ namespace PublicTestRunner {
                 Console.WriteLine("--- Test Results -----------------------------------------------------------------------------------");
 
                 int SuccessfulFinishedCount = 0;
-                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
-                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname}");
+                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) { // all success 
+                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname}");
                     SuccessfulFinishedCount++;
                 }
 
                 int OtherStatCount = 0;
-                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) {
-                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.LatestDeployment.DeploymentDirectory.FullName}");
+                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) { // all failed
+                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname} at {jj.job.LatestDeployment.DeploymentDirectory.FullName}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
-                foreach(var jj in AllOpenJobs) {
-                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.Status}");
+                foreach(var jj in AllOpenJobs) { // all still running
+                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname} at {jj.job.Status}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
