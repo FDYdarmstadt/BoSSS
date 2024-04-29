@@ -145,11 +145,11 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public double xSemiAxis0 => 10 * L;
 
-        public double ySemiAxis0 => 0;
+        public double ySemiAxis0 => 1e-6;
 
         public double yCenter0 => L - zi0;
         public Func<double[], double, double> GetPhi() {
-            return (X, t) => X[1] - yCenter0 + qv / (rho_B * h_vap) * t;
+            return (X, t) =>  X[1] - yCenter0 + qv / (rho_B * h_vap) * t;
         }
 
         //public Func<double[], double, double> GetPhi() {

@@ -255,14 +255,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 1, bool startUp = false, bool symmetry = true, string _DbPath = null) {
+        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 1, bool startUp = true, bool symmetry = true, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
-            _DbPath = @"\\dc3\userspace\shishkina\cluster\\CapillaryRise_0";
+           // _DbPath = @"\\dc3\userspace\shishkina\cluster\\CapillaryRise_0";
 
             // basic database options
             // ======================
@@ -324,7 +324,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // the gaseous phase should be close to air
             //C.PhysicalParameters.rho_B = 1.204e-6;  // kg / cm^3
             //C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm s
-
             double g = 0;
             double R = 0;
             double H = 0;
@@ -572,9 +571,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            double h0 = 1e-2;
+            double h0 = 2e-2;
+            double xSemiAxis0 = R;
+            double ySemiAxis0 = 1e-2;
+            double yCenter0 = h0;
 
-            Func<double[], double> PhiFunc = (X => X[1] - h0);
+            Func<double[], double> PhiFunc = (X => X[1] - yCenter0 + (ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt());
 
             if(startUp) {
                 C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -661,7 +663,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =========
             #region levelset
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
+            if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {     
+                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl(xSemiAxis0, ySemiAxis0, yCenter0);
+            }
 
             //int Nsp = 256;
             //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, Nsp, R, X => h0, R/(double)Nsp);
@@ -684,6 +689,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Endtime = (startUp) ? Math.Max(Math.Sqrt(2 * R / g), 2 * R * C.PhysicalParameters.mu_A / C.PhysicalParameters.Sigma) * 4.0 : (t_startUp + t_end);
             C.NoOfTimesteps = (int)(C.Endtime / C.dtMin);
             C.saveperiod = 100;
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
 
             #endregion
 

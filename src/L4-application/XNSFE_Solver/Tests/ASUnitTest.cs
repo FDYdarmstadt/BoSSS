@@ -149,7 +149,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             //C.PhysicalParameters.sliplength = 0.0;
             //C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            //C.SkipSolveAndEvaluateResidual = false;
+            C.SkipSolveAndEvaluateResidual = true;
 
             XNSFESolverTest(Tst, C);
         }

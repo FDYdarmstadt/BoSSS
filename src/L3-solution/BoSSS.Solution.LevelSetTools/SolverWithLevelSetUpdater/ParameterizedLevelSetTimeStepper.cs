@@ -40,24 +40,26 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             this.Timestepper = Control.Timestepper;
         }
 
-        public double[] MoveLevelSet(double dt, double time, double forceX, double xSemi0, double ySemi0, double yCenter0, IGridData gdat, CellQuadratureScheme levSetQuadScheme, int quadOrder) {
+        public double[] MoveLevelSet(double dt, double time, SinglePhaseField[] meanVelocity, double xSemi0, double ySemi0, double yCenter0, IGridData gdat, CellQuadratureScheme levSetQuadScheme, int quadOrder) {
 
             double[] CoeffValues0 = new double[3] { 0, 0, 0 };
             double[] ParamValues0 = new double[3] { xSemi0, ySemi0, yCenter0 };
-            double[] LowerBoundaryValues = new double[3] { -10, -10, -10 };
-            double[] UpperBoundaryValues = new double[3] { 10, 10, 10 };
+            double[] LowerBoundaryValues = new double[3] { -1, -5, -5 };
+            double[] UpperBoundaryValues = new double[3] { 1, 5, 5 };
 
             var myf = new MyRealF(levSetQuadScheme, gdat, quadOrder);
 
 
-            var CoeffValues1 = GradientMinimizationMethod.Minimi(CoeffValues0, ParamValues0, myf.F, NumericalGradient.Differentiate(myf.F), LowerBoundaryValues, UpperBoundaryValues, dt, time, forceX);
+            var CoeffValues1 = GradientMinimizationMethod.Minimi(CoeffValues0, ParamValues0, myf.F, NumericalGradient.Differentiate(myf.F), LowerBoundaryValues, UpperBoundaryValues, dt, time, meanVelocity);
 
             double[] ParamValues1 = new double[CoeffValues1.Length];
             for (int i = 0; i < CoeffValues1.Length; i++) {
                  ParamValues1[i] = CoeffValues1[i] * dt + ParamValues0[i]; // Multiply each element by the scalar
+                 if ((ParamValues1[i] > UpperBoundaryValues[i]) || (ParamValues1[i] < LowerBoundaryValues[i])) {
+                    ParamValues1[i] = ParamValues0[i];
+                    CoeffValues1[i] = 0;
+                }
             }
-
-
             return ParamValues1;
         }
 
@@ -77,7 +79,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <param name="dt"></param>
         /// <param name="forceX"></param>
         /// <returns></returns>
-        public static double[] Minimi(double[] InitialValueForCoeff, double[] EllipsePar0, Func<double[], double[], double, double, double, double> F, Func<double[], double[], double, double, double, double[]> Differentiate, double[] LowerSafeguard, double[] UpperSafeguard, double dt, double time, double forceX) {
+        public static double[] Minimi(double[] InitialValueForCoeff, double[] EllipsePar0, Func<double[], double[], double, double, SinglePhaseField[], double> F, Func<double[], double[], double, double, SinglePhaseField[], double[]> Differentiate, double[] LowerSafeguard, double[] UpperSafeguard, double dt, double time, SinglePhaseField[]  meanVelocity) {
 
             int L = InitialValueForCoeff.Length;
             double[] CoeffOldIter = new double[L];
@@ -87,17 +89,17 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 CoeffNewIter[i] = InitialValueForCoeff[i];
             }
             double[] derivOldIter = new double[L];
-            double[] derivNewIter = Differentiate(CoeffOldIter, EllipsePar0, dt, time, forceX);
-            double eps = 1e-20;
+            double[] derivNewIter = Differentiate(CoeffOldIter, EllipsePar0, dt, time, meanVelocity);
+            double eps = 1e-16;
             double lambda = 0.001;
             Console.WriteLine("iter {0}: [{1}]", 0, string.Join(", ", CoeffOldIter));
 
-            double funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, forceX);
+            double funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
             double funcOldIter = 0.0;
             double numerator = 0.0;
             double denumerator = 0.0;
             double exitCriteria = 0.0;
-            int itermax = 5000;
+            int itermax = 150000;
 
             for (int i = 1; i < itermax; ++i) {
                 //Update Schema
@@ -107,10 +109,10 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                     derivOldIter[d] = derivNewIter[d];
                     CoeffNewIter[d] -= lambda * derivOldIter[d];
                 }
-                funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, forceX);
+                funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
 
                 //Lambda and exit criteria calculation
-                derivNewIter = Differentiate(CoeffNewIter, EllipsePar0, dt, time, forceX);
+                derivNewIter = Differentiate(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
                 numerator = 0.0;
                 denumerator = 0.0;
                 exitCriteria = 0.0;
@@ -132,6 +134,9 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 if (i == itermax) {
                     throw new ApplicationException("Increase the number of iterations for the gradient method!");
                 }
+                //if (CoeffNewIter[0] < 0) {
+                //    CoeffNewIter[0]=0;
+                //}
             }
 
             Console.WriteLine($"Minimum of function: {funcNewIter} at  X value: [{string.Join(", ", CoeffNewIter)}]");
@@ -147,9 +152,9 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// </summary>
         /// <param name="F"></param>
         /// <returns></returns>
-        static public Func<double[], double[], double, double, double, double[]> Differentiate(Func<double[], double[], double, double, double, double> F) {
+        static public Func<double[], double[], double, double, SinglePhaseField[], double[]> Differentiate(Func<double[], double[], double, double, SinglePhaseField[], double> F) {
 
-            return delegate (double[] X, double[] EllPar0, double dt, double time, double forceX) {
+            return delegate (double[] X, double[] EllPar0, double dt, double time, SinglePhaseField[] meanVelocity) {
                 double gridStepSize = 1.0e-10;
                 int L = X.Length;
                 double[] dF_dX = new double[L];
@@ -171,7 +176,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                     XRight[i] += gridStepSize;
 
                     //Console.WriteLine($" {X[i ]}   {XRight[i ]} {XLeft[i]}");
-                    dF_dX[i] = 0.5 * (F(XRight, EllPar0, dt, time, forceX) - F(XLeft, EllPar0, dt, time, forceX)) / gridStepSize;
+                    dF_dX[i] = 0.5 * (F(XRight, EllPar0, dt, time, meanVelocity) - F(XLeft, EllPar0, dt, time, meanVelocity)) / gridStepSize;
                 }
                 return dF_dX;
             };
@@ -196,7 +201,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <param name="forceX"></param>
         /// <returns></returns>
         /// <exception cref="ArithmeticException"></exception>
-        public static double IntegralCalculation(double[] EllipseCoeff, double[] EllipsePar0, Func<double[], double[], double, double, double, double, double, double> f, double alphaMin, double alphaMax, double dt, double time, double forceX) {
+        public static double IntegralCalculation(double[] EllipseCoeff, double[] EllipsePar0, Func<double[], double[], double, double, double, double, double[], double> f, double alphaMin, double alphaMax, double dt, double time, double[] velocity) {
 
             Console.WriteLine($"IntegralCalculation {EllipseCoeff[0]},{EllipseCoeff[1]},{EllipseCoeff[2]} {alphaMin} {alphaMax} {stepNumber}");
             double a = EllipsePar0[0];
@@ -216,7 +221,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
             double funcForIntegration(double alpha) {
                 double gramDeter_alpha = gramDeter(alpha);
-                double q_alpha = f(EllipseCoeff, EllipsePar0, x(alpha), y(alpha), dt, time, forceX);
+                double q_alpha = f(EllipseCoeff, EllipsePar0, x(alpha), y(alpha), dt, time, velocity);
 
                 if (double.IsNaN(gramDeter_alpha) || double.IsInfinity(gramDeter_alpha) || double.IsInfinity(q_alpha) || double.IsInfinity(q_alpha))
                     throw new ArithmeticException($" {EllipseCoeff} {gramDeter_alpha}, {q_alpha}");
@@ -232,7 +237,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             }
 
             //var integral = integralResult * stepSize;
-            Console.WriteLine("integral = " + integralResult * stepSize);
+            Console.WriteLine("integral_simpson = " + integralResult * stepSize);
             return integralResult * stepSize;
         }
 
@@ -260,7 +265,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <param name="timeStep"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        static double f(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double force) {
+        static double f(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double[] velocity) {
 
             // double timeStep = 0.2;
             //double time0 = 0;
@@ -279,20 +284,16 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             //double term2 = EllipseCoeff[1] / EllipsePar0[0] * SquareRoot;
             //double term3 = EllipsePar0[1] * x.Pow2() * EllipseCoeff[0]  / ( EllipsePar0[0].Pow2() * SquareRoot);
 
-            if (EllipsePar0[1] == 0) {
-                double term1 = -EllipseCoeff[2];
-                double Grad = 1;
-                return term1 + force * Grad;
-            } else {
-                double SquareRoot = (EllipsePar0[1].Pow2() * (1 - x.Pow2() / EllipsePar0[0].Pow2())).Sqrt();
+            double SquareRoot = (EllipsePar0[1].Pow2() * (1 - x.Pow2() / EllipsePar0[0].Pow2())).Sqrt();
+            double numer =  EllipsePar0[1] * EllipseCoeff[1] * EllipsePar0[0] * (EllipsePar0[0].Pow2() - x.Pow2()) + x.Pow2() * EllipsePar0[1].Pow2() * EllipseCoeff[0];
+            double DerivFuncEllipse = -EllipseCoeff[2] + numer / (SquareRoot * EllipsePar0[0].Pow2() * EllipsePar0[0]);
+            double Gradx =  -EllipsePar0[1].Pow2() * x / (EllipsePar0[0].Pow2() * SquareRoot);
+            double Grady = 1;
+            //double Grad = (Gradx.Pow2() + Grady.Pow2()).Sqrt();
+            double res  = velocity[0] * Gradx + velocity[1] * Grady;
+            //Console.WriteLine($"forceX: {res} ");
+            return DerivFuncEllipse + res;
 
-                double term1 = -EllipseCoeff[2] + (EllipsePar0[1] * EllipseCoeff[1] * EllipsePar0[0] * (EllipsePar0[0].Pow2() - x.Pow2()) + x.Pow2() * EllipsePar0[0].Pow2() * EllipseCoeff[0]) / (SquareRoot * EllipsePar0[0].Pow2() * EllipsePar0[0]);
-                double Gradx = -EllipsePar0[1].Pow2() * x / (EllipsePar0[0].Pow2() * SquareRoot);
-                double Grady = 1.0;
-                double Grad = (Gradx.Pow2() + Grady.Pow2()).Sqrt();
-                return term1 + force * Grad;
-            }
-            
         }
         /// <summary>
         /// 
@@ -304,8 +305,8 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <param name="timeStep"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        static double fsqr(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double force) {
-            var fval = f(EllipseCoeff, EllipsePar0, x, y, timeStep, time, force);
+        static double fsqr(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double[] velocity) {
+            var fval = f(EllipseCoeff, EllipsePar0, x, y, timeStep, time, velocity);
             return fval * fval;
         }
 
@@ -317,7 +318,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <param name="dt"></param>
         /// <param name="forceX"></param>
         /// <returns></returns>
-        public double F(double[] EllipseCoeff, double[] EllipsePar0, double dt, double time, double forceX) {
+        public double F(double[] EllipseCoeff, double[] EllipsePar0, double dt, double time, SinglePhaseField[] meanVelocity) {
             
 
 
@@ -325,11 +326,16 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
             void VectorizedEvaluate(int i0, int Length, QuadRule rule, MultidimensionalArray EvalResult) {
                 var PhysicalNodes = gdat.GlobalNodes.GetValue_Cell(rule.Nodes, i0, Length);
+                var VelocityValues = MultidimensionalArray.Create(Length, rule.NoOfNodes, 2);
+                for (int d = 0; d < 2; d++) {
+                    meanVelocity[d].Evaluate(i0, Length, rule.Nodes, VelocityValues.ExtractSubArrayShallow(-1, -1, d));
+                }
                 for (int i = 0; i < Length; i++) {
                     for (int k = 0; k < rule.NoOfNodes; k++) {
                         double x = PhysicalNodes[i, k, 0];
                         double y = PhysicalNodes[i, k, 1];
-                        EvalResult[i, k, 0] = fsqr(EllipseCoeff, EllipsePar0, x, y, dt, time, forceX);
+                        double[] velocity = new double[] { VelocityValues[i, k, 0], VelocityValues[i, k, 1] };
+                        EvalResult[i, k, 0] = fsqr(EllipseCoeff, EllipsePar0, x, y, dt, time, velocity);
                     }
                 }
             }
@@ -348,10 +354,12 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             q.Execute();
 
             {
-                const double alphaMin = -Math.PI * 5 / 6;
-                const double alphaMax = -Math.PI / 6;
-                double TotalIntegral_RefVal = IntegrationOverEllipse.IntegralCalculation(EllipseCoeff, EllipsePar0, fsqr, alphaMin, alphaMax, dt, time, forceX);
-                Console.WriteLine(TotalIntegral_RefVal - TotalIntegral);
+                double angle = Math.Atan((3.0 / 16).Sqrt());
+                double alphaMin = -Math.PI + angle ;
+                double alphaMax = -angle;
+                //double TotalIntegral_RefVal = IntegrationOverEllipse.IntegralCalculation(EllipseCoeff, EllipsePar0, fsqr, alphaMin, alphaMax, dt, time, velocity);
+                Console.WriteLine($"integral_bosss: {TotalIntegral}");
+               // Console.WriteLine($"integral_diff: {TotalIntegral_RefVal - TotalIntegral}");
             }
 
             return TotalIntegral;

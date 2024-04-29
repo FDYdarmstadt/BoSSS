@@ -106,6 +106,21 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingViscosityJumpTest(3, vmode, CutCellQuadratureType);
         }
 #endif
+        /// <summary>
+        /// See <see cref="PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test"/>.
+        /// </summary>
+        [Test]
+        public static void CapillaryRiseTest() {
+
+            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194();
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
+            }
+            
+        }
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
