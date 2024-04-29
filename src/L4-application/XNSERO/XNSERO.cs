@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using NUnit.Framework;
 
 namespace BoSSS.Application.XNSERO_Solver {
     /// <summary>
@@ -41,11 +42,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="args"></param>
         static void Main(string[] args) {
             InitMPI();
-            TestProgram.TestStickyTrap();
+            //TestProgram.TestStickyTrap();
             //TestProgram.TestParticleParameter();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow_Phoretic();
-            //Assert.IsFalse(true, "remove me");
+            TestProgram.TestParticleInShearFlow_Phoretic();
+            Assert.IsFalse(true, "remove me");
             
             void KatastrophenPlot(DGField[] dGFields,string Tag) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);

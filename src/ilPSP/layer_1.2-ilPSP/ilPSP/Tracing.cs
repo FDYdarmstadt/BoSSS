@@ -542,7 +542,8 @@ namespace ilPSP.Tracing {
 
             int newDepht = MethodCallRecord.Pop_MethodCallrecord(this.Duration.Ticks, this.AllocatedMem, this.PeakMem, out var mcr);
             Tracer.Current.UpdateTime();
-            mcr.m_ActiveStopwatch = null;
+            Debug.Assert(mcr.m_ActiveStopwatch == null, "A popped MethodCallRecord is NOT supposed to have an active Stopwatch");
+            Debug.Assert(mcr.m_ActiveTicks == null, "A popped MethodCallRecord is NOT supposed to have active Ticks");
 
             if (DoLogging) {
                 

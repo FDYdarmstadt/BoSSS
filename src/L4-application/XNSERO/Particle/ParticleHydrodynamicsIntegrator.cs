@@ -73,6 +73,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             if (!CutCells.IsSubMaskOf(CellMask.GetFullMask(LevelSetTracker.GridDat))){
                 throw new Exception("Cut cell mask not a sub mask of full mask.");
             }
+
             {
                 XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId(FluidSpecies) }, RequiredOrder, 1).XQuadSchemeHelper;
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(1, CutCells);
@@ -101,12 +102,14 @@ namespace BoSSS.Application.XNSERO_Solver {
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                         for(int i = 0; i < Length; i++)
                             for(int d = 0; d < SpatialDim + 1; d++) {
+                                // I am quite sure that this way of using Neumair's summation is not working as intended
                                 forcesAndTorque[d] = ForceTorqueSummationWithNeumaierArray(forcesAndTorque[d], ResultsOfIntegration, Length, d);
                             }
                     }
                 ).Execute();
             }
             return tempForces = forcesAndTorque.CloneAs();
+
         }
 
         private static int GetSpeciesID(string FluidSpecies) {
