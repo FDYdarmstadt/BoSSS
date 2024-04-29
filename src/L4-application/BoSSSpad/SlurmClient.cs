@@ -342,7 +342,7 @@ namespace BoSSS.Application.BoSSSpad {
                         tr.Info("jobstatus is `" + (jobstatus??"Null") + "`");
                         if(jobstatus == null) {
                             tr.Info("returning `Unknown` state");
-                            return (JobStatus.Unknown, null);
+                            return (JobStatus.FailedOrCanceled, null); // `running.txt` exists, but no job known to SLURM: probably canceled.
                         }
 
                         switch(jobstatus.ToUpperInvariant()) {
