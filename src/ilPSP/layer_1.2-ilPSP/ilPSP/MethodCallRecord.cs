@@ -403,7 +403,7 @@ namespace ilPSP.Tracing {
                 long r = 0;
                 foreach (var c in Calls.Values) {
                     //if (!c.IgnoreForExclusive) {
-                    r += c.m_TicksSpentInMethod;
+                    r += c.TicksSpentInMethod;
                     //}
                 }
                 return r;
