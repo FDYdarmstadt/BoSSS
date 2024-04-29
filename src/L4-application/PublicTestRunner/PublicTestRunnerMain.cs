@@ -1269,7 +1269,7 @@ namespace PublicTestRunner {
                     }
 
                     resTable.SaveToCSVFile("ResultTable.csv");
-                    File.Copy("ResultTable", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now + ".csv")
+                    File.Copy("ResultTable", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now + ".csv"));
                 } catch (Exception e) {
                     Console.WriteLine($"{e.Message}, {e.StackTrace}");
                 }
