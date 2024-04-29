@@ -1851,7 +1851,7 @@ namespace PublicTestRunner {
             Console.WriteLine("ret b4 finalize = " + ret); 
             csMPI.Raw.mpiFinalize();
 
-            System.Environment.Exit(0);
+            System.Environment.Exit(ret);
 
             return ret;
         }
