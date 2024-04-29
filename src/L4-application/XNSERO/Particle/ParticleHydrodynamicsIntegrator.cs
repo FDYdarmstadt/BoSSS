@@ -112,6 +112,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         }
 
+
         private static int GetSpeciesID(string FluidSpecies) {
             int fluidSpeciesID;
             if(FluidSpecies.Length == 1)// save some ms by skipping the string comparison

@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -69,11 +70,14 @@ namespace BoSSS.Application.XNSERO_Solver {
                     CellMask CutCells = Particles[p].ParticleCutCells(Particles[0].LsTrk, AllCutCells);
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
                     double[] tempHydrodynamics = Particles[p].Motion.CalculateHydrodynamics(HydrodynamicIntegrator, CutCells, FluidSpecies, dt);
+                    hydrodynamics.CheckForNanOrInfV(messageprefix: "Hydrodynamic forces of particle " + p);
                     for (int d = 0; d < SpatialDimension + 1; d++) 
                         hydrodynamics[offset + d] = tempHydrodynamics[d];
                 }
 
                 hydrodynamics = hydrodynamics.MPISum();
+
+                hydrodynamics.CheckForNanOrInfV(messageprefix: "Hydrodynamic forces after summation");
 
                 // Gravity, has to be added after MPISum()!
                 for (int p = 0; p < Particles.Length; p++) {
@@ -85,12 +89,16 @@ namespace BoSSS.Application.XNSERO_Solver {
                     }
                 }
 
+                hydrodynamics.CheckForNanOrInfV(messageprefix: "Hydrodynamic forces after gravity");
+
                 // Relaxation
-                if (hydrodynamics.Sum() > 1e-10){
+                if (hydrodynamics.Sum() > 1e-10) {
                     double omega = Particles[0].Motion.RelaxationParameter;
                     hydrodynamics = HydrodynamicsRelaxation(hydrodynamics, ref omega);
-                    Particles[0].Motion.RelaxationParameter = omega; 
+                    Particles[0].Motion.RelaxationParameter = omega;
                 }
+
+                hydrodynamics.CheckForNanOrInfV(messageprefix: "Hydrodynamic forces after relaxation");
 
                 // Write to single particles.
                 for (int p = 0; p < Particles.Length; p++) {
@@ -100,7 +108,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-       
         /// <summary>
         /// Saves hydrodynamic forces and torques of the last time-step.
         /// </summary>
@@ -109,12 +116,12 @@ namespace BoSSS.Application.XNSERO_Solver {
             double[] hydrodynamics = new double[(SpatialDimension + 1) * AllParticles.Length];
             m_ForcesAndTorquePreviousIteration.Clear();
             m_ForcesAndTorqueWithoutRelaxation.Clear();
-            for(int p = 0; p < AllParticles.Length; p++) {
+            for (int p = 0; p < AllParticles.Length; p++) {
                 Particle currentParticle = AllParticles[p];
                 int offset = p * (SpatialDimension + 1);
                 double[] tempForces = currentParticle.Motion.GetHydrodynamicForces(0);
                 double tempTorque = currentParticle.Motion.GetHydrodynamicTorque(0);
-                for(int d = 0; d < SpatialDimension; d++) {
+                for (int d = 0; d < SpatialDimension; d++) {
                     hydrodynamics[offset + d] = tempForces[d];
                 }
                 hydrodynamics[offset + SpatialDimension] = tempTorque;
@@ -153,7 +160,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsRelaxation(double[] hydrodynamics, ref double omega) {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            return m_ForcesAndTorqueWithoutRelaxation.Count > 2 ? AitkenRelaxation(hydrodynamics, ref omega) : StaticUnderrelaxation(hydrodynamics);
+            if (m_ForcesAndTorqueWithoutRelaxation.Count > 2) {
+                return AitkenRelaxation(hydrodynamics, ref omega);
+            } else {
+                return StaticUnderrelaxation(hydrodynamics);
+            }
         }
 
         private double[] StaticUnderrelaxation(double[] variable) {
@@ -168,6 +179,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        
         private double[] AitkenRelaxation(double[] variable, ref double Omega) {
             using (new FuncTrace()) {
                 double[][] residual = new double[variable.Length][];
@@ -178,7 +190,11 @@ namespace BoSSS.Application.XNSERO_Solver {
                     residualDiff[i] = residual[i][0] - residual[i][1];
                     residualScalar += residual[i][1] * residualDiff[i];
                 }
-                Omega = -Omega * residualScalar / residualDiff.L2Norm().Pow2();
+                if (residualDiff.L2NormPow2() > 0.0) {
+                    // breakdown of Aitken; no further update
+                    Omega = -Omega * residualScalar / residualDiff.L2NormPow2();
+                    //throw new ArithmeticException($"AitkenRelaxation: Omega = {Omega} (residualScalar = {residualScalar}, |residualDiff|_2 = {residualDiff.L2Norm()}");
+                }
                 double[] outVar = variable.CloneAs();
                 for (int i = 0; i < variable.Length; i++) {
                     outVar[i] = Omega * (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]) + m_ForcesAndTorquePreviousIteration[0][i];

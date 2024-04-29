@@ -41,12 +41,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            InitMPI();
-            //TestProgram.TestStickyTrap();
-            //TestProgram.TestParticleParameter();
+            //InitMPI();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            TestProgram.TestParticleInShearFlow_Phoretic();
-            Assert.IsFalse(true, "remove me");
+            //TestProgram.TestParticleInShearFlow_Phoretic();
+            //Assert.IsFalse(true, "remove me");
             
             void KatastrophenPlot(DGField[] dGFields,string Tag) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
