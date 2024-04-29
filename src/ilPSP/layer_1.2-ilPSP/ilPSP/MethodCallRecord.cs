@@ -193,17 +193,20 @@ namespace ilPSP.Tracing {
 
 
         /// <summary>
-        /// Stopwatch while this method call record is 'open', i.e.
+        /// <see cref="m_ActiveTicks"/>
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
         internal Stopwatch m_ActiveStopwatch = null;
 
         /// <summary>
-        /// this might be non-zero/non-null when 
+        /// The main-purpose of this is to write correct profiling logs while we are at some non-zero stack depth, and correctly track the time of methods
+        /// which have not been left yet.
+        /// 
+        /// This might be non-zero/non-null when this is the <see cref="Tracer.Current"/> call record; then also, there is a non-null <see cref="m_ActiveStopwatch"/>.
         /// </summary>
         [DataMember]
-        private long? m_ActiveTicks;
+        internal long? m_ActiveTicks;
 
 
         private static readonly object padlock = new object();
@@ -278,11 +281,12 @@ namespace ilPSP.Tracing {
         }
 
 
-
-        internal void UpdateTime() {
-            m_ActiveTicks = m_ActiveStopwatch.Elapsed.Ticks;
-            if(ParrentCall != null)
-                ParrentCall.UpdateTime();
+        /// <summary>
+        /// bring all timinig up-to-date
+        /// </summary>
+        public void UpdateTime() {
+            m_ActiveTicks = m_ActiveStopwatch?.Elapsed.Ticks;
+            ParrentCall?.UpdateTime();
         }
 
         ///// <summary>

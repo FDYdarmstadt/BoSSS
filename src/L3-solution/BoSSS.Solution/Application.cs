@@ -3065,6 +3065,7 @@ namespace BoSSS.Solution {
             ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
             OnlineProfiling.AppEndTime = DateTime.Now;
             OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
+            Tracer.Current.UpdateTime();
 
             if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
                 try {
