@@ -73,6 +73,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             if (!CutCells.IsSubMaskOf(CellMask.GetFullMask(LevelSetTracker.GridDat))){
                 throw new Exception("Cut cell mask not a sub mask of full mask.");
             }
+
             {
                 XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId(FluidSpecies) }, RequiredOrder, 1).XQuadSchemeHelper;
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(1, CutCells);
@@ -108,6 +109,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
             return tempForces = forcesAndTorque.CloneAs();
         }
+
 
         private static int GetSpeciesID(string FluidSpecies) {
             int fluidSpeciesID;

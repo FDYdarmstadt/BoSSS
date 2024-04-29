@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using NUnit.Framework;
 
 namespace BoSSS.Application.XNSERO_Solver {
     /// <summary>
@@ -40,8 +41,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            InitMPI();
-            TestProgram.TestStickyTrap();
+            //InitMPI();
+            //BoSSS.Application.XNSERO_Solver.TestProgram.TestParticleInShearFlow_Phoretic();
+            //TestProgram.TestStickyTrap();
             //TestProgram.TestParticleParameter();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow_Phoretic();
