@@ -268,7 +268,7 @@ namespace ilPSP {
 
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = true) {
             if (InParallelSection == true) {
-                for (int i = 0; i < toExclusive; i++) {
+                for (int i = fromInclusive; i < toExclusive; i++) {
                     body(i);
                 }
             } else {
