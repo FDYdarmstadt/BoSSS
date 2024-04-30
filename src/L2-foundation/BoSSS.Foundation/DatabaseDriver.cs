@@ -344,8 +344,22 @@ namespace BoSSS.Foundation.IO {
         /// Indicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
+        /// <returns>the id of the equivalent grid, if found; otherwise, the id of <paramref name="grid"/></returns>
         public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database) {
             return gridDatabaseDriver.SaveGridIfUnique(ref grid, out EquivalentGridFound, database);
+        }
+
+        /// <summary>
+        /// Searches for an equivalent grid in the database.
+        /// </summary>
+        /// <param name="grid">
+        /// The grid for which an equivalent one should be searched.
+        /// </param>
+        /// <returns>
+        /// the equivalent grid, if found; otherwise, null
+        /// </returns>
+        public IGrid SearchForEquivalentGrid(IGrid grid, IDatabaseInfo database) {
+            return gridDatabaseDriver.SearchForEquivalentGrid(grid, database);
         }
 
         /// <summary>

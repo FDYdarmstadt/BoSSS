@@ -18,6 +18,7 @@ using BoSSS.Application.BoSSSpad;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.GridImport;
+using MathNet.Numerics.Financial;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -101,20 +102,24 @@ namespace BoSSS.Foundation.IO {
         /// - false (default): Only store the grid, if no equivalent grid is in the database
         /// - true: store always
         /// </param>
-
         /// <returns></returns>
         public static Guid SaveGrid<TG>(this IDatabaseInfo database, ref TG grd, bool force = false) where TG : IGrid //
         {
             bool found;
             IGrid grid = grd;
             Guid GridGuid;
-            if(!force) {
+            if (!force) {
                 GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
-                if(found) {
+                if (found) {
                     Console.WriteLine("An equivalent grid (" + GridGuid + ") is already present in the database -- the grid will not be saved.");
                     grd = ((TG)grid);
                 }
             } else {
+                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                    Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
+                    return Guid.Empty;
+                }
+
                 GridGuid = database.Controller.DBDriver.SaveGrid(grid, database);
             }
 
@@ -147,11 +152,15 @@ namespace BoSSS.Foundation.IO {
                 Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
                 if (found) {
                     Console.WriteLine("An equivalent grid is already present in the database -- the grid will not be saved.");
-                    grd = (GridCommons)grid;
+                    
                 }
             } else {
-                database.Controller.DBDriver.SaveGrid(grid, database);
-                grd = (GridCommons)grid;
+                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                    Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
+                } else {
+                    database.Controller.DBDriver.SaveGrid(grid, database);
+                }
+                
             }
             return grid;
         }
@@ -252,6 +261,11 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessionName"></param>
         /// <param name="fields"></param>
         public static void SaveGridAndTimestep(this IDatabaseInfo targetDb, DGField[] fields, string projectName, string sessionName) {
+            if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
+                return;
+            }
+
             if (fields == null) {
                 throw new ArgumentNullException(nameof(fields));
             }

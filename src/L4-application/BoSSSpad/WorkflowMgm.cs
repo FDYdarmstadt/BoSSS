@@ -213,10 +213,14 @@ namespace BoSSS.Application.BoSSSpad {
 
         internal bool RunWorkflowFromBackup {
             get {
-                //string runfromBackup = System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP");
-                //return runfromBackup.IsEmptyOrWhite() == false;
-                return File.Exists("BOSSS_RUNTESTFROMBACKUP.txt");
-                
+                using (var tr = new FuncTrace("RunWorkflowFromBackup")) {
+                    //string runfromBackup = System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP");
+                    //return runfromBackup.IsEmptyOrWhite() == false;
+                    const string magicFile = "BOSSS_RUNTESTFROMBACKUP.txt";
+                    bool exists = File.Exists(magicFile);
+                    tr.Info($"File {magicFile} exists? {exists} (current directory: {System.Environment.CurrentDirectory})");
+                    return exists;
+                }
             }
         }
 
