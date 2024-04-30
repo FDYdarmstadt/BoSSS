@@ -98,24 +98,116 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         /// case 2
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly_case2(
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p2(
 #if DEBUG
             [Values(2)] int dimension,
-            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(0, 1)] int AMRlevel
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+#endif
+            ) {
+            AllUp(2, dimension, 2, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
+        }
+        
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p2(
+#if DEBUG
+            [Values(2)] int dimension,
             [Values(2, 4)] int gridResolution,
             [Values(0, 1)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
 #else
             [Values(2, 3)] int dimension,
-            [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
-            [Values(0, 2)] int AMRlevel,
-            [Values(true, false)] bool projectOnSameBasis
+            [Values(0, 2)] int AMRlevel
 #endif
             ) {
-            AllUp(2, dimension, degree, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+            AllUp(2, dimension, 2, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
         }
-        
+
+#if! DEBUG
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p3(
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 3, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p3(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 3, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p4_grd2n4(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p4_grd2n4(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
+        }
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p4_grd8(
+            [Values(2, 3)] int dimension,
+            [Values(8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p4_grd8(
+            [Values(2, 3)] int dimension,
+            [Values(8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
+        }
+#endif
+
+
+
         static public void AllUp(
 #if DEBUG
             [Values(0, 1, 2)] int caseNo,
