@@ -383,6 +383,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns path to text-file for standard error stream
         /// </summary>
         public override string GetStderrFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
@@ -391,6 +393,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns path to text-file for standard output stream
         /// </summary>
         public override string GetStdoutFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
         }
