@@ -355,6 +355,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="grid">
         /// The grid for which an equivalent one should be searched.
         /// </param>
+        /// <param name="database"></param>
         /// <returns>
         /// the equivalent grid, if found; otherwise, null
         /// </returns>
