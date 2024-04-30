@@ -746,7 +746,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
         [Test]
         static public void Run__BoundaryAndInitialData() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__BoundaryAndInitialData
             Mutex JupyterMutex = new Mutex(false, "BoundaryAndInitialData");
             try {
                 JupyterMutex.WaitOne();
@@ -763,7 +763,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
+            //--test=ValidationTestRunner.WorksheetTests_Local.Run__MetaJobManager
             Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
             try {
                 JupyterMutex.WaitOne();
