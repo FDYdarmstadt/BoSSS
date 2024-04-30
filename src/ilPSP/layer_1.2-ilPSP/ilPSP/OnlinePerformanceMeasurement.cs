@@ -377,7 +377,9 @@ namespace ilPSP {
             }
         }
 
-
+        /// <summary>
+        /// loops through all strategies in <see cref="OMPbindingStrategy"/> and tries to select the fastest one
+        /// </summary>
         static public OMPbindingStrategy FindBestOMPstrategy(int[] CPUIndices, out bool OMPisSlow) {
             OMPbindingStrategy[] strats = (OMPbindingStrategy[]) Enum.GetValues(typeof(OMPbindingStrategy));
             double[] performance = new double[strats.Length];
