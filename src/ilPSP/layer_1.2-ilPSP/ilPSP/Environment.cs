@@ -592,7 +592,6 @@ namespace ilPSP {
         static Random rnd = new Random();
 
         private static void SetOMPbinding() {
-            // just hope that dynamic thread will avoid the deadlocks.
             
             using (var tr = new FuncTrace("SetOMPbinding")) {
                 //tr.InfoToConsole = true;
