@@ -771,10 +771,8 @@ namespace BoSSS.Application.BoSSSpad {
             private TimeSpan UpdateRunTime(JobStatus s) {
                 if (m_RunTime != null)
                     return m_RunTime.Value;
-
                 
-
-                if (s == JobStatus.FailedOrCanceled || s == JobStatus.InProgress) {
+                if (s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
                     m_RunTime = m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
                     return m_RunTime.Value;
                 }

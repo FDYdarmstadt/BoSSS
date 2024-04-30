@@ -23,7 +23,7 @@ namespace ilPSP {
         /// <summary>
         /// Collected normalized benchmark results over the application runtime
         /// - Key: benchmark name
-        /// - Value: normalized results, i.e. 1.0 represents expected behavior, smaller values denote under-performance, larger values denote over-performance
+        /// - Value: normalized results, i.e. 1.0 represents expected behavior/speed, smaller values denote under-performance, larger values denote over-performance
         /// </summary>
         [DataMember]
         public Dictionary<string, List<double>> BenchResults;
@@ -37,13 +37,15 @@ namespace ilPSP {
             foreach(var br in BenchResults) {
                 tw.Write(br.Key);
                 tw.Write(": ");
-                double[] res = br.Value.ToArray();
-                double avg = res.Sum()/res.Count();
-                double min = res.Min();
-                double max = res.Max();
-                tw.Write($"[{min:g5} | {avg:g5} | {max:g5}]");
-                tw.Write("  ");
-                tw.Write(res.ToConcatString("[", ", ", "]", "g4"));
+                double[] res = br.Value.Where(x => x > 0).ToArray();
+                if (res.Length > 0) {
+                    double avg = res.Sum()/res.Count();
+                    double min = res.Min();
+                    double max = res.Max();
+                    tw.Write($"[{min:g5} | {avg:g5} | {max:g5}]");
+                    tw.Write("  ");
+                }
+                tw.Write(br.Value.ToConcatString("[", ", ", "]", "g4"));
                 tw.WriteLine();
             }
         }
@@ -377,7 +379,9 @@ namespace ilPSP {
             }
         }
 
-
+        /// <summary>
+        /// loops through all strategies in <see cref="OMPbindingStrategy"/> and tries to select the fastest one
+        /// </summary>
         static public OMPbindingStrategy FindBestOMPstrategy(int[] CPUIndices, out bool OMPisSlow) {
             OMPbindingStrategy[] strats = (OMPbindingStrategy[]) Enum.GetValues(typeof(OMPbindingStrategy));
             double[] performance = new double[strats.Length];
