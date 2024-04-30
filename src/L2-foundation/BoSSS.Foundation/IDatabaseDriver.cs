@@ -160,6 +160,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="grid">
         /// The grid for which an equivalent one should be searched.
         /// </param>
+        /// <param name="database"></param>
         /// <returns>
         /// the equivalent grid, if found; otherwise, null
         /// </returns>
@@ -177,7 +178,7 @@ namespace BoSSS.Foundation.IO {
         /// Indicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        /// <returns>the id of the equivalent grid, if found; otherwise, the id of <paramref name="grid"/></returns>
+        /// <returns>the id of the equivalent grid, if found; otherwise, the id of <paramref name="grd"/></returns>
         Guid SaveGridIfUnique(ref IGrid grd, out bool EquivalentGridFound, IDatabaseInfo database);
 
         /// <summary>
