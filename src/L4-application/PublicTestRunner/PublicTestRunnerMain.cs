@@ -1305,6 +1305,22 @@ namespace PublicTestRunner {
             return returnCode;
         }
 
+        /// <summary>
+        /// Checks all profiling's in all MPI ranks for something fishy.
+        /// </summary>
+        /// <param name="profilings">
+        /// profiling for each MPI rank
+        /// - index: enumeration of MPI ranks
+        /// </param>
+        /// <param name="worstBenchmarks">
+        /// On exit, the worst (i.e. slowest) result of the respective benchmark, over all taken measurements in all MPI processes
+        /// - keys: benchmark name in <see cref="ilPSP.OnlinePerformanceLog.BenchResults"/>
+        /// - values: minimum 
+        /// </param>
+        /// <returns>
+        /// - true: if the relative speed of any benchmark is below 0.1
+        /// - false: everything is fine!
+        /// </returns>
         private static bool DetectSlowBenchmark(OnlineProfiling[] profilings, out Dictionary<string, double> worstBenchmarks) {
             bool veryBadResultDetected = false;
 
@@ -1314,12 +1330,15 @@ namespace PublicTestRunner {
 
                 if (BenchResults != null) {
                     foreach (var kv in BenchResults) {
-                        double worstRes = kv.Value.Min();
-                        if (worstBenchmarks.ContainsKey(kv.Key))
-                            worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
-                        if (worstRes < 0.1)
-                            veryBadResultDetected = true;
-                        worstBenchmarks[kv.Key] = worstRes;
+                        var validMeasurements = kv.Value.Where(val => val > 0.0); // non-positive values indicate skipped benchmarks
+                        if (validMeasurements.Count() > 0) {
+                            double worstRes = validMeasurements.Min();
+                            if (worstBenchmarks.ContainsKey(kv.Key))
+                                worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
+                            if (worstRes > 0 && worstRes < 0.1)
+                                veryBadResultDetected = true;
+                            worstBenchmarks[kv.Key] = worstRes;
+                        }
                     }
                 }
             }
@@ -1327,6 +1346,13 @@ namespace PublicTestRunner {
             return veryBadResultDetected;
         }
 
+        /// <summary>
+        /// Writes a one-line summary of all profiling's in all MPI ranks for something fishy.
+        /// </summary>
+        /// <param name="profilings">
+        /// profiling for each MPI rank
+        /// - index: enumeration of MPI ranks
+        /// </param>        /// <returns></returns>
         private static string SummarizeProfilings(OnlineProfiling[] profilings) {
             string BenchmarkSummary;
             using (var stw = new StringWriter()) {
