@@ -614,73 +614,73 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// returns the condition number of the full matrix
         /// </summary>
         public double CondNumMatlab() {
-
-            int[] DepVars = this.VarGroup;
-            var grd = m_map.GridDat;
-            int NoOfCells = grd.Grid.NumberOfCells;
-            int NoOfBdryCells = grd.GetBoundaryCells().NoOfItemsLocally_WithExternal;
-
-
-            var Mtx = m_MultigridOp.OperatorMatrix;
-
-            //bool Comparison = this.VarGroup.SetEquals(new int[] { 1 });
+            using (new FuncTrace()) {
+                int[] DepVars = this.VarGroup;
+                var grd = m_map.GridDat;
+                int NoOfCells = grd.Grid.NumberOfCells;
+                int NoOfBdryCells = grd.GetBoundaryCells().NoOfItemsLocally_WithExternal;
 
 
-            // Blocks and selectors 
-            // ====================
-            var InnerCellsMask = grd.GetBoundaryCells().Complement();
+                var Mtx = m_MultigridOp.OperatorMatrix;
 
-            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.SetVariableSelector(this.VarGroup);
-
-            //long J = grd.CellPartitioning.TotalLength;
-
-            // Matlab
-            // ======
-
-            double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
-            
-            MultidimensionalArray output = MultidimensionalArray.Create(4, 1);
-            //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
-
-            using(BatchmodeConnector bmc = new BatchmodeConnector()) {
-                //if(Comparison) {
-                //    string compPath = $"Mtx_ipPoisson-J{J}.txt";
-                //    File.Copy(compPath, Path.Combine(bmc.WorkingDirectory.FullName, "comp.txt"), false);
-                //}
-
-                bmc.PutSparseMatrix(Mtx, "FullMatrix");
-
-                bmc.PutVector(Full_0Vars, "Full_0Vars");
-
-                bmc.Cmd("output = ones(4,1);");
+                //bool Comparison = this.VarGroup.SetEquals(new int[] { 1 });
 
 
-                bmc.Cmd("output(1) = condest(FullMatrix(Full_0Vars,Full_0Vars));");
+                // Blocks and selectors 
+                // ====================
+                var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
-                //if(Comparison) {
-                //    bmc.Cmd("compMtx = ReadMsr('comp.txt');");
-                //    bmc.Cmd("output(2) = norm(compMtx - FullMatrix(Full_0Vars,Full_0Vars), inf);");
-                //    bmc.Cmd("output(3) = condest(compMtx);");
-                //}
+                var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+                FullSel.SetVariableSelector(this.VarGroup);
 
-                bmc.GetMatrix(output, "output");
-                bmc.Execute(false);
+                //long J = grd.CellPartitioning.TotalLength;
 
-                double condestFull = output[0, 0];
-                var allValues = condestFull.MPIAllGather();
-                Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
-                
+                // Matlab
+                // ======
 
-                Console.WriteLine($"MATLAB condition number vars {VarNames}: {condestFull:0.###e-00}");
-                //if(Comparison) {
-                //    Console.WriteLine($"MATLAB condition number check matrix vars {VarNames}: {output[2, 0]:0.###e-00}");
-                //    Console.WriteLine($"MATLAB matrix check {VarNames}: {output[1, 0]:0.###e-00}");
-                //}
-                
-                return condestFull;
+                double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
+
+                MultidimensionalArray output = MultidimensionalArray.Create(4, 1);
+                //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
+
+                using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                    //if(Comparison) {
+                    //    string compPath = $"Mtx_ipPoisson-J{J}.txt";
+                    //    File.Copy(compPath, Path.Combine(bmc.WorkingDirectory.FullName, "comp.txt"), false);
+                    //}
+
+                    bmc.PutSparseMatrix(Mtx, "FullMatrix");
+
+                    bmc.PutVector(Full_0Vars, "Full_0Vars");
+
+                    bmc.Cmd("output = ones(4,1);");
+
+
+                    bmc.Cmd("output(1) = condest(FullMatrix(Full_0Vars,Full_0Vars));");
+
+                    //if(Comparison) {
+                    //    bmc.Cmd("compMtx = ReadMsr('comp.txt');");
+                    //    bmc.Cmd("output(2) = norm(compMtx - FullMatrix(Full_0Vars,Full_0Vars), inf);");
+                    //    bmc.Cmd("output(3) = condest(compMtx);");
+                    //}
+
+                    bmc.GetMatrix(output, "output");
+                    bmc.Execute(false);
+
+                    double condestFull = output[0, 0];
+                    var allValues = condestFull.MPIAllGather();
+                    Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
+
+
+                    Console.WriteLine($"MATLAB condition number vars {VarNames}: {condestFull:0.###e-00}");
+                    //if(Comparison) {
+                    //    Console.WriteLine($"MATLAB condition number check matrix vars {VarNames}: {output[2, 0]:0.###e-00}");
+                    //    Console.WriteLine($"MATLAB matrix check {VarNames}: {output[1, 0]:0.###e-00}");
+                    //}
+
+                    return condestFull;
+                }
             }
-            
         }
 
         public double Cond2Matlab() {
