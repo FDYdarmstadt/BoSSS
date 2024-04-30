@@ -47,7 +47,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
             switch (par) {
                 case Parallelism.OMP:
-                liborder = new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                liborder = new string[] { "PARDISO2_omp.dll", "libBoSSSnative_omp.so" };
                 break;
 
                 case Parallelism.SEQ:
@@ -105,14 +105,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public unsafe _pardiso PARDISO { get { return pardiso; } }
 
-
-        static string WinMKL_lp64_mangling(string nmn) {
-            return "mkl_pds_lp64_" + nmn;
-        }
-
-        static string WinMKLmangling(string nmn) {
-            return "mkl_pds_" + nmn;
-        }
 
 
         /// <summary>

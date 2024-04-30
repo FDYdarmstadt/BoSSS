@@ -59,7 +59,6 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            InitMPI();
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6);
             //throw new Exception("remove me");
@@ -322,6 +321,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             Tecplot.PlotFields(Fields, "XPoisson" + timestepNo.ToString(), physTime, susamp);
             Tecplot.PlotFields(Fields, "grid" + timestepNo.ToString(), physTime, 0);
         }
+
+        //protected override void Bye() {
+        //    this.OnlineProfiling.OnlinePerformanceLog.WriteStatistics(Console.Error);
+        //}
 
     }
 

@@ -22,6 +22,7 @@ using BoSSS.Foundation.Grid;
 using System.Collections;
 using System.Linq;
 using ilPSP.Tracing;
+using System.Text.Json.Serialization;
 
 namespace BoSSS.Application.XNSERO_Solver {
 
@@ -81,7 +82,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Level set tracker of the solid level set.
         /// </summary>
-        [DataMember]
+        [JsonIgnore]
         public LevelSetTracker LsTrk { get; set; }
                 
         /// <summary>

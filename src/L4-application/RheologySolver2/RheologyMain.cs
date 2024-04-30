@@ -591,7 +591,6 @@ namespace BoSSS.Application.Rheology {
                 dt = base.GetTimestep();
 
 
-                int NoIncrementTimestep;
 
                 Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
                 var overallstart = DateTime.Now;

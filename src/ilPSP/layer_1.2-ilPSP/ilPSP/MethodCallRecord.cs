@@ -18,10 +18,12 @@ using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
+using static ilPSP.Utils.UnsafeDBLAS;
 
 namespace ilPSP.Tracing {
 
@@ -84,6 +86,13 @@ namespace ilPSP.Tracing {
             }
         }
 
+        /// <summary>
+        /// resets the <see cref="ParrentCall"/> (not serialized to avoid loops) of all child calls after serialization 
+        /// </summary>
+        public void FixParrent() {
+            this.FixParrentRecursive();
+        }
+
         void FixParrentRecursive() {
             foreach(var ch in this.Calls.Values) {
                 ch.ParrentCall = this;
@@ -91,6 +100,7 @@ namespace ilPSP.Tracing {
             }
         }
 
+        /*
         /// <summary>
         /// Sets the time spend in respective method (see <see cref="TicksSpentInMethod"/>) and in all child calls to zero. Can be configured to reset call count as well.
         /// </summary>
@@ -114,7 +124,7 @@ namespace ilPSP.Tracing {
                 this.CallCount = 0;
             }
         }
-
+        */
 
         /// <summary>
         /// method name
@@ -179,7 +189,113 @@ namespace ilPSP.Tracing {
         /// Accumulated time in method.
         /// </summary>
         [DataMember]
-        internal long m_TicksSpentInMethod = 0;
+        long m_TicksSpentInMethod = 0;
+
+
+        /// <summary>
+        /// <see cref="m_ActiveTicks"/>
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        internal Stopwatch m_ActiveStopwatch = null;
+
+        /// <summary>
+        /// The main-purpose of this is to write correct profiling logs while we are at some non-zero stack depth, and correctly track the time of methods
+        /// which have not been left yet.
+        /// 
+        /// This might be non-zero/non-null when this is the <see cref="Tracer.Current"/> call record; then also, there is a non-null <see cref="m_ActiveStopwatch"/>.
+        /// </summary>
+        [DataMember]
+        internal long? m_ActiveTicks;
+
+
+        private static readonly object padlock = new object();
+
+
+        internal static int Push_MethodCallRecord(string _name, Stopwatch ActiveStopWatch, out MethodCallRecord mcr) {
+            Debug.Assert(Tracer.InstrumentationSwitch == true);
+
+
+            //if (Tracer.Current != null) {
+            lock (padlock) {
+                if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
+                    mcr = new MethodCallRecord(Tracer.Current, _name);
+                    Tracer.Current.Calls.Add(_name, mcr);
+                }
+            }
+            Tracer.Current = mcr;
+            mcr.CallCount++;
+            mcr.m_TicksSpentinBlocking = -Tracer.GetMPITicks();
+            mcr.m_ActiveStopwatch = ActiveStopWatch;
+            //mcr.m_Memory = -GetMemory();
+            //} else {
+            //    Debug.Assert(Tracer.Root == null);
+            //    var mcr = new MethodCallRecord(Tracer.Current, _name);
+            //    Tracer.Root = mcr;
+            //    Tracer.Current = mcr;
+            //}
+
+            return mcr.Depth;
+        }
+
+        internal static int Pop_MethodCallrecord(long ElapsedTicks, long Memory_increase, long PeakMemory_increase, out MethodCallRecord mcr) {
+            Debug.Assert(Tracer.InstrumentationSwitch == true, "instrumentation switch off!");
+
+
+            Debug.Assert(!object.ReferenceEquals(Tracer.Current, Tracer.Root), "root frame cannot be popped");
+            //if(!object.ReferenceEquals(Current, _Root) == false) {
+            //    Console.Error.WriteLine("root frame cannot be popped");
+            //    throw new Exception("root frame cannot be popped");
+            //}
+            Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
+            Tracer.Current.m_TicksSpentinBlocking += Tracer.GetMPITicks();
+            Tracer.Current.m_MemoryIncrease = Math.Max(Tracer.Current.m_MemoryIncrease, Memory_increase);
+            Tracer.Current.m_PeakMemoryIncrease = Math.Max(Tracer.Current.m_PeakMemoryIncrease, PeakMemory_increase);
+            Tracer.Current.m_ActiveStopwatch = null;
+            Tracer.Current.m_ActiveTicks = null;
+
+            //fails for some reason on lichtenberg:
+            //Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking, $"ticks are fucked up: elapsed = {ElapsedTicks}, blocking = {Tracer.Current.m_TicksSpentinBlocking}");
+
+            mcr = Tracer.Current;
+            Tracer.Current = Tracer.Current.ParrentCall;
+            Tracer.Current.UpdateTime();
+            return Tracer.Current.Depth;
+        }
+
+
+        internal static MethodCallRecord LogDummyblock(long ticks, string _name) {
+            Debug.Assert(Tracer.InstrumentationSwitch == true && ilPSP.Environment.InParallelSection == false);
+
+            MethodCallRecord mcr;
+            if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
+                mcr = new MethodCallRecord(Tracer.Current, _name);
+                //mcr.IgnoreForExclusive = true;
+                Tracer.Current.Calls.Add(_name, mcr);
+            }
+            mcr.CallCount++;
+            //Debug.Assert(mcr.IgnoreForExclusive == true);
+            mcr.m_TicksSpentInMethod += ticks;
+
+            return mcr;
+        }
+
+
+        /// <summary>
+        /// bring all timinig up-to-date
+        /// </summary>
+        public void UpdateTime() {
+            m_ActiveTicks = m_ActiveStopwatch?.Elapsed.Ticks;
+            ParrentCall?.UpdateTime();
+        }
+
+        ///// <summary>
+        ///// Marks an active, i.e., 'hot' root object.
+        ///// After serialization/deserialization, this will always be cold.
+        ///// </summary>
+        //[NonSerialized]
+        //[JsonIgnore]
+        //internal bool m_StillHot = false;
 
         /// <summary>
         /// Accumulated time in method.
@@ -187,7 +303,16 @@ namespace ilPSP.Tracing {
         [JsonIgnore]
         public long TicksSpentInMethod {
             get {
-                return m_TicksSpentInMethod;
+                //if(m_StillHot && ParrentCall == null) {
+                //    m_TicksSpentInMethod = Tracer.TotalTime.Elapsed.Ticks;
+                //}
+
+                if(m_ActiveStopwatch == null) {
+                    m_ActiveTicks = null;
+                }
+
+                long ret = m_TicksSpentInMethod + (m_ActiveTicks ?? 0);
+                return ret;
             }
         }
 
@@ -278,7 +403,7 @@ namespace ilPSP.Tracing {
                 long r = 0;
                 foreach (var c in Calls.Values) {
                     //if (!c.IgnoreForExclusive) {
-                    r += c.m_TicksSpentInMethod;
+                    r += c.TicksSpentInMethod;
                     //}
                 }
                 return r;
@@ -301,7 +426,7 @@ namespace ilPSP.Tracing {
         [JsonIgnore]
         public long TicksExclusive {
             get {
-                return this.m_TicksSpentInMethod - TicksSpentInChildCalls;
+                return this.m_TicksSpentInMethod - TicksSpentInChildCalls + (m_ActiveTicks ?? 0);
             }
         }
 
@@ -321,8 +446,8 @@ namespace ilPSP.Tracing {
         [JsonIgnore]
         public double TimeFractionOfRoot {
             get {
-                double rT = (double)(this.m_TicksSpentInMethod);
-                double rR = (double)(this.Root.m_TicksSpentInMethod);
+                double rT = (double)(this.TicksSpentInMethod);
+                double rR = (double)(this.Root.TicksSpentInMethod);
                 return rT / rR;
             }
         }
@@ -334,7 +459,7 @@ namespace ilPSP.Tracing {
         public double ExclusiveTimeFractionOfRoot {
             get {
                 double rT = (double)(this.TicksExclusive);
-                double rR = (double)(this.Root.m_TicksSpentInMethod);
+                double rR = (double)(this.Root.TicksSpentInMethod);
                 return rT / rR;
             }
         }
@@ -408,7 +533,7 @@ namespace ilPSP.Tracing {
             /// </summary>
             TimeSpan TimeSpentInMethod {
                 get {
-                    return new TimeSpan(this.M.m_TicksSpentInMethod);
+                    return new TimeSpan(this.M.TicksSpentInMethod);
                 }
             }
 
@@ -417,8 +542,8 @@ namespace ilPSP.Tracing {
             /// </summary>
             public double RuntimeFraction {
                 get {
-                    double rT = (double)(this.M.m_TicksSpentInMethod);
-                    double rR = (double)(this.RelativeRoot.m_TicksSpentInMethod);
+                    double rT = (double)(this.M.TicksSpentInMethod);
+                    double rR = (double)(this.RelativeRoot.TicksSpentInMethod);
                     return rT / rR;
                 }
             }
@@ -428,15 +553,13 @@ namespace ilPSP.Tracing {
             /// </summary>
             override public string ToString() {
                 using(var stw = new StringWriter()) {
-                    stw.Write(string.Format(
-                        "'{0}': {1} calls, {2:0.###E-00} seconds, {3:F3} %  of '{4}', {5} MB allocated, {6} MB allocated exclusive, called by: ",
-                        M.Name, // 0
-                        M.CallCount, // 1
-                        TimeSpentInMethod.TotalSeconds, //  2
-                        RuntimeFraction * 100, // 3 
-                        RelativeRoot.Name, // 4
-                        (double)(M.InclusiveMemoryIncrease) / (1024.0 * 1024.0), //  5
-                        (double)(M.ExclusiveMemoryIncrease) / (1024.0 * 1024.0))); // 6
+                    stw.Write(
+                        $"'{M.Name}': {M.CallCount} calls, " +
+                        $"{TimeSpentInMethod.TotalSeconds:G5} seconds, " +
+                        $"{RuntimeFraction * 100:F3} %  of '{RelativeRoot.Name}', " +
+                        $"{(double)(M.InclusiveMemoryIncrease) / (1024.0 * 1024.0):G5} MB allocated, {((double)M.ExclusiveMemoryIncrease) / (1024.0 * 1024.0):G5} MB allocated exclusive, " +
+                        $"called by: "
+                        ); // 6
 
                     if(M.ParrentCall == null) {
                         stw.Write("NOBODY");
@@ -603,7 +726,7 @@ namespace ilPSP.Tracing {
         /// </summary>
         public long TicksSpentInMethod {
             get {
-                return AllCalls.Sum(a => a.m_TicksSpentInMethod);
+                return AllCalls.Sum(a => a.TicksSpentInMethod);
             }
         }
 
@@ -662,7 +785,7 @@ namespace ilPSP.Tracing {
                 var Root = this.AllCalls[0].Root;
 
                 double rT = (double)(this.TicksSpentInMethod);
-                double rR = (double)(Root.m_TicksSpentInMethod);
+                double rR = (double)(Root.TicksSpentInMethod);
                 return rT / rR;
             }
         }
@@ -675,8 +798,9 @@ namespace ilPSP.Tracing {
             get {
                 var Root = this.AllCalls[0].Root;
                 double rT = (double)(this.ExclusiveTicks);
-                double rR = (double)(Root.m_TicksSpentInMethod);
-                return rT / rR;
+                double rR = (double)(Root.TicksSpentInMethod);
+                double fraction = rT / rR;
+                return fraction;
             }
         }
 
@@ -699,20 +823,24 @@ namespace ilPSP.Tracing {
 
 
                 stw.Write($"'{this.Name}': {this.CallCount} calls, ");
-                stw.Write($"{(this.ExclusiveTimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.ExclusiveTicks)).TotalSeconds:0.##E-00} sec. runtime exclusive, ");
-                stw.Write($"{(this.TimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.TicksSpentInMethod)).TotalSeconds:0.##E-00} sec. runtime inclusive child calls, ");
-                stw.Write($"{(double)(this.InclusiveMemoryIncrease) / (1024.0 * 1024.0):0.##E-00}/{(double)(this.ExclusiveMemoryIncrease) / (1024.0 * 1024.0):0.##E-00} MB allocated incl./excl., ");
+                stw.Write($"{(this.ExclusiveTimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.ExclusiveTicks)).TotalSeconds:G5} sec. runtime exclusive, ");
+                stw.Write($"{(this.TimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.TicksSpentInMethod)).TotalSeconds:G5} sec. runtime inclusive child calls, ");
+                stw.Write($"{(double)(this.InclusiveMemoryIncrease) / (1024.0 * 1024.0):G5}/{(double)(this.ExclusiveMemoryIncrease) / (1024.0 * 1024.0):G5} MB allocated incl./excl., ");
                 stw.Write("called by: ");
-                        
-                stw.Write("'");
-                for(int i = 0; i < calledBy.Count; i++) {
-                    stw.Write(calledBy[i]);
-                    stw.Write("*");
-                    stw.Write(calledByCnt[i]);
-                    if(i < calledBy.Count - 1)
-                        stw.Write(",");
-                    else
-                        stw.Write("'");
+
+                if (calledBy.Count > 0) {
+                    stw.Write("'");
+                    for (int i = 0; i < calledBy.Count; i++) {
+                        stw.Write(calledBy[i]);
+                        stw.Write("*");
+                        stw.Write(calledByCnt[i]);
+                        if (i < calledBy.Count - 1)
+                            stw.Write(",");
+                        else
+                            stw.Write("'");
+                    }
+                } else {
+                    stw.Write("NOBODY");
                 }
 
                 return stw.ToString();

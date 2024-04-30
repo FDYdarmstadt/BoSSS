@@ -66,8 +66,8 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            
-            
+
+
             /*
 
             Debugger.Launch();
@@ -246,7 +246,6 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             //*/
-
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
