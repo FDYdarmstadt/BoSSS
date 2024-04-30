@@ -67,6 +67,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard output file, if present - otherwise null.
         /// </summary>
         public override string GetStdoutFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             return Clint.GetStdoutFile(int.Parse(idToken));
         }
 
@@ -74,6 +76,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard error file, if present - otherwise null.
         /// </summary>
         public override string GetStderrFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             return Clint.GetStderrFile(int.Parse(idToken));
         }
 
