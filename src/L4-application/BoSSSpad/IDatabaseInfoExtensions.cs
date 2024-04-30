@@ -109,7 +109,20 @@ namespace BoSSS.Foundation.IO {
             IGrid grid = grd;
             Guid GridGuid;
             if (!force) {
-                GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                    var eg = database.Controller.DBDriver.SearchForEquivalentGrid(grid, database);
+                    if (eg != null) {
+                        grid = eg;
+                        found = true;
+                        GridGuid = eg.ID;
+                    } else {
+                        Console.WriteLine("Running in bacvkup mode, and no equivalent grid is found.");
+                        return grd.ID;
+                    }
+                } else {
+                    GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                }
+
                 if (found) {
                     Console.WriteLine("An equivalent grid (" + GridGuid + ") is already present in the database -- the grid will not be saved.");
                     grd = ((TG)grid);
@@ -117,7 +130,7 @@ namespace BoSSS.Foundation.IO {
             } else {
                 if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
                     Console.WriteLine("BoSSSpad is in backup mode, not saving anything.");
-                    return Guid.Empty;
+                    return grd.ID;
                 }
 
                 GridGuid = database.Controller.DBDriver.SaveGrid(grid, database);
@@ -149,9 +162,27 @@ namespace BoSSS.Foundation.IO {
             bool found;
             IGrid grid = grd;
             if (!force) {
-                Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                Guid GridGuid;// = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+
+
+                if (BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                    var eg = database.Controller.DBDriver.SearchForEquivalentGrid(grid, database);
+                    if (eg != null) {
+                        grid = eg;
+                        found = true;
+                        GridGuid = eg.ID;
+                    } else {
+                        Console.WriteLine("Running in backup mode, and no equivalent grid is found.");
+                        return grd;
+                    }
+                } else {
+                    GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+                }
+
+
+
                 if (found) {
-                    Console.WriteLine("An equivalent grid is already present in the database -- the grid will not be saved.");
+                    Console.WriteLine($"An equivalent grid {GridGuid} is already present in the database -- the grid will not be saved.");
                     
                 }
             } else {
