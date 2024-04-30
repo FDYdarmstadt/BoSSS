@@ -1548,6 +1548,9 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
+                if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                    Console.WriteLine($"BoSSSpad is configured to run from a backup, `RunWorkflowFromBackup` = {BoSSSshell.WorkflowMgm.RunWorkflowFromBackup} ; ");
+                }
 
                
                 // ========================================================================
@@ -1576,8 +1579,6 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         dep.optInfo = rr.optJobObj;
                 }
-
-                Console.WriteLine();
             }
         }
 
