@@ -37,6 +37,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -2360,7 +2361,9 @@ namespace BoSSS.Solution {
                         return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
                     }
 
-                    bool gridChanged; 
+                    bool gridChanged;
+
+                    var lastLogWrite = DateTime.Now;
 
                     for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
@@ -2368,7 +2371,10 @@ namespace BoSSS.Solution {
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
-                        this.ProfilingLog();
+                        if( i <= i0.MajorNumber + 1 || (DateTime.Now - lastLogWrite > new TimeSpan(0, 5, 0))) { // prevent writing the log to often
+                            this.ProfilingLog();
+                            lastLogWrite = DateTime.Now;
+                        }
                         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
@@ -3059,41 +3065,43 @@ namespace BoSSS.Solution {
         /// writes the profiling report 
         /// </summary>
         protected virtual void ProfilingLog() {
-            if (OnlineProfiling == null)
-                //OnlineProfiling = new OnlineProfiling(this.Control);
-                return; // for some reason (i.e., because only Dispose was called()) not initialized yet
-            ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
-            OnlineProfiling.AppEndTime = DateTime.Now;
-            OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
-            Tracer.Current.UpdateTime();
+            using (new FuncTrace()) {
+                if (OnlineProfiling == null)
+                    //OnlineProfiling = new OnlineProfiling(this.Control);
+                    return; // for some reason (i.e., because only Dispose was called()) not initialized yet
+                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                OnlineProfiling.AppEndTime = DateTime.Now;
+                OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
+                Tracer.Current.UpdateTime();
 
-            if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
-                try {
-                    using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
-                        var str = OnlineProfiling.Serialize();
-                        using (StreamWriter stw = new StreamWriter(stream)) {
-                            stw.Write(str);
-                            stw.Flush();
+                if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
+                    try {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                            var str = OnlineProfiling.Serialize();
+                            using (StreamWriter stw = new StreamWriter(stream)) {
+                                stw.Write(str);
+                                stw.Flush();
+                            }
+
                         }
-
+                    } catch (Exception e) {
+                        Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_bin: " + e.Message);
                     }
-                } catch (Exception e) {
-                    Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_bin: " + e.Message);
-                }
 
-                try {
-                    using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
-                        using (StreamWriter stw = new StreamWriter(stream)) {
-                            OnlineProfiling.WriteProfilingReport(stw);
-                            stw.Flush();
-                            stream.Flush();
-                            stw.Close();
+                    try {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                            using (StreamWriter stw = new StreamWriter(stream)) {
+                                OnlineProfiling.WriteProfilingReport(stw);
+                                stw.Flush();
+                                stream.Flush();
+                                stw.Close();
+                            }
                         }
+                    } catch (Exception e) {
+                        Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_summary: " + e.Message);
                     }
-                } catch (Exception e) {
-                    Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_summary: " + e.Message);
-                }
 
+                }
             }
         }
 
