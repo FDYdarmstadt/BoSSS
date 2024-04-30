@@ -1873,7 +1873,7 @@ namespace BoSSS.Foundation.XDG {
 
                             if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                // Use the accelerated bernstein cut cell finding technique for dg levelsets
+                                // Use the accelerated Bernstein cut cell finding technique for dg levelsets
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 var data = this.m_DataHistories[levSetind].Current;
                                 NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1}), false); // only use edge nodes

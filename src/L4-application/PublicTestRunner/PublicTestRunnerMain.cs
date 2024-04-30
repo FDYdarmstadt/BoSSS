@@ -1249,7 +1249,7 @@ namespace PublicTestRunner {
                     resTable.Add(nd, new List<object>());
                     resTable.Add(os, new List<object>());
 
-                    foreach (var jj in AllOpenJobs) {
+                    foreach (var jj in AllFinishedJobs) {
                         resTable[jn].Add(jj.job.Name);
                         resTable[tn].Add(jj.testname);
                         resTable[st].Add(jj.job.Status);
@@ -1258,7 +1258,7 @@ namespace PublicTestRunner {
 
                         string osString;
                         try {
-                            osString = AllFinishedJobs.FirstOrDefault(jx => jx.testname == jj.testname).profilings?.Select(prf => prf?.OnlinePerformanceLog?.OMPbindingStrategy).ToConcatString("", "-", "");
+                            osString = jj.profilings?.Select(prf => prf?.OnlinePerformanceLog?.OMPbindingStrategy).ToConcatString("", "-", "");
                             if (osString == null)
                                 osString = "NIX";
                         } catch (Exception e) {
@@ -1269,7 +1269,7 @@ namespace PublicTestRunner {
                     }
 
                     resTable.SaveToCSVFile("ResultTable.csv");
-                    File.Copy("ResultTable", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now + ".csv"));
+                    File.Copy("ResultTable.csv", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now + ".csv"));
                 } catch (Exception e) {
                     Console.WriteLine($"{e.Message}, {e.StackTrace}");
                 }
@@ -1892,7 +1892,7 @@ namespace PublicTestRunner {
                 break;
             }
 
-
+            MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
             Console.WriteLine("ret b4 finalize = " + ret); 
             csMPI.Raw.mpiFinalize();
 
