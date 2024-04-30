@@ -40,6 +40,9 @@ namespace ilPSP.Utils {
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool GetThreadGroupAffinity(IntPtr hThread, out GROUP_AFFINITY lpGroupAffinity);
+        
+        [DllImport("kernel32.dll", SetLastError = true)]
+        unsafe private static extern bool SetThreadGroupAffinity(IntPtr hThread, [In] ref GROUP_AFFINITY lpGroupAffinity, GROUP_AFFINITY* PreviousGroupAffinity);
 
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -126,7 +129,7 @@ namespace ilPSP.Utils {
             Process currentProcess = Process.GetCurrentProcess();
             IntPtr processHandle = currentProcess.Handle;
 
-           
+            // first pass: get number of groups
             ushort groupCount = 0;
             GetProcessGroupAffinity(processHandle, ref groupCount, null); // second arg 0 on iput -> returns the n umber of processor 
             if (groupCount != 1) {
@@ -134,7 +137,7 @@ namespace ilPSP.Utils {
                 //throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
             }
             
-            
+            // second pass: get actual groups
             ushort[] groups = new ushort[groupCount];
             if (!GetProcessGroupAffinity(processHandle, ref groupCount, groups)) {
                 Console.Error.WriteLine("Failed to get processor group affinity.");
@@ -157,6 +160,46 @@ namespace ilPSP.Utils {
 
             return CPUlist.ToArray();
         }
+
+        /// <summary>
+        /// Set WIN32 affinity for current thread
+        /// </summary>
+        static public void SetAffinity(IEnumerable<int> CPUindices) {
+            int CPUsPerGroup = NumberOfCPUsPerGroup;
+
+            unsafe {
+                GROUP_AFFINITY* affinities = stackalloc GROUP_AFFINITY[16];
+                int[] iGroup2affinities = new int[16];
+                int NumberOfGroups = 0;
+                foreach (int iCPU in CPUindices) { // sort the CPU indices into processor groups
+                    int iGroup = iCPU/CPUsPerGroup;
+                    int iAff;
+                    if (iGroup2affinities[iGroup] == 0) {
+                        iGroup2affinities[iGroup] = NumberOfGroups + 1;
+                        iAff = NumberOfGroups;
+                        NumberOfGroups++;
+                    } else {
+                        iAff = iGroup2affinities[iGroup] - 1;
+                    }
+                    affinities[iAff].Group = checked((ushort)iGroup);
+                    int iCPUgrp = iCPU%CPUsPerGroup;
+                    affinities[iAff].Mask = (UIntPtr)((ulong)1 << iCPUgrp);
+                }
+
+
+
+                for (int cntGroup = 0; cntGroup < NumberOfGroups; cntGroup++) {
+                    
+                    if (SetThreadGroupAffinity(GetCurrentThread(), ref affinities[cntGroup], null)) {
+
+                    } else {
+                        int errorCode = Marshal.GetLastWin32Error();
+                        throw new Win32Exception(errorCode);
+                    }
+                }
+            }
+        }
+
 
         /// <summary>
         /// When running on MS HPC, the Environment variable `CCP_AFFINITY`
@@ -247,7 +290,7 @@ namespace ilPSP.Utils {
         /// </summary>
         public static int SetKMP_AFFINITYfromCCPVar(int NumThreads) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 // Check if CCP_AFFINITY is defined and defined on all ranks
                 // =========================================================
 

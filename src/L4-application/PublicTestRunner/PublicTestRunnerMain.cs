@@ -1,4 +1,6 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XNSFE_Solver;
+using BoSSS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -247,7 +249,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// Timout for job-manager run
         /// </summary>
-        public static double TimeOutSec = 24 * 60 * 60; // 24 hours;
+        public static double TimeOutSec = 450 * 60; // ;
 
 
         /// <summary>
@@ -261,11 +263,11 @@ namespace PublicTestRunner {
         /// finds all assemblies which potentially contain tests.
         /// </summary>
         static Assembly[] GetAllAssembliesForTests() {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 var R = new HashSet<Assembly>();
 
-                if(TestTypeProvider.FullTest != null) {
-                    foreach(var t in TestTypeProvider.FullTest) {
+                if (TestTypeProvider.FullTest != null) {
+                    foreach (var t in TestTypeProvider.FullTest) {
                         //Console.WriteLine("test type: " + t.FullName);
                         var a = t.Assembly;
                         //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
@@ -276,9 +278,9 @@ namespace PublicTestRunner {
 
 
 
-                if(discoverRelease) {
-                    if(TestTypeProvider.ReleaseOnlyTests != null) {
-                        foreach(var t in TestTypeProvider.ReleaseOnlyTests) {
+                if (discoverRelease) {
+                    if (TestTypeProvider.ReleaseOnlyTests != null) {
+                        foreach (var t in TestTypeProvider.ReleaseOnlyTests) {
                             R.Add(t.Assembly);
                         }
                     }
@@ -289,11 +291,11 @@ namespace PublicTestRunner {
         }
 
 
-        
 
-        
 
-        
+
+
+
 
         //static bool IsReleaseOnlyAssembly
 
@@ -313,11 +315,11 @@ namespace PublicTestRunner {
                 }
             }
 
-            if(discoverRelease) {
-                if(TestTypeProvider.MpiReleaseOnlyTests != null) {
-                    foreach(var t in TestTypeProvider.MpiReleaseOnlyTests) {
+            if (discoverRelease) {
+                if (TestTypeProvider.MpiReleaseOnlyTests != null) {
+                    foreach (var t in TestTypeProvider.MpiReleaseOnlyTests) {
                         bool contains = R.Contains(t, (itm1, itm2) => ((itm1.NoOfProcs == itm2.NoOfProcs) && itm1.Asbly.Equals(itm2.type.Assembly)));
-                        if(!contains) {
+                        if (!contains) {
                             R.Add((t.type.Assembly, t.NoOfProcs));
                         }
                     }
@@ -372,7 +374,7 @@ namespace PublicTestRunner {
             return ret.ToArray();
         }
 
-        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test, int?[] NumThreads) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
+        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string, string[]> RequiredFiles4Test, int?[] NumThreads) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
             var r = new List<string>(); // full test names
             var n = new List<int?>(); // number of threads for test
             var l = new List<string>(); // short names 
@@ -476,7 +478,7 @@ namespace PublicTestRunner {
 
 
             // add assembly-global files for test, check uniqueness of filenames
-            foreach(var testname in d.Keys) {
+            foreach (var testname in d.Keys) {
                 var s = new List<string>();
                 s.AddRange(d[testname]);
                 s.AddRange(g);
@@ -553,7 +555,7 @@ namespace PublicTestRunner {
             }
         }
 
-        
+
         /// <summary>
         /// Decides whether an assembly <paramref name="a"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
         /// </summary>
@@ -564,7 +566,7 @@ namespace PublicTestRunner {
             foreach (var filter in sFilters) {
                 string modFilter;
                 bool expect = false;
-                if(filter.StartsWith("!")) {
+                if (filter.StartsWith("!")) {
                     modFilter = filter.Substring(1);
                     expect = false;
                 } else {
@@ -579,16 +581,16 @@ namespace PublicTestRunner {
             }
             return false;
         }
-        
 
-         /// <summary>
+
+        /// <summary>
         /// Decides whether an assembly <paramref name="m"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
         /// </summary>
         static bool FilterTestMethod(MethodInfo m, string AssemblyFilter) {
 
-            if(AssemblyFilter.IsEmptyOrWhite())
+            if (AssemblyFilter.IsEmptyOrWhite())
                 return true;
-            
+
             string FullName = m.DeclaringType.Name + "." + m.Name;
             Assembly a = m.DeclaringType.Assembly;
 
@@ -596,7 +598,7 @@ namespace PublicTestRunner {
             foreach (var filter in sFilters) {
                 string modFilter;
                 bool expect = false;
-                if(filter.StartsWith("!")) {
+                if (filter.StartsWith("!")) {
                     modFilter = filter.Substring(1);
                     expect = false;
                 } else {
@@ -607,14 +609,14 @@ namespace PublicTestRunner {
                 string[] AssemblyNMethodFilter = modFilter.Split("\\", StringSplitOptions.RemoveEmptyEntries);
                 string aFilter = AssemblyNMethodFilter[0];
 
-                if(aFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect) {
+                if (aFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect) {
 
-                    if(AssemblyNMethodFilter.Length < 2)
+                    if (AssemblyNMethodFilter.Length < 2)
                         return true;
 
                     string mfilter = AssemblyNMethodFilter[1];
 
-                    
+
                     if (mfilter.WildcardMatch(FullName) == expect)
                         return true;
 
@@ -631,22 +633,22 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("yaml subprogram must be executed serially");
             }
 
-            using(var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
                 // ===================================
                 // phase 1: submit jobs
                 // ===================================
 
 
-           
+
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 {
                     var assln = GetAllAssembliesForTests();
-                    if(assln != null) {
-                        foreach(var a in assln) {
+                    if (assln != null) {
+                        foreach (var a in assln) {
                             {
                                 var allTst4Assi = GetTestsInAssembly(a, null);
-                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1));
                                 }
                             }
@@ -655,14 +657,14 @@ namespace PublicTestRunner {
                 }
                 {
                     var ParAssln = GetAllMpiAssemblies();
-                    if(ParAssln != null) {
-                        foreach(var TT in ParAssln) {
+                    if (ParAssln != null) {
+                        foreach (var TT in ParAssln) {
                             {
 
                                 var a = TT.Asbly;
                                 var allTst4Assi = GetTestsInAssembly(a, null);
 
-                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs));
                                 }
                             }
@@ -672,7 +674,7 @@ namespace PublicTestRunner {
 
                 Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
                 int cnt = 0;
-                foreach(var t in allTests) {
+                foreach (var t in allTests) {
                     cnt++;
                     Console.WriteLine($"  #{cnt}: {t.testname}");
                     Console.WriteLine($"     {t.shortname}");
@@ -682,10 +684,10 @@ namespace PublicTestRunner {
                 Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
 
                 string yamlName;
-                 
+
                 yamlName = "jobs.yml";
 
-                using(var YAML = new StreamWriter(yamlName)) {
+                using (var YAML = new StreamWriter(yamlName)) {
                     YAML.WriteLine("################################################################################");
                     YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
                     YAML.WriteLine("# any modification might get over-written");
@@ -707,15 +709,12 @@ namespace PublicTestRunner {
                     YAML.WriteLine("  - test parallel");
                     YAML.WriteLine();
 
-                    if (allTests.Count == 0)
-                    {
+                    if (allTests.Count == 0) {
                         YAML.WriteLine("EmptyTest:");
                         YAML.WriteLine("  stage: test");
                         YAML.WriteLine("  script:");
                         YAML.WriteLine("    - echo \"Empty\"");
-                    }
-                    else
-                    {
+                    } else {
                         //Set job class
                         // ======================================================================
                         //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, ARTIFACT_REF_PATH
@@ -738,11 +737,9 @@ namespace PublicTestRunner {
 
                         cnt = 0;
                         var checkResFileName = new HashSet<string>();
-                        foreach (var t in allTests)
-                        {
+                        foreach (var t in allTests) {
 
-                            if (t.testname.Contains("TutorialTest"))
-                            {
+                            if (t.testname.Contains("TutorialTest")) {
                                 Console.WriteLine("skipping: " + t.testname);
                                 continue;
                             }
@@ -750,7 +747,7 @@ namespace PublicTestRunner {
 
                             if (t.NoOfProcs == 1)
                                 YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
-                            else 
+                            else
                                 YAML.WriteLine(DebugOrReleaseSuffix + "#p" + t.NoOfProcs + "#" + t.shortname + ":" + t.testname + ":");
                             YAML.WriteLine("   extends: .Test");
 
@@ -763,8 +760,7 @@ namespace PublicTestRunner {
                                 YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml'");
                             else
                                 YAML.WriteLine($"     - mpiexec -n {t.NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(t.ass.Location)} --test={t.testname} --result=TestResult.xml");
-                            if (t.NoOfProcs > 1)
-                            {
+                            if (t.NoOfProcs > 1) {
                                 YAML.WriteLine("   tags:");
                                 YAML.WriteLine($"    - {t.NoOfProcs}cores");
                             }
@@ -780,7 +776,25 @@ namespace PublicTestRunner {
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE);
         /// appending of the user name avoids "unauthorized access"-exceptions
         /// </summary>
-        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName);
+        static Mutex IOsyncMutex;
+
+        static PublicTestRunnerMain() {
+            Random rnd = new Random(Guid.NewGuid().GetHashCode());
+            string mutex_name = "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName;
+            for (int iRetry = 0; iRetry < 10; iRetry++) {
+                try {
+                    IOsyncMutex = new Mutex(false, mutex_name);
+                    break;
+                } catch (Exception) {
+                    Thread.Sleep(rnd.Next(1000));
+                    IOsyncMutex = null;
+                }
+            }
+
+            if(IOsyncMutex == null) {
+                Console.WriteLine("Unable to create mutex: " + mutex_name);
+            }
+        }
 
         /// <summary>
         /// to distinct the internalTestRunner
@@ -810,7 +824,7 @@ namespace PublicTestRunner {
             FileStream ServerMutex;
             string DateNtime = null;
             try {
-                IOsyncMutex.WaitOne();
+                IOsyncMutex?.WaitOne();
 
                 var rnd = new Random(DateTime.Now.Millisecond + typeof(PublicTestRunnerMain).Assembly.Location.GetHashCode() + Directory.GetCurrentDirectory().GetHashCode());
                 Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
@@ -839,7 +853,7 @@ namespace PublicTestRunner {
                 Console.Error.WriteLine("TERMINATING APPLICATION");
                 System.Environment.Exit(-666);
             } finally {
-                IOsyncMutex.ReleaseMutex();
+                IOsyncMutex?.ReleaseMutex();
             }
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile("JobManagerRun-" + DateNtime);
@@ -1019,17 +1033,17 @@ namespace PublicTestRunner {
                 // ===================================
 
 
-                var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
+                var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)>();
 
 
                 
                 using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
-                    (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
+                    (Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)[] UpdateFinishedJobs() {
                         using(var trr = new FuncTrace("UpdateFinishedJobs")) {
                             string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
 
-                            var RecentlyFinished = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
+                            var RecentlyFinished = new List<(Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)>();
 
                             for(int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
@@ -1045,8 +1059,8 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if (s == JobStatus.FailedOrCanceled) {
-                                    Console.WriteLine(" ------------------- Job Failed reason:");
+                                if (s == JobStatus.FailedOrCanceled || s == JobStatus.Unknown) {
+                                    Console.WriteLine($" ------------------- Job Failed ({jj.job.Name}) reason: {s}, Exit Code {jj.job?.LatestDeployment.ExitCode}, {jj.job?.LatestDeployment.DeploymentDirectory}");
                                     var s1 = jj.job.GetStatus(true);
                                     if (s1 != s) {
                                         Console.WriteLine("changed its mind to: " + s1);
@@ -1062,14 +1076,14 @@ namespace PublicTestRunner {
 
 
                                 if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
-                                    
 
+                                    bool reallyDelete = true;
 
                                     // message:
-                                    if(s == JobStatus.FinishedSuccessful)
-                                        Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
+                                    if (s == JobStatus.FinishedSuccessful)
+                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime +  ") // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
-                                        Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
+                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime +  ") // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
 
 
 
@@ -1092,10 +1106,36 @@ namespace PublicTestRunner {
                                             returnCode--;
                                         }
                                     }
+                                    
+                                    OnlineProfiling[] profilings = null;
+                                    if (s == JobStatus.FinishedSuccessful) {
+                                        using (new BlockTrace("load_profilings", trr)) {
+                                            try {
+                                                string[] sourceFiles = Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "profiling_bin.*.txt");
+                                                //if(sourceFiles.Length <= 0) {
+                                                //    Console.WriteLine(" ------------------ No benchmark file");
+                                                //}
+
+                                                profilings = new OnlineProfiling[sourceFiles.Length];
+                                                int rnk = 0;
+                                                foreach (var orig in sourceFiles) {
+                                                    profilings[rnk] = OnlineProfiling.Deserialize(File.ReadAllText(orig));
+                                                    rnk++;
+                                                }
+
+                                                if (DetectSlowBenchmark(profilings, out _))
+                                                    reallyDelete = false;
+
+                                            } catch (Exception ioe) {
+                                                Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                                            }
+                                        }
+                                    }
+
                                     // delete deploy directory
                                     if (TestTypeProvider.DeleteSuccessfulTestFiles) {
                                         using (new BlockTrace("delete_deploy_dir", trr)) {
-                                            if (s == JobStatus.FinishedSuccessful) {
+                                            if (s == JobStatus.FinishedSuccessful && reallyDelete) {
                                                 try {
                                                     Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
                                                 } catch (Exception e) {
@@ -1106,7 +1146,7 @@ namespace PublicTestRunner {
                                     }
 
                                     // move job to 'finished' list
-                                    var X = (jj.job, jj.ResFile, jj.testname, s);
+                                    var X = (jj.job, jj.ResFile, jj.testname, s, profilings);
                                     AllFinishedJobs.Add(X);
                                     RecentlyFinished.Add(X);
 
@@ -1161,23 +1201,80 @@ namespace PublicTestRunner {
                     returnCode -= 1;
                 }
 
+
+                Console.WriteLine("--- Performance Benchmarks -------------------------------------------------------------------------");
+                foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
+
+                    if (jj.profilings != null && jj.profilings.Any(prof => prof?.OnlinePerformanceLog != null)) {
+                        string BenchmarkSummary = SummarizeProfilings(jj.profilings);
+                        Console.WriteLine($"{jj.job.Name} : Online profiling: {BenchmarkSummary}");
+                    }
+                }
+
+                Console.WriteLine("--- Test Results -----------------------------------------------------------------------------------");
+
                 int SuccessfulFinishedCount = 0;
-                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
-                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname}");
+                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) { // all success 
+                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname}");
                     SuccessfulFinishedCount++;
                 }
 
                 int OtherStatCount = 0;
-                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) {
-                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.LatestDeployment.DeploymentDirectory.FullName}");
+                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) { // all failed
+                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname} at {jj.job.LatestDeployment.DeploymentDirectory.FullName}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
-                foreach(var jj in AllOpenJobs) {
-                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.Status}");
+                foreach(var jj in AllOpenJobs) { // all still running
+                    Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname} at {jj.job.Status}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
+
+                // summary table
+                try {
+                    var resTable = new Dictionary<string, IList<object>>();
+                    const string jn = "JobName";
+                    const string tn = "TestName";
+                    const string st = "Status";
+                    const string rt = "RunTime";
+                    const string nd = "Ndeploy";
+                    const string os = "OMPstrat";
+                    
+
+                    resTable.Add(jn, new List<object>());
+                    resTable.Add(tn, new List<object>());
+                    resTable.Add(st, new List<object>());
+                    resTable.Add(rt, new List<object>());
+                    resTable.Add(nd, new List<object>());
+                    resTable.Add(os, new List<object>());
+
+                    foreach (var jj in AllOpenJobs) {
+                        resTable[jn].Add(jj.job.Name);
+                        resTable[tn].Add(jj.testname);
+                        resTable[st].Add(jj.job.Status);
+                        resTable[rt].Add(jj.job.LatestDeployment.RunTime.TotalSeconds);
+                        resTable[nd].Add(jj.job.AllDeployments.Count);
+
+                        string osString;
+                        try {
+                            osString = AllFinishedJobs.FirstOrDefault(jx => jx.testname == jj.testname).profilings?.Select(prf => prf?.OnlinePerformanceLog?.OMPbindingStrategy).ToConcatString("", "-", "");
+                            if (osString == null)
+                                osString = "NIX";
+                        } catch (Exception e) {
+                            Console.WriteLine(e);
+                            osString = "NIX";
+                        }
+                        resTable[os].Add(osString);
+                    }
+
+                    resTable.SaveToCSVFile("ResultTable.csv");
+                    File.Copy("ResultTable", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now + ".csv"));
+                } catch (Exception e) {
+                    Console.WriteLine($"{e.Message}, {e.StackTrace}");
+                }
+
+
 
                 // very final message:
                 if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
@@ -1206,6 +1303,61 @@ namespace PublicTestRunner {
             CloseTracing();
 
             return returnCode;
+        }
+
+        private static bool DetectSlowBenchmark(OnlineProfiling[] profilings, out Dictionary<string, double> worstBenchmarks) {
+            bool veryBadResultDetected = false;
+
+            worstBenchmarks = new Dictionary<string, double>();
+            foreach (var profiling in profilings) {
+                var BenchResults = profiling?.OnlinePerformanceLog?.BenchResults;
+
+                if (BenchResults != null) {
+                    foreach (var kv in BenchResults) {
+                        double worstRes = kv.Value.Min();
+                        if (worstBenchmarks.ContainsKey(kv.Key))
+                            worstRes = Math.Min(worstRes, worstBenchmarks[kv.Key]);
+                        if (worstRes < 0.1)
+                            veryBadResultDetected = true;
+                        worstBenchmarks[kv.Key] = worstRes;
+                    }
+                }
+            }
+
+            return veryBadResultDetected;
+        }
+
+        private static string SummarizeProfilings(OnlineProfiling[] profilings) {
+            string BenchmarkSummary;
+            using (var stw = new StringWriter()) {
+
+                var veryBadResultDetected = DetectSlowBenchmark(profilings, out var worstBenchmarks);
+
+                stw.Write(profilings?.Select(prof => prof?.OnlinePerformanceLog?.OMPbindingStrategy).ToConcatString("[", " | ", " ]"));
+
+                if (veryBadResultDetected)
+                    stw.Write("!!! SLOW BENCHMARK RESULT !!! ");
+                int L = worstBenchmarks.Count;
+                int l = 0;
+                foreach (var worstRes in worstBenchmarks) {
+                    l++;
+                    stw.Write(worstRes.Key + ": " +  worstRes.Value.ToString("g4"));
+                    if (worstRes.Value < 0.1)
+                        stw.Write(" !!!");
+                    if (l < L)
+                        stw.Write(", ");
+                    else
+                        stw.Write(";");
+                }
+
+                if (veryBadResultDetected) {
+                    stw.Write(" ");
+                    stw.Write(profilings?.Select(p => p?.OnlinePerformanceLog).ToConcatString("[", " | ", " ]"));
+                }
+                BenchmarkSummary = stw.ToString();
+            }
+
+            return BenchmarkSummary;
         }
 
         private static void LogResultFile(StreamWriter ot, Job j, string testname, string ResFile) {
@@ -1659,8 +1811,8 @@ namespace PublicTestRunner {
 
             BoSSS.Solution.Application.InitMPI();
 
-            //Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
-            //ilPSP.Environment.DisableOpenMP();
+            Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
+            ilPSP.Environment.DisableOpenMP();
             
             int ret = -1;
             switch (args[0]) {
@@ -1741,9 +1893,10 @@ namespace PublicTestRunner {
             }
 
 
-            Console.WriteLine("ret b4 finalize = " + ret);
+            Console.WriteLine("ret b4 finalize = " + ret); 
             csMPI.Raw.mpiFinalize();
 
+            System.Environment.Exit(ret);
 
             return ret;
         }
@@ -1756,6 +1909,7 @@ namespace PublicTestRunner {
             //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
             //}
             //Debugger.Launch();
+           
 
             try {
                 return _Main(args, new PublicTests());
@@ -1779,6 +1933,7 @@ namespace PublicTestRunner {
                     stw.WriteLine(e.StackTrace);
                     stw.Flush();
                     stw.Close();
+                    System.Environment.Exit(-667);
                 }
 
 

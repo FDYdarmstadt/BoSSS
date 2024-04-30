@@ -111,9 +111,11 @@ namespace ilPSP.Tracing {
         static bool m_InstrumentationSwitch = true;
 
         static Tracer() {
-            _Root = new MethodCallRecord(null, "root_frame");
-            Current = _Root;
             TotalTime = new Stopwatch();
+            _Root = new MethodCallRecord(null, "root_frame") {
+                m_ActiveStopwatch = TotalTime
+            };
+            Current = _Root;
             TotalTime.Reset();
             TotalTime.Start();
         }
@@ -124,9 +126,12 @@ namespace ilPSP.Tracing {
         /// </summary>
         static public MethodCallRecord Root {
             get {
-                TotalTime.Stop();
-                _Root.m_TicksSpentInMethod = TotalTime.Elapsed.Ticks;
-                TotalTime.Start();
+                //TotalTime.Stop();
+                //_Root.m_TicksSpentInMethod = TotalTime.Elapsed.Ticks;
+                //TotalTime.Start();
+
+
+
 //#if TEST
 //                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
 //#endif
@@ -135,7 +140,7 @@ namespace ilPSP.Tracing {
         }
 
 
-        static private Stopwatch TotalTime;
+        static internal Stopwatch TotalTime;
 
         static private MethodCallRecord _Root;
 
@@ -144,81 +149,16 @@ namespace ilPSP.Tracing {
         /// </summary>
         public static MethodCallRecord Current {
             get;
-            private set;
+            internal set;
         }
 
-        static private long GetMPITicks() {
+        internal static long GetMPITicks() {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
         
 
-        private static readonly object padlock = new object();
-
-
-        internal static int Push_MethodCallRecord(string _name, out MethodCallRecord mcr) {
-            Debug.Assert(InstrumentationSwitch == true);
-            
-
-            //if (Tracer.Current != null) {
-            lock(padlock) {
-                if(!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
-                    mcr = new MethodCallRecord(Tracer.Current, _name);
-                    Tracer.Current.Calls.Add(_name, mcr);
-                }
-            }
-            Tracer.Current = mcr;
-            mcr.CallCount++;
-            mcr.m_TicksSpentinBlocking = -GetMPITicks();
-            //mcr.m_Memory = -GetMemory();
-            //} else {
-            //    Debug.Assert(Tracer.Root == null);
-            //    var mcr = new MethodCallRecord(Tracer.Current, _name);
-            //    Tracer.Root = mcr;
-            //    Tracer.Current = mcr;
-            //}
-
-            return mcr.Depth;
-        }
-
-        internal static int Pop_MethodCallrecord(long ElapsedTicks, long Memory_increase, long PeakMemory_increase, out MethodCallRecord mcr) {
-            Debug.Assert(InstrumentationSwitch == true, "instrumentation switch off!");
-
-
-            Debug.Assert(!object.ReferenceEquals(Current, _Root), "root frame cannot be popped");
-            //if(!object.ReferenceEquals(Current, _Root) == false) {
-            //    Console.Error.WriteLine("root frame cannot be popped");
-            //    throw new Exception("root frame cannot be popped");
-            //}
-            Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
-            Tracer.Current.m_TicksSpentinBlocking += GetMPITicks();
-            Tracer.Current.m_MemoryIncrease = Math.Max(Tracer.Current.m_MemoryIncrease, Memory_increase);
-            Tracer.Current.m_PeakMemoryIncrease = Math.Max(Tracer.Current.m_PeakMemoryIncrease, PeakMemory_increase);
-
-            //fails for some reason on lichtenberg:
-            //Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking, $"ticks are fucked up: elapsed = {ElapsedTicks}, blocking = {Tracer.Current.m_TicksSpentinBlocking}");
-
-            mcr = Tracer.Current;
-            Tracer.Current = Tracer.Current.ParrentCall;
-            return Tracer.Current.Depth;
-        }
-
-
-        internal static MethodCallRecord LogDummyblock(long ticks, string _name) {
-            Debug.Assert(InstrumentationSwitch == true && ilPSP.Environment.InParallelSection == false);
-
-            MethodCallRecord mcr;
-            if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
-                mcr = new MethodCallRecord(Tracer.Current, _name);
-                //mcr.IgnoreForExclusive = true;
-                Tracer.Current.Calls.Add(_name, mcr);
-            }
-            mcr.CallCount++;
-            //Debug.Assert(mcr.IgnoreForExclusive == true);
-            mcr.m_TicksSpentInMethod += ticks;
-
-            return mcr;
-        }
+        
     }
 
     /// <summary>
@@ -274,7 +214,7 @@ namespace ilPSP.Tracing {
         /// </summary>
         public void StdoutOnAllRanks() {
             m_StdoutOnlyOnRank0Bkup = ilPSP.Environment.StdoutOnlyOnRank0;
-            ilPSP.Environment.StdoutOnlyOnRank0 = true;
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
         }
 
         /// <summary>
@@ -391,7 +331,7 @@ namespace ilPSP.Tracing {
             if(Tracer.InstrumentationSwitch == false || ilPSP.Environment.InParallelSection == true)
                 return new MethodCallRecord(null, "dummy");
             else 
-                return Tracer.LogDummyblock(ticks, name);
+                return MethodCallRecord.LogDummyblock(ticks, name);
         }
 
 
@@ -576,7 +516,7 @@ namespace ilPSP.Tracing {
             if (ilPSP.Environment.InParallelSection)
                 return;
 
-            int newDepth = Tracer.Push_MethodCallRecord(_name, out var mcr);
+            int newDepth = MethodCallRecord.Push_MethodCallRecord(_name, this.Watch, out var mcr);
             this._name = _name;
 
             if (DoLogging) {
@@ -586,6 +526,8 @@ namespace ilPSP.Tracing {
             
             LogMemtrace(WorkingSet_onEntry, ">", mcr);
         }
+
+        public bool IntermediateReportOfChildCalls = false;
 
 
         /// <summary>
@@ -598,7 +540,10 @@ namespace ilPSP.Tracing {
                 return;
 
 
-            int newDepht = Tracer.Pop_MethodCallrecord(this.Duration.Ticks, this.AllocatedMem, this.PeakMem, out var mcr);
+            int newDepht = MethodCallRecord.Pop_MethodCallrecord(this.Duration.Ticks, this.AllocatedMem, this.PeakMem, out var mcr);
+            Tracer.Current.UpdateTime();
+            Debug.Assert(mcr.m_ActiveStopwatch == null, "A popped MethodCallRecord is NOT supposed to have an active Stopwatch");
+            Debug.Assert(mcr.m_ActiveTicks == null, "A popped MethodCallRecord is NOT supposed to have active Ticks");
 
             if (DoLogging) {
                 
@@ -607,6 +552,14 @@ namespace ilPSP.Tracing {
 
                 try {
                     s_FtLogger.Info(str);
+
+                    if(IntermediateReportOfChildCalls) {
+                        using (var wrt = new StringWriter()) {
+                            MethodCallRecordExtension.GetMostExpensiveCalls(wrt, mcr);
+                            s_FtLogger.Info("Intermediate Report: " + mcr.ToString());
+                        }
+                    }
+
                 } catch (Exception nre) {
                     Console.Error.WriteLine("ERRROR (logging): " + nre.Message);
                     Console.Error.WriteLine(nre.StackTrace);
