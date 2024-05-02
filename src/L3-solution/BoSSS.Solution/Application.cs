@@ -3071,6 +3071,7 @@ namespace BoSSS.Solution {
                     return; // for some reason (i.e., because only Dispose was called()) not initialized yet
                 ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 OnlineProfiling.AppEndTime = DateTime.Now;
+                
                 OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
                 Tracer.Current.UpdateTime();
 

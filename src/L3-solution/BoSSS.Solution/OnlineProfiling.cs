@@ -145,6 +145,13 @@ namespace BoSSS.Solution {
                 OnlineProfiling profiling;
                 using (JsonReader reader = new JsonTextReader(rd)) {  // Alternative: binary writer: JsonTextWriter
                     profiling = formatter.Deserialize<OnlineProfiling>(reader);
+
+                    if(profiling.RootCall == null && JsonString.IsNonEmpty()) {
+                        // try to load legacy file
+                        var mcr = MethodCallRecord.Deserialize(JsonString);
+                        profiling.RootCall = mcr;
+                    }
+
                 }
 
                 profiling?.RootCall?.FixParrent();
@@ -164,8 +171,10 @@ namespace BoSSS.Solution {
 
 
         public void UpdateDGInfo(IGrid g, IEnumerable<DGField> m_RegisteredFields) {
-            this.CellPartitioning = g.CellPartitioning.MpiSize.ForLoop(rank => g.CellPartitioning.GetLocalLength(rank));
-            this.LocalNumberOfCells = g.CellPartitioning.LocalLength;
+            if (g != null) {
+                this.CellPartitioning = g.CellPartitioning.MpiSize.ForLoop(rank => g.CellPartitioning.GetLocalLength(rank));
+                this.LocalNumberOfCells = g.CellPartitioning.LocalLength;
+            }
 
             var _DgInfo = new List<(string FieldName, int Degree, bool isXdg)>();
             if(m_RegisteredFields != null) {

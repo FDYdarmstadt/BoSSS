@@ -105,7 +105,7 @@ namespace ValidationTestRunner {
     /// NUnit entry point for each example worksheet which represents a long-term validation test
     /// </summary>
     /// <remarks>
-    /// - long-term tests are typicalle executed from some backup database
+    /// - long-term tests are typicalle executed from some backup database; therefore, the file `BOSSS_RUNTESTFROMBACKUP.txt` must be present in the local dir
     /// - All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
     /// </remarks>
     [TestFixture]
