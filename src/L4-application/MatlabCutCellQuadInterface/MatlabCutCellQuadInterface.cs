@@ -118,6 +118,16 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             tecplot.PlotFields(path, t, LevelSets);
         }
 
+        /// <summary>
+        /// Checks if it is a cut cell, if so returns true. 
+        /// </summary>
+        /// <param name="jCell">local cell index</param>
+        /// <param name="levelSetIndex">level set index (default: 0)</param>
+        /// <returns></returns>
+        public bool IsItACutCell(int jCell, int levelSetIndex = 0) {
+            var mask = lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex);                    
+            return mask.Contains(jCell);
+        }
 
         /// <summary>
         /// Compile quadrature rules for the given degree and spieces
