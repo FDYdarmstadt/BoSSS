@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace BoSSS.Application.ExternalBinding {
+namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
 
     /// <summary>
@@ -1881,14 +1881,14 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         
-        static Initializer MyInit;
+        static MatlabCutCellQuadInterface MyInit;
 
         /// <summary>
         /// MPI Init
         /// </summary>
         [OneTimeSetUp]
         public static void Init() {
-            MyInit = new Initializer();
+            MyInit = new MatlabCutCellQuadInterface();
             Console.WriteLine("Test");
             MyInit.BoSSSInitialize();
         }

@@ -13,17 +13,17 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 
-namespace BoSSS.Application.ExternalBinding {
+namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
     /// <summary>
     /// Initialization stuff
     /// </summary>
-    public class Initializer {
+    public class MatlabCutCellQuadInterface {
 
         /// <summary>
         /// Constructor for export.
         /// </summary>
         [CodeGenExport]
-        public Initializer() {
+        public MatlabCutCellQuadInterface() {
 
         }
 
@@ -35,12 +35,17 @@ namespace BoSSS.Application.ExternalBinding {
             get {
                 return new[] {
                     typeof(Foundation.Grid.Classic.GridData),
-                    typeof(Initializer)
+                    typeof(MatlabCutCellQuadInterface)
                 };
             }
 
         }
 
+        static void Main(string[] args) {
+            
+            Console.WriteLine(args.Length);
+            Console.WriteLine("External binder for Matlab");
+        }
 
         static bool mustFinalizeMPI;
 
@@ -67,7 +72,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         GridCommons grd;
         
-        public void _1_SetDomain(int Dim, double[] xNodes, double[] yNodes, double[] zNodes) {
+        public void SetDomain(int Dim, double[] xNodes, double[] yNodes, double[] zNodes) {
 
             switch(Dim) {
                 case 2: grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
@@ -85,7 +90,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         LevelSetTracker lsTrk;
 
-        public void _2_SetLevelSets(int degree, _2D dummy) {
+        public void SetLevelSets(int degree, _2D dummy) {
 
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
@@ -96,7 +101,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         }
 
-        void _3a_WriteVolQuadRules(int deg) {
+        public void WriteVolQuadRules(int deg) {
 
             var spcA = lsTrk.GetSpeciesId("A");
 
@@ -119,21 +124,22 @@ namespace BoSSS.Application.ExternalBinding {
                     }
                     
                     var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);
+                    NodesGlobal_jCell.SaveToTextFile("NodesJ" + jCell + ".txt");
 
 
                     double metric_jCell = JacobiDet[jCell];
 
 
-                    var WeightsGlobal_jCell = qr.Nodes.CloneAs();
+                    var WeightsGlobal_jCell = qr.Weights.CloneAs();
                     WeightsGlobal_jCell.Scale(metric_jCell);
                 }
             }
-
+            Console.WriteLine("Calculated the volume quadrature rule");    
 
         }
 
 
-        void _3b_WriteSrfQuadRules(int deg) {
+        public void WriteSrfQuadRules(int deg) {
 
             var spcA = lsTrk.GetSpeciesId("A");
 
@@ -161,7 +167,7 @@ namespace BoSSS.Application.ExternalBinding {
                     double metric_jCell = JacobiDet[jCell];
 
 
-                    var WeightsGlobal_jCell = qr.Nodes.CloneAs();
+                    var WeightsGlobal_jCell = qr.Weights.CloneAs();
                     WeightsGlobal_jCell.Scale(metric_jCell);
                 }
             }
