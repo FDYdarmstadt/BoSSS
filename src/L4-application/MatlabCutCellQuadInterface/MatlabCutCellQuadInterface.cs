@@ -77,19 +77,24 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         
         public void SetDomain(int Dim, double[] xNodes, double[] yNodes, double[] zNodes) {
 
-            switch(Dim) {
-                case 2: grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                    break; 
-                case 3: grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes); 
-                    break;
-                default: 
-                    throw new NotImplementedException();
+        public void SetDomain(int Dim, double[] xNodes, double[] yNodes) {
+            if (Dim != 2) {
+                throw new ArgumentException("Dimension must be 2 for the given input parameters.");
             }
+            grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
         }
 
         public delegate double Matlab2DFunctionDelegate(double x, double y);
 
-        public delegate double Matlab3DFunctionDelegate(double x, double y, double z);
+        public void SetDomain(int Dim, double[] xNodes, double[] yNodes, double[] zNodes) {
+            if (Dim != 3) {
+                throw new ArgumentException("Dimension must be 3 for the given input parameters.");
+            }
+            if (zNodes == null || zNodes.Length == 0) {
+                throw new ArgumentException("zNodes must not be empty for a 3D grid.");
+            }
+            grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        }
 
         LevelSetTracker lsTrk;
 
