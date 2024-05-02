@@ -12,6 +12,8 @@ using ilPSP.Connectors;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
+using BoSSS.Solution.Tecplot;
+using System.Linq;
 
 namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
     /// <summary>
@@ -99,6 +101,15 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
 
+        }
+
+        public void PlotCurrentState(int superSampling=0) {
+            Tecplot tecplot = new Tecplot(grd.GridData, (uint)superSampling);
+            string path = Path.Combine(Path.GetFullPath("."), "plot_");
+            double t = 0.0;
+            DGField[] LevelSets = lsTrk.LevelSets.Select(s => (DGField)s).ToArray();
+
+            tecplot.PlotFields(path, t, LevelSets);
         }
 
         public void WriteVolQuadRules(int deg) {
