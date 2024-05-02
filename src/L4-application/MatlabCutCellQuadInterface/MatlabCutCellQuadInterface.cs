@@ -48,6 +48,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             
             Console.WriteLine(args.Length);
             Console.WriteLine("External binder for Matlab");
+            MatlabCutCellQuadInterfaceTests.circle2D();
         }
 
         static bool mustFinalizeMPI;
@@ -74,8 +75,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         }
 
         GridCommons grd;
-        
-        public void SetDomain(int Dim, double[] xNodes, double[] yNodes, double[] zNodes) {
+
 
         public void SetDomain(int Dim, double[] xNodes, double[] yNodes) {
             if (Dim != 2) {
@@ -84,7 +84,6 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
         }
 
-        public delegate double Matlab2DFunctionDelegate(double x, double y);
 
         public void SetDomain(int Dim, double[] xNodes, double[] yNodes, double[] zNodes) {
             if (Dim != 3) {
@@ -106,12 +105,13 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
             lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
+            PlotCurrentState(0);
 
         }
 
         public void PlotCurrentState(int superSampling=0) {
             Tecplot tecplot = new Tecplot(grd.GridData, (uint)superSampling);
-            string path = Path.Combine(Path.GetFullPath("."), "plot_");
+            string path = Path.Combine(Path.GetFullPath("."), "plot_LS");
             double t = 0.0;
             DGField[] LevelSets = lsTrk.LevelSets.Select(s => (DGField)s).ToArray();
 
@@ -178,9 +178,9 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     for (int n = 0; n < globTr.NoOfNodes; n++) {
                         for (int d=0; d < globTr.SpatialDim; d++) {
                             ret[n, d] = globTr.Nodes[n, d];
-                }
+                        }
                         ret[n, globTr.SpatialDim] = WeightsGlobal_jCell[n];
-            }
+                    }
 
                 }
             }
@@ -213,7 +213,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
                         throw new NotSupportedException("curved cells not supported!");
                     }
-                    
+
                     qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
                     var globTr = qr.CloneAs();
                     globTr.TransformLocal2Global(grd, jCell);
@@ -221,18 +221,14 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
 
                     var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);
-                    NodesGlobal_jCell.SaveToTextFile("NodesJ" + jCell + ".txt");
-
 
                     double metric_jCell = JacobiDet[jCell];
-
 
                     var WeightsGlobal_jCell = qr.Weights.CloneAs();
                     WeightsGlobal_jCell.Scale(metric_jCell);
                 }
             }
-            Console.WriteLine("Calculated the volume quadrature rule");    
-
+            Console.WriteLine("Calculated the volume quadrature rule");
         }
 
 
