@@ -95,7 +95,7 @@ namespace ValidationTestRunner {
 
         virtual public bool CopyManagedAssembliesCentrally => false;
 
-        virtual public int RetryCount => 1;
+        virtual public int RetryCount => 2;
 
         virtual public bool DeleteSuccessfulTestFiles => false;
     }
