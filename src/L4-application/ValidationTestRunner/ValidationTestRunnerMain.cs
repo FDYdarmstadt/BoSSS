@@ -105,11 +105,12 @@ namespace ValidationTestRunner {
     /// NUnit entry point for each example worksheet which represents a long-term validation test
     /// </summary>
     /// <remarks>
-    /// All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
+    /// - long-term tests are typicalle executed from some backup database
+    /// - All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
     /// </remarks>
     [TestFixture]
     [NUnitNumThreads(1)]
-    static public class WorksheetTests_Local {
+    static public class WorksheetTests_Local_long {
 
 
         /// <summary>
@@ -145,7 +146,7 @@ namespace ValidationTestRunner {
         static public void Run__HeatedWallSimple() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallSimple
             string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLSIMPLE");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__HeatedWallSimple ");
                 return;
             } else {
@@ -171,7 +172,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallConvergence
 
             string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLCONVERGENCE");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__HeatedWallConvergence ");
                 return;
             } else {
@@ -354,7 +355,7 @@ namespace ValidationTestRunner {
             Console.WriteLine("CoFlowDiffusionFlame @ FDYcluster");
 
             string really = System.Environment.GetEnvironmentVariable("RUN_COFLOWFLAME");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__CoFlowDiffusionFlame ");
                 return;
             } else {
@@ -447,7 +448,7 @@ namespace ValidationTestRunner {
         static public void Run__Droplet3D() {
 
             string really = null; // System.Environment.GetEnvironmentVariable("RUN_DROPLET");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__Droplet3D ");
                 return;
             } else {
@@ -479,7 +480,7 @@ namespace ValidationTestRunner {
         static public void Run__CombustingDroplet() {
             //ValidationTestRunner.WorksheetTests_Local.Run__CombustingDroplet
             string really = System.Environment.GetEnvironmentVariable("RUN_COMBDROPLET");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__CombustingDroplet ");
                 return;
             } else {
@@ -508,7 +509,7 @@ namespace ValidationTestRunner {
         static public void Run__Droplet3D_FirstPeriodStudy() {
 
             string really = null; // System.Environment.GetEnvironmentVariable("RUN_DROPLET_FIRSTPERIOD");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__Droplet3D_FirstPeriodStudy ");
                 return;
             } else {
@@ -684,12 +685,12 @@ namespace ValidationTestRunner {
         }
 
 
-        /// <summary>
-        /// Serial Shock Fitting Solver:
-        /// - SAIDT - space-time Scalar Advection in 1D
+        // <summary>
+        // Serial Shock Fitting Solver:
+        // - SAIDT - space-time Scalar Advection in 1D
         /// - BUIDT - space-time Burgers Equation in 1D
-        /// - XESF  - Inviscid Euler Equation in 2D
-        /// </summary>
+        // - XESF  - Inviscid Euler Equation in 2D
+        // </summary>
         //[NUnitFileToCopyHack(
         //    "examples/ShockFitting/SAIDT/SAIDT_Validation.ipynb"
         //    //"../internal/src/private-seb/Notebooks/BUIDT/BUIDT_Validation.ipynb",
@@ -734,13 +735,27 @@ namespace ValidationTestRunner {
                 PROJECT_NAME,
                 $"{PROJECT_NAME}*",
                 "delete_memprofile",
-                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1)); 
+                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
 
             NotebookRunner.DeleteDeployments("memprofile*");
 
             ValidationTestRunnerMain.RunWorksheet("memprofile/memprofile.ipynb");
 
         }
+    }
+
+
+
+    /// <summary>
+    /// NUnit entry point for each example worksheet which represents a short-running validation test;
+    /// </summary>
+    /// <remarks>
+    /// - short running rests are fully re-computed every timem
+    /// - All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
+    /// </remarks>
+    [TestFixture]
+    [NUnitNumThreads(1)]
+    static public class WorksheetTests_Local_short {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
@@ -779,6 +794,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("GridGeneration/GridGeneration.ipynb")]
         [Test]
         static public void Run__GridGeneration() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__GridGeneration
             ValidationTestRunnerMain.RunWorksheet("GridGeneration/GridGeneration.ipynb");
         }
 
