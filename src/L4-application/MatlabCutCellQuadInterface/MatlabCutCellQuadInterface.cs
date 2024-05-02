@@ -14,6 +14,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.Tecplot;
 using System.Linq;
+using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
     /// <summary>
@@ -112,9 +113,83 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             tecplot.PlotFields(path, t, LevelSets);
         }
 
-        public void WriteVolQuadRules(int deg) {
 
-            var spcA = lsTrk.GetSpeciesId("A");
+        /// <summary>
+        /// Compile quadrature rules for the given degree and spieces
+        /// </summary>
+        /// <param name="deg"></param>
+        /// <param name="spec">Integer value for the phase:
+        /// If level set < 0 then -1 and if level set > 0 then 1 </param>
+        public void CompileQuadRules(int deg, int SpeciesId = -1) {
+            var spcA = SpeciesId == -1 ? lsTrk.GetSpeciesId("A") : lsTrk.GetSpeciesId("B");
+
+            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
+            var scheme = metrics.XQuadSchemeHelper.GetVolumeQuadScheme(spcA);
+            Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rules = scheme.Compile(grd.GridData, deg);
+
+            if (SpeciesId == -1)
+                rulesA = rules;
+            else
+                rulesB = rules;
+        }
+
+        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesA;
+        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesB;
+
+        public MultidimensionalArray GetQuadRules(int cellNo, int spec = -1) {
+            ICompositeQuadRule<QuadRule> rules = spec == -1 ? rulesA : rulesB;
+
+            MultidimensionalArray ret = null;
+
+            var JacobiDet = grd.GridData.iGeomCells.JacobiDet;
+
+            foreach (var pair in rules) {
+                var qr = pair.Rule;
+
+                for (int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
+                    if (jCell != cellNo)
+                        continue;
+
+                    int j = jCell - pair.Chunk.i0;
+                    if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
+                        throw new NotSupportedException("curved cells not supported!");
+                    }
+
+                    //qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
+
+                    var globTr = qr.CloneAs();
+                    globTr.TransformLocal2Global(grd, jCell);
+                    //globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
+                    
+
+                    double metric_jCell = JacobiDet[jCell];
+                    var WeightsGlobal_jCell = qr.Weights.CloneAs();
+                    WeightsGlobal_jCell.Scale(metric_jCell);
+
+
+                    ret = MultidimensionalArray.Create(globTr.NoOfNodes, globTr.SpatialDim + 1);
+
+
+                    for (int n = 0; n < globTr.NoOfNodes; n++) {
+                        for (int d=0; d < globTr.SpatialDim; d++) {
+                            ret[n, d] = globTr.Nodes[n, d];
+                }
+                        ret[n, globTr.SpatialDim] = WeightsGlobal_jCell[n];
+            }
+
+                }
+            }
+
+            if (ret == null)
+                throw new ArgumentOutOfRangeException($"jCell{cellNo} could not be found");
+
+            Console.WriteLine("Calculated the volume quadrature rule");
+            return ret;
+
+        }
+
+        public void WriteVolQuadRules(int deg, int spec = -1) {
+            var spcA = spec == -1 ? lsTrk.GetSpeciesId("A") : lsTrk.GetSpeciesId("B");
 
             var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
             var scheme = metrics.XQuadSchemeHelper.GetVolumeQuadScheme(spcA);
@@ -128,12 +203,18 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
 
 
-                for(int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
+                for (int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
                     int j = jCell - pair.Chunk.i0;
-                    if(!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
+                    if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
                         throw new NotSupportedException("curved cells not supported!");
                     }
                     
+                    qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
+                    var globTr = qr.CloneAs();
+                    globTr.TransformLocal2Global(grd, jCell);
+                    globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
+
+
                     var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);
                     NodesGlobal_jCell.SaveToTextFile("NodesJ" + jCell + ".txt");
 
