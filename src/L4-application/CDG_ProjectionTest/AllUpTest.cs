@@ -105,7 +105,6 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(0, 1)] int AMRlevel
 #else
             [Values(2, 3)] int dimension,
-            [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(0, 2)] int AMRlevel
 #endif
@@ -121,8 +120,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 #if DEBUG
             [Values(2)] int dimension,
             [Values(2, 4)] int gridResolution,
-            [Values(0, 1)] int AMRlevel,
-            [Values(true, false)] bool projectOnSameBasis
+            [Values(0, 1)] int AMRlevel
 #else
             [Values(2, 3)] int dimension,
             [Values(2, 4, 8)] int gridResolution,
@@ -132,14 +130,13 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             AllUp(2, dimension, 2, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
         }
 
-#if! DEBUG
+
         /// <summary>
         /// case 2
         /// </summary>
         [Test]
         static public void AllUp_patchwiseOnly_case2_sameDegree_p3(
             [Values(2, 3)] int dimension,
-            [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(0, 2)] int AMRlevel
             ) {
@@ -157,7 +154,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             ) {
             AllUp(2, dimension, 3, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
         }
-
+#if! DEBUG
         /// <summary>
         /// case 2
         /// </summary>
