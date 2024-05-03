@@ -109,6 +109,7 @@ namespace BoSSS.Foundation.IO {
                         loadedSession.Database = database;
                         loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
 
+                        tr.Info("loaded session " + loadedSession.ToString());
                         return loadedSession;
                     }
                 }
