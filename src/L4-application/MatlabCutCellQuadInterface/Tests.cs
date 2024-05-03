@@ -19,7 +19,9 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var app = new BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface.MatlabCutCellQuadInterface();
             app.BoSSSInitialize();
 
-            double[] xnodes = { 0, 0.5, 1 };
+            double[] xnodesCoarse = { 0, 0.5, 1 };
+            double[] xnodesNormal = { 0, 0.25, 0.5, 0.75, 1 };
+            var xnodes = xnodesNormal;
             app.SetDomain(2, xnodes, xnodes);
 
             double[] center = {  0.5, 0.5 };
@@ -28,7 +30,9 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
             app.SetLevelSets(3, phiCircle);
             app.CompileQuadRules(2, -1);
-            app.GetQuadRules(3, -1);
+            app.CompileQuadRules(2, 1);
+
+            app.GetQuadRules(3, 1);
             //app.WriteVolQuadRules(2);
         }
 
