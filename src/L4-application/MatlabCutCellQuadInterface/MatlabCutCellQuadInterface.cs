@@ -134,8 +134,14 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// </summary>
         /// <param name="deg"></param>
         /// <param name="spec">Integer value for the phase:
-        /// If level set < 0 then -1 and if level set > 0 then 1 </param>
+        /// 1 - external points; -1 - inner points; 0 - boundary points </param>
         public void CompileQuadRules(int deg, int SpeciesId = -1) {
+            // If interface does not bother to calculate others
+            if (SpeciesId == 0) {
+                CompileLevelsetQuadRules(deg);
+                return;
+            }
+
             var spcA = SpeciesId == -1 ? lsTrk.GetSpeciesId("A") : lsTrk.GetSpeciesId("B");
 
             var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
@@ -148,11 +154,27 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 rulesB = rules;
         }
 
+        /// <summary>
+        /// Compile quadrature rules for the given degree and level set index
+        /// </summary>
+        /// <param name="deg"></param>
+        /// <param name="levelSetIndex">Integer value for the level set</param>
+        public void CompileLevelsetQuadRules(int deg, int levelSetIndex = 0) {
+            var spcA = lsTrk.GetSpeciesId("A");
+
+            var metrics = lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spcA }, deg);
+            var scheme = metrics.XQuadSchemeHelper.GetLevelSetquadScheme(levelSetIndex, spcA, lsTrk.Regions.GetCutCellMask4LevSet(levelSetIndex));
+            var rules = scheme.Compile(grd.GridData, deg);
+
+            rulesInterface = rules;
+        }
+
         Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesA;
         Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesB;
+        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesInterface;
 
         public MultidimensionalArray GetQuadRules(int cellNo, int spec = -1) {
-            ICompositeQuadRule<QuadRule> rules = spec == -1 ? rulesA : rulesB;
+            ICompositeQuadRule<QuadRule> rules = spec == 1 ? rulesB : (spec == 0 ? rulesInterface : rulesA);
 
             MultidimensionalArray ret = null;
 
@@ -195,8 +217,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 }
             }
 
-            if (ret == null)
-                throw new ArgumentOutOfRangeException($"jCell{cellNo} could not be found");
+            //if (ret == null)
+            //    throw new ArgumentOutOfRangeException($"jCell{cellNo} could not be found");
 
             Console.WriteLine("Calculated the volume quadrature rule");
             return ret;
