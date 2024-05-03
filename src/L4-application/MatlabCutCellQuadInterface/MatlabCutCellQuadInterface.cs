@@ -31,19 +31,6 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         }
 
 
-        /// <summary>
-        /// the main purpose of this property is to guarantee that the assembly for all types are linked.
-        /// </summary>
-        static public Type[] ExplicitHooks {
-            get {
-                return new[] {
-                    typeof(Foundation.Grid.Classic.GridData),
-                    typeof(MatlabCutCellQuadInterface)
-                };
-            }
-
-        }
-
         static void Main(string[] args) {
             
             Console.WriteLine(args.Length);
@@ -58,7 +45,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// </summary>
         public void BoSSSInitialize() {
             try {
-                Console.WriteLine("Test");
+                Console.WriteLine("BoSSS has been initialized");
                 mustFinalizeMPI |= BoSSS.Solution.Application.InitMPI();
             } catch (Exception ex) {
                 Console.WriteLine(ex);
@@ -97,16 +84,24 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
         LevelSetTracker lsTrk;
 
-        public void SetLevelSets(int degree, _2D dummy) {
+        public void SetLevelSets(int degree, _2D inLevelSet) {
 
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
-            levSet0.ProjectField(dummy);
+            levSet0.ProjectField(inLevelSet);
 
             lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
-            PlotCurrentState(0);
+        }
 
+        public void SetLevelSets(int degree, _3D inLevelSet) {
+
+            Basis b = new Basis(grd, degree);
+            var levSet0 = new LevelSet(b, "LevelSetField0");
+            levSet0.ProjectField(inLevelSet);
+
+            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk.UpdateTracker(0.0);
         }
 
         public void PlotCurrentState(int superSampling=0) {
@@ -220,7 +215,6 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             //if (ret == null)
             //    throw new ArgumentOutOfRangeException($"jCell{cellNo} could not be found");
 
-            Console.WriteLine("Calculated the volume quadrature rule");
             return ret;
 
         }
@@ -238,8 +232,6 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 var qr = pair.Rule;
                 var NodesGlobal = grd.GridData.GlobalNodes.GetValue_Cell(qr.Nodes, pair.Chunk.i0, pair.Chunk.Len);
 
-
-
                 for (int jCell = pair.Chunk.i0; jCell < pair.Chunk.JE; jCell++) {
                     int j = jCell - pair.Chunk.i0;
                     if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
@@ -252,12 +244,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
 
 
-                    var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);
-
-                    double metric_jCell = JacobiDet[jCell];
-
-                    var WeightsGlobal_jCell = qr.Weights.CloneAs();
-                    WeightsGlobal_jCell.Scale(metric_jCell);
+                    //var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);
+                    //double metric_jCell = JacobiDet[jCell];
+                    //var WeightsGlobal_jCell = qr.Weights.CloneAs();
+                    //WeightsGlobal_jCell.Scale(metric_jCell);
                 }
             }
             Console.WriteLine("Calculated the volume quadrature rule");
