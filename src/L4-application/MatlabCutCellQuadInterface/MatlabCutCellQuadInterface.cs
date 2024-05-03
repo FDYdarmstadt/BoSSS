@@ -84,7 +84,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
         LevelSetTracker lsTrk;
 
-        public void SetLevelSets(int degree, _2D inLevelSet) {
+        public void SetLevelSet(int degree, _2D inLevelSet) {
 
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
@@ -94,7 +94,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             lsTrk.UpdateTracker(0.0);
         }
 
-        public void SetLevelSets(int degree, _3D inLevelSet) {
+        public void SetLevelSet(int degree, _3D inLevelSet) {
 
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
@@ -103,6 +103,104 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
         }
+
+        List<_2D> levelsets2D;
+        List<_3D> levelsets3D;
+
+        /// <summary>
+        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list for a given pint.
+        /// </summary>
+        /// <param name="delegates"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private _2D ReturnMaxDelegate(IEnumerable<_2D> delegates) {
+            if (delegates.Count() < 1)
+                throw new Exception("No level sets are submitted, call SubmitLevelSet() method first!");
+
+            if (delegates.Count() == 1)
+                return delegates.First();
+
+            return (x0, x1) => {
+                double maxResult = double.MinValue;
+                foreach (_2D del in delegates) {
+                    double result = del(x0, x1);
+                    if (result > maxResult) {
+                        maxResult = result;
+                    }
+                }
+                return maxResult;
+            };
+        }
+
+        /// <summary>
+        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list for a given pint.
+        /// </summary>
+        /// <param name="delegates"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private _3D ReturnMaxDelegate(IEnumerable<_3D> delegates) {
+            if (delegates.Count() < 1)
+                throw new Exception("No level sets are submitted, call SubmitLevelSet() method first!");
+
+            if (delegates.Count() == 1)
+                return delegates.First();
+
+            return (x0, x1, x2) =>
+            {
+                double maxResult = double.MinValue;
+                foreach (_3D del in delegates) {
+                    double result = del(x0, x1, x2);
+                    if (result > maxResult) {
+                        maxResult = result;
+                    }
+                }
+                return maxResult;
+            };
+        }
+
+        public void SubmitLevelSet(_2D inLevelSet) {
+            Levelsets2D.Add(inLevelSet);
+        }
+
+        public void SubmitLevelSet(_3D inLevelSet) {
+            Levelsets3D.Add(inLevelSet);
+        }
+
+
+        public void ProjectLevelSet(int degree) {
+            Basis b = new Basis(grd, degree);
+            var levSet0 = new LevelSet(b, "LevelSetField0");
+
+            // Projection
+            if (grd.SpatialDimension == 2) {
+                _2D inLevelSet = ReturnMaxDelegate(Levelsets2D);
+                levSet0.ProjectField(inLevelSet);
+
+            } else if (grd.SpatialDimension == 3) {
+                _3D inLevelSet = ReturnMaxDelegate(Levelsets3D);
+                levSet0.ProjectField(inLevelSet);
+
+            } else {
+                throw new Exception("Only 2D and 3D meshes are supported.");
+            }
+
+
+            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk.UpdateTracker(0.0);
+            Console.WriteLine("Successful creation of level set");
+        }
+
+
+        public void SetLevelSets(int degree, _3D[] inLevelSets) {
+            _3D inLevelSet = ReturnMaxDelegate(inLevelSets);
+            Basis b = new Basis(grd, degree);
+            var levSet0 = new LevelSet(b, "LevelSetField0");
+            levSet0.ProjectField(inLevelSet);
+
+            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk.UpdateTracker(0.0);
+        }
+
 
         public void PlotCurrentState(int superSampling=0) {
             Tecplot tecplot = new Tecplot(grd.GridData, (uint)superSampling);
@@ -167,6 +265,11 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesA;
         Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesB;
         Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesInterface;
+
+        public List<_2D> Levelsets2D { get => levelsets2D ?? (levelsets2D = new List<_2D>()); }
+
+        public List<_3D> Levelsets3D { get => levelsets3D ?? (levelsets3D = new List<_3D>()); }
+
 
         public MultidimensionalArray GetQuadRules(int cellNo, int spec = -1) {
             ICompositeQuadRule<QuadRule> rules = spec == 1 ? rulesB : (spec == 0 ? rulesInterface : rulesA);
