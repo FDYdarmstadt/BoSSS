@@ -39,6 +39,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public class Job {
 
+
         /// <summary>
         /// ctor.
         /// </summary>
