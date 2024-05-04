@@ -469,7 +469,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public ISessionInfo[] Sessions {
             get {
-                using (new FuncTrace()) {
+                using (var tr = new FuncTrace()) {
                     if (CurrentProject.IsEmptyOrWhite()) {
                         Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
                         return new ISessionInfo[0];
@@ -491,9 +491,24 @@ namespace BoSSS.Application.BoSSSpad {
                                     Guid g = Guid.Empty;
                                     try {
                                         g = si.ID;
+
+                                        if(si.ProjectName == null) {
+                                            if(si is SessionProxy sip) {
+                                                sip.TriggerReload = true;
+                                            }
+                                        }
+
                                         return si.ProjectName.Equals(this.CurrentProject);
                                     } catch (Exception e) {
+                                        string sessionString;
+                                        try {
+                                            sessionString =  (si?.GetType().ToString() ?? "X") + " // " + (si?.ToString() ?? "NULL");
+                                        } catch(Exception e2) {
+                                            sessionString = e2.ToString();
+                                        }
+
                                         Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
+                                        tr.Warning(" reading session " + g + ": " + e + " (" + e.StackTrace + "); Session = " + sessionString);
                                         return false;
                                     }
                                     //#endif

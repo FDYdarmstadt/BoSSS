@@ -87,7 +87,13 @@ namespace BoSSS.Foundation.IO {
 
         DateTime lastCheck = DateTime.MinValue;
 
+        public bool TriggerReload = false;
+
         bool isUpToDateFunc(ISessionInfo s) {
+            if (TriggerReload) {
+                TriggerReload = false;
+                return false;
+            }
             if (s.SuccessfulTermination) {
                 var nau = DateTime.Now;
                 // if the session is surely terminated, we cache the data at least for a minute or so to safe IO ops
@@ -99,6 +105,8 @@ namespace BoSSS.Foundation.IO {
                     // checked less than a minute ago; probably nothing has changed.
                     return true;
                 }
+            } else {
+                
             }
             var fileSysWriteTime = Utils.GetSessionFileWriteTime(s);
             bool b = fileSysWriteTime == s.WriteTime;

@@ -1232,6 +1232,7 @@ namespace PublicTestRunner {
                 }
 
                 // summary table
+                TimeSpan totalTime = new TimeSpan();
                 try {
                     var resTable = new Dictionary<string, IList<object>>();
                     const string jn = "JobName";
@@ -1255,6 +1256,7 @@ namespace PublicTestRunner {
                         resTable[st].Add(jj.job.Status);
                         resTable[rt].Add(jj.job.LatestDeployment.RunTime.TotalSeconds);
                         resTable[nd].Add(jj.job.AllDeployments.Count);
+                        totalTime += jj.job.LatestDeployment.RunTime;
 
                         string osString;
                         try {
@@ -1269,7 +1271,7 @@ namespace PublicTestRunner {
                     }
 
                     resTable.SaveToCSVFile("ResultTable.csv");
-                    File.Copy("ResultTable.csv", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now + ".csv"));
+                    //File.Copy("ResultTable.csv", Path.Combine("C:\\tmp", "ResultTable-" + DateTime.Now.ToString("MMMdd_HHmmss") + ".csv"));
                 } catch (Exception e) {
                     Console.WriteLine($"{e.Message}, {e.StackTrace}");
                 }
@@ -1278,7 +1280,7 @@ namespace PublicTestRunner {
 
                 // very final message:
                 if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
-                    Console.WriteLine("All tests/jobs finished successfully.");
+                    Console.WriteLine($"All tests/jobs finished successfully. Sum of runtime of all jobs: {totalTime}");
                     Console.WriteLine("SUCCESS.");
 
                     if(returnCode != 0) {
@@ -1290,7 +1292,7 @@ namespace PublicTestRunner {
                     returnCode = 0;
 
                 } else {
-                    Console.Error.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
+                    Console.Error.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states. Sum of runtime of all jobs: {totalTime}");
                     Console.Error.WriteLine("FAILURE.");
                 }
                 Console.WriteLine($"{DateTime.Now}");

@@ -587,14 +587,54 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
         [Test]
-        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
-            [Values(2, 3)] int FlowSolverDegree,
-            [Values(false, true)] bool SchurCompl,
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p2(
             [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
             ) {
+            int FlowSolverDegree = 2;
+            bool SchurCompl = false;
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
         }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p2(
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
+            ) {
+            int FlowSolverDegree = 2;
+            bool SchurCompl = true;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p3(
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
+            ) {
+            int FlowSolverDegree = 3;
+            bool SchurCompl = false;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p3(
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
+            ) {
+            int FlowSolverDegree = 3;
+            bool SchurCompl = true;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
+        }
+
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>; Schur complement off
