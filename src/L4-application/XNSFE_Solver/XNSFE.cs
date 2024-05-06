@@ -112,6 +112,45 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
         }
 
+        /// <summary>
+        /// override of <see cref="XNSE{T}.QuadOrder"/>, takes into account the temperature degree
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        override public int QuadOrder() {
+            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+                    $"If you do not know how to remove this exception, you should better return now!");
+            }
+
+            //QuadOrder
+            int degU = Math.Max(VelocityDegree(), TemperatureDegree());
+            int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                //See remarks
+                quadOrder *= 2;
+                quadOrder += 1;
+            }
+
+            return quadOrder;
+        }
+
+        /// <summary>
+        ///  temperature degree.
+        /// </summary>
+        protected int TemperatureDegree() {
+            int pT;
+            if (this.Control.FieldOptions.TryGetValue("Temperature", out FieldOpts t)) {
+                pT = t.Degree;            
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            return pT;
+        }
+
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             base.AddMultigridConfigLevel(configsLevel, iLevel);
             AddXHeatMultigridConfigLevel(configsLevel);
