@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 namespace XESF.Fluxes {
     internal class CentralMomentumFlux : CentralFlux {
         public CentralMomentumFlux(IBoundaryConditionMap boundaryMap, Material material, int component) : base(boundaryMap, material) {
+            base.material = material;
+            base.boundaryMap = boundaryMap;
             this.component = component;
         }
 

@@ -12,9 +12,9 @@ using ilPSP;
 namespace XESF.Fluxes {
     public abstract class CentralFlux : IEdgeForm, IVolumeForm, ISupportsJacobianComponent {
 
-        protected readonly IBoundaryConditionMap boundaryMap;
+        public IBoundaryConditionMap boundaryMap;
 
-        protected readonly Material material;
+        public Material material;
 
         protected string speciesName;
 
@@ -55,12 +55,13 @@ namespace XESF.Fluxes {
             }
         }
 
-        public double[] GetExternalState(ref CommonParamsBnd inp, double[] Uin) {
+        public double[] GetExternalState(ref CommonParamsBnd inp, double[] Uin)
+        {
             double[] Uout = new double[Uin.Length];
 
             var xdgBoudaryMap = this.boundaryMap as XDGCompressibleBoundaryCondMap;
             var boundaryMap = this.boundaryMap as CompressibleBoundaryCondMap;
-            if(xdgBoudaryMap == null && boundaryMap == null)
+            if (xdgBoudaryMap == null && boundaryMap == null)
                 throw new NotSupportedException("This type of boundary condition map is not supported.");
 
             //get EdgeTag
@@ -68,14 +69,15 @@ namespace XESF.Fluxes {
 
             // Get boundary condition on this edge
             BoundaryCondition boundaryCondition;
-            if(xdgBoudaryMap != null)
+            if (xdgBoudaryMap != null)
                 boundaryCondition = xdgBoudaryMap.GetBoundaryConditionForSpecies(EdgeTag, this.speciesName);
             else
                 boundaryCondition = boundaryMap.GetBoundaryCondition(EdgeTag);
 
             //create state vector from Uin
             Vector momentum = new Vector(inp.D);
-            for(int i = 0; i < inp.D; i++) {
+            for (int i = 0; i < inp.D; i++)
+            {
                 momentum[i] = Uin[i + 1];
             }
             var stateIn = new StateVector(material, Uin[0], momentum, Uin[inp.D + 1]);
@@ -85,7 +87,8 @@ namespace XESF.Fluxes {
 
             //Create Uout from stateOut
             Uout[0] = stateOut.Density;
-            for(int i = 0; i < inp.D; i++) {
+            for (int i = 0; i < inp.D; i++)
+            {
                 Uout[1 + i] = stateOut.Momentum[i];
             }
             Uout[inp.D + 1] = stateOut.Energy;

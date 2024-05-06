@@ -46,6 +46,18 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// - Returns a value from a dictionary <paramref name="dict"/>, if <paramref name="key"/> is present; 
+        /// - returns null, if <paramref name="key"/> is not in the dictionary.
+        /// </summary>
+        public static U Get<T, U>(this IDictionary<T, U> dict, T key)
+            where U : class //
+        {
+            
+            dict.TryGetValue(key, out var val);
+            return val;
+        }
+
+        /// <summary>
         /// Checks whether all elements of the given sequence are uniform (or
         /// homogeneous) with respect to the given <paramref name="selector"/>.
         /// That is, it checks whether <paramref name="selector"/>(element)
@@ -772,16 +784,24 @@ namespace ilPSP {
             using(var stw = new StringWriter()) {
                 if(firstSign != null)
                     stw.Write(firstSign);
+                if(ie == null) {
+                    stw.Write(lastSign);
+                    return stw.ToString();
+                }
+
+
                 int L = ie.Count();
                 int cnt = 0;
-                foreach(var o in ie) {
-                    if (o != null)
-                        stw.Write(o);
-                    else
-                        stw.Write("Null");
-                    if(cnt < (L - 1))
-                        stw.Write(separator);
-                    cnt++;
+                if (ie != null) {
+                    foreach (var o in ie) {
+                        if (o != null)
+                            stw.Write(o);
+                        else
+                            stw.Write("Null");
+                        if (cnt < (L - 1))
+                            stw.Write(separator);
+                        cnt++;
+                    }
                 }
                 if(lastSign != null)
                     stw.Write(lastSign);
@@ -790,5 +810,49 @@ namespace ilPSP {
             }
         }
 
+
+        /// <summary>
+        /// Helps to print an enumeration of objects into a nice string, e.g. something like:
+        /// ```
+        ///   (obj1, obj2, obj3)
+        /// ```
+        /// </summary>
+        /// <param name="ie"></param>
+        /// <param name="firstSign">
+        /// first part of the return string
+        /// </param>
+        /// <param name="separator">
+        /// separator between elements
+        /// </param>
+        /// <param name="lastSign">
+        /// final part of the return string
+        /// </param>
+        /// <returns></returns>
+        public static string ToConcatString(this IEnumerable<double> ie, string firstSign, string separator, string lastSign, string format = "g7") {
+            using (var stw = new StringWriter()) {
+                if (firstSign != null)
+                    stw.Write(firstSign);
+                if (ie == null) {
+                    stw.Write(lastSign);
+                    return stw.ToString();
+                }
+
+                int L = ie.Count();
+                int cnt = 0;
+                if (ie != null) {
+                    foreach (var o in ie) {
+                        stw.Write(o.ToString(format));
+                        
+                        if (cnt < (L - 1))
+                            stw.Write(separator);
+                        cnt++;
+                    }
+                }
+                if (lastSign != null)
+                    stw.Write(lastSign);
+
+                return stw.ToString();
+            }
+        }
     }
 }

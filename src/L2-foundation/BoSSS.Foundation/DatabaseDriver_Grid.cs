@@ -39,6 +39,42 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Searches for an equivalent grid in the database.
+        /// </summary>
+        /// <param name="grid">
+        /// The grid for which an equivalent one should be searched.
+        /// </param>
+        /// <param name="database"></param>
+        /// <returns>
+        /// the equivalent grid, if found; otherwise, null
+        /// </returns>
+        public IGrid SearchForEquivalentGrid(IGrid grid, IDatabaseInfo database) {
+            using (var tr = new FuncTrace("SearchForEquivalentGrid")) {
+                var Grids = database.Grids;
+                foreach (var GrdInf in Grids) {
+                    IGrid gridInDatabase = (IGrid)this.LoadGridInfo(GrdInf.ID, database);
+
+                    IEqualityComparer<IGrid> cellComparer = grid.GridSerializationHandler.CellComparer;
+                    IEqualityComparer<IGrid> referenceComparer = grid.GridSerializationHandler.BasePropertiesComparer;
+
+                    if (referenceComparer.Equals(grid, gridInDatabase)) {
+                        tr.Info($"base properties match {gridInDatabase}");
+
+                        gridInDatabase = LoadGridData(gridInDatabase);
+                        if (cellComparer.Equals(grid, gridInDatabase)) {
+                            tr.Info($"Found equivalent: {gridInDatabase}");
+                            grid = gridInDatabase;
+                            return grid;
+                        }
+                    }
+                }
+                tr.Info("No equivalent grid found.");
+                return null;
+            }
+        }
+
+
+        /// <summary>
         /// Searches for an equivalent grid in the database and, if none is found
         /// saves a grid object to the database.
         /// </summary>
@@ -50,27 +86,22 @@ namespace BoSSS.Foundation.IO {
         /// Indicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
+        /// <returns>the id of the equivalent grid, if found; otherwise, the id of <paramref name="grid"/></returns>
         public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database) {
-            using (new FuncTrace("SaveGridIfUnique")) {
-                var Grids = database.Grids;
-                foreach (var GrdInf in Grids) {
-                    IGrid gridInDatabase = (IGrid)this.LoadGridInfo(GrdInf.ID, database);
+            using (var tr = new FuncTrace("SaveGridIfUnique")) {
+                var ge = SearchForEquivalentGrid(grid, database);
 
-                    IEqualityComparer<IGrid> cellComparer = grid.GridSerializationHandler.CellComparer;
-                    IEqualityComparer<IGrid> referenceComparer = grid.GridSerializationHandler.BasePropertiesComparer;
-
-                    if (referenceComparer.Equals(grid, gridInDatabase)) {
-                        gridInDatabase = LoadGridData(gridInDatabase);
-                        if (cellComparer.Equals(grid, gridInDatabase)) {
-                            grid = gridInDatabase;
-                            EquivalentGridFound = true;
-                            return grid.ID;
-                        }
-                    }
+                if (ge == null) {
+                    EquivalentGridFound = false;
+                    var g = SaveGrid(grid, database);
+                    tr.Info($"No equivalent grid, saved new grid {grid}");
+                    return g;
+                } else {
+                    EquivalentGridFound = true;
+                    grid = ge;
+                    tr.Info($"equivalent grid found: {ge}");
+                    return ge.ID;
                 }
-                EquivalentGridFound = false;
-                var g = SaveGrid(grid, database);
-                return g;
             }
         }
 

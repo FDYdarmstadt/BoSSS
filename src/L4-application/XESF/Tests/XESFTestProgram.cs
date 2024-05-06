@@ -22,31 +22,36 @@ using System.Diagnostics.Metrics;
 
 namespace XESF.Tests
 {
+    [TestFixture]
     public static class XESFTestProgram
-    {
+            {
+        
         #region NUnit stuff
-        //[OneTimeSetUp]
-        //static public void Init() {
-        //    BoSSS.Solution.Application.InitMPI();
-        //}
-
-        //[OneTimeTearDown]
-        //static public void Cleanup() {
-        //}
-        #endregion
-
-        #region SupersonicWedgeFlow using two LS on a Cartesian Mesh
-        public static void XDG_SWF_TwoLs()
+        [OneTimeSetUp]
+        static public void Init()
         {
             BoSSS.Solution.Application.InitMPI();
+        }
+
+        [OneTimeTearDown]
+        static public void Cleanup()
+        {
+        }
+        #endregion
+
+        #region SupersonicWedgeFlow using two LS on a Cartesian mesh
+        [Test]
+        public static void XDG_SWF_TwoLs()
+        {
+            BoSSS.Solution.Application.InitMPI(num_threads:1); //fails if more than 1 thread is chosenm problem with OpenMP
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
                 var C = XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base(
                     optiLSDegree: 1,
                     lsDegree: 1,
-                    shocksetup: ApplicationWithIDT.GetLevelSet.FromParams,
-                    optiLevelSetType: OptiLevelSetType.GlobalLevelSet,
+                    shocksetup: ApplicationWithIDT.GetLevelSet.FromFunction,
+                    optiLevelSetType: OptiLevelSetType.SplineLevelSet,
                     initialValue: ApplicationWithIDT.GetInitialValue.FromFunctionPerSpecies,
                     MaxIterations: 200,
                     dgDegree: 0,
@@ -62,16 +67,17 @@ namespace XESF.Tests
                     );
                 p.Init(C);
                 p.RunSolverMode();
-                var tol1 = 1e-02;
-                var tol2 = 2.5;
+                var tol1 = 1e-07;
+                var tol2 = 1e-07;
                 Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol2 && p.ResidualVector.MPI_L2Norm() < tol1), $"the L2 Error is greater than {tol1} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
             }
         }
         #endregion
         #region SupersonicWedgeFlow using one LS on a Cartesian rotated mesh
+        [Test]
         public static void XDG_SWF_OneLs_Cart()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
@@ -91,98 +97,47 @@ namespace XESF.Tests
             }
         }
         #endregion
-
-
-        public static void XDGBowShockFromOldRun(
-            string dbPath=@"\\dc3\userspace\sebastian\cluster\XESF_BowShock_ConvStudy2_12022024", 
-            string sessId= "b9f34fb7-0e80-45d9-9669-737e2900cf84",
-            string gridId= "f9f4e736-496c-4740-a79f-c07dfdbcddc7", 
-            int tsNumber=161,int dgDegree_start=1)
+        public static void XDGBowShockFromDB()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
-                var C = XESFHardCodedControl.XDGBowShock_TwoLs_LSFromDB(
-                    dgDegreeStart:dgDegree_start,
-                    optiLSDegree: 3,
-                    lsTwoDegree: 3,
-                    lsOneDegree: 3,
-                    dbPath: dbPath,
-                    restart: true,
-                    sessId:sessId,
-                    gridId:gridId,
-                    tsNumber:tsNumber,
-                    initialValue: GetInitialValue.FromDBXDG,
-                    MaxIterations: 200,
-                    agg: 0.4,
-                    solverRunType: SolverRunType.PContinuation,
-                    MinPIter: new int[] { 20, 20, 20, 20, 20, 20 },
-                    applyReInit: false,
-                    ReInitTols: new double[] { 0, -1e-1, -0.25, -((double)1) / 9, -((double)1) / 16 },
-                    MaxReInits: new int[] { 0, 30, 30, 30, 30 },
-                    PlotInterval: 1,
-                    bulkFlux: ConvectiveBulkFluxes.OptimizedHLLC,
-                    interfaceFluxLS1: ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
-                    interfaceFluxLS2: ConvectiveInterfaceFluxes.RoeInterface,
-                    FluxVersion: XESF.Fluxes.FluxVersion.Optimized
-                ); ;
+                var C = XESFHardCodedControl.XDGBS_Local(
+                    plotInterval: 1
+                    );
+                C.GetInitialValue = GetInitialValue.FromP0Timestepping;
                 p.Init(C);
                 p.RunSolverMode();
-                var tol = 1e-02;
-                p.DerivedVariableToXDGFieldMap.TryGetValue(XESF.Variables.XESFVariables.Enthalpy_Error, out XDGField EE);
-                Assert.IsTrue((EE.L2NormAllSpecies() < tol), $"the L2 Enthalpy Error is greater than {tol} (EE={EE.L2NormAllSpecies()}");
             }
         }
-        /// <summary>
-        /// BowShock, where the initial conditions and LevelSet are loaded from a Database, mostly an AV run
-        /// </summary>
-        public static void XDGBowShockFromDB(int xCells, int yCells, int deg, int sDeg)
+        public static void XDG_SWF_TwoLs_HighOrder()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             using (var p = new XESFMain())
             {
-                var C = XESFHardCodedControl.XDGBowShock_TwoLs_LSFromDB(
-                    optiLSDegree: 3,
-                    lsTwoDegree: 3,
-                    lsOneDegree: 3,
-                    dbPath: null,
-                    shockLevelSet_Db: @"..\..\..\Tests\bosss_db_levelSets.zip",
-                    shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
-                    pointPath: @"..\..\..\Tests\BowShockPoints.txt",
-                    initialValue: GetInitialValue.FromDBSinglePhase,
-                    MaxIterations: 200,
-                    agg: 0.4,
-                    numOfCellsX: xCells,
-                    numOfCellsY: yCells,
-                    solverRunType: SolverRunType.PContinuation,
-                    MinPIter: new int[] { 20, 20, 20, 20, 20, 20 },
-                    applyReInit: false,
-                    ReInitTols: new double[] { 0, -1e-1, -0.25, -((double)1)/9, -((double)1) / 16 },
-                    MaxReInits: new int[] { 0, 30, 30, 30, 30 },
-                    dgDegreeStart: sDeg,
-                    dgDegreeEnd: deg,
-                    PlotInterval: 1,
-                    bulkFlux: ConvectiveBulkFluxes.OptimizedHLLC,
-                    interfaceFluxLS1: ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
-                    interfaceFluxLS2: ConvectiveInterfaceFluxes.GodunovInterface,
-                    FluxVersion: XESF.Fluxes.FluxVersion.Optimized
-                );
+                var C = XESFHardCodedControl.XDGWS_Cluster(
+                    dgDegree: 3,
+                    lsdegree: 3,
+                    getInitialValue: GetInitialValue.FromP0Timestepping,
+                    wedge_angle: 35,
+                    plotInterval: 1
+                    );
+
                 p.Init(C);
                 p.RunSolverMode();
-                var tol = 1e-02;
-                p.DerivedVariableToXDGFieldMap.TryGetValue(XESF.Variables.XESFVariables.Enthalpy_Error, out XDGField EE);
-                Assert.IsTrue((EE.L2NormAllSpecies() < tol ), $"the L2 Enthalpy Error is greater than {tol} (EE={EE.L2NormAllSpecies()}");
+                var tol = 1e-07;
+                Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < tol && p.ResidualVector.MPI_L2Norm() < tol), $"the L2 Error is greater than {tol} (Residual {p.ResidualVector.MPI_L2Norm()}, Enriched Residual {p.obj_f_vec.MPI_L2Norm()}");
+
             }
         }
-
-        /// <summary>
-        /// Helper function to store interpolating points of an SplineLevelSet
-        /// </summary>
-        /// <param name="p"></param>
-        /// <param name="filename"></param>
-        public static void SaveIsoContourToTextFile(XESFMain p, string filename)
+/// <summary>
+/// Helper function to store interpolating points of an SplineLevelSet
+/// </summary>
+/// <param name="p"></param>
+/// <param name="filename"></param>
+public static void SaveIsoContourToTextFile(XESFMain p, string filename)
         {
             if (p.LevelSetOpti is SplineOptiLevelSet spliny)
             {

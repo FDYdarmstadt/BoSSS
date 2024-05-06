@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\public\src\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
   </ItemGroup>
 
 </Project>

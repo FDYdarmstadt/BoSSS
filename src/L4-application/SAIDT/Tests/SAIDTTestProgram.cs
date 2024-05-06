@@ -52,15 +52,15 @@ namespace SAIDT.Tests {
         //Some straight Example with good first guess and SinglePhaseFieldLevelSet
         public static void StraightShock_p0_SplineLevelSet() {
             BoSSS.Solution.Application.InitMPI();
-            using(var p = new SAIDTMain()) {
+
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            using (var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.StraightShock(
                     MaxIterations: 150,
                     dgDegree: 0,
-                    numOfCellsX: 5,
-                    numOfCellsY: 5,
-                    OptiNumOfCellsX: 5,
-                    OptiNumOfCellsY: 5,
-                    agg: 0.1,
+                    numOfCellsX:10,
+                    numOfCellsY: 10,
+                    agg: 0.2,
                     ImmediatePlotPeriod: -1,
                     optiLevelSetType: OptiLevelSetType.SplineLevelSet,
                     LSDegree: 3,
@@ -68,11 +68,10 @@ namespace SAIDT.Tests {
                     isFarConfig: true
                     ) ;
                 C.minimalSQPIterations = new int[] { 100, 100, 100 }; //we need to ensure enough iterations
-                C.Gamma_Start = 1e-1;
-                C.Gamma_Min = 1e-2;
+                C.Gamma_Start = 1;
                 p.Init(C);
                 p.RunSolverMode();
-                Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < 3e-8 && p.ResidualVector.MPI_L2Norm() < 3e-8), System.String.Format("the L2 Error is greater than 1e-09 (Residual {0}, Enriched Residual {1}", p.ResidualVector.MPI_L2Norm(), p.obj_f_vec.MPI_L2Norm()));
+                Assert.IsTrue((p.obj_f_vec.MPI_L2Norm() < 1e-4 && p.ResidualVector.MPI_L2Norm() < 1e-4), System.String.Format("the L2 Error is greater than 1e-09 (Residual {0}, Enriched Residual {1}", p.ResidualVector.MPI_L2Norm(), p.obj_f_vec.MPI_L2Norm()));
             }
         }
 

@@ -488,7 +488,7 @@ namespace BoSSS.Solution.Control {
 
             public bool TryGetValue(string key, out R value) {
                 var r = home.TryGetValue(key, out var tt);
-                value = Ex(tt);
+                value = r ? Ex(tt) : default(R);
                 return r;
             }
 
@@ -572,7 +572,17 @@ namespace BoSSS.Solution.Control {
         public IDictionary<string, ScalarFunctionTimeDep> InitialValues_EvaluatorsVec {
             get {
                 Sync__InitialValues_Evaluators();
-                return new ProxyDict_ScalarFunction() { home = m_InitialValues_Evaluators };
+                var ret = new ProxyDict_ScalarFunction() { home = m_InitialValues_Evaluators };
+
+                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+
+                return ret;
             }
         }
 
@@ -587,12 +597,22 @@ namespace BoSSS.Solution.Control {
         /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
         /// </remarks>
         [JsonIgnore]
-        public IDictionary<string, Func<double[],double>> InitialValues_Evaluators {
+        public IDictionary<string, Func<double[], double>> InitialValues_Evaluators {
             get {
                 Sync__InitialValues_Evaluators();
-                return new ProxyDict_Func() {
-                    home = m_InitialValues_Evaluators 
+                var ret = new ProxyDict_Func() {
+                    home = m_InitialValues_Evaluators
                 };
+
+                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                //if (!ret.Keys.SetEquals(InitialValues_EvaluatorsVec.Keys))
+                //    throw new ApplicationException($"InitialValues_EvaluatorsVec keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+
+                return ret;
             }
         }
 
@@ -608,12 +628,22 @@ namespace BoSSS.Solution.Control {
         /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
         /// </remarks>
         [JsonIgnore]
-        public IDictionary<string, Func<double[],double,double>> InitialValues_Evaluators_TimeDep {
+        public IDictionary<string, Func<double[], double, double>> InitialValues_Evaluators_TimeDep {
             get {
                 Sync__InitialValues_Evaluators();
-                return new ProxyDict_Func_TimeDep() {
-                    home = m_InitialValues_Evaluators 
+                var ret = new ProxyDict_Func_TimeDep() {
+                    home = m_InitialValues_Evaluators
                 };
+
+                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                //if (!ret.Keys.SetEquals(InitialValues_EvaluatorsVec.Keys))
+                //    throw new ApplicationException($"InitialValues_EvaluatorsVec keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+
+                return ret;
             }
         }
 
@@ -675,7 +705,8 @@ namespace BoSSS.Solution.Control {
 
         /// <summary>
         /// Saves restart Information: GUID of the restarted session and the time-step
-        /// If empty, no restart is done.
+        /// - If empty, no restart is done.
+        /// - if the 2dn argument (<see cref="TimestepNumber"/>) is null, the last timestep is taken
         /// </summary>
         [DataMember]
         public Tuple<Guid, TimestepNumber> RestartInfo;

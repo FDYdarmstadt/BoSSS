@@ -165,7 +165,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             base.RuntimeLocation = "win\\amd64";
 
-            m_AdditionalEnvironmentVars.Add("OMP_PROC_BIND", "spread");
+            //m_AdditionalEnvironmentVars.Add("OMP_PROC_BIND", "spread");
         }
 
 
@@ -496,6 +496,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard error file.
         /// </summary>
         public override string GetStderrFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
@@ -503,6 +505,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard output file.
         /// </summary>
         public override string GetStdoutFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
 

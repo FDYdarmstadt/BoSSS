@@ -48,36 +48,40 @@ using System.ComponentModel;
 namespace BoSSS.Application.SipPoisson {
 
 
+    static class  BoSSSmkl {
+        
+    }
+
+
     /// <summary>
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
 
-
+        
         /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            
 
 
-            //InitMPI(args);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
-            
             /*
-             * int Nothreads = args.Length > 0 ? int.Parse(args[0]) : 4;
-            //int stack = args.Length > 1 ? int.Parse(args[1]) : 0;
+
+            Debugger.Launch();
+            InitMPI(args);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
+
+            
             int MpiSz;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
             int Rank;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
-            Console.WriteLine($"Stressing with {MpiSz}x{Nothreads}");
-            
 
-
+            int Nothreads = ilPSP.Environment.NumThreads;
+             
 
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
@@ -86,38 +90,20 @@ namespace BoSSS.Application.SipPoisson {
 
             //Process proc = Process.GetCurrentProcess();
             var CPUidxs = ilPSP.Utils.CPUAffinity.GetAffinity();
-            Console.WriteLine("r" + Rank + $"  Affinity to {CPUidxs.Count()} cores: {CPUidxs.ToConcatString("", ", ", ";")}");
+            Console.WriteLine("r" + Rank + $" Windows Affinity to {CPUidxs.Count()} cores: {CPUidxs.ToConcatString("", ", ", ";")}");
 
             //proc.ProcessorAffinity = (IntPtr) 0xFFFFFFFFFFFF;
             //Console.WriteLine("r" + Rank + $"  Reset Affinity {proc.ProcessorAffinity:X}");
-
-            
-
-            
+                        
 
 
             ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
 
-
-            {
-                
-                // Get all environment variables
-                IDictionary environmentVariables = System.Environment.GetEnvironmentVariables();
-
-                
-
-                using (var stw = new StreamWriter("envvar" + Rank + ".txt")) {
-                    foreach (DictionaryEntry variable in environmentVariables) {
-                        stw.WriteLine($"Rank {Rank}: {variable.Key} = {variable.Value}");
-                    }
-
-                }
-
-            }
+           
 
             //SetOMPAffinity(Nothreads, Rank, MpiSz, false);
-            ilPSP.Environment.InitThreading(false, Nothreads);
+            //ilPSP.Environment.InitThreading(false, Nothreads);
 
 
 
@@ -142,22 +128,38 @@ namespace BoSSS.Application.SipPoisson {
             var start = DateTime.Now;
             var timeout = new TimeSpan(hours: 0, minutes: 50, seconds: 1);
             Stopwatch s0 = new Stopwatch();
-            int cnt = 0;
+            int cnt = -1;
             while (true) {
-                if (DateTime.Now - start > timeout) {
-                    FinalizeMPI();
-                    return;
+                var duration = DateTime.Now - start;
+                if (duration > timeout) {
+                    //FinalizeMPI();
+                    //return;
+                    break;
                 }
 
+                {
+                    cnt = (int)Math.Round(duration.TotalSeconds / 15);
+                    if (cnt < 0)
+                        cnt = 0;
+                    Console.WriteLine("count = " + cnt);
 
-                //cnt++;
-                //if (cnt > 2) {
-                //    Console.WriteLine("Now with proper affinity...");
-                //    SetAffinity(Nothreads, Rank);
-                //} else {
-                //    Console.WriteLine("Now with fucked-up affinity...");
-                //    SetAffinity(Nothreads, 0);
-                //}
+                    int[] CPUs;
+                    if (duration.TotalSeconds < 1*60) {
+                        CPUs = new int[] { 4, 5, 6, 7, 8, 9, 10, 11 };
+                        //CPUs = 40.ForLoop(i => i + 4);
+                    } else if (duration.TotalSeconds < 2*60) {
+                        CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
+                        //CPUs = 40.ForLoop(i => i + 4 + 64);
+                    } else if (duration.TotalSeconds < 3*60) {
+                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
+                        //CPUs = ArrayTools.Cat(42.ForLoop(i => i + 2), 42.ForLoop(i => i + 64 + 2));
+                    } else {
+                        CPUs = 4.ForLoop(i => i*2 + 4);
+                        //CPUs = new int[] { 64, 65, 66, 70, 71, 72 };
+                    }
+                    Console.WriteLine($"Binding to {CPUs.Length} CPUs/cores");
+                    ilPSP.MKLservice.BindOMPthreads(CPUs);
+                }
 
 
                 s0.Reset();
@@ -180,7 +182,7 @@ namespace BoSSS.Application.SipPoisson {
                 var AnrmG = AnrmLoc.MPISum().Sum();
                 var BnrmG = BnrmLoc.MPISum().Sum();
                 var CnrmG = CnrmLoc.MPISum().Sum();
-
+                
                 Console.WriteLine("A norm: " + AnrmG);
                 Console.WriteLine("B norm: " + BnrmG);
                 Console.WriteLine("C norm: " + CnrmG);
@@ -235,8 +237,7 @@ namespace BoSSS.Application.SipPoisson {
                                 _A[iRow, iCol] = Acc;
                             }
                         }
-                        ilPSP.Utils.CPUAffinityWindows.HelloGroup();
-
+                        
                     });
                     s0.Stop();
                     Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
@@ -244,8 +245,7 @@ namespace BoSSS.Application.SipPoisson {
 
             }
 
-            */
-
+            //*/
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 
@@ -253,21 +253,7 @@ namespace BoSSS.Application.SipPoisson {
             });
         }
 
-        private static void SetOMPAffinity(int Nothreads, int Rank, int Size, bool Global) {
-            ilPSP.Environment.StdoutOnlyOnRank0 = false;
-
-            string omp_places;
-            if(!Global)
-                omp_places = $"{{{Nothreads*Rank}:{Nothreads}}}";
-            else
-                omp_places = $"{{0:{Nothreads*Size}}}";
-            System.Environment.SetEnvironmentVariable("OMP_PROC_BIND", "spread");
-            System.Environment.SetEnvironmentVariable("OMP_PLACES", omp_places);
-            Console.WriteLine($"R{Rank}: OMP_PLACES = {omp_places}");
-
-            ilPSP.Environment.StdoutOnlyOnRank0 = true;
-        }
-
+       
 
 #pragma warning disable 649
         /// <summary>

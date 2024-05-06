@@ -33,6 +33,8 @@ namespace SAIDT.Fluxes
         private LevelSetTracker lsTrk;
         private double a;
         public Func<double, double> FlowFunc;
+        double s_alpha = 10;
+        bool is_nf_smth;
 
         public int LevelSetIndex {
             get;
@@ -69,17 +71,29 @@ namespace SAIDT.Fluxes
         }
 
 
+        double SmoothedHeaviSide(double x)
+        {
+            return 1 / (1 + Math.Exp(-2 * s_alpha * x));
+        }
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             // Flux across the interface
             // Took Regular Flux
             Vector n = new Vector(2); n.x = inp.Normal.x; n.y = inp.Normal.y;
-            var vel = FlowField(inp.X);
-
-            if(vel * n > 0)
-                return (vel * uA[0]) * n * (vA - vB);
+            var flowfield = FlowField(inp.X);
+            double beta_n = flowfield * n;
+            double ret;
+            if (is_nf_smth)
+            {
+                ret = (flowfield * uA[0]) * n * SmoothedHeaviSide(beta_n) + (flowfield * uB[0]) * n * (1 - SmoothedHeaviSide(beta_n));
+            }
             else
-                return (vel * uB[0]) * n * (vA - vB);
-
+            {
+                if (beta_n > 0)
+                    ret = beta_n * uA[0];
+                else
+                    ret = beta_n * uB[0];
+            }
+            return ret * (vA - vB);
             //throw new NotSupportedException("Has to be checked again.");
         }
 
@@ -94,25 +108,14 @@ namespace SAIDT.Fluxes
 
         public IList<string> ParameterOrdering => null;
 
-
-
-
-        //private readonly LevelSetTracker levelSetTracker;
-
-        public ScalarAdvectionUpwindFlux_Interface(LevelSetTracker levelSetTracker, int levelSetIndex = 0, string posSpecies = "R", string negSpecies = "L") {
-            //this.levelSetTracker = levelSetTracker;
-
-            LevelSetIndex = levelSetIndex;
-            PositiveSpecies = posSpecies;
-            NegativeSpecies = negSpecies;
-        }
-
-        public ScalarAdvectionUpwindFlux_Interface(LevelSetTracker lsTrk, Func<double, double> FlowFunc, int levelSetIndex = 0, string posSpecies = "R", string negSpecies = "L") {
+        public ScalarAdvectionUpwindFlux_Interface(LevelSetTracker lsTrk, Func<double, double> FlowFunc, int levelSetIndex = 0, string posSpecies = "R", string negSpecies = "L", double s_alpha = 10, bool is_nf_smth = false) {
             this.lsTrk = lsTrk;
             this.FlowFunc = FlowFunc;
             LevelSetIndex = levelSetIndex;
             PositiveSpecies = posSpecies;
             NegativeSpecies = negSpecies;
+            this.s_alpha = s_alpha;
+            this.is_nf_smth = is_nf_smth;
         }
 
         public ScalarAdvectionUpwindFlux_Interface(double a) {
