@@ -8,6 +8,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation;
 using ilPSP;
+using ilPSP.Utils;
 using ilPSP.Connectors;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -158,11 +159,18 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             };
         }
 
-        public void SubmitLevelSet(_2D inLevelSet) {
+
+        public void Submit2DLevelSet(_2D inLevelSet) {
+            if (grd.SpatialDimension != 2)
+                throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (2D).");
+
             Levelsets2D.Add(inLevelSet);
         }
 
-        public void SubmitLevelSet(_3D inLevelSet) {
+        public void Submit3DLevelSet(_3D inLevelSet) {
+            if (grd.SpatialDimension != 3)
+                throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (3D).");
+
             Levelsets3D.Add(inLevelSet);
         }
 
