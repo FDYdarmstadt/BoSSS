@@ -30,10 +30,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
         public double cahn = 1.0;
 
         /// <summary>
-        /// ContactAngle for walls
+        /// ContactAngle for walls, as formula text!
+        /// Putting a formula directly has a hidden bug, the code of the "static" formula gets overriden when deserializing, but the internal objects poit to the "static" formula text.
         /// </summary>
         [DataMember]
-        public Formula theta = new Formula("X => Math.PI/2.0");
+        public string theta = "X => Math.PI/2.0";
 
         /// <summary>
         /// Timestepping scheme, use RK as the implementation does not remember "old" timesteps (necessary for BDF)
