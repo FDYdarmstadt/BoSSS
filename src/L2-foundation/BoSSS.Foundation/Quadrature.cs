@@ -47,6 +47,16 @@ namespace BoSSS.Foundation.Quadrature {
         /// the results from multi-threaded quadrature are compared against single-threaded quadrature execution.
         /// </summary>
         public static bool ENABLE_MULTITHREAD_CHECKING = false;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static double MULTITHREAD_CHECKING_ABS_THRESHOLD = 0.0;
+
+        /// <summary>
+        /// relative comparison threshold
+        /// </summary>
+        public static double MULTITHREAD_CHECKING_REL_THRESHOLD = 1e-10;
     }
 
     /// <summary>
@@ -819,7 +829,7 @@ namespace BoSSS.Foundation.Quadrature {
                                 err_k.Acc(-1.0, res_k);
                                 double norm_err_k = err_k.L2Norm();
 
-                                checkErrors.Add((j + k, norm_err_k, Math.Max(norm_ref_k, norm_res_k)*1.0e-10));
+                                checkErrors.Add((j + k, norm_err_k, Math.Max(norm_ref_k, norm_res_k)*Quadrature_Settings.MULTITHREAD_CHECKING_REL_THRESHOLD + Quadrature_Settings.MULTITHREAD_CHECKING_ABS_THRESHOLD));
                             }
                         }
                     }

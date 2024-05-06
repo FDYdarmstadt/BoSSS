@@ -304,7 +304,7 @@ namespace BoSSS.Application.BoSSSpad {
                         tr.Info("found running.txt token");
                     } else {
                         // no 'isrunning.txt'-token and no 'exit.txt' token: job should be pending in queue
-                        tr.Info("jobb seems to be pending");
+                        tr.Info("job seems to be pending");
                         return (JobStatus.PendingInExecutionQueue, null);
 
                         //isRunning = false;
@@ -342,7 +342,7 @@ namespace BoSSS.Application.BoSSSpad {
                         tr.Info("jobstatus is `" + (jobstatus??"Null") + "`");
                         if(jobstatus == null) {
                             tr.Info("returning `Unknown` state");
-                            return (JobStatus.Unknown, null);
+                            return (JobStatus.FailedOrCanceled, null); // `running.txt` exists, but no job known to SLURM: probably canceled.
                         }
 
                         switch(jobstatus.ToUpperInvariant()) {
@@ -383,6 +383,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns path to text-file for standard error stream
         /// </summary>
         public override string GetStderrFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
@@ -391,6 +393,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns path to text-file for standard output stream
         /// </summary>
         public override string GetStdoutFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
         }

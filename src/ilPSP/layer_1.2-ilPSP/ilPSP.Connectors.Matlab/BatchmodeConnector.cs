@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
@@ -731,113 +732,117 @@ namespace ilPSP.Connectors.Matlab {
         /// a reader to the standard output of the MATLAB process.
         /// </returns>
         public void Execute(bool PrintOutput = true) {
-            SuccessfulExe = false;
-            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            if (Executed == true)
-                throw new InvalidOperationException("Execute can be called only once.");
+            using (var tr = new FuncTrace()) {
+                SuccessfulExe = false;
+                ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+                if (Executed == true)
+                    throw new InvalidOperationException("Execute can be called only once.");
 
-            int Rank = this.Rank;
+                int Rank = this.Rank;
 
-            // run MATLAB
-            // ==========
-            Cmd("exit"); // be sure to exit!
+                // run MATLAB
+                // ==========
+                Cmd("exit"); // be sure to exit!
 
-            if (Rank == 0) {
+                if (Rank == 0) {
 
-                CommandFile.Flush();
-                CommandFile.Close();
+                    CommandFile.Flush();
+                    CommandFile.Close();
 
-                //psi.RedirectStandardOutput = true;
-                //psi.RedirectStandardError = true;
-                //psi.RedirectStandardInput = true;
+                    //psi.RedirectStandardOutput = true;
+                    //psi.RedirectStandardError = true;
+                    //psi.RedirectStandardInput = true;
 
-                var proc = Process.Start(psi);
-                proc.WaitForExit();
-            }
-
-
-            // return 
-            // ======
-
-
-            if (Rank == 0) {
-                var p = Path.Combine(WorkingDirectory.FullName, LOGFILE);
-
-                if (PrintOutput && File.Exists(p)) {
-                    //var stdout = new StreamReader(p);
-                    //string line = stdout.ReadLine();
-                    //while (line != null) {
-                    //    Console.WriteLine(line);
-                    //    line = stdout.ReadLine();
-                    //}
-                    //stdout.Dispose();
-                    var text = File.ReadAllText(p);
-                    Console.WriteLine(text);
+                    using (var bt = new BlockTrace("RUNNING_MATLAB", tr)) {
+                        var proc = Process.Start(psi);
+                        proc.WaitForExit();
+                    }
                 }
 
-                CreatedFiles.Add(p);
-            }
 
-            foreach (string key in m_OutputObjects.Keys.ToArray()) {
-                object outputObj = m_OutputObjects[key];
-
-                string filepath;
-                if (Rank == 0)
-                    filepath = Path.Combine(WorkingDirectory.FullName, key);
-                else
-                    filepath = null;
-
-                if (outputObj is IMatrix) {
-                    // ++++++++++++++++++++++++++
-                    // load pre-allocated matrix
-                    // ++++++++++++++++++++++++++
-                    IMatrix outputMtx = (IMatrix)outputObj;
-                    if (Rank == 0)
-                        outputMtx.LoadFromTextFile(filepath);
+                // return 
+                // ======
 
 
-                    var _outputMtx = MPIExtensions.MPIBroadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
+                if (Rank == 0) {
+                    var p = Path.Combine(WorkingDirectory.FullName, LOGFILE);
 
-                    if (Rank != 0) {
-                        outputMtx.Clear();
-                        outputMtx.Acc(1.0, _outputMtx);
+                    if (PrintOutput && File.Exists(p)) {
+                        //var stdout = new StreamReader(p);
+                        //string line = stdout.ReadLine();
+                        //while (line != null) {
+                        //    Console.WriteLine(line);
+                        //    line = stdout.ReadLine();
+                        //}
+                        //stdout.Dispose();
+                        var text = File.ReadAllText(p);
+                        Console.WriteLine(text);
                     }
 
-                    if (!object.ReferenceEquals(outputObj, outputMtx)) {
+                    CreatedFiles.Add(p);
+                }
 
-                    }
+                foreach (string key in m_OutputObjects.Keys.ToArray()) {
+                    object outputObj = m_OutputObjects[key];
 
-                } else if (outputObj is Type && ((Type)outputObj) == typeof(MultidimensionalArray)) {
-                    // ++++++++++++++++++++++++++
-                    // load matrix which is NOT pre-allocated, unknown size
-                    // ++++++++++++++++++++++++++
-
-                    IMatrix outputMtx = null;
+                    string filepath;
                     if (Rank == 0)
-                        outputMtx = IMatrixExtensions.LoadFromTextFile(filepath);
+                        filepath = Path.Combine(WorkingDirectory.FullName, key);
+                    else
+                        filepath = null;
 
-                    var _outputMtx = MPIExtensions.MPIBroadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
-                    m_OutputObjects[key] = _outputMtx;
+                    if (outputObj is IMatrix) {
+                        // ++++++++++++++++++++++++++
+                        // load pre-allocated matrix
+                        // ++++++++++++++++++++++++++
+                        IMatrix outputMtx = (IMatrix)outputObj;
+                        if (Rank == 0)
+                            outputMtx.LoadFromTextFile(filepath);
 
-                } else if (outputObj is int[][]) {
-                    int[][] outputStAry = (int[][])outputObj;
 
-                    if (Rank == 0)
-                        LoadStaggeredArray(outputStAry, filepath);
+                        var _outputMtx = MPIExtensions.MPIBroadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
 
-                    var _outputStAry = MPIExtensions.MPIBroadcast(outputStAry, 0, csMPI.Raw._COMM.WORLD);
-
-                    if (Rank != 0) {
-                        for (int i = 0; i < Math.Max(_outputStAry.Length, outputStAry.Length); i++) { // we use max to ensure an index-out-of-range if something is fishy
-                            outputStAry[i] = _outputStAry[i];
+                        if (Rank != 0) {
+                            outputMtx.Clear();
+                            outputMtx.Acc(1.0, _outputMtx);
                         }
-                    }
-                } else {
-                    throw new NotImplementedException("output object type not implemented.");
-                }
-            }
 
-            SuccessfulExe = true;
+                        if (!object.ReferenceEquals(outputObj, outputMtx)) {
+
+                        }
+
+                    } else if (outputObj is Type && ((Type)outputObj) == typeof(MultidimensionalArray)) {
+                        // ++++++++++++++++++++++++++
+                        // load matrix which is NOT pre-allocated, unknown size
+                        // ++++++++++++++++++++++++++
+
+                        IMatrix outputMtx = null;
+                        if (Rank == 0)
+                            outputMtx = IMatrixExtensions.LoadFromTextFile(filepath);
+
+                        var _outputMtx = MPIExtensions.MPIBroadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
+                        m_OutputObjects[key] = _outputMtx;
+
+                    } else if (outputObj is int[][]) {
+                        int[][] outputStAry = (int[][])outputObj;
+
+                        if (Rank == 0)
+                            LoadStaggeredArray(outputStAry, filepath);
+
+                        var _outputStAry = MPIExtensions.MPIBroadcast(outputStAry, 0, csMPI.Raw._COMM.WORLD);
+
+                        if (Rank != 0) {
+                            for (int i = 0; i < Math.Max(_outputStAry.Length, outputStAry.Length); i++) { // we use max to ensure an index-out-of-range if something is fishy
+                                outputStAry[i] = _outputStAry[i];
+                            }
+                        }
+                    } else {
+                        throw new NotImplementedException("output object type not implemented.");
+                    }
+                }
+
+                SuccessfulExe = true;
+            }
         }
 
 

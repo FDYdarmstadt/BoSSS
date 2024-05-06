@@ -115,13 +115,13 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
 #if !DEBUG
         [Test]
-#endif       
+#endif
         public static void ScalingCircle2D(
         //[Values(1)] 
         [Values(1,2,3,4)]
             int dgDegree
         ) //
-    {
+        {
             int sz = ilPSP.Environment.MPIEnv.MPI_Size;
             if (sz > 1) {
                 Console.WriteLine("ScalingCircle2D: skipping for more than 1 processor.");
@@ -158,6 +158,27 @@ namespace BoSSS.Application.XdgPoisson3 {
             */
 
             ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingCircle2D" });
+        }
+
+
+        /// <summary>
+        /// A comparatively large circle for which caused some ArithmeticExcetion in <see cref="XdgAggregationBasis"/> (23apr24);
+        /// </summary>
+#if !DEBUG
+//        [Test]
+#endif
+        public static void LargeCircle2D(
+        [Values(4,5)]
+            int dgDegree
+        ) //
+        {
+
+            var c = BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 512, p: 4);
+
+            using(var s = new XdgPoisson3Main()) {
+                s.Init(c);
+                s.RunSolverMode();
+            }
         }
     }
 }

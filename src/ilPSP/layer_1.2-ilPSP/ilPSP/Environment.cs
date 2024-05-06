@@ -185,6 +185,10 @@ namespace ilPSP {
             set;
         } = 4;
 
+        /// <summary>
+        /// The maximum number of OpenMP threads on the entire computer (aka. Symmetric Multi Processing Node, SMP Node), among all MPI Ranks;
+        /// This is important if, e.g. in parallel PARDISO solves, the matrix is gathered on one MPI rank and all other Ranks pause;
+        /// </summary>
         public static int MaxNumOpenMPthreads { 
             get; 
             private set; 
@@ -220,6 +224,9 @@ namespace ilPSP {
         /// Enable/Re-enable the use of OpenMP in external libraries (mostly Intel MKL, which provides BLAS, LAPACK and PARDISO)
         /// </summary>
         public static void EnableOpenMP() {
+            if(DisableOpenMP_becauseIsSlow)
+                return; 
+
             if(OpenMPdisabled) {
                 MaxNumOpenMPthreads = backup_MaxNumOpenMPthreads;
                 OpenMPdisabled = false;
@@ -227,6 +234,7 @@ namespace ilPSP {
 
             BLAS.ActivateOMP();
             LAPACK.ActivateOMP();
+            SetOMPbinding();
         }
 
 
@@ -254,13 +262,13 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                //SetOMPbinding();
+                SetOMPbinding();
             }
         }
 
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = true) {
             if (InParallelSection == true) {
-                for (int i = 0; i < toExclusive; i++) {
+                for (int i = fromInclusive; i < toExclusive; i++) {
                     body(i);
                 }
             } else {
@@ -284,10 +292,87 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    //SetOMPbinding();
+                    SetOMPbinding();
                 }
             }
         }
+
+        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
+            if (InParallelSection == true) {
+                body(fromInclusive, toExclusive);
+            } else {
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+                    void _body(int ithread) {
+                        int L = toExclusive - fromInclusive;
+                        int i0 = (L*ithread)/__Numthreads;
+                        int iE = (L*(ithread+1))/__Numthreads;
+
+                        body(i0, iE);
+                    }
+
+
+                    Parallel.For(0, __Numthreads, options, _body);
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                    SetOMPbinding();
+                }
+            }
+        }
+
+        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int, int> body, bool enablePar = true) {
+            if (InParallelSection == true) {
+                body(0, fromInclusive, toExclusive);
+            } else {
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+                    void _body(int ithread) {
+                        int L = toExclusive - fromInclusive;
+                        int i0 = (L*ithread)/__Numthreads;
+                        int iE = (L*(ithread+1))/__Numthreads;
+
+                        body(ithread, i0, iE);
+                    }
+
+
+                    Parallel.For(0, __Numthreads, options, _body);
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                    SetOMPbinding();
+                }
+            }
+        }
+
 
         public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
             if (InParallelSection) {
@@ -312,7 +397,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                //SetOMPbinding();
+                SetOMPbinding();
             }
         }
 
@@ -321,7 +406,7 @@ namespace ilPSP {
         /// </summary>
         static System.Collections.Generic.IReadOnlyList<int> ReservedCPUsInitially = null;
 
-        static IEnumerable<int> ReservedCPUsForThisRank = null;
+        static IEnumerable<int> DedicatedCPUsForThisRank = null;
 
         static IEnumerable<int> ReservedCPUsOnSMP = null;
 
@@ -332,13 +417,13 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
-                bool bkup = StdoutOnlyOnRank0;
-                StdoutOnlyOnRank0 = false;
+                //tr.InfoToConsole = true;
+                //tr.StdoutOnAllRanks();
+
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
-
-
+                tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}");
+                
                 // ===========================
                 // Determine Number of Threads
                 // ===========================
@@ -413,7 +498,7 @@ namespace ilPSP {
                         bool eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
                         string listdiffs;
                         if (!eqalAff)
-                            listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ", ", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ", ", "]") + ")";
+                            listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ",", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ",", "]") + ")";
                         else
                             listdiffs = "";
                         if (eqalAff == false) {
@@ -425,7 +510,7 @@ namespace ilPSP {
                         tr.Info($"CCP_AFFINITY not set");
                     }
                 }
-                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ", ", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
+                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
                 if (disjoint == true && allequal == true) {
@@ -438,31 +523,55 @@ namespace ilPSP {
 
                 if (allequal) {
                     if (ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
-                        //
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Sufficient CPUs to give each MPI rank `NumThreads` CPUs
                         //
+                        // We might have more CPUs at hand than `NumThreads`;
+                        // But, despite havening more, we only want to use `NumThreads` CPUs, 
+                        // since the user only requested `NumThreads` CPUs
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                        int MaxSkip = ReservedCPUsOnSMP.Count() - NumThreads * MPIEnv.ProcessesOnMySMP;
+                        int skip;
+                        if (MaxSkip.MPIMax() > 0) {
+                            //
+                            // If we have more CPUs than requested, still do some shifting, to prevent using the same CPU over and over
+                            //
 
-                        ReservedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(MPIEnv.ProcessRankOnSMP * NumThreads, NumThreads);
-                        MaxNumOpenMPthreads = ReservedCPUsOnSMP.Count();
+                            if (MPIEnv.ProcessRankOnSMP == 0) {
+                                MaxSkip = rnd.Next(0, MaxSkip + 1);
+                            } else {
+                                MaxSkip = -1;
+                            }
+
+                            int[] _MaxSkip = new int[MPIEnv.NoOfSMPs];
+                            _MaxSkip[MPIEnv.SMPrank] = MaxSkip;
+                            _MaxSkip = _MaxSkip.MPIMax();
+                            skip = _MaxSkip[MPIEnv.SMPrank];
+                        } else {
+                            skip = 0;
+                        }
+
+                        DedicatedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(skip + MPIEnv.ProcessRankOnSMP * NumThreads, NumThreads);
+                        MaxNumOpenMPthreads = Math.Min(ReservedCPUsOnSMP.Count(), MPIEnv.ProcessesOnMySMP * NumThreads);
                     }
 
                 } else if (disjoint) {
 
-                    ReservedCPUsForThisRank = ReservedCPUs.ToArray();
-                    if (ReservedCPUsForThisRank.Count() < NumThreads) {
-                        tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {ReservedCPUsForThisRank.ToConcatString("[", ", ", "]")}");
+                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
+                    if (DedicatedCPUsForThisRank.Count() < NumThreads) {
+                        tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")}");
                     }
 
-                    MaxNumOpenMPthreads = Math.Min(ReservedCPUsForThisRank.Count(), NumThreads);
+                    MaxNumOpenMPthreads = Math.Min(DedicatedCPUsForThisRank.Count(), NumThreads);
 
                 } else {
                     // just hope for the best
                     MKLservice.Dynamic = true;
                 }
 
-                if(ReservedCPUsForThisRank != null) {
-                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {ReservedCPUsForThisRank.ToConcatString("[", ",", "]")} for OpenMP.");
+                if(DedicatedCPUsForThisRank != null) {
+                    tr.Info($"R{MPIEnv.MPI_Rank}: using CPUs {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")} for OpenMP.");
                 } else {
                     tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
                 }
@@ -471,24 +580,27 @@ namespace ilPSP {
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 SetOMPbinding();
-                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetAffinity().ToConcatString("[", ", ", "]"));
-                CheckOMPThreading();
-                StdoutOnlyOnRank0 = bkup;
+                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetAffinity().ToConcatString("[", ",", "]"));
+                OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                
+               
             }
+
+            //System.Environment.Exit(-99);
         }
 
         static Random rnd = new Random();
 
         private static void SetOMPbinding() {
+            
             using (var tr = new FuncTrace("SetOMPbinding")) {
-                tr.InfoToConsole = true;
-                if (ReservedCPUsForThisRank == null
-                    || MpiRnkOwnsEntireComputer) {
+                //tr.InfoToConsole = true;
+                if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    tr.Info($"Floating OpenMP configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ", ", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+                    //tr.Info($"Floating OpenMP configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
@@ -496,7 +608,7 @@ namespace ilPSP {
                 } else {
                     int[] OpenMPcpuIdx;
 
-                    int L = ReservedCPUsForThisRank.Count();
+                    int L = DedicatedCPUsForThisRank.Count();
                     int Nt = Math.Min(NumThreads, MaxNumOpenMPthreads);
 
                     if (L > Nt) {
@@ -507,225 +619,38 @@ namespace ilPSP {
                         }
 
 
-                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank.Skip(skip).Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray();
+                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(DedicatedCPUsForThisRank.Skip(skip).Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray();
 
 
 
                     } else {
-                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(ReservedCPUsForThisRank).ToArray();
+                        OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(DedicatedCPUsForThisRank).ToArray();
                     }
-                    
-                    tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ", ", "]")} configuration ({ReservedCPUsForThisRank?.ToConcatString("[", ", ", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
 
-                    MKLservice.BindOMPthreads(OpenMPcpuIdx);
+                    //OpenMPcpuIdx = new[] { 0, 2, 4, 6, 8, 10, 12, 14 }; 
+                    //OpenMPcpuIdx = new[] { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+                    //tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
+
+                    if(OMPbindingStrategy == null) {
+                        OMPbindingStrategy = OnlinePerformanceMeasurement.FindBestOMPstrategy(OpenMPcpuIdx, out DisableOpenMP_becauseIsSlow);
+                        OnlinePerformanceMeasurement.Log.OMPbindingStrategy = OMPbindingStrategy.Value;
+                    }
+
+                    if (DisableOpenMP_becauseIsSlow) {
+                        DisableOpenMP();
+                        CPUAffinity.SetAffinity(DedicatedCPUsForThisRank);
+                    } else {
+                        MKLservice.BindOMPthreads(OpenMPcpuIdx, OMPbindingStrategy.Value);
+                    }
                 }
-            }
+            } 
+            
         }
 
-        /// <summary>
-        /// We are trying to identify if OpenMP-thread from different MPI ranks dead-lock each other;
-        /// Therefore:
-        /// 1. A reference measurement of a GEMM operation is performed on rank 0
-        /// 2. The same operation is then performed on rank [0], [0,1], [0,1,2], ...
-        /// 3. The runtime measurements are then compared to the reference measurement
-        /// 4. an exception is thrown if the parallel runs take much longer than the reference run
-        /// </summary>
-        /// <exception cref="ApplicationException"></exception>
-        static void CheckOMPThreading() {
-            using (var tr = new FuncTrace()) {
-                /* SOME TESTS ON LICHTENBERG: 
-                 * 
-                 * there seems to be no clear advantage in setting OMP_PLACES;
-                 * 
-                 * without any OMP_PLACES: -------------------------------------------
-
-                01/25/2024 13:57:37  Running with 4 MPI processes 
-                Working path: /work/home/fk69umer/XNSE-25jan24
-                Binary path: /work/home/fk69umer/XNSE-25jan24
-                Current commit hash: 1ffd4df84aec90b393ee393933b8853b88c85b7a
-                User: fk69umer
-                Node: mpsc0536 (ranks 0, 1, 2, 3)
-
-                MPI Rank 2: Value for OMP_PLACES: 
-                MPI Rank 3: Value for OMP_PLACES: 
-                MPI Rank 3: Value for OMP_PROC_BIND: 
-                MPI Rank 1: Value for OMP_PLACES: 
-                MPI Rank 2: Value for OMP_PROC_BIND: 
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                MPI Rank 0: Value for OMP_PLACES: 
-                MPI Rank 1: Value for OMP_PROC_BIND: 
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                MPI Rank 0: Value for OMP_PROC_BIND: 
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                MPI Rank 0: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                MPI Rank 1: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                MPI Rank 2: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                MPI Rank 3: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                Ref run: (min|avg|max) : (	7.879E-02 |	8.43E-02 |	1.328E-01)
-                Now, doing work on 1 ranks ...
-                R0: 1 workers: (min|avg|max) : (	7.878E-02 |	7.9E-02   |	7.924E-02)  --- 		( 1E00     |	9.371E-01 |	5.97E-01)
-                Now, doing work on 2 ranks ...
-                R0: 2 workers: (min|avg|max) : (	7.579E-02 |	7.853E-02 |	8.01E-02)  --- 		    ( 9.62E-01 |	9.316E-01 |	6.03E-01)
-                R1: 2 workers: (min|avg|max) : (	3.419E-02 |	8.897E-02 |	4.743E-01)  --- 		( 4.34E-01 |	1.055E00  |	3.57E00)
-                Now, doing work on 3 ranks ...
-                R1: 3 workers: (min|avg|max) : (	5.337E-02 |	7.226E-02 |	8.145E-02)  --- 		( 6.77E-01 |	8.572E-01 |	6.14E-01)
-                R0: 3 workers: (min|avg|max) : (	7.728E-02 |	8.364E-02 |	9.387E-02)  --- 		( 9.81E-01 |	9.922E-01 |	7.07E-01)
-                R2: 3 workers: (min|avg|max) : (	7.862E-02 |	8.826E-02 |	1.322E-01)  --- 		( 9.98E-01 |	1.047E00  |	9.96E-01)
-                Now, doing work on 4 ranks ...
-                R2: 4 workers: (min|avg|max) : (	7.767E-02 |	8.378E-02 |	9.692E-02)  --- 		( 9.86E-01 |	9.939E-01 |	7.3E-01)
-                R0: 4 workers: (min|avg|max) : (	8.063E-02 |	1.092E-01 |	1.83E-01)  --- 		    ( 1.02E00  |	1.296E00  |	1.38E00)
-                R1: 4 workers: (min|avg|max) : (	6.777E-02 |	1.142E-01 |	3.435E-01)  --- 		( 8.6E-01  |	1.354E00  |	2.59E00)
-                R3: 4 workers: (min|avg|max) : (	3.407E-02 |	1.279E-01 |	6.426E-01)  --- 		( 4.32E-01 |	1.517E00  |	4.84E00)
-                            -------------------------------------
-
-                and now, with OMP_PLACES set: -----------------------------------
-                01/25/2024 14:05:01  Running with 4 MPI processes 
-                Working path: /work/home/fk69umer/XNSE-25jan24
-                Binary path: /work/home/fk69umer/XNSE-25jan24
-                Current commit hash: 1ffd4df84aec90b393ee393933b8853b88c85b7a
-                User: fk69umer
-                Node: mpsd0114 (ranks 0, 1, 2, 3)
-
-
-                MPI Rank 3: Value for OMP_PLACES: 
-                MPI Rank 1: Value for OMP_PLACES: 
-                MPI Rank 2: Value for OMP_PLACES: 
-                MPI Rank 3: Value for OMP_PROC_BIND: 
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                MPI Rank 1: Value for OMP_PROC_BIND: 
-                MPI Rank 2: Value for OMP_PROC_BIND: 
-                MPI Rank 0: Value for OMP_PLACES: 
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                MPI Rank 0: Value for OMP_PROC_BIND: 
-                OMP_NUM_THREADS = 4
-                Finally, setting number of OpenMP and Parallel Task Library threads to 4
-                MPI Rank 2: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                MPI Rank 0: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                MPI Rank 3: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                MPI Rank 1: assigned to CPUs: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15;
-                R0, SMP rank 0: setting OMP_PLACES = {0,1,2,3}
-                R1, SMP rank 1: setting OMP_PLACES = {4,5,6,7}
-                R3, SMP rank 3: setting OMP_PLACES = {12,13,14,15}
-                R2, SMP rank 2: setting OMP_PLACES = {8,9,10,11}
-                Ref run: (min|avg|max) : (	3.31E-02 |	5.071E-02 |	1.917E-01)
-                Now, doing work on 1 ranks ...
-                R0: 1 workers: (min|avg|max) : (	3.297E-02 |	3.804E-02 |	5.443E-02)  --- 		( 9.96E-01 |	7.502E-01 |	2.84E-01)
-                Now, doing work on 2 ranks ...
-                R0: 2 workers: (min|avg|max) : (	3.623E-02 |	4.84E-02 |	6.778E-02)  --- 		( 1.09E00 |	9.545E-01 |	3.54E-01)
-                Now, doing work on 3 ranks ...
-                R1: 2 workers: (min|avg|max) : (	4.857E-02 |	7.535E-02 |	2.967E-01)  --- 		( 1.47E00 |	1.486E00 |	1.55E00)
-                R1: 3 workers: (min|avg|max) : (	5.121E-02 |	5.61E-02 |	7.05E-02)  --- 		( 1.55E00 |	1.106E00 |	3.68E-01)
-                R0: 3 workers: (min|avg|max) : (	4.167E-02 |	6.363E-02 |	7.679E-02)  --- 		( 1.26E00 |	1.255E00 |	4E-01)
-                R2: 3 workers: (min|avg|max) : (	4.825E-02 |	7.676E-02 |	2.685E-01)  --- 		( 1.46E00 |	1.514E00 |	1.4E00)
-                Now, doing work on 4 ranks ...
-                R1: 4 workers: (min|avg|max) : (	5.134E-02 |	5.854E-02 |	9.231E-02)  --- 		( 1.55E00 |	1.154E00 |	4.81E-01)
-                R2: 4 workers: (min|avg|max) : (	5.128E-02 |	6.41E-02 |	8.576E-02)  --- 		( 1.55E00 |	1.264E00 |	4.47E-01)
-                R3: 4 workers: (min|avg|max) : (	5.178E-02 |	8.39E-02 |	3.045E-01)  --- 		( 1.56E00 |	1.655E00 |	1.59E00)
-                R0: 4 workers: (min|avg|max) : (	3.749E-02 |	8.64E-02 |	1.526E-01)  --- 		( 1.13E00 |	1.704E00 |	7.96E-01)
-                -------------------------------------
-
-                */
-
-
-                const int N = 2048;
-                const int Runs = 5;
-
-
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSz);
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int Rank);
-
-
-                var A = MultidimensionalArray.Create(N, N);
-                var B = MultidimensionalArray.Create(N, N);
-                var C = MultidimensionalArray.Create(N, N);
-
-                A.Storage.FillRandom();
-                B.Storage.FillRandom();
-                C.Storage.FillRandom();
-
-
-
-                (double minTime, double avgTime, double maxTime) GEMMbench() {
-                    double mintime = double.MaxValue;
-                    double maxtime = 0.0;
-
-                    var RunTimes = new System.Collections.Generic.List<double>();
-
-                    for (int i = 0; i < Runs; i++) {
-                        var start = DateTime.Now;
-                        A.GEMM(1.0, B, C, 0.1);
-                        var end = DateTime.Now;
-
-                        double secs = (end - start).TotalSeconds;
-
-                        RunTimes.Add(secs);
-                        mintime = Math.Min(mintime, secs);
-                        maxtime = Math.Max(maxtime, secs);
-                    }
-
-                    // remove the outliers before computing the average:
-                    RunTimes.Sort();
-                    RunTimes.RemoveAt(0);
-                    RunTimes.RemoveAt(RunTimes.Count - 1);
-                    double avgTime = RunTimes.Sum() / RunTimes.Count;
-
-                    avgTime /= Runs;
-
-                    return (mintime, avgTime, maxtime);
-                }
-
-                (double minTime, double avgTime, double maxTime) TimeRef0 = (0, 0, 0);
-                if (Rank == 0) {
-                    tr.Info("Now, doing reference run on rank 0...");
-                    TimeRef0 = GEMMbench();
-                    tr.Info($"Ref run: (min|avg|max) : (\t{TimeRef0.minTime:0.###E-00} |\t{TimeRef0.avgTime:0.###E-00} |\t{TimeRef0.maxTime:0.###E-00})");
-                }
-
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                var TimeRef = TimeRef0.MPIBroadcast(0);
-
-                for (int ranksToBench = 0; ranksToBench < MpiSz; ranksToBench++) {
-                    tr.Info("Now, doing work on " + (ranksToBench + 1) + " ranks ...");
-
-                    (double minTime, double avgTime, double maxTime) TimeX = (BLAS.MachineEps, BLAS.MachineEps, BLAS.MachineEps);
-                    if (Rank <= ranksToBench) {
-                        TimeX = GEMMbench();
-                    }
-
-
-                    double minFactor = TimeX.minTime / TimeRef.minTime;
-                    double avgFactor = TimeX.avgTime / TimeRef.avgTime;
-                    double maxFactor = TimeX.maxTime / TimeRef.maxTime;
-
-
-                    if (minFactor.MPIMax() > 10 || maxFactor.MPIMax() > 5 || avgFactor.MPIMax() > 10) {
-
-                        string scaling = $"R{Rank}: {ranksToBench + 1} workers: (min|avg|max) : (\t{TimeX.minTime:0.###E-00} |\t{TimeX.avgTime:0.###E-00} |\t{TimeX.maxTime:0.###E-00})  --- \t\t( {minFactor:0.##E-00} |\t{avgFactor:0.###E-00} |\t{maxFactor:0.##E-00})";
-                        tr.Info("Scaling involving " + (ranksToBench + 1) + " ranks: " + scaling);
-                        Console.WriteLine("Suspicious OpenMP runtime behavior: " + scaling);
-
-                        //if(avgFactor > 7)
-                        //    throw new ApplicationException("Some very slow processor detected -- maybe some OpenMP locking: " + scaling);
-                    }
-
-
-
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                }
-
-
-            }
-        }
-
+        static OMPbindingStrategy? OMPbindingStrategy;
+        static bool DisableOpenMP_becauseIsSlow = false;
+   
         /// <summary>
         /// true, if the code currently runs in multi-threaded; then, further spawning into sub-threads should not occur.
         /// </summary>
@@ -741,7 +666,7 @@ namespace ilPSP {
         static bool m_StdoutOnlyOnRank0 = false;
 
         /// <summary>
-        /// if true, the standard - output stream will not be visible on screen on processer with MPI rank 
+        /// if true, the standard - output stream will not be visible on screen on processor with MPI rank 
         /// unequal to 0.
         /// </summary>
         public static bool StdoutOnlyOnRank0 {

@@ -49,6 +49,36 @@ namespace ilPSP.Utils {
             }
             return ret.ToArray();
         }
+
+
+        // Define the sysconf call
+        [DllImport("libc.so.6", SetLastError = true)]
+        private static extern long sysconf(int name);
+
+        // Constant for _SC_NPROCESSORS_ONLN from sysconf.h
+        private const int _SC_NPROCESSORS_ONLN = 84;
+
+        /// <summary>
+        /// The total number of CPUs in a system; 
+        /// This might be larger than the number reported from <see cref="System.Environment.ProcessorCount"/>,
+        /// since SLURM seems to mess with this value
+        /// </summary>
+        public static int TotalNumberOfCPUs {
+            get {
+                try {
+                    long processorCount = sysconf(_SC_NPROCESSORS_ONLN);
+                    if (processorCount == -1) {
+                        throw new InvalidOperationException("Failed to get processor count");
+                    }
+
+                    //Console.WriteLine("Linux No Of CPUS: " + processorCount);
+                    return (int)processorCount;
+                } catch (Exception ex) {
+                    Console.WriteLine("Error: " + ex.Message);
+                    return System.Environment.ProcessorCount;
+                }
+            }
+        }
     }
 }
     

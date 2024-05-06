@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L4-application\ApplicationWithIDT\ApplicationWithIDT.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L4-application\XESF\XESF.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
+    <ProjectReference Include="..\..\L4-application\ApplicationWithIDT\ApplicationWithIDT.csproj" />
+    <ProjectReference Include="..\..\L4-application\XESF\XESF.csproj" />
   </ItemGroup>
 
 </Project>

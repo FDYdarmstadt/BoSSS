@@ -723,6 +723,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
         protected virtual List<DGField> GetInterfaceVelocity(){
+            MPICollectiveWatchDog.Watch();
             int D = this.GridData.SpatialDimension;
             var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             var PhysParam = this.Control.PhysicalParameters;
@@ -803,6 +804,14 @@ namespace BoSSS.Application.XNSE_Solver {
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
             double s = 0.5; // safety factor
+            int D = this.GridData.SpatialDimension;
+
+            List<DGField> LevelSetVelocity;
+            IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification)))
+                LevelSetVelocity = GetInterfaceVelocity();
+            else
+                LevelSetVelocity = null;
 
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
@@ -836,14 +845,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // level set cfl
-                {
-                    int D = this.GridData.SpatialDimension;
-                    IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
-                    if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
+                {   
+                    if (LevelSetVelocity != null) {
                         // At this point the level set velocity is not updated to the correct value
                         //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
-
-                        var LevelSetVelocity = GetInterfaceVelocity();
 
                         double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
                         dt_cfl *= s / Math.Pow(p, 2);
