@@ -979,7 +979,7 @@ namespace PublicTestRunner {
                 }
 
                 {
-                    const string BOSSS_TEST_RUNNER_GODMODE = "c:\\tmp\\godmode.txt";
+                    string BOSSS_TEST_RUNNER_GODMODE = Path.Combine(BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath(), "godmode.txt");
                     try {
                         var s = File.ReadAllText(BOSSS_TEST_RUNNER_GODMODE);
                         int godval = int.Parse(s);
