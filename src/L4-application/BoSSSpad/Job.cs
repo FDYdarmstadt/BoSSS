@@ -39,6 +39,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public class Job {
 
+
         /// <summary>
         /// ctor.
         /// </summary>
@@ -757,6 +758,33 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
 
+            TimeSpan? m_RunTime;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public TimeSpan RunTime {
+                get {
+                    return UpdateRunTime(Status);
+                }
+            }
+
+            private TimeSpan UpdateRunTime(JobStatus s) {
+                if (m_RunTime != null)
+                    return m_RunTime.Value;
+                
+                if (s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                    m_RunTime = m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                    return m_RunTime.Value;
+                }
+
+                if (s == JobStatus.InProgress) {
+                    return m_owner.AssignedBatchProc.GetRunTime(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                }
+
+                return new TimeSpan(0);
+            }
+
 
             /// <summary>
             /// Status of the deployment
@@ -766,7 +794,7 @@ namespace BoSSS.Application.BoSSSpad {
                     using(var tr = new FuncTrace()) {
                         tr.Info("Trying to get status of deployment: " + ((DeploymentDirectory?.FullName) ?? "no-path-avail"));
                         if (StatusCache != null) {
-                            tr.Info("From chache: " + StatusCache.Value); 
+                            tr.Info("From cache: " + StatusCache.Value); 
                             return StatusCache.Value;
                         }
 
@@ -833,6 +861,7 @@ namespace BoSSS.Application.BoSSSpad {
                                 RememberCache(bpc_status, ExitCode);
                         }
 
+                        tr.Info($"Deployment: runtime = {UpdateRunTime(bpc_status)}");
                         tr.Info($"Deployment: {bpc_status}, exit code = {ExitCodeCache}");
                         return bpc_status;
                     }
@@ -1548,6 +1577,9 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
+                if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
+                    Console.WriteLine($"BoSSSpad is configured to run from a backup, `RunWorkflowFromBackup` = {BoSSSshell.WorkflowMgm.RunWorkflowFromBackup} ; ");
+                }
 
                
                 // ========================================================================
@@ -1576,8 +1608,6 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         dep.optInfo = rr.optJobObj;
                 }
-
-                Console.WriteLine();
             }
         }
 

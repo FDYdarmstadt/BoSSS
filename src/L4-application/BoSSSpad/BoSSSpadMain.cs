@@ -29,6 +29,7 @@ using System.IO.Pipes;
 using System.Threading.Tasks;
 using static ilPSP.Connectors.Matlab.BatchmodeConnector;
 using System.Diagnostics.Metrics;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -114,33 +115,14 @@ namespace BoSSS.Application.BoSSSpad {
             
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 
-            //new SessionMemtrace(new DirectoryInfo(path));
+           /*
+            string path = @"\\fdygitrunner\ValidationTests\databases\bkup-2023Oct31_165410.LinslvPerfSer\sessions\dce38035-09a6-4f62-a82f-b7c089d27822\"; 
+            var json = File.ReadAllText(Path.Combine(path, "profiling_bin.0.txt"));
 
-            /*
-            void w(ValueTuple<string,string> tt) {
-                Console.BackgroundColor = ConsoleColor.Blue;
-                Console.WriteLine(tt.Item1);
-                Console.ResetColor();
-            }
+            var p = OnlineProfiling.Deserialize(json);
+
+            Console.Write(p.ToString());
             
-
-            var ssh = new BoSSS.Application.BoSSSpad.SingleSessionSshClient("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_ed25519"), "C:\\Program Files\\Git\\usr\\bin\\ssh.exe");
-
-            var rr = ssh.RunCommand("ls"); w(rr);
-            rr = ssh.RunCommand("cd mono"); w(rr);
-            rr = ssh.RunCommand("ls"); w(rr);
-
-            Console.WriteLine("Now Waiting.");
-            Thread.Sleep(20 * 1000);
-            rr = ssh.RunCommand("cd /"); w(rr);
-            rr = ssh.RunCommand("cd home"); w(rr);
-            rr = ssh.RunCommand("ls"); w(rr);
-
-
-            bool gracefull = ssh.Disconnect(false);
-            Console.WriteLine("gracefull exit? " + gracefull);
-            //return 0;
             //*/
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -188,7 +170,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // launch the app
             // ==============
-            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
+            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI(args);
 
             try {
                 switch (mode) {
