@@ -59,8 +59,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
         static void Main(string[] args) {
             
-            Console.WriteLine(args.Length);
             Console.WriteLine("External binder for Matlab");
+            Console.WriteLine("Running an example 2d circle test case");
             MatlabCutCellQuadInterfaceTests.circle2D();
         }
 
@@ -84,6 +84,9 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         public void BoSSSFinalize() {
             if (mustFinalizeMPI)
                 MPI.Wrappers.csMPI.Raw.mpiFinalize();
+
+            Console.WriteLine("BoSSS has been finalized");
+
         }
 
         /// <summary>
