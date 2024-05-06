@@ -33,6 +33,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             app.CompileQuadRules(2, 1);
 
             app.GetQuadRules(3, 1);
+            app.BoSSSFinalize();
             //app.WriteVolQuadRules(2);
         }
 
