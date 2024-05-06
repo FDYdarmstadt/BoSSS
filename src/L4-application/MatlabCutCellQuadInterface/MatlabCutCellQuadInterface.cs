@@ -19,7 +19,7 @@ using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
     /// <summary>
-    /// Initialization stuff
+    /// MatlabCutCellQuadInterface
     /// </summary>
     public class MatlabCutCellQuadInterface {
 
@@ -31,6 +31,31 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
         }
 
+        // Fields and properties
+        GridCommons grd;
+
+        List<_2D> levelsets2D;
+        List<_3D> levelsets3D;
+
+        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesA;
+        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesB;
+        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesInterface;
+
+        LevelSetTracker lsTrk;
+
+        static bool mustFinalizeMPI;
+
+        // Methods
+
+        /// <summary>
+        /// the list of 2d level sets
+        /// </summary>
+        public List<_2D> Levelsets2D { get => levelsets2D ?? (levelsets2D = new List<_2D>()); }
+
+        /// <summary>
+        /// the list of 3d level sets
+        /// </summary>
+        public List<_3D> Levelsets3D { get => levelsets3D ?? (levelsets3D = new List<_3D>()); }
 
         static void Main(string[] args) {
             
@@ -39,7 +64,6 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             MatlabCutCellQuadInterfaceTests.circle2D();
         }
 
-        static bool mustFinalizeMPI;
 
         /// <summary>
         /// Load/lookup of native libraries
@@ -62,9 +86,13 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
-        GridCommons grd;
-
-
+        /// <summary>
+        /// Set the domain in 2D
+        /// </summary>
+        /// <param name="Dim"></param>
+        /// <param name="xNodes"></param>
+        /// <param name="yNodes"></param>
+        /// <exception cref="ArgumentException"></exception>
         public void SetDomain(int Dim, double[] xNodes, double[] yNodes) {
             if (Dim != 2) {
                 throw new ArgumentException("Dimension must be 2 for the given input parameters.");
@@ -83,8 +111,12 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
         }
 
-        LevelSetTracker lsTrk;
-
+        /// <summary>
+        /// Combination of <see cref="Submit2DLevelSet(_2D)">  + <see cref="ProjectLevelSet(int)" >
+        /// Supports only 1 level set
+        /// </summary>
+        /// <param name="degree">Degree of level set</param>
+        /// <param name="inLevelSet"></param>
         public void SetLevelSet(int degree, _2D inLevelSet) {
 
             Basis b = new Basis(grd, degree);
@@ -95,6 +127,12 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             lsTrk.UpdateTracker(0.0);
         }
 
+        /// <summary>
+        /// Combination of <see cref="Submit3DLevelSet(_3D)">  + <see cref="ProjectLevelSet(int)" >
+        /// Supports only 1 level set
+        /// </summary>
+        /// <param name="degree">Degree of level set</param>
+        /// <param name="inLevelSet"></param>
         public void SetLevelSet(int degree, _3D inLevelSet) {
 
             Basis b = new Basis(grd, degree);
@@ -105,61 +143,43 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             lsTrk.UpdateTracker(0.0);
         }
 
-        List<_2D> levelsets2D;
-        List<_3D> levelsets3D;
 
         /// <summary>
-        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list for a given pint.
+        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list of level sets.
         /// </summary>
         /// <param name="delegates"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private _2D ReturnMaxDelegate(IEnumerable<_2D> delegates) {
-            if (delegates.Count() < 1)
-                throw new Exception("No level sets are submitted, call SubmitLevelSet() method first!");
+        private _2D ReturnMaxDelegate(IList<_2D> delegates) {
+            if (delegates.Count == 0)
+                throw new Exception("No level sets are submitted, call Submit2DLevelSet() method first!");
 
-            if (delegates.Count() == 1)
+            if (delegates.Count == 1)
                 return delegates.First();
 
-            return (x0, x1) => {
-                double maxResult = double.MinValue;
-                foreach (_2D del in delegates) {
-                    double result = del(x0, x1);
-                    if (result > maxResult) {
-                        maxResult = result;
-                    }
-                }
-                return maxResult;
-            };
+            return (x0, x1) => delegates.Max(del => del(x0, x1));
         }
 
         /// <summary>
-        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list for a given pint.
+        /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list of level sets.
         /// </summary>
         /// <param name="delegates"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private _3D ReturnMaxDelegate(IEnumerable<_3D> delegates) {
-            if (delegates.Count() < 1)
-                throw new Exception("No level sets are submitted, call SubmitLevelSet() method first!");
+        private _3D ReturnMaxDelegate(IList<_3D> delegates) {
+            if (delegates.Count == 0)
+                throw new Exception("No level sets are submitted, call Submit3DLevelSet() method first!");
 
-            if (delegates.Count() == 1)
+            if (delegates.Count == 1)
                 return delegates.First();
 
-            return (x0, x1, x2) =>
-            {
-                double maxResult = double.MinValue;
-                foreach (_3D del in delegates) {
-                    double result = del(x0, x1, x2);
-                    if (result > maxResult) {
-                        maxResult = result;
-                    }
-                }
-                return maxResult;
-            };
+            return (x0, x1, x2) => delegates.Max(del => del(x0, x1, x2));
         }
 
-
+        /// <summary>
+        /// Submit a level set in 2D
+        /// </summary>
+        /// <param name="inLevelSet">A delegate with (double, double) => double </param>
         public void Submit2DLevelSet(_2D inLevelSet) {
             if (grd.SpatialDimension != 2)
                 throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (2D).");
@@ -167,6 +187,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             Levelsets2D.Add(inLevelSet);
         }
 
+        /// <summary>
+        /// Submit a level set in 3D
+        /// </summary>
+        /// <param name="inLevelSet">A delegate with (double, double, double) => double </param>
         public void Submit3DLevelSet(_3D inLevelSet) {
             if (grd.SpatialDimension != 3)
                 throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (3D).");
@@ -174,7 +198,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             Levelsets3D.Add(inLevelSet);
         }
 
-
+        /// <summary>
+        /// Project the submitted level sets
+        /// </summary>
+        /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSet(int degree) {
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
@@ -195,10 +222,14 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
             lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
-            Console.WriteLine("Successful creation of level set");
+            Console.WriteLine("Successful projection of level set");
         }
 
-
+        /// <summary>
+        /// Combines SubmitLevelSe
+        /// </summary>
+        /// <param name="degree"></param>
+        /// <param name="inLevelSets"></param>
         public void SetLevelSets(int degree, _3D[] inLevelSets) {
             _3D inLevelSet = ReturnMaxDelegate(inLevelSets);
             Basis b = new Basis(grd, degree);
@@ -209,7 +240,10 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             lsTrk.UpdateTracker(0.0);
         }
 
-
+        /// <summary>
+        /// Plot the current state as a .plt file
+        /// </summary>
+        /// <param name="superSampling">the super sampling level</param>
         public void PlotCurrentState(int superSampling=0) {
             Tecplot tecplot = new Tecplot(grd.GridData, (uint)superSampling);
             string path = Path.Combine(Path.GetFullPath("."), "plot_LS");
@@ -270,15 +304,16 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             rulesInterface = rules;
         }
 
-        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesA;
-        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesB;
-        Foundation.Quadrature.ICompositeQuadRule<Foundation.Quadrature.QuadRule> rulesInterface;
 
-        public List<_2D> Levelsets2D { get => levelsets2D ?? (levelsets2D = new List<_2D>()); }
-
-        public List<_3D> Levelsets3D { get => levelsets3D ?? (levelsets3D = new List<_3D>()); }
-
-
+        /// <summary>
+        /// Get the quadrature rules for the cell in a multidimensional array
+        /// </summary>
+        /// <param name="cellNo">local cell index</param>
+        /// <param name="spec">Integer value for the phase:
+        /// 1 - external points; -1 - inner points; 0 - boundary points </param>
+        /// <returns>Returns the quadrature rules with a multidimensional array where the first index is node index,
+        /// the second index indicates dimension or weight (when D+1)</returns>
+        /// <exception cref="NotSupportedException"></exception>
         public MultidimensionalArray GetQuadRules(int cellNo, int spec = -1) {
             ICompositeQuadRule<QuadRule> rules = spec == 1 ? rulesB : (spec == 0 ? rulesInterface : rulesA);
 
@@ -293,13 +328,11 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     if (jCell != cellNo)
                         continue;
 
-                    int j = jCell - pair.Chunk.i0;
                     if (!grd.GridData.Cells.IsCellAffineLinear(jCell)) {
                         throw new NotSupportedException("curved cells not supported!");
                     }
 
                     //qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-
                     var globTr = qr.CloneAs();
                     globTr.TransformLocal2Global(grd, jCell);
                     //globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
@@ -319,7 +352,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                         }
                         ret[n, globTr.SpatialDim] = WeightsGlobal_jCell[n];
                     }
-
+                    return ret;
                 }
             }
 
@@ -330,6 +363,12 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
         }
 
+        /// <summary>
+        /// Debugging for volume quad rules
+        /// </summary>
+        /// <param name="deg"></param>
+        /// <param name="spec"></param>
+        /// <exception cref="NotSupportedException"></exception>
         public void WriteVolQuadRules(int deg, int spec = -1) {
             var spcA = spec == -1 ? lsTrk.GetSpeciesId("A") : lsTrk.GetSpeciesId("B");
 
@@ -364,7 +403,12 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             Console.WriteLine("Calculated the volume quadrature rule");
         }
 
-
+        /// <summary>
+        /// Debugging for surface quad rules
+        /// </summary>
+        /// <param name="deg"></param>
+        /// <param name="spec"></param>
+        /// <exception cref="NotSupportedException"></exception>
         public void WriteSrfQuadRules(int deg) {
 
             var spcA = lsTrk.GetSpeciesId("A");
