@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using ilPSP;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,6 +21,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public EdgePenaltyForm(string speciesName, string variableName, double scale = 1) {
             this.speciesName = speciesName;
             this.variables = new string[] { variableName };
+            if(scale.IsNaNorInf()) {
+                throw new ArgumentException("Illegal scaling value for EdgePenaltyForm: " + scale);
+            }
             this.scale = scale;
         }
 
@@ -74,6 +78,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double flux =  (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT);
             flux *= scale * Penalty(inp.jCellIn, inp.jCellOut);
+            Debug.Assert(!flux.IsNaNorInf());
             return flux;
 
         }

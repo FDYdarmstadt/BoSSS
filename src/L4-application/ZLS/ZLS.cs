@@ -25,6 +25,10 @@ using BoSSS.Solution;
 
 namespace ZwoLevelSetSolver {
 
+    /// <summary>
+    /// ZLS: Two-Level-Set-Solver;
+    /// - Main purpose seems to be Euler/Euler fluid-structure interaction
+    /// </summary>
     public class ZLS : XNSE<ZLS_Control> {
 
         /// <summary>

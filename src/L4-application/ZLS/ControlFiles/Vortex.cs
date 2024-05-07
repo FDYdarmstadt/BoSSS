@@ -197,7 +197,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
             C.Material = new ConvergenceTest();
-            C.Material.Viscosity = 0;
+            C.Material.Viscosity = 1.0; // changed fk, 08feb24
 
             #endregion
 
