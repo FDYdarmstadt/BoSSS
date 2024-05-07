@@ -25,9 +25,12 @@ namespace ZwoLevelSetSolver.Tests
         
         [Test]
         public static void SolidBallInChannel([Values(2)] int p = 2,
-                                    [Values(16)] int res = 16) {
-
+                                    [Values(4)] int res = 8) {
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
             var C = ZwoLevelSetSolver.ControlFiles.HardCodedControl.AcceleratedBallInChannel(p, res);
+            //var C = ZwoLevelSetSolver.ControlFiles.HardCodedControl.BallInChannel(p, res);
+            //var C = ZwoLevelSetSolver.ControlFiles.HardCodedControl.DynamicChannel(p, res);
+            //var C = ZwoLevelSetSolver.ControlFiles.HardCodedControl.Channel(p, res);
             C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 0.0;
             //C.NonLinearSolver.MinSolverIterations = 200;

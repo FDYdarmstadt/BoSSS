@@ -304,7 +304,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public static ZLS_Control AcceleratedBallInChannel(int p = 2, int kelem = 4) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 4;
+            C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
 
@@ -335,9 +335,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = false;
 
             C.Material = new AllOne();
-            C.Material.Viscosity = 0;
-            C.Material.Density = 2;
+            C.Material.Viscosity = 1e-6;
+            C.Material.Density = 0.001;
             C.Material.Lame2 = 100;
+
+            //C.Material = new Solid();
+            //C.Material.Viscosity = 1e-9;
+            //C.Material.Density = 2;
+            //C.Material.Lame2 = 1e6;
 
             #endregion
 
@@ -348,7 +353,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             double xLeft = -3;
             double xRight = 3;
-            double ySize = 2.1;
+            double ySize = 2;
 
             C.GridFunc = delegate () {
 
@@ -484,7 +489,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 50;
             C.saveperiod = 1;
 
             #endregion
@@ -496,7 +501,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 4;
+            C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.1;
             C.NoOfMultigridLevels = 1;
 
@@ -528,7 +533,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = false;
 
             C.Material = new Solid();
-            C.Material.Viscosity = 0;
+            C.Material.Viscosity = 1e-6;
             C.Material.Density = 2;
             C.Material.Lame2 = 1000;
 

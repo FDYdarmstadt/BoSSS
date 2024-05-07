@@ -52,6 +52,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = true;
 
             C.Material = new ConvergenceTest();
+            //C.Material.Viscosity = 1e-6;
+            C.Material.Viscosity = 1e-1;
+            C.Material.Lame2 = 10.0/3.0;
 
             #endregion
 
@@ -68,17 +71,18 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 grd.EdgeTagNames.Add(1, "wall");
+                grd.EdgeTagNames.Add(2, "freeslip");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
 
-                    if (Math.Abs(X[1] + 1) <= 1.0e-8)
+                    if(Math.Abs(X[1] + 1) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[1] - 1) <= 1.0e-8)
+                    if(Math.Abs(X[1] - 1) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + 1) <= 1.0e-8)
+                    if(Math.Abs(X[0] + 1) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] - 1) <= 1.0e-8)
+                    if(Math.Abs(X[0] - 1) <= 1.0e-8)
                         et = 1;
 
                     return et;
@@ -141,8 +145,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region time
 
             //C.CheckJumpConditions = true;
-            C.NoOfTimesteps = 200;
-            double dt = 5e-2;
+            C.NoOfTimesteps = 50;
+            //double dt = 5e-2;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
@@ -153,6 +158,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             return C;
         }
+
 
         public static ZLS_Control SteadyVortex(int p = 2, int kelem = 16)
         {
@@ -198,6 +204,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.mu_B = 1;
             C.Material = new ConvergenceTest();
             C.Material.Viscosity = 1.0; // changed fk, 08feb24
+            //C.Material.Viscosity = 1e-3;
 
             #endregion
 

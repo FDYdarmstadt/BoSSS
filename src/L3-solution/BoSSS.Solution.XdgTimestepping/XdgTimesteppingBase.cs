@@ -704,7 +704,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 ana.CalculateGlobals = calculateGlobals;
 
-                //check if expensive stencilCondNumbers are required
+                ana.CalculateMassMatrix = calculateMassMatrix;
+
+                ana.PlotStencilCondNumViz = plotStencilCondNumViz;
+
+                //check if stencilCondNumbers are required
                 if (plotStencilCondNumViz == true || calculateStencils == true) {
                     ana.CalculateStencils = true;
                 } else {
@@ -720,14 +724,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
 
-                if (calculateMassMatrix) {
-                    var condNoMassMtx = ana.CondMassMatrix();
-                    Ret.Add("MassMtxCondNo", condNoMassMtx);
-                }
-
-                if (plotStencilCondNumViz) {
-                    StencilCondNoVizS.Add(ana.StencilCondNumbersV());
-                }
 
                 /*
                 {
@@ -740,14 +736,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //k++;
             }
 
-            if (StencilCondNoVizS.Count > 0) {
-                var LevelSets = m_LsTrk.LevelSetHistories;
+            //if (StencilCondNoVizS.Count > 0) {
+            //    var LevelSets = m_LsTrk.LevelSetHistories;
 
-                foreach (var levelSet in LevelSets) {
-                    StencilCondNoVizS.Add((LevelSet)levelSet.Current);
-                }
-                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
-            }
+            //    foreach (var levelSet in LevelSets) {
+            //        StencilCondNoVizS.Add((LevelSet)levelSet.Current);
+            //    }
+            //    Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
+            //}
 
             return Ret;
         }

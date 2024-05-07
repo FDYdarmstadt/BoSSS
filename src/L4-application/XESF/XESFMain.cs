@@ -23,6 +23,7 @@ using XESF.Variables;
 using ApplicationWithIDT;
 using BoSSS.Solution.CompressibleFlowCommon.ShockFinding;
 using ApplicationWithIDT.OptiLevelSets;
+using BoSSS.Solution.Statistic.QuadRules;
 
 
 namespace XESF
@@ -48,7 +49,10 @@ namespace XESF
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args)
         {
-            //XESF.Tests.XESFTestProgram.XDGBowShockFromDB(5, 16, 1, 0);
+            //IDTTestRunner.RunTests();
+            //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
+            //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs_HighOrder();
+            //XESF.Tests.XESFTestProgram.XDGBowShockFromDB();
             XESFMain._Main(args, false, () => new XESFMain());
         }
 
@@ -228,7 +232,14 @@ namespace XESF
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new GodunovFlux(this.Control, boundaryMap, new EulerMomentumComponent(1, material.EquationOfState.HeatCapacityRatio, Control.MachNumber, gridData.SpatialDimension), material));
                     this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new GodunovFlux(this.Control, boundaryMap, new EulerEnergyComponent(), material));
                     break;
+                case ConvectiveBulkFluxes.CentralFlux:
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Density].Add(new CentralDensityFlux(boundaryMap, material));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new CentralMomentumFlux(boundaryMap, material,0));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new CentralMomentumFlux(boundaryMap, material, 1));
+                    this.XSpatialOperator.EquationComponents[CompressibleVariables.Energy].Add(new CentralEnergyFlux(boundaryMap, material));
+                    break;
                 default:
+                    
                     throw new NotImplementedException("The convectiveBulkFlux you chose is not implemented");
             }
 
@@ -253,6 +264,7 @@ namespace XESF
                     }
                     break;
                 case ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var:
+                case ConvectiveInterfaceFluxes.OptimizedHLLCWall:
                     switch (Control.FluxVersion)
                     {
                         case FluxVersion.NonOptimized:
@@ -435,9 +447,9 @@ namespace XESF
                         break;
                 }
                 this.Op_obj.Commit();
+                this.XSpatialOperator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 this.XSpatialOperator.Commit();
             }
-
             if (Control.GetInitialValue == GetInitialValue.FromP0Timestepping)
             {
                 ComputeP0Solution(); //needs to be done here as operator is now assembled
@@ -474,7 +486,7 @@ namespace XESF
             //// Cell agglomerator (cell length scales are needed for diffusive AV fluxes)
             UpdateAgglomerator();
 
-            ComputeResiduals();
+            (res_l2, obj_f, res_L2) = ComputeResiduals();
 
             //obj_f = obj_f_vec.MPI_L2Norm();
             //Eval_r = XSpatialOperator.GetEvaluatorEx(LsTrk, ConservativeFields, null, ResidualMap);
@@ -490,6 +502,90 @@ namespace XESF
 
         }
 
+        /// <summary>
+        /// Loads all fields in <see cref="m_IOFields"/> from the database
+        /// using the given <see cref="AppControl.RestartInfo"/> (<see cref="Control"/>)
+        /// </summary>
+        /// <param name="time">
+        /// On exit, contains the physical time represented by the time-step
+        /// </param>
+        /// <returns>
+        /// Returns the actual time-step number of the loaded time-step
+        /// </returns>
+        protected override TimestepNumber RestartFromDatabase(out double time)
+        {
+            using (var tr = new FuncTrace())
+            {
+
+                // obtain session timesteps:
+                var sessionToLoad = this.Control.RestartInfo.Item1;
+                ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
+
+                var all_ts = session.Timesteps;
+
+                // find timestep to load
+                Guid tsi_toLoad_ID;
+                tsi_toLoad_ID = GetRestartTimestepID();
+                ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
+
+                time = tsi_toLoad.PhysicalTime;
+
+
+                if (tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp)
+                {
+                    var tsiI = tp.GetInternal() as TimestepInfo;
+                    if (tsiI != null)
+                    {
+                        OnRestartTimestepInfo(tsiI);
+                    }
+                }
+
+                DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
+
+                if (((TimestepProxy)tsi_toLoad).GetInternal() is IDTTimeStepInfo IDTtsInfo)
+                {
+                    this.gamma = IDTtsInfo.Gamma;
+                    CurrentStepNo = (int)IDTtsInfo.TimeStepNumbers.Last();
+                    this.Gammas = IDTtsInfo.GammaHistory;
+                    this.Alphas = IDTtsInfo.AlphaHistory.ToList();
+                    this.ResNorms = IDTtsInfo.ResHistory.ToList();
+                    if (LevelSetOpti is SplineOptiLevelSet splineLs)
+                    {                       
+                        var LSParams = IDTtsInfo.LevelSetParams;
+                        if (LSParams.Length == splineLs.m_AllParams.Length)
+                        {
+                            for (int i = 0; i < LSParams.Length; i++)
+                            {
+                                splineLs.m_AllParams[i] = LSParams[i];
+                            }
+                            splineLs.Interpolate();
+                            splineLs.ProjectOntoLevelSet(LsTBO);
+
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"{GetLevelSet.DirectyFromTimestep} not supported if Grid has not equal y - Cells");
+                        }
+                    }
+                }
+                if (Control.IsTwoLevelSetRun)
+                {
+                    this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue);
+                    LsTBO = LevelSetTwo;
+                }
+                else
+                {
+                    // Level set one
+                    LsTBO = LevelSet;
+                }
+                LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+                LsTrk.UpdateTracker(CurrentStepNo);
+
+                time = CurrentStepNo;
+                // return
+                return tsi_toLoad.TimeStepNumber;
+            }
+        }
 
         /// <summary>
         /// Initializes multi-grid operator configuration object. The MGP is used only in the process of agglomeration so far to transform from solution to agglomeration space.
@@ -558,12 +654,12 @@ namespace XESF
                 case GetInitialValue.FromDBXDG:
                     DatabaseInfo dbi = DatabaseInfo.Open(Control.ShockLevelSet_Db);
                     ISessionInfo si = dbi.Controller.GetSessionInfo(Control.ShockLevelSet_Info.Item1);
-                    tsiFromDb = Control.IVTimestepNumber >= si.Timesteps.Count ? si.Timesteps.Last() : si.Timesteps.Pick(Control.IVTimestepNumber);
+                    tsiFromDb = Control.IVTimestepNumber >= si.Timesteps.Count ? si.Timesteps.Last() : si.Timesteps.ElementAt(Control.IVTimestepNumber);
                     break;
                 case GetInitialValue.FromAVRun:
                     DatabaseInfo dbi_2 = DatabaseInfo.Open(Control.SeedFromAV_Db);
                     ISessionInfo si_2 = dbi_2.Controller.GetSessionInfo(Control.SeedFromAV_Db_Info.Item1);
-                    tsiFromDb = Control.IVTimestepNumber >= si_2.Timesteps.Count ? si_2.Timesteps.Last() : si_2.Timesteps.Pick(Control.IVTimestepNumber);
+                    tsiFromDb = Control.IVTimestepNumber >= si_2.Timesteps.Count ? si_2.Timesteps.Last() : si_2.Timesteps.ElementAt(Control.IVTimestepNumber);
                     break;
                 default:
                     break;
@@ -574,7 +670,7 @@ namespace XESF
             #region Initialize the LevelSet
             if (Control.IsTwoLevelSetRun)
             {
-                this.LevelSet.ProjectField(1.0, this.Control.LevelSetPos, scheme);
+                this.LevelSet.ProjectField(1.0, this.Control.LevelSetOneInitialValue, scheme);
                 LsTBO = LevelSetTwo;
             }
             else
@@ -593,7 +689,7 @@ namespace XESF
 
                 case GetLevelSet.FromFunction:
                     LevelSetOpti.AssembleTransMat(LsTBO);
-                    LevelSetOpti.ProjectFromFunction(Control.InitialShockPostion);
+                    LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                     LevelSetOpti.ProjectOntoLevelSet(LsTBO);
                     break;
 
@@ -924,7 +1020,7 @@ namespace XESF
                             ShockLevelSetField = new SinglePhaseField(new Basis(this.GridData, Control.LevelSetDegree), "shockLevelSetField");
                         }
 
-                        ShockLevelSetField.ProjectFromForeignGrid(1.0, (ConventionalDGField)fieldsFromDb.Pick(1));
+                        ShockLevelSetField.ProjectFromForeignGrid(1.0, (ConventionalDGField)fieldsFromDb.ElementAt(1));
 
                     }
                     else
@@ -993,6 +1089,8 @@ namespace XESF
                     this.DerivedVariableToDoubleMap.Add(doubleVar, new double());
                 }
             }
+            #endregion
+            #region register fields
             #endregion
 
             #region register the derived Fields
@@ -1255,9 +1353,10 @@ namespace XESF
     {
         public static void RunTests()
         {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads:1);
             XESFMain.DeleteOldPlotFiles();
             List<string> fails = new List<string>();
+
             try { SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22(); } catch { fails.Add("SAIDTTestProgram.CurvedShock_Eccomas22"); }
             try { BUIDT.Tests.BUIDTTestProgram.StraightShockCurvedStart_Eccomas22(); } catch { fails.Add("BUIDTTestProgram.StraightShockCurvedStart_Eccomas22()"); }
             try { XESF.Tests.XESFTestProgram.XDG_SWF_OneLs_Cart(); } catch { fails.Add("XESFTestProgram.XDG_SWF_OneLs_Cart"); }

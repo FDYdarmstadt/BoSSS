@@ -46,6 +46,12 @@ namespace ZwoLevelSetSolver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
+            FieldOptions.Add(VariableNames.DisplacementZ, new FieldOpts() {
+                //Degree = p + DisplacementDegOffset,
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
         }
     }
 

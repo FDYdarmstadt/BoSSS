@@ -75,13 +75,14 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            
+
             //ilPSP.Environment.NumThreads = 8;
             //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, false, 3);
+            ////BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            ////DeleteOldPlotFiles();
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
             /*
@@ -426,7 +427,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             FinalOperatorSettings(XOP, D);
-            XOP.FluxesAreNOTMultithreadSafe = false;
+            XOP.FluxesAreNOTMultithreadSafe = false; // enable multi-threaded evaluation of fluxes
             XOP.Commit();
 
             return XOP;
@@ -602,13 +603,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+            } else {
+                if (this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton)
+                    throw new ApplicationException("illegal configuration");
                 opFactory.AddEquation(new NavierStokes_Newton("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes_Newton("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else {
-                throw new NotSupportedException();
-            }
+            } 
+
             opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, config));
         }
 
@@ -711,13 +713,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
-                if(Control.FailOnSolverFail && !success)
+                if (Control.FailOnSolverFail && !success) {
+                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling);
+                    SaveToDatabase(TimestepNo, phystime);
                     throw new ArithmeticException("Solver did not converge.");
+                }
 
                 return dt;
             }
         }
         protected virtual List<DGField> GetInterfaceVelocity(){
+            MPICollectiveWatchDog.Watch();
             int D = this.GridData.SpatialDimension;
             var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             var PhysParam = this.Control.PhysicalParameters;
@@ -798,7 +804,10 @@ namespace BoSSS.Application.XNSE_Solver {
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
             double s = 0.5; // safety factor
+            int D = this.GridData.SpatialDimension;
 
+
+            int p = 0;
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             if (CC.NoOfItemsLocally > 0) {
@@ -811,10 +820,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // get level set degree
-                int p = 0;
                 try {
                     p = ((DGField)LsTrk.LevelSets[0]).Basis.Degree;
-                } catch {
+                }
+                catch {
                     Console.WriteLine("Cannot determine DG order of level set");
                 }
 
@@ -822,31 +831,28 @@ namespace BoSSS.Application.XNSE_Solver {
                 {
                     var physParams = this.Control.PhysicalParameters;
                     if (physParams.Sigma != 0) {
-                        //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin * (p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
-                        //if (dt_cap < dt) {
-                        //    dt = Math.Min(dt_cap, dt);
-                        //    Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
-                        //}
+                        double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin * (p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                        if (dt_cap < dt) {
+                            dt = Math.Min(dt_cap, dt);
+                            Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                        }
                     }
                 }
+            }
 
-                // level set cfl
-                {
-                    int D = this.GridData.SpatialDimension;
-                    IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
-                    if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
-                        // At this point the level set velocity is not updated to the correct value
-                        //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
+            // level set cfl
+            IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
 
-                        var LevelSetVelocity = GetInterfaceVelocity();
+                var LevelSetVelocity = GetInterfaceVelocity();
+                // At this point the level set velocity is not updated to the correct value
+                //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
 
-                        //double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
-                        //dt_cfl *= s / Math.Pow(p, 2);
-                        //if (dt_cfl < dt) {
-                        //    dt = Math.Min(dt_cfl, dt);
-                        //    Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
-                        //}
-                    }
+                double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
+                dt_cfl *= s / Math.Pow(p, 2);
+                if (dt_cfl < dt) {
+                    dt = Math.Min(dt_cfl, dt);
+                    Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
                 }
             }
 
@@ -885,6 +891,42 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
         }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from an analytic solution
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="Time"></param>
+        /// <param name="St"></param>
+        protected override void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
+            using (new FuncTrace()) {
+                Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
+
+                // level-set
+                // ---------
+                this.LsUpdater.LevelSets["Phi"].DGLevelSet.ProjectField(X => this.Control.Phi(X, Time));
+                //this.LsUpdater.LevelSets[0].CGLevelSet..ProjectField(X => this.Control.Phi(X, Time));
+
+                //this.LsTrk.UpdateTracker(Time, incremental: true);
+
+                // solution
+                // --------
+                int D = this.LsTrk.GridDat.SpatialDimension;
+
+                for (int d = 0; d < D; d++) {
+                    XDGField _u = (XDGField)St[d];
+                    _u.Clear();
+                    _u.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionVelocity["A"][d](X, Time));
+                    _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionVelocity["B"][d](X, Time)));
+                }
+                XDGField _p = (XDGField)St[D];
+                _p.Clear();
+                _p.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionPressure["A"](X, Time));
+                _p.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionPressure["B"](X, Time)));
+            }
+        }
+
 
 
     }

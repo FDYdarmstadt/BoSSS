@@ -235,7 +235,10 @@ namespace BoSSS.Solution.Utils {
                 for (int i = 0; i < inp.GetLength(0); i++) {
                     double x = inp[i, 0];
 
-                    res[i] = f(x);
+                    if (f != null)
+                        res[i] = f(x);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -255,7 +258,11 @@ namespace BoSSS.Solution.Utils {
                 for (int i = 0; i < inp.GetLength(0); i++) {
                     double x = inp[i, 0];
 
-                    res[i] = f(time, x);
+
+                    if (f != null)
+                        res[i] = f(time, x);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -275,7 +282,10 @@ namespace BoSSS.Solution.Utils {
                     double x = inp[i, 0];
                     double y = inp[i, 1];
 
-                    res[i] = f(x, y);
+                    if (f != null)
+                        res[i] = f(x, y);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -295,7 +305,10 @@ namespace BoSSS.Solution.Utils {
                     double x = inp[i, 0];
                     double y = inp[i, 1];
 
-                    res[i] = f(x, y);
+                    if (f != null)
+                        res[i] = f(x, y);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -334,7 +347,11 @@ namespace BoSSS.Solution.Utils {
                     double x = inp[i, 0];
                     double y = inp[i, 1];
 
-                    res[i] = f(time, x, y);
+
+                    if (f != null)
+                        res[i] = f(time, x, y);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -355,7 +372,10 @@ namespace BoSSS.Solution.Utils {
                     double y = inp[i, 1];
                     double z = inp[i, 2];
 
-                    res[i] = f(x, y, z);
+                    if(f != null)
+                        res[i] = f(x, y, z);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -374,7 +394,10 @@ namespace BoSSS.Solution.Utils {
                     for (int d = 0; d < D; d++)
                         X[d] = inp[i, d];
 
-                    res[i] = f(X);
+                    if(f != null)
+                        res[i] = f(X);
+                    else
+                        res[i] = 0;
 #if DEBUG
                     if (res[i].IsNaN())
                         throw new ArithmeticException("Vectorizing returns invalid values");
@@ -422,7 +445,10 @@ namespace BoSSS.Solution.Utils {
                     for (int d = 0; d < D; d++)
                         X[d] = inp[i, d];
 
-                    res[i] = f(X, time);
+                    if (f != null)
+                        res[i] = f(X, time);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -442,7 +468,10 @@ namespace BoSSS.Solution.Utils {
                     for (int d = 0; d < D; d++)
                         X[d] = inp[i, d];
 
-                    res[i] = f(X, time);
+                    if (f != null)
+                        res[i] = f(X, time);
+                    else
+                        res[i] = 0;
                 }
             });
         }
@@ -464,7 +493,11 @@ namespace BoSSS.Solution.Utils {
                     double y = inp[i, 1];
                     double z = inp[i, 2];
 
-                    res[i] = f(time, x, y, z);
+
+                    if (f != null)
+                        res[i] = f(time, x, y, z);
+                    else
+                        res[i] = 0;
                 }
             });
         }

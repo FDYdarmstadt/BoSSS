@@ -1,5 +1,4 @@
-﻿
-using BoSSS.Application.XNSE_Solver;
+﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -73,8 +72,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===============
             #region grid
 
-            double xLeft = -5;
-            double xRight = 5;
+            double xLeft = -3;
+            double xRight = 8;
             double ySize = 2;
 
             //*
@@ -123,12 +122,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
             Func<double[], double> Phi1Func = delegate (double[] X) {
                 if(X[0] < 0 && X[1] < 0.9) {
                     //y = 0.11
-                    return -(X[0]).Pow2() + 0.11 * 0.11;
+                    return -(X[0]).Pow2() + 0.1 * 0.1;
                 }
                 if(X[0] > 0 && X[1] < 0.9) {
-                    return -(X[0]).Pow2() + 0.11 * 0.11;
+                    return -(X[0]).Pow2() + 0.1 * 0.1;
                 }
-                return -((X[0]).Pow2() + (X[1] - 0.9).Pow2()) + 0.11 * 0.11;
+                return -((X[0]).Pow2() + (X[1] - 0.9).Pow2()) + 0.1 * 0.1;
             };
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
@@ -136,25 +135,25 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
 
             double R(double t) {
-                if(t < 1) {
+                if(t <= 1) {
                     return (35 + (-84 + (70 - 20 * t) * t) * t) * t * t * t * t;
                 } else {
                     return 1;
                 }
             }
 
-            double d = 0.3;
+            double d = 0.2;
 
 
             double G(double y, double t) {
                 if(y >= d)
-                    return R(t);
+                    return 1;
                 else
-                    return (1 - ((y - d) / d) * ((y - d) / d)) * R(t);
+                    return (1 - ((y - d) / d) * ((y - d) / d));
             }
 
 
-            double vmax = 2;
+            double vmax = 1;
             double inflowX(double[] x, double t) {
                 return vmax * R(t) * G(x[1], t);
             }
@@ -200,7 +199,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 2 });
-            C.AMR_startUpSweeps = 1;
+            C.AMR_startUpSweeps = 2;
 
             #endregion
 
@@ -220,8 +219,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 30;
-            C.NoOfTimesteps = 10000;
+            C.Endtime = 20;
+            C.NoOfTimesteps = 2000;
             C.saveperiod = 1;
 
             #endregion

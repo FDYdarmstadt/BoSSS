@@ -30,10 +30,9 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
-            //Debugger.Launch();
-            //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            ////MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
-            // dbg_launch();
+            //// dbg_launch();
             //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
             //throw new NotImplementedException("remove me");
 
@@ -301,6 +300,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             using (new FuncTrace()) {
                 // Elo
                 Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime + " ... ");
+
 
                 // timestepping params
                 base.NoOfTimesteps = 20;

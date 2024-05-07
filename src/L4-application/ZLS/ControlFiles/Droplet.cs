@@ -51,12 +51,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             #endregion
 
-            if(D == 3) {
-                C.FieldOptions.Add("DisplacementZ", new FieldOpts() {
-                    Degree = p,
-                    SaveToDB = FieldOpts.SaveToDBOpt.FALSE
-                });
-            }
+            //if(D == 3) {
+            //    C.FieldOptions.Add("DisplacementZ", new FieldOpts() {
+            //        Degree = p,
+            //        SaveToDB = FieldOpts.SaveToDBOpt.FALSE
+            //    });
+            //}
 
             // Physical Parameters
             // ===================

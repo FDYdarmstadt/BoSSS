@@ -15,13 +15,25 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public Continuity(string spcName, int D, Solid material) {
             this.spcName = spcName;
-            for(int i = 0; i < D; ++i) {
-                string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
-                AddVariableNames(velocity);
-                var divergence1 = new Divergence(spcName, velocity, i);
-                AddComponent(divergence1);
+            if(true) {
+                for(int i = 0; i < D; ++i) {
+                    string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
+                    AddVariableNames(velocity);
+                    var divergence1 = new Divergence(spcName, velocity, i);
+                    AddComponent(divergence1);
+                }
+                AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / material.Lame2 - 1.0 / material.Viscosity));
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / (material.Viscosity)));
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1000));
+            } else {
+                string[] displacement = ZwoLevelSetSolver.VariableNames.DisplacementVector(D);
+                for(int i = 0; i < D; ++i) {
+                    AddVariableNames(displacement);
+                    var divergence = new Divergence(spcName, displacement[i], i, 1.0);
+                    AddComponent(divergence);
+                }
+                //AddComponent(new NonlinearContinuityForm(spcName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)));
             }
-            AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / material.Lame2 - 1.0 / material.Viscosity));
         }
 
         public override string SpeciesName => spcName;

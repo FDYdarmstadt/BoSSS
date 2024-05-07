@@ -19,7 +19,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -122,16 +122,12 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
         ///
         ///
         ///
-        ///namespace BoSSScppWrapper
+        ///namespace BoSSS
         ///{
-        ///    //MonoBoSSSglobals::Initialized = 0;
-        ///
-        ///    MonoDomain* MonoBoSSSglobals::domain = NULL;
-        ///    MonoAssembly* MonoBoSSSglobals::assembly = NULL;
-        ///    MonoImage* MonoBoSSSglobals::image = NULL;
-        ///    int MonoBoSSSglobals::Initialized = 0;
-        ///
-        ///    void Mo [rest of string was truncated]&quot;;.
+        ///    
+        ///    
+        ///}
+        ///.
         /// </summary>
         internal static string MonoBoSSSglobals_cpp {
             get {
@@ -141,22 +137,10 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
         
         /// <summary>
         ///   Looks up a localized string similar to #pragma once
-        ///namespace BoSSScppWrapper
+        ///namespace BoSSS
         ///{
         ///class MonoBoSSSglobals
         ///{
-        ///public:
-        ///	
-        ///    static MonoDomain* domain;
-        ///    static MonoAssembly* assembly;
-        ///    static MonoImage* image;
-        ///
-        ///	static void Init(const char* dir, const char* exe);
-        ///    static MonoClass*  LookupClass(const char *_classname, const char* _namespace);
-        ///    static MonoMethod* LookupMethod(MonoClass* pClass, const char *name, mono_bool include_namespace);
-        ///
-        ///private:
-        ///    static int Initialized;
         ///};
         ///}
         ///.
