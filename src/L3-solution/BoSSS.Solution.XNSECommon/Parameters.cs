@@ -459,7 +459,7 @@ namespace BoSSS.Solution.XNSECommon {
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            LevelSet Phi = levelSet.CGLevelSet;
+            LevelSet Phi = levelSet.C0LevelSet;
             DGField[] Normals = new SinglePhaseField[D];
             for (int i = 0; i < D; ++i) {
                 Normals[i] = ParameterVarFields[parameterNames[i]];

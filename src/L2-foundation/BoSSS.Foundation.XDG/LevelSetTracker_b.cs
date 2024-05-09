@@ -92,6 +92,19 @@ namespace BoSSS.Foundation.XDG {
             return GetXDGSpaceMetrics(new SpeciesId[] { Spc }, CutCellsQuadOrder, HistoryIndex);
         }
 
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(string Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+            return GetXDGSpaceMetrics(new SpeciesId[] { this.GetSpeciesId(Spc) }, CutCellsQuadOrder, HistoryIndex);
+        }
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<string> Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+            return GetXDGSpaceMetrics(Spc.Select(spc => this.GetSpeciesId(spc)), CutCellsQuadOrder, HistoryIndex);
+        }
+
 
         /// <summary>
         /// Cut Cell and Cut Edge metrics before agglomeration

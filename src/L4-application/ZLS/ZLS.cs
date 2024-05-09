@@ -22,17 +22,22 @@ using ilPSP;
 using BoSSS.Solution.Utils;
 using NUnit.Framework;
 using BoSSS.Solution;
+using System.Diagnostics;
 
 namespace ZwoLevelSetSolver {
 
     /// <summary>
     /// ZLS: Two-Level-Set-Solver;
     /// - Main purpose seems to be Euler/Euler fluid-structure interaction
+    /// - Original author: Lauritz Beck
     /// </summary>
     public class ZLS : XNSE<ZLS_Control> {
 
         /// <summary>
-        /// Usually, the term "DG order of the calculation" means the velocity degree.
+        /// DG polynomial degree of the displacement variable.
+        /// 
+        /// Note: Usually, the term "DG order of the calculation" means the velocity degree.
+        /// despite dis, displacement fields or the pressure might have other DG polynomial degrees.
         /// </summary>
         protected int DisplacementDegree() {
             int pDspl;
@@ -154,6 +159,48 @@ namespace ZwoLevelSetSolver {
 
             //OperatorAnalysis();
             //base.TerminationKey = true;
+            //Debugger.Launch();
+            {
+                var Phi0 = this.LsUpdater.LevelSets.ElementAt(0).Value.C0LevelSet;
+                var Phi1 = this.LsUpdater.LevelSets.ElementAt(1).Value.C0LevelSet;
+
+                Console.WriteLine("  Len of Phi0: " + Phi0.CoordinateVector.Mapping.GlobalCount);
+                Console.WriteLine("  Len of Phi1: " + Phi1.CoordinateVector.Mapping.GlobalCount);
+
+                var LsChecker = new TestingIO(this.GridData, $"LevelSets-{TimestepNo}.csv", TestingIO.DataCorrelation.GeometricalCode, 1);
+                LsChecker.AddDGField(Phi0);
+                LsChecker.AddDGField(Phi1);
+
+                var Species = new[] { "A", "B", "C" };
+                int order = this.LsTrk.GetCachedOrders().Max();
+                var metrics = this.LsTrk.GetXDGSpaceMetrics(Species, order).CutCellMetrics;
+
+                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+
+                foreach(string spc in Species) {
+                    var spcId = LsTrk.GetSpeciesId(spc);
+                    var vol = metrics.CutCellVolumes[spcId].To1DArray().GetSubVector(0, J);
+                    var LsArea = metrics.InterfaceArea[spcId].To1DArray().GetSubVector(0, J);
+                    var BndyArea = metrics.CellSurface[spcId].To1DArray().GetSubVector(0, J);
+
+                    LsChecker.AddVector("Volume-" + spc, vol);
+                    LsChecker.AddVector("Interface-" + spc, LsArea);
+                    LsChecker.AddVector("CellBndy-" + spc, BndyArea);
+                }
+                LsChecker.DoIOnow();
+
+                Assert.Less(LsChecker.AbsError(Phi0), 1.0e-8, "Mismatch in level-set 0 between single-core and parallel run.");
+                Assert.Less(LsChecker.AbsError(Phi1), 1.0e-8, "Mismatch in level-set 1 between single-core and parallel run.");
+
+                foreach(string spc in Species) {
+                    Console.WriteLine("    Volume comparison error    : " + LsChecker.AbsError("Volume-" + spc));
+                    Console.WriteLine("    Surface comparison error   : " + LsChecker.AbsError("Interface-" + spc));
+                    Console.WriteLine("    Cell surf comparison error : " + LsChecker.AbsError("CellBndy-" + spc));
+
+                }
+
+            }
+
 
             return dt;
         }

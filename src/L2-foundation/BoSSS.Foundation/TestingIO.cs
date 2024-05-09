@@ -28,7 +28,7 @@ namespace BoSSS.Foundation {
     /// - for runs which have a different number of MPI cores than the reference size, numeraical values will be compared.
     /// 
     /// The typical use-case of this class is as follows:
-    /// 1. Instantiate (<see cref="TestingIO.TestingIO(IGridData, string, bool, int)"/>)
+    /// 1. Instantiate (<see cref="TestingIO.TestingIO(IGridData, string, DataCorrelation, int)"/>)
     /// 2. Add Vectors, DG fields, etc. (<see cref="AddVector(string, IEnumerable{double})"/>, <see cref="AddDGField(ConventionalDGField)"/>, <see cref="AddColumn(string, ExecutionMask.ItemInfo)"/>)
     ///    to this IO object; 
     /// 3. Call <see cref="DoIOnow"/> th either save the current data or load the reference data 
@@ -84,23 +84,45 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// - true: cells are compared according to GlobalID
-        /// - false: cells are related according to a geometrical code (<see cref="GeomBinTreeBranchCode"/>)
+        /// <see cref="DataCorrelation"/>
         /// </summary>
-        public bool CheckGlobalID {
+        public DataCorrelation DataCorr {
             private set;
             get;
         }
 
 
         /// <summary>
+        /// Controls how data series from different runs is compared.
+        /// 
+        /// Background: especially if Adaptive Mesh Refinement (AMR) is turned on, 
+        /// the cells of the mesh might be labeled differently.
+        /// I.e., while the meshes are geometrically equivalent, when AMR is used, 
+        /// the same cell might have different Ids. 
+        /// In such cases, it is better to identify cells by a unique geometrical property.
+        /// </summary>
+        public enum DataCorrelation {
+
+            /// <summary>
+            /// data/cells are compared according to GlobalID; should not be used with AMR
+            /// </summary>
+            GlobalId = 0,
+
+            /// <summary>
+            /// cells are related according to a geometrical code (<see cref="GeomBinTreeBranchCode"/>)
+            /// </summary>
+            GeometricalCode = 1,
+        }
+
+
+        /// <summary>
         /// 
         /// </summary>
-        public TestingIO(IGridData __g, string __CSVfile, bool __CheckGlobalID = true, int __ReferenceMPISize = 1) {
+        public TestingIO(IGridData __g, string __CSVfile, DataCorrelation __dataCorrelation = DataCorrelation.GlobalId, int __ReferenceMPISize = 1) {
             if(__ReferenceMPISize < 1)
                 throw new ArgumentOutOfRangeException();
 
-            CheckGlobalID = __CheckGlobalID;
+            DataCorr = __dataCorrelation;
             CSVfile = __CSVfile;
             GridDat = __g;
             this.ReferenceMPISize = __ReferenceMPISize;
@@ -224,7 +246,8 @@ namespace BoSSS.Foundation {
         double[][] Dict2AoA<T>(IDictionary<string, T> table) where T : IEnumerable<double> {
             var coln = ColumnNames;
             if(!coln.SetEquals(table.Keys)) {
-                throw new ApplicationException();
+                
+                throw new ApplicationException($"Different column names {coln.ToConcatString("[", ", ", "]")} and table {table.Keys.ToConcatString("[", ", ", "]")}:  difference is {coln.SetSymmDifference(table.Keys).ToConcatString("[", ", ", "]")}");
             }
 
             double[][] DataColumns = coln.Select(nmn => table[nmn].ToArray()).ToArray();
@@ -301,7 +324,7 @@ namespace BoSSS.Foundation {
 
             ReferenceData = AoA2Dict(DataColumns);
 
-            if(CheckGlobalID) {
+            if(DataCorr == DataCorrelation.GlobalId) {
                 if(AbsError(ColName_Gid) > 0.0)
                     throw new ArgumentException("Mismatch in Global ID between reference data and current grid.");
             }
@@ -506,10 +529,12 @@ namespace BoSSS.Foundation {
             int L = data.Count();
             int K = L / J;
 
-            
-            if(J*K != L || K < 1)
-                throw new ArgumentException("wrong length of input vector");
-            if(L == 1) {
+
+            if (J*K != L || K < 1) {
+                //int Jtot = this.GridDat.iLogicalCells.NoOfExternalCells + J;
+                throw new ArgumentException($"wrong length of input vector named ${ColName}; expecting a multiple of {J}, but length is {L}; (forgot to remove external cells?)");
+            }
+            if(K == 1) {
                 m_CurrentData.Add(ColName, data.ToArray());
             } else {
                 var M = MultidimensionalArray.CreateWrapper(data.ToArray(), J, K);
@@ -616,7 +641,7 @@ namespace BoSSS.Foundation {
                 throw new ArgumentException("DG field is defined on different mesh");
 
             int N = f.Basis.Length;
-            int N1 = ReferenceData.Keys.Where(colName => colName.StartsWith(f.Identification)).Count();
+            int N1 = ReferenceData.Keys.Where(colName => colName.StartsWith(f.Identification + "_")).Count();
             if(N != N1)
                 throw new ArgumentException("DG degree seems different");
 
@@ -678,7 +703,7 @@ namespace BoSSS.Foundation {
                 // ----
 
                 double[][] SortColumns;
-                if(this.CheckGlobalID) {
+                if(this.DataCorr == DataCorrelation.GlobalId) {
                     SortColumns = NoOfCols.ForLoop(i => new double[CatGiD.Length]);
                     int[] SortIndices = CatGiD.Length.ForLoop(i => i);
 
@@ -746,7 +771,7 @@ namespace BoSSS.Foundation {
             
             Permutation Resorting;
 
-            if(CheckGlobalID) {
+            if(this.DataCorr == DataCorrelation.GlobalId) {
                 {
                     // id    is the GlobalID-permutation that we have for the loaded vector
                     // sigma is the current GlobalID-permutation of the grid

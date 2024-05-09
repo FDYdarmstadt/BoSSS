@@ -249,7 +249,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <returns></returns>
         public double ComputeLevelSetError(CellMask cm) {
 
-            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].C0LevelSet;
 
             double L2Error = PhiCG.L2Error(exactPhi, cm);
 
@@ -303,7 +303,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <returns></returns>
         public double ComputeInterfacePointsError(double time) {
 
-            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].C0LevelSet;
             SubGrid sbgrd = solver.LsTrk.Regions.GetCutCellSubGrid();
             MultidimensionalArray interfaceP = XNSEUtils.GetInterfacePoints(solver.LsTrk, PhiCG, sbgrd);
 

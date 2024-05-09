@@ -165,11 +165,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             // Here Phasefield Movement            
             if (Phasefield == null) {
                 iTimestep = 0;
-                Phasefield = new Phasefield(null, levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
+                Phasefield = new Phasefield(null, levelSet.C0LevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
                 Phasefield.InitCH();
             }
 
-            Phasefield.UpdateFields(levelSet.CGLevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
+            Phasefield.UpdateFields(levelSet.C0LevelSet, levelSet.DGLevelSet, levelSet.Tracker, extensionVelocity, m_grd, m_control, null);
             Phasefield.MovePhasefield(iTimestep, dt, time);
             iTimestep++;
         }

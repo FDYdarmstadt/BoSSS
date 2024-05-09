@@ -235,7 +235,7 @@ namespace HangingNodesTests {
             }
             */
 
-            var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", false, 1);
+            var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", TestingIO.DataCorrelation.GeometricalCode, 1);
             for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];
                 string SpcName = Tracker.GetSpeciesName(spc);

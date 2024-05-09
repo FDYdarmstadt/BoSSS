@@ -46,7 +46,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected override LevelSetTracker InstantiateTracker() {
             LsUpdater = InstantiateLevelSetUpdater();
             foreach (DualLevelSet LevSet in LsUpdater.LevelSets.Values) {
-                base.RegisterField(LevSet.CGLevelSet);
+                base.RegisterField(LevSet.C0LevelSet);
                 base.RegisterField(LevSet.DGLevelSet);
             }
 

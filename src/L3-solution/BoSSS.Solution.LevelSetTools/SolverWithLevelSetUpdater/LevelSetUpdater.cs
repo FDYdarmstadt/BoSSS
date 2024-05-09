@@ -16,10 +16,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// <summary>
     /// A pair of two DG-fields for level-set handling
     /// - a (potentially) discontinuous (at cell boundaries) representation, <see cref="DGLevelSet"/>
-    /// - a continuous representation, <see cref="CGLevelSet"/>
+    /// - a continuous representation, <see cref="C0LevelSet"/>
     /// </summary>
     /// <remarks>
-    /// For a well-defined XDG method, continuity of the level-set at cell boundaries is mandatory.
+    /// For a well-defined XDG method, continuity of the level-set at cell boundaries is mandatory, otherwise the level-set (-surface) is not closed.
     /// However, typical evolution methods (e.g. scalar convection) do not guarantee continuity. 
     /// (Alternatively, one might use a Continuous Galerkin (CG) method for the evolution, e.g. Streamwise-Upwind-Petrov-Galerkin (SUPG).
     /// The CG discretization in BoSSS, however does not support 3D in general and hanging nodes in 2D and 3D and there are no plans for this in future.)
@@ -52,7 +52,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// without to much L2-difference to the original <see cref="DGLevelSet"/>.
         /// Continuity projection is performed by the <see cref="LevelSetUpdater"/>.
         /// </summary>
-        public LevelSet CGLevelSet;
+        public LevelSet C0LevelSet;
 
         /// <summary>
         /// The DG representation which should be used for level-set evolution.
@@ -159,7 +159,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double dt,
                 double underRelax,
                 bool incremental) {
-                LevelSet ls = phaseInterface.CGLevelSet;
+                LevelSet ls = phaseInterface.C0LevelSet;
                 LevelSet lsBkUp = ls.CloneAs();
 
                 //Move LevelSet and update Params
@@ -263,11 +263,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
 
                 ContinuityProjection preEnforcer = new ContinuityProjection(
-                    phaseInterface.CGLevelSet.Basis,
+                    phaseInterface.C0LevelSet.Basis,
                     phaseInterface.DGLevelSet.Basis,
                     Tracker.GridDat,
                     ContinuityProjectionOption.None);
-                LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+                LevelSet preCGLevelSet = phaseInterface.C0LevelSet.CloneAs();
                 preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
                 LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
                 preTracker.UpdateTracker(0.0);
@@ -277,7 +277,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
 
-                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
+                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.C0LevelSet, CCplus, PosFF);
                 preTracker.Dispose();
             }
 
@@ -288,7 +288,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 int i = 0;
                 foreach (ILevelSetParameter parameter in lsParameters) {
 
-                    if (!phaseInterface.CGLevelSet.GridDat.IsAlive())
+                    if (!phaseInterface.C0LevelSet.GridDat.IsAlive())
                         throw new ApplicationException("CG level set on invalidated mesh -- something went wrong during mesh adaptation/load balancing.");
                     if (!phaseInterface.DGLevelSet.GridDat.IsAlive())
                         throw new ApplicationException("CG level set on invalidated mesh -- something went wrong during mesh adaptation/load balancing.");
@@ -372,7 +372,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             DualLevelSet levelSet0 = new DualLevelSet {
                 Identification = interfaceName,
                 LevelSetIndex = 0,
-                CGLevelSet = cgLevelSet,
+                C0LevelSet = cgLevelSet,
                 DGLevelSet = dgLevelSet,
                 Tracker = Tracker,
             };
@@ -411,7 +411,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 DualLevelSet dualLevelSet = new DualLevelSet {
                     Identification = interfaceNames[i],
                     LevelSetIndex = i,
-                    CGLevelSet = cgLevelSets[i],
+                    C0LevelSet = cgLevelSets[i],
                     DGLevelSet = dgLevelSets[i],
                     Tracker = Tracker,
                 };
@@ -450,7 +450,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 DualLevelSet dualLevelSet = new DualLevelSet {
                     Identification = interfaceNames[i],
                     LevelSetIndex = i,
-                    CGLevelSet = cgLevelSets[i],
+                    C0LevelSet = cgLevelSets[i],
                     DGLevelSet = dgLevelSets[i],
                     Tracker = Tracker,
                 };
@@ -489,7 +489,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 DualLevelSet dualLevelSet = new DualLevelSet {
                     Identification = interfaceNames[i],
                     LevelSetIndex = i,
-                    CGLevelSet = cgLevelSets[i],
+                    C0LevelSet = cgLevelSets[i],
                     DGLevelSet = dgLevelSets[i],
                     Tracker = Tracker,
                 };
@@ -500,7 +500,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         static SingleLevelSetUpdater CreateSingleLevelSetUpdater(DualLevelSet levelSet, GridData grid, ContinuityProjectionOption continuityMode) {
             ContinuityProjection enforcer1 = new ContinuityProjection(
-                levelSet.CGLevelSet.Basis,
+                levelSet.C0LevelSet.Basis,
                 levelSet.DGLevelSet.Basis,
                 grid,
                 continuityMode);

@@ -172,9 +172,9 @@ namespace BoSSS.Application.XNSEC {
                 int RefMPIsize = 1;
                 if (IO != null) {
                     LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                    LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+                    LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].C0LevelSet;
 
-                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", true, RefMPIsize);
+                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", TestingIO.DataCorrelation.GlobalId, RefMPIsize);
                     projCheck.AddDGField(PhiDG);
                     projCheck.AddDGField(PhiCG);
                     projCheck.DoIOnow();

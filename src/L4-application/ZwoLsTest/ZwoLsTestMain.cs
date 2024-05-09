@@ -380,7 +380,7 @@ namespace BoSSS.Application.ZwoLsTest {
             // check level-set coordinates
             // ===========================
             {
-                var LsChecker = new TestingIO(this.GridData, $"LevelSets-{name_disc}.csv", true, RefMPIsize);
+                var LsChecker = new TestingIO(this.GridData, $"LevelSets-{name_disc}.csv", TestingIO.DataCorrelation.GlobalId, RefMPIsize);
                 LsChecker.AddDGField(this.Phi0);
                 LsChecker.AddDGField(this.Phi1);
                 LsChecker.DoIOnow();
@@ -400,7 +400,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             bool[] equalAggAsinReferenceRun;
             {
-                var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", true, RefMPIsize);
+                var aggoCheck = new TestingIO(this.GridData, $"Agglom-{name_disc}.csv", TestingIO.DataCorrelation.GlobalId, RefMPIsize);
                 long[] GiDs = GridData.CurrentGlobalIdPermutation.Values;
                 int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 long[] extGiDs = GridData.iParallel.GlobalIndicesExternalCells;
@@ -464,7 +464,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
                 string FileName = $"{name}LengthScales-{name_disc}.csv";
-                var Checker = new TestingIO(this.GridData, FileName, true, RefMPIsize);
+                var Checker = new TestingIO(this.GridData, FileName, TestingIO.DataCorrelation.GlobalId, RefMPIsize);
                 Checker.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
                 Checker.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
                 Checker.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);
@@ -472,7 +472,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 Checker.DoIOnow();
 
                 if(this.MPISize == 1) {
-                    var Checker2 = new TestingIO(this.GridData, FileName, true, int.MaxValue);
+                    var Checker2 = new TestingIO(this.GridData, FileName, TestingIO.DataCorrelation.GlobalId, int.MaxValue);
                     Checker2.AddColumn("CellSurfA", (double[] X, int j, int jG) => CellSurfaceA[j]);
                     Checker2.AddColumn("CellVolA", (double[] X, int j, int jG) => CellVolumeA[j]);
                     Checker2.AddColumn("CellSurfB", (double[] X, int j, int jG) => CellSurfaceB[j]);

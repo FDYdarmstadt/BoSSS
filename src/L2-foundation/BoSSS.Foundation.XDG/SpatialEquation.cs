@@ -135,7 +135,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// XDG Equations on a surface. 
     /// Surface is between to species.
     /// </summary>
-    public abstract class SurfaceEquation : SpatialEquation{
+    public abstract class SurfaceEquation : SpatialEquation {
         /// <summary>
         /// Empty surface equation.
         /// </summary>

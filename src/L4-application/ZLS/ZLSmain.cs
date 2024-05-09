@@ -9,6 +9,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.Statistic;
 using NUnit.Framework;
+using System.Diagnostics;
 
 namespace ZwoLevelSetSolver {
     class ZLSmain {
@@ -27,6 +28,7 @@ namespace ZwoLevelSetSolver {
         }
 
         static void RunSolver(string[] args) {
+            //Debugger.Launch();
             ZLS._Main(args, false, delegate () {
                 //Control file from runtime via args
                 var p = new ZLS();
@@ -34,6 +36,7 @@ namespace ZwoLevelSetSolver {
             });
         }
 
+        /*
         static void ConditionNumberScaling(int p = 2,
             double dt = 1.0e200,
             BoSSS.Solution.Control.NonLinearSolverCode slvCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton
@@ -59,7 +62,7 @@ namespace ZwoLevelSetSolver {
             }
             ConditionNumberScalingTest.Perform(controlFiles, new ConditionNumberScalingTest.Config() { plot = true, title= "ConditionNumberScaling" });
         }
-
+        */
         /*
         static void ConvergenceNumberScaling(int p = 2,
             double dt = 1.0e200,

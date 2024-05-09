@@ -23,7 +23,7 @@ using System.Linq;
 
 namespace BoSSS.Application.XNSEC {
     /// <summary>
-    /// Low Mach number flow solver. Supports temperature dependeant density and transport parameters.
+    /// Low Mach number flow solver. Supports temperature dependent density and transport parameters.
     /// The mixture fraction solver <see cref="XNSEC_MixtureFraction"/> can be used for finding estimates for combustion applications
     /// </summary>
     public partial class XNSEC : SolverWithLevelSetUpdater<XNSEC_Control> {

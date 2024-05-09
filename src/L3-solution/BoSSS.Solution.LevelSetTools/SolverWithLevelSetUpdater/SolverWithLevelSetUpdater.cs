@@ -86,7 +86,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             // register all managed LevelSets
             foreach (DualLevelSet LevSet in LsUpdater.LevelSets.Values) {
-                base.RegisterField(LevSet.CGLevelSet);
+                base.RegisterField(LevSet.C0LevelSet);
                 base.RegisterField(LevSet.DGLevelSet);
             }
 
@@ -403,8 +403,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     pair.DGLevelSet.AccConstant(-1.0);
                 }
 
-                pair.CGLevelSet.Clear();
-                pair.CGLevelSet.AccLaidBack(1.0, pair.DGLevelSet);
+                pair.C0LevelSet.Clear();
+                pair.C0LevelSet.AccLaidBack(1.0, pair.DGLevelSet);
 
             }
 
@@ -493,7 +493,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             if(!object.ReferenceEquals(this.LsTrk, LsUpdater.Tracker))
                 throw new ApplicationException("LevelSetUpdater linked to old LevelSetTracker.");
             foreach(var kv in LsUpdater.LevelSets) {
-                if(!object.ReferenceEquals(this.GridData, kv.Value.CGLevelSet.GridDat)) {
+                if(!object.ReferenceEquals(this.GridData, kv.Value.C0LevelSet.GridDat)) {
                     throw new ApplicationException($"CG Level set {kv.Key} linked to old GridData");
                 }
                 if(!object.ReferenceEquals(this.GridData, kv.Value.DGLevelSet.GridDat)) {
@@ -531,7 +531,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if (dist1 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
 
-                var coords1CG = pair1.CGLevelSet.CoordinateVector.ToArray();
+                var coords1CG = pair1.C0LevelSet.CoordinateVector.ToArray();
                 CellMask Near1 = this.LsTrk.Regions.GetSpeciesRestrictedNearMask4LevSet(0, 1);
                 bool check_distCG = true;
                 if (!Near.SequenceEqual(Near1)) {
@@ -547,9 +547,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if (dist2 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
 
-                double distCG = pair1.CGLevelSet.CoordinateVector.L2Distance(coords1CG);
+                double distCG = pair1.C0LevelSet.CoordinateVector.L2Distance(coords1CG);
                 if (check_distCG && distCG > 3e-15)
-                    throw new Exception($"illegal modification of CG level-set when projecting a second time (rank {pair1.CGLevelSet.GridDat.MpiRank}: CG level-set LS distance = {distCG})");
+                    throw new Exception($"illegal modification of CG level-set when projecting a second time (rank {pair1.C0LevelSet.GridDat.MpiRank}: CG level-set LS distance = {distCG})");
             }
 #if TEST
             var MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
@@ -575,8 +575,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             base.PostRestart(time, timestep);
 
             // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
-            if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
-                this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+            if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].C0LevelSet.L2Norm() != 0.0)
+                this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].C0LevelSet);
 
             // set restart time, used later in the intial tracker updates
             restartTime = time;

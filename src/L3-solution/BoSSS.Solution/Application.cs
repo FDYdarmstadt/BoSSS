@@ -2463,9 +2463,11 @@ namespace BoSSS.Solution {
 
                         SaveApplicationToDatabase(i, physTime, RunLoop(i + 1), gridChanged);
 
-
-                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                        //Console.WriteLine("End of timestep #" + i + ", ImmediatePlotPeriod = " + this.Control.ImmediatePlotPeriod);
+                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0) {
+                            tr.Info("Plotting timestep #" + i);
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
+                        }
                     }
 
 
