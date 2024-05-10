@@ -1,4 +1,4 @@
-﻿using ilPSP;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -649,7 +649,7 @@ namespace BoSSS.Foundation.XDG {
             ret += f0; // affine contribution - contains V and GradV contribution
 
             for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
-                if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
+                if (((m_EdgForm.BoundaryEdgeTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
                     //if (U_IN[iVar] != 0.0) {
                     {
                         ret += DiffBnd(ref U_IN_temp[iVar], U_IN[iVar],
@@ -657,7 +657,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                if (((m_EdgForm.InnerEdgeTerms & (TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV)) != 0)) {
+                if (((m_EdgForm.BoundaryEdgeTerms & (TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV)) != 0)) {
                     for (int d = 0; d < D; d++) {
                         //if (U_IN[iVar] != 0.0) {
                         {
