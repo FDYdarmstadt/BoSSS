@@ -3552,6 +3552,25 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// clears the <paramref name="ColNo"/>-th column from <paramref name="inp"/> .
+        /// </summary>
+        /// <param name="inp">
+        /// matrix that should be altered
+        /// </param>
+        /// <param name="ColNo">
+        /// column index of the column to set
+        /// </param>
+        public static void ClearCol(this IMatrix inp, int ColNo) {
+
+            if (ColNo < 0 || ColNo >= inp.NoOfCols)
+                throw new IndexOutOfRangeException("ColNo out of range");
+
+            int I1 = inp.NoOfRows;
+            for (int i = 0; i < I1; i++)
+                inp[i, ColNo] = 0.0;
+        }
+
+        /// <summary>
         /// sets the <paramref name="ColNo"/>-th column from
         /// <paramref name="inp"/> 
         /// to values provided by <paramref name="col"/>.
