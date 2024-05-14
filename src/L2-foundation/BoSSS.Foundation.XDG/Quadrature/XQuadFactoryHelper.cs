@@ -452,6 +452,13 @@ namespace BoSSS.Foundation.XDG {
                         ret = Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         break;
+                    case MomentFittingVariants.Algoim:
+                        var algoimComboFactory = new Quadrature.AlgoimFactories(
+                                this.m_LevelSetDatas[levSetIndex],
+                                Kref,
+                                true);
+                        ret = algoimComboFactory.GetVolumeFactory();
+                        break;
                     default:
                         ret = new ComplementaryRuleFactory(GetVolRuleFactory(levSetIndex, JumpTypes.Heaviside, Kref));
                         break;
