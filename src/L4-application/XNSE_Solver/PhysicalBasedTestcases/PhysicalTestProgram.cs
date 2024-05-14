@@ -29,8 +29,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class ASUnitTest {
 
-#if !DEBUG
-
+        sbyte<xyx
         /// <summary>
         /// Note: control file currently (05jul23) set to 20000 timesteps, totally unfeasible for the test.
         /// </summary>
@@ -43,6 +42,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.RunSolverMode();
             }
         }
+#if !DEBUG
 
         /// <summary>
         /// See <see cref="PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test"/>.

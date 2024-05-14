@@ -33,11 +33,9 @@ namespace ilPSP.LinSolvers.PARDISO {
     public class Wrapper_MKL : DynLibLoader {
 
         /// <summary>
-        /// Read from Environment which type of parallel library should be used.
-        /// Returns a list of libraries in specific order to search for.
+        /// Performs a sanitation on <paramref name="par"/>
         /// </summary>
-        static string[] SelectLibrary(Parallelism par) {
-            string[] liborder;
+        static Parallelism SelectPar(Parallelism par) {
             if (ilPSP.Environment.MaxNumOpenMPthreads <= 1 && par == Parallelism.OMP)
                 // redirect if we should only one OpenMP thread.
                 par = Parallelism.SEQ;
@@ -45,19 +43,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 // redirect if we should only one OpenMP thread.
                 par = Parallelism.SEQ;
 
-            switch (par) {
-                case Parallelism.OMP:
-                liborder = new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
-                break;
-
-                case Parallelism.SEQ:
-                liborder = new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
-                break;
-
-                default:
-                throw new NotSupportedException($"Unsupported level of parallelism {par} for v5 PARDISO solver.");
-            }
-            return liborder;
+            return par;
         }
 
 
@@ -65,14 +51,11 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor
         /// </summary>
         public Wrapper_MKL(Parallelism par) : base(
-            SelectLibrary(par),
-            new string[3][][],
-            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
-            new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix },
-            new int[] { -1, -1, -1 }) {
-
-            
-        }
+            ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(SelectPar(par)),
+            ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(SelectPar(par)),
+            ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(SelectPar(par)),
+            ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(SelectPar(par)),
+            ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(SelectPar(par))) { }
 
         /// <summary>
         /// PARDISO interface, see PARDISO documentation

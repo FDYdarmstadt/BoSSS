@@ -77,79 +77,10 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //ilPSP.Environment.NumThreads = 8;
-            //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, false, 3);
-            ////BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            ////DeleteOldPlotFiles();
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
-
-            /*
-            var plots = new List<Plot2Ddata>();
-            for(int i = 0; i < 4; i++) {
-                var p = new Plot2Ddata();
-                var x = GenericBlas.Linspace(1, 20, 100);
-                var y = x.Select(x_i => Math.Sin(x_i + i)).ToArray();
-                p.AddDataGroup("pli" + i, x, y);
-
-                plots.Add(p);
-            }
-
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
-            if (rank == 0) {
-                Plot2Ddata[,] multi = new Plot2Ddata[1, plots.Count];
-                int iCol = 0;
-                foreach (var kv in plots) {
-                    multi[0, iCol] = kv;
-                    iCol++;
-                    //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
-                    //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
-                    //kv.Value.SavePgfplotsFile_WA(Path.Combine(OutputDir, kv.Key + ".tex");
-                }
-
-                multi.SaveToGIF("waterfall." + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".png", 600*4, 600);
-
-            }
-
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            throw new Exception("exit2");
-
-            //*/
-
-            /*
-            var mtxa = IMatrixExtensions.LoadFromTextFile(@"..\..\..\bin\release\net5.0\weirdo\indef.txt");
-
-            for (int NN = 10; NN <= mtxa.NoOfRows; NN++) {
-                Console.WriteLine("NN = " + NN);
-                var mtx = mtxa.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NN - 1, NN - 1 }).CloneAs();
-
-                var UpTri = MultidimensionalArray.Create(NN, NN);
-                var UpTri2 = MultidimensionalArray.Create(NN, NN);
-                mtx.SymmetricLDLInversion(UpTri, null);
-                mtx.GramSchmidt(UpTri2, null);
-
-
-                Console.WriteLine("UpTri vs. LDL " + UpTri2.Storage.L2Dist(UpTri.Storage));
-
-                var LoTri = UpTri.TransposeTo();
-                var Eye = LoTri.GEMM(mtx, UpTri);
-                var LoTri2 = UpTri2.TransposeTo();
-                var Eye2 = LoTri2.GEMM(mtx, UpTri2);
-                //L.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\GS.txt");
-                //Eye.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\ID.txt");
-                Eye.AccEye(-1.0);
-                Eye2.AccEye(-1.0);
-                Console.WriteLine("Ortho Error: " + Eye.InfNorm() + "    " + Eye2.InfNorm());
-
-            }
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
-            NUnit.Framework.Assert.IsTrue(false, "remove me"); 
-            */
-
-            
+            InitMPI();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            NUnit.Framework.Assert.IsTrue(false, "remove me");
+                        
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();

@@ -577,11 +577,6 @@ namespace BoSSS.Solution.Control {
                 if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
                     throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
 
-                if (!ret.Keys.SetEquals(InitialValues_Evaluators.Keys))
-                    throw new ApplicationException($"InitialValues_Evaluators keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-                if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
-                    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-
                 return ret;
             }
         }
@@ -606,11 +601,6 @@ namespace BoSSS.Solution.Control {
 
                 if(!InitialValues.Keys.IsSubsetOf(ret.Keys))
                     throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
-
-                if (!ret.Keys.SetEquals(InitialValues_EvaluatorsVec.Keys))
-                    throw new ApplicationException($"InitialValues_EvaluatorsVec keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-                if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
-                    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
 
                 return ret;
             }

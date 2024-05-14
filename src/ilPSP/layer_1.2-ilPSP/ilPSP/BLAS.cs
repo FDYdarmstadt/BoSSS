@@ -1083,12 +1083,16 @@ namespace ilPSP.Utils {
         }
     }
 
-    internal class BLAS_LAPACK_Libstuff {
+
+    /// <summary>
+    /// provides arguments for <see cref="DynLibLoader"/>
+    /// </summary>
+    public class BLAS_LAPACK_IntelMKL_Libstuff {
         // workaround for .NET bug:
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         public static PlatformID[] GetPlatformID(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix };
+                case Parallelism.SEQ: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 case Parallelism.OMP: return new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix };
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -1096,7 +1100,7 @@ namespace ilPSP.Utils {
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "BLAS_LAPACK.dll", "libBoSSSnative_seq.so" };
+                case Parallelism.SEQ: return new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
                 case Parallelism.OMP: return new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -1104,7 +1108,7 @@ namespace ilPSP.Utils {
 
         public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
                 case Parallelism.OMP: return new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix };
                 default: throw new ArgumentOutOfRangeException();
             }
@@ -1135,11 +1139,11 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public UnsafeDBLAS(Parallelism par) :
-            base(BLAS_LAPACK_Libstuff.GetLibname(par),
-                 BLAS_LAPACK_Libstuff.GetPrequesiteLibraries(par),
-                 BLAS_LAPACK_Libstuff.GetGetNameMangling(par),
-                 BLAS_LAPACK_Libstuff.GetPlatformID(par),
-                 BLAS_LAPACK_Libstuff.GetPointerSizeFilter(par)) { }
+            base(BLAS_LAPACK_IntelMKL_Libstuff.GetLibname(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPrequesiteLibraries(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(par),
+                 BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(par)) { }
 
         
         /// <summary> FORTRAN BLAS routine </summary>
