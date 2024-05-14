@@ -341,6 +341,27 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// Creates Chebyshev nodes between two points (first kind).
+        /// </summary>
+        /// <param name="a">minimum</param>
+        /// <param name="b">maximum</param>
+        /// <param name="n">number of nodes desired</param>
+        /// <returns>
+        /// an array of length <paramref name="n"/>,
+        /// with first entry equal to <paramref name="a"/>, 
+        /// last entry equal to <paramref name="b"/>, and 
+        /// all other points linear interpolated in between. 
+        /// </returns>
+        public static double[] ChebyshevNodes(double a, double b, int n) {
+            if (n < 3) n = 3; // Ensure there are at least three points
+            double[] points = new double[n];
+            for (int i = 0; i < n; i++) {
+                points[i] = (a+b)/2 + (b-a)/2* Math.Cos(Math.PI * (2 * i + 1) / (2 * n));
+            }
+            return points;
+        }
+
+        /// <summary>
         /// Random vector with <paramref name="n"/> entries.
         /// </summary>
         public static double[] RandomVec(int n, int seed = 0) {
