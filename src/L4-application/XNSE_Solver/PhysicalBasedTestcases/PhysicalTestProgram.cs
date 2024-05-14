@@ -29,7 +29,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class ASUnitTest {
 
-        sbyte<xyx
         /// <summary>
         /// Note: control file currently (05jul23) set to 20000 timesteps, totally unfeasible for the test.
         /// </summary>

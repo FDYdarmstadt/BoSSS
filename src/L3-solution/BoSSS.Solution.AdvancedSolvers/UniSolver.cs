@@ -126,10 +126,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         foreach(SpeciesId s in Op_Agglomeration.SpeciesList) {
                             var agg = Op_Agglomeration.GetAgglomerator(s);
-                            Console.WriteLine($"Agglom. for species {LsTrk.GetSpeciesName(s)}: {agg.TotalNumberOfAgglomerations}");
-                                                       
-
-                            Console.WriteLine(agg.AggInfo.ToString());
+                            tr.Info($"Agglom. for species {LsTrk.GetSpeciesName(s)}: {agg.TotalNumberOfAgglomerations}");
+                            tr.Info(agg.AggInfo.ToString());
                         }
 
 

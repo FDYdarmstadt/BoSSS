@@ -87,7 +87,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             return R;
         }
-
+        
         /// <summary>
         /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
         /// </summary>

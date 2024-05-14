@@ -56,6 +56,7 @@ namespace ilPSP.LinSolvers.PARDISO {
             ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetGetNameMangling(SelectPar(par)),
             ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPlatformID(SelectPar(par)),
             ilPSP.Utils.BLAS_LAPACK_IntelMKL_Libstuff.GetPointerSizeFilter(SelectPar(par))) { }
+        
 
         /// <summary>
         /// PARDISO interface, see PARDISO documentation
@@ -88,14 +89,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public unsafe _pardiso PARDISO { get { return pardiso; } }
 
-
-        static string WinMKL_lp64_mangling(string nmn) {
-            return "mkl_pds_lp64_" + nmn;
-        }
-
-        static string WinMKLmangling(string nmn) {
-            return "mkl_pds_" + nmn;
-        }
 
 
         /// <summary>
