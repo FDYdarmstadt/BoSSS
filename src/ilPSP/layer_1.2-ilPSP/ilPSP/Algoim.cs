@@ -49,7 +49,7 @@ namespace ilPSP.Utils {
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "CppAlgoim.dll", "CppAlgoim.dll", "CppAlgoim.dll", "CppAlgoim.so" };
+                case Parallelism.SEQ: return new string[] { "Algoimwrapper.dll", "Algoimwrapper.dll", "Algoimwrapper.dll", "Algoimwrapper.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
