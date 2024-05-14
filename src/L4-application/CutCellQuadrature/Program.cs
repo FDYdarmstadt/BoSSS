@@ -884,7 +884,7 @@ namespace CutCellQuadrature {
                 || mode == Modes.HMFOneStepGauss
                 || mode == Modes.HMFOneStepGaussAndStokes
                 || mode == Modes.EquivalentPolynomials
-                || mode == Modes.SayeGaussRules) {
+                || mode == Modes.SayeGaussRules
 
                 result = PerformVolumeQuadrature(
                     mode, volumeFactory, cutCellGrid, order, localTimer);
