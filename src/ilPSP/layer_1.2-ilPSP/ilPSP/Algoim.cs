@@ -29,7 +29,6 @@ using static MPI.Wrappers.Utils.DynLibLoader;
 using System.Threading;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using static ilPSP.Utils.UnsafeDBLAS;
 using static ilPSP.Utils.UnsafeAlgoim;
 using System.Xml;
 using System.Runtime.CompilerServices;
@@ -224,9 +223,9 @@ namespace ilPSP.Utils {
 #pragma warning restore 649
 
         // Defines a delegate that can point to the method matching its signature.
-        public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int q, int[] sizes, double[] coordinates, double[] LSvalues);
+        public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int p,int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
-        public unsafe delegate QuadSchemeUnmanaged _GetSurfaceScheme(int dim, int q, int[] sizes, double[] coordinates, double[] LSvalues);
+        public unsafe delegate QuadSchemeUnmanaged _GetSurfaceScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
         public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
             get { return GetVolumeScheme; }
@@ -266,7 +265,43 @@ namespace ilPSP.Utils {
 
         static UnsafeAlgoim m_Algoim;
 
-        public static QuadScheme GetSurfaceQuadratureRules() {
+        /// <summary>
+        /// Returns the volume quadrature rules for the given parameters
+        /// </summary>
+        /// <param name="dim">dimension of space</param>
+        /// <param name="p">degree of level set (will be used for Berstein pol. interpolation)</param>
+        /// <param name="q">quadrature order</param>
+        /// <param name="lengths"> array for the lengths in each axis</param>
+        /// <param name="x">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths)</param>
+        /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
+        /// <returns></returns>
+        public static QuadScheme GetSurfaceQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceScheme(dim, p, q, lengths, x, y);
+            QuadScheme ret = new QuadScheme(retC);
+            retC.FreeMemory();
+            return ret;
+        }
+
+        /// <summary>
+        /// Returns the volume quadrature rules for the given parameters
+        /// </summary>
+        /// <param name="dim">dimension of space</param>
+        /// <param name="p">degree of level set (will be used for Berstein pol. interpolation)</param>
+        /// <param name="q">quadrature order</param>
+        /// <param name="lengths"> array for the lengths in each axis</param>
+        /// <param name="x">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths)</param>
+        /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
+        /// <returns></returns>
+        public static QuadScheme GetVolumeQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(dim, p, q, lengths, x, y);
+            QuadScheme ret = new QuadScheme(retC);
+            retC.FreeMemory();
+            return ret;
+        }
+
+        public static QuadScheme GetSurfaceQuadratureRulesTest() {
 
             // Hardcoded example values
             // Define points_1dy array
@@ -280,15 +315,7 @@ namespace ilPSP.Utils {
 
             int[] s = { 3, 3 };
 
-            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceScheme(2, 5, s, l, points_1dy);
-            QuadScheme ret = new QuadScheme(retC);
-            retC.FreeMemory();
-            return ret;
-        }
-
-        public static QuadScheme GetVolumeQuadratureRules(int dim, int q, int[] lengths, double[] x, double[] y) {
-
-            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(dim, q, lengths, x, y);
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceScheme(2, 3, 5, s, l, points_1dy);
             QuadScheme ret = new QuadScheme(retC);
             retC.FreeMemory();
             return ret;
@@ -308,7 +335,7 @@ namespace ilPSP.Utils {
 
             int[] s = { 3, 3 };
 
-            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(2, 5, s, l, points_1dy);
+            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(2, 3, 5, s, l, points_1dy);
             QuadScheme ret = new QuadScheme(retC);
             retC.FreeMemory();
             return ret;
