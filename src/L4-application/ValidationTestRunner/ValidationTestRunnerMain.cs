@@ -137,6 +137,31 @@ namespace ValidationTestRunner {
             Console.WriteLine("RheologyConfinedCylinder @ FDYcluster");
         }
 
+
+        /// <summary>
+        /// Hagen-Poiseulle flow (aka. pipe flow) for the helical symmetric solver
+        /// Maintainer: Schahin Akbari
+        /// </summary>
+        [NUnitFileToCopyHack("HelicalSymmetricSolver/Hagen_Poiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing.ipynb")]
+        [Test]
+        static public void Run__Helical_HagenPoiseulle() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__RheologyConfinedCylinder
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Helical_HagenPoiseulle",
+                "Helical_HagenPoiseulle*",
+                "DELETE_Helical_HagenPoiseulle",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Hagen_Poiseulle.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing.ipynb");
+
+            Console.WriteLine("Helical_HagenPoiseulle @ FDYcluster");
+        }
+
         /// <summary>
         /// Contact Line at heated wall,
         /// Maintainer: Matthias Rieckmann
