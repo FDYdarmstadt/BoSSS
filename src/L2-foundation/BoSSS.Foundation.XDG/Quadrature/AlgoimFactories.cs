@@ -46,9 +46,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         //This would return a factory object with the configuration 
         //input: level set, tolerance etc.
-        public AlgoimFactories(LevelSetTracker.LevelSetData ls, RefElement e, bool callSurfaceAndVolumeAtOnce = true) {
+        public AlgoimFactories(LevelSetTracker.LevelSetData ls, RefElement e, bool negativeVolume = false, bool callSurfaceAndVolumeAtOnce = true) {
             refElement = e;
             lsData = ls;
+            VolumeSign = negativeVolume;
             SurfaceAndVolumeAtOnce = callSurfaceAndVolumeAtOnce;
         }
 
@@ -60,6 +61,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// </summary>
         bool SurfaceAndVolumeAtOnce;
 
+
+        /// <summary>
+        /// A boolean to change the sign of level set. true: negative level set, false: positive level set (ls > 0).
+        /// </summary>
+        bool VolumeSign;
 
         /// <summary>
         /// key: quadrature order <br/>
@@ -85,6 +91,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             public RefElement RefElement => m_Owner.refElement;
 
             int spaceDim => RefElement.SpatialDimension;
+            bool VolumeSign => m_Owner.VolumeSign;
 
             internal GetQuadratureRule m_CalculateQuadRule;
 
@@ -115,7 +122,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 foreach (Chunk chunk in mask) {
                     foreach (int cell in chunk.Elements) {
-                        var quadRule = calculateLevSetOnCell(cell, RequestedOrder);
+                        var quadRule = CalculateLevSetOnCell(cell, RequestedOrder);
                         ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
                     }
                 }
@@ -124,37 +131,21 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 return ret.ToArray();
             }
 
+            // to do
             public IEnumerable<IChunkRulePair<QuadRule>> CalculateQuadRuleSetCombo(ExecutionMask mask, int RequestedOrder) {
-                if (!(mask is CellMask))
-                    throw new ArgumentException("Expecting a cell mask.");
-
-                if (m_Rules.ContainsKey(RequestedOrder))
-                    return m_Rules[RequestedOrder];
-
-                //if (mask.MaskType != MaskType.Geometrical)
-                //    throw new ArgumentException("Expecting a geometrical mask.");
-
-                //CellMask _mask = mask as CellMask;
-                //SubGrid sgrd = new SubGrid(_mask);
-
                 List<ChunkRulePair<QuadRule>> ret = new List<ChunkRulePair<QuadRule>>();
 
                 foreach (Chunk chunk in mask) {
                     foreach (int cell in chunk.Elements) {
-                        var quadRule = calculateLevSetOnCell(cell, RequestedOrder);
+                        var quadRule = CalculateLevSetOnCell(cell, RequestedOrder);
                         //Algoim.GetVolumeQuadratureRules()
                         ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
 
                     }
                 }
 
-                //    quadRule.Nodes =;
-                //quadRule.Weights;
-
-                //VolumeRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), VolRule);
                 m_Rules.Add(RequestedOrder, ret.ToArray());
                 return ret.ToArray();
-
             }
 
             private IEnumerable<IChunkRulePair<QuadRule>> GetChunkRulePair(Chunk chunk, int RequestedOrder) {
@@ -164,7 +155,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 
                 foreach (int cell in chunk.Elements) {
-                    var quadRule = calculateLevSetOnCell(cell, RequestedOrder);
+                    var quadRule = CalculateLevSetOnCell(cell, RequestedOrder);
                     //Algoim.GetVolumeQuadratureRules()
                     ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(chunk.i0), quadRule));
 
@@ -174,7 +165,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             }
 
-            private QuadRule calculateLevSetOnCell(int j0, int RequestedOrder) {
+            private QuadRule CalculateLevSetOnCell(int j0, int RequestedOrder) {
                 int n = (RequestedOrder + 1) ;
                 double[] points = GenericBlas.Linspace(-1, 1, Math.Max( n,3)); //testing
 
@@ -201,8 +192,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 double[] y = new double[ret.Length];
 
-                for (int i = 0; i < ret.Length; i++) 
-                    y[i] = ret[lsData.LevelSetIndex, i];
+                if (VolumeSign) {
+                    for (int i = 0; i < ret.Length; i++)
+                        y[i] = -ret[0, i];
+                } else {
+                    for (int i = 0; i < ret.Length; i++)
+                        y[i] = -ret[0, i];
+                }
+
 
                 double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
 
