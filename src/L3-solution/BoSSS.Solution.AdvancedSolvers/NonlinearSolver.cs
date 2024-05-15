@@ -378,10 +378,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             SetHomotopyValue(HomotopyValue);
 
             // the real call:
-            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out double[] OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), true, out IDifferentialOperator abstractOperator);
+            this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw, out double[] OpAffineRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), 
+                true, // `true` signals that we want a linearization
+                out IDifferentialOperator abstractOperator);
             AbstractOperator = abstractOperator;
             
-
+            /*
 #if DEBUG
             const int TEST_INTERVALL = 10;
 #else
@@ -400,9 +402,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // Therefore, we check that
                 //     M(u0)*u0 + b(u0) = f(u0).
                 //
-
+                
                 // the real call:
-                this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out _, CurrentState.ToArray(), false, out _);
+                this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out _, CurrentState.ToArray(), 
+                    false, // `false` signals tat we want an evaluation
+                    out _);
                 if (DummyMtx != null)
                     // only evaluation ==> OpMatrix must be null
                     throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
@@ -419,8 +423,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
                     //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
                 }
+                
 
+                LinearizationCounter++;
+
+                {
+                    this.m_AssembleMatrix(out BlockMsrMatrix OpMtxRaw2, out double[] OpAffineRaw2, out BlockMsrMatrix _, CurrentState.ToArray(),
+                        true, // `true` signals that we want a linearization
+                        out _);
+
+                    OpMtxRaw2.Acc(-1.0, OpMtxRaw);
+                    OpAffineRaw2.AccV(-1.0, OpAffineRaw);
+
+                    Console.WriteLine($"Linearization change: {OpMtxRaw2.InfNorm()}, {OpAffineRaw2.MPI_L2Norm()}");
+                }
             }
+            */
 
             // setup of the multigrid operator
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
@@ -440,7 +458,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.LinearizationRHS.ScaleV(-1.0);
         }
 
-        int LinearizationCounter = 0;
+       // int LinearizationCounter = 0;
 
 
         /// <summary>
