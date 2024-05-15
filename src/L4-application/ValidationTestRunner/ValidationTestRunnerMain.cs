@@ -142,10 +142,10 @@ namespace ValidationTestRunner {
         /// Hagen-Poiseulle flow (aka. pipe flow) for the helical symmetric solver
         /// Maintainer: Schahin Akbari
         /// </summary>
-        [NUnitFileToCopyHack("HelicalSymmetricSolver/Hagen_Poiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing.ipynb")]
+        [NUnitFileToCopyHack("HelicalSymmetricSolver/HagenPoiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb")]
         [Test]
         static public void Run__Helical_HagenPoiseulle() {
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__RheologyConfinedCylinder
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_HagenPoiseulle
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -156,11 +156,37 @@ namespace ValidationTestRunner {
                 "DELETE_Helical_HagenPoiseulle",
                 new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
 
-            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Hagen_Poiseulle.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/HagenPoiseulle.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb");
 
             Console.WriteLine("Helical_HagenPoiseulle @ FDYcluster");
         }
+
+
+        /// <summary>
+        /// Centrifugal flow (aka. centrifugal flow) for the helical symmetric solver
+        /// Maintainer: Schahin Akbari
+        /// </summary>
+        [NUnitFileToCopyHack("HelicalSymmetricSolver/Centrifugal.ipynb", "HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb")]
+        [Test]
+        static public void Run__Helical_Centrifugal() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_Centrifugal
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Helical_Centrifugal",
+                "Helical_Centrifugal*",
+                "DELETE_Helical_Centrifugal",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Centrifugal.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb");
+
+            Console.WriteLine("Helical_Centrifugal @ FDYcluster");
+        }
+
 
         /// <summary>
         /// Contact Line at heated wall,
