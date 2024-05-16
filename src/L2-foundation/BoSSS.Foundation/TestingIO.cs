@@ -609,7 +609,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Adds a DG field
+        /// Returns the difference: (current value of <paramref name="f"/>) - (value of <paramref name="f"/> loaded from file)
         /// </summary>
         public ConventionalDGField LocalError(ConventionalDGField f) {
             if(!object.ReferenceEquals(GridDat, f.GridDat))

@@ -195,10 +195,17 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         private EdgeMask m_CutCellSubgrid_InnerEdges;
 
+        /// <summary>
+        /// Interior quadrature for the surface elements, i.e. for each cut background-cell $` K_j `$ a quadrature to approximate
+        /// ```math
+        ///    \int_{\partial K_j \cap \mathfrak{I} } \ldots \mathrm{dl} .
+        /// ```
+        /// These rules are used, e.g., by the (edge parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
+        /// </summary>
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
-            //Default behaviour: If Species are not divided by Level Set, function should not be called
+            //Default behavior: If Species are not divided by Level Set, function should not be called
             Debug.Assert(!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp));
             //var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(this.m_CutCellSubgrid_InnerEdges);
 
@@ -244,10 +251,11 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Interior quadrature for the surface elements, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
-        /// \f[
+        /// Interior quadrature for the surface elements, i.e. for each cut background-cell $` K_j `$ a quadrature to approximate
+        /// ```math
         ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
-        /// \f]
+        /// ```
+        /// These rules are used, e.g., by the (volume parts of) surface element operator <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
         /// </summary>
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
@@ -286,6 +294,12 @@ namespace BoSSS.Foundation.XDG {
             return LevSetQrIns;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sp"></param>
+        /// <param name="iLevSet"></param>
+        /// <returns></returns>
         public CellQuadratureScheme GetContactLineQuadScheme(SpeciesId sp, int iLevSet) {
             //Find domain
             CellMask allDoublyCuts = CellMask.GetEmptyMask(XDGSpaceMetrics.GridDat, MaskType.Geometrical);
@@ -321,9 +335,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Boundary quadrature for the surface elements, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// Quadrature for edges, i.e. for each cut background-cell $` K_j `$ and each species $`\mathfrak{s}`$ a quadrature to approximate
         /// \f[
-        ///    \int_{\partial K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
+        ///    \int_{\partial K_j \cap \mathfrak{s} } \ldots \mathrm{dS} .
         /// \f]
         /// </summary>
         public EdgeQuadratureScheme GetEdgeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, EdgeMask IntegrationDomain = null, int? fixedOrder = null) {
@@ -603,6 +617,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Quadrature scheme which is used for the penalty components on ghost edges, for species <paramref name="sp"/>.
+        /// <see cref="XDifferentialOperatorMk2.GhostEdgesOperator"/>
         /// </summary>
         public EdgeQuadratureScheme GetEdgeGhostScheme(SpeciesId sp, EdgeMask IntegrationDomainRestriction = null) {
             if (!this.SpeciesList.Contains(sp))

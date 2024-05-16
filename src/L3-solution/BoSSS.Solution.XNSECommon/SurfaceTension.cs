@@ -1137,16 +1137,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         double m_beta;
 
-        /// <summary>
-        /// true for quasi-static computations with moving slip-wall and non-moving interface  
-        /// </summary>
-        //bool m_staticInt;
+        ///// <summary>
+        ///// true for quasi-static computations with moving slip-wall and non-moving interface  
+        ///// </summary>
+        ////bool m_staticInt;
 
         IncompressibleBcType[] m_edgeTag2Type;
 
         /// <summary>
-        /// Dirichlet boundary values; <br/>
-        ///  - 2nd index: edge tag
+        /// Dirichlet boundary values
+        ///  - 1st index: edge tag
         /// </summary>
         protected Func<double[], double, double>[] velFunction;
 

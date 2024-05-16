@@ -23,6 +23,8 @@ using BoSSS.Solution.Utils;
 using NUnit.Framework;
 using BoSSS.Solution;
 using System.Diagnostics;
+using System.ComponentModel;
+using BoSSS.Solution.Tecplot;
 
 namespace ZwoLevelSetSolver {
 
@@ -177,17 +179,44 @@ namespace ZwoLevelSetSolver {
 
                 int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
+                var cutLineViz = new List<ConventionalDGField>();
+
                 foreach(string spc in Species) {
                     var spcId = LsTrk.GetSpeciesId(spc);
                     var vol = metrics.CutCellVolumes[spcId].To1DArray().GetSubVector(0, J);
                     var LsArea = metrics.InterfaceArea[spcId].To1DArray().GetSubVector(0, J);
                     var BndyArea = metrics.CellSurface[spcId].To1DArray().GetSubVector(0, J);
 
+                    var cutLine = metrics.CutLineLength[spcId].To1DArray().GetSubVector(0, J);
+                    var intersectLine = metrics.IntersectionLength[spcId].To1DArray().GetSubVector(0, J);
+
+                    SinglePhaseField cutLineDG = new SinglePhaseField(new Basis(this.Grid, 0), "cutline-Spc#" + spc);
+                    cutLineDG.CoordinateVector.SetV(cutLine);
+                    cutLineViz.Add(cutLineDG);
+
                     LsChecker.AddVector("Volume-" + spc, vol);
                     LsChecker.AddVector("Interface-" + spc, LsArea);
                     LsChecker.AddVector("CellBndy-" + spc, BndyArea);
+                    LsChecker.AddVector("cutLine-" + spc, cutLine);
+                    LsChecker.AddVector("intersectLine-" + spc, intersectLine);
+                    LsChecker.AddDGField(cutLineDG);
                 }
+                LsChecker.AddDGField(this.Velocity[0]);
+                LsChecker.AddDGField(this.Velocity[1]);
+
                 LsChecker.DoIOnow();
+
+                foreach(string spc in Species) {
+                    var name = "cutline-Spc#" + spc;
+                    var err = LsChecker.LocalError(cutLineViz.Single(f => f.Identification == name));
+                    cutLineViz.Add(err);
+
+                    var refValue = cutLineViz.Single(f => f.Identification == name).CloneAs();
+                    LsChecker.OverwriteDGField(refValue);
+                    refValue.Identification = "Reference-" + refValue.Identification;
+                    cutLineViz.Add(refValue);
+                }
+
 
                 Assert.Less(LsChecker.AbsError(Phi0), 1.0e-8, "Mismatch in level-set 0 between single-core and parallel run.");
                 Assert.Less(LsChecker.AbsError(Phi1), 1.0e-8, "Mismatch in level-set 1 between single-core and parallel run.");
@@ -196,9 +225,15 @@ namespace ZwoLevelSetSolver {
                     Console.WriteLine("    Volume comparison error    : " + LsChecker.AbsError("Volume-" + spc));
                     Console.WriteLine("    Surface comparison error   : " + LsChecker.AbsError("Interface-" + spc));
                     Console.WriteLine("    Cell surf comparison error : " + LsChecker.AbsError("CellBndy-" + spc));
-
+                    Console.WriteLine("    Cut line comparison error  : " + LsChecker.AbsError("cutLine-" + spc));
+                    Console.WriteLine("    Intersection error         : " + LsChecker.AbsError("intersectLine-" + spc));
                 }
 
+                Console.WriteLine("    VelocityX comparison error     : " + LsChecker.LocalError(this.Velocity[0]).L2NormAllSpecies());
+                Console.WriteLine("    VelocityX comparison error     : " + LsChecker.LocalError(this.Velocity[1]).L2NormAllSpecies());
+
+
+                Tecplot.PlotFields(cutLineViz, "cutLineMeasures", 0, 0);
             }
 
 
@@ -253,3 +288,4 @@ namespace ZwoLevelSetSolver {
         }
     }
 }
+
