@@ -139,7 +139,10 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Returns a rule for the edges of surface-elements (elements on the zero-level-set surface, 
-        /// i.e. on \f$  K \cap \mathfrak{I}\f$ .
+        /// i.e., on
+        /// ```math 
+        ///     \partial K \cap \mathfrak{I} .
+        /// ```
         /// (point integrals in 2D, Line integrals in 3D)
         /// </summary>
         /// <returns>
@@ -198,18 +201,30 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Returns a rule factory for the boundary of surface-elements 
-        /// (elements on the zero-level-set surface), i.e. on \f$  K \cap \mathfrak{I}\f$ .
+        /// (elements on the zero-level-set surface), i.e., for integrals 
+        /// ```math 
+        ///    \int_{ E \cap \mathfrak{I} \textrm{dl} . 
+        /// ```
         /// This are point integrals in 2D and line integrals in 3D.
+        /// 
+        /// Internally, this method uses the <see cref="EdgeRuleFromCellBoundaryFactory"/>
+        /// to split up a cell boundary quadrature for $`     \int_{ \partial K \cap \mathfrak{I} \textrm{dl}  `$ 
+        /// into the respective edges.
         /// </summary>
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
         public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
-            int D = gdat.SpatialDimension;
+
+            var maxVolume = this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask();
+            if (gdat.iGeomCells.RefElements.Length > 1)
+                maxVolume = maxVolume.Intersect(gdat.Cells.GetCells4Refelement(KrefVol));
+
             return new EdgeRuleFromCellBoundaryFactory(gdat,
                 _GetSurfaceElement_BoundaryRuleFactory(levSetIndex, KrefVol),
-                this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                maxVolume
+                );
         }
 
         /// <summary>
@@ -220,17 +235,15 @@ namespace BoSSS.Foundation.XDG {
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
-        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
-        {
+        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             switch (CutCellQuadratureType) {
                 case MomentFittingVariants.Saye:
-                return IntersectingQuadratureFactories.EdgePoint(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
+                    return IntersectingQuadratureFactories.EdgePoint(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
                 default:
-                if (zwoLSBruteForceFactories == null)
-                {
-                    zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                }
-                return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+                    if (zwoLSBruteForceFactories == null) {
+                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                    }
+                    return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
             }
         }
 
@@ -312,15 +325,24 @@ namespace BoSSS.Foundation.XDG {
             CheckJmp(jmp);
 
             if (D == 2) {
+                var maxVolume = this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask();
+                if (gdat.iGeomCells.RefElements.Length > 1)
+                    maxVolume = maxVolume.Intersect(gdat.Cells.GetCells4Refelement(KrefVol));
+
+
                 var r = new EdgeRuleFromCellBoundaryFactory(gdat,
                     GetCellFaceFactory(levSetIndex, KrefVol, jmp),
-                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                    maxVolume);
                 return r;
             } else {
                 if (jmp == JumpTypes.Heaviside) {
+                    var maxVolume = this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask();
+                    if (gdat.iGeomCells.RefElements.Length > 1)
+                        maxVolume = maxVolume.Intersect(gdat.Cells.GetCells4Refelement(KrefVol));
+
                     var r = new EdgeRuleFromCellBoundaryFactory(gdat,
                         GetCellFaceFactory(levSetIndex, KrefVol, JumpTypes.Heaviside),
-                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                        maxVolume);
                     return r;
                 } else if (jmp == JumpTypes.OneMinusHeaviside) {
 

@@ -24,11 +24,13 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation.Quadrature {
 
     /// <summary>
-    /// converts a cell boundary quadrature rule into an edge quadrature rule
+    /// converts a cell boundary quadrature rule into an edge quadrature rule;
+    /// Therefore, the individual faces of a cell (<see cref="CellBoundaryQuadRule.NumbersOfNodesPerFace"/>) are split up into the respective edges.
     /// </summary>
     public class EdgeRuleFromCellBoundaryFactory : IQuadRuleFactory<QuadRule> {
 
@@ -38,6 +40,8 @@ namespace BoSSS.Foundation.Quadrature {
         public EdgeRuleFromCellBoundaryFactory(Grid.Classic.GridData g, IQuadRuleFactory<CellBoundaryQuadRule> cellBndQF, CellMask maxDomain) {
             m_cellBndQF = cellBndQF;
             grd = g;
+            if (maxDomain.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("expecting a geometrical mask");
             m_maxDomain = maxDomain;
         }
 
@@ -73,13 +77,12 @@ namespace BoSSS.Foundation.Quadrature {
 
 #if DEBUG
             var maskBitMask = mask.GetBitMask();
-
 #endif
 
             var Edg2Cel = this.grd.iGeomEdges.CellIndices;
             var Edg2Fac = this.grd.iGeomEdges.FaceIndices;
             int J = this.grd.Cells.NoOfLocalUpdatedCells;
-            QuadRule DefaultRule = this.RefElement.GetQuadratureRule(order); ;
+            QuadRule DefaultRule = this.RefElement.GetQuadratureRule(order); 
 
             int myIKrfeEdge = this.grd.Edges.EdgeRefElements.IndexOf(this.RefElement, (a, b) => object.ReferenceEquals(a, b));
             if (myIKrfeEdge < 0)
@@ -103,6 +106,11 @@ namespace BoSSS.Foundation.Quadrature {
                 for (int i = 0; i < NoEdg; i++) {
 
                     int iEdge = EdgeIndices[i];
+
+                    //if (iEdge == 175 && this.grd.MpiRank == 1)
+                    //    Debugger.Launch();
+
+
                     if (this.grd.Edges.GetRefElementIndex(iEdge) != myIKrfeEdge)
                         throw new ArgumentException("illegal edge mask");
 
@@ -246,10 +254,10 @@ namespace BoSSS.Foundation.Quadrature {
             // extract edge rule
             // -----------------
 
-            int i0 = 0, iE = 0;
+            int i0 = 0;
             for (int i = 0; i < iFace; i++)
                 i0 += givenRule.NumbersOfNodesPerFace[i];
-            iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1;
+            int iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1;
 
             if (iE < i0) {
                 // rule is empty (measure is zero).

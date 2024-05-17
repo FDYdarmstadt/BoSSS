@@ -37,6 +37,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// - a quadrature rule the cell boundary, <see cref="GetLineFactory(bool)"/>
     /// - a point measure where the level-set enters and exits a cell, <see cref="GetPointFactory"/>
     /// </summary>
+    /// <remarks>
+    /// Collecting bothy duties (line and point factory) in this one meta-class ensures that the expensive root-finding has to be done only once.
+    /// </remarks>
     public class LineAndPointQuadratureFactory {
 
         /// <summary>
@@ -116,9 +119,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             internal LineAndPointQuadratureFactory m_Owner;
 
             /// <summary>
-            /// cache<br/>
-            /// key: quadrature order; <br/>
-            /// value: cached quadrature rule
+            /// cache
+            /// - key: quadrature order; 
+            /// - value: cached quadrature rule
             /// </summary>
             internal Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> Rules;
 
