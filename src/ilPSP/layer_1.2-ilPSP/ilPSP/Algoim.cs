@@ -276,6 +276,8 @@ namespace ilPSP.Utils {
         /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
         /// <returns></returns>
         public static QuadScheme GetSurfaceQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+            x.SaveToTextFileDebugUnsteady("xSurf");
+            y.SaveToTextFileDebugUnsteady("ySurf");
 
             QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceScheme(dim, p, q, lengths, x, y);
             QuadScheme ret = new QuadScheme(retC);
@@ -294,6 +296,8 @@ namespace ilPSP.Utils {
         /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
         /// <returns></returns>
         public static QuadScheme GetVolumeQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+            x.SaveToTextFileDebugUnsteady("xVol");
+            y.SaveToTextFileDebugUnsteady("yVol");
 
             QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(dim, p, q, lengths, x, y);
             QuadScheme ret = new QuadScheme(retC);
