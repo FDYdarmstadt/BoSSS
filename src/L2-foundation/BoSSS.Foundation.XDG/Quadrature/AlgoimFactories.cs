@@ -197,7 +197,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                         y[i] = -ret[0, i];
                 } else {
                     for (int i = 0; i < ret.Length; i++)
-                        y[i] = -ret[0, i];
+                        y[i] = ret[0, i];
                 }
 
 
