@@ -80,6 +80,31 @@ namespace CutCellQuadrature {
         }
 
         [Test]
+        public static void Test2DSurfaceHighOrderRobustnessStructuredAlgoim() {
+            ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
+            testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+            Program app = new Program(testCase);
+            app.Init(null);
+            app.SetUpEnvironment();
+            app.SetInitial(0);
+
+            int i = 1;
+            while (testCase.ProceedToNextShift()) {
+                double referenceValue = app.SetUpConfiguration();
+                var result = app.PerformConfiguration(
+                    Modes.Algoim,
+                    8);
+                double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
+
+                Assert.That(
+                    relError < 1e-4,
+                    "Relative error too large for shift number " + i);
+                i++;
+            }
+        }
+
+        [Test]
         public static void Test2DSurfaceConvergenceStructured() {
             int[] orders = Enumerable.Range(0, 10).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
@@ -167,6 +192,47 @@ namespace CutCellQuadrature {
         }
 
         [Test]
+        public static void Test2DSurfaceConvergenceStructuredAlgoim() {
+            int[] orders = Enumerable.Range(0, 10).ToArray();
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
+            double[,] results = new double[sizes.Length, orders.Length];
+
+            for (int i = 0; i < sizes.Length; i++) {
+                ITestCase testCase = new Smereka2EllipseArcLength(sizes[i], GridTypes.Structured);
+                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+                Program app = new Program(testCase);
+                app.Init(null);
+                app.SetUpEnvironment();
+                app.SetInitial(0);
+                testCase.ProceedToNextShift();
+                double referenceValue = app.SetUpConfiguration();
+
+                for (int j = 0; j < orders.Length; j++) {
+                    var result = app.PerformConfiguration(
+                        Modes.Algoim,
+                        orders[j]);
+                    results[i, j] = Math.Abs(result.Item1 - referenceValue);
+                }
+            }
+
+            double[] xValues = sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+            for (int j = 0; j < orders.Length; j++) {
+                double[] yValues = new double[sizes.Length];
+
+                for (int i = 0; i < sizes.Length; i++) {
+                    yValues[i] = Math.Log(results[i, j]);
+                }
+
+                double eoc = Regression(xValues, yValues);
+
+                Assert.That(
+                    eoc > orders[j] + 1,
+                    "Convergence order too low for order " + orders[j]);
+            }
+        }
+
+        [Test]
         public static void Test2DVolumeHighOrderRobustnessStructured() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
@@ -213,6 +279,31 @@ namespace CutCellQuadrature {
 
                 Assert.That(
                     relError < 1e-4,
+                    "Relative error too large for shift number " + i);
+                i++;
+            }
+        }
+
+        [Test]
+        public static void Test2DVolumeHighOrderRobustnessStructuredAlgoim() {
+            ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
+            testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+            Program app = new Program(testCase);
+            app.Init(null);
+            app.SetUpEnvironment();
+            app.SetInitial(0);
+
+            int i = 1;
+            while (testCase.ProceedToNextShift()) {
+                double referenceValue = app.SetUpConfiguration();
+                var result = app.PerformConfiguration(
+                    Modes.Algoim,
+                    7);
+                double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
+
+                Assert.That(
+                    relError < 1e-5,
                     "Relative error too large for shift number " + i);
                 i++;
             }
@@ -307,6 +398,49 @@ namespace CutCellQuadrature {
         }
 
         [Test]
+        public static void Test2DVolumeConvergenceStructuredAlgoim() {
+            int[] orders = Enumerable.Range(0, 9).ToArray();
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
+            double[,] results = new double[sizes.Length, orders.Length];
+            var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
+
+            for (int i = 0; i < sizes.Length; i++) {
+                ITestCase testCase = new MinGibou1EllipseArea(sizes[i], GridTypes.Structured);
+                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+                Program app = new Program(testCase);
+                app.Init(null);
+                app.SetUpEnvironment();
+                app.SetInitial(0);
+                testCase.ProceedToNextShift();
+                double referenceValue = app.SetUpConfiguration();
+
+                for (int j = 0; j < orders.Length; j++) {
+                    var result = app.PerformConfiguration(
+                        Modes.Algoim,
+                        orders[j]);
+                    results[i, j] = Math.Abs(result.Item1 - referenceValue);
+                }
+            }
+
+            double[] xValues = sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+            for (int j = 0; j < orders.Length; j++) {
+                double[] yValues = new double[sizes.Length];
+
+                for (int i = 0; i < sizes.Length; i++) {
+                    yValues[i] = Math.Log(results[i, j]);
+                }
+
+                double eoc = Regression(xValues, yValues);
+
+                Console.WriteLine(orders[j] + ": " + eoc);
+                Assert.That(
+                    eoc > orders[j] + 1,
+                    "Convergence order too low for order " + orders[j]);
+            }
+        }
+
+        [Test]
         public void Test2DSurfaceHighOrderRobustnessUnstructured() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.PseudoStructured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
@@ -323,6 +457,31 @@ namespace CutCellQuadrature {
                     Modes.HMFClassic,
                     7,
                     rootFindingAlgorithm: new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
+
+                Assert.That(
+                    relError < 1e-4,
+                    "Relative error too large for shift number " + i);
+                i++;
+            }
+        }
+
+        [Test]
+        public void Test2DSurfaceHighOrderRobustnessUnstructuredAlgoim() {
+            ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.PseudoStructured);
+            testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+            Program app = new Program(testCase);
+            app.Init(null);
+            app.SetUpEnvironment();
+            app.SetInitial(0);
+
+            int i = 1;
+            while (testCase.ProceedToNextShift()) {
+                double referenceValue = app.SetUpConfiguration();
+                var result = app.PerformConfiguration(
+                    Modes.Algoim,
+                    7);
                 double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
 
                 Assert.That(
@@ -376,6 +535,48 @@ namespace CutCellQuadrature {
         }
 
         [Test]
+        public void Test2DSurfaceConvergenceUnstructuredAlgoim() {
+            int[] orders = Enumerable.Range(0, 7).ToArray();
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Small, GridSizes.Normal, GridSizes.Large };
+            double[,] results = new double[sizes.Length, orders.Length];
+            var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
+
+            for (int i = 0; i < sizes.Length; i++) {
+                ITestCase testCase = new Smereka2EllipseArcLength(sizes[i], GridTypes.PseudoStructured);
+                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+                Program app = new Program(testCase);
+                app.Init(null);
+                app.SetUpEnvironment();
+                app.SetInitial(0);
+                testCase.ProceedToNextShift();
+                double referenceValue = app.SetUpConfiguration();
+
+                for (int j = 0; j < orders.Length; j++) {
+                    var result = app.PerformConfiguration(
+                        Modes.Algoim,
+                        orders[j]);
+                    results[i, j] = Math.Abs(result.Item1 - referenceValue);
+                }
+            }
+
+            double[] xValues = sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+            for (int j = 0; j < orders.Length; j++) {
+                double[] yValues = new double[sizes.Length];
+
+                for (int i = 0; i < sizes.Length; i++) {
+                    yValues[i] = Math.Log(results[i, j]);
+                }
+
+                double eoc = Regression(xValues, yValues);
+
+                Assert.That(
+                    eoc > orders[j] + 1,
+                    "Convergence order too low for order " + orders[j]);
+            }
+        }
+
+        [Test]
         public void Test2DVolumeHighOrderRobustnessUnstructured() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.PseudoStructured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
@@ -392,6 +593,32 @@ namespace CutCellQuadrature {
                     Modes.HMFClassic,
                     6,
                     rootFindingAlgorithm: new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
+
+                Console.WriteLine(relError);
+                Assert.That(
+                    relError < 1e-6,
+                    "Relative error too large for shift number " + i);
+                i++;
+            }
+        }
+
+        [Test]
+        public void Test2DVolumeHighOrderRobustnessUnstructuredAlgoim() {
+            ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.PseudoStructured);
+            testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+            Program app = new Program(testCase);
+            app.Init(null);
+            app.SetUpEnvironment();
+            app.SetInitial(0);
+
+            int i = 1;
+            while (testCase.ProceedToNextShift()) {
+                double referenceValue = app.SetUpConfiguration();
+                var result = app.PerformConfiguration(
+                    Modes.Algoim,
+                    6);
                 double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
 
                 Console.WriteLine(relError);
@@ -425,6 +652,49 @@ namespace CutCellQuadrature {
                         Modes.HMFClassic,
                         orders[j],
                         rootFindingAlgorithm: rootFindingAlgorithm);
+                    results[i, j] = Math.Abs(result.Item1 - referenceValue);
+                }
+            }
+
+            double[] xValues = sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+            for (int j = 0; j < orders.Length; j++) {
+                double[] yValues = new double[sizes.Length];
+
+                for (int i = 0; i < sizes.Length; i++) {
+                    yValues[i] = Math.Log(results[i, j]);
+                }
+
+                double eoc = Regression(xValues, yValues);
+
+                Console.WriteLine(eoc);
+                Assert.That(
+                    eoc > orders[j] + 1,
+                    "Convergence order too low for order " + orders[j]);
+            }
+        }
+
+        [Test]
+        public void Test2DVolumeConvergenceUnstructuredAlgoim() {
+            int[] orders = Enumerable.Range(0, 6).ToArray();
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Small, GridSizes.Normal, GridSizes.Large };
+            double[,] results = new double[sizes.Length, orders.Length];
+            var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
+
+            for (int i = 0; i < sizes.Length; i++) {
+                ITestCase testCase = new MinGibou1EllipseArea(sizes[i], GridTypes.PseudoStructured);
+                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+                Program app = new Program(testCase);
+                app.Init(null);
+                app.SetUpEnvironment();
+                app.SetInitial(0);
+                testCase.ProceedToNextShift();
+                double referenceValue = app.SetUpConfiguration();
+
+                for (int j = 0; j < orders.Length; j++) {
+                    var result = app.PerformConfiguration(
+                        Modes.Algoim,
+                        orders[j]);
                     results[i, j] = Math.Abs(result.Item1 - referenceValue);
                 }
             }
