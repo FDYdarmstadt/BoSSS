@@ -86,7 +86,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.m_ls = ls;
             this.m_HMForder = hMForder;
             this.SpatialDimension = D;
-            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
+            //parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
             parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(interfaceName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
 
 
@@ -116,17 +116,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
                     );
 
-                VectorField<SinglePhaseField> LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(
-                    d => new SinglePhaseField(levelSet.DGLevelSet.Basis)
-                    ));
-                LevSetGradient.Clear();
-                LevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+                //VectorField<SinglePhaseField> LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(
+                //    d => new SinglePhaseField(levelSet.DGLevelSet.Basis)
+                //    ));
+                // LevSetGradient.Clear();
+                // LevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
 
-                IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSet.LevelSetIndex);
-                IEnumerable<SpeciesId> requiredSpeciesId = requiredSpecies.Select(spc => LsTrk.GetSpeciesId(spc));
-                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(requiredSpeciesId, m_HMForder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, LsTrk.Regions.GetCutCellMask());
-                
+                //IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSet.LevelSetIndex);
+                //IEnumerable<SpeciesId> requiredSpeciesId = requiredSpecies.Select(spc => LsTrk.GetSpeciesId(spc));
+                //var SchemeHelper = LsTrk.GetXDGSpaceMetrics(requiredSpeciesId, m_HMForder, 1).XQuadSchemeHelper;
+                //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, LsTrk.Regions.GetCutCellMask());
+
 
                 //double forceX = ComputeForceX(levelSet, ParameterVarFields);
                 //tr.Info("forceX = " + forceX);
@@ -145,68 +145,68 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
-        private double ComputeForceX(DualLevelSet levelSet, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            double forceX = 0;
-            {
-                var LsTrk = levelSet.Tracker;
-                int D = LsTrk.GridDat.SpatialDimension;
-                SinglePhaseField[] meanVelocity = D.ForLoop(
-                    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
-                    );
+        //private double ComputeForceX(DualLevelSet levelSet, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        //    double forceX = 0;
+        //    {
+        //        var LsTrk = levelSet.Tracker;
+        //        int D = LsTrk.GridDat.SpatialDimension;
+        //        SinglePhaseField[] meanVelocity = D.ForLoop(
+        //            d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
+        //            );
 
-                VectorField<SinglePhaseField> LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(
-                    d => new SinglePhaseField(levelSet.DGLevelSet.Basis)
-                    ));
-                LevSetGradient.Clear();
-                LevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+        //        VectorField<SinglePhaseField> LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(
+        //            d => new SinglePhaseField(levelSet.DGLevelSet.Basis)
+        //            ));
+        //        LevSetGradient.Clear();
+        //        LevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
 
-                IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSet.LevelSetIndex);
-                IEnumerable<SpeciesId> requiredSpeciesId = requiredSpecies.Select(spc => LsTrk.GetSpeciesId(spc));
-                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(requiredSpeciesId, m_HMForder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, LsTrk.Regions.GetCutCellMask());
+        //        IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSet.LevelSetIndex);
+        //        IEnumerable<SpeciesId> requiredSpeciesId = requiredSpecies.Select(spc => LsTrk.GetSpeciesId(spc));
+        //        var SchemeHelper = LsTrk.GetXDGSpaceMetrics(requiredSpeciesId, m_HMForder, 1).XQuadSchemeHelper;
+        //        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, LsTrk.Regions.GetCutCellMask());
 
-                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                    cqs.Compile(LsTrk.GridDat, m_HMForder),
-                    delegate (int j0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                        var VelocityValues = MultidimensionalArray.Create(Length, QR.NoOfNodes, D);
-                        var LevelSetGradValues = MultidimensionalArray.Create(Length, QR.NoOfNodes, D);
+        //        CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+        //            cqs.Compile(LsTrk.GridDat, m_HMForder),
+        //            delegate (int j0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+        //                var VelocityValues = MultidimensionalArray.Create(Length, QR.NoOfNodes, D);
+        //                var LevelSetGradValues = MultidimensionalArray.Create(Length, QR.NoOfNodes, D);
 
-                        for (int d = 0; d < D; d++) {
-                            meanVelocity[d].Evaluate(j0, Length, QR.Nodes, VelocityValues.ExtractSubArrayShallow(-1, -1, d));
-                            LevSetGradient[d].Evaluate(j0, Length, QR.Nodes, LevelSetGradValues.ExtractSubArrayShallow(-1, -1, d));
-                        }
+        //                for (int d = 0; d < D; d++) {
+        //                    meanVelocity[d].Evaluate(j0, Length, QR.Nodes, VelocityValues.ExtractSubArrayShallow(-1, -1, d));
+        //                    LevSetGradient[d].Evaluate(j0, Length, QR.Nodes, LevelSetGradValues.ExtractSubArrayShallow(-1, -1, d));
+        //                }
 
-                        var Normals = LsTrk.DataHistories[levelSet.LevelSetIndex][0].GetLevelSetNormals(QR.Nodes, j0, Length);
+        //                var Normals = LsTrk.DataHistories[levelSet.LevelSetIndex][0].GetLevelSetNormals(QR.Nodes, j0, Length);
                         
 
-                        for (int j = 0; j < Length; j++) { // loop over cells
-                            for (int k = 0; k < QR.NoOfNodes; k++) { // loop over nodes
+        //                for (int j = 0; j < Length; j++) { // loop over cells
+        //                    for (int k = 0; k < QR.NoOfNodes; k++) { // loop over nodes
 
-                                double acc = 0;
-                                for (int d = 0; d < D; d++) {
-                                    acc += VelocityValues[j, k, 1];//Normals[j, k, d]; LevelSetGradValues[j, k, d]
-                                                                                                 //acc1 += LevelSetGradValues[j, k, d];
-                                }
-                                EvalResult[j, k, 0] = acc;
-                            }
-                        }
+        //                        double acc = 0;
+        //                        for (int d = 0; d < D; d++) {
+        //                            acc += VelocityValues[j, k, 1];//Normals[j, k, d]; LevelSetGradValues[j, k, d]
+        //                                                                                         //acc1 += LevelSetGradValues[j, k, d];
+        //                        }
+        //                        EvalResult[j, k, 0] = acc;
+        //                    }
+        //                }
                         
 
-                        //EvalResult.ExtractSubArrayShallow(-1, -1, 0).Multiply(1.0,
-                        //    VelocityValues, Normals, 0.0, "jk", "jkd", "jkd");
+        //                //EvalResult.ExtractSubArrayShallow(-1, -1, 0).Multiply(1.0,
+        //                //    VelocityValues, Normals, 0.0, "jk", "jkd", "jkd");
 
 
-                    },
-                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        //( i0, Length, ResultsOfIntegration) => {
-                        for (int i = 0; i < Length; i++)
-                            forceX += ResultsOfIntegration[i, 0];
-                    }
-                 ).Execute();
-            }
+        //            },
+        //            delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+        //                //( i0, Length, ResultsOfIntegration) => {
+        //                for (int i = 0; i < Length; i++)
+        //                    forceX += ResultsOfIntegration[i, 0];
+        //            }
+        //         ).Execute();
+        //    }
 
-            return forceX;
-        }
+        //    return forceX;
+        //}
 
             
     }
