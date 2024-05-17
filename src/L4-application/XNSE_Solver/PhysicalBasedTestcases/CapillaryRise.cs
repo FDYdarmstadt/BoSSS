@@ -572,7 +572,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             double h0 = 2e-2;
-            double xSemiAxis0 = R;
+            double xSemiAxis0 = 5.0 * R;
             double ySemiAxis0 = 1e-2;
             double yCenter0 = h0;
 

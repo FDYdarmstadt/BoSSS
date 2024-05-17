@@ -69,8 +69,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 return grd;
             };
 
-            double xSemiAxis0 = 2.0;
-            double ySemiAxis0 = 0.5;
+            double xSemiAxis0 = 3.5;
+            double ySemiAxis0 = 1.0;
             double yCenter0 = 0.0;
             //C.AddBoundaryValue("wall_ZeroGradient");
 
@@ -78,8 +78,14 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.AddBoundaryValue("Pressure_Outlet_ZeroGradient");
             C.AddBoundaryValue("Velocity_Inlet_ZeroGradient");
 
-            C.AddInitialValue("VelocityY#A", new Formula("X => 0.0"));
-            C.AddInitialValue("VelocityY#B", new Formula("X => 0.0"));
+            //C.AddInitialValue("VelocityY#A", new Formula("X => 2.0"));
+            //C.AddInitialValue("VelocityY#B", new Formula("X => 2.0"));
+            double ka = 0.8;
+            double kb = 0.0;
+            double kc = 0.0;
+            Func<double[], double> VelFunc = (X => kc - (xSemiAxis0 * ySemiAxis0 * kb * (xSemiAxis0.Pow2() - X[0].Pow2()) + ySemiAxis0.Pow2() * ka * X[0].Pow2()) / ( (ySemiAxis0.Pow2() *(1 - X[0].Pow2() / xSemiAxis0.Pow2()) ).Sqrt() * xSemiAxis0.Pow2() * xSemiAxis0));
+            C.InitialValues_Evaluators.Add("VelocityY#A", VelFunc);
+            C.InitialValues_Evaluators.Add("VelocityY#B", VelFunc);
 
             Func<double[], double> PhiFunc = (X => X[1] - yCenter0 + (ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt());
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
