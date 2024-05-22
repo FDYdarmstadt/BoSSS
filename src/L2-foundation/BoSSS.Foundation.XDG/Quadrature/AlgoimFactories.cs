@@ -31,7 +31,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Owner = this,
                 m_Rules = this.m_SurfaceRules
             };
-            factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules; // Assign the static method here
+            factory.useMetrics = true;
+            factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules; 
             return factory;
         }
 
@@ -40,7 +41,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Owner = this,
                 m_Rules = this.m_SurfaceRules
             };
-            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules; // Assign the static method here
+            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules; 
             return factory;
         }
 
@@ -93,6 +94,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             int spaceDim => RefElement.SpatialDimension;
             bool VolumeSign => m_Owner.VolumeSign;
 
+            public bool useMetrics = false;
+
             internal GetQuadratureRule m_CalculateQuadRule;
 
             internal delegate UnsafeAlgoim.QuadScheme GetQuadratureRule(int dim, int p, int q, int[] lengths, double[] x, double[] y);
@@ -119,7 +122,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             public IEnumerable<IChunkRulePair<QuadRule>> CalculateQuadRuleSetSingle(ExecutionMask mask, int RequestedOrder) {
                 List<ChunkRulePair<QuadRule>> ret = new List<ChunkRulePair<QuadRule>>();
-
+                
                 foreach (Chunk chunk in mask) {
                     foreach (int cell in chunk.Elements) {
                         var quadRule = CalculateLevSetOnCell(cell, RequestedOrder);
@@ -165,9 +168,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             }
 
-            private QuadRule CalculateLevSetOnCell(int j0, int RequestedOrder) {
-                int n = (RequestedOrder + 1) ;
-                double[] points = GenericBlas.Linspace(-1, 1, Math.Max( n,3)); //testing
+            private QuadRule CalculateLevSetOnCell(int jCell, int RequestedOrder) {
+                int pOrder = 3; //Math.Max(3, RequestedOrder); //ensure the polynomial interpolation is at least degree of 3.
+                int n = (pOrder + 1) ;
+                double[] points = GenericBlas.ChebyshevNodes(-1.0, 1.0, Math.Max(n, 3));
+                //double[] points = GenericBlas.Linspace(-1.0, 1.0, Math.Max( n,3)); //testing
 
                 //double[] points = ChebyshevPoints.Generate(n);
 
@@ -180,7 +185,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 
                 NodeSet NS = new NodeSet(RefElement, combinations, false);
-                var ret = lsData.GetLevSetValues(NS, j0, 1);
+                var ret = lsData.GetLevSetValues(NS, jCell, 1);
                 //Console.WriteLine(ret.ToString());
                 //ret.SaveToTextFile("ret.txt");
 
@@ -209,9 +214,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 //int[] sizes = new int[] { 3, 3 };
                 int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
 
-                int pOrder = Math.Max(3, RequestedOrder); //ensure the polynomial interpolation is at least degree of 3.
                 UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(spaceDim, pOrder, RequestedOrder, sizes, x, y);
-                //qs.OutputQuadratureRuleAsVtpXML("bosssj" + j0 + ".vtp");
+                //qs.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
                 //Console.WriteLine("qs.length = " + qs.length);
                 QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
 
@@ -229,8 +233,27 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                         //Console.WriteLine($"quadRule.Nodes[{row}, {d}] = qs.nodes[{ind}] = {qs.nodes[ind]} ");
                     }
                 }
-                //quadRule.OutputQuadratureRuleAsVtpXML("quadRule" + j0 + ".vtp");
+                //quadRule.OutputQuadratureRuleAsVtpXML("quadRule" + jCell + ".vtp");
                 quadRule.Nodes.LockForever();
+                //var quadRuleGlobal = quadRule.CloneAs();
+                //quadRuleGlobal.TransformLocal2Global(lsData.GridDat.Grid, jCell);
+
+                //var LevelSetNormals = lsData.GetLevelSetReferenceNormals(quadRule.Nodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                //LevelSetNormals.SaveToTextFile("lsnormals.txt");
+                if (useMetrics) { 
+                var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
+                //useMetrics.SaveToTextFile("useMetrics.txt");
+
+                ////quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("beforeWeights");
+
+                for (int k = 0; k < qs.length; k++)
+                    quadRule.Weights[k] /= metrics[0, k];
+                }
+                //quadRule.Weights.MatMatMul(useMetrics);
+
+                //quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("afterWeights");
+
+                //quadRuleGlobal.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
                 return quadRule;
             }
 
