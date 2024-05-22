@@ -113,7 +113,7 @@ namespace CutCellQuadrature.TestCases {
                         default:
                             throw new Exception();
                     }
-                    double[] nodes = GenericBlas.Linspace(-10.0, 10.0, noOfCellsPerDirection + 1);
+                    double[] nodes = GenericBlas.Linspace(-2.0, 2.0, noOfCellsPerDirection + 1);
                     grid = Grid2D.Cartesian2DGrid(nodes, nodes);
                     break;
 
