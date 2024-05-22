@@ -71,7 +71,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         string GetParamName(int index);
 
         /// <summary>
-        /// removes oscillations in the iso-contour
+        /// removes oscillations in the zero iso-contour (unused so far)
         /// </summary>
         void Reinitialize(double L, double kappa_S);
 
@@ -197,13 +197,35 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         /// <param name="initialShockPostion"></param>
         void ProjectFromFunction(Func<double[], double> initialShockPostion);
+        /// <summary>
+        /// Get the polynomial degree of the level set
+        /// </summary>
+        /// <returns></returns>
         int GetDegree();
+        /// <summary>
+        /// get the mean value in a cell
+        /// </summary>
+        /// <param name="i"></param>
+        /// <returns></returns>
         double GetMeanValue(int i);
+        /// <summary>
+        /// Transform to LevelSet object
+        /// </summary>
+        /// <param name="v"></param>
+        /// <returns></returns>
         LevelSet ToLevelSet(int v);
+        /// <summary>
+        /// Assemble a level set Tracker
+        /// </summary>
         void AssembleTracker();
+        /// <summary>
+        /// Calc level-set specific norm
+        /// </summary>
+        /// <param name="levelSetStepCoordinates"></param>
+        /// <returns></returns>
         double Norm(double[] levelSetStepCoordinates);
         /// <summary>
-        /// a method that returns the regularization Matrix
+        /// a method that returns the level-set specific regularization Matrix
         /// </summary>
         /// <returns></returns>
         MsrMatrix GetRegMatrix();
