@@ -264,35 +264,35 @@ namespace BoSSS.Foundation.XDG {
                     MultidimensionalArray grad = levelSet.Basis.EvaluateGradient(NS);
                     int noOfNodes = grad.GetLength(0);
 
-                    unsafe {
-                        fixed (double* pGrad = &grad.Storage[0], pRes = &output.Storage[0]) {
-                            double* pResCur = pRes;
-                            double* pGradCur = pGrad;
-                            for(int i = 0; i < Len; i++) {
-                                for(int j = 0; j < noOfNodes; j++) {
-                                    //double norm = 0.0;
-                                    for(int d = 0; d < D; d++) {
-                                        for(int k = 0; k < levelSet.Basis.MinimalLength; k++) {
-                                            *(pResCur + d) += levelSet.Coordinates[i + j0, k] * *(pGradCur + grad.Index(j, k, d));
-                                        }
-                                    }
+                    //unsafe {
+                    //    fixed (double* pGrad = &grad.Storage[0], pRes = &output.Storage[0]) {
+                    //        double* pResCur = pRes;
+                    //        double* pGradCur = pGrad;
+                    //        for(int i = 0; i < Len; i++) {
+                    //            for(int j = 0; j < noOfNodes; j++) {
+                    //                //double norm = 0.0;
+                    //                for(int d = 0; d < D; d++) {
+                    //                    for(int k = 0; k < levelSet.Basis.MinimalLength; k++) {
+                    //                        *(pResCur + d) += levelSet.Coordinates[i + j0, k] * *(pGradCur + grad.Index(j, k, d));
+                    //                    }
+                    //                }
 
-                                    pResCur += D;
-                                }
-                            }
-                        }
-                    }
-
-                    //// Reference implementation
-                    //for (int i = 0; i < Len; i++) {
-                    //    for (int j = 0; j < noOfNodes; j++) {
-                    //        for (int d = 0; d < D; d++) {
-                    //            for (int k = 0; k < levelSetField.Basis.MinimalLength; k++) {
-                    //                output[i, j, d] += levelSetField.Coordinates[i + j0, k] * grad[j, k, d];
+                    //                pResCur += D;
                     //            }
                     //        }
                     //    }
                     //}
+
+                    // Reference implementation
+                    for (int i = 0; i < Len; i++) {
+                        for (int j = 0; j < noOfNodes; j++) {
+                            for (int d = 0; d < D; d++) {
+                                for (int k = 0; k < levelSet.Basis.MinimalLength; k++) {
+                                    output[i, j, d] += levelSet.Coordinates[i + j0, k] * grad[j, k, d];
+                                }
+                            }
+                        }
+                    }
                 }
 
                 private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
