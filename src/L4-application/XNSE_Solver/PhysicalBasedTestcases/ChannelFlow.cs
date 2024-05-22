@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 4, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 3, int kelem = 4, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -149,12 +149,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 2;
+
             double H = 2;
+            int Lscale = 1;
+            double L = Lscale * H;
+
 
             if (D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, Lscale * kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
@@ -299,8 +302,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (wallBC == 1) {
                 U = 1.0;
-                //C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
-                //C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
+                C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
+                C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
             }
 
             ////C.InitialValues_Evaluators.Add("Pressure#A", X => 2.0 - X[0]);
@@ -406,7 +409,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
 
-            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            //C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             //C.LevelSet_ConvergenceCriterion = 1e-6;
 
@@ -435,9 +438,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
-            C.AMR_startUpSweeps = 1;
+            //C.AdaptiveMeshRefinement = true;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            //C.AMR_startUpSweeps = 1;
+
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //C.BaseRefinementLevel = 2;
             //C.RefinementLevel = 2;
@@ -454,15 +458,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 0.138; // 5e-2; // 5e-2;
+            double dt = 0.5; // 0.138; // 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 10; // 500;
+            C.NoOfTimesteps = 100; // 500;
             C.saveperiod = 10;
 
             #endregion

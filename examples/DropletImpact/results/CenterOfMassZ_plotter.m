@@ -5,7 +5,7 @@ clear all
 data_CoM = cell(1,1);
 % 
 %import = importdata("DropletRebound_8x8x8AMR1_k3_dropVelocity100vH_NeKs_withReInit10_c4t4_CenterOfMassZ");
-import = importdata("DropletRebound_8x8x8AMR1_k3_dropVelocity100vH_NeKs_RI1_halfdt_c4t4_restart2_CenterOfMassZ");
+import = importdata("DropletRebound_8x8x8AMR1_k3_dropVelocity100vH_NeKs_RI1_halfdt_c4t4_restart4_CenterOfMassZ");
 data_CoM{1,1} = import.data;
 
 
@@ -40,7 +40,7 @@ plot(data_CoM{1,1}(:,1), data_CoM{1,1}(:,2), 'b', data_ref(:,1)-t0, data_ref(:,3
 legend({'$u_{D,I} = -1.12 \ (100\%)$', 'ref data experiment'}, 'Interpreter', 'latex', 'Fontsize', size_legend, 'Location', 'southeast')
 xlabel('$t$', 'Interpreter', 'latex', 'FontSize', size_label)
 ylabel('$z$', 'Interpreter', 'latex', 'FontSize', size_label)
-ylim([0.2e-3 0.8e-3])
+%ylim([0.2e-3 0.8e-3])
 xlim([0e-4 12e-4])
 %set(gca, 'XTick', [0 1 2 3 4 5 6 7], 'FontSize', size_tick) 
 %set(gca, 'YTick', [0.02 0.03 0.04 0.05 0.06]) 

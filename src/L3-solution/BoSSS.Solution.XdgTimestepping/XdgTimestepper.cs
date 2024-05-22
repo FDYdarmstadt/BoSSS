@@ -692,16 +692,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 if(JacobiParameterVars == null)
                                     JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
 
-                                // update parameters in JacobiParameterVars 
-                                foreach (DGField param in Parameters) {
-                                    int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => jpv.Identification.Equals(param.Identification));
-                                    //int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => ReferenceEquals(jpv, param));
-                                    if (ind > -1) {
-                                            this.JacobiParameterVars[ind] = param;
+                                    // update parameters in JacobiParameterVars - some equation components (e.g. surface tension force) needs parameters not updated by given jacobi ParameterFactories (e.g. Normals). 
+                                    // In order to have (non-zero) values we take the fields given for the timestepper. 
+                                    foreach (DGField param in Parameters) {
+                                        int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => jpv.Identification.Equals(param.Identification));
+                                        //int ind = this.JacobiParameterVars.FirstIndexWhere(jpv => ReferenceEquals(jpv, param));
+                                        if (ind > -1) {
+                                            this.JacobiParameterVars[ind] = param.CloneAs();
+                                        }
                                     }
-                                }
 
-                                op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
+                                    op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
 
                                 var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);
                                 mtxBuilder.time = time;

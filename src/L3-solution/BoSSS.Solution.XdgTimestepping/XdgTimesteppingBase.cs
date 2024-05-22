@@ -29,6 +29,8 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using BoSSS.Solution.Queries;
+using BoSSS.Foundation.IO;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -504,16 +506,30 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     Mgop.TransformRhsFrom(R, currentRes);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-                    /*
-                    //// plotting during Newton iterations:  
-                    var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
 
+                    //// plotting during Newton iterations:  
+                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+
+                    //DGField[] MaxAbsResidualFields = new DGField[this.Residuals.Fields.Count];
+                    //for (int i = 0; i < MaxAbsResidualFields.Length; i++) {
+                    //    DGField f = this.Residuals.Fields[i];
+                    //    string identification = f.Identification + "_MaxAbsValue";
+                    //    Basis cb = new Basis(f.Basis.GridDat, 0);
+                    //    DGField marf = new SinglePhaseField(new Basis(f.Basis.GridDat, 0), identification);
+                    //    for (int j = 0; j < cb.Length; j++) {
+                    //        f.GetExtremalValuesInCell(out double min, out double max, j);
+                    //        double maxAbsVal = Math.Max(min.Abs(), max.Abs());
+                    //        marf.SetMeanValue(j, maxAbsVal);
+                    //    }
+                    //    MaxAbsResidualFields[i] = marf;
+                    //}
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields, MaxAbsResidualFields), "DuringNewton-" + iterIndex, iterIndex, 2);
 
                     //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
                     //var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
                     //Console.WriteLine($"RESILOG: w.r.t. XDG (nonagg): {Norm(R, FreshMama):0.####E-00}");
-                    */
+
 
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
