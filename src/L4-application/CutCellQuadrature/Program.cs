@@ -67,115 +67,6 @@ namespace CutCellQuadrature {
 
     public partial class Program : Application {
 
-        //// Define the QuadScheme struct that is exchanged by C Wrapper - Algoim (garbage collector does not free it, so memory should be managed manually)
-        //[StructLayout(LayoutKind.Sequential)]
-        //public struct QuadSchemeUnmanaged {
-        //    public int dimension;
-        //    public int size;
-        //    public IntPtr nodes;
-        //    public IntPtr weights;
-
-        //    // Method to free memory allocated for nodes and weights
-        //    public void FreeMemory() {
-        //        Marshal.FreeHGlobal(nodes);
-        //        Marshal.FreeHGlobal(weights);
-        //    }
-        //}
-
-        //// Define the QuadScheme struct in C# (memory management is handled automatically by the garbage collector)
-        //public struct QuadScheme {
-        //    public int dimension;
-        //    public int size;
-        //    public double[] nodes;
-        //    public double[] weights;
-
-        //    // Constructor to create QuadScheme from QuadSchemeUnmanaged
-        //    public QuadScheme(QuadSchemeUnmanaged unmanagedQuadScheme) {
-        //        dimension = unmanagedQuadScheme.dimension;
-        //        size = unmanagedQuadScheme.size;
-
-        //        // Copy data from IntPtr to managed double[] arrays
-        //        nodes = new double[size];
-        //        Marshal.Copy(unmanagedQuadScheme.nodes, nodes, 0, size);
-
-        //        weights = new double[size];
-        //        Marshal.Copy(unmanagedQuadScheme.weights, weights, 0, size);
-        //    }
-        //}
-
-        //[DllImport("CppAlgoim.dll", CallingConvention = CallingConvention.Cdecl)]
-        //static extern QuadSchemeUnmanaged GetVolumeScheme(int dim, int q, int[] sizes, double[] coordinates, double[] LSvalues);
-
-        //[DllImport("CppAlgoim.dll", CallingConvention = CallingConvention.Cdecl)]
-        //static extern QuadSchemeUnmanaged GetSurfaceScheme(int dim, int q, int[] sizes, double[] coordinates, double[] LSvalues);
-
-        //public static QuadScheme GetSurfaceQuadratureRules() {
-
-        //    // Hardcoded example values
-        //    // Define points_1dy array
-        //    double[] points_1dy = { 4.0, 3.0, 4.0, 0.0, -1.0, 0.0, 4.0, 3.0, 4.0 };
-
-        //    // Define points_1dx array
-        //    double[] points_1dx = { -1.0, 0.0, 1.0 };
-        //    double[] l = new double[points_1dx.Length * 2];
-        //    Array.Copy(points_1dx, 0, l, 0, points_1dx.Length);
-        //    Array.Copy(points_1dx, 0, l, points_1dx.Length, points_1dx.Length);
-
-        //    int[] s = { 3, 3 };
-
-        //    QuadSchemeUnmanaged retC = GetSurfaceScheme(2, 5, s, l, points_1dy);
-        //    Console.WriteLine("Algoim passed the quadscheme back");
-
-        //    QuadScheme ret = new QuadScheme(retC);
-        //    retC.FreeMemory();
-        //    return ret;
-        //}
-
-        //public static QuadScheme GetVolumeQuadratureRules() {
-
-        //    // Hardcoded example values
-        //    // Define points_1dy array
-        //    double[] points_1dy = { 4.0, 3.0, 4.0, 0.0, -1.0, 0.0, 4.0, 3.0, 4.0 };
-
-        //    // Define points_1dx array
-        //    double[] points_1dx = { -1.0, 0.0, 1.0 };
-        //    double[] l = new double[points_1dx.Length * 2];
-        //    Array.Copy(points_1dx, 0, l, 0, points_1dx.Length);
-        //    Array.Copy(points_1dx, 0, l, points_1dx.Length, points_1dx.Length);
-
-        //    int[] s = { 3, 3 };
-
-        //    QuadSchemeUnmanaged retC = GetVolumeScheme(2, 5, s, l, points_1dy);
-        //    Console.WriteLine("Algoim passed the quadscheme back");
-
-        //    QuadScheme ret = new QuadScheme(retC);
-        //    retC.FreeMemory();
-        //    return ret;
-        //}
-
-        //static void callAlgoim() {
-        //    Console.WriteLine("Algoim is being called");
-        //    QuadScheme quadVol = GetVolumeQuadratureRules();
-        //    //Console.WriteLine(AlgoimWrapper.Example_calculation(2));
-        //    double totVol = 0;
-        //    foreach (double w in quadVol.weights)
-        //        totVol += w;
-
-        //    Console.WriteLine("Vol: " + totVol);
-
-        //    QuadScheme quadSurf = GetSurfaceQuadratureRules();
-        //    //Console.WriteLine(AlgoimWrapper.Example_calculation(2));
-        //    double totSurf = 0;
-        //    foreach (double w in quadSurf.weights)
-        //        totSurf += w;
-
-        //    Console.WriteLine("Surf: " + totSurf);
-
-        //    //QuadScheme quad2 = AlgoimWrapper.GetSurfaceQuadratureRules();
-        //    ////Console.WriteLine(AlgoimWrapper.Example_calculation(2));
-        //    //Console.WriteLine("Dim: " + quad.dimension);
-        //}
-
         private static ITestCase[] testCases = new ITestCase[] {
             //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
 
@@ -885,6 +776,7 @@ namespace CutCellQuadrature {
                 || mode == Modes.HMFOneStepGaussAndStokes
                 || mode == Modes.EquivalentPolynomials
                 || mode == Modes.SayeGaussRules
+                || mode == Modes.Algoim) {
 
                 result = PerformVolumeQuadrature(
                     mode, volumeFactory, cutCellGrid, order, localTimer);
@@ -1025,7 +917,15 @@ namespace CutCellQuadrature {
                     for (int i = 0; i < weights.Length; i++) {
                         writer.WriteString($"{globalVertices[0,i,0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
         }
-
+                    //if (globalVertices.Dimension == 3) { 
+                    //    for (int i = 0; i < weights.Length; i++) {
+                    //        writer.WriteString($"{globalVertices[0,i,0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
+                    //    }
+                    //} else { 
+                    //    for (int i = 0; i < weights.Length; i++) {
+                    //        writer.WriteString($"{globalVertices[i, 0]} {globalVertices[i, 1]} {(dim == 3 ? globalVertices[i, 2] : 0.0)}\n");
+                    //    }
+                    //}
                     writer.WriteEndElement(); // DataArray
                     writer.WriteEndElement(); // Points
 
