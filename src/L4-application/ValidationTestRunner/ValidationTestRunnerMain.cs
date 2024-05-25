@@ -160,6 +160,29 @@ namespace ValidationTestRunner {
         }
 
         /// <summary>
+        /// CNS Solver, 
+        /// thesis results for: Vandergrift: Implicit Discontinuous Galerkin Shock Tracking Methods for Compressible Flows with Shocks (2024)
+        /// </summary>
+        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy_PostProcessing.ipynb")]
+        [Test]
+        static public void Run__CNS_1DShockAcoustic()
+        {
+            // delete the database if it is more than 25 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "CNS_AcousticWave1D_ConvStudy",
+                "CNS_AcousticWave1D_ConvStudy",
+                "DELETE_CNSShockAcousticInteraction1D",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy_PostProcessing.ipynb");
+
+            Console.WriteLine("CNS1DShockAcoustic @ FDYcluster");
+        }
+
+        /// <summary>
         /// Rheology Solver, 
         /// publication results for: Kikker, Kummer, Oberlack: A fully coupled high-order discontinuous Galerkin solver for viscoelastic fluid flow, https://onlinelibrary.wiley.com/doi/10.1002/fld.4950
         /// </summary>
