@@ -114,6 +114,52 @@ namespace ValidationTestRunner {
 
 
         /// <summary>
+        /// XDG-IST Solver, 
+        /// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
+        /// </summary>
+        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
+        [Test]
+        static public void Run__XDGIST_BowShock()
+        {
+            // delete the database if it is more than 25 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "XESF_BowShock_ConvStudy",
+                "XESF_BowShock_ConvStudy",
+                "DELETE_XDGISTBowShock",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb");
+
+            Console.WriteLine("XDGISTBowShock @ FDYcluster");
+        }
+
+        /// <summary>
+        /// XDG-IST Solver, 
+        /// thesis results for: Vandergrift: Implicit Discontinuous Galerkin Shock Tracking Methods for Compressible Flows with Shocks (2024)
+        /// </summary>
+        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb")]
+        [Test]
+        static public void Run__XDGIST_1DShockAcoustic()
+        {
+            // delete the database if it is more than 25 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "XESTSF_ShockAcousticInteraction1D_ConvergenceStudy",
+                "XESTSF_ShockAcousticInteraction1D_ConvergenceStudy",
+                "DELETE_XESTSFShockAcousticInteraction1D",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb");
+
+            Console.WriteLine("XDGIST1DShockAcoustic @ FDYcluster");
+        }
+
+        /// <summary>
         /// Rheology Solver, 
         /// publication results for: Kikker, Kummer, Oberlack: A fully coupled high-order discontinuous Galerkin solver for viscoelastic fluid flow, https://onlinelibrary.wiley.com/doi/10.1002/fld.4950
         /// </summary>
