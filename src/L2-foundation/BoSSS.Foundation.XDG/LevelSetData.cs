@@ -1149,15 +1149,16 @@ namespace BoSSS.Foundation.XDG {
             Dictionary<SpeciesId, SubGrid> m_SpeciesSubGrids;
 
             /// <summary>
-            /// Level set region code,
-            /// for locally updated and external cells
+            /// Level set region code, for locally updated and external cells
+            /// - index: (logical) cell index, also includes external cells.
             /// </summary>
             internal ushort[] m_LevSetRegions;
 
 
             /// <summary>
             /// Level set region code, before the most recent call to <see cref="LevelSetTracker.UpdateTracker"/>
-            /// for locally updated and external cells
+            /// for locally updated and external cells.
+            /// This is required for updating memory of XDG fields.
             /// </summary>
             internal ushort[] m_LevSetRegions_b4Update;
 

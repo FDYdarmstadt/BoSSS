@@ -25,50 +25,79 @@ using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
 using MPI.Wrappers;
+using System.Threading.Tasks;
+using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Quadrature {
 
     /// <summary>
     /// converts a cell boundary quadrature rule into an edge quadrature rule;
     /// Therefore, the individual faces of a cell (<see cref="CellBoundaryQuadRule.NumbersOfNodesPerFace"/>) are split up into the respective edges.
+    /// 
+    /// Note: the conversion of cell boundary rules into edge rules implicitly assumes that the 
+    /// level-set-fields is at least C^0 continuous, i.e. the level-set field is continuous across the cell boundaries.
     /// </summary>
     public class EdgeRuleFromCellBoundaryFactory : IQuadRuleFactory<QuadRule> {
 
         /// <summary>
         /// constructor
         /// </summary>
-        public EdgeRuleFromCellBoundaryFactory(Grid.Classic.GridData g, IQuadRuleFactory<CellBoundaryQuadRule> cellBndQF, CellMask maxDomain) {
-            m_cellBndQF = cellBndQF;
+        public EdgeRuleFromCellBoundaryFactory(IGridData g, RefElement edgeRefElement, IEnumerable<IQuadRuleFactory<CellBoundaryQuadRule>> cellBndQF, EdgeMask maxDomain) {
+            m_cellBndQF = new Dictionary<RefElement, IQuadRuleFactory<CellBoundaryQuadRule>>();
+            foreach(var f in cellBndQF) {
+                m_cellBndQF.Add(f.RefElement, f);
+            }
+
+            if (g.iGeomEdges.EdgeRefElements.IndexOf(edgeRefElement) < 0)
+                throw new ArgumentException("edgeRefElement is not an edge ref element of the grid.");
+            
+            RefElement = edgeRefElement;
             grd = g;
             if (maxDomain.MaskType != MaskType.Geometrical)
                 throw new ArgumentException("expecting a geometrical mask");
             m_maxDomain = maxDomain;
+
+            if(!maxDomain.IsSubMaskOf(g.iGeomEdges.GetEdges4RefElement(edgeRefElement)))
+                throw new ArgumentException("maxDomain is not a submask of the edges of the edgeRefElement.");
         }
 
-        IQuadRuleFactory<CellBoundaryQuadRule> m_cellBndQF;
+        /// <summary>
+        /// the edge simplex
+        /// </summary>
+        public RefElement RefElement {
+            get;
+            private set;
+        }
 
-        Grid.Classic.GridData grd;
+        int m_quadorder;
 
-        CellMask m_maxDomain;
+        public void CreateRulesAndMPIExchgange(int __quadorder) {
+            //
+            m_quadorder = __quadorder;
+            CreateInternal(__quadorder);
+        }
+
+        IDictionary<RefElement, IQuadRuleFactory<CellBoundaryQuadRule>> m_cellBndQF;
+
+        readonly IGridData grd;
+
+        readonly EdgeMask m_maxDomain;
 
         /// <summary>
         /// If there are any cached rules, this method returns their order.
         /// </summary>
         public int[] GetCachedRuleOrders() {
-            return this.m_cellBndQF.GetCachedRuleOrders();
+            return new[] { m_quadorder };
         }
 
-        
-        /// <summary>
-        /// produces an edge quadrature rule
-        /// </summary>
-        /// <param name="mask">an edge mask</param>
-        /// <param name="order">desired order</param>
-        /// <returns></returns>
-        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
 
+        void CreateInternal(int order) {
             // init & checks
             // =============
+
+            var mask = m_maxDomain;
+            Console.Error.WriteLine("   ----------------   EdgeRuleFromCellBoundaryFactory.GetQuadRuleSet: order = " + order);
+
 
             if (!(mask is EdgeMask))
                 throw new ArgumentException("Expecting an edge mask.");
@@ -81,10 +110,13 @@ namespace BoSSS.Foundation.Quadrature {
 
             var Edg2Cel = this.grd.iGeomEdges.CellIndices;
             var Edg2Fac = this.grd.iGeomEdges.FaceIndices;
-            int J = this.grd.Cells.NoOfLocalUpdatedCells;
-            QuadRule DefaultRule = this.RefElement.GetQuadratureRule(order); 
+            int J = this.grd.iGeomCells.NoOfLocalUpdatedCells;
+            QuadRule DefaultRule = this.RefElement.GetQuadratureRule(order);
+            var iGeomEdges = this.grd.iGeomEdges;
+            var iGeomCells = this.grd.iGeomCells;
+            var iLogiCells = this.grd.iLogicalCells;
 
-            int myIKrfeEdge = this.grd.Edges.EdgeRefElements.IndexOf(this.RefElement, (a, b) => object.ReferenceEquals(a, b));
+            int myIKrfeEdge = this.grd.iGeomEdges.EdgeRefElements.IndexOf(this.RefElement, (a, b) => object.ReferenceEquals(a, b));
             if (myIKrfeEdge < 0)
                 throw new ApplicationException("fatal error");
 
@@ -98,7 +130,11 @@ namespace BoSSS.Foundation.Quadrature {
             // find cells
             // ==========
 
-            BitArray CellBitMask = new BitArray(J);
+            int NoOfRefElements = iGeomCells.RefElements.Length;
+            BitArray[] CellBitMask = NoOfRefElements.ForLoop(iKref => new BitArray(J));
+
+            var QuadRulesForOtherProc = new Dictionary<int, List<(CellBoundaryQuadRule rule, long jGlob, int iPart, Vector Center)>>();
+
             int[] Cells = new int[NoEdg]; // mapping: Edge Index --> Cell Index (both geometrical)
             int[] Faces = new int[NoEdg]; // mapping: Edge Index --> Face 
             BitArray MaxDomainMask = m_maxDomain.GetBitMask();
@@ -106,125 +142,182 @@ namespace BoSSS.Foundation.Quadrature {
                 for (int i = 0; i < NoEdg; i++) {
 
                     int iEdge = EdgeIndices[i];
-
-                    //if (iEdge == 175 && this.grd.MpiRank == 1)
-                    //    Debugger.Launch();
-
-
-                    if (this.grd.Edges.GetRefElementIndex(iEdge) != myIKrfeEdge)
+                    if (iGeomEdges.GetRefElementIndex(iEdge) != myIKrfeEdge)
                         throw new ArgumentException("illegal edge mask");
 
-                    if (!(grd.Edges.IsEdgeConformalWithCell1(iEdge) || grd.Edges.IsEdgeConformalWithCell2(iEdge))) {
-                        throw new NotSupportedException("For an edge that is not conformal with at least one cell, no edge rule can be created from a cell boundary rule.");
-                    }
 
                     int jCell0 = Edg2Cel[iEdge, 0];
                     int jCell1 = Edg2Cel[iEdge, 1];
-                    bool conf0 = grd.Edges.IsEdgeConformalWithCell1(iEdge);
-                    bool conf1 = grd.Edges.IsEdgeConformalWithCell2(iEdge);
-
-                    // this gives no errors for surface elements in 3D
-                    bool Allow0 = MaxDomainMask[jCell0];
-                    bool Allow1 = (jCell1 >= 0 && jCell1 < J) ? MaxDomainMask[jCell1] : false;
-
-                    // //this is required for MPI parallel calculations
-                    //bool Allow0 = true;// AllowedCells[jCell0];
-                    //bool Allow1 = (jCell1 >= 0 && jCell1 < J);// ? AllowedCells[jCell1] : false;
-
-                    if (!Allow0 && !Allow1) {
-                        // fallback onto default rule, if allowed
-
-                        //if (this.m_DefaultRuleFallbackAllowed) {
-                        //    Cells[i] = -1; // by a negative index, we mark that we take the default rule
-                        //    Faces[i] = -1;
-                        //    Ret[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), DefaultRule);
+                    int iKref0 = iGeomCells.GetRefElementIndex(jCell0);
+                    int iKref1 = iGeomCells.GetRefElementIndex(jCell1);
 
 
-                        //} else {
-                        throw new ArgumentException("unable to find a cell from which the edge rule can be taken.");
-                        //}
+                    bool conf0 = grd.iGeomEdges.IsEdgeConformalWithCell1(iEdge);
+                    bool conf1 = grd.iGeomEdges.IsEdgeConformalWithCell2(iEdge);
+
+                    if (!(conf0 || conf1)) {
+                        throw new NotSupportedException("For an edge that is not conformal with at least one cell, no edge rule can be created from a cell boundary rule.");
+                    }
+
+                    CellBitMask[iKref0][jCell0] = true;
+                    if(jCell1 < J)
+                        CellBitMask[iKref1][jCell1] = true;
+
+                    if (conf0) {
+                        // use the quadrature rule from the IN-cell
+                        Cells[i] = jCell0;
+                        Faces[i] = Edg2Fac[iEdge, 0];
+                    } else if(conf1 && jCell1 < J) {
+                        // use the quadrature rule from the OUT-cell
+                        Cells[i] = jCell1;
+                        Faces[i] = Edg2Fac[iEdge, 1];
                     } else {
-                        Debug.Assert(Allow0 || Allow1);
+                        // the out-cell is conformal, but since it is an external cell, we must obtain it from the MPI communication
+                        Debug.Assert(conf1 == true);
+                        Debug.Assert(jCell1 >= J);
+                        Cells[i] = jCell1;
+                        Faces[i] = Edg2Fac[iEdge, 1]; 
+                    }
 
-                        if (conf0 && Allow0) {
-                            // cell 0 is allowed and conformal:
-                            // take this, it won't get better
+                
 
-                            CellBitMask[jCell0] = true;
-                            Faces[i] = Edg2Fac[iEdge, 0] + 333; // arbitrary shift, as we need the sign to distinguish a case later on, otherwise Face = 0 is undefined and may lead to wrong results
-                            Cells[i] = jCell0;
-                        } else if (conf1 && Allow1) {
-                            // cell 1 is allowed and conformal:
-                            // take this, it won't get better
 
-                            CellBitMask[jCell1] = true;
-                            Faces[i] = Edg2Fac[iEdge, 1] + 333;
-                            Cells[i] = jCell1;
+                    if (conf0 == true && conf1 == false && jCell1 >= J) {
+                        // +++++++++++++++++++++++++++++++++++++++++++++
+                        // cell must be communicated to other processor 
+                        // +++++++++++++++++++++++++++++++++++++++++++++
 
-                        } else if (Allow0) {
-                            // cell 0 is allowed, but NOT conformal
+                        int jCell1log = grd.GetLogicalCellIndex(jCell1);
+                        long jCell2glob = grd.iParallel.GlobalIndicesExternalCells[jCell1log - J];
+                        int otherProcRank = grd.CellPartitioning.FindProcess(jCell2glob);
 
-                            CellBitMask[jCell0] = true;
-                            Faces[i] = -(Edg2Fac[iEdge, 0] + 333); // by a negative index, we mark a non-conformal edge
-                            Cells[i] = jCell0;
-                        } else if (Allow1) {
-                            // cell 1 is allowed, but NOT conformal
+                        // index of the geometrical cell within the logical cell
+                        int iPart = grd.GetGeometricalPartIndex(jCell1);
 
-                            CellBitMask[jCell1] = true;
-                            Faces[i] = -(Edg2Fac[iEdge, 1] + 333); // by a negative index, we mark a non-conformal edge
-                            Cells[i] = jCell1;
+                        // center of the cell, just to check whether we really exchanged the right cell 
+                        Vector CenterCheck = grd.iGeomCells.GetCenter(jCell1);
+
+
+                        if(!QuadRulesForOtherProc.ContainsKey(otherProcRank)) {
+                            QuadRulesForOtherProc.Add(otherProcRank, new List<(CellBoundaryQuadRule rule, long jGlob, int iPart, Vector Center)>());
                         }
 
+                        QuadRulesForOtherProc[otherProcRank].Add((null, jCell2glob, iPart, CenterCheck));
                     }
-                }
-            }
 
+                }
+                
+            }
 
             // get cell boundary rule
             // ======================
-            var CellMask = new CellMask(this.grd, CellBitMask, MaskType.Geometrical);
+
+            CellMask[] CellMasks = CellBitMask.Select( cbm => new CellMask(this.grd, cbm, MaskType.Geometrical)).ToArray();
+
+            // Cell Boundary Quadrature Rules for each reference element
+            // - 1st index: index of the reference element
+            // - 2nd index: index of the chunk
+            IChunkRulePair<CellBoundaryQuadRule>[][] cellBndRuleS = NoOfRefElements.ForLoop(iKref =>
+                 this.m_cellBndQF[iGeomCells.RefElements[iKref]].GetQuadRuleSet(CellMasks[iKref], order).ToArray());
 
 
-            IChunkRulePair<CellBoundaryQuadRule>[] cellBndRule = this.m_cellBndQF.GetQuadRuleSet(CellMask, order).ToArray();
-            int[] jCell2PairIdx = new int[J];
-            for (int i = 0; i < cellBndRule.Length; i++) {
-                var chk = cellBndRule[i].Chunk; // cell chunk
-                for (int jCell = chk.JE - 1; jCell >= chk.i0; jCell--) {
-                    jCell2PairIdx[jCell] = i + 555;
+            int[] jCellGeom2Chunk = new int[iGeomCells.Count];
+            jCellGeom2Chunk.SetAll(-1);
+            for (int iKref = 0; iKref < NoOfRefElements; iKref++) {
+                var cellBndRule = cellBndRuleS[iKref];
+                int L = cellBndRule.Length;
+
+                for(int iChunk = 0; iChunk < L; iChunk++) {
+                    int j0 = cellBndRule[iChunk].Chunk.i0;
+                    int JE = cellBndRule[iChunk].Chunk.JE;
+                    for (int jCell = j0; jCell < JE; jCell++) {
+                        jCellGeom2Chunk[jCell] = iChunk;
+                    }
                 }
             }
 
-            int[] iChunk = new int[NoEdg]; // which chunk for which edge?
-            for (int i = 0; i < NoEdg; i++) {
-                if (Cells[i] >= 0) {
-                    iChunk[i] = jCell2PairIdx[Cells[i]] - 555;
-                } else {
-                    iChunk[i] = int.MinValue;
+
+            // MPI exchange
+            // (required for non-conformal boundaries)
+            // ========================================
+
+            // Step 1: fill in the quadrature rules
+            foreach (var kv in QuadRulesForOtherProc) {
+                int iTargetRank = kv.Key;
+                var list = kv.Value;
+                for (int iItem = 0; iItem < list.Count; iItem++) {
+                    var ttt = list[iItem];
+
+                    int jCell = grd.CellPartitioning.TransformIndexToLocal(ttt.jGlob);
+                    int jCellGeom = grd.GetGeometricCellIndex(jCell, ttt.iPart);
+                    int iKref = iGeomCells.GetRefElementIndex(jCellGeom);
+
+                    ttt.rule = cellBndRuleS[iKref][jCellGeom].Rule;
+
                 }
             }
+
+            // Step 2: MPI exchange
+            var QuadRulesFromOtherProc = SerialisationMessenger.ExchangeData(QuadRulesForOtherProc, csMPI.Raw._COMM.WORLD);
+
+
+            // Step 3: re-arange the received data
+            int Jgeom = iGeomCells.NoOfLocalUpdatedCells;
+            CellBoundaryQuadRule[] RulesForExternalCells = new CellBoundaryQuadRule[iGeomCells.Count - Jgeom];
+
+            foreach (var kv in QuadRulesFromOtherProc) {
+                int iSourceRank = kv.Key;
+                var list = kv.Value;
+                for (int iItem = 0; iItem < list.Count; iItem++) {
+                    var ttt = list[iItem];
+                    if(!grd.CellPartitioning.IsInLocalRange(ttt.jGlob))
+                        throw new ApplicationException("fatal error; should only receive quadrature rules for external cells.");
+
+                    int jLoc = grd.iParallel.Global2LocalIdx[ttt.jGlob];
+                    int jCellGeom = grd.GetGeometricCellIndex(jLoc, ttt.iPart);
+
+
+                    RulesForExternalCells[jCellGeom - Jgeom] = ttt.rule;
+                }
+            }
+
+
+
             // build rule
             // ==========
             {
-                for (int i = 0; i < NoEdg; i++) { // loop over edges
+                m_EdgesToChunk = new int[grd.iGeomEdges.Count];
+                m_EdgesToChunk.SetAll(-1111);
+                m_QuadRule = new ChunkRulePair<QuadRule>[NoEdg];
+
+
+                for (int i = 0; i < NoEdg; i++) { // loop over edges in mask
                     //if (MaxDomainMask[Cells[i]] == false)
                     //    Debugger.Break();
 
-                    //if (Cells[i] >= 0) {
-                    var CellBndR = cellBndRule[iChunk[i]].Rule;
-                    QuadRule qrEdge = null;
+                    int jCell = Cells[i];
+                    int iFace = Faces[i];
 
-                    if(Faces[i] >= 0)
-                        qrEdge = this.CombineQr(null, CellBndR, Faces[i] - 333);
-                    else {                       
-                        qrEdge = this.CombineQrNonConformal(null, CellBndR, -Faces[i] - 333, EdgeIndices[i], Cells[i]);                        
+                    CellBoundaryQuadRule CellBndR;
+                    if(jCell < Jgeom) {
+                        // use locally computed rule
+
+                        CellBndR = cellBndRuleS[iGeomCells.GetRefElementIndex(jCell)][jCellGeom2Chunk[jCell]].Rule;
+                    } else {
+                        // use externally computed rule
+
+                        CellBndR = RulesForExternalCells[jCell - Jgeom];
                     }
+
+                    //if (Cells[i] >= 0) {
+
+                    QuadRule qrEdge = null;
+                    qrEdge = this.CombineQr(null, CellBndR, iFace);
+                    
 
                     qrEdge.Nodes.LockForever();
                     qrEdge.Weights.LockForever();
-                    Ret[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), qrEdge);
-                    //} else {
-                    //    Debug.Assert(Ret[i] != null);
-                    //}
+                    m_QuadRule[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), qrEdge);
                 }
             }
 
@@ -232,22 +325,98 @@ namespace BoSSS.Foundation.Quadrature {
             // ======
 
 #if DEBUG
-            for (int i = 0; i < Ret.Length; i++) {
-                Chunk c = Ret[i].Chunk;
+            for (int i = 0; i < m_QuadRule.Length; i++) {
+                Chunk c = m_QuadRule[i].Chunk;
                 for (int e = c.i0; e < c.JE; e++) {
-                    Debug.Assert(maskBitMask[e] == true);
+                    Debug.Assert(maskBitMask[e] == true, "Internal error: rule created for edge " + e + ", which was never requested.");
+                    maskBitMask[e] = false;
                 }
+            }
+
+            for (int i = 0; i < maskBitMask.Length; i++) {
+                Debug.Assert(maskBitMask[i] == false, "Internal error: rule for edge " + i + " was not created.");
+            }
+#endif
+        }
+
+
+        ChunkRulePair<QuadRule>[] m_QuadRule;
+
+        /// <summary>
+        /// mapping from edge index into <see cref="m_QuadRule"/>
+        /// </summary>
+        int[] m_EdgesToChunk;
+
+        /// <summary>
+        /// produces an edge quadrature rule
+        /// </summary>
+        /// <param name="mask">an edge mask</param>
+        /// <param name="order">desired order</param>
+        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+
+            // init & checks
+            // =============
+
+            Console.Error.WriteLine("   ----------------   EdgeRuleFromCellBoundaryFactory.GetQuadRuleSet: order = " + order);
+
+
+            if (!(mask is EdgeMask))
+                throw new ArgumentException("Expecting an edge mask.");
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
+            if(!mask.IsSubMaskOf(m_maxDomain))
+                throw new ArgumentException("Cannot return quadrature rule for mask larger than initially specified");
+#if DEBUG
+            var checkBitMask = new BitArray(grd.iGeomEdges.Count);
+#endif
+
+
+            var Ret = new List<ChunkRulePair<QuadRule>>();
+
+
+            foreach (var chunk in mask) {
+
+
+                for (int i = chunk.i0; i < chunk.JE; i++) {
+                    int iQuadRule = m_EdgesToChunk[chunk.i0];
+                    var pair = m_QuadRule[iQuadRule];
+                    if (pair.Chunk.i0 == i && pair.Chunk.Len == (chunk.JE - i)) {
+                        // the pair is an exact fit for the rest of the chunk
+                        Ret.Add(pair);
+                        i += pair.Chunk.Len - 1;
+                    } else {
+                        var newChunk = new Chunk() {
+                            i0 = i,
+                            Len = Math.Min(pair.Chunk.JE, chunk.JE) - i
+                        };
+                        Ret.Add(new ChunkRulePair<QuadRule>(newChunk, pair.Rule));
+                        i += newChunk.Len - 1;
+                    }
+#if DEBUG
+                    for (int i2 = Ret.Last().Chunk.i0; i2 < Ret.Last().Chunk.JE; i2++) {
+                        Debug.Assert(checkBitMask[i2] == false, "rule for respective edge is already set.");
+                        checkBitMask[i2] = true;
+                    }
+#endif
+                }
+
+            }
+
+
+#if DEBUG
+            var maskBitMask = mask.GetBitMask();
+            for(int i = 0; i < grd.iLogicalEdges.Count; i++) {
+                Debug.Assert(checkBitMask[i] == maskBitMask[i], "not all edges are covered by the rule.");
             }
 #endif
 
             return Ret;
-
-            
         }
 
         private QuadRule CombineQr(QuadRule qrEdge, CellBoundaryQuadRule givenRule, int iFace) {
             int D = grd.SpatialDimension;
-            var volSplx = m_cellBndQF.RefElement;
+            var volSplx = givenRule.Nodes.RefElement;
             int coD = D - 1;
             Debug.Assert(this.RefElement.SpatialDimension == coD);
 
@@ -329,12 +498,19 @@ namespace BoSSS.Foundation.Quadrature {
 
         }
 
+        /*
         // Basically the same, but drop nodes, that are not located on the edge!
         private QuadRule CombineQrNonConformal(QuadRule qrEdge, CellBoundaryQuadRule givenRule, int iFace, int iEdge, int jCell) {
             int D = grd.SpatialDimension;
             var volSplx = m_cellBndQF.RefElement;
             int coD = D - 1;
             Debug.Assert(this.RefElement.SpatialDimension == coD);
+
+
+            //if (grd.MpiRank == 1 && this.m_cellBndQF.GetType().ToString().ToLowerInvariant().Contains("pointqrf")) {
+            //    Debugger.Launch();
+            //}
+
 
             // extract edge rule
             // -----------------
@@ -464,6 +640,7 @@ namespace BoSSS.Foundation.Quadrature {
             return qrEdge;
 
         }
+        */
 
         /// <summary>
         /// total difference between quadrature weights on both sides of an edge
@@ -473,13 +650,6 @@ namespace BoSSS.Foundation.Quadrature {
             private set;
         }
 
-        /// <summary>
-        /// the edge simplex
-        /// </summary>
-        public RefElement RefElement {
-            get {
-                return m_cellBndQF.RefElement.FaceRefElement;
-            }
-        }
+       
     }
 }

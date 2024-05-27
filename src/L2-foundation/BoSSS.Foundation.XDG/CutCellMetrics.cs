@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections;
@@ -166,6 +167,7 @@ namespace BoSSS.Foundation.XDG {
                 int[,] E2C = gd.iLogicalEdges.CellIndices;
 
                 var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+                //var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
 
                 // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
                 // 1st index: cell
@@ -223,13 +225,38 @@ namespace BoSSS.Foundation.XDG {
 
                     var cellSurf = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 2);
 
+
                     for(int e = 0; e < EE; e++) {
+
                         double a = edgArea[e];
                         int jCell0 = E2C[e, 0];
                         int jCell2 = E2C[e, 1];
                         cellSurf[jCell0] += a;
                         if(jCell2 >= 0)
                             cellSurf[jCell2] += a;
+
+                    }
+
+
+                    
+                    {
+
+                        BitArray edgeRuleArea = new BitArray(EE);
+                        // visualization of edge surface
+
+                        for (int e = 0; e < EE; e++) {
+                            edgeRuleArea[e] = true;
+                        }
+
+                        int rnk = gd.MpiRank;
+                        var trk = this.XDGSpaceMetrics.Tracker;
+                        var SpcName = trk.GetSpeciesName(spc);
+                        
+                        EdgeMask edgeruleAreaMask = new EdgeMask(gd, edgeRuleArea, MaskType.Geometrical);
+                        edgeruleAreaMask.SaveToTextFile("EdgeArea-" + SpcName + "r" + rnk + ".csv", WriteHeader: false,
+                            (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => edgArea[LogicalItemIndex] / gd.Edges.GetEdgeArea(LogicalItemIndex)
+                            );
+
 
                     }
 
@@ -358,7 +385,7 @@ namespace BoSSS.Foundation.XDG {
         public Dictionary<SpeciesId, MultidimensionalArray> CutLineLength {
             get {
                 if(m_CutLineLength == null) {
-                    ComputeNonAgglomeratedCutLineMetricx();
+                    ComputeNonAgglomeratedCutLineMetrics();
                 }
                 return m_CutLineLength;
             }
@@ -374,7 +401,7 @@ namespace BoSSS.Foundation.XDG {
         public Dictionary<SpeciesId, MultidimensionalArray> IntersectionLength {
             get {
                 if (m_IntersectionLength == null) {
-                    ComputeNonAgglomeratedCutLineMetricx();
+                    ComputeNonAgglomeratedCutLineMetrics();
                 }
                 return m_IntersectionLength;
             }
@@ -383,7 +410,7 @@ namespace BoSSS.Foundation.XDG {
         Dictionary<SpeciesId, MultidimensionalArray> m_IntersectionLength;
 
 
-        void ComputeNonAgglomeratedCutLineMetricx() {
+        void ComputeNonAgglomeratedCutLineMetrics() {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
 
@@ -396,7 +423,8 @@ namespace BoSSS.Foundation.XDG {
                 int NoSpc = species.Count();
                 int[,] E2C = gd.iLogicalEdges.CellIndices;
 
-                var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+                //var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+                var schH = this.XDGSpaceMetrics.XQuadSchemeHelper;
 
                 // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
                 // 1st index: cell
@@ -414,9 +442,9 @@ namespace BoSSS.Foundation.XDG {
                 for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                     SpeciesId spc = species[iSpc];
 
-                    // compute cut edge area
-                    // ---------------------
-                    MultidimensionalArray edgArea = MultidimensionalArray.Create(EE);
+                    // compute cut line measure
+                    // ------------------------
+                    MultidimensionalArray edgMeas = MultidimensionalArray.Create(EE);
                     
                     var cutLineScheme = schH.Get_SurfaceElement_EdgeQuadScheme(spc, 0);
                     var cutLineRule = cutLineScheme.Compile(gd, this.CutCellQuadratureOrder);
@@ -433,11 +461,35 @@ namespace BoSSS.Foundation.XDG {
                         {
                             for (int i = 0; i < Length; i++) {
                                 int iEdge = i + i0;
-                                Debug.Assert(edgArea[iEdge] == 0);
-                                edgArea[iEdge] = ResultsOfIntegration[i, 0];
-                                Debug.Assert(!(double.IsNaN(edgArea[iEdge]) || double.IsInfinity(edgArea[iEdge])));
+                                Debug.Assert(edgMeas[iEdge] == 0);
+                                edgMeas[iEdge] = ResultsOfIntegration[i, 0];
+                                Debug.Assert(!(double.IsNaN(edgMeas[iEdge]) || double.IsInfinity(edgMeas[iEdge])));
                             }
                         }).Execute();
+
+                    {
+
+                        // visualization of edge surface
+
+                        BitArray edgeRuleArea = new BitArray(EE);
+
+                        for (int e = 0; e < EE; e++) {
+                            
+                            edgeRuleArea[e] = edgMeas[e] > 0;
+                        }
+
+                        int rnk = gd.MpiRank;
+                        var trk = this.XDGSpaceMetrics.Tracker;
+                        var SpcName = trk.GetSpeciesName(spc);
+
+                        EdgeMask edgeruleAreaMask = new EdgeMask(gd, edgeRuleArea, MaskType.Geometrical);
+                        edgeruleAreaMask.SaveToTextFile("CutLine-" + SpcName + "r" + rnk + ".csv", WriteHeader: false,
+                            (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => edgMeas[LogicalItemIndex]
+                            );
+
+
+                    }
+
 
                     // sum up edges for surface
                     // ------------------------
@@ -447,7 +499,7 @@ namespace BoSSS.Foundation.XDG {
                     var cutLineInCell = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 0);
 
                     for (int e = 0; e < EE; e++) {
-                        double a = edgArea[e];
+                        double a = edgMeas[e];
                         int jCell0 = E2C[e, 0];
                         int jCell2 = E2C[e, 1];
                         cutLineInCell[jCell0] += a;

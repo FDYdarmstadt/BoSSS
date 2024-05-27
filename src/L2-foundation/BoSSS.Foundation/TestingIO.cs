@@ -621,7 +621,7 @@ namespace BoSSS.Foundation {
             Error.Scale(-1);
             Error.Acc(1.0, f);
 
-            Error.Identification = "Error-" + f.Identification;
+            Error.Identification = f.Identification + "-Error";
             return Error;
         }
 

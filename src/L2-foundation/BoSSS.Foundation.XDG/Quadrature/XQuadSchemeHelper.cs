@@ -30,7 +30,11 @@ using System.Linq;
 namespace BoSSS.Foundation.XDG {
 
     /// <summary>
-    /// Provides quadrature schemes for typical XDG-cases;
+    /// Provides quadrature schemes 
+    /// This is a driver-class for the creation of various quadrature schemes.
+    /// All of these have different, involved, constructor calls.
+    /// Via this utility class, a somewhat unified access to the creation of these rules is provided.
+    /// (see also <see cref="MomentFittingVariant"/>).
     /// </summary>
     public class XQuadSchemeHelper {
 
@@ -150,8 +154,8 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// All edges which are cut by a level-set.
-        /// 1st index: volume reference element
-        /// 2nd index: level set
+        /// - 1st index: volume reference element
+        /// - 2nd index: level set
         /// </summary>
         /// <remarks>
         /// Be aware that this might contain also edges like <c>e</c>,
@@ -175,18 +179,20 @@ namespace BoSSS.Foundation.XDG {
         /// reference element <paramref name="Kref"/>.
         /// </summary>
         private EdgeMask GetCutEdges(RefElement Kref, int iLevSet) {
-            int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref);
+            IGridData gdat = this.XDGSpaceMetrics.GridDat;
+            int iKref = gdat.iGeomCells.RefElements.IndexOf(Kref);
             return m_CutEdges[iKref, iLevSet];
         }
 
-        /// <summary>
-        /// all edges of cells which are cut by level set #<paramref name="iLevSet"/> and which belong to a cell with
-        /// reference element <paramref name="Kref"/>.
-        /// </summary>
-        private EdgeMask GetHMFEdgesDomain(RefElement Kref, int iLevSet) {
-            int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref, (a, b) => object.ReferenceEquals(a, b));
-            return m_HMFEdgesDomain[iKref, iLevSet];
-        }
+
+        ///// <summary>
+        ///// all edges of cells which are cut by level set #<paramref name="iLevSet"/> and which belong to a cell with
+        ///// reference element <paramref name="Kref"/>.
+        ///// </summary>
+        //private EdgeMask GetHMFEdgesDomain(RefElement Kref, int iLevSet) {
+        //    int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref, (a, b) => object.ReferenceEquals(a, b));
+        //    return m_HMFEdgesDomain[iKref, iLevSet];
+        //}
 
         /// <summary>
         /// initialized by the constructor to avoid MPI-deadlocks;
@@ -363,14 +369,16 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Quadrature for edges, i.e. for each cut background-cell $` K_j `$ and each species $`\mathfrak{s}`$ a quadrature to approximate
-        /// \f[
+        /// Quadrature for edges, i.e. for each cut background-cell $` K_j `$ and each species $` \mathfrak{s} `$ a quadrature to approximate
+        /// ```math
         ///    \int_{\partial K_j \cap \mathfrak{s} } \ldots \mathrm{dS} .
-        /// \f]
+        /// ```
         /// </summary>
         public EdgeQuadratureScheme GetEdgeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, EdgeMask IntegrationDomain = null, int? fixedOrder = null) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
+
+            IGridData gdat = XDGSpaceMetrics.GridDat;
 
             // determine domain
             // ================
@@ -383,9 +391,10 @@ namespace BoSSS.Foundation.XDG {
                 EdgeQuadratureScheme edgeQrIns = new EdgeQuadratureScheme(UseDefaultFactories, allRelevantEdges);
 
                 // overwrite with cut-cell-rules in cut-cells:
-                foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                foreach (var Kref in gdat.iGeomCells.RefElements) {
                     for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                         if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
+                            
                             EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet).Intersect(allRelevantEdges);
 #if DEBUG
                             CellMask difference = cutEdges.GetAdjacentCells().Except(XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
@@ -400,9 +409,10 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 // overwrite with double-cut-cell-rules in double-cut-cells:
-                foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                foreach (var Kref in gdat.iGeomCells.RefElements) {
                     for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                         if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
+
                             EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet).Intersect(allRelevantEdges);
                             var jmp = IdentifyWingA(iLevSet, sp);
                             //handle rules for cells/edges where two levelsets are present

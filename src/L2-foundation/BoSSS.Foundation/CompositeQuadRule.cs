@@ -168,8 +168,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// Pairs of quadrature rules and the domain on which they should be
         /// applied
         /// </summary>
-        public List<IChunkRulePair<TQuadRule>> chunkRulePairs =
-            new List<IChunkRulePair<TQuadRule>>();
+        public List<IChunkRulePair<TQuadRule>> chunkRulePairs = new List<IChunkRulePair<TQuadRule>>();
 
         #region ICompositeQuadRule<TQuadRule> Members
 

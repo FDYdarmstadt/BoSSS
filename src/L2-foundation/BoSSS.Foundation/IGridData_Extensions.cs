@@ -199,6 +199,94 @@ namespace BoSSS.Foundation.Grid {
         }
 
 
+        /// <summary>
+        /// Returns a geometrical cell indices (<see cref="IGeometricalCellsData"/>) for a logical cell index <paramref name="j"/>.
+        /// </summary>
+        /// <param name="g">
+        /// The grid object.
+        /// </param>
+        /// <param name="j">
+        /// A logical cell index.
+        /// </param>
+        /// <param name="iPart">
+        /// sub-index of geometrical cell index within the logical cell; for standard grids, this is always 0.
+        /// </param>
+        /// <returns>
+        /// An enumeration of geometrical cell indices.
+        /// </returns>
+        public static int GetGeometricCellIndex(this IGridData g, int j, int iPart) {
+            if (j < 0)
+                throw new ArgumentException();
+            if (j >= g.iLogicalCells.Count)
+                throw new ArgumentException();
+
+            if (g.iLogicalCells.AggregateCellToParts == null || g.iLogicalCells.AggregateCellToParts[j] == null) {
+                if (iPart != 0)
+                    throw new ArgumentException("part index out-of-range");
+                return j;
+            }
+
+            return g.iLogicalCells.AggregateCellToParts[j][iPart];
+        }
+
+        /// <summary>
+        /// Returns a logical cell indices (<see cref="IGeometricalCellsData"/>) for a geometrical cell index <paramref name="jG"/>.
+        /// </summary>
+        /// <param name="g">
+        /// The grid object.
+        /// </param>
+        /// <param name="jG">
+        /// A geometrical cell index.
+        /// </param>
+        /// <returns>
+        /// the logical cell index related to geometrical cell <paramref name="jG"/>; for standard grids, this is always identical to <paramref name="jG"/>.
+        /// </returns>
+        public static int GetLogicalCellIndex(this IGridData g, int jG) {
+            if (jG < 0)
+                throw new ArgumentException();
+            if (jG >= g.iGeomCells.Count)
+                throw new ArgumentException();
+
+            if(g.iGeomCells.GeomCell2LogicalCell == null) {
+                return jG;
+            } else {
+                return g.iGeomCells.GeomCell2LogicalCell[jG];
+            }
+        }
+
+        /// <summary>
+        /// Returns a geometrical cell indices (<see cref="IGeometricalCellsData"/>) for a logical cell index <paramref name="j"/>.
+        /// </summary>
+        /// <param name="g">
+        /// The grid object.
+        /// </param>
+        /// <param name="jG">
+        /// A geometrical cell index.
+        /// </param>
+        /// <returns>
+        /// the sub-index of geometrical cell <paramref name="jG"/> index within the logical cell; for standard grids, this is always 0.
+        /// </returns>
+        public static int GetGeometricalPartIndex(this IGridData g, int jG) {
+            if (jG < 0)
+                throw new ArgumentException();
+            if (jG >= g.iGeomCells.Count)
+                throw new ArgumentException();
+
+            if(g.iLogicalCells.AggregateCellToParts == null)
+                return 0;
+
+            int jLog = GetLogicalCellIndex(g, jG);
+
+            if(g.iLogicalCells.AggregateCellToParts[jLog] == null)
+                return 0;
+
+            return g.iLogicalCells.AggregateCellToParts[jLog].IndexWhere(_jG => _jG == jG);
+        }
+
+
+
+
+
         class Mask2GeomChunks_Enum : IEnumerator<Tuple<int, int>> {
 
             public int MaxVecLen = 1;

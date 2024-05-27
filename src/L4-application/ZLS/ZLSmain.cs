@@ -16,9 +16,6 @@ namespace ZwoLevelSetSolver {
 
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
-            BoSSS.Solution.Application.DeleteOldPlotFiles();
-            //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
             RunSolver(args);
             //ConditionNumberScaling();

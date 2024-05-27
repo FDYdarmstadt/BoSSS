@@ -40,6 +40,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 CutCellQuadOrder = __quadorder;
                 m_qfHelper = qfHelper;
+                qfHelper.CreateRulesAndMPIExchgange(__quadorder);
                 this.Tracker = lsTrk;
                 this.m_SpeciesList = speciesIds.ToArray();
 

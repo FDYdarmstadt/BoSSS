@@ -25,6 +25,10 @@ using BoSSS.Solution;
 using System.Diagnostics;
 using System.ComponentModel;
 using BoSSS.Solution.Tecplot;
+using System.Xml.Linq;
+using System.Collections;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace ZwoLevelSetSolver {
 
@@ -154,14 +158,15 @@ namespace ZwoLevelSetSolver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetTimestep();
+
+            
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             LastSolverSuccess = Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"done with time step {TimestepNo}, Solver success? {LastSolverSuccess}");
             Assert.IsTrue(LastSolverSuccess, "Solver did not converge");
+            
 
-            //OperatorAnalysis();
-            //base.TerminationKey = true;
-            //Debugger.Launch();
+
             {
                 var Phi0 = this.LsUpdater.LevelSets.ElementAt(0).Value.C0LevelSet;
                 var Phi1 = this.LsUpdater.LevelSets.ElementAt(1).Value.C0LevelSet;
@@ -174,12 +179,19 @@ namespace ZwoLevelSetSolver {
                 LsChecker.AddDGField(Phi1);
 
                 var Species = new[] { "A", "B", "C" };
-                int order = this.LsTrk.GetCachedOrders().Max();
+                int order = this.LsTrk.GetCachedOrders().Count > 0 ? this.LsTrk.GetCachedOrders().Max() : 1;
                 var metrics = this.LsTrk.GetXDGSpaceMetrics(Species, order).CutCellMetrics;
 
                 int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
                 var cutLineViz = new List<ConventionalDGField>();
+
+                {
+                    var doubleCutCells = new SinglePhaseField(new Basis(this.Grid, 0), "DoubleCut");
+                    doubleCutCells.AccConstant(1.0, metrics.XDGSpaceMetrics.XQuadSchemeHelper.GetDoubleCutCells(0));
+                    LsChecker.AddDGField(doubleCutCells);
+                    cutLineViz.Add(doubleCutCells);
+                }
 
                 foreach(string spc in Species) {
                     var spcId = LsTrk.GetSpeciesId(spc);
@@ -190,8 +202,32 @@ namespace ZwoLevelSetSolver {
                     var cutLine = metrics.CutLineLength[spcId].To1DArray().GetSubVector(0, J);
                     var intersectLine = metrics.IntersectionLength[spcId].To1DArray().GetSubVector(0, J);
 
+                    if(spc == "A") {
+                        var intersectMask = new BitArray(J);
+                        var cutLineMask = new BitArray(J);
+
+                        for(int j = 0; j < J; j++) {
+                            if(intersectLine[j] > 0 || cutLine[j] > 0)
+                                Console.WriteLine($"  ---ls intersect {j}: {intersectLine[j]}   \tcut line: {cutLine[j]}");
+
+                            intersectMask[j] = intersectLine[j] > 0;
+                            cutLineMask[j] = cutLine[j] > 0;
+                        }
+
+                        CellMask _intersect = new CellMask(this.GridData, intersectMask, MaskType.Logical);
+                        _intersect.SaveToTextFile("Intersect-" + spc + "r" + this.MPIRank + ".csv", WriteHeader: false,
+                            (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => intersectLine[LogicalItemIndex]
+                            );
+
+                        CellMask _cutLine = new CellMask(this.GridData, cutLineMask, MaskType.Logical);
+                        _cutLine.SaveToTextFile("CellCutLine-" + spc + "r" + this.MPIRank + ".csv", WriteHeader: false,
+                            (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => cutLine[LogicalItemIndex]
+                            );
+                    }
+
                     SinglePhaseField cutLineDG = new SinglePhaseField(new Basis(this.Grid, 0), "cutline-Spc#" + spc);
-                    cutLineDG.CoordinateVector.SetV(cutLine);
+                    for(int j = 0; j < J; j++)
+                        cutLineDG.SetMeanValue(j, cutLine[j]);
                     cutLineViz.Add(cutLineDG);
 
                     LsChecker.AddVector("Volume-" + spc, vol);
@@ -213,20 +249,35 @@ namespace ZwoLevelSetSolver {
 
                     var refValue = cutLineViz.Single(f => f.Identification == name).CloneAs();
                     LsChecker.OverwriteDGField(refValue);
-                    refValue.Identification = "Reference-" + refValue.Identification;
+                    refValue.Identification = refValue.Identification + "-Reference";
                     cutLineViz.Add(refValue);
                 }
+
+                {
+                    var err = LsChecker.LocalError(cutLineViz.Single(f => f.Identification == "DoubleCut"));
+                    cutLineViz.Add(err);
+
+                    var refValue = cutLineViz.Single(f => f.Identification == "DoubleCut").CloneAs();
+                    LsChecker.OverwriteDGField(refValue);
+                    refValue.Identification = refValue.Identification + "-Reference";
+                    cutLineViz.Add(refValue);
+                }
+
+
+
+                cutLineViz.Add(LsTrk.LevelSets[0] as LevelSet);
+                cutLineViz.Add(LsTrk.LevelSets[1] as LevelSet);
 
 
                 Assert.Less(LsChecker.AbsError(Phi0), 1.0e-8, "Mismatch in level-set 0 between single-core and parallel run.");
                 Assert.Less(LsChecker.AbsError(Phi1), 1.0e-8, "Mismatch in level-set 1 between single-core and parallel run.");
 
                 foreach(string spc in Species) {
-                    Console.WriteLine("    Volume comparison error    : " + LsChecker.AbsError("Volume-" + spc));
-                    Console.WriteLine("    Surface comparison error   : " + LsChecker.AbsError("Interface-" + spc));
-                    Console.WriteLine("    Cell surf comparison error : " + LsChecker.AbsError("CellBndy-" + spc));
-                    Console.WriteLine("    Cut line comparison error  : " + LsChecker.AbsError("cutLine-" + spc));
-                    Console.WriteLine("    Intersection error         : " + LsChecker.AbsError("intersectLine-" + spc));
+                    Console.WriteLine("    " + spc + " Volume comparison error    : " + LsChecker.AbsError("Volume-" + spc));
+                    Console.WriteLine("    " + spc + "Surface comparison error   : " + LsChecker.AbsError("Interface-" + spc));
+                    Console.WriteLine("    " + spc + " Cell surf comparison error : " + LsChecker.AbsError("CellBndy-" + spc));
+                    Console.WriteLine("    " + spc + " Cut line comparison error  : " + LsChecker.AbsError("cutLine-" + spc));
+                    Console.WriteLine("    " + spc + " Intersection error         : " + LsChecker.AbsError("intersectLine-" + spc));
                 }
 
                 Console.WriteLine("    VelocityX comparison error     : " + LsChecker.LocalError(this.Velocity[0]).L2NormAllSpecies());

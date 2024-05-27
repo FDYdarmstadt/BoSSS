@@ -120,6 +120,10 @@ namespace BoSSS.Foundation.XDG {
 #endif
             var CutCellsQuadType = this.CutCellQuadratureType;
 
+
+            Console.Error.WriteLine($" ###################  CutCellsQuadOrder = {CutCellsQuadOrder} ");
+
+
             //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
             var key = Tuple.Create(_Spc, this.CutCellQuadratureType, CutCellsQuadOrder);

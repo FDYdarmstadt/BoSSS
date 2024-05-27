@@ -284,7 +284,9 @@ namespace ilPSP.Utils {
         bool m_UseJson = false;
 
         /// <summary>
-        /// Whether to use a JSON formatter or the binary formatter
+        /// Whether to use a JSON formatter (text) or the binary formatter
+        /// - true: use text/JSON
+        /// - false: use binary
         /// </summary>
         public bool UseJson {
             get {
@@ -754,17 +756,19 @@ namespace ilPSP.Utils {
         /// Exchanges serialize-able data objects in between all MPI processes.
         /// </summary>
         /// <param name="objects_to_send">
-        /// Data to send.<br/>
-        /// keys: MPI rank of the process to which <em>o</em> should be send to<br/>
-        /// values: some object <em>o</em>
+        /// Data to send.
+        /// - keys: MPI rank of the process to which <em>o</em> should be send to
+        /// - values: some object <em>o</em>
         /// </param>
         /// <param name="comm"></param>
         /// <returns>
-        /// Received data.<br/>
-        /// keys: MPI rank of the process from which <em>q</em> has been received.<br/>
-        /// values: some object <em>q</em>
+        /// Received data.
+        /// - keys: MPI rank of the process from which <em>q</em> has been received.
+        /// - values: some object <em>q</em>
         /// </returns>
-        /// <param name="__UseJSON"></param>
+        /// <param name="__UseJSON">
+        /// <see cref="UseJson"/>
+        /// </param>
         public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm, bool __UseJSON = false) {
             using (var sms = new SerialisationMessenger(comm)) {
                 sms.UseJson = __UseJSON;
