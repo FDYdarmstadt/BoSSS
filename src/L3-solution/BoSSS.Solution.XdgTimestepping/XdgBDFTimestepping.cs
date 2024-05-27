@@ -1057,7 +1057,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 
                 // assemble matrix & affine part
-                Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
+                Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0, "expecting a zero operator matrix");
                 Debug.Assert(OpAffine.L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);

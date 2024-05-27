@@ -348,6 +348,9 @@ namespace BoSSS.Foundation.Grid {
             return m_BitMask;
         }
 
+       
+
+
         /// <summary>
         /// Creates an execution mask which only contains elements that are
         /// included in this mask and in the given mask

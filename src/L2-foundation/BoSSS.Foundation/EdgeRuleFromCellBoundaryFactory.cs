@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.Quadrature {
             // =============
 
             var mask = m_maxDomain;
-            Console.Error.WriteLine("   ----------------   EdgeRuleFromCellBoundaryFactory.GetQuadRuleSet: order = " + order);
+            //Console.Error.WriteLine("   ----------------   EdgeRuleFromCellBoundaryFactory.GetQuadRuleSet: order = " + order);
 
 
             if (!(mask is EdgeMask))
@@ -105,7 +105,7 @@ namespace BoSSS.Foundation.Quadrature {
                 throw new ArgumentException("Expecting a geometrical mask.");
 
 #if DEBUG
-            var maskBitMask = mask.GetBitMask();
+            var maskBitMask = mask.GetBitMask().CloneAs();
 #endif
 
             var Edg2Cel = this.grd.iGeomEdges.CellIndices;
@@ -149,7 +149,7 @@ namespace BoSSS.Foundation.Quadrature {
                     int jCell0 = Edg2Cel[iEdge, 0];
                     int jCell1 = Edg2Cel[iEdge, 1];
                     int iKref0 = iGeomCells.GetRefElementIndex(jCell0);
-                    int iKref1 = iGeomCells.GetRefElementIndex(jCell1);
+                    int iKref1 = jCell1 >= 0 ? iGeomCells.GetRefElementIndex(jCell1) : -1234;
 
 
                     bool conf0 = grd.iGeomEdges.IsEdgeConformalWithCell1(iEdge);
@@ -159,16 +159,16 @@ namespace BoSSS.Foundation.Quadrature {
                         throw new NotSupportedException("For an edge that is not conformal with at least one cell, no edge rule can be created from a cell boundary rule.");
                     }
 
-                    CellBitMask[iKref0][jCell0] = true;
-                    if(jCell1 < J)
-                        CellBitMask[iKref1][jCell1] = true;
-
+                    
                     if (conf0) {
                         // use the quadrature rule from the IN-cell
+                        // no need to compute rule for the out-cell)
+                        CellBitMask[iKref0][jCell0] = true;
                         Cells[i] = jCell0;
                         Faces[i] = Edg2Fac[iEdge, 0];
-                    } else if(conf1 && jCell1 < J) {
+                    } else if(conf1 && jCell1 >= 0 && jCell1 < J) {
                         // use the quadrature rule from the OUT-cell
+                        CellBitMask[iKref1][jCell1] = true;
                         Cells[i] = jCell1;
                         Faces[i] = Edg2Fac[iEdge, 1];
                     } else {
@@ -185,7 +185,10 @@ namespace BoSSS.Foundation.Quadrature {
                     if (conf0 == true && conf1 == false && jCell1 >= J) {
                         // +++++++++++++++++++++++++++++++++++++++++++++
                         // cell must be communicated to other processor 
+                        // (the out-cell is external, but we are unable to compute a quadrature rule for it)
                         // +++++++++++++++++++++++++++++++++++++++++++++
+
+                        Debug.Assert(CellBitMask[iKref0][jCell0]);
 
                         int jCell1log = grd.GetLogicalCellIndex(jCell1);
                         long jCell2glob = grd.iParallel.GlobalIndicesExternalCells[jCell1log - J];
@@ -318,6 +321,13 @@ namespace BoSSS.Foundation.Quadrature {
                     qrEdge.Nodes.LockForever();
                     qrEdge.Weights.LockForever();
                     m_QuadRule[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), qrEdge);
+#if DEBUG
+                    for (int e = m_QuadRule[i].Chunk.i0; e < m_QuadRule[i].Chunk.JE; e++) {
+                        Debug.Assert(maskBitMask[e] == true, "quadrature rule outside of requested mask");
+                    }
+#endif
+
+                    m_EdgesToChunk[EdgeIndices[i]] = i;
                 }
             }
 
@@ -379,7 +389,7 @@ namespace BoSSS.Foundation.Quadrature {
 
 
                 for (int i = chunk.i0; i < chunk.JE; i++) {
-                    int iQuadRule = m_EdgesToChunk[chunk.i0];
+                    int iQuadRule = m_EdgesToChunk[i];
                     var pair = m_QuadRule[iQuadRule];
                     if (pair.Chunk.i0 == i && pair.Chunk.Len == (chunk.JE - i)) {
                         // the pair is an exact fit for the rest of the chunk

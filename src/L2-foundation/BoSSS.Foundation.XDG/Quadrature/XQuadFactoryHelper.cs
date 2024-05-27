@@ -121,9 +121,13 @@ namespace BoSSS.Foundation.XDG {
 
             this.m_CutEdges4LevelSet = new EdgeMask[lsDatas.Length];
             for(int iLs = 0; iLs < lsDatas.Length; iLs++) {
-                m_CutEdges4LevelSet[iLs] = lsDatas[iLs].Region.GetCutCellSubgrid4LevSet(iLs).InnerEdgesMask.ToGeometicalMask();
+                var cutCellSubGrid = lsDatas[iLs].Region.GetCutCellSubgrid4LevSet(iLs);
+                var innerCut = cutCellSubGrid.InnerEdgesMask;
+                var bndyCut = cutCellSubGrid.AllEdgesMask.Intersect((gdat as GridData).BoundaryEdges);
+
+                m_CutEdges4LevelSet[iLs] = innerCut.Union(bndyCut).ToGeometicalMask();
             }
-        }
+    }
 
 
         /// <summary>
@@ -134,18 +138,14 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Triggers the creation of all quadrature rules, so that later, the can be retrieved from the cache.
+        /// This is supposed to give a better runtime behavior, since the creation of quadrature rules is quite expensive.
         /// Furthermore, in the creation of quadrature rules there are some parts where MPI communication is needed or makes things more robust.
         /// One example are hanging node on MPI boundaries; There, a quadrature rule might be difficult to be created right locally.
-        /// 
-        /// 
         /// </summary>
-        /// <param name=""></param>
         public void CreateRulesAndMPIExchgange(int __quadorder) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
 
-                var allFactories = m_SurfaceElement_BoundaryRuleFactory.Values.ToArray();
-                allFactories = allFactories.Cat(m_EdgeRuleFactory1.Values);
 
                 // populate the caches...
                 foreach(var KrefEdge in this.gdat.iGeomEdges.EdgeRefElements) {
@@ -157,6 +157,8 @@ namespace BoSSS.Foundation.XDG {
                 }
                 
                 // perform the MPI exchange
+                var allFactories = m_SurfaceElement_BoundaryRuleFactory.Values.ToArray();
+                allFactories = allFactories.Cat(m_EdgeRuleFactory1.Values);
                 foreach (EdgeRuleFromCellBoundaryFactory f in  allFactories) {
                     f.CreateRulesAndMPIExchgange(__quadorder);
                 }
@@ -216,7 +218,7 @@ namespace BoSSS.Foundation.XDG {
                     LineAndPoint_in2D[levSetIndex, iKref] = new LineAndPointQuadratureFactory(
                         KrefVol,
                         this.m_LevelSetDatas[levSetIndex],
-                        CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes);
+                        true);// CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes);
                 }
 
                 return LineAndPoint_in2D[levSetIndex, iKref].GetPointFactory();
@@ -391,23 +393,13 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory for the cut edge integrals.
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefEdge) {
-
-            //void Phi(int x, NodeSet nodes, MultidimensionalArray inU, MultidimensionalArray outU)
-            //{
-            //    ((LevelSet)m_LevelSetDatas[levSetIndex].LevelSet).EvaluateEdge(x, 1, nodes, inU, outU);
-            //    inU.Scale(-1);
-            //};
-
-            //return new BruteForceQuadratureFactory(new BruteForceEdgeScheme(Phi));
-
+                        
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
             int D = gdat.SpatialDimension;
 
-            if (!gdat.iGeomEdges.EdgeRefElements.Contains(KrefEdge, (a, b) => object.ReferenceEquals(a, b)))
-                throw new ArgumentException();
             int iKref = Array.IndexOf(gdat.iGeomEdges.EdgeRefElements, KrefEdge);
             if(iKref < 0)
-                throw new ArgumentException("Expecting an **Edge** reference element.");
+                throw new ArgumentException($"Expecting an **Edge** reference element, but got {KrefEdge}.");
 
             CheckJmp(jmp);
 

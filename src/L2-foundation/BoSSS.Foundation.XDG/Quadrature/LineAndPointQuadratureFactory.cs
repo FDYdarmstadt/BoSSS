@@ -382,8 +382,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             // ===========================
 
             
-            Console.Error.WriteLine("   .......................   LineAndPointQuadratureFactory.GetQuadRuleSet_Internal: order = " + order);
-
+            
             var PointMeasure_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
             var LineMeasurePos_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
             var LineMeasureNeg_result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);

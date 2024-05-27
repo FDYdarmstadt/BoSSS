@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
@@ -24,6 +25,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -247,7 +249,7 @@ namespace BoSSS.Foundation.Grid {
             if (jG >= g.iGeomCells.Count)
                 throw new ArgumentException();
 
-            if(g.iGeomCells.GeomCell2LogicalCell == null) {
+            if (g.iGeomCells.GeomCell2LogicalCell == null) {
                 return jG;
             } else {
                 return g.iGeomCells.GeomCell2LogicalCell[jG];
@@ -255,7 +257,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Returns a geometrical cell indices (<see cref="IGeometricalCellsData"/>) for a logical cell index <paramref name="j"/>.
+        /// Returns a geometrical cell indices (<see cref="IGeometricalCellsData"/>) for a logical cell index <paramref name="jG"/>.
         /// </summary>
         /// <param name="g">
         /// The grid object.
@@ -272,12 +274,12 @@ namespace BoSSS.Foundation.Grid {
             if (jG >= g.iGeomCells.Count)
                 throw new ArgumentException();
 
-            if(g.iLogicalCells.AggregateCellToParts == null)
+            if (g.iLogicalCells.AggregateCellToParts == null)
                 return 0;
 
             int jLog = GetLogicalCellIndex(g, jG);
 
-            if(g.iLogicalCells.AggregateCellToParts[jLog] == null)
+            if (g.iLogicalCells.AggregateCellToParts[jLog] == null)
                 return 0;
 
             return g.iLogicalCells.AggregateCellToParts[jLog].IndexWhere(_jG => _jG == jG);
@@ -406,9 +408,9 @@ namespace BoSSS.Foundation.Grid {
                                 Current_jLog = Current_Chunk.i0;
                                 Debug.Assert(Current_Chunk.i0 > iE, "strange overlap of chunks");
 
-                                if(Current_Chunk.i0 - iE > 0) {
+                                if (Current_Chunk.i0 - iE > 0) {
                                     // unable to concat chunks
-                                    if(i0 == iE) {
+                                    if (i0 == iE) {
                                         // chunk is still empty
                                         i0 = Current_Chunk.i0;
                                         iE = i0;
@@ -431,7 +433,7 @@ namespace BoSSS.Foundation.Grid {
                         // +++++++++++++++++++++++++++++++
 
                         // hehe
-                        throw new NotImplementedException("todo"); 
+                        throw new NotImplementedException("todo");
                     }
 
                     iE++;
@@ -772,6 +774,8 @@ namespace BoSSS.Foundation.Grid {
         /// Returns a mask which contains all boundary edges
         /// </summary>
         static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
+            if (gdat is GridData gdat2)
+                return gdat2.BoundaryEdges;
 
             int E = gdat.iLogicalEdges.Count;
             BitArray boundaryEdges = new BitArray(E);
@@ -781,7 +785,7 @@ namespace BoSSS.Foundation.Grid {
 
             // loop over all Edges
             for (int e = 0; e < E; e++) {
-                int Cel1 = CellIndices[e, 0];
+                //int Cel1 = CellIndices[e, 0];
                 int Cel2 = CellIndices[e, 1];
 
                 if (Cel2 < 0) {
@@ -794,6 +798,58 @@ namespace BoSSS.Foundation.Grid {
             return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
         }
 
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        static public EdgeMask GetEdges4RefElement(this IGridData gdat, RefElement KrefEdge) {
+            return gdat.iGeomEdges.GetEdges4RefElement(KrefEdge);
+        }
+
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        public static CellMask GetCells4Refelement(this IGridData gdat, RefElement Kref) {
+            return gdat.iGeomCells.GetCells4Refelement(Kref);
+        }
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        public static CellMask GetCells4Refelement(this IGridData gdat, int iKref) {
+            return gdat.iGeomCells.GetCells4Refelement(gdat.iGeomCells.RefElements[iKref]);
+        }
+
+
+        /// <summary>
+        /// Returns a mask which contains all edges for reference element <paramref name="KrefEdge"/>, which bound to a cell with reference element <paramref name="KrefVol"/>.
+        /// </summary>
+        static public EdgeMask GetEdges4RefElement(this IGridData gdat, RefElement KrefVol, RefElement KrefEdge) {
+            var bMask = new BitArray(gdat.iGeomEdges.Count);
+
+            int iKrefVol = gdat.iGeomCells.RefElements.IndexOf(KrefVol);
+
+            foreach (var jEdge in gdat.GetEdges4RefElement(KrefEdge).ItemEnum) {
+                int jCell0 = gdat.iGeomEdges.CellIndices[jEdge, 0];
+                int jCell1 = gdat.iGeomEdges.CellIndices[jEdge, 1];
+
+                if(gdat.iGeomCells.GetRefElementIndex(jCell0) == iKrefVol) {
+                    bMask[jEdge] = true;
+                } else if(jCell1 >= 0 && gdat.iGeomCells.GetRefElementIndex(jCell1) == iKrefVol) {
+                    bMask[jEdge] = true;
+                }
+            }
+
+            return new EdgeMask(gdat, bMask, MaskType.Geometrical);
+        }
+
+        /// <summary>
+        /// alias for <see cref="IGeometricalEdgeData.GetEdges4RefElement"/>
+        /// </summary>
+        static public EdgeMask GetEdges4RefElement(this IGridData gdat, int iKref) {
+            return gdat.GetEdges4RefElement(gdat.iGeomEdges.EdgeRefElements[iKref]);
+        }
 
 
         /// <summary>
@@ -872,38 +928,38 @@ namespace BoSSS.Foundation.Grid {
 
             switch (mode) {
                 case GetCellNeighbours_Mode.ViaEdges: {
-                    var R = g.GetCellNeighboursViaEdges(jCell);
-                    foreach (var rr in R) {
-                        ret.Add(rr.Item1);
-                        ret2.Add(rr.Item2);
+                        var R = g.GetCellNeighboursViaEdges(jCell);
+                        foreach (var rr in R) {
+                            ret.Add(rr.Item1);
+                            ret2.Add(rr.Item2);
+                        }
+                        break;
                     }
-                    break;
-                }
 
                 case GetCellNeighbours_Mode.ViaVertices: {
-                    foreach (int jCellGeom in g.GetGeometricCellIndices(jCell)) {
-                        var CellVtx_jCell = g.iGeomCells.CellVertices[jCellGeom];
-                        int K = CellVtx_jCell.GetLength(0);
-                        var VerticeIndex2Cell = g.iVertices.VerticeToCell;
+                        foreach (int jCellGeom in g.GetGeometricCellIndices(jCell)) {
+                            var CellVtx_jCell = g.iGeomCells.CellVertices[jCellGeom];
+                            int K = CellVtx_jCell.GetLength(0);
+                            var VerticeIndex2Cell = g.iVertices.VerticeToCell;
 
-                        for (int k = 0; k < K; k++) {
-                            int iVtx = CellVtx_jCell[k];
-                            ret2.Add(iVtx);
+                            for (int k = 0; k < K; k++) {
+                                int iVtx = CellVtx_jCell[k];
+                                ret2.Add(iVtx);
 
-                            foreach (int jN in VerticeIndex2Cell[iVtx]) {
-                                if (jN != jCell) {
-                                    if (!ret.Contains(jN))
-                                        ret.Add(jN);
+                                foreach (int jN in VerticeIndex2Cell[iVtx]) {
+                                    if (jN != jCell) {
+                                        if (!ret.Contains(jN))
+                                            ret.Add(jN);
+                                    }
+
                                 }
-
                             }
                         }
+                        break;
                     }
-                    break;
-                }
 
                 default:
-                throw new NotImplementedException();
+                    throw new NotImplementedException();
             }
 
             CellNeighBours = ret.ToArray();
@@ -940,11 +996,11 @@ namespace BoSSS.Foundation.Grid {
         static public bool IsEdgeConformal(this IGeometricalEdgeData ge, int iedge, int InOrOut) {
             switch (InOrOut) {
                 case 0:
-                return ge.IsEdgeConformalWithCell1(iedge);
+                    return ge.IsEdgeConformalWithCell1(iedge);
                 case 1:
-                return ge.IsEdgeConformalWithCell2(iedge);
+                    return ge.IsEdgeConformalWithCell2(iedge);
                 default:
-                throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException();
             }
 
         }
@@ -1051,7 +1107,7 @@ namespace BoSSS.Foundation.Grid {
 
                     m_CFL_EvalPoints[i] = new NodeSet(Kref, vert, true);
                 }
-                
+
 
 
                 // evaluators an memory for result
@@ -1137,17 +1193,17 @@ namespace BoSSS.Foundation.Grid {
         /// <returns></returns>
         static public int CellToEdge(this IGridData g, int jCell, int iFace) {
             GridData gdat = (GridData)g;
-            
+
             int[] EdgeCandidates = g.iLogicalCells.Cells2Edges[jCell];
 
-            if(iFace < 0 || iFace >= gdat.Cells.GetRefElement(jCell).NoOfFaces)
+            if (iFace < 0 || iFace >= gdat.Cells.GetRefElement(jCell).NoOfFaces)
                 throw new ArgumentOutOfRangeException("illegal face index.");
 
-            foreach(int i in EdgeCandidates) {
+            foreach (int i in EdgeCandidates) {
                 int iEdge = Math.Abs(i) - 1;
                 int inOut = i > 0 ? 0 : 1;
 
-                if(gdat.Edges.FaceIndices[iEdge, inOut] == iFace) {
+                if (gdat.Edges.FaceIndices[iEdge, inOut] == iFace) {
                     return iEdge;
                 }
             }
@@ -1173,6 +1229,6 @@ namespace BoSSS.Foundation.Grid {
         ViaVertices
     }
 
-    
+
 
 }
