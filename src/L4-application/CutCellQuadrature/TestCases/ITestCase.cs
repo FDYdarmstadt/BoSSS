@@ -28,7 +28,10 @@ namespace CutCellQuadrature.TestCases {
     /// Grid solution
     /// </summary>
     public enum GridSizes {
-
+        /// <summary>
+        /// Single cell, no resolution
+        /// </summary>
+        Single,
         /// <summary>
         /// Coarsest resolution
         /// </summary>

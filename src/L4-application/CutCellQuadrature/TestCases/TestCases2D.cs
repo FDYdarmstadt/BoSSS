@@ -90,6 +90,9 @@ namespace CutCellQuadrature.TestCases {
                 case GridTypes.Structured:
                     int noOfCellsPerDirection;
                     switch (GridSize) {
+                        case GridSizes.Single:
+                            noOfCellsPerDirection = 1;
+                            break;
                         case GridSizes.Tiny:
                             noOfCellsPerDirection = 5;
                             break;
@@ -119,6 +122,9 @@ namespace CutCellQuadrature.TestCases {
 
                 case GridTypes.PseudoStructured:
                     switch (GridSize) {
+                        case GridSizes.Single:
+                            noOfCellsPerDirection = 1;
+                            break;
                         case GridSizes.Tiny:
                             noOfCellsPerDirection = 5;
                             break;
@@ -184,7 +190,7 @@ namespace CutCellQuadrature.TestCases {
                             break;
 
                         default:
-                            throw new Exception();
+                            throw new NotImplementedException();
                     }
                     break;
 
