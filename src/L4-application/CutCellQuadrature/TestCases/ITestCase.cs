@@ -49,7 +49,7 @@ namespace CutCellQuadrature.TestCases {
         Normal,
 
         /// <summary>
-        /// Second finest resolution
+        /// Finer resolution
         /// </summary>
         Large,
 
