@@ -32,6 +32,7 @@ namespace CutCellQuadrature.TestCases {
         /// Single cell, no resolution
         /// </summary>
         Single,
+
         /// <summary>
         /// Coarsest resolution
         /// </summary>
@@ -53,9 +54,25 @@ namespace CutCellQuadrature.TestCases {
         Large,
 
         /// <summary>
-        /// Finest resolution
+        /// High resolution
         /// </summary>
-        Huge
+        Huge,
+
+        /// <summary>
+        /// Higher resolution
+        /// </summary>
+        Ultra,
+
+        /// <summary>
+        /// Even higher resolution
+        /// </summary>
+        Mega,
+
+        /// <summary>
+        /// Highest resolution
+        /// </summary>
+        Giga
+
     }
 
     /// <summary>
