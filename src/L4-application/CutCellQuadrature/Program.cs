@@ -77,13 +77,24 @@ namespace CutCellQuadrature {
             //new SingleSquareStraightLineLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new SingleSquareParabolaLengthTestCase(GridSizes.Small, GridTypes.Structured),
+
             //new SingleSquareParabolaVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
 
             //new SingleCubeSurfaceTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new Saye2022EllipseArea(GridSizes.Single),
+            //new Saye2022EllipseArea(GridSizes.Tiny),
+
+            //new TwoCircles2DVolume(GridSizes.Tiny),
             new TwoCircles2DVolume(GridSizes.Small),
+            //new TwoCircles2DVolume(GridSizes.Normal),
+            //new TwoCircles2DVolume(GridSizes.Large),
+            //new TwoCircles2DSurface(GridSizes.Tiny),
             //new TwoCircles2DSurface(GridSizes.Small),
+            //new TwoCircles2DSurface(GridSizes.Normal),
+            //new TwoCircles2DSurface(GridSizes.Large),
             
             //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Normal, GridTypes.Structured),
@@ -287,7 +298,7 @@ namespace CutCellQuadrature {
             // Quadrature variant
 
             Modes mode = Modes.Algoim;
-            int[] orders = new int[] { 2,3,4,5,6,7,8,9};
+            int[] orders = Enumerable.Range(0, 10).ToArray();
 
             //Modes mode = Modes.HMFClassic;
             //int[] orders = new int[] { 3, 4, 5, 6, 7, 8 };
@@ -851,6 +862,12 @@ namespace CutCellQuadrature {
                         continue;
                     }
 
+                    rule.OutputQuadratureRuleAsVtpXML("nodesUntransformedForj" + cell + ".vtp");
+                    
+                    var globalRule = rule.CloneAs();
+                    globalRule.OutputQuadratureRuleAsVtpXML("nodesForj" + cell + ".vtp");
+
+
                     for (int k = 0; k < rule.NoOfNodes; k++) {
                         double weight = rule.Weights[k];
 
@@ -915,7 +932,7 @@ namespace CutCellQuadrature {
                     writer.WriteAttributeString("format", "ascii");
 
                     for (int i = 0; i < weights.Length; i++) {
-                        writer.WriteString($"{globalVertices[0,i,0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
+                        writer.WriteString($"{globalVertices[0, i, 0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
         }
                     //if (globalVertices.Dimension == 3) { 
                     //    for (int i = 0; i < weights.Length; i++) {
