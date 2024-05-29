@@ -511,20 +511,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
                     //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
 
-                    //DGField[] MaxAbsResidualFields = new DGField[this.Residuals.Fields.Count];
-                    //for (int i = 0; i < MaxAbsResidualFields.Length; i++) {
-                    //    DGField f = this.Residuals.Fields[i];
-                    //    string identification = f.Identification + "_MaxAbsValue";
-                    //    Basis cb = new Basis(f.Basis.GridDat, 0);
-                    //    DGField marf = new SinglePhaseField(new Basis(f.Basis.GridDat, 0), identification);
-                    //    for (int j = 0; j < cb.Length; j++) {
-                    //        f.GetExtremalValuesInCell(out double min, out double max, j);
-                    //        double maxAbsVal = Math.Max(min.Abs(), max.Abs());
-                    //        marf.SetMeanValue(j, maxAbsVal);
-                    //    }
-                    //    MaxAbsResidualFields[i] = marf;
-                    //}
-                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields, MaxAbsResidualFields), "DuringNewton-" + iterIndex, iterIndex, 2);
+                    //Console.WriteLine($"Plot fields during Newton iteration {iterIndex}");
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields, this.m_LsTrk.LevelSets[0]), "DuringNewton-" + iterIndex, iterIndex, 2);
 
                     //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
                     //var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
@@ -745,14 +733,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
 
-                /*
-                {
-                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
-                    var bla = ana.MinimalEigen();
-                    Console.WriteLine("done: " + bla.lambdaMin);
-                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
-                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
-                }*/
+
+                //{
+                //    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
+                //    var bla = ana.MinimalEigen();
+                //    Console.WriteLine("done: " + bla.lambdaMin);
+                //    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                //    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                //}
                 //k++;
             }
 

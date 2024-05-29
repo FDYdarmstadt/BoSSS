@@ -637,21 +637,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-
-        private string GetName__Stack_OpAffine(int i) {
-            if(!coupledOperator)
-                return this.GetType().FullName + "::Stack_OpAffine[" + i + "]";
-            else
-                return this.GetType().FullName + "::CoupledStack_OpAffine[" + i + "]";
-        }
-
-        private string GetName__Stack_OpMatrix(int i) {
-            if(!coupledOperator)
-                return this.GetType().FullName + "::Stack_OpMatrix[" + i + "]";
-            else
-                return this.GetType().FullName + "::CoupledStack_OpMatrix[" + i + "]";
-        }
-
         /// <summary>
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
@@ -1280,6 +1265,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
+
+        protected void IterationCallback_LevelSetHandling_CoupledIterative(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+
+            Console.WriteLine($"Iteration {m_IterationCounter} done");
+            m_IterationCounter++;
+        }
 
 
         double m_CurrentPhystime;
@@ -1933,6 +1924,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Bad, undocumented design! To be removed! Fk, 18feb22
         /// </summary>
         private bool coupledOperator = false;
+
+
+        /// <summary>
+        /// in case of multiple calls of <see cref="XdgTimesteppingBase.AssembleMatrixCallback"/> during one iteration
+        /// it is set to true in order to prevent multiple calls of <see cref="MoveLevelSetAndRelatedStuff"/>
+        /// </summary>
+        //private bool alreadyCalledInCurrentIteration = false;
 
 
         /// <summary>
