@@ -169,12 +169,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             private QuadRule GetNodesAndWeights(int jCell, int RequestedOrder) {
-                int pOrder = 3; //Math.Max(3, RequestedOrder); //ensure the polynomial interpolation is at least degree of 3.
-                int n = (pOrder + 1) ;
-                double[] points = GenericBlas.ChebyshevNodes(-1.0, 1.0, Math.Max(n, 3));
-                //double[] points = GenericBlas.Linspace(-1.0, 1.0, Math.Max( n,3)); //testing
+                //number of nodes in 1d for level set interpolation = degree + 1
+                int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
 
-                //double[] points = ChebyshevPoints.Generate(n);
+                //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+                double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
 
 
                 int numberOfCombinations = (int)Math.Pow(points.Length, spaceDim); //Cartesian pair product for the points
@@ -214,7 +213,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 //int[] sizes = new int[] { 3, 3 };
                 int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
 
-                UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(spaceDim, pOrder, RequestedOrder, sizes, x, y);
+                UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(spaceDim, n, RequestedOrder, sizes, x, y);
                 //qs.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
                 //Console.WriteLine("qs.length = " + qs.length);
                 QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
