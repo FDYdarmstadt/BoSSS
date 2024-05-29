@@ -196,7 +196,7 @@ namespace CutCellQuadrature {
         /// <summary>
         /// [Test] not activated yet
         /// </summary>
-        public static void Test2DSurfaceConvergenceStructuredAlgoim() {
+        public static void Test2DSurfaceHConvergenceStructuredAlgoim() {
             int[] orders = Enumerable.Range(3, 5).ToArray();
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Ultra, GridSizes.Mega, GridSizes.Giga };
@@ -235,6 +235,47 @@ namespace CutCellQuadrature {
                 Assert.That(
                     eoc > orders[j] + 1,
                     "Convergence order (" + eoc + ") too low for order " + orders[j] );
+            }
+        }
+
+        /// <summary>
+        /// Performs a 2D p-refinement for the quadrature rules from Algoim
+        /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
+        /// </summary>
+        [Test]
+        public static void Test2DSurfacePConvergenceStructuredAlgoim() {
+            int[] orders = Enumerable.Range(1, 25).ToArray();
+
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny };
+
+            for (int i = 0; i < sizes.Length; i++) {
+                Console.WriteLine($"Ellipse p-convergence for {sizes[i]}");
+
+                double[] results = new double[orders.Length];
+
+                ITestCase testCase = new Saye2022EllipsePerimeter(sizes[i]);
+                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+                Program app = new Program(testCase);
+                app.Init(null);
+                app.SetUpEnvironment();
+                app.SetInitial(0);
+                testCase.ProceedToNextShift();
+                double referenceValue = app.SetUpConfiguration();
+
+                for (int j = 0; j < orders.Length; j++) {
+                    var result = app.PerformConfiguration(
+                        Modes.Algoim,
+                        orders[j]);
+
+                    results[j] = Math.Abs(result.Item1 - referenceValue);
+                    Console.WriteLine($"p={orders[j]}, error={results[j]}");
+                }
+
+                double eoc = Regression(orders.Select(i => (double)i).ToArray(), results);
+                Assert.That(
+               eoc < 0,
+               "Error does not decrease for grid " + sizes[i]);
             }
         }
 
@@ -446,6 +487,49 @@ namespace CutCellQuadrature {
                     "Convergence order too low for order " + orders[j]);
             }
         }
+
+        /// <summary>
+        /// Performs a 2D p-refinement for the quadrature rules from Algoim
+        /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
+        /// </summary>
+        [Test]
+        public static void Test2DVolumePConvergenceStructuredAlgoim() {
+            int[] orders = Enumerable.Range(1, 25).ToArray(); // until p=12 it is always decreasing (the same behavior in Algoim example "Ellipse q-convergence test")
+
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny };
+
+            for (int i = 0; i < sizes.Length; i++) {
+                Console.WriteLine($"Ellipse p-convergence for {sizes[i]}");
+
+                double[] results = new double[orders.Length];
+
+                ITestCase testCase = new Saye2022EllipseArea(sizes[i]);
+                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+                Program app = new Program(testCase);
+                app.Init(null);
+                app.SetUpEnvironment();
+                app.SetInitial(0);
+                testCase.ProceedToNextShift();
+                double referenceValue = app.SetUpConfiguration();
+
+                for (int j = 0; j < orders.Length; j++) {
+                    var result = app.PerformConfiguration(
+                        Modes.Algoim,
+                        orders[j]);
+
+                    results[j] = Math.Abs(result.Item1 - referenceValue);
+                    Console.WriteLine($"p={orders[j]}, error={results[j]}");
+                }
+
+                double eoc = Regression(orders.Select(i => (double)i).ToArray(), results);
+                Assert.That(
+               eoc < 0,
+               "Error does not decrease for grid " + sizes[i]);
+
+            }
+        }
+
 
         [Test]
         public void Test2DSurfaceHighOrderRobustnessUnstructured() {
