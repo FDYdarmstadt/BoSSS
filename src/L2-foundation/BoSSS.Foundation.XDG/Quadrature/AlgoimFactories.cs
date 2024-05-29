@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 
                 foreach (Chunk chunk in mask) {
                     foreach (int cell in chunk.Elements) {
-                        var quadRule = CalculateLevSetOnCell(cell, RequestedOrder);
+                        var quadRule = GetNodesAndWeights(cell, RequestedOrder);
                         ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
                     }
                 }
@@ -138,9 +138,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             public IEnumerable<IChunkRulePair<QuadRule>> CalculateQuadRuleSetCombo(ExecutionMask mask, int RequestedOrder) {
                 List<ChunkRulePair<QuadRule>> ret = new List<ChunkRulePair<QuadRule>>();
 
-                foreach (Chunk chunk in mask) {
-                    foreach (int cell in chunk.Elements) {
-                        var quadRule = CalculateLevSetOnCell(cell, RequestedOrder);
+
+                foreach (int cell in mask.ItemEnum) {
+                    var quadRule = GetNodesAndWeights(cell, RequestedOrder);
                         //Algoim.GetVolumeQuadratureRules()
                         ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
 
@@ -158,7 +158,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 
                 foreach (int cell in chunk.Elements) {
-                    var quadRule = CalculateLevSetOnCell(cell, RequestedOrder);
+                    var quadRule = GetNodesAndWeights(cell, RequestedOrder);
                     //Algoim.GetVolumeQuadratureRules()
                     ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(chunk.i0), quadRule));
 
@@ -168,7 +168,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             }
 
-            private QuadRule CalculateLevSetOnCell(int jCell, int RequestedOrder) {
+            private QuadRule GetNodesAndWeights(int jCell, int RequestedOrder) {
                 int pOrder = 3; //Math.Max(3, RequestedOrder); //ensure the polynomial interpolation is at least degree of 3.
                 int n = (pOrder + 1) ;
                 double[] points = GenericBlas.ChebyshevNodes(-1.0, 1.0, Math.Max(n, 3));
