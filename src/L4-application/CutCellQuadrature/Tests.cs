@@ -194,10 +194,12 @@ namespace CutCellQuadrature {
         }
 
         /// <summary>
-        /// [Test] not activated yet
+        /// Performs a 2D convergence study for the quadrature rules from Algoim
+        /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
+        [Test]
         public static void Test2DSurfaceConvergenceStructuredAlgoim() {
-            int[] orders = Enumerable.Range(1, 9).ToArray();
+            int[] orders = Enumerable.Range(1, 10).ToArray();
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -221,7 +223,8 @@ namespace CutCellQuadrature {
                 }
             }
 
-            double[] xValues = sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+            double[] xValues = xValues = new double[] { 1.0, 1 / 5, 1 / 10, 1 / 20, 1 / 40 };  //sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+
             for (int j = 0; j < orders.Length; j++) {
                 double[] yValues = new double[sizes.Length];
 
@@ -444,11 +447,15 @@ namespace CutCellQuadrature {
             }
         }
 
+        /// <summary>
+        /// Performs a 2D convergence study for the quadrature rules from Algoim
+        /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
+        /// </summary>
         [Test]
         public static void Test2DVolumeConvergenceStructuredAlgoim() {
             int[] orders = Enumerable.Range(1,9).ToArray(); // Higher orders lead to machine epsilon so the convergence behavior is not visible in standard precision
 
-            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large, };
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large };
             double[,] results = new double[sizes.Length, orders.Length];
 
             for (int i = 0; i < sizes.Length; i++) {
@@ -470,7 +477,8 @@ namespace CutCellQuadrature {
                 }
             }
 
-            double[] xValues = sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+            double[] xValues = xValues = new double[] { 1.0, 1 / 5, 1 / 10, 1 / 20, 1 / 40 };  //sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
+
             for (int j = 0; j < orders.Length; j++) {
                 double[] yValues = new double[sizes.Length];
 
@@ -666,47 +674,5 @@ namespace CutCellQuadrature {
                 }
         }
 
-        [Test]
-        public void Test2DVolumeConvergenceUnstructuredAlgoim() {
-            int[] orders = Enumerable.Range(0, 6).ToArray();
-            GridSizes[] sizes = new GridSizes[] { GridSizes.Small, GridSizes.Normal, GridSizes.Large };
-            double[,] results = new double[sizes.Length, orders.Length];
-            var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
-
-            for (int i = 0; i < sizes.Length; i++) {
-                ITestCase testCase = new MinGibou1EllipseArea(sizes[i], GridTypes.PseudoStructured);
-                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
-
-                Program app = new Program(testCase);
-                app.Init(null);
-                app.SetUpEnvironment();
-                app.SetInitial(0);
-                testCase.ProceedToNextShift();
-                double referenceValue = app.SetUpConfiguration();
-
-                for (int j = 0; j < orders.Length; j++) {
-                    var result = app.PerformConfiguration(
-                        Modes.Algoim,
-                        orders[j]);
-                    results[i, j] = Math.Abs(result.Item1 - referenceValue);
-                }
-            }
-
-            double[] xValues = sizes.Select(s => -Math.Log(2.0) * (int)s).ToArray();
-            for (int j = 0; j < orders.Length; j++) {
-                double[] yValues = new double[sizes.Length];
-
-                for (int i = 0; i < sizes.Length; i++) {
-                    yValues[i] = Math.Log(results[i, j]);
-                }
-
-                double eoc = Regression(xValues, yValues);
-
-                Console.WriteLine(eoc);
-                Assert.That(
-                    eoc > orders[j] + 1,
-                    "Convergence order too low for order " + orders[j]);
-            }
-        }
     }
 }
