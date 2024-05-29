@@ -1051,9 +1051,20 @@ namespace CutCellQuadrature {
 
         private void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling, SubGrid subGrid) {
             Tecplot tecplot = new Tecplot(GridData, true, false, (uint)superSampling, subGrid.VolumeMask);
+            Basis b = new Basis(GridData, 0);
+
+            DGField CellNumbers = new SinglePhaseField(b, "CellNumbers");
+            CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = j0 + j;
+                    }
+                }
+            }, new CellQuadratureScheme());
             //Tecplot tecplot = new Tecplot(m_Context, true, false, (uint)superSampling, null);
             string path = Path.Combine(Path.GetFullPath("."), "plot_" + testCase.GetType().Name);
-            tecplot.PlotFields(path, physTime, m_IOFields);
+            tecplot.PlotFields(path, physTime, m_IOFields.Cat(CellNumbers));
         }
 
         private static double Regression(double[] xValues, double[] yValues) {
