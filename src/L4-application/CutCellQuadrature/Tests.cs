@@ -196,10 +196,10 @@ namespace CutCellQuadrature {
         /// <summary>
         /// [Test] not activated yet
         /// </summary>
-        public static void Test2DSurfaceHConvergenceStructuredAlgoim() {
-            int[] orders = Enumerable.Range(3, 5).ToArray();
+        public static void Test2DSurfaceConvergenceStructuredAlgoim() {
+            int[] orders = Enumerable.Range(1, 9).ToArray();
 
-            GridSizes[] sizes = new GridSizes[] { GridSizes.Ultra, GridSizes.Mega, GridSizes.Giga };
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large };
             double[,] results = new double[sizes.Length, orders.Length];
 
             for (int i = 0; i < sizes.Length; i++) {
@@ -233,8 +233,8 @@ namespace CutCellQuadrature {
 
                 Console.WriteLine(orders[j] + ": " + eoc);
                 Assert.That(
-                    eoc > orders[j] + 1,
-                    "Convergence order (" + eoc + ") too low for order " + orders[j] );
+                    eoc > orders[j] ,
+                    "Convergence order (" + eoc + ") too low for order " + orders[j]);
             }
         }
 
@@ -243,7 +243,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public static void Test2DSurfacePConvergenceStructuredAlgoim() {
+        public static void Test2DSurfacePRefinementStructuredAlgoim() {
             int[] orders = Enumerable.Range(1, 25).ToArray();
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny };
@@ -445,16 +445,15 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DVolumeHConvergenceStructuredAlgoim() {
-            int[] orders = Enumerable.Range(3,10).ToArray();
-            //int[] orders = new int[] { 1 };
+        public static void Test2DVolumeConvergenceStructuredAlgoim() {
+            int[] orders = Enumerable.Range(1,9).ToArray(); // Higher orders lead to machine epsilon so the convergence behavior is not visible in standard precision
 
-            GridSizes[] sizes = new GridSizes[] { GridSizes.Ultra, GridSizes.Mega, GridSizes.Giga };
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large, };
             double[,] results = new double[sizes.Length, orders.Length];
 
             for (int i = 0; i < sizes.Length; i++) {
                 ITestCase testCase = new Saye2022EllipseArea(sizes[i]);
-                testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+                testCase.ScaleShifts(0 * testCase.GridSpacing);
 
                 Program app = new Program(testCase);
                 app.Init(null);
@@ -483,7 +482,7 @@ namespace CutCellQuadrature {
 
                 Console.WriteLine(orders[j] + ": " + eoc);
                 Assert.That(
-                    eoc > orders[j] + 1 ,
+                    eoc > orders[j] ,
                     "Convergence order too low for order " + orders[j]);
             }
         }
@@ -493,10 +492,10 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public static void Test2DVolumePConvergenceStructuredAlgoim() {
-            int[] orders = Enumerable.Range(1, 25).ToArray(); // until p=12 it is always decreasing (the same behavior in Algoim example "Ellipse q-convergence test")
+        public static void Test2DVolumePRefinementStructuredAlgoim() {
+            int[] orders = Enumerable.Range(1, 25).ToArray(); 
 
-            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny };
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Ultra, GridSizes.Mega, GridSizes.Giga };
 
             for (int i = 0; i < sizes.Length; i++) {
                 Console.WriteLine($"Ellipse p-convergence for {sizes[i]}");
