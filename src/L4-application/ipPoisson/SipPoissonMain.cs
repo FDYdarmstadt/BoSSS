@@ -65,8 +65,6 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-
-     
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 

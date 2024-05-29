@@ -95,7 +95,7 @@ namespace ValidationTestRunner {
 
         virtual public bool CopyManagedAssembliesCentrally => false;
 
-        virtual public int RetryCount => 1;
+        virtual public int RetryCount => 2;
 
         virtual public bool DeleteSuccessfulTestFiles => false;
     }
@@ -105,11 +105,12 @@ namespace ValidationTestRunner {
     /// NUnit entry point for each example worksheet which represents a long-term validation test
     /// </summary>
     /// <remarks>
-    /// All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
+    /// - long-term tests are typicalle executed from some backup database; therefore, the file `BOSSS_RUNTESTFROMBACKUP.txt` must be present in the local dir
+    /// - All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
     /// </remarks>
     [TestFixture]
     [NUnitNumThreads(1)]
-    static public class WorksheetTests_Local {
+    static public class WorksheetTests_Local_long {
 
 
         /// <summary>
@@ -136,6 +137,57 @@ namespace ValidationTestRunner {
             Console.WriteLine("RheologyConfinedCylinder @ FDYcluster");
         }
 
+
+        /// <summary>
+        /// Hagen-Poiseulle flow (aka. pipe flow) for the helical symmetric solver
+        /// Maintainer: Schahin Akbari
+        /// </summary>
+        [NUnitFileToCopyHack("HelicalSymmetricSolver/HagenPoiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb")]
+        [Test]
+        static public void Run__Helical_HagenPoiseulle() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_HagenPoiseulle
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Helical_HagenPoiseulle",
+                "Helical_HagenPoiseulle*",
+                "DELETE_Helical_HagenPoiseulle",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/HagenPoiseulle.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb");
+
+            Console.WriteLine("Helical_HagenPoiseulle @ FDYcluster");
+        }
+
+
+        /// <summary>
+        /// Centrifugal flow (aka. centrifugal flow) for the helical symmetric solver
+        /// Maintainer: Schahin Akbari
+        /// </summary>
+        [NUnitFileToCopyHack("HelicalSymmetricSolver/Centrifugal.ipynb", "HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb")]
+        [Test]
+        static public void Run__Helical_Centrifugal() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_Centrifugal
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Helical_Centrifugal",
+                "Helical_Centrifugal*",
+                "DELETE_Helical_Centrifugal",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Centrifugal.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb");
+
+            Console.WriteLine("Helical_Centrifugal @ FDYcluster");
+        }
+
+
         /// <summary>
         /// Contact Line at heated wall,
         /// Maintainer: Matthias Rieckmann
@@ -145,7 +197,7 @@ namespace ValidationTestRunner {
         static public void Run__HeatedWallSimple() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallSimple
             string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLSIMPLE");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__HeatedWallSimple ");
                 return;
             } else {
@@ -171,7 +223,7 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallConvergence
 
             string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLCONVERGENCE");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__HeatedWallConvergence ");
                 return;
             } else {
@@ -354,7 +406,7 @@ namespace ValidationTestRunner {
             Console.WriteLine("CoFlowDiffusionFlame @ FDYcluster");
 
             string really = System.Environment.GetEnvironmentVariable("RUN_COFLOWFLAME");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__CoFlowDiffusionFlame ");
                 return;
             } else {
@@ -447,7 +499,7 @@ namespace ValidationTestRunner {
         static public void Run__Droplet3D() {
 
             string really = null; // System.Environment.GetEnvironmentVariable("RUN_DROPLET");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__Droplet3D ");
                 return;
             } else {
@@ -479,7 +531,7 @@ namespace ValidationTestRunner {
         static public void Run__CombustingDroplet() {
             //ValidationTestRunner.WorksheetTests_Local.Run__CombustingDroplet
             string really = System.Environment.GetEnvironmentVariable("RUN_COMBDROPLET");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__CombustingDroplet ");
                 return;
             } else {
@@ -508,7 +560,7 @@ namespace ValidationTestRunner {
         static public void Run__Droplet3D_FirstPeriodStudy() {
 
             string really = null; // System.Environment.GetEnvironmentVariable("RUN_DROPLET_FIRSTPERIOD");
-            if(really.IsEmptyOrWhite()) {
+            if (really.IsEmptyOrWhite()) {
                 Console.WriteLine("skipping Run__Droplet3D_FirstPeriodStudy ");
                 return;
             } else {
@@ -684,12 +736,12 @@ namespace ValidationTestRunner {
         }
 
 
-        /// <summary>
-        /// Serial Shock Fitting Solver:
-        /// - SAIDT - space-time Scalar Advection in 1D
+        // <summary>
+        // Serial Shock Fitting Solver:
+        // - SAIDT - space-time Scalar Advection in 1D
         /// - BUIDT - space-time Burgers Equation in 1D
-        /// - XESF  - Inviscid Euler Equation in 2D
-        /// </summary>
+        // - XESF  - Inviscid Euler Equation in 2D
+        // </summary>
         //[NUnitFileToCopyHack(
         //    "examples/ShockFitting/SAIDT/SAIDT_Validation.ipynb"
         //    //"../internal/src/private-seb/Notebooks/BUIDT/BUIDT_Validation.ipynb",
@@ -734,19 +786,33 @@ namespace ValidationTestRunner {
                 PROJECT_NAME,
                 $"{PROJECT_NAME}*",
                 "delete_memprofile",
-                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1)); 
+                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
 
             NotebookRunner.DeleteDeployments("memprofile*");
 
             ValidationTestRunnerMain.RunWorksheet("memprofile/memprofile.ipynb");
 
         }
+    }
+
+
+
+    /// <summary>
+    /// NUnit entry point for each example worksheet which represents a short-running validation test;
+    /// </summary>
+    /// <remarks>
+    /// - short running rests are fully re-computed every timem
+    /// - All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
+    /// </remarks>
+    [TestFixture]
+    [NUnitNumThreads(1)]
+    static public class WorksheetTests_Local_short {
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
         [Test]
         static public void Run__BoundaryAndInitialData() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__BoundaryAndInitialData
             Mutex JupyterMutex = new Mutex(false, "BoundaryAndInitialData");
             try {
                 JupyterMutex.WaitOne();
@@ -763,7 +829,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
+            //--test=ValidationTestRunner.WorksheetTests_Local.Run__MetaJobManager
             Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
             try {
                 JupyterMutex.WaitOne();
@@ -779,6 +845,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("GridGeneration/GridGeneration.ipynb")]
         [Test]
         static public void Run__GridGeneration() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__GridGeneration
             ValidationTestRunnerMain.RunWorksheet("GridGeneration/GridGeneration.ipynb");
         }
 

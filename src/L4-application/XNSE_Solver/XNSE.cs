@@ -807,6 +807,13 @@ namespace BoSSS.Application.XNSE_Solver {
             int D = this.GridData.SpatialDimension;
 
 
+            List<DGField> LevelSetVelocity;
+            IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification)))
+                LevelSetVelocity = GetInterfaceVelocity();
+            else
+                LevelSetVelocity = null;
+
             int p = 0;
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
@@ -841,19 +848,19 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             // level set cfl
-            IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
-            if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
+            {
+                if (LevelSetVelocity != null) {
+                    // At this point the level set velocity is not updated to the correct value
+                    //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
 
-                var LevelSetVelocity = GetInterfaceVelocity();
-                // At this point the level set velocity is not updated to the correct value
-                //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
-
-                double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
-                dt_cfl *= s / Math.Pow(p, 2);
-                if (dt_cfl < dt) {
-                    dt = Math.Min(dt_cfl, dt);
-                    Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
+                    double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
+                    dt_cfl *= s / Math.Pow(p, 2);
+                    if (dt_cfl < dt) {
+                        dt = Math.Min(dt_cfl, dt);
+                        Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
+                    }
                 }
+
             }
 
             // determine Minimum timestep over all processess

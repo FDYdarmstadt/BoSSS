@@ -254,7 +254,8 @@ namespace BoSSS.Foundation.XDG {
                     ///////////////////
 
 
-                    using(new BlockTrace("surface_integration", tr)) {
+                    using(var bt = new BlockTrace("surface_integration", tr)) {
+                        bt.IntermediateReportOfChildCalls = true;
                         if (DoEdge) {
 #if DEBUG
                             {

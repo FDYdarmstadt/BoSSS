@@ -57,9 +57,9 @@ namespace XESTSF {
             //var c = XESTSFHardCodedControl.XDG_1D_Acoustic_Wave_Interaction_TwoLs_Base();
             //var c = XESTSFHardCodedControl.MovingShockWave2(shkspd:0.4);
             //var c = XESTSFHardCodedControl.AcousticWave1D(withLevelSet:false,acoustic_amplitude_neg:0.001);
-            //var c = XESTSFHardCodedControl.AcousticWave1D(withShock: true, withLevelSet: true, p_amp_neg: 1e-5, scaling:100);
+            var c = XESTSFHardCodedControl.AcousticWave1D(waveLength: 0.8, scaling: 1, endTime: 4, MachL: 1.5, withLevelSet: true, wavePosition: 0.9, shockPosition: 0.5, p_amp_neg: 1E-05, p_amp_pos: 0, waveform: "1sinus", dgDegree: 3, numOfCellsX: 121, PlotInterval: -1, numOfCellsT: 121);
             //var c = XESTSFHardCodedControl.StationaryShockWave();
-            var c = XESTSFHardCodedControl.ShuOsher1D(numOfCellsX: 70, numOfCellsT: 10,PlotInterval:1);
+            //var c = XESTSFHardCodedControl.ShuOsher1D(numOfCellsX: 70, numOfCellsT: 10,PlotInterval:1);
             p.Init(c);
             p.RunSolverMode();
             p.ResNorms.SaveToTextFile("ResNorms.txt");
