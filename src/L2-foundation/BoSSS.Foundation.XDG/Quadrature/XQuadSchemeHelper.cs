@@ -273,7 +273,7 @@ namespace BoSSS.Foundation.XDG {
                                     if (_doublyCut.NoOfItemsLocally <= 0)
                                         continue;
 
-                                    var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                                    var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, KrefEdge);
                                     var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, jmpJ, Kref, backupFactory);
                                     edgeQrIns.AddFactory(factory, _doublyCut);
                                 }
@@ -356,10 +356,21 @@ namespace BoSSS.Foundation.XDG {
                         if (NoOfRefElm > 1)
                             doublyCut = doublyCut.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
 
-                        if (doublyCut.Count() > 0) {
-                            var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                        if (doublyCut.NoOfItemsLocally > 0) {
+                            var KrefEdge = XDGSpaceMetrics.GridDat.iGeomEdges.EdgeRefElements[0];
+                            if (XDGSpaceMetrics.GridDat.iGeomEdges.EdgeRefElements.Length > 1)
+                                throw new NotImplementedException("todo");
+                            
+
+
+                            var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, KrefEdge);
                             var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref, backupFactory);
+
+                            //var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                            //var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref, backupFactory);
+                            //LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                             LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
+
                         }
                     }
                 }

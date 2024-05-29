@@ -121,8 +121,6 @@ namespace BoSSS.Foundation.XDG {
             var CutCellsQuadType = this.CutCellQuadratureType;
 
 
-            Console.Error.WriteLine($" ###################  CutCellsQuadOrder = {CutCellsQuadOrder} ");
-
 
             //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
