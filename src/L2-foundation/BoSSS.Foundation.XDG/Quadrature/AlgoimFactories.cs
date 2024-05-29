@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         //This would return a factory object with the configuration 
         //input: level set, tolerance etc.
-        public AlgoimFactories(LevelSetTracker.LevelSetData ls, RefElement e, bool negativeVolume = false, bool callSurfaceAndVolumeAtOnce = true) {
+        public AlgoimFactories(LevelSetTracker.LevelSetData ls, RefElement e, bool negativeVolume = false, bool callSurfaceAndVolumeAtOnce = false) {
             refElement = e;
             lsData = ls;
             VolumeSign = negativeVolume;
@@ -141,10 +141,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 foreach (int cell in mask.ItemEnum) {
                     var quadRule = GetNodesAndWeights(cell, RequestedOrder);
-                        //Algoim.GetVolumeQuadratureRules()
-                        ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
-
-                    }
+                    //Algoim.GetVolumeQuadratureRules()
+                    ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
                 }
 
                 m_Rules.Add(RequestedOrder, ret.ToArray());
@@ -175,7 +173,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
                 double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
 
-
                 int numberOfCombinations = (int)Math.Pow(points.Length, spaceDim); //Cartesian pair product for the points
 
                 MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(points, spaceDim);
@@ -185,6 +182,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 NodeSet NS = new NodeSet(RefElement, combinations, false);
                 var ret = lsData.GetLevSetValues(NS, jCell, 1);
+
+                //if boundary take in value
+                //in out cells for discontinous (take average if not same )
+                //(lsData.LevelSet as LevelSet).EvaluateEdge()
+
                 //Console.WriteLine(ret.ToString());
                 //ret.SaveToTextFile("ret.txt");
 
@@ -216,11 +218,18 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(spaceDim, n, RequestedOrder, sizes, x, y);
                 //qs.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
                 //Console.WriteLine("qs.length = " + qs.length);
-                QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
 
-                //for (int i = 0; i < q.length; i++) {
-                //    writer.WriteString($"{q.nodes[i * dim]} {q.nodes[i * dim + 1]} {(dim == 3 ? q.nodes[i * dim + 2] : 0.0)}\n");
-                //}
+
+
+                if (qs.length < 1) {
+                    QuadRule quadRuleEmpty = QuadRule.CreateEmpty(RefElement, 1, 1);
+                    quadRuleEmpty.Nodes.LockForever();
+                    return quadRuleEmpty;
+                }
+
+
+
+                QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
 
                 //int ind = 0;
                 for (int row = 0; row < qs.length; row++) {
@@ -240,7 +249,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 //var LevelSetNormals = lsData.GetLevelSetReferenceNormals(quadRule.Nodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
                 //LevelSetNormals.SaveToTextFile("lsnormals.txt");
                 if (useMetrics) { 
-                var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
+                    var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
                 //useMetrics.SaveToTextFile("useMetrics.txt");
 
                 ////quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("beforeWeights");
@@ -252,7 +261,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 //quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("afterWeights");
 
-                //quadRuleGlobal.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
+                //quadRuleGlobal.OutputQuadratureRuleAsVtpXML("bosssj" + jCell  + ".vtp");
                 return quadRule;
             }
 

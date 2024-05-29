@@ -361,7 +361,7 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// Creates Chebyshev nodes between two points (second kind).
+        /// Creates Chebyshev nodes between two points (second kind: includes end points).
         /// </summary>
         /// <param name="a">minimum</param>
         /// <param name="b">maximum</param>
