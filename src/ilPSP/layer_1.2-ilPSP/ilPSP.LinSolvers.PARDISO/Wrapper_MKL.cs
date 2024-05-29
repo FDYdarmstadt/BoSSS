@@ -41,13 +41,17 @@ namespace ilPSP.LinSolvers.PARDISO {
             if (ilPSP.Environment.MaxNumOpenMPthreads <= 1 && par == Parallelism.OMP)
                 // redirect if we should only one OpenMP thread.
                 par = Parallelism.SEQ;
-            switch(par) {
+            if (ilPSP.Environment.OpenMPenabled == false && par == Parallelism.OMP)
+                // redirect if we should only one OpenMP thread.
+                par = Parallelism.SEQ;
+
+            switch (par) {
                 case Parallelism.OMP:
-                liborder = new string[] { "PARDISO2_omp.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                liborder = new string[] { "PARDISO2_omp.dll", "libBoSSSnative_omp.so" };
                 break;
 
                 case Parallelism.SEQ:
-                liborder = new string[] { "PARDISO2_seq.dll", "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
+                liborder = new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
                 break;
 
                 default:
@@ -62,10 +66,10 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public Wrapper_MKL(Parallelism par) : base(
             SelectLibrary(par),
-            new string[3][][],
-            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
-            new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix },
-            new int[] { -1, -1, -1 }) {
+            new string[2][][],
+            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
+            new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
+            new int[] { -1, -1 }) {
 
             
         }
@@ -101,14 +105,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public unsafe _pardiso PARDISO { get { return pardiso; } }
 
-
-        static string WinMKL_lp64_mangling(string nmn) {
-            return "mkl_pds_lp64_" + nmn;
-        }
-
-        static string WinMKLmangling(string nmn) {
-            return "mkl_pds_" + nmn;
-        }
 
 
         /// <summary>

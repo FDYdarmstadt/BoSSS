@@ -77,12 +77,11 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
 
-            //ilPSP.Environment.NumThreads = 1;
-
+            //ilPSP.Environment.NumThreads = 8;
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, false, 3);
             ////BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, LevelSetHandling.Coupled_Once, TimeSteppingScheme.ImplicitEuler, true, 5);
-            //DeleteOldPlotFiles();
+            ////DeleteOldPlotFiles();
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
@@ -777,6 +776,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected virtual List<DGField> GetInterfaceVelocity(){
+            MPICollectiveWatchDog.Watch();
             int D = this.GridData.SpatialDimension;
             var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             var PhysParam = this.Control.PhysicalParameters;
@@ -857,6 +857,14 @@ namespace BoSSS.Application.XNSE_Solver {
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
             double s = 0.5; // safety factor
+            int D = this.GridData.SpatialDimension;
+
+            List<DGField> LevelSetVelocity;
+            IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification)))
+                LevelSetVelocity = GetInterfaceVelocity();
+            else
+                LevelSetVelocity = null;
 
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
@@ -892,14 +900,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // level set cfl
-                {
-                    int D = this.GridData.SpatialDimension;
-                    IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
-                    if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
+                {   
+                    if (LevelSetVelocity != null) {
                         // At this point the level set velocity is not updated to the correct value
                         //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
-
-                        var LevelSetVelocity = GetInterfaceVelocity();
 
                         double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
                         dt_cfl *= s / Math.Pow(p, 2);

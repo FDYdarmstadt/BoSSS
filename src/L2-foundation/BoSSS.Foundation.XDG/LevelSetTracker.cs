@@ -1852,7 +1852,7 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
-
+                    //Environment.ParallelFor(
                     var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
                     foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
                         int j = t_j0_Len.Item1;
@@ -1873,7 +1873,7 @@ namespace BoSSS.Foundation.XDG {
 
                             if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                // Use the accelerated bernstein cut cell finding technique for dg levelsets
+                                // Use the accelerated Bernstein cut cell finding technique for dg levelsets
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 var data = this.m_DataHistories[levSetind].Current;
                                 NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1}), false); // only use edge nodes

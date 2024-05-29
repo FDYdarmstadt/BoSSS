@@ -24,7 +24,7 @@ using System.Linq;
 using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.XNSERO_Solver {
-    public class ViscosityAtIB : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
+    public class ViscosityAtIB : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient, IMultitreadSafety {
 
         //LevelSetTracker m_LsTrk;
 
@@ -370,11 +370,21 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        public bool IsMultithreadSafe => false;
+
         /// <summary>
         /// Linear component - returns this object itself.
         /// </summary>
         virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { this };
+        }
+
+        public IEquationComponent CloneForThread() {
+            return null;
+        }
+
+        public object GetPadlock() {
+            return this.Particles[0];
         }
     }
 }

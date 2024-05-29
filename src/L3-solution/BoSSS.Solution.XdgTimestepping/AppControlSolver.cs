@@ -12,7 +12,8 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.Control {
 
     /// <summary>
-    /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers
+    /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers,
+    /// resp. for implicit time-stepping.
     /// </summary>
     [Serializable]
     [DataContract]
@@ -78,10 +79,11 @@ namespace BoSSS.Solution.Control {
                 return base.TimesteppingMode;
             }
             set {
-                base.TimesteppingMode = value;
+                base.TimesteppingMode = value; // should set timestep to a large number if steady.
                 if (value == _TimesteppingMode.Steady) {
                     TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-
+                    if (dtFixed <= 1.0e100)
+                        throw new Exception("someone changed base implementation.");
                 }
             }
         }

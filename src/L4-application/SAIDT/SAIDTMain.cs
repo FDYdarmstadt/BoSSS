@@ -10,8 +10,6 @@ using BoSSS.Solution.Utils;
 using SAIDT.Fluxes;
 using ApplicationWithIDT;
 using BoSSS.Solution.AdvancedSolvers;
-using NUnit.Framework;
-using BoSSS.Solution;
 
 namespace SAIDT {
     /// <summary>
@@ -29,13 +27,8 @@ namespace SAIDT {
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. `cs:SAIDT.SAIDTHardCodedControl.CurvedShock_Eccomas22()` </param>
         static void Main(string[] args) {
-            Application.InitMPI();
-            ilPSP.Environment.InitThreading(true, 4);
-            //SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22();
-            SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SInglePhaseFieldLS();
             //SAIDT.Tests.SAIDTTestProgram.StraightShock_p0_SplineLevelSet();
-            Assert.IsTrue(false, "remove testcode");
-
+            //SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22();
             SAIDTMain._Main(args, false, () => new SAIDTMain());
         }
 
@@ -82,7 +75,6 @@ namespace SAIDT {
             GridData gridData = (GridData)this.GridData;
             this.XSpatialOperator = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             this.Op_obj = new XDifferentialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
-            this.Op_obj.FluxesAreNOTMultithreadSafe = true;
             #endregion
 
             #region add EquationComponents
@@ -138,9 +130,18 @@ namespace SAIDT {
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
             //note that the operator is assembled we can compute the p0 solution
-            if(Control.GetInitialValue != GetInitialValue.FromFunctionPerSpecies) {
-                ComputeP0Solution();
+            switch (Control.GetInitialValue)
+            {
+                case GetInitialValue.FromP0Timestepping:
+                    ComputeP0Solution();
+                    break;
+                case GetInitialValue.OneFullNewtonStep:
+                    ComputeP0SolutionOneNewtonStep();
+                    break;
+                default:
+                    break;
             }
+
             //Initialize empty vectors and matrices
             InitializeMatricesAndVectors();
             //// Cell agglomeration 
@@ -148,7 +149,7 @@ namespace SAIDT {
             #endregion
 
             #region  Compute Residual and Derived Quantities
-            ComputeResiduals();
+            (res_l2, obj_f, res_L2) = ComputeResiduals();
             InitResNorm = res_l2;
             Init_obj_f = obj_f;
             ResNorms.Add(res_l2);
@@ -163,7 +164,7 @@ namespace SAIDT {
         /// <summary>
         /// Solves the linear P=0 problem, by assembling the operator matrix of the residual and solving the linear system. 
         /// </summary>
-        public void ComputeP0Solution() {
+        public void ComputeP0SolutionOneNewtonStep() {
             this.Concentration.Clear();
             XDGBasis basis_p0 = new XDGBasis(LsTrk, 0);
             XDGField c_p0 = new XDGField(basis_p0, "c_p0_initial");
@@ -193,7 +194,7 @@ namespace SAIDT {
                 case OptiLevelSetType.SinglePhaseField:
                 case OptiLevelSetType.SpecFemField:
                 case OptiLevelSetType.SplineLevelSet:
-                LevelSetOpti.ProjectFromFunction(Control.InitialShockPostion);
+                LevelSetOpti.ProjectFromFunction(Control.LevelSetTwoInitialValue);
                 break;
                 case OptiLevelSetType.GlobalLevelSet:
                 break;

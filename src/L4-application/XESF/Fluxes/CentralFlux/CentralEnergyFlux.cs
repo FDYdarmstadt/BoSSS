@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 namespace XESF.Fluxes {
     internal class CentralEnergyFlux : CentralFlux {
         public CentralEnergyFlux(IBoundaryConditionMap boundaryMap, Material material) : base(boundaryMap, material) {
+
+            base.material = material;
+            base.boundaryMap = boundaryMap;
         }
 
         public override Vector GetFluxVector(int D, double[] U) {
