@@ -164,9 +164,9 @@ namespace ZwoLevelSetSolver {
             LastSolverSuccess = Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"done with time step {TimestepNo}, Solver success? {LastSolverSuccess}");
             Assert.IsTrue(LastSolverSuccess, "Solver did not converge");
-            
 
 
+            /* Testcode - don't remove for the near future (until, maybe September 2024)
             {
                 var Phi0 = this.LsUpdater.LevelSets.ElementAt(0).Value.C0LevelSet;
                 var Phi1 = this.LsUpdater.LevelSets.ElementAt(1).Value.C0LevelSet;
@@ -286,7 +286,7 @@ namespace ZwoLevelSetSolver {
 
                 Tecplot.PlotFields(cutLineViz, "cutLineMeasures", 0, 0);
             }
-
+            */
 
             return dt;
         }
