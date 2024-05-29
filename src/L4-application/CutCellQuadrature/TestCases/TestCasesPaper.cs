@@ -732,7 +732,7 @@ namespace CutCellQuadrature.TestCases {
                             break;
 
                         default:
-                            throw new Exception();
+                            throw new NotImplementedException();
                     }
 
                     grid = Grid2D.Cartesian2DGrid(
