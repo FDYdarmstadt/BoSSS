@@ -30,7 +30,7 @@ namespace CutCellQuadrature {
     public partial class Program : Application {
 
         [Test]
-        public static void Test2DSurfaceHighOrderRobustnessStructured() {
+        public void Test2DSurfaceHighOrderRobustnessStructured() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -56,7 +56,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DSurfaceHighOrderRobustnessStructuredSaye() {
+        public void Test2DSurfaceHighOrderRobustnessStructuredSaye() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -82,7 +82,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DSurfaceHighOrderRobustnessStructuredAlgoim() {
+        public void Test2DSurfaceHighOrderRobustnessStructuredAlgoim() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -107,7 +107,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DSurfaceConvergenceStructured() {
+        public void Test2DSurfaceConvergenceStructured() {
             int[] orders = Enumerable.Range(0, 10).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -150,7 +150,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DSurfaceConvergenceStructuredSaye() {
+        public void Test2DSurfaceConvergenceStructuredSaye() {
             int[] orders = Enumerable.Range(0, 10).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -198,7 +198,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public static void Test2DSurfaceConvergenceStructuredAlgoim() {
+        public void Test2DSurfaceConvergenceStructuredAlgoim() {
             int[] orders = Enumerable.Range(1, 10).ToArray();
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large };
@@ -246,7 +246,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public static void Test2DSurfacePRefinementStructuredAlgoim() {
+        public void Test2DSurfacePRefinementStructuredAlgoim() {
             int[] orders = Enumerable.Range(1, 25).ToArray();
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny };
@@ -283,7 +283,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DVolumeHighOrderRobustnessStructured() {
+        public void Test2DVolumeHighOrderRobustnessStructured() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -309,7 +309,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DVolumeHighOrderRobustnessStructuredSaye() {
+        public void Test2DVolumeHighOrderRobustnessStructuredSaye() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -335,7 +335,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DVolumeHighOrderRobustnessStructuredAlgoim() {
+        public void Test2DVolumeHighOrderRobustnessStructuredAlgoim() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -360,7 +360,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DVolumeConvergenceStructured() {
+        public void Test2DVolumeConvergenceStructured() {
             int[] orders = Enumerable.Range(0, 9).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -404,7 +404,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public static void Test2DVolumeConvergenceStructuredSaye() {
+        public void Test2DVolumeConvergenceStructuredSaye() {
             int[] orders = Enumerable.Range(0, 9).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -452,7 +452,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public static void Test2DVolumeConvergenceStructuredAlgoim() {
+        public void Test2DVolumeConvergenceStructuredAlgoim() {
             int[] orders = Enumerable.Range(1,9).ToArray(); // Higher orders lead to machine epsilon so the convergence behavior is not visible in standard precision
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large };
@@ -500,7 +500,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public static void Test2DVolumePRefinementStructuredAlgoim() {
+        public void Test2DVolumePRefinementStructuredAlgoim() {
             int[] orders = Enumerable.Range(1, 25).ToArray(); 
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Ultra, GridSizes.Mega, GridSizes.Giga };
