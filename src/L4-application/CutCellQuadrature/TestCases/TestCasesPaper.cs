@@ -399,6 +399,135 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
+    /// <summary>
+    /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
+    /// </summary>
+    class Saye2022EllipseArea : Generic2DTestCase, IVolumeTestCase {
+
+        private const double xMajor = 2;
+
+        private const double yMajor = 1;
+
+        public Saye2022EllipseArea(GridSizes gridSize)
+            : base(gridSize, GridTypes.Structured) {
+        }
+
+        public override double Solution {
+            get {
+                return xMajor * yMajor * Math.PI / 4.0;
+            }
+        }
+
+        public override ILevelSet GetLevelSet(GridData gridData) {
+            //return new AnalyticEllipseLevelSet(gridData);
+            return new LevelSet(new Basis(gridData, LevelSetDegree), "levelSet");
+        }
+
+        public override void UpdateLevelSet(ILevelSet levelSet) {
+            //AnalyticEllipseLevelSet analyticeLevelSet = levelSet as AnalyticEllipseLevelSet;
+            //if (analyticeLevelSet == null) {
+            //    throw new Exception();
+            //}
+
+            //analyticeLevelSet.SetParameters(3.0, 1.5, CurrentShift.OffsetX, CurrentShift.OffsetY);
+
+            LevelSet levelSetField = levelSet as LevelSet;
+            if (levelSetField == null) {
+                throw new Exception();
+            }
+
+            levelSetField.ProjectField(LevelSetInitialValue);
+        }
+
+        public override int LevelSetDegree {
+            get {
+                return 2;
+            }
+        }
+
+        public override void LevelSetInitialValue(MultidimensionalArray input, MultidimensionalArray output) {
+            double aSquare = xMajor * xMajor / 4.0;
+            double bSquare = yMajor * yMajor / 4.0;
+
+            for (int i = 0; i < input.GetLength(0); i++) {
+                double x = input[i, 0] - CurrentShift.OffsetX;
+                double y = input[i, 1] - CurrentShift.OffsetY;
+
+                output[i] = 1.0 - (x * x / aSquare + y * y / bSquare);
+            }
+        }
+
+        public override double GridSpacing {
+            get {
+                return 0.4;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
+    /// </summary>
+    class Saye2022EllipsePerimeter : Generic2DTestCase, ISurfaceTestCase {
+
+        private const double xMajor = 2;
+
+        private const double yMajor = 1;
+
+        public Saye2022EllipsePerimeter(GridSizes gridSize)
+            : base(gridSize, GridTypes.Structured) {
+        }
+
+        public override double Solution {
+            get {
+                return 4.844224110273838099214251598195914705976959198943300412541558176231060; 
+            }
+        }
+
+        public override ILevelSet GetLevelSet(GridData gridData) {
+            //return new AnalyticEllipseLevelSet(gridData);
+            return new LevelSet(new Basis(gridData, LevelSetDegree), "levelSet");
+        }
+
+        public override void UpdateLevelSet(ILevelSet levelSet) {
+            //AnalyticEllipseLevelSet analyticeLevelSet = levelSet as AnalyticEllipseLevelSet;
+            //if (analyticeLevelSet == null) {
+            //    throw new Exception();
+            //}
+
+            //analyticeLevelSet.SetParameters(3.0, 1.5, CurrentShift.OffsetX, CurrentShift.OffsetY);
+
+            LevelSet levelSetField = levelSet as LevelSet;
+            if (levelSetField == null) {
+                throw new Exception();
+            }
+
+            levelSetField.ProjectField(LevelSetInitialValue);
+        }
+
+        public override int LevelSetDegree {
+            get {
+                return 2;
+            }
+        }
+
+        public override void LevelSetInitialValue(MultidimensionalArray input, MultidimensionalArray output) {
+            double aSquare = xMajor * xMajor / 4.0;
+            double bSquare = yMajor * yMajor / 4.0;
+
+            for (int i = 0; i < input.GetLength(0); i++) {
+                double x = input[i, 0] - CurrentShift.OffsetX;
+                double y = input[i, 1] - CurrentShift.OffsetY;
+
+                output[i] = 1.0 - (x * x / aSquare + y * y / bSquare);
+            }
+        }
+
+        public override double GridSpacing {
+            get {
+                return 0.4;
+            }
+        }
+    }
     class MinGibou1EllipseArea : Generic2DTestCase, IVolumeTestCase {
 
         private const double xMajor = 3.0;
