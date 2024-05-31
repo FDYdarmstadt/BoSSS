@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
        
-
+        /*
         /// <summary>
         /// not used/suitable for cell boundary quadrature
         /// </summary>
@@ -66,6 +66,8 @@ namespace BoSSS.Foundation.Quadrature {
         protected override MultidimensionalArray GetScalingsForNonlinElements(int i0, int L) {
             throw new NotImplementedException("todo.");
         }
+        */
+
 
         /// <summary>
         /// see <see cref="Quadrature{A,B}.CheckQuadratureChunk"/>
@@ -130,7 +132,7 @@ namespace BoSSS.Foundation.Quadrature {
                         if (Linear) {
 
 
-                            MultidimensionalArray scalings = GetScalingsForLinearElements(j0, Bulksize);
+                            MultidimensionalArray scalings = Scaling.GetScalingsForLinearElements(this.gridData, quadRule, j0, Bulksize);
                             Debug.Assert(scalings.Dimension == 1);
                             Debug.Assert(scalings.Lengths.Length == 1);
                             Debug.Assert(scalings.IsContinuous);
@@ -164,7 +166,7 @@ namespace BoSSS.Foundation.Quadrature {
                                 }
                             }
                         } else {
-                            var scalings = GetScalingsForNonlinElements(j0, Bulksize);
+                            var scalings = Scaling.GetScalingsForNonlinElements(this.gridData, quadRule, j0, Bulksize);
                             Debug.Assert(scalings.Dimension == 2);
                             Debug.Assert(scalings.GetLength(0) == Bulksize);
                             Debug.Assert(scalings.GetLength(1) == currentRuleWeights.GetLength(0));

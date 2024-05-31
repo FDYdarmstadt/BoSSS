@@ -25,6 +25,9 @@ using ilPSP;
 
 namespace BoSSS.Foundation.Quadrature {
 
+    
+
+
     /// <summary>
     /// quadrature over cells.
     /// </summary>
@@ -49,21 +52,7 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         
-        /// <summary>
-        /// the absolute value of the Jacobian determinate, for the 
-        /// transformation that translates cell reference coordinates into physical coordinates.
-        /// </summary>
-        protected override MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
-            return gridData.iGeomCells.JacobiDet.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + L - 1 });
-        }
-
-        /// <summary>
-        /// the absolute value of the Jacobian determinate, for the 
-        /// transformation that translates cell reference coordinates into physical coordinates.
-        /// </summary>
-        protected override MultidimensionalArray GetScalingsForNonlinElements(int jCell0, int L) {
-            return base.GridDat.JacobianDeterminat.GetValue_Cell(this.CurrentRule.Nodes, jCell0, L);
-        }
+        
 
         /// <summary>
         /// Sweeps whether cell <paramref name="i0"/> is linear/nonlinear and how many cells of the same type are going to come after it.

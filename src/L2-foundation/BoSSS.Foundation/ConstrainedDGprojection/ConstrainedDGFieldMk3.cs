@@ -808,7 +808,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             EdgeQuadrature.GetQuadrature(
                 new int[] { 1 }, m_grd,
-                (new EdgeQuadratureScheme(true, innerEM)).Compile(m_grd, m_Basis.Degree * 2),
+                (new EdgeQuadratureScheme(true, null, innerEM)).Compile(m_grd, m_Basis.Degree * 2),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     NodeSet NS = QR.Nodes;
                     EvalResult.Clear();

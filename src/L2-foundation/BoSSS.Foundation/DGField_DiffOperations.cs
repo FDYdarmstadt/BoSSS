@@ -470,8 +470,8 @@ namespace BoSSS.Foundation {
             CellMask emVol = (optionalSubGrid != null) ? optionalSubGrid.VolumeMask : null;
 
             DifferentialOperator d_dx = new DifferentialOperator(1, 1, QuadOrderFunc.Linear(),"in", "out");
-            d_dx.EdgeQuadraturSchemeProvider = g => new Quadrature.EdgeQuadratureScheme(true, emEdge);
-            d_dx.VolumeQuadraturSchemeProvider = g => new Quadrature.CellQuadratureScheme(true, emVol);
+            d_dx.EdgeQuadraturSchemeProvider = g => new Quadrature.EdgeQuadratureScheme(true, null, emEdge);
+            d_dx.VolumeQuadraturSchemeProvider = g => new Quadrature.CellQuadratureScheme(true, null, emVol);
             var flux = CreateDerivativeFlux(d, f.Identification);
             d_dx.EquationComponents["out"].Add(flux);
             d_dx.FluxesAreNOTMultithreadSafe = false;

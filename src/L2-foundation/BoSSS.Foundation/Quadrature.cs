@@ -182,6 +182,14 @@ namespace BoSSS.Foundation.Quadrature {
         protected MultidimensionalArray m_EvalResultsCollapsed;
 
         /// <summary>
+        /// integration metric
+        /// </summary>
+        public IQuadratureScaling Scaling {
+            get;
+            protected set;
+        }
+
+        /// <summary>
         /// Standard constructor
         /// </summary>
         /// <param name="noOfIntegralsPerCell">
@@ -199,6 +207,10 @@ namespace BoSSS.Foundation.Quadrature {
             foreach (var no in noOfIntegralsPerCell)
                 m_TotalNoOfIntegralsPerItem *= no;
             m_IntegralsComponent = noOfIntegralsPerCell;
+            this.Scaling = rule.QuadratureScaling;
+            if(CoordinateSystem != CoordinateSystem.Reference && rule.QuadratureScaling == null) {
+                throw new ArgumentException("For integration in physical coordinate system, a quadrature scaling (integration metric) is required for the rule");
+            } 
 
 #if DEBUG
             if (rule.Count() > 0) {
@@ -431,6 +443,7 @@ namespace BoSSS.Foundation.Quadrature {
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, NumThreads);
                     for (int iRnk = 1; iRnk < NumThreads; iRnk++) {
                         allThreads[iRnk] = this.CloneForThreadParallelization(iRnk, NumThreads);
+                        allThreads[iRnk].Scaling = this.Scaling;
                         allThreads[iRnk].m_OnCloneForThreadParallelization?.Invoke(allThreads[iRnk], iRnk, NumThreads);
                         allThreads[iRnk].m_compositeRule = null; // prevent accidental use
 
@@ -903,7 +916,7 @@ namespace BoSSS.Foundation.Quadrature {
                                     // codepath for integration of linear elements
                                     // +++++++++++++++++++++++++++++++++++++++++++
 
-                                    var scalings = GetScalingsForLinearElements(j0, Bulksize);
+                                    var scalings = Scaling.GetScalingsForLinearElements(gridData, quadRule, j0, Bulksize);
                                     Debug.Assert(scalings.Dimension == 1);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
                                     Debug.Assert(currentRuleWeights.IsContinuous);
@@ -936,7 +949,7 @@ namespace BoSSS.Foundation.Quadrature {
                                     // codepath for integration of nonlinear/curved elements
                                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                    var scalings = GetScalingsForNonlinElements(j0, Bulksize);
+                                    var scalings = Scaling.GetScalingsForNonlinElements(gridData, quadRule, j0, Bulksize);
                                     Debug.Assert(scalings.Dimension == 2);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
                                     Debug.Assert(scalings.GetLength(1) == currentRuleWeights.GetLength(0));
@@ -1017,7 +1030,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         protected abstract void CheckQuadratureChunk(int j0, int Len, int iKRef);
         
-
+        /*
         /// <summary>
         /// Implement this method by returning the correct scaling factors for
         /// elements with a linear mapping of the domain of integration (e.g., cell volumes).
@@ -1025,7 +1038,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <returns>
         /// A list of scaling factors
         /// </returns>
-        protected abstract MultidimensionalArray GetScalingsForLinearElements(int i0, int L);
+        protected virtual MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
+            return Scaling.GetScalingsForLinearElements(i0, L);
+        }
 
         /// <summary>
         /// Returns Scaling metrics for
@@ -1035,6 +1050,8 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="L"></param>
         /// <returns></returns>
         protected abstract MultidimensionalArray GetScalingsForNonlinElements(int i0, int L);
+        */
+
 
         /// <summary>
         /// identifies the chunk of elements (edges or cells), starting from <paramref name="i0"/>

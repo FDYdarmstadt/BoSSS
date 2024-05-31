@@ -15,7 +15,9 @@ using System.Diagnostics;
 
 namespace CutCellQuadratureScaling {
 
-
+    /// <summary>
+    /// 
+    /// </summary>
     class CutCellQuadratureScalingMain {
 
         public static void Main(string[] args) {
@@ -29,7 +31,9 @@ namespace CutCellQuadratureScaling {
                     Test.Init();
                     Test.RunSolverMode();
 
-                    Test.CompareTo(Ref);
+                    Test.CompareSurfaceTo(Ref);
+                    Test.CompareVolumerTo(Ref);
+                    Test.CompareEdgeAreaTo(Ref);
                 }
 
             }
@@ -37,8 +41,6 @@ namespace CutCellQuadratureScaling {
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
-
-
     }
 
 
@@ -99,7 +101,7 @@ namespace CutCellQuadratureScaling {
         }
 
 
-        public void CompareTo(TestSetupSingleLevset2D othr) {
+        public void CompareSurfaceTo(TestSetupSingleLevset2D othr) {
             foreach (string Species in this.LsTrk.SpeciesNames) {
                 var SpcId_this = this.LsTrk.GetSpeciesId(Species);
                 var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
@@ -115,6 +117,50 @@ namespace CutCellQuadratureScaling {
                 Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
             }
         }
+
+        /// <summary>
+        /// verifies quadratic/kubic scaling of volume integrals in 2D/3D
+        /// </summary>
+        public void CompareVolumerTo(TestSetupSingleLevset2D othr) {
+            double D = this.Grid.SpatialDimension;
+            
+            foreach (string Species in this.LsTrk.SpeciesNames) {
+                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
+                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
+
+
+
+                var Area_this = this.latestCCM.CutCellVolumes[SpcId_this];
+                var Area_othr = othr.latestCCM.CutCellVolumes[SpcId_othr];
+                var Area_err = Area_othr*(this.MeshScaling.Pow(D)) - Area_this*(othr.MeshScaling.Pow(D));
+
+                double absErr = Area_err.L2Norm();
+                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
+
+                Console.WriteLine($"Cut Cell Volume, species {Species} absolute error : {absErr:g7}");
+                Console.WriteLine($"Cut Cell Volume, species {Species} relative error : {relErr:g7}");
+            }
+        }
+
+
+        public void CompareEdgeAreaTo(TestSetupSingleLevset2D othr) {
+            double D = this.Grid.SpatialDimension;
+            
+            foreach (string Species in this.LsTrk.SpeciesNames) {
+                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
+                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
+
+                var Area_this = this.latestCCM.CutEdgeAreas[SpcId_this];
+                var Area_othr = othr.latestCCM.CutEdgeAreas[SpcId_othr];
+                var Area_err = Area_othr*(this.MeshScaling.Pow(D - 1)) - Area_this*(othr.MeshScaling.Pow(D - 1));
+
+                double absErr = Area_err.L2Norm();
+                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
+
+                Console.WriteLine($"Cut Edge area, species {Species} absolute error : {absErr:g7}");
+                Console.WriteLine($"Cut Edge area, species {Species} relative error : {relErr:g7}");
+            }
+        }
     }
 
 
@@ -124,7 +170,7 @@ namespace CutCellQuadratureScaling {
         protected override IGrid CreateOrLoadGrid() {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            double[] zNodes = GenericBlas.Linspace(-7, +7, 8);
+            double[] zNodes = GenericBlas.Linspace(-3, +3, 4);
             xNodes.ScaleV(MeshScaling);
             xNodes.ScaleV(MeshScaling);
             xNodes.ScaleV(MeshScaling);

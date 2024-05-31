@@ -151,13 +151,20 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
-        public QuadratureScheme(bool UseDefaultFactories, TDomain domain = null) {
+        /// <param name="scaling"></param>
+        public QuadratureScheme(bool UseDefaultFactories, IQuadratureScaling scaling, TDomain domain = null) {
             if (domain != null)
                 if (domain.MaskType != MaskType.Geometrical)
                     throw new ArgumentException();
             this.Domain = domain;
             this.m_UseDefaultFactories = UseDefaultFactories;
         }
+
+        /// <summary>
+        /// Scaling/Integration metric which will be forwarded to the produced composite quadrature rules (<see cref="ICompositeQuadRule{TQuadRule}.QuadratureScaling"/>)
+        /// </summary>
+        public readonly IQuadratureScaling Scaling;
+
 
         bool m_UseDefaultFactories;
 
@@ -319,7 +326,7 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
-                            factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain);
+                            factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain, Scaling);
 
                     int prevIE = -1;
                     foreach (var CRP in currentRule) {
@@ -690,8 +697,11 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
-        public CellQuadratureScheme(bool UseDefaultFactories = true, CellMask domain = null)
-            : base(UseDefaultFactories, ConvDomain(domain)) {
+        /// <param name="scaling">
+        /// if null, the default scaling for volume integration will be used.
+        /// </param>
+        public CellQuadratureScheme(bool UseDefaultFactories = true, IQuadratureScaling scaling = null, CellMask domain = null)
+            : base(UseDefaultFactories, scaling ?? new CellQuadratureScalingVolume(), ConvDomain(domain)) {
         }
 
         /// <summary>
@@ -706,8 +716,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="domain">
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
-        public CellQuadratureScheme(IQuadRuleFactory<QuadRule> factory, CellMask domain = null)
-            : base(false, ConvDomain(domain)) {
+        /// <param name="scaling"></param>
+        public CellQuadratureScheme(IQuadRuleFactory<QuadRule> factory, IQuadratureScaling scaling, CellMask domain = null)
+            : base(false, scaling, ConvDomain(domain)) {
             AddFactoryDomainPair(factory, ConvDomain(domain));
         }
 
@@ -771,8 +782,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
-        public EdgeQuadratureScheme(bool UseDefaultFactories = true, EdgeMask domain = null)
-            : base(UseDefaultFactories, ConvDomain(domain)) {
+        /// <param name="scaling"></param>
+        public EdgeQuadratureScheme(bool UseDefaultFactories = true, IQuadratureScaling scaling = null, EdgeMask domain = null)
+            : base(UseDefaultFactories, scaling ?? new EdgeQuadratureScalingArea(), ConvDomain(domain)) {
         }
 
         /// <summary>
@@ -787,8 +799,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="domain">
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
-        public EdgeQuadratureScheme(IQuadRuleFactory<QuadRule> factory, EdgeMask domain = null)
-            : base(false, ConvDomain(domain)) {
+        /// <param name="scaling"></param>
+        public EdgeQuadratureScheme(IQuadRuleFactory<QuadRule> factory, IQuadratureScaling scaling, EdgeMask domain = null)
+            : base(false, scaling, ConvDomain(domain)) {
             AddFactoryDomainPair(factory, ConvDomain(domain));
         }
 
@@ -843,8 +856,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
         /// if false, the user must add factories for all items in the domain.
         /// </param>
-        public CellBoundaryQuadratureScheme(bool UseDefaultFactories, CellMask domain = null)
-            : base(UseDefaultFactories, domain) {
+        /// <param name="scaling"></param>
+        public CellBoundaryQuadratureScheme(bool UseDefaultFactories, IQuadratureScaling scaling = null, CellMask domain = null)
+            : base(UseDefaultFactories, scaling, domain) {
         }
 
         /// <summary>
@@ -859,8 +873,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="domain">
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
-        public CellBoundaryQuadratureScheme(IQuadRuleFactory<CellBoundaryQuadRule> factory, CellMask domain = null)
-            : base(false, domain) {
+        /// <param name="scaling"></param>
+        public CellBoundaryQuadratureScheme(IQuadRuleFactory<CellBoundaryQuadRule> factory, IQuadratureScaling scaling, CellMask domain = null)
+            : base(false, scaling, domain) {
             AddFactoryDomainPair(factory, domain);
         }
 
