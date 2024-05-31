@@ -116,7 +116,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         protected override void SetInitial(double t) {
             //this will suppress exception prompts
-            //Workaround to prevent distrubance while executing batchclient
+            //Workaround to prevent disturbance while executing batchclient
             if (this.Control.SuppressExceptionPrompt) {
                 AppDomain currentDomain = AppDomain.CurrentDomain;
                 //currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
