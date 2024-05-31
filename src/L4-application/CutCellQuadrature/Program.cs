@@ -134,7 +134,7 @@ namespace CutCellQuadrature {
             //new MinGibou1EllipseArea(GridSizes.Huge, GridTypes.Structured),
 
 
-            
+
             //new Smereka4EllipsoidSurface(GridSizes.Tiny, GridTypes.Structured),
             //new Smereka4EllipsoidSurface(GridSizes.Small, GridTypes.Structured),
             //new Smereka4EllipsoidSurface(GridSizes.Normal, GridTypes.Structured),
@@ -161,7 +161,7 @@ namespace CutCellQuadrature {
             //new CircleVolume2DTestCase(GridSizes.Normal, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Large, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Huge, GridTypes.Structured),
-            
+
 
             //new CircleArcLength(GridSizes.Small, GridTypes.Structured)
             //new Olshanskii(GridSizes.Tiny, GridTypes.PseudoStructured),
@@ -176,18 +176,8 @@ namespace CutCellQuadrature {
         static void Main(string[] args) {
             InitMPI(args);
 
-            
-
-            QuadScheme quadVol = Algoim.GetSurfaceQuadratureRules();
-            //Console.WriteLine(AlgoimWrapper.Example_calculation(2));
-            double totVol = 0;
-            foreach (double w in quadVol.weights)
-                totVol += w;
-
-            Console.WriteLine("Surf: " + totVol);
 
 
-            //callAlgoim();
             foreach (var testCase in testCases) {
 
                 Program app = new Program(testCase);
@@ -289,7 +279,7 @@ namespace CutCellQuadrature {
 
             // Export options
             int plotSuperSampling = 0;
-            bool logVolumeNodes = true;
+            bool logVolumeNodes = false;
             int logVolumeNodes_selectedCell = -1;
             bool logSurfaceNodes = false;
             bool logConsole = true;
@@ -930,10 +920,9 @@ namespace CutCellQuadrature {
                     writer.WriteAttributeString("Name", "Points");
                     writer.WriteAttributeString("NumberOfComponents", "3");
                     writer.WriteAttributeString("format", "ascii");
-
                     for (int i = 0; i < weights.Length; i++) {
                         writer.WriteString($"{globalVertices[0, i, 0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
-        }
+                    }
                     //if (globalVertices.Dimension == 3) { 
                     //    for (int i = 0; i < weights.Length; i++) {
                     //        writer.WriteString($"{globalVertices[0,i,0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
