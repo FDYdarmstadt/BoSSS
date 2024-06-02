@@ -17,6 +17,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
             [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
             ) {
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D
 
 
             using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder)) {
