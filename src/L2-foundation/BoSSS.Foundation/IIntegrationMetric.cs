@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// One example are integrals over embedded manifolds, e.g. level-set-surface integrals; Those are defined 
     /// in cell coordinates, but require different scaling factors than volume integrals.
     /// </summary>
-    public interface IQuadratureScaling {
+    public interface IIntegrationMetric {
 
         /// <summary>
         /// Provides integration metric factors for linear edges or cells, i.e., 

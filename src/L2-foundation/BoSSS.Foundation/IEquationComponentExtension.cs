@@ -186,8 +186,8 @@ namespace BoSSS.Foundation {
                 if (volQr != null)
                     throw new ArgumentException("If 'OnlyBoundaryEdges == true', 'volQr' must be null!", "volQr");
 
-                volQr = new CellQuadratureScheme(true, null, CellMask.GetEmptyMask(GridDat));
-                edgeQr = new EdgeQuadratureScheme(true, null, GridDat.GetBoundaryEdgeMask());
+                volQr = new CellQuadratureScheme(true, CellMask.GetEmptyMask(GridDat));
+                edgeQr = new EdgeQuadratureScheme(true, GridDat.GetBoundaryEdgeMask());
             }
 
             op.ComputeMatrixEx(
@@ -289,8 +289,8 @@ namespace BoSSS.Foundation {
                     CellMask cm = (sgrd == null) ? null : sgrd.VolumeMask;
                     EdgeMask em = (sgrd == null) ? null : sgrd.AllEdgesMask;
 
-                    qInsEdge = new EdgeQuadratureScheme(true, null, em);
-                    qInsVol = new CellQuadratureScheme(true, null, cm);
+                    qInsEdge = new EdgeQuadratureScheme(true, em);
+                    qInsVol = new CellQuadratureScheme(true, cm);
                 }
 
                 var bkup = op.LegacySupport_ModifyQuadSchemProvider(qInsEdge, qInsVol);
@@ -406,8 +406,8 @@ namespace BoSSS.Foundation {
             where V : IList<double> {
 
             var bkup = op.LegacySupport_ModifyQuadSchemProvider(
-                new EdgeQuadratureScheme(true, null, sgrd == null ? null : sgrd.AllEdgesMask),
-                new CellQuadratureScheme(true, null, sgrd == null ? null : sgrd.VolumeMask));
+                new EdgeQuadratureScheme(true, sgrd == null ? null : sgrd.AllEdgesMask),
+                new CellQuadratureScheme(true, sgrd == null ? null : sgrd.VolumeMask));
 
 
 

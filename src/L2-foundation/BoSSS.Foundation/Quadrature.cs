@@ -184,7 +184,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// integration metric
         /// </summary>
-        public IQuadratureScaling Scaling {
+        public IIntegrationMetric Scaling {
             get;
             protected set;
         }

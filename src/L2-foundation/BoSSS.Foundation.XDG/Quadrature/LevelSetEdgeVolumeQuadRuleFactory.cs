@@ -714,10 +714,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <summary>
             /// Constructor
             /// </summary>
-            /// <param name="owner"></param>
-            /// <param name="edgeRuleFactory"></param>
-            /// <param name="maxLambdaDegree"></param>
-            /// <param name="mask"></param>
             public LambdaEdgeBoundaryQuadrature(
                 LevelSetEdgeVolumeQuadRuleFactory owner,
                 IQuadRuleFactory<CellEdgeBoundaryQuadRule> edgeRuleFactory,
@@ -748,15 +744,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             
-            /// <summary>
-            /// Not implemented.
-            /// </summary>
-            /// <param name="i0"></param>
-            /// <param name="L"></param>
-            /// <returns></returns>
-            protected override MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
-                throw new NotSupportedException("special treatment for this class");
-            }
 
             /// <summary>
             /// For each face $` E $`  of each cell in

@@ -624,10 +624,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
             }
-
-            protected override MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
-                throw new NotSupportedException("special treatment for this class");
-            }
         }
     }
 }

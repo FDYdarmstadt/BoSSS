@@ -11,7 +11,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// <summary>
     /// integration metric for area integrals on edges
     /// </summary>
-    public class EdgeQuadratureScalingArea : IQuadratureScaling {
+    public class EdgeIntegrationMetric : IIntegrationMetric {
 
 
       /// <summary>

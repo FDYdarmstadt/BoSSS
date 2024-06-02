@@ -11,7 +11,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// <summary>
     /// integration metric for volume integrals
     /// </summary>
-    public class CellQuadratureScalingVolume : IQuadratureScaling {
+    public class CellIntegrationMetric : IIntegrationMetric {
 
 
 

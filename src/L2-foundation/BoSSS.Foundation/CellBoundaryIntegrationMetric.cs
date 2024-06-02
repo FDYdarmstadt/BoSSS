@@ -12,7 +12,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// <summary>
     /// integration metric for area integrals on cell boundaries
     /// </summary>
-    public class CellBoundaryScalingArea : IQuadratureScaling {
+    public class CellBoundaryIntegrationMetric : IIntegrationMetric {
         
 
         /// <summary>

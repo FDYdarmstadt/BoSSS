@@ -455,7 +455,7 @@ namespace BoSSS.Foundation {
             }
 
             int order = Math.Max(this.Basis.Degree, other.Basis.Degree) * 2;
-            CellQuadratureScheme cqs = new CellQuadratureScheme(domain: cm);
+            CellQuadratureScheme cqs = new CellQuadratureScheme(UseDefaultFactories:true, domain: cm);
             return LxError(other.Evaluate, null, cqs.Compile(this.GridDat, order)).Sqrt();
         }
 
@@ -627,7 +627,7 @@ namespace BoSSS.Foundation {
 
             EdgeQuadrature.GetQuadrature(
                 new int[] { 1 }, grd,
-                (new EdgeQuadratureScheme(true, null, innerEM)).Compile(grd, this.Basis.Degree * 2),
+                (new EdgeQuadratureScheme(true, innerEM)).Compile(grd, this.Basis.Degree * 2),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     NodeSet NS = QR.Nodes;
                     EvalResult.Clear();
@@ -680,7 +680,7 @@ namespace BoSSS.Foundation {
         virtual public double L2Norm(CellMask CM) {
             CellQuadratureScheme scheme = null;
             if (CM != null)
-                scheme = new CellQuadratureScheme(true, null, CM);
+                scheme = new CellQuadratureScheme(true, CM);
             double r = LxError((ScalarFunction)null, null, scheme.SaveCompile(this.GridDat, 2 * m_Basis.Degree)).Sqrt();
             return r;
         }
@@ -709,7 +709,7 @@ namespace BoSSS.Foundation {
         virtual public double L1Norm(CellMask CM) {
             CellQuadratureScheme scheme = null;
             if (CM != null)
-                scheme = new CellQuadratureScheme(true, null, CM);
+                scheme = new CellQuadratureScheme(true, CM);
             double r = LxError((ScalarFunction)null, (X, a, b) => a.Abs(), scheme.SaveCompile(this.GridDat, 2 * m_Basis.Degree));
             return r;
         }
@@ -765,7 +765,7 @@ namespace BoSSS.Foundation {
             }
 
             protected LxNormQuadrature(IGridData g) 
-                : base(new int[] { 1 }, g, (new CellQuadratureScheme(true, null, CellMask.GetEmptyMask(g)).SaveCompile(g, 1))) //
+                : base(new int[] { 1 }, g, (new CellQuadratureScheme(true, CellMask.GetEmptyMask(g)).SaveCompile(g, 1))) //
             {
             }
 

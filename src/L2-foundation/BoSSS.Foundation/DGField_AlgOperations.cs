@@ -332,8 +332,8 @@ namespace BoSSS.Foundation {
             DifferentialOperator powOp = new DifferentialOperator(args, new string[] { "res" }, QuadOrderFunc.SumOfMaxDegrees());
             powOp.EquationComponents["res"].Add(new AbsSource(args));
 
-            powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, null, EdgeMask.GetEmptyMask(this.Basis.GridDat));
-            powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, null, em);
+            powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat));
+            powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
 
             powOp.FluxesAreNOTMultithreadSafe = false;
             powOp.Commit();
@@ -438,8 +438,8 @@ namespace BoSSS.Foundation {
                                                         new string[] { "res" },
                                                         QuadOrderFunc.SumOfMaxDegrees());
             powOp.EquationComponents["res"].Add(new PowSource(pow));
-            powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, null, EdgeMask.GetEmptyMask(this.Basis.GridDat));
-            powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, null, em);
+            powOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat));
+            powOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
 
             powOp.FluxesAreNOTMultithreadSafe = false;
             powOp.Commit();
@@ -628,7 +628,7 @@ namespace BoSSS.Foundation {
 
             DifferentialOperator src = new DifferentialOperator(Dom, Cod, QuadOrderFunc.NonLinear(3));
             src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(Dom, f));
-            src.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(false, null, EdgeMask.GetEmptyMask(this.Basis.GridDat));
+            src.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.Basis.GridDat));
             src.VolumeQuadraturSchemeProvider = g => cqs;
             src.FluxesAreNOTMultithreadSafe = false;
             src.Commit();
@@ -715,8 +715,8 @@ namespace BoSSS.Foundation {
             DifferentialOperator multOp = new DifferentialOperator(new string[] { "a", "b" },
                                                           new string[] { "res" },
                                                           QuadOrderFunc.NonLinear(2));
-            multOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, null, EdgeMask.GetEmptyMask(g));
-            multOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, null, em);
+            multOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
+            multOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, em);
             multOp.EquationComponents["res"].Add(new MultiplySource());
             multOp.FluxesAreNOTMultithreadSafe = false;
             multOp.Commit();
@@ -831,8 +831,8 @@ namespace BoSSS.Foundation {
                                                           new string[] { "res" },
                                                           QuadOrderFunc.Linear());
                                                           //QuadOrderFunc.NonLinear(2));
-            fracOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, null, EdgeMask.GetEmptyMask(g));
-            fracOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, null, cm);
+            fracOp.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(g));
+            fracOp.VolumeQuadraturSchemeProvider = g => new CellQuadratureScheme(true, cm);
             fracOp.EquationComponents["res"].Add(new QuotientSource());
             fracOp.FluxesAreNOTMultithreadSafe = false;
             fracOp.Commit();

@@ -58,7 +58,7 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
-        public IQuadratureScaling QuadratureScaling {
+        public IIntegrationMetric QuadratureScaling {
             get;
             set;
         }
@@ -127,7 +127,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// optimization of the execution of the quadrature itself.
         /// </remarks>
         public static CompositeQuadRule<TQuadRule> Create<TDomain>(
-            IQuadRuleFactory<TQuadRule> ruleFactory, int order, TDomain domain, IQuadratureScaling scaling)
+            IQuadRuleFactory<TQuadRule> ruleFactory, int order, TDomain domain, IIntegrationMetric scaling)
             where TDomain : ExecutionMask //
         {
             using (var tr = new FuncTrace()) {
