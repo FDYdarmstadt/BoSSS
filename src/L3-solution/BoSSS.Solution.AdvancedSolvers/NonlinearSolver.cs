@@ -438,6 +438,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     Console.WriteLine($"Linearization change: {OpMtxRaw2.InfNorm()}, {OpAffineRaw2.MPI_L2Norm()}");
                 }
+                */
                 
             }
             

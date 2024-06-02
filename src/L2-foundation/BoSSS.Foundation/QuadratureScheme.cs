@@ -716,7 +716,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// if false, the user must add factories for all items in the domain.
         /// </param>
         public CellQuadratureScheme(bool UseDefaultFactories = true, CellMask domain = null)
-            : this(null, UseDefaultFactories, ConvDomain(domain)) {
+            : this(null, UseDefaultFactories, domain) {
         }
 
         /// <summary>
@@ -737,6 +737,23 @@ namespace BoSSS.Foundation.Quadrature {
             AddFactoryDomainPair(factory, ConvDomain(domain));
         }
 
+        /// <summary>
+        /// Convenience constructor that allows for the construction of a
+        /// scheme with a predefined factory. Equivalent to creating an empty
+        /// scheme and calling
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>(<paramref name="factory"/>, <paramref name="domain"/>).
+        /// </summary>
+        /// <param name="factory">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="domain">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        public CellQuadratureScheme(IQuadRuleFactory<QuadRule> factory, CellMask domain = null)
+            : this(null, factory, domain) {
+        }
+
+       
         /// <summary>
         /// <see cref="CellMask.GetFullMask"/>
         /// </summary>
@@ -816,7 +833,7 @@ namespace BoSSS.Foundation.Quadrature {
             : this(null, UseDefaultFactories, ConvDomain(domain)) {
         }
 
-        /// <summary>
+        /// <summary>        
         /// Convenience constructor that allows for the construction of a
         /// scheme with a predefined factory. Equivalent to creating an empty
         /// scheme and calling
@@ -832,6 +849,22 @@ namespace BoSSS.Foundation.Quadrature {
         public EdgeQuadratureScheme(IIntegrationMetric scaling, IQuadRuleFactory<QuadRule> factory, EdgeMask domain = null)
             : base(scaling ?? new EdgeIntegrationMetric(), false, ConvDomain(domain)) {
             AddFactoryDomainPair(factory, ConvDomain(domain));
+        }
+
+        /// <summary>
+        /// Convenience constructor that allows for the construction of a
+        /// scheme with a predefined factory. Equivalent to creating an empty
+        /// scheme and calling
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>(<paramref name="factory"/>, <paramref name="domain"/>).
+        /// </summary>
+        /// <param name="factory">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="domain">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        public EdgeQuadratureScheme(IQuadRuleFactory<QuadRule> factory, EdgeMask domain = null)
+            : this(null, factory, domain) {
         }
 
         /// <summary>
@@ -918,7 +951,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </param>
         /// <param name="scaling"></param>
         public CellBoundaryQuadratureScheme(IIntegrationMetric scaling, IQuadRuleFactory<CellBoundaryQuadRule> factory, CellMask domain = null)
-            : base(scaling, false, domain) {
+            : base(scaling ?? new CellBoundaryIntegrationMetric(), false, domain) {
             AddFactoryDomainPair(factory, domain);
         }
 
@@ -935,8 +968,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
         public CellBoundaryQuadratureScheme(IQuadRuleFactory<CellBoundaryQuadRule> factory, CellMask domain = null)
-            : base(new CellBoundaryIntegrationMetric(), false, domain) {
-            AddFactoryDomainPair(factory, domain);
+            : this(null, factory, domain) {
         }
 
 

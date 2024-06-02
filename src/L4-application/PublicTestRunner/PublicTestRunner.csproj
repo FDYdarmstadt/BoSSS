@@ -21,6 +21,7 @@
     <ProjectReference Include="..\CDG_Projection_MPI\CDG_Projection_MPI.csproj" />
     <ProjectReference Include="..\CNS\CNS.csproj" />
     <ProjectReference Include="..\CNS_MPITests\CNS_MPITests.csproj" />
+    <ProjectReference Include="..\CutCellQuadratureScaling\CutCellQuadratureScaling.csproj" />
     <ProjectReference Include="..\CutCellQuadrature\CutCellQuadrature.csproj" />
     <ProjectReference Include="..\DatabaseTests\DatabaseTests.csproj" />
     <ProjectReference Include="..\DerivativeTest\DerivativeTest.csproj" />

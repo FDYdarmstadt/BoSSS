@@ -12,8 +12,10 @@ using BoSSS.Solution.LoadBalancing;
 using ilPSP;
 using BoSSS.Solution.Tecplot;
 using System.Diagnostics;
+using NUnit.Framework;
 
-namespace CutCellQuadratureScaling {
+
+namespace BoSSS.Application.CutCellQuadratureScaling {
 
     /// <summary>
     /// 
@@ -45,16 +47,18 @@ namespace CutCellQuadratureScaling {
 
 
 
-    class TestSetupSingleLevset2D : Application {
+    class TestSetupSingleLevset2D : BoSSS.Solution.Application {
 
-        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2) {
+        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye) {
             this.MeshScaling = meshScaling;
             this.CutCellQuadratureOrder = cutCellQuadratureOrder;
+            this.QuadratureType = quadratureType;
         }
 
 
-        public double MeshScaling = 1.0;
-        public int CutCellQuadratureOrder = 2;
+        public readonly double MeshScaling = 1.0;
+        public readonly int CutCellQuadratureOrder = 2;
+        public readonly XQuadFactoryHelper.MomentFittingVariants QuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
         protected override IGrid CreateOrLoadGrid() {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
@@ -115,6 +119,8 @@ namespace CutCellQuadratureScaling {
 
                 Console.WriteLine($"Level Set Surface, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
+
+                Assert.Less(relErr, 1.0e-10, $"relative surface error above threshold for species {Species}" );
             }
         }
 
@@ -139,6 +145,8 @@ namespace CutCellQuadratureScaling {
 
                 Console.WriteLine($"Cut Cell Volume, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Cut Cell Volume, species {Species} relative error : {relErr:g7}");
+
+                Assert.Less(relErr, 1.0e-10, $"relative volume error above threshold for species {Species}");
             }
         }
 
@@ -159,6 +167,8 @@ namespace CutCellQuadratureScaling {
 
                 Console.WriteLine($"Cut Edge area, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Cut Edge area, species {Species} relative error : {relErr:g7}");
+
+                Assert.Less(relErr, 1.0e-10, $"relative edge area error above threshold for species {Species}");
             }
         }
     }
