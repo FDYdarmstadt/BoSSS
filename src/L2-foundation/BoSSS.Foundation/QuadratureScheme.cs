@@ -158,12 +158,13 @@ namespace BoSSS.Foundation.Quadrature {
                     throw new ArgumentException();
             this.Domain = domain;
             this.m_UseDefaultFactories = UseDefaultFactories;
+            this.IntegrationMetric = scaling;
         }
 
         /// <summary>
         /// Scaling/Integration metric which will be forwarded to the produced composite quadrature rules (<see cref="ICompositeQuadRule{TQuadRule}.QuadratureScaling"/>)
         /// </summary>
-        public readonly IIntegrationMetric Scaling;
+        public readonly IIntegrationMetric IntegrationMetric;
 
 
         bool m_UseDefaultFactories;
@@ -326,7 +327,7 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
-                            factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain, Scaling);
+                            factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain, IntegrationMetric);
 
                     int prevIE = -1;
                     foreach (var CRP in currentRule) {
