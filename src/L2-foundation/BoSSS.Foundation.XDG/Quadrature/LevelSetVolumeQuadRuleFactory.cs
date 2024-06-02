@@ -913,15 +913,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <summary>
             /// Constructor
             /// </summary>
-            /// <param name="owner"></param>
-            /// <param name="surfaceRuleFactory"></param>
-            /// <param name="mask"></param>
             public LambdaLevelSetSurfaceQuadrature(
                 LevelSetVolumeQuadRuleFactory owner, IQuadRuleFactory<QuadRule> surfaceRuleFactory, CellMask mask)
                 : base(
                     new int[] { owner.GetNumberOfLambdas(owner.lambdaBasis.MaxAbsoluteDegree) },
                     owner.LevelSetData.GridDat,
-                    new CellQuadratureScheme(surfaceRuleFactory, mask).Compile(owner.LevelSetData.GridDat, owner.lambdaBasis.MaxAbsoluteDegree),
+                    new CellQuadratureScheme(null,surfaceRuleFactory, mask).Compile(owner.LevelSetData.GridDat, owner.lambdaBasis.MaxAbsoluteDegree),
                     CoordinateSystem.Reference) //
             {
                 this.owner = owner;

@@ -922,6 +922,24 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         /// <summary>
+        /// Convenience constructor that allows for the construction of a
+        /// scheme with a predefined factory. Equivalent to creating an empty
+        /// scheme and calling
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>(<paramref name="factory"/>, <paramref name="domain"/>).
+        /// </summary>
+        /// <param name="factory">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        /// <param name="domain">
+        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
+        /// </param>
+        public CellBoundaryQuadratureScheme(IQuadRuleFactory<CellBoundaryQuadRule> factory, CellMask domain = null)
+            : base(new CellBoundaryIntegrationMetric(), false, domain) {
+            AddFactoryDomainPair(factory, domain);
+        }
+
+
+        /// <summary>
         /// <see cref="CellMask.GetFullMask"/>
         /// </summary>
         /// <param name="gridData">

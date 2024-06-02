@@ -139,11 +139,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             // subgrid on which the volume rule should be constructed
             // ======================================================
             SubGrid sgrd = new SubGrid(_mask);
-            CellQuadratureScheme surfaceScheme = new CellQuadratureScheme(surfaceRuleFactory, sgrd.VolumeMask);
+            CellQuadratureScheme surfaceScheme = new CellQuadratureScheme(null, surfaceRuleFactory, sgrd.VolumeMask);
             EdgeQuadratureScheme edgeScheme = null;
             CellBoundaryQuadratureScheme cellBndSchme = null;
             if (edgeRuleFactory != null)
-                edgeScheme = new EdgeQuadratureScheme(edgeRuleFactory, sgrd.AllEdgesMask);
+                edgeScheme = new EdgeQuadratureScheme(null, edgeRuleFactory, sgrd.AllEdgesMask);
             if (cellBoundaryFactory != null)
                 cellBndSchme = new CellBoundaryQuadratureScheme(cellBoundaryFactory, sgrd.VolumeMask);
             if ((edgeScheme == null) == (cellBndSchme == null))
