@@ -184,10 +184,12 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// integration metric
         /// </summary>
-        public IIntegrationMetric Scaling {
+        public IIntegrationMetric IntegrationMetric {
             get;
             protected set;
         }
+
+        protected abstract IIntegrationMetric GetDefaultIntegrationMetric();
 
         /// <summary>
         /// Standard constructor
@@ -207,9 +209,10 @@ namespace BoSSS.Foundation.Quadrature {
             foreach (var no in noOfIntegralsPerCell)
                 m_TotalNoOfIntegralsPerItem *= no;
             m_IntegralsComponent = noOfIntegralsPerCell;
-            this.Scaling = rule.QuadratureScaling;
-            if(CoordinateSystem != CoordinateSystem.Reference && rule.QuadratureScaling == null) {
-                throw new ArgumentException("For integration in physical coordinate system, a quadrature scaling (integration metric) is required for the rule");
+            this.IntegrationMetric = rule.IntegrationMetric;
+            if(cs != CoordinateSystem.Reference && rule.IntegrationMetric == null) {
+                this.IntegrationMetric = GetDefaultIntegrationMetric();
+                //throw new ArgumentException("For integration in physical coordinate system, a quadrature scaling (integration metric) is required for the rule");
             } 
 
 #if DEBUG
@@ -443,7 +446,7 @@ namespace BoSSS.Foundation.Quadrature {
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, NumThreads);
                     for (int iRnk = 1; iRnk < NumThreads; iRnk++) {
                         allThreads[iRnk] = this.CloneForThreadParallelization(iRnk, NumThreads);
-                        allThreads[iRnk].Scaling = this.Scaling;
+                        allThreads[iRnk].IntegrationMetric = this.IntegrationMetric;
                         allThreads[iRnk].m_OnCloneForThreadParallelization?.Invoke(allThreads[iRnk], iRnk, NumThreads);
                         allThreads[iRnk].m_compositeRule = null; // prevent accidental use
 
@@ -916,7 +919,7 @@ namespace BoSSS.Foundation.Quadrature {
                                     // codepath for integration of linear elements
                                     // +++++++++++++++++++++++++++++++++++++++++++
 
-                                    var scalings = Scaling.GetScalingsForLinearElements(gridData, quadRule, j0, Bulksize);
+                                    var scalings = IntegrationMetric.GetScalingsForLinearElements(gridData, quadRule, j0, Bulksize);
                                     Debug.Assert(scalings.Dimension == 1);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
                                     Debug.Assert(currentRuleWeights.IsContinuous);
@@ -949,7 +952,7 @@ namespace BoSSS.Foundation.Quadrature {
                                     // codepath for integration of nonlinear/curved elements
                                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                    var scalings = Scaling.GetScalingsForNonlinElements(gridData, quadRule, j0, Bulksize);
+                                    var scalings = IntegrationMetric.GetScalingsForNonlinElements(gridData, quadRule, j0, Bulksize);
                                     Debug.Assert(scalings.Dimension == 2);
                                     Debug.Assert(scalings.GetLength(0) == Bulksize);
                                     Debug.Assert(scalings.GetLength(1) == currentRuleWeights.GetLength(0));

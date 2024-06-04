@@ -51,8 +51,12 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
-        
-        
+
+        protected override IIntegrationMetric GetDefaultIntegrationMetric() {
+            return new CellIntegrationMetric();
+        }
+
+
 
         /// <summary>
         /// Sweeps whether cell <paramref name="i0"/> is linear/nonlinear and how many cells of the same type are going to come after it.

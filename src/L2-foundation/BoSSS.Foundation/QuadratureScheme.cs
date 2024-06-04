@@ -162,7 +162,7 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         /// <summary>
-        /// Scaling/Integration metric which will be forwarded to the produced composite quadrature rules (<see cref="ICompositeQuadRule{TQuadRule}.QuadratureScaling"/>)
+        /// Scaling/Integration metric which will be forwarded to the produced composite quadrature rules (<see cref="ICompositeQuadRule{TQuadRule}.IntegrationMetric"/>)
         /// </summary>
         public readonly IIntegrationMetric IntegrationMetric;
 

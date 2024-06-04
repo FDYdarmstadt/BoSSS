@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// The quadrature scaling/integration metric
         /// </summary>
-        IIntegrationMetric QuadratureScaling {
+        IIntegrationMetric IntegrationMetric {
             get;
         }
 

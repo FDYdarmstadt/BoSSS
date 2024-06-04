@@ -140,6 +140,10 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
+        protected override IIntegrationMetric GetDefaultIntegrationMetric() {
+            return new EdgeIntegrationMetric();
+        }
+
 
         /// <summary>
         /// Index of the current rule's reference element into

@@ -58,7 +58,7 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
-        public IIntegrationMetric QuadratureScaling {
+        public IIntegrationMetric IntegrationMetric {
             get;
             set;
         }
@@ -132,7 +132,7 @@ namespace BoSSS.Foundation.Quadrature {
         {
             using (var tr = new FuncTrace()) {
                 CompositeQuadRule<TQuadRule> compositeRule = new CompositeQuadRule<TQuadRule>();
-                compositeRule.QuadratureScaling = scaling;
+                compositeRule.IntegrationMetric = scaling;
                 // BEWARE: This check may cause nasty trouble in parallel runs
                 // where a domain is only present on some domains and has thus been
                 // removed by Björn
@@ -218,7 +218,7 @@ namespace BoSSS.Foundation.Quadrature {
             CompositeQuadRule<TQuadRule> A, CompositeQuadRule<TQuadRule> B) {
 
             CompositeQuadRule<TQuadRule> result = new CompositeQuadRule<TQuadRule>();
-            result.QuadratureScaling = B.QuadratureScaling;
+            result.IntegrationMetric = B.IntegrationMetric;
             //result.chunkRulePairs = ZipChunkRulePairs(A.chunkRulePairs, B.chunkRulePairs);
             result.chunkRulePairs = ZipHelper2(A.chunkRulePairs, B.chunkRulePairs);
 

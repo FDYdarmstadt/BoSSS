@@ -55,6 +55,10 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
+        protected override IIntegrationMetric GetDefaultIntegrationMetric() {
+            return new CellBoundaryIntegrationMetric();
+        }
+
 
         /// <summary>
         /// Sweeps whether cell <paramref name="i0"/> is linear/nonlinear and how many cells of the same type are going to come after it.
@@ -140,7 +144,7 @@ namespace BoSSS.Foundation.Quadrature {
 
 
 
-                                var scalings = Scaling.GetScalingsForLinearElements(this.gridData, quadRule, j0, Bulksize);
+                                var scalings = IntegrationMetric.GetScalingsForLinearElements(this.gridData, quadRule, j0, Bulksize);
 
                                 Debug.Assert(scalings.Dimension == 2);
                                 Debug.Assert(scalings.IsContinuous);
@@ -179,7 +183,7 @@ namespace BoSSS.Foundation.Quadrature {
                                 // codepath for integration of nonlinear/curved elements
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                var scalings = Scaling.GetScalingsForNonlinElements(this.gridData, quadRule, j0, Bulksize);
+                                var scalings = IntegrationMetric.GetScalingsForNonlinElements(this.gridData, quadRule, j0, Bulksize);
 
                                 Debug.Assert(scalings.Dimension == 2);
                                 Debug.Assert(scalings.IsContinuous);

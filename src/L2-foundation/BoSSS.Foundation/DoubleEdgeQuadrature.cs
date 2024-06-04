@@ -51,7 +51,11 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
-       
+        protected override IIntegrationMetric GetDefaultIntegrationMetric() {
+            return new EdgeIntegrationMetric();
+        }
+
+
         /*
         /// <summary>
         /// not used/suitable for cell boundary quadrature
@@ -132,7 +136,7 @@ namespace BoSSS.Foundation.Quadrature {
                         if (Linear) {
 
 
-                            MultidimensionalArray scalings = Scaling.GetScalingsForLinearElements(this.gridData, quadRule, j0, Bulksize);
+                            MultidimensionalArray scalings = IntegrationMetric.GetScalingsForLinearElements(this.gridData, quadRule, j0, Bulksize);
                             Debug.Assert(scalings.Dimension == 1);
                             Debug.Assert(scalings.Lengths.Length == 1);
                             Debug.Assert(scalings.IsContinuous);
@@ -166,7 +170,7 @@ namespace BoSSS.Foundation.Quadrature {
                                 }
                             }
                         } else {
-                            var scalings = Scaling.GetScalingsForNonlinElements(this.gridData, quadRule, j0, Bulksize);
+                            var scalings = IntegrationMetric.GetScalingsForNonlinElements(this.gridData, quadRule, j0, Bulksize);
                             Debug.Assert(scalings.Dimension == 2);
                             Debug.Assert(scalings.GetLength(0) == Bulksize);
                             Debug.Assert(scalings.GetLength(1) == currentRuleWeights.GetLength(0));
