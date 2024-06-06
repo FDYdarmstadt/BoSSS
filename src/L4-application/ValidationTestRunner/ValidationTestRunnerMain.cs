@@ -144,6 +144,8 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__XDGIST_1DShockAcoustic()
         {
+            Debugger.Launch();
+
             // delete the database if it is more than 25 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
@@ -1232,11 +1234,13 @@ namespace ValidationTestRunner {
             if(EnforceDeletionEnvVar != null) {
                 string really = System.Environment.GetEnvironmentVariable(EnforceDeletionEnvVar) ?? "";
                 string really2 = System.Environment.GetEnvironmentVariable("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER") ?? "";
-                if(really.IsNonEmpty() || really2.IsNonEmpty() || masterEnforceDeletion) {
-                    if(really.Trim() != "0" || really2.Trim() != "0") {
-                        Console.WriteLine($"Enforcing deletion of old runs, since environment variables {EnforceDeletionEnvVar}/BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER are set to {really}/{really2} (not 0) or file 'BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt' exists!");
-                        enforce = true;
-                    }
+                if ((really.IsNonEmpty() && really.Trim() != "0")
+                    || (really2.IsNonEmpty() && really2.Trim() != "0")
+                    || masterEnforceDeletion) {
+
+                    Console.WriteLine($"Enforcing deletion of old runs, since environment variables {EnforceDeletionEnvVar}/BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER are set to {really}/{really2} (not 0) or file 'BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt' exists!");
+                    enforce = true;
+
                 }
             }
 
