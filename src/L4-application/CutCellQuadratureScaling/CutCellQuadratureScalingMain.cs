@@ -36,6 +36,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumerTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
+                    Test.CompareCutLineTo(Ref);
                 }
 
             }
@@ -47,9 +48,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
 
-    class TestSetupSingleLevset2D : BoSSS.Solution.Application {
+    abstract class TestSetupBase : BoSSS.Solution.Application {
 
-        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye) {
+        public TestSetupBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye) {
             this.MeshScaling = meshScaling;
             this.CutCellQuadratureOrder = cutCellQuadratureOrder;
             this.QuadratureType = quadratureType;
@@ -60,42 +61,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public readonly int CutCellQuadratureOrder = 2;
         public readonly XQuadFactoryHelper.MomentFittingVariants QuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
-        protected override IGrid CreateOrLoadGrid() {
-            double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
-            double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            xNodes.ScaleV(MeshScaling);
-            yNodes.ScaleV(MeshScaling);
-
-            GridCommons grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-            return grd;
-        }
-
-        LevelSet Phi1;
-        //LevelSet Phi2;
-
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-
-            Phi1 = new LevelSet(new Basis(this.GridData, 2), "Phi1");
-            //Phi2 = new LevelSet(new Basis(this.GridData, 2), "Phi2");
-
-
-            double R = 4.0*this.MeshScaling;
-            double Phi1_ana(double x, double y) {
-                return 1.0 - (x / R).Pow2() - (y / R).Pow2();
-            }
-            Debug.Assert(Phi1_ana(R, 0).Abs() <= 1.0e-8);
-
-            Phi1.ProjectField(Phi1_ana);
-            //Phi2.ProjectField(((x, y) => y));
-
-            LsTrk = new LevelSetTracker(this.GridData as GridData, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new [] { "A", "B" }, Phi1);
-            LsTrk.UpdateTracker(0.0);
-        }
-
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.PlotFields(new DGField[] { Phi1 }, "CutCellQuadratureScaling", timestepNo.MajorNumber, superSampling);
-        }
-
+        
         protected CutCellMetrics latestCCM;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -127,7 +93,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// <summary>
         /// verifies quadratic/kubic scaling of volume integrals in 2D/3D
         /// </summary>
-        public void CompareVolumerTo(TestSetupSingleLevset2D othr) {
+        public void CompareVolumerTo(TestSetupBase othr) {
             double D = this.Grid.SpatialDimension;
             
             foreach (string Species in this.LsTrk.SpeciesNames) {
@@ -151,7 +117,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
 
-        public void CompareEdgeAreaTo(TestSetupSingleLevset2D othr) {
+        public void CompareEdgeAreaTo(TestSetupBase othr) {
             double D = this.Grid.SpatialDimension;
             
             foreach (string Species in this.LsTrk.SpeciesNames) {
@@ -171,10 +137,97 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Assert.Less(relErr, 1.0e-10, $"relative edge area error above threshold for species {Species}");
             }
         }
+
+
+        public void CompareCutLineTo(TestSetupBase othr) {
+            double D = this.Grid.SpatialDimension;
+
+            foreach(string Species in this.LsTrk.SpeciesNames) {
+                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
+                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
+
+                var Area_this = this.latestCCM.CutLineLength[SpcId_this];
+                var Area_othr = othr.latestCCM.CutLineLength[SpcId_othr];
+                //
+                var Area_err = Area_othr * (this.MeshScaling.Pow(D - 2)) - Area_this * (othr.MeshScaling.Pow(D - 2));
+
+                double absErr = Area_err.L2Norm();
+                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
+
+                Console.WriteLine($"Cut line measure, species {Species} absolute error : {absErr:g7}");
+                Console.WriteLine($"Cut line measure, species {Species} relative error : {relErr:g7}");
+
+                Assert.Less(relErr, 1.0e-10, $"relative edge area error above threshold for species {Species}");
+            }
+        }
     }
 
 
-    class TestSetupSingleLevset3D : TestSetupSingleLevset2D {
+    abstract class TestSetupSingleLevSetBase : TestSetupBase {
+
+        public TestSetupSingleLevSetBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+
+
+
+        LevelSet Phi1;
+        //LevelSet Phi2;
+
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+
+            Phi1 = new LevelSet(new Basis(this.GridData, 2), "Phi1");
+            //Phi2 = new LevelSet(new Basis(this.GridData, 2), "Phi2");
+
+
+            double R = 4.0 * this.MeshScaling;
+            double Phi1_ana(double x, double y) {
+                return 1.0 - (x / R).Pow2() - (y / R).Pow2();
+            }
+            Debug.Assert(Phi1_ana(R, 0).Abs() <= 1.0e-8);
+
+            Phi1.ProjectField(Phi1_ana);
+            //Phi2.ProjectField(((x, y) => y));
+
+            LsTrk = new LevelSetTracker(this.GridData as GridData, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new[] { "A", "B" }, Phi1);
+            LsTrk.UpdateTracker(0.0);
+        }
+
+
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            Tecplot.PlotFields(new DGField[] { Phi1 }, "CutCellQuadratureScaling", timestepNo.MajorNumber, superSampling);
+        }
+
+
+    }
+
+
+
+    class TestSetupSingleLevset2D : TestSetupSingleLevSetBase {
+
+        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+
+
+
+        protected override IGrid CreateOrLoadGrid() {
+            double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
+            double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
+            xNodes.ScaleV(MeshScaling);
+            yNodes.ScaleV(MeshScaling);
+
+            GridCommons grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+            return grd;
+        }
+
+
+    }
+
+
+
+    class TestSetupSingleLevset3D : TestSetupSingleLevSetBase {
+
+        public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye)
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
 
 
         protected override IGrid CreateOrLoadGrid() {

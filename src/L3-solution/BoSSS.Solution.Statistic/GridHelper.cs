@@ -18,7 +18,7 @@ namespace BoSSS.Solution.Statistic
                 return classicGridData;
             } else if(gridData is AggregationGridData aggGridData) {
                 GridData data = aggGridData.AncestorGrid;
-                return aggGridData.AncestorGrid;
+                return data;
             } else {
                 throw new NotImplementedException("ToDo: Grid Type not yet implemented");
             }

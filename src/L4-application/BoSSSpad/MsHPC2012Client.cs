@@ -642,6 +642,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// 
         /// </summary>
+        [DataMember]
+        public bool UseNodeExclusive = false;
+
+        /// <summary>
+        /// 
+        /// </summary>
         private (int id, JobState state)[] _ListJobs() {
 
 
@@ -741,7 +747,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-            bool exclusive = false;
+            bool exclusive = this.UseNodeExclusive;
 
 
             using (var stw = new StringWriter()) {
