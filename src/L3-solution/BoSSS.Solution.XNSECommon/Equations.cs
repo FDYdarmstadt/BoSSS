@@ -393,11 +393,11 @@ namespace BoSSS.Solution.XNSECommon {
             if (physParams.IncludeConvection && config.isTransport) {
                 DefineConvective(d, dimension, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);                
             }
-            if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
-                // if Moving mesh, we need the interface transport term somehow
+            //if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+            //    // if Moving mesh, we need the interface transport term somehow
 
-                throw new NotImplementedException("Something missing here.");
-            }
+            //    throw new NotImplementedException("Something missing here.");
+            //}
 
 
             // pressure gradient
@@ -440,10 +440,10 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            if (!isMovingMesh) {
+            //if (!isMovingMesh) {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
                 AddComponent(conv);
-            }
+            //}
             // when moving mesh, nothing to do here
         }
     }
@@ -466,10 +466,10 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            if (!isMovingMesh) {
+            //if (!isMovingMesh) {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
                 AddComponent(conv);
-            }
+            //}
             // when moving mesh, nothing to do here
         }
     }

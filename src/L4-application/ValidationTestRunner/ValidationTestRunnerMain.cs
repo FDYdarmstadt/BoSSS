@@ -506,7 +506,7 @@ namespace ValidationTestRunner {
                 Console.WriteLine("RUN_DROPLET = " + really);
             }
 
-            Console.WriteLine("Lets go...");
+            Console.WriteLine("Let's go...");
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -538,7 +538,7 @@ namespace ValidationTestRunner {
                 Console.WriteLine("RUN_COMBDROPLET = " + really);
             }
 
-            Console.WriteLine("Lets go...");
+            Console.WriteLine("Let's go...");
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -567,7 +567,7 @@ namespace ValidationTestRunner {
                 Console.WriteLine("RUN_DROPLET_FIRSTPERIOD = " + really);
             }
 
-            Console.WriteLine("Lets go...");
+            Console.WriteLine("Let's go...");
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -579,6 +579,42 @@ namespace ValidationTestRunner {
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
 
             ValidationTestRunnerMain.RunWorksheet("Oscillating-Droplet/Droplet3D-FirstPeriodStudy.ipynb");
+        }
+
+
+
+        /// <summary> 
+        /// 3D aerodynamical droplet rebound in a rotating disk flow field.
+        /// Cooperation project with CREATOR (SLA) - Experiment from Gauthier et. al.
+        /// </summary>
+        [NUnitFileToCopyHack("examples/DropletImpact/DropletReboundGauthier_Run.ipynb",
+            "vonKarmanFlowSolution_HAMcoeffU.txt",
+            "vonKarmanFlowSolution_HAMcoeffV.txt",
+            "vonKarmanFlowSolution_HAMcoeffW.txt",
+            "vonKarmanFlowSolution_HAMcoeffP.txt")]
+        [Test]
+        static public void Run__DropletReboundGauthier() {
+
+            string really = System.Environment.GetEnvironmentVariable("RUN_DROPLET_REBOUND_GAUTHIER");
+            if (really.IsEmptyOrWhite()) {
+                Console.WriteLine("skipping Run__DropletReboundGauthier ");
+                return;
+            } else {
+                Console.WriteLine("RUN_DROPLET_REBOUND_GAUTHIER = " + really);
+            }
+
+            Console.WriteLine("Let's go...");
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            //ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+            //    "DropletReboundGauthier",
+            //    "DropletReboundGauthier*",
+            //    "delete_DropletReboundGauthier",
+            //    new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
+
+            ValidationTestRunnerMain.RunWorksheet("DropletReboundGauthier_Run.ipynb");
         }
 
 

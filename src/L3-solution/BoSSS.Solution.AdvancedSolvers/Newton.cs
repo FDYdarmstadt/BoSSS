@@ -30,6 +30,7 @@ using System.IO;
 using System.Diagnostics;
 using BoSSS.Foundation.XDG;
 using NUnit.Framework;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -668,10 +669,70 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             };
                         }
 
+
+                        // Writing to text files
+                        //{
+                        //    Console.WriteLine("Writing to text file");
+                        //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("CurrentLinOpMtx");
+                        //    CurrentLin.MassMatrix.SaveToTextFileSparse("CurrentLinMassMtx");
+                        //    CurRes.SaveToTextFile("CurRes");
+                        //}
+
+                        //var ana = new OpAnalysisBase(CurrentLin.OperatorMatrix, CurRes, (UnsetteledCoordinateMapping)CurrentLin.DgMapping, CurrentLin.Config, CurrentLin.AbstractOperator);
+                        // Arnoldi iteration
+                        //{
+                        //    var Mtx = CurrentLin.OperatorMatrix;
+                        //    int L = Mtx.RowPartitioning.LocalLength;
+
+                        //    var FullSel = new SubBlockSelector(CurrentLin.Mapping);
+                        //    var VarGroup = CurrentLin.Mapping.ProblemMapping.BasisS.Count.ForLoop(i => i);
+                        //    FullSel.SetVariableSelector(VarGroup);
+                        //    var mask = new BlockMask(FullSel);
+                        //    var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
+
+                        //    Console.WriteLine("Computing minimal Eigenvalue and Eigenvector");
+                        //    var bla = Part.MinimalEigen();
+
+                        //    double[] Vret = new double[L];
+                        //    mask.AccSubVec(bla.V, Vret);
+
+                        //    Console.WriteLine("done: " + bla.lambdaMin);
+                        //    var Suprious = CurrentLin.ProlongateSolToDg(bla.V, "Spurious_");
+                        //    Tecplot.Tecplot.PlotFields(Suprious, $"SpuriousModes-{itc}", bla.lambdaMin, 2);
+                        //}
+
+                        // MATLAB
+                        //{
+                        //    var Mtx = CurrentLin.OperatorMatrix;
+
+                        //    MultidimensionalArray outputD = MultidimensionalArray.Create(1, 1);
+                        //    MultidimensionalArray outputV = MultidimensionalArray.Create((int)Mtx.NoOfRows, 1);
+
+                        //    int[] DepVars = CurrentLin.Mapping.ProblemMapping.BasisS.Count.ForLoop(i => i);
+                        //    double[] DepVars_subvec = CurrentLin.Mapping.ProblemMapping.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
+
+                        //    Console.WriteLine("Computing minimal Eigenvalue and Eigenvector. Calling MATLAB ...");
+                        //    using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+
+                        //        bmc.PutSparseMatrix(Mtx, "FullMatrix");
+                        //        bmc.PutVector(DepVars_subvec, "DepVars_subvec");
+                        //        bmc.Cmd("[V,D] = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'sm');");
+                        //        bmc.GetMatrix(outputV, "V");
+                        //        bmc.GetMatrix(outputD, "D");
+                        //        bmc.Execute(false);
+                        //    }
+
+                        //    Console.WriteLine("done: " + outputD[0, 0]);
+                        //    var Suprious = CurrentLin.ProlongateSolToDg(outputV.To1DArray(), "Spurious_");
+                        //    Tecplot.Tecplot.PlotFields(Suprious, $"SpuriousModes-{itc}", outputD[0, 0], 2);
+                        //}
+
                         //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
                         //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
                         solver.Solve(step, CurRes);
                         step.ScaleV(-1);
+
+                        Console.WriteLine($"NewtonStep: linear solver converged? {solver.Converged}");
                     }
                 } else {
                     throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");

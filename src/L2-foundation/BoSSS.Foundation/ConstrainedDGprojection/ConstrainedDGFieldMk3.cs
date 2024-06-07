@@ -176,11 +176,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
         /// <summary>
-        /// hard-coded switch to turn some console output on/off (BAD PRACTICE)
-        /// </summary>
-        protected bool diagnosticOutput = false;
-
-        /// <summary>
         /// hard-coded switch to turn debugging output for MATLAB on/off
         /// </summary>
         protected bool diagOutputMatlab = false;
@@ -506,15 +501,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                     SinglePhaseField errorField;
                     (double jumpNorm, double L2err) = owner.CheckLocalProjection(this.comm, out errorField, this.Patch, true);
-                    //if(owner.diagnosticOutput)
-                    //    Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
-                    //if(jumpNorm > 1e-11) {
-                    //    if(owner.diagnosticOutput) {
-                    //        Console.WriteLine("======================");
-                    //        Console.WriteLine("project mask: No of cells {0}", this.Patch.NoOfItemsLocally);
-                    //    }
-
-                    //}
+                    tr.Info($"L2 jump norm on mask: {jumpNorm}");
 
                     return l2_change;
                 }
