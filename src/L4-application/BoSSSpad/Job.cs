@@ -1559,8 +1559,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
-                Debugger.Launch();
-
+                
                 // ================
                 // status
                 // ================
