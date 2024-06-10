@@ -469,6 +469,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public ISessionInfo[] Sessions {
             get {
+                Debugger.Launch();
                 using (var tr = new FuncTrace()) {
                     if (CurrentProject.IsEmptyOrWhite()) {
                         Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
