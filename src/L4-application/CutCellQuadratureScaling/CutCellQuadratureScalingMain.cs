@@ -18,18 +18,20 @@ using NUnit.Framework;
 namespace BoSSS.Application.CutCellQuadratureScaling {
 
     /// <summary>
-    /// 
+    /// Stumb class for ad-hoc execution of tests
     /// </summary>
-    class CutCellQuadratureScalingMain {
+    static class CutCellQuadratureScalingMain {
+
+        static XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.TwoStepStokesAndGauss;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
-            using(var Ref = new TestSetupSingleLevset2D(1.0, 8)) {
+            using(var Ref = new TestSetupSingleLevset2D(1.0, 8, quadratureType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
 
-                using (var Test = new TestSetupSingleLevset2D(0.5, 8)) {
+                using (var Test = new TestSetupSingleLevset2D(0.5, 8, quadratureType)) {
                     Test.Init();
                     Test.RunSolverMode();
 

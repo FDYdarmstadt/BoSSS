@@ -284,7 +284,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //     M(u0)*u0 + b(u0) = f(u0).
                 //
 
-
+                
                 this.m_AssembleMatrix(out BlockMsrMatrix LinMtx, out double[] OpAffine, out _, CurrentState.ToArray(), true, out _);
                 var Check = OpAffine.CloneAs();
                 LinMtx.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
@@ -298,6 +298,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
                     //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
 				}
+                //*/
             }
             EvaluationCounter++;
 
@@ -403,7 +404,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //     M(u0)*u0 + b(u0) = f(u0).
                 //
                 
-                
+                /*
                 // the evaluation
                 this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out _, CurrentState.ToArray(), 
                     false, // `false` signals tat we want an evaluation
@@ -411,7 +412,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (DummyMtx != null)
                     // only evaluation ==> OpMatrix must be null
                     throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
-                /*
+                
                 var Check = OpAffineRaw.CloneAs();
                 OpMtxRaw.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, Check);
 

@@ -646,15 +646,111 @@ namespace BoSSS.Solution.XdgTimestepping {
                         throw new ArgumentException("Domain/Matrix column mapping mismatch.");
                 }
 
+                /*
+                IDifferentialOperator Operator;
                 if(XdgOperator != null) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++
                     // XDG Branch: still requires length-scale-hack
                     // (should be cleaned some-when in the future)
                     // +++++++++++++++++++++++++++++++++++++++++++++++
 
-                    //if(XdgOperator.AgglomerationThreshold <= 0)
-                    //    throw new ArgumentException("Mismatch between agglomeration threshold provided ");
+                    Operator = XdgOperator;
+                } else if(DgOperator != null) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++
+                    // DG Branch
+                    // +++++++++++++++++++++++++++++++++++++++++++++++
 
+                    Operator = DgOperator;
+                }
+
+
+                {
+                    if(OpMtx != null) {
+                        // +++++++++++++++++++++++++++++
+                        // Solver requires linearization
+                        // +++++++++++++++++++++++++++++
+
+                        Debug.Assert(OpMtx.InfNorm() == 0.0);
+                        switch(XdgOperator.LinearizationHint) {
+
+                            case LinearizationHint.AdHoc:
+                            using(new BlockTrace("XDG-LinearizationHint.AdHoc", ft, false)) {
+                                this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
+
+
+
+                                var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping, LsTrkHistoryIndex);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
+                                    mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                                }
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+
+                                return;
+                            }
+
+                            case LinearizationHint.FDJacobi:
+                            using(new BlockTrace("XDG-LinearizationHint.FDJacobi", ft, false)) {
+                                var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                if(mtxBuilder.Eval is XDifferentialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
+                                    foreach(var kv in AgglomeratedCellLengthScales) {
+                                        evn.CellLengthScales[kv.Key] = kv.Value;
+                                    }
+                                }
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                return;
+                            }
+
+                            case LinearizationHint.GetJacobiOperator:
+                            using(new BlockTrace("XDG-LinearizationHint.GetJacobiOperator", ft, false)) {
+                                var op = GetJacobiXdgOperator();
+
+                                if(JacobiParameterVars == null)
+                                    JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
+
+                                op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
+
+                                var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
+                                    mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                                }
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                return;
+                            }
+                        }
+                    } else {
+                        // ++++++++++++++++++++++++
+                        // only operator evaluation
+                        // ++++++++++++++++++++++++
+
+
+                        using(new BlockTrace("XDG-Evaluate", ft, false)) {
+                            this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
+
+                            var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
+                            eval.time = time;
+
+                            eval.MPITtransceive = true;
+                            foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
+                                eval.CellLengthScales[kv.Key] = kv.Value;
+                            }
+                            eval.Evaluate(1.0, 0.0, OpAffine);
+                        }
+                    }
+
+
+                }
+
+                //*/
+
+                
+                
+                if(XdgOperator != null) {
                     if(OpMtx != null) {
                         // +++++++++++++++++++++++++++++
                         // Solver requires linearization
@@ -755,7 +851,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 return;
                             }
 
-                            case LinearizationHint.FDJacobi: using(new BlockTrace("DG-LinearizationHint.FDJacobi", ft)){
+                            case LinearizationHint.FDJacobi: using(new BlockTrace("DG-LinearizationHint.FDJacobi", ft)) {
                                 var mtxBuilder = DgOperator.GetFDJacobianBuilder(__CurrentState, this.Parameters, Mapping);
                                 mtxBuilder.time = time;
                                 mtxBuilder.MPITtransceive = true;
@@ -794,7 +890,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 } else {
                     throw new NotImplementedException();
                 }
+
+                //*/
             }
+
         }
 
 
