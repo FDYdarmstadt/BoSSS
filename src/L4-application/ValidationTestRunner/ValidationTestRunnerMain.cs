@@ -142,9 +142,7 @@ namespace ValidationTestRunner {
         /// </summary>
         [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb")]
         [Test]
-        static public void Run__XDGIST_1DShockAcoustic()
-        {
-            Debugger.Launch();
+        static public void Run__XDGIST_1DShockAcoustic() {
 
             // delete the database if it is more than 25 days old;
             // this will cause a re-execution of all computations
