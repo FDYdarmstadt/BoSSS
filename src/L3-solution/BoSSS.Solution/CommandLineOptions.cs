@@ -85,7 +85,8 @@ namespace BoSSS.Solution {
         public bool delPlt { get; set; }
 
         /// <summary>
-        /// Override for the project name in the control file (<see cref="Control.AppControl.ProjectName"/>), resp. the 
+        /// Override for the project name in the control file (<see cref="Control.AppControl.ProjectName"/>), 
+        /// resp. the 
         /// session information (<see cref="BoSSS.Foundation.IO.ISessionInfo.ProjectName"/>).
         /// </summary>
         [Option('P', "prjnmn", HelpText = "overrides the project name.")]
