@@ -38,6 +38,7 @@ using System.Configuration;
 using static BoSSS.Solution.AMRLevelIndicatorLibrary;
 using BoSSS.Solution;
 using BoSSS.Application.XNSE_Solver.SpecificSolutions;
+using System.IO;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -488,6 +489,34 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             return C;
         }
 
+
+        public static XNSE_Control DropletReboundGauthier_Restart() {
+
+            string _DbPath = @"\\dc3\userspace\smuda\hpccluster\DropletRebound_Gauthier";
+            var DatabaseInfo = BoSSS.Foundation.IO.DatabaseInfo.Open(_DbPath);
+
+            var rstID = new Guid("4048fd03-ba72-488c-a363-66df1b140d15");
+            var restartSessionInfo = new SessionInfo(rstID, DatabaseInfo);
+
+            //var ctrl = restartSessionInfo.GetControl();
+            string sessionDir = DatabaseDriver.GetSessionDirectory(restartSessionInfo);
+            string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
+
+            string ctrlfileContent = File.ReadAllText(path_obj);
+
+            var ctrl = AppControl.Deserialize(ctrlfileContent);
+
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+
+            ctrl.RestartInfo = Tuple.Create(rstID, restartSessionInfo.Timesteps.Last().TimeStepNumber);
+            ctrl.DbPath = _DbPath;
+
+            ctrl.SessionName = "DropletRebound_Gauthier\tDropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6_DebugRun";
+
+            return (XNSE_Control)ctrl;
+
+        }
 
 
         public static XNSE_Control DropletImpactTest_hydrophilicSurface(int k = 3, int numCells = 8) {
