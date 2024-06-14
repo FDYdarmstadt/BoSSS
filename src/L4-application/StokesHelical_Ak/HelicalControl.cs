@@ -51,7 +51,7 @@ namespace StokesHelical_Ak {
         public HelicalControl() {
             base.NoOfMultigridLevels = 10000;
             base.ImmediatePlotPeriod = 1;
-            base.LinearSolver = new DirectSolver.Config() { WhichSolver = DirectSolver._whichSolver.PARDISO};
+            base.LinearSolver = new DirectSolver.Config() { WhichSolver = DirectSolver._whichSolver.PARDISO, };
             this.steady = false;
         }
         public override Type GetSolverType() {
