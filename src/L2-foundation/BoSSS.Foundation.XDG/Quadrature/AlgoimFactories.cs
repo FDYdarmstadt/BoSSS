@@ -45,6 +45,15 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return factory;
         }
 
+        public IQuadRuleFactory<CellBoundaryQuadRule> GetEdgeVolumeFactory() {
+            var factory = new EdgeRuleFactory() {
+                m_Owner = this,
+                m_Rules = this.m_CellBoundaryRules
+            };
+            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
+            return factory;
+        }
+
         //This would return a factory object with the configuration 
         //input: level set, tolerance etc.
         public AlgoimFactories(LevelSetTracker.LevelSetData ls, RefElement e, bool negativeVolume = false, bool callSurfaceAndVolumeAtOnce = false) {
@@ -73,6 +82,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// value: quadrature rule
         /// </summary>
         Dictionary<int, ChunkRulePair<QuadRule>[]> m_SurfaceRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
+
+        /// <summary>
+        /// key: quadrature order <br/>
+        /// value: quadrature rule
+        /// </summary>
+        Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_CellBoundaryRules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
 
 
         /// <summary>
@@ -267,21 +282,202 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         }
 
-        class AlgoimEdgeRuleFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
-            public RefElement RefElement => throw new NotImplementedException();
+        class EdgeRuleFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
+            internal AlgoimFactories m_Owner;
 
+            internal Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_Rules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
 
-            public AlgoimEdgeRuleFactory() { }
+            public RefElement RefElement => m_Owner.refElement;
+
+            int spaceDim => RefElement.SpatialDimension;
+            bool VolumeSign => m_Owner.VolumeSign;
+
+            public bool useMetrics = false;
+
+            internal GetQuadratureRule m_CalculateQuadRule;
+
+            internal delegate UnsafeAlgoim.QuadScheme GetQuadratureRule(int dim, int p, int q, int[] lengths, double[] x, double[] y);
+
+            public LevelSetTracker.LevelSetData lsData => m_Owner.lsData;
+
+            public GridData GridDat => lsData.GridDat;
+
+            private int GetEdges(RefElement refElement) {
+                // helper vars
+                int D = this.GridDat.SpatialDimension;
+                var CellToEdge = this.GridDat.iLogicalCells.Cells2Edges;
+                var EdgeToCell = this.GridDat.iLogicalEdges.CellIndices;
+                var FaceIndices = this.GridDat.iGeomEdges.FaceIndices;
+                var TrafoIdx = this.GridDat.iGeomEdges.Edge2CellTrafoIndex;
+                var EdgeToCellTrafos = this.GridDat.iGeomEdges.Edge2CellTrafos;
+                int NoOfFaces = RefElement.NoOfFaces;
+                var Scalings = GridDat.iGeomEdges.Edge2CellTrafos_SqrtGramian;
+                int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+
+                var faceRefElement = refElement.FaceRefElement;
+                return 0;
+            }
 
             public int[] GetCachedRuleOrders() {
                 throw new NotImplementedException();
             }
 
-            public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int RequestedOrder) {
+                if (!(mask is CellMask))
+                    throw new ArgumentException("Expecting a cell mask.");
+
+                if (m_Rules.ContainsKey(RequestedOrder))
+                    return m_Rules[RequestedOrder];
+
+                if (m_Owner.SurfaceAndVolumeAtOnce)
+                    return CalculateQuadRuleSetCombo(mask, RequestedOrder);
+                else
+                    return CalculateQuadRuleSetSingle(mask, RequestedOrder);
+            }
+
+            CellBoundaryQuadRule CombineEdgeRules(QuadRule[] rules) {
+                int numberOfNodes = 0;
+                foreach (QuadRule rule in rules) {
+                    numberOfNodes += rule.NoOfNodes;
+                }
+                CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(RefElement, numberOfNodes, spaceDim, RefElement.NoOfFaces);
+                int subarrayPointer = 0;
+                for (int i = 0; i < rules.Length; ++i) {
+                    int subNumberOfNodes = rules[i].NoOfNodes;
+                    combinedRule.NumbersOfNodesPerFace[i] = subNumberOfNodes;
+                    for (int j = 0; j < subNumberOfNodes; ++j) {
+                        for (int d = 0; d < 3; ++d) {
+                            combinedRule.Nodes[subarrayPointer + j, d] = rules[i].Nodes[j, d];
+                        }
+                        combinedRule.Weights[subarrayPointer + j] = rules[i].Weights[j];
+                    }
+                    subarrayPointer += subNumberOfNodes;
+                }
+                combinedRule.Nodes.LockForever();
+                return combinedRule;
+            }
+
+            public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> CalculateQuadRuleSetSingle(ExecutionMask mask, int RequestedOrder) {
+                List<ChunkRulePair<CellBoundaryQuadRule>> ret = new List<ChunkRulePair<CellBoundaryQuadRule>>();
+
+                int noOfEdges = RefElement.NoOfFaces;
+
+                foreach (int cell in mask.ItemEnum) {
+                    QuadRule[] edgeRules = new QuadRule[noOfEdges];
+                    for (int e = 0; e < noOfEdges; e++) {
+                        edgeRules[e] = GetNodesAndWeights(cell, RequestedOrder);
+                    }
+
+                    var combinedEdgeRules = CombineEdgeRules(edgeRules);
+                    ret.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(cell), combinedEdgeRules));
+
+                }
+
+                m_Rules.Add(RequestedOrder, ret.ToArray());
+                return ret.ToArray();
+            }
+
+            // to do
+            public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> CalculateQuadRuleSetCombo(ExecutionMask mask, int RequestedOrder) {
                 throw new NotImplementedException();
             }
 
+            private CellBoundaryQuadRule GetNodesAndWeights(int jCell, int RequestedOrder) {
+                //number of nodes in 1d for level set interpolation = degree + 1
+                int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
 
+                //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+                double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+
+                int numberOfCombinations = (int)Math.Pow(points.Length, spaceDim-1); //Cartesian pair product for the points
+
+                MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(points, spaceDim-1);
+
+                //combinations.SaveToTextFile("combs.txt");
+
+
+                NodeSet NS = new NodeSet(RefElement.FaceRefElement, combinations, false);
+                var ret = lsData.GetLevSetValues(NS, jCell, 1);
+
+                //if boundary take in value
+                //in out cells for discontinous (take average if not same )
+                //(lsData.LevelSet as LevelSet).EvaluateEdge()
+
+                //Console.WriteLine(ret.ToString());
+                //ret.SaveToTextFile("ret.txt");
+
+                //Console.WriteLine("Ret dim: " + ret.Dimension);
+                //foreach (var l in ret.Lengths)
+                //    Console.WriteLine("Length in:  " + l);
+
+                //Console.WriteLine("Total number of elements: " + ret.Length);
+
+                double[] y = new double[ret.Length];
+
+                if (VolumeSign) {
+                    for (int i = 0; i < ret.Length; i++)
+                        y[i] = -ret[0, i];
+                } else {
+                    for (int i = 0; i < ret.Length; i++)
+                        y[i] = ret[0, i];
+                }
+
+
+                double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
+
+                //new double[points.Length + points.Length];
+                //Array.Copy(points, 0, x, 0, points.Length);
+                //Array.Copy(points, 0, x, points.Length, points.Length);
+                //int[] sizes = new int[] { 3, 3 };
+                int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
+
+                UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(spaceDim, n, RequestedOrder, sizes, x, y);
+                //qs.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
+                //Console.WriteLine("qs.length = " + qs.length);
+
+
+                if (qs.length < 1) {
+                    CellBoundaryQuadRule quadRuleEmpty = CellBoundaryQuadRule.CreateEmpty(RefElement, 1, 1, RefElement.NoOfFaces);
+                    quadRuleEmpty.Nodes.LockForever();
+                    return quadRuleEmpty;
+                }
+
+
+                CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, qs.dimension, RefElement.NoOfFaces);
+
+                //int ind = 0;
+                for (int row = 0; row < qs.length; row++) {
+                    quadRule.Weights[row] = qs.weights[row];
+
+                    for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
+                        int ind = row * qs.dimension + d;
+                        quadRule.Nodes[row, d] = qs.nodes[ind];
+                        //Console.WriteLine($"quadRule.Nodes[{row}, {d}] = qs.nodes[{ind}] = {qs.nodes[ind]} ");
+                    }
+                }
+                //quadRule.OutputQuadratureRuleAsVtpXML("quadRule" + jCell + ".vtp");
+                quadRule.Nodes.LockForever();
+                //var quadRuleGlobal = quadRule.CloneAs();
+                //quadRuleGlobal.TransformLocal2Global(lsData.GridDat.Grid, jCell);
+
+                //var LevelSetNormals = lsData.GetLevelSetReferenceNormals(quadRule.Nodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                //LevelSetNormals.SaveToTextFile("lsnormals.txt");
+                if (useMetrics) {
+                    var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
+                    //useMetrics.SaveToTextFile("useMetrics.txt");
+
+                    ////quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("beforeWeights");
+
+                    for (int k = 0; k < qs.length; k++)
+                        quadRule.Weights[k] /= metrics[0, k];
+                }
+                //quadRule.Weights.MatMatMul(useMetrics);
+
+                //quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("afterWeights");
+
+                //quadRuleGlobal.OutputQuadratureRuleAsVtpXML("bosssj" + jCell  + ".vtp");
+                return quadRule;
+            }
 
         }
     }
