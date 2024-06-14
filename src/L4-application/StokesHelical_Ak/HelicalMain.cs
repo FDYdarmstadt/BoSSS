@@ -65,13 +65,13 @@ namespace StokesHelical_Ak {
 
 
 
-            var c = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree:2,noOfCellsR:16,noOfCellsXi:16);
-            c.ImmediatePlotPeriod = 1;
-            c.NoOfTimesteps = 1;
-            var solver = new HelicalMain();
-            solver.Init(c);
-            solver.RunSolverMode();
-            Process.Start("mpiexec");
+            //var c = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: 4, noOfCellsR: 32, noOfCellsXi: 32);
+            //c.ImmediatePlotPeriod = 1;
+            //c.NoOfTimesteps = 5;
+            //var solver = new HelicalMain();
+            //solver.Init(c);
+            //solver.RunSolverMode();
+            //Process.Start("mpiexec");
             ////StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
             ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix
             //// StokesHelical_Ak.HardcodedControl.TSFP();

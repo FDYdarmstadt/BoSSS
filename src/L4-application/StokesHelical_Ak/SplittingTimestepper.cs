@@ -57,9 +57,9 @@ namespace StokesHelical_Ak {
         double[] OpAffine;
 
         CoordinateMapping Umap => Uvec.Mapping;
-        
+
         readonly internal CoordinateVector Uvec;
-        
+
         internal CoordinateVector U_convec;
 
         internal CoordinateVector U_0;
@@ -77,11 +77,11 @@ namespace StokesHelical_Ak {
 
         public SplittingTimestepper(
             Action<BlockMsrMatrix, double[], UnsetteledCoordinateMapping, DGField[], Dictionary<SpeciesId, MultidimensionalArray>, double, bool> __Impl,
-            DifferentialOperator Expl, ITemporalOperator MassMatrixOp, CoordinateMapping __U, 
+            DifferentialOperator Expl, ITemporalOperator MassMatrixOp, CoordinateMapping __U,
             double __dt, int BdfOrder,
             BoSSS.Solution.AdvancedSolvers.ISolverFactory lc,
-            MultigridOperator.ChangeOfBasisConfig[][] mgconfig, 
-            AggregationGridData[] mgseq, 
+            MultigridOperator.ChangeOfBasisConfig[][] mgconfig,
+            AggregationGridData[] mgseq,
             R0fix r0fix, double _rMin, bool _PRP) {
             Uvec = new CoordinateVector(__U);
             dt = __dt;
@@ -118,24 +118,24 @@ namespace StokesHelical_Ak {
                 MassMatrix = new BlockMsrMatrix(Umap, Umap);
                 mtxBuilder.ComputeMatrix(MassMatrix, dummy);
 
-                if(_PRP == true) { // if(BC requires PRP){ //What BC exactly need PRP ?!?
-                                   // ++++++++++++++++++++++++++++++++++++
-                                   // apply pressure reference to mass matrix
-                                   // (should not change anything, since the conti/pressure block is zero in the mass matrix)
-                                   // ++++++++++++++++++++++++++++++++++++
+                if (_PRP == true) { // if(BC requires PRP){ //What BC exactly need PRP ?!?
+                                    // ++++++++++++++++++++++++++++++++++++
+                                    // apply pressure reference to mass matrix
+                                    // (should not change anything, since the conti/pressure block is zero in the mass matrix)
+                                    // ++++++++++++++++++++++++++++++++++++
 
                     // We don't manipulate the matrix, we only check that it fullfills
                     // the requirements imposed by the pressure reference point.
                     this.Umap.GridDat.LocatePoint(new double[] { 0.5, 0.5 }, out _, out long GlobalIndex, out _, out bool onthisProc);
-                    if(onthisProc) {
+                    if (onthisProc) {
                         long iRowGl = Umap.GlobalUniqueCoordinateIndex_FromGlobal(3, GlobalIndex, 0);
 
-                        if(OpMatrix.GetNoOfOffDiagonalNonZerosPerRow(iRowGl) != 0)
+                        if (OpMatrix.GetNoOfOffDiagonalNonZerosPerRow(iRowGl) != 0)
                             throw new ArithmeticException("pressure ref pt is to be used, but there are off-diagonal non-zeros in operator matrix");
-                        if(OpMatrix[iRowGl, iRowGl] != 1.0)
+                        if (OpMatrix[iRowGl, iRowGl] != 1.0)
                             throw new ArithmeticException("pressure ref pt is to be used, diagonal element is expected to be 1.0, but is " + OpMatrix[iRowGl, iRowGl]);
 
-                        if(MassMatrix.GetNoOfNonZerosPerRow(iRowGl) != 0)
+                        if (MassMatrix.GetNoOfNonZerosPerRow(iRowGl) != 0)
                             throw new ArithmeticException("pressure ref pt is to be used, but mass matrix is occupied in respective row.");
                     }
                     //}
@@ -146,16 +146,16 @@ namespace StokesHelical_Ak {
                 Debug.Assert(dummy.L2NormPow2() == 0);
 
                 double factor;
-                if(m_BdfOrder == 1) {
+                if (m_BdfOrder == 1) {
                     factor = 1 / dt;
-                } else if(m_BdfOrder == 3) {
+                } else if (m_BdfOrder == 3) {
                     factor = Globals.beta0 / dt;
                 } else {
                     throw new NotSupportedException("only supporting BDF1 and BDF3, not BDF(" + m_BdfOrder + ")");
                 }
 
 
-                if(_rMin < 10e-6) {
+                if (_rMin < 10e-6) {
                     // ++++++++++++++++++++++++++++++++++++
                     // apply R0 fix to mass matrix
                     // ++++++++++++++++++++++++++++++++++++
@@ -179,18 +179,20 @@ namespace StokesHelical_Ak {
                 var slv = lc.CreateInstance(MgOperator);
                 slv.Init(MgOperator);
                 newSolver = slv;
-                if(newSolver is ISolverWithCallback scb) { 
-                    scb.IterationCallback = delegate (int iIter, double[] X, double[] Res, MultigridOperator mgop) {
+                if (newSolver is DirectSolver directSolver) {
+                    directSolver.ActivateCaching = (iter, lvl) => true;
+                } else if (newSolver is ISolverWithCallback solverCallback) {
+                    solverCallback.IterationCallback = delegate (int iIter, double[] X, double[] Res, MultigridOperator mgop) {
                         double ResNorm = Res.MPI_L2Norm();
                         Console.WriteLine($"{iIter} {ResNorm:0.##e-00}");
                     };
-                }
+                };
             }
             // Set dummy values for BDF history
             // ================================
             // Ich setze hier meinn Zeug an, um zu checken, ob ich wirklich die Exakte Lösung berechnen kann!
             // Ersetze den Pfad mit dem tatsächlichen Pfad deiner Datei
-            
+
 
             // Lese den Vektor aus der Datei und speichere ihn als double[]
             Un = Uvec.ToArray();
@@ -200,12 +202,12 @@ namespace StokesHelical_Ak {
             Cnn = Compute_C(Unn, 0);
             Cn = Compute_C(Un, 0);
         }
-        
+
         /// <summary>
         /// Mass Matrix without R0 fix
         /// </summary>
         BlockMsrMatrix MassMatrix;
-        
+
         BlockMsrMatrix OpMatrix;
 
         MultigridOperator MgOperator;
@@ -282,12 +284,12 @@ namespace StokesHelical_Ak {
         public void Solve(double time, R0fix m_R0fix, int restartTimeStep, int currentTimestep, bool restart, double[] Unnn_, double[] Unn_, double[] Un_, int bdfOrder) {
             //Shift timesteps
             // ===============
-            if(restart && restartTimeStep + 1 == currentTimestep && bdfOrder == 3) {
+            if (restart && restartTimeStep + 1 == currentTimestep && bdfOrder == 3) {
                 Unnn = Unnn_;
                 Unn = Unn_;
                 ComputeOldValuesFromRestart(Unnn, Unn, time);
             } else {
-                if(currentTimestep != 1) {
+                if (currentTimestep != 1) {
                     Unnn = Unn;
                     Unn = Un;
                     Cnnn = Cnn;
@@ -335,12 +337,12 @@ namespace StokesHelical_Ak {
         public void Solve(double time, int restartTimeStep, int currentTimestep, bool restart, double[] Unnn_, double[] Unn_, double[] Un_, int bdfOrder) {
             // Shift timesteps
             // ===============
-            if(restart && restartTimeStep + 1 == currentTimestep && bdfOrder == 3) { // For restart
+            if (restart && restartTimeStep + 1 == currentTimestep && bdfOrder == 3) { // For restart
                 Unnn = Unnn_;
                 Unn = Unn_;
                 ComputeOldValuesFromRestart(Unnn, Unn, time);
             } else {  // Normal
-                if(currentTimestep != 1) {
+                if (currentTimestep != 1) {
                     Unnn = Unn;
                     Unn = Un;
                     Cnnn = Cnn;
@@ -368,17 +370,17 @@ namespace StokesHelical_Ak {
         void VerifyRHS(double[] RHS) {
 
 
-            if(m_PRP) {
+            if (m_PRP) {
                 // +++++++++++++++++++++++++++++++++++++++++++++
                 // does it fulfill the pressure reference point?
                 // +++++++++++++++++++++++++++++++++++++++++++++
 
                 this.Umap.GridDat.LocatePoint(new double[] { 0.5, 0.5 }, out _, out long GlobalIndex, out _, out bool onthisProc);
-                if(onthisProc) {
+                if (onthisProc) {
                     int jLoc = this.Umap.GridDat.CellPartitioning.Global2Local(GlobalIndex);
                     int iRowLoc = this.Umap.LocalUniqueCoordinateIndex(3, jLoc, 0);
 
-                    if(RHS[iRowLoc] != 0)
+                    if (RHS[iRowLoc] != 0)
                         throw new ArithmeticException("RHS is nonzero for the pressure reference point.");
                 }
             }
@@ -403,7 +405,7 @@ namespace StokesHelical_Ak {
 
         private void ComputeDifferences(double time, int currentTimestep) {
 
-            if(currentTimestep > 2) {
+            if (currentTimestep > 2) {
                 //var UN_zwischen = Uvec.ToArray();
                 var diff = Un.L2Distance(Unnn);
                 var denNom = Un.L2Norm();
@@ -412,11 +414,11 @@ namespace StokesHelical_Ak {
                 double typee = currentTimestep / 20.0;
 
                 // Überprüfen, ob 'typee' eine ganze Zahl ist
-                if(typee % 1 == 0) {
+                if (typee % 1 == 0) {
                     Console.WriteLine("");
                 }
 
-                if(diff / denNom <= 10E-6) {
+                if (diff / denNom <= 10E-6) {
                     Un.SaveToTextFile($"Solution_StokesSystem_with_dt={this.dt}");
                     //RHS.SaveToTextFile($"RHS_StokesSystem_with_dt={this.dt}");
                     //Assert.That(diff / denNom >= 10E-3, "SteadyStateReached");
@@ -454,9 +456,9 @@ namespace StokesHelical_Ak {
 
 
             var U_0P0 = U_0.CloneAs(); U_0P0.RenameFields("urP0", "uxiP0", "uEtaP0", "pP0");
-            foreach(var u in U_0P0.Fields) {
+            foreach (var u in U_0P0.Fields) {
                 int Np = u.Coordinates.NoOfCols;
-                for(int n = 1; n < Np; n++)
+                for (int n = 1; n < Np; n++)
                     u.Coordinates.ClearCol(n);
             }
             var U_convecP0 = U_0.CloneAs(); U_convecP0.RenameFields(idx => "Mom" + (idx + 1) + "P0");
@@ -499,29 +501,29 @@ namespace StokesHelical_Ak {
 
             // calculate Convective Terms before R0 fix
             Cn = Compute_C(Un, time);
-            U_convec = U_0.CloneAs(); 
+            U_convec = U_0.CloneAs();
             U_convec.SetV(Cn);
             U_convec.RenameFields(idx => "Mom" + (idx + 1));
             //MassMatrix.Solve_Direct(U_convec, Cn);
 
 
-            var U_0P0 = U_0.CloneAs(); 
+            var U_0P0 = U_0.CloneAs();
             U_0P0.RenameFields("urP0", "uxiP0", "uEtaP0", "pP0");
-            foreach(var u in U_0P0.Fields) {
+            foreach (var u in U_0P0.Fields) {
                 int Np = u.Coordinates.NoOfCols;
-                for(int n = 1; n < Np; n++) {
+                for (int n = 1; n < Np; n++) {
                     u.Coordinates.ClearCol(n);
                 }
                 CellMask Domain = CellMask.GetFullMask(gridData);
-                Console.WriteLine("Mean_of_"+ u.ToString() +"_=_"+u.GetMeanValueTotal(Domain));
+                Console.WriteLine("Mean_of_" + u.ToString() + "_=_" + u.GetMeanValueTotal(Domain));
             }
-            var U_convecP0 = U_0.CloneAs(); 
+            var U_convecP0 = U_0.CloneAs();
             U_convecP0.RenameFields(idx => "Mom" + (idx + 1) + "P0");
 
             var Cn0 = Compute_C(U_0P0.ToArray(), 0.0);
             U_convecP0.SetV(Cn0);
 
-            foreach(var u in U_convecP0.Fields) {
+            foreach (var u in U_convecP0.Fields) {
                 CellMask Domain = CellMask.GetFullMask(gridData);
                 Console.WriteLine("Mean_of_" + u.ToString() + "_=_" + u.GetMeanValueTotal(Domain));
             }
@@ -534,9 +536,9 @@ namespace StokesHelical_Ak {
 
         private void ApplyBDFOrder(double[] RHS, int currentTimestep, bool restart, double time, int restartTimeStep) {
             // Implementation for applying BDF order (either 1 or 3)
-            if(m_BdfOrder == 3) {
+            if (m_BdfOrder == 3) {
                 ApplyBDF3(RHS, currentTimestep, restart, time, restartTimeStep);
-            } else if(m_BdfOrder == 1) {
+            } else if (m_BdfOrder == 1) {
                 ApplyBDF1(RHS);
             } else {
                 throw new NotSupportedException($"BDF order {m_BdfOrder} not supported");
@@ -546,7 +548,7 @@ namespace StokesHelical_Ak {
         private void ApplyBDF3(double[] RHS, int currentTimestep, bool restart, double time, int restartTimeStep) {
 
 
-            if(BackupTimestep + 1 == currentTimestep && restart == false) {
+            if (BackupTimestep + 1 == currentTimestep && restart == false) {
 
                 Backup_Cn = Cn.CloneAs();
                 Backup_Cnn = Cnn.CloneAs();
@@ -558,7 +560,7 @@ namespace StokesHelical_Ak {
 
 
                 BackupTime = time;
-            } else if(restart && restartTimeStep + 1 == currentTimestep) {
+            } else if (restart && restartTimeStep + 1 == currentTimestep) {
 
                 var dist_nnn = Backup_Unnn.L2Distance(Unnn);
                 var dist_nn = Backup_Unn.L2Distance(Unn);
@@ -619,11 +621,11 @@ namespace StokesHelical_Ak {
             random_With_Pres_Offset.SetV(random); // random_With_Pres_Offset <- random // Creat a real Copy not Reference type!
 
             var pres = random_With_Pres_Offset.Fields[3]; // Fields[3] for pressure of course
-            if(containsR0fix) {
+            if (containsR0fix) {
                 var R0mask = R0fix.GetR0BndyCells(map.GridDat);
                 pres.AccConstant(1.0, R0mask.Complement());
 
-                if(map.MpiRank == 0) {
+                if (map.MpiRank == 0) {
                     pres.SetMeanValue(0, pres.GetMeanValue(0) + 1.0);
                 }
             } else {
@@ -643,7 +645,7 @@ namespace StokesHelical_Ak {
         }
 
         private void ExecuteSolver(double[] RHS, int currentTimestep) {
-            using(var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
 
                 //RHS.Clear();
@@ -654,8 +656,8 @@ namespace StokesHelical_Ak {
                 tr.Info($"Solver {newSolver} converged? {newSolver.Converged}, no of iterations: {newSolver.ThisLevelIterations}");
 
 
-                
-               //  RHS.AccV(1.0, RHS_instat);
+
+                //  RHS.AccV(1.0, RHS_instat);
 
                 //double errSol_l2 = Uvec.MPI_L2Dist(Uinfty);
                 //Console.WriteLine("Solution distance: " + errSol_l2);
@@ -706,7 +708,7 @@ namespace StokesHelical_Ak {
             long J = this.Umap.GridDat.CellPartitioning.TotalLength;
             var StencilCondNoVizS = new List<DGField>();
             var Ret = new Dictionary<string, double>();
-            foreach(int[] varGroup in VarGroups) {
+            foreach (int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.OpMatrix, this.OpAffine, this.Umap, m_mgconfig, null);
 
                 ana.CalculateGlobals = calculateGlobals;
@@ -715,20 +717,20 @@ namespace StokesHelical_Ak {
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
 
-                foreach(var kv in Table) {
-                    if(!Ret.ContainsKey(kv.Key)) {
+                foreach (var kv in Table) {
+                    if (!Ret.ContainsKey(kv.Key)) {
                         Ret.Add(kv.Key, kv.Value);
                     }
                 }
 
-                if(plotStencilCondNumViz) {
+                if (plotStencilCondNumViz) {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
 
 
             }
 
-            if(StencilCondNoVizS.Count > 0) {
+            if (StencilCondNoVizS.Count > 0) {
                 Tecplot.PlotFields(StencilCondNoVizS, nameOfStencil, 0.0, 1);
             }
 
