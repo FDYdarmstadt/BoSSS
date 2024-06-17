@@ -245,6 +245,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             int spaceDim => RefElement.SpatialDimension;
 
+            // Edge rule is D-1 for the original space D
+            int ruleDim => spaceDim - 1;
+
             bool VolumeSign => m_Owner.VolumeSign;
 
             public bool useMetrics = false;
@@ -295,13 +298,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 foreach (QuadRule rule in rules) {
                     numberOfNodes += rule.NoOfNodes;
                 }
-                CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(RefElement, numberOfNodes, spaceDim, RefElement.NoOfFaces);
+                CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(RefElement, numberOfNodes, ruleDim, RefElement.NoOfFaces);
                 int subarrayPointer = 0;
                 for (int i = 0; i < rules.Length; ++i) {
                     int subNumberOfNodes = rules[i].NoOfNodes;
                     combinedRule.NumbersOfNodesPerFace[i] = subNumberOfNodes;
                     for (int j = 0; j < subNumberOfNodes; ++j) {
-                        for (int d = 0; d < 3; ++d) {
+                        for (int d = 0; d < ruleDim; ++d) {
                             combinedRule.Nodes[subarrayPointer + j, d] = rules[i].Nodes[j, d];
                         }
                         combinedRule.Weights[subarrayPointer + j] = rules[i].Weights[j];
@@ -320,7 +323,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 foreach (int cell in mask.ItemEnum) {
                     QuadRule[] edgeRules = new QuadRule[noOfEdges];
                     for (int e = 0; e < noOfEdges; e++) {
-                        edgeRules[e] = GetNodesAndWeights(cell, RequestedOrder);
+                        edgeRules[e] = GetNodesAndWeights(cell, RequestedOrder, e);
                     }
 
                     var combinedEdgeRules = CombineEdgeRules(edgeRules);
@@ -337,18 +340,48 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 throw new NotImplementedException();
             }
 
-            private CellBoundaryQuadRule GetNodesAndWeights(int jCell, int RequestedOrder) {
+            //Map from bosss-cube indices to edges
+            //RowNumber: index of edge in bosss-cube 
+            //Each Row: first entry: index of axis, second entry: coordinate in the axis
+            static int[,] edge2CubeMap = new int[6, 2]{
+            { 0, -1 },
+            { 0,  1 },
+            { 1,  1 },
+            { 1, -1},
+            { 2, 1 },
+            { 2, -1 }};
+
+            private CellBoundaryQuadRule GetNodesAndWeights(int jCell, int RequestedOrder, int edgeIndex) {
                 //number of nodes in 1d for level set interpolation = degree + 1
                 int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
 
                 //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
                 double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
 
-                int numberOfCombinations = (int)Math.Pow(points.Length, spaceDim-1); //Cartesian pair product for the points
+                int numberOfCombinations = (int)Math.Pow(points.Length, ruleDim); //Cartesian pair product for the points
 
-                MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(points, spaceDim-1);
+                MultidimensionalArray combinationsOnEdge = MultidimensionalArray.CreateCartesianPairProduct(points, ruleDim);
 
-                //combinations.SaveToTextFile("combs.txt");
+                MultidimensionalArray combinations  = MultidimensionalArray.Create(numberOfCombinations, spaceDim);
+    
+                // This operation basically insert a column at 'edgeMap[0]' into matrix combinationsOnEdge with all values equal to 'edgeMap[1]'
+                int dimOffset = 0;
+                for (int d = 0; d < spaceDim; d++) {
+                    if (d == edge2CubeMap[edgeIndex, 0]) {
+                        for (int i = 0; i < numberOfCombinations; i++) {
+                            //Assign the coordinate from mapping (e.g. if left edge: -1)
+                            combinations[i, d] = edge2CubeMap[edgeIndex, 1];
+                        }
+                        dimOffset = 1;
+                    } else {
+                        for (int i = 0; i < numberOfCombinations; i++) {
+                            //Assign from combinationsOnEdge
+                            combinations[i, d] = combinationsOnEdge[i,d-dimOffset];
+                        }
+                    }
+                }
+
+                combinations.SaveToTextFile("combs.txt");
 
 
                 NodeSet NS = new NodeSet(RefElement.FaceRefElement, combinations, false);
@@ -378,15 +411,15 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 }
 
 
-                double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
+                double[] x = Enumerable.Repeat(points, ruleDim).SelectMany(i => i).ToArray();
 
                 //new double[points.Length + points.Length];
                 //Array.Copy(points, 0, x, 0, points.Length);
                 //Array.Copy(points, 0, x, points.Length, points.Length);
                 //int[] sizes = new int[] { 3, 3 };
-                int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
+                int[] sizes = Enumerable.Repeat(points.Length, ruleDim).ToArray();
 
-                UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(spaceDim, n, RequestedOrder, sizes, x, y);
+                UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(ruleDim, n, RequestedOrder, sizes, x, y);
                 //qs.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
                 //Console.WriteLine("qs.length = " + qs.length);
 
@@ -412,8 +445,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 }
                 //quadRule.OutputQuadratureRuleAsVtpXML("quadRule" + jCell + ".vtp");
                 quadRule.Nodes.LockForever();
-                //var quadRuleGlobal = quadRule.CloneAs();
-                //quadRuleGlobal.TransformLocal2Global(lsData.GridDat.Grid, jCell);
+                var quadRuleGlobal = quadRule.CloneAs();
+                quadRuleGlobal.TransformLocal2Global(lsData.GridDat.Grid, jCell);
 
                 //var LevelSetNormals = lsData.GetLevelSetReferenceNormals(quadRule.Nodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
                 //LevelSetNormals.SaveToTextFile("lsnormals.txt");
@@ -430,7 +463,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 //quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("afterWeights");
 
-                //quadRuleGlobal.OutputQuadratureRuleAsVtpXML("bosssj" + jCell  + ".vtp");
+                quadRuleGlobal.OutputQuadratureRuleAsVtpXML("bosssj" + jCell  + ".vtp");
                 return quadRule;
             }
 
