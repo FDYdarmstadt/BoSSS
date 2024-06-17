@@ -74,70 +74,80 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
             double[] CoeffOldIter = (double[])InitialValueForCoeff.Clone();
             double[] CoeffNewIter = (double[])InitialValueForCoeff.Clone();
+            double[] CoeffLookAhead = (double[])InitialValueForCoeff.Clone();
+            double lambda = 20.0;//0.165;
 
-            double[] derivOldIter = new double[InitialValueForCoeff.Length];
-            double[] derivNewIter = Differentiate(CoeffOldIter, EllipsePar0, dt, time, meanVelocity);
-            double eps = 1e-14;
-            double lambda = 0.001;
-            Console.WriteLine("iter {0}: [{1}]", 0, string.Join(", ", CoeffOldIter));
+            //double[] derivOldIter = new double[InitialValueForCoeff.Length];
+            //double[] derivNewIter = Differentiate(CoeffOldIter, EllipsePar0, dt, time, meanVelocity);
 
-            double funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
-        
-            int itermax = 150000;
+            //double funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
+
+
+            double[] deriv = new double[InitialValueForCoeff.Length];
+            double eps = GenericBlas.MachineEps.Sqrt();
+            double gamma = 0.9;
+            double[] grad_acc = new double[3] { 0.0, 0.0, 0.0};
+
+
+            int itermax = 10000000;
 
             for (int i = 1; i < itermax; ++i) {
                 //Update Schema
-                var funcOldIter = funcNewIter;
-                for (int d = 0; d < derivOldIter.Length; ++d) {
-                    CoeffOldIter[d] = CoeffNewIter[d];
-                    derivOldIter[d] = derivNewIter[d];
-                    CoeffNewIter[d] -= lambda * derivOldIter[d];
+                //var funcOldIter = funcNewIter;
+                for (int n = 0; n < CoeffOldIter.Length; ++n) {
+                    CoeffLookAhead[n] = CoeffOldIter[n] - gamma * grad_acc[n];
                 }
 
-                CoeffNewIter[0] = Math.Max(0.0, CoeffNewIter[0]);
-                CoeffNewIter[0] = Math.Min(1.0, CoeffNewIter[0]);
+                deriv = Differentiate(CoeffLookAhead, EllipsePar0, dt, time, meanVelocity);
+                for (int d = 0; d < deriv.Length; ++d) {
+                    //derivOldIter[d] = derivNewIter[d];
+                    grad_acc[d] = grad_acc[d] * gamma + lambda * deriv[d];
+                    //derivNewIter[d] = grad_acc[d];
+                    CoeffNewIter[d] = CoeffOldIter[d] - grad_acc[d];//lambda * derivOldIter[d];
+                }
+                //CoeffNewIter[0] = Math.Max(0.0, CoeffNewIter[0]);
+                //CoeffNewIter[0] = Math.Min(1.0, CoeffNewIter[0]);
 
-                CoeffNewIter[1] = Math.Max(-1.0, CoeffNewIter[1]);
-                CoeffNewIter[1] = Math.Min(1.0, CoeffNewIter[1]);
+                //CoeffNewIter[1] = Math.Max(-1.0, CoeffNewIter[1]);
+                //CoeffNewIter[1] = Math.Min(1.0, CoeffNewIter[1]);
 
-                CoeffNewIter[2] = Math.Max(-2.0, CoeffNewIter[2]);
-                CoeffNewIter[2] = Math.Min(2.0, CoeffNewIter[2]);
+                //CoeffNewIter[2] = Math.Max(-2.0, CoeffNewIter[2]);
+                //CoeffNewIter[2] = Math.Min(2.0, CoeffNewIter[2]);
+                //funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
 
-                funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
-
-                //Lambda and exit criteria calculation
-                derivNewIter = Differentiate(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
-                double numerator = 0.0;
-                double denumerator = 0.0;
+                //Exit criteria calculation
+                //double numerator = 0.0;
+                //double denumerator = 0.0;
                 double exitCriteria = 0.0;
                 for (int j = 0; j < CoeffOldIter.Length; ++j) {
-                    exitCriteria += derivNewIter[j] * derivNewIter[j];
-                    //exitCriteria += (funcNewIter - funcOldIter) * (funcNewIter - funcOldIter);
-                    numerator +=(CoeffNewIter[j] - CoeffOldIter[j]) * (derivNewIter[j] - derivOldIter[j]);
-                    denumerator += (derivNewIter[j] - derivOldIter[j]) * (derivNewIter[j] - derivOldIter[j]);
+                    //exitCriteria += (CoeffNewIter[j] - CoeffOldIter[j]) * (CoeffNewIter[j] - CoeffOldIter[j]);
+                    exitCriteria += deriv[j] * deriv[j];
+                    //numerator +=(CoeffNewIter[j] - CoeffOldIter[j]) * (derivNewIter[j] - derivOldIter[j]);
+                    //denumerator += (derivNewIter[j] - derivOldIter[j]) * (derivNewIter[j] - derivOldIter[j]);
+                    CoeffOldIter[j] = CoeffNewIter[j];
                     //Console.WriteLine($"derivOldIter: {derivOldIter[j]}, derivNewIter: {derivNewIter[j]}");
                     //Console.WriteLine($"numerator: {numerator}, denumerator: {denumerator}");
                 }
-                numerator = Math.Abs(numerator);
-                lambda = numerator / denumerator;
-                lambda = 1000;
-                if (numerator.IsNaNorInf() || denumerator.IsNaNorInf() || lambda.IsNaNorInf())
-                    throw new ArithmeticException($"breakdown in minimizer: {numerator}, {denumerator}, {lambda}");
+                //numerator = Math.Abs(numerator);
+                //numerator = Math.Sqrt(denumerator);
+                //lambda = Math.Max(numerator / (denumerator + eps), 0.165);
+                //if (numerator.IsNaNorInf() || denumerator.IsNaNorInf() || lambda.IsNaNorInf())
+                //    throw new ArithmeticException($"breakdown in minimizer: {numerator}, {denumerator}, {lambda}");
                 Console.WriteLine("iter {0}: \t [{1}]", i, string.Join(", ", CoeffNewIter));
-                Console.WriteLine("            \t [{1}] \t {2} {3}", i, string.Join(", ", derivNewIter), lambda, derivNewIter.L2Norm());
-
+                Console.WriteLine("            \t [{1}] \t {2} ", i, string.Join(", ", deriv), deriv.L2Norm());
+                Console.WriteLine("lambda_p: \t [{1}]", i, string.Join(", ", lambda));
 
                 //Exit loop condition
-                //if (exitCriteria < eps) {
-                //    break;
-                //}
+                if (Math.Sqrt(exitCriteria) < eps) {
+                    break;
+                }
                 if (i == itermax) {
                     throw new ApplicationException("Increase the number of iterations for the gradient method!");
                 }
                
             }
 
-            Console.WriteLine($"Minimum of function: {funcNewIter} at  X value: [{string.Join(", ", CoeffNewIter)}]");
+            Console.WriteLine($"Minimum of function: {F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity)} at  X value: [{string.Join(", ", CoeffNewIter)}]");
             return CoeffNewIter;
 
         }

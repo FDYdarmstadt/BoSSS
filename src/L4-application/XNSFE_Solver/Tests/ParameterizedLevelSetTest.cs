@@ -69,7 +69,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 return grd;
             };
 
-            double xSemiAxis0 = 3.5;
+            double xSemiAxis0 = 1.5;
             double ySemiAxis0 = 1.0;
             double yCenter0 = 0.0;
             //C.AddBoundaryValue("wall_ZeroGradient");
@@ -80,8 +80,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             //C.AddInitialValue("VelocityY#A", new Formula("X => 2.0"));
             //C.AddInitialValue("VelocityY#B", new Formula("X => 2.0"));
-            double ka = 0.8;
-            double kb = 0.0;
+            double ka = 0.5;
+            double kb = -0.5;
             double kc = 0.0;
             Func<double[], double> VelFunc = (X => kc - (xSemiAxis0 * ySemiAxis0 * kb * (xSemiAxis0.Pow2() - X[0].Pow2()) + ySemiAxis0.Pow2() * ka * X[0].Pow2()) / ( (ySemiAxis0.Pow2() *(1 - X[0].Pow2() / xSemiAxis0.Pow2()) ).Sqrt() * xSemiAxis0.Pow2() * xSemiAxis0));
             C.InitialValues_Evaluators.Add("VelocityY#A", VelFunc);
@@ -107,7 +107,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
             C.dtFixed = 0.01;
-            C.NoOfTimesteps = 100;
+            C.NoOfTimesteps = 50;
             C.Endtime = 1.0;
 
             C.ImmediatePlotPeriod = 1;
