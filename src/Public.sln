@@ -209,6 +209,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdvancedSolverTestsMPI", "L
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HangingNodesTests", "L4-application\HangingNodesTests\HangingNodesTests.csproj", "{F1FD39D3-2268-43FA-BE5A-59B109F5CEFA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Helical_Turbulence_Implicit", "L4-application\Helical_Turbulence_Implicit\Helical_Turbulence_Implicit.csproj", "{E318EB76-A558-4801-A9B3-373105143699}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -732,6 +734,12 @@ Global
 		{F1FD39D3-2268-43FA-BE5A-59B109F5CEFA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F1FD39D3-2268-43FA-BE5A-59B109F5CEFA}.TEST|Any CPU.ActiveCfg = Debug|Any CPU
 		{F1FD39D3-2268-43FA-BE5A-59B109F5CEFA}.TEST|Any CPU.Build.0 = Debug|Any CPU
+		{E318EB76-A558-4801-A9B3-373105143699}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E318EB76-A558-4801-A9B3-373105143699}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E318EB76-A558-4801-A9B3-373105143699}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E318EB76-A558-4801-A9B3-373105143699}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E318EB76-A558-4801-A9B3-373105143699}.TEST|Any CPU.ActiveCfg = Debug|Any CPU
+		{E318EB76-A558-4801-A9B3-373105143699}.TEST|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -832,6 +840,7 @@ Global
 		{96B3CCCE-E1B6-4487-A709-9AAE762812DD} = {04599CA7-506E-42E8-A041-45AD6D3B64D1}
 		{C61B081B-4E60-4E88-94A7-985A54AF4D21} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
 		{F1FD39D3-2268-43FA-BE5A-59B109F5CEFA} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
+		{E318EB76-A558-4801-A9B3-373105143699} = {92405EB8-3356-435E-9969-26756C41A843}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}
