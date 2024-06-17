@@ -622,6 +622,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        public static Action<DGField[]> DiagnosticFunction;
+
+
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;
@@ -670,7 +673,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
                         //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
+                        
+                        if(DiagnosticFunction != null) {
+                            DiagnosticFunction(this.CurrentLin.ProlongateRhsToDg(CurRes, "RHS"));
+                        }
+                        
                         solver.Solve(step, CurRes);
+
+                        if (DiagnosticFunction != null) {
+                            DiagnosticFunction(this.CurrentLin.ProlongateSolToDg(step, "sol"));
+                        }
+
+
                         step.ScaleV(-1);
                     }
                 } else {

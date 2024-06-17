@@ -102,7 +102,7 @@ namespace ZwoLevelSetSolver {
 
 
 
-        public static double FieldAsymmetry(this IEnumerable<DGField> f, int axis, bool[] antiSymmetric) {
+        public static double[] FieldAsymmetry(this IEnumerable<DGField> f, int axis, bool[] antiSymmetric) {
             if(antiSymmetric.Count() != f.Count())
                 throw new ArgumentException("correlating arrays are supposed to have the same length.");
             int NoOfFields = f.Count();
@@ -126,12 +126,15 @@ namespace ZwoLevelSetSolver {
             }
 
             var Error = EvenResult - MirrorResult;
-            return Error.L2Norm().Pow2().MPISum().Sqrt();
+
+            double[] LocalErrors = NoOfFields.ForLoop(ifld => Error.ExtractSubArrayShallow(ifld, -1).L2Norm().Pow2());
+
+            return LocalErrors.MPISum().Select(x => x.Sqrt()).ToArray();
         }
 
 
         public static double FieldAsymmetry(this DGField f, int axis, bool antiSymmetric) {
-            return (new DGField[] { f }).FieldAsymmetry(axis, new bool[] { antiSymmetric });
+            return (new DGField[] { f }).FieldAsymmetry(axis, new bool[] { antiSymmetric })[0];
         }
     }
 }

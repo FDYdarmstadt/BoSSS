@@ -591,11 +591,11 @@ namespace BoSSS.Solution.Statistic {
 
             var FE = new FieldEvaluation(F.First().GridDat);
 
-            MultidimensionalArray Result = MultidimensionalArray.Create(Points.GetLength(0), 1);
+            MultidimensionalArray Result = MultidimensionalArray.Create(Points.GetLength(0), F.Count());
             BitArray UnlocatedPoints = new BitArray(Points.GetLength(0), false);
             FE.EvaluateParallel(1.0, F, Points, 0.0, Result, UnlocatedPoints);
 
-            return Result.ExtractSubArrayShallow(-1, 0);
+            return Result;
         }
 
 

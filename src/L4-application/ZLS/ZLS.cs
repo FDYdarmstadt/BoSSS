@@ -159,16 +159,17 @@ namespace ZwoLevelSetSolver {
             //Update Calls
             dt = GetTimestep();
 
+            // check grid symmetry:
             double xAsymmetry = this.GridData.GridAsymmetry(0);
             Console.WriteLine("  ---   x Mesh Asymmetry: " + xAsymmetry);
 
-            var testVel = this.Velocity[0].CloneAs();
-            testVel.Clear();
-            foreach(var s in this.LsTrk.SpeciesIdS) {
-                testVel.GetSpeciesShadowField(s).ProjectField((x, y) => x * x + y);
-            }
-            double dgSymm = testVel.FieldAsymmetry(0, false);
-            Console.WriteLine("  ---   dg field Asymmetry: " + dgSymm);
+            // check symmetry of RHS and Solution in Newton solver:
+            Newton.DiagnosticFunction = delegate (DGField[] flds) {
+                double[] asymmetries = flds.FieldAsymmetry(0, new bool[] { true, false, false, true, false }); // adopt for 3D!
+                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetries.ToConcatString("(", ", ", ")")}");    
+            };
+            Newton.DiagnosticFunction(this.CurrentStateVector.Mapping);
+
 
 
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
