@@ -1235,7 +1235,8 @@ namespace ilPSP {
 
 
         /// <summary>
-        /// Creates a n-dimensional array with all the possible combinations of elements in set x
+        /// Creates a matrix with all the possible combinations of elements in set x in n-dimension.
+        /// Row index: point index, column index: dimension.
         /// </summary>
         /// <remarks>increments with the order from the lowest to the highest dim </remarks>
         public static MultidimensionalArray CreateCartesianPairProduct(double[] x, int n) {
