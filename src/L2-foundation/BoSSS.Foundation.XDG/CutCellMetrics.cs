@@ -378,7 +378,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Total length of cut line (i.e., intersection of level-set surface with cell boundary) length of  each non-agglomerated cut cell.
+        /// Total length (i.e., D-2 dimensional measure) of cut line (i.e., intersection of D-1 dimensional level-set surface with D-1 dimensional cell boundary) for each non-agglomerated cut cell.
         /// - key: species
         /// - index: cell index
         /// </summary>
@@ -394,9 +394,12 @@ namespace BoSSS.Foundation.XDG {
         Dictionary<SpeciesId, MultidimensionalArray> m_CutLineLength;
 
         /// <summary>
-        /// Total length of level-set intersection length of each non-agglomerated cut cell.
+        /// Total length (i.e., D-2 dimensional measure) of 
+        /// level-set intersection (i.e., intersection of the D-1 dimensional level-set 0 with the d-1 dimensional level-set 1)
+        /// for each non-agglomerated cut cell.
         /// - key: species
         /// - index: cell index
+        /// See also: <see cref="XQuadSchemeHelper.GetContactLineQuadScheme"/>
         /// </summary>
         public Dictionary<SpeciesId, MultidimensionalArray> IntersectionLength {
             get {

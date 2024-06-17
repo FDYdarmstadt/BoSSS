@@ -39,7 +39,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region db
 
             C.savetodb = false;
-            C.DbPath = @"C:\Users\miao\Documents\Database\Droplet-EE";
+            C.DbPath = null;// @"C:\Users\miao\Documents\Database\Droplet-EE";
             C.ProjectName = "Droplet";
             C.SessionName = "Droplet-check";
             C.ProjectDescription = "Droplet running on pc";

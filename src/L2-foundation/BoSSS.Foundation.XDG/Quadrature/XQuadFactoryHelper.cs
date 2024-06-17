@@ -228,7 +228,7 @@ namespace BoSSS.Foundation.XDG {
 
                 if (CellFaceSurface_in3D == null)
                     CellFaceSurface_in3D = new IQuadRuleFactory<CellBoundaryQuadRule>[this.m_LevelSetDatas.Length, NoOfRefElements];
-                if (CellFaceSurface_in3D[levSetIndex, NoOfRefElements] == null) {
+                if (CellFaceSurface_in3D[levSetIndex, iKref] == null) {
                     var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
 
                     switch (CutCellQuadratureType) {

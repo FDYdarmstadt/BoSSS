@@ -159,14 +159,27 @@ namespace ZwoLevelSetSolver {
             //Update Calls
             dt = GetTimestep();
 
-            
+            double xAsymmetry = this.GridData.GridAsymmetry(0);
+            Console.WriteLine("  ---   x Mesh Asymmetry: " + xAsymmetry);
+
+            var testVel = this.Velocity[0].CloneAs();
+            testVel.Clear();
+            foreach(var s in this.LsTrk.SpeciesIdS) {
+                testVel.GetSpeciesShadowField(s).ProjectField((x, y) => x * x + y);
+            }
+            double dgSymm = testVel.FieldAsymmetry(0, false);
+            Console.WriteLine("  ---   dg field Asymmetry: " + dgSymm);
+
+
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             LastSolverSuccess = Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"done with time step {TimestepNo}, Solver success? {LastSolverSuccess}");
             Assert.IsTrue(LastSolverSuccess, "Solver did not converge");
 
 
-            /* Testcode - don't remove for the near future (until, maybe September 2024)
+
+            /*
+             //Testcode - don't remove for the near future (until, maybe September 2024)
             {
                 var Phi0 = this.LsUpdater.LevelSets.ElementAt(0).Value.C0LevelSet;
                 var Phi1 = this.LsUpdater.LevelSets.ElementAt(1).Value.C0LevelSet;
