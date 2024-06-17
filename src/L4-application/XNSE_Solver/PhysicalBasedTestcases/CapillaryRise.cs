@@ -572,9 +572,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             double h0 = 2e-2;
-            double xSemiAxis0 = 5.0 * R;
+            double xSemiAxis0 = 1.1 * R;
             double ySemiAxis0 = 1e-2;
-            double yCenter0 = h0;
+            double yCenter0 = h0 + ySemiAxis0;
 
             Func<double[], double> PhiFunc = (X => X[1] - yCenter0 + (ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt());
 
@@ -683,15 +683,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
+            dt = 5e-04;
+            dt_startUp = 5e-04;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.dtMax = (startUp) ? dt_startUp : dt;
             C.dtMin = (startUp) ? dt_startUp : dt;
             C.Endtime = (startUp) ? Math.Max(Math.Sqrt(2 * R / g), 2 * R * C.PhysicalParameters.mu_A / C.PhysicalParameters.Sigma) * 4.0 : (t_startUp + t_end);
-            C.NoOfTimesteps = (int)(C.Endtime / C.dtMin);
+            C.NoOfTimesteps =  (int)(C.Endtime / C.dtMin);
             C.saveperiod = 100;
 
             C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            C.SuperSampling = 4;
 
             #endregion
 
