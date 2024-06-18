@@ -96,7 +96,7 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
         // Velocity components
 
         public IList<String> ArgumentOrdering {
-            get { return new string[] { "ur", "uxi", "ueta", "Pressure" }; }
+            get { return new string[] {  "Velocity_R", "Velocity_XI", "Velocity_ETA" , "Pressure" }; }
         }
 
         public TermActivationFlags VolTerms {

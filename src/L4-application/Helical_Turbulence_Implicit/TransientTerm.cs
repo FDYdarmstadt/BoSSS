@@ -18,7 +18,7 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit {
         }
 
         public IList<string> ArgumentOrdering {
-            get { return new string[] { (new string[] { "ur", "uxi", "ueta" })[velIndex] }; }
+            get { return new string[] { (new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" })[velIndex] }; }
         }
 
         public IList<string> ParameterOrdering {

@@ -25,7 +25,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             InitMPI();
 
 
-            var c = BoSSS.Application.IncompressibleNSE.ControlExamples.ChannelFlow();
+            var c = BoSSS.Application.IncompressibleNSE.DNS_Hagen_Poiseulle.HagenPoiseulle();
             var solver = new Helical_Turbulence_Implicit_Main();
             solver.Init(c);
             solver.RunSolverMode();
@@ -44,7 +44,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// <summary>
         /// velocity
         /// </summary>
-        [InstantiateFromControlFile(new string[] { "Velocity_R", "Velocity_ETA", "Velocity_XI" },
+        [InstantiateFromControlFile(new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" },
             null,
             true, true,
             IOListOption.ControlFileDetermined)]
@@ -54,8 +54,8 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// Volume Force, dimension is acceleration, i.e. length per time-square.
         /// </summary>
         [InstantiateFromControlFile(
-            new string[] { "Gravity_R", "Gravity_ETA", "Gravity_XI" },
-            new string[] { "Velocity_R", "Velocity_ETA", "Velocity_XI" },
+            new string[] { "Gravity_R", "Gravity_XI", "Gravity_ETA"},
+            new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" },
             true, true,
             IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> Gravity;
@@ -63,8 +63,8 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// <summary>
         /// Residual in the momentum equation.
         /// </summary>
-        [InstantiateFromControlFile(new string[] { "ResidualMomentum_R", "ResidualMomentum_ETA", "ResidualMomentum_XI" },
-            new string[] { "Velocity_R", "Velocity_ETA", "Velocity_XI" },
+        [InstantiateFromControlFile(new string[] { "ResidualMomentum_R", "ResidualMomentum_XI", "ResidualMomentum_ETA" },
+            new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" },
             true, true,
             IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> ResidualMomentum;
@@ -99,7 +99,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             if (D == 2)
                 return new string[] { "Velocity_R", "Velocity_XI" };
             else if (D == 3)
-                return new string[] { "Velocity_R", "Velocity_ETA", "Velocity_XI" };
+                return new string[] { "Velocity_R",  "Velocity_XI","Velocity_ETA" };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
@@ -114,7 +114,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             if (D == 2)
                 return new string[] { "Gravity_R", "Gravity_XI" };
             else if (D == 3)
-                return new string[] { "Gravity_R", "Gravity_ETA", "Gravity_XI" };
+                return new string[] { "Gravity_R", "Gravity_XI" ,"Gravity_ETA" };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
@@ -122,7 +122,8 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// <summary>
         /// Declaration of the spatial HELICAL operator
         /// </summary>
-        protected override DifferentialOperator GetOperatorInstance(int D) {
+        protected override DifferentialOperator GetOperatorInstance(int D_) {
+            int D = D_ +1;
 
             // instantiate boundary condition mapping
             // ======================================
@@ -130,7 +131,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             // instantiate operator
             // ====================
-            string[] CodName = (new[] { "ResidualMomentum_R", "ResidualMomentum_ETA", "ResidualMomentum_XI" }).GetSubVector(0, D).Cat("ResidualConti");
+            string[] CodName = (new[] { "ResidualMomentum_R",  "ResidualMomentum_XI", "ResidualMomentum_ETA" }).GetSubVector(0, D).Cat("ResidualConti");
 
             // instantiate Values 
             // ====================
@@ -171,11 +172,11 @@ namespace BoSSS.Application.IncompressibleNSE {
                 var comps_conv_R = new BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations.convectiveRmom();
                 op.EquationComponents["ResidualMomentum_R"].Add(comps_conv_R);       // bulk component
 
-                var comps_conv_ETA = new BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations.convectiveETAmom();
-                op.EquationComponents["ResidualMomentum_ETA"].Add(comps_conv_ETA);   // bulk component
-
                 var comps_conv_XI = new BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations.convectiveXImom();
                 op.EquationComponents["ResidualMomentum_XI"].Add(comps_conv_XI);     // bulk component
+
+                var comps_conv_ETA = new BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations.convectiveETAmom();
+                op.EquationComponents["ResidualMomentum_ETA"].Add(comps_conv_ETA);   // bulk component
             }
             // pressure part:
             // ===================
@@ -191,17 +192,17 @@ namespace BoSSS.Application.IncompressibleNSE {
             {
                 var comps_visc_R = new rMomentum(this.Control.TermSwitch, penalty, PenaltyFactor);
                 op.EquationComponents["ResidualMomentum_R"].Add(comps_visc_R);      // bulk component
-                var comps_visc_ETA = new etaMomentum(noOfCells, this.Control.TermSwitch, penalty, PenaltyFactor);
-                op.EquationComponents["ResidualMomentum_ETA"].Add(comps_visc_ETA);  // bulk component
                 var comps_visc_XI = new xiMomentum(this.Control.TermSwitch, penalty, PenaltyFactor);
                 op.EquationComponents["ResidualMomentum_XI"].Add(comps_visc_XI);   // bulk component
+                var comps_visc_ETA = new etaMomentum(noOfCells, this.Control.TermSwitch, penalty, PenaltyFactor);
+                op.EquationComponents["ResidualMomentum_ETA"].Add(comps_visc_ETA);  // bulk component
             }
 
             // Continuity equation
             // ===================
             {
                 var myContiNew = new BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.ContinuityEquation.Conti(noOfCells);
-                op.EquationComponents["konti"].Add(myContiNew);
+                op.EquationComponents["ResidualConti"].Add(myContiNew);
             }
             // Forcing Terms
             // ===================

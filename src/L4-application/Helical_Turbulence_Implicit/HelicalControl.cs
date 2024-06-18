@@ -131,26 +131,26 @@ namespace BoSSS.Application.IncompressibleNSE {
         [DataMember]
         public int dg_degree = -1;
 
-        public override void SetDGdegree(int degree) {
+        //public override void SetDGdegree(int degree) {
 
-            base.FieldOptions.Clear();
-            base.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = degree - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            base.FieldOptions.Add("ur", new FieldOpts() {
-                Degree = degree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            base.FieldOptions.Add("uxi", new FieldOpts() {
-                Degree = degree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            base.AddFieldOption("ueta", degree);
+        //    base.FieldOptions.Clear();
+        //    base.FieldOptions.Add("Pressure", new FieldOpts() {
+        //        Degree = degree - 1,
+        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+        //    });
+        //    base.FieldOptions.Add("ur", new FieldOpts() {
+        //        Degree = degree,
+        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+        //    });
+        //    base.FieldOptions.Add("uxi", new FieldOpts() {
+        //        Degree = degree,
+        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+        //    });
+        //    base.AddFieldOption("ueta", degree);
 
-            base.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            base.FieldOptions.Add("Phi", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-        }
+        //    base.FieldOptions.Add("PhiDG", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+        //    base.FieldOptions.Add("Phi", new FieldOpts() { Degree = degree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+        //}
 
         [DataMember]
         public bool R0fixOn = false;
