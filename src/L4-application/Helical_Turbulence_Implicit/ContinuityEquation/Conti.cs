@@ -32,7 +32,7 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Contin
         }
 
         public IList<String> ArgumentOrdering {
-            get { return new string[] { "ur", "uxi", "Pressure" }; }
+            get { return new string[] { "Velocity_R", "Velocity_XI", "Pressure" }; }
         }
 
         public TermActivationFlags VolTerms {

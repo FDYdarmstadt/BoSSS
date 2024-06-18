@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StokesHelical_Ak.ForcingTerms.ManSol {
+namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.ForcingTerms.ManSol {
     class ForcingTerm : IVolumeForm {
 
         public IList<string> ArgumentOrdering {

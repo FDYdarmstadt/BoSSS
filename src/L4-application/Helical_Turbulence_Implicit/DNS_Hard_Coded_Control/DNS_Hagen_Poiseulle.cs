@@ -98,6 +98,21 @@ namespace BoSSS.Application.IncompressibleNSE {
                         return 3;
                 });
 
+
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    double r = _X[0];
+                    double xi = _X[1];
+
+                    if (Math.Abs(r - Ctrl.rMax) < 1E-8)
+                        // right
+                        return "Dirichlet_outer_wall";
+                    else if (Ctrl.rMin >= 1E-6 && Math.Abs(r - Ctrl.rMin) < 1E-8)
+                        // right
+                        return "Dirichlet_inner_wall";
+
+                    throw new ArgumentOutOfRangeException();
+                });
+
                 return grd;
             };
             if (bdfOrder == 3) {
@@ -110,7 +125,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             // DG degree
             // =========
             Ctrl.dg_degree = degree;
-            Ctrl.SetDGdegree(degree);
+             Ctrl.SetDGdegree(degree+1);
             // Initial Values
             // ==============
             double a = Globals.a;
@@ -119,15 +134,20 @@ namespace BoSSS.Application.IncompressibleNSE {
             Ctrl.HagenPoisseulle = true;
 
             Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>0 "));
-            Ctrl.AddInitialValue("ur", new Formula($"(X) => 0"));
-            Ctrl.AddInitialValue("ueta", new Formula($"(X) => {MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * b} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(X[0]*4* {nu})"));
-            Ctrl.AddInitialValue("uxi", new Formula($"(X) => -{MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * a} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(4* {nu})"));
+            Ctrl.AddInitialValue("Velocity_R", new Formula($"(X) => 0"));
+            Ctrl.AddInitialValue("Velocity_ETA", new Formula($"(X) => {MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * b} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(X[0]*4* {nu})"));
+            Ctrl.AddInitialValue("Velocity_XI", new Formula($"(X) => -{MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * a} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(4* {nu})"));
             // Boundary Conditions
             // ==============
-            Ctrl.AddBoundaryValue("Dirichlet", "ur", new Formula("(X,t) =>  0", true));
-            Ctrl.AddBoundaryValue("Dirichlet", "ueta", new Formula("(X,t) =>0", true));
-            Ctrl.AddBoundaryValue("Dirichlet", "uxi", new Formula("(X,t) => 0", true));
-            Ctrl.AddBoundaryValue("Dirichlet", "Pressure", new Formula("(X,t) =>0", true));
+            Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_R", new Formula("(X,t) =>  0", true));
+            Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_ETA", new Formula("(X,t) =>0", true));
+            Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_XI", new Formula("(X,t) => 0", true));
+          
+            Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_R", new Formula("(X,t) =>  0", true));
+            Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_ETA", new Formula($"(X,t) => {MaxAmp} * (X[0] / (Math.Sqrt({a * a} * X[0] * X[0] + {b * b}))) * ({a * b} * ({Ctrl.rMax} * {Ctrl.rMax} - X[0] * X[0])) / (X[0] * 4 * {nu})", true));
+            Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_XI", new Formula($"(X,t) =>- {MaxAmp} * (X[0] / (Math.Sqrt({a * a} * X[0] * X[0] + {b * b}))) * ({a * a} * ({Ctrl.rMax} * {Ctrl.rMax} - X[0] * X[0])) / (4 * {nu})", true));
+
+            //Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Pressure", new Formula("(X,t) =>0", true));
 
             if (rMin < 10e-6) {
                 Globals.activeMult = Globals.Multiplier.Bsq;
