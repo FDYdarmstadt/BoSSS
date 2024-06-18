@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit {
+namespace BoSSS.Application.IncompressibleNSE {
     public static class Globals {
         public static double Det2x2(this double[,] M) {
             return M[0, 0] * M[1, 1] - M[0, 1] * M[1, 0];
