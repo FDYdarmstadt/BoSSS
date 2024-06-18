@@ -46,7 +46,11 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
-            throw new NotImplementedException();
+            CheckKref(levSetIndex, KrefVol);
+            bool negativeLevelSet = CheckJmp(jmp);
+
+            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol, negativeLevelSet);
+            return algoimFactory.GetEdgeVolumeFactory();
         }
 
         public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -63,24 +67,42 @@ namespace BoSSS.Foundation.XDG {
 
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref) {
+            CheckKref(levSetIndex, Kref);
             var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], Kref);
-            
             return algoimFactory.GetSurfaceFactory(); 
         }
 
         public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref) {
-            bool negativeVolume;
-            if (jmp == JumpTypes.Heaviside)
-                negativeVolume = false;
-            else if (jmp == JumpTypes.OneMinusHeaviside)
-                negativeVolume = true;
-            else
-                throw new NotImplementedException();
-
-            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], Kref, negativeVolume);
-
+            CheckKref(levSetIndex, Kref);
+            bool negativeLevelSet = CheckJmp(jmp);
+            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], Kref, negativeLevelSet);
             return algoimFactory.GetVolumeFactory();
         }
+
+        /// <summary>
+        /// Checks if the jump type is implemented and determines if negativeVolume is desired
+        /// </summary>
+        /// <param name="jmp"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private bool CheckJmp(JumpTypes jmp) {
+            if (jmp == JumpTypes.Heaviside)
+                return false; //we are looking for positive level set values
+            else if (jmp == JumpTypes.OneMinusHeaviside)
+                return true; //we are looking for negative level set values
+            else
+                throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Checks if reference element exists
+        /// </summary>
+        /// <param name="jmp"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private void CheckKref(int levSetIndex, RefElement KrefVol) {
+            if (!this.m_LevelSetDatas[levSetIndex].GridDat.Grid.RefElements.Contains(KrefVol, (a, b) => object.ReferenceEquals(a, b)))
+                throw new ArgumentException();
+        }
+
     }
 
 
