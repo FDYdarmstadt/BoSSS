@@ -270,13 +270,13 @@ namespace BoSSS.Foundation.XDG {
                             this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm);
                         break;
 
-                        case MomentFittingVariants.Algoim:
-                            if (CellFaceVolume_in3D == null)
-                                CellFaceVolume_in3D = new IQuadRuleFactory<CellBoundaryQuadRule>[this.m_LevelSetDatas.Length];
+                        //case MomentFittingVariants.Algoim:
+                        //    if (CellFaceVolume_in3D == null)
+                        //        CellFaceVolume_in3D = new IQuadRuleFactory<CellBoundaryQuadRule>[this.m_LevelSetDatas.Length];
 
-                            var factory = new AlgoimFactories(this.m_LevelSetDatas[levSetIndex], Kref);
-                            CellFaceVolume_in3D[levSetIndex] = factory.GetEdgeVolumeFactory();
-                            break;
+                        //    var factory = new AlgoimFactories(this.m_LevelSetDatas[levSetIndex], Kref);
+                        //    CellFaceVolume_in3D[levSetIndex] = factory.GetEdgeVolumeFactory();
+                        //    break;
 
                         default:
                         if (CellFaceVolume_in3D == null)
