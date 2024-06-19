@@ -41,13 +41,6 @@ namespace BoSSS.Foundation.XDG {
     public class XQuadFactoryHelper : XQuadFactoryHelperBase {
 
 
-        /// <summary>
-        /// Used type of the HMF.
-        /// </summary>
-        public MomentFittingVariants CutCellQuadratureType {
-            get;
-            private set;
-        }
         public MultiLevelSetBeckFactoryCreator zwoLSSayeFactories { get; private set; }
 
         /// <summary>
@@ -55,7 +48,6 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, MomentFittingVariants momentFittingVariant) 
             : base(lsDatas) {
-
 
             this.CutCellQuadratureType = momentFittingVariant;
         }

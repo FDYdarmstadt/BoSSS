@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The type of quadrature which is be used for computing.
         /// </summary>
-        public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType {
+        public XQuadFactoryHelperBase.MomentFittingVariants CutCellQuadratureType {
             get {
                 return m_qfHelper.CutCellQuadratureType;
             }

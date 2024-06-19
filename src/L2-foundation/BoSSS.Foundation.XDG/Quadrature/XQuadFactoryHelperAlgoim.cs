@@ -27,7 +27,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.XDG.Quadrature;
 using IntersectingQuadrature;
-using static BoSSS.Foundation.XDG.XQuadFactoryHelper;
+using static BoSSS.Foundation.XDG.XQuadFactoryHelperBase;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -42,7 +42,8 @@ namespace BoSSS.Foundation.XDG {
 
 
         public XQuadFactoryHelperAlgoim(LevelSetTracker.LevelSetData[] lsDatas) : base(lsDatas) {
-           
+
+            this.CutCellQuadratureType = MomentFittingVariants.Algoim;
         }
 
         public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
