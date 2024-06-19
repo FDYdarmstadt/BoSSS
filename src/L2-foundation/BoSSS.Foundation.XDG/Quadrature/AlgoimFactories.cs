@@ -443,7 +443,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 }
 
                 CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
-
+                quadRule.Weights = quadRuleOnEdge.Weights;
                 dimOffset = 0;
                 for (int d = 0; d < spaceDim; d++) {
                     if (d == edge2CubeMap[edgeIndex, 0]) {
