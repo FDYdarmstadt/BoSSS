@@ -53,6 +53,10 @@ namespace BoSSS.Foundation.XDG {
             return algoimFactory.GetEdgeVolumeFactory();
         }
 
+        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+            throw new NotImplementedException();
+        }
+
         public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             throw new NotImplementedException();
         }
@@ -72,11 +76,19 @@ namespace BoSSS.Foundation.XDG {
             return algoimFactory.GetSurfaceFactory(); 
         }
 
+        public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+            throw new NotImplementedException();
+        }
+
         public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref) {
             CheckKref(levSetIndex, Kref);
             bool negativeLevelSet = CheckJmp(jmp);
             var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], Kref, negativeLevelSet);
             return algoimFactory.GetVolumeFactory();
+        }
+
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+            throw new NotImplementedException();
         }
 
         /// <summary>
