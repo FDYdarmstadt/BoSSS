@@ -15,18 +15,18 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// Properties of the discrete XDG space. Note that the properties of discrete XDG space
     /// (e.g. measures of cut-cells and the mass matrix) depend on the 
-    /// the chosen type (<see cref="XQuadFactoryHelper.MomentFittingVariants"/>) and order of the cut-cell quadrature, 
+    /// the chosen type (<see cref="XQuadFactoryHelperBase.MomentFittingVariants"/>) and order of the cut-cell quadrature, 
     /// therefore these are collected in this central object.
     /// Instances of this object are obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics(IEnumerable{SpeciesId}, int, int)"/>.
     /// </summary>
     public sealed class XDGSpaceMetrics {
 
-        XQuadFactoryHelper m_qfHelper;
+        XQuadFactoryHelperBase m_qfHelper;
 
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelper qfHelper, int __quadorder, SpeciesId[] speciesIds, int HistoyIndex) {
+        internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelperBase qfHelper, int __quadorder, SpeciesId[] speciesIds, int HistoyIndex) {
             using(new FuncTrace("XDGSpaceMetrics.ctor")) {
                 // ----
                 // init 
@@ -62,7 +62,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Provides access to quadrature factories; however, most of the time the user wants to use schemes, <see cref="XQuadSchemeHelper"/>.
         /// </summary>
-        public XQuadFactoryHelper XQuadFactoryHelper {
+        public XQuadFactoryHelperBase XQuadFactoryHelper {
             get {
                 return m_qfHelper;
             }
