@@ -46,10 +46,19 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return factory;
         }
 
-        public IQuadRuleFactory<CellBoundaryQuadRule> GetEdgeVolumeFactory() {
-            var factory = new EdgeRuleFactory() {
+        public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundaryVolumeFactory() {
+            var factory = new CellBoundaryFactory() {
                 m_Owner = this,
                 m_Rules = this.m_CellBoundaryRules
+            };
+            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
+            return factory;
+        }
+
+        public IQuadRuleFactory<QuadRule> GetEdgeVolumeFactoryOnEdge() {
+            var factory = new EdgeRuleFactoryOnEdge() {
+                m_Owner = this,
+                m_Rules = this.m_EdgeRules
             };
             factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
             return factory;
@@ -65,13 +74,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         LevelSetTracker.LevelSetData lsData;
+
         RefElement refElement;
 
         /// <summary>
         /// Enables combined surface and volume quadrature rule calls with caching to avoid repeated polynomial interpolations. This speeds up computations when both rules are needed but may cause unnecessary calculations if only one rule is required.
         /// </summary>
         bool SurfaceAndVolumeAtOnce;
-
 
         /// <summary>
         /// A boolean to change the sign of level set. true: negative level set, false: positive level set (ls > 0).
@@ -90,6 +99,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// </summary>
         Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_CellBoundaryRules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
 
+        /// <summary>
+        /// key: quadrature order <br/>
+        /// value: quadrature rule
+        /// </summary>
+        Dictionary<int, ChunkRulePair<QuadRule>[]> m_EdgeRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
 
         /// <summary>
         /// key: quadrature order <br/>
@@ -99,7 +113,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         #region Edge rules
 
-
         class Factory : IQuadRuleFactory<QuadRule> {
             internal AlgoimFactories m_Owner;
 
@@ -108,6 +121,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             public RefElement RefElement => m_Owner.refElement;
 
             int spaceDim => RefElement.SpatialDimension;
+
             bool VolumeSign => m_Owner.VolumeSign;
 
             public bool useMetrics = false;
@@ -237,7 +251,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         }
 
-        class EdgeRuleFactoryCellBased : IQuadRuleFactory<CellBoundaryQuadRule> {
+        class CellBoundaryFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
             internal AlgoimFactories m_Owner;
 
             internal Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_Rules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
@@ -273,7 +287,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return m_Rules[RequestedOrder];
 
                 if (m_Owner.SurfaceAndVolumeAtOnce)
-                    return CalculateQuadRuleSetCombo(mask, RequestedOrder);
+                    return CalculateQuadRuleSetCombo(cellMask, RequestedOrder);
                 else
                     return CalculateQuadRuleSetSingle(cellMask, RequestedOrder);
             }
@@ -283,13 +297,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 foreach (QuadRule rule in rules) {
                     numberOfNodes += rule.NoOfNodes;
                 }
-                CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(RefElement, numberOfNodes, ruleDim, RefElement.NoOfFaces);
+                CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(RefElement, numberOfNodes, spaceDim, RefElement.NoOfFaces);
                 int subarrayPointer = 0;
                 for (int i = 0; i < rules.Length; ++i) {
                     int subNumberOfNodes = rules[i].NoOfNodes;
                     combinedRule.NumbersOfNodesPerFace[i] = subNumberOfNodes;
                     for (int j = 0; j < subNumberOfNodes; ++j) {
-                        for (int d = 0; d < ruleDim; ++d) {
+                        for (int d = 0; d < spaceDim; ++d) {
                             combinedRule.Nodes[subarrayPointer + j, d] = rules[i].Nodes[j, d];
                         }
                         combinedRule.Weights[subarrayPointer + j] = rules[i].Weights[j];
@@ -299,8 +313,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 combinedRule.Nodes.LockForever();
                 return combinedRule;
             }
-
-
 
             public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> CalculateQuadRuleSetSingle(CellMask mask, int RequestedOrder) {
                 if (mask.MaskType != MaskType.Geometrical)
@@ -370,7 +382,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     }
                 }
 
-                combinations.SaveToTextFile($"combsj{jCell}e{edgeIndex}.txt");
+                //combinations.SaveToTextFile($"combsj{jCell}e{edgeIndex}.txt");
 
                 NodeSet NS = new NodeSet(RefElement, combinations, false);
                 var ret = lsData.GetLevSetValues(NS, jCell, 1);
@@ -451,8 +463,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 //quadRule.OutputQuadratureRuleAsVtpXML("quadRule" + jCell + ".vtp");
                 quadRule.Nodes.LockForever();
-                var quadRuleGlobal = quadRule.CloneAs();
-                quadRuleGlobal.TransformLocal2Global(lsData.GridDat.Grid, jCell);
+                //var quadRuleGlobal = quadRule.CloneAs();
+                //quadRuleGlobal.TransformLocal2Global(lsData.GridDat.Grid, jCell);
 
                 //var LevelSetNormals = lsData.GetLevelSetReferenceNormals(quadRule.Nodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
                 //LevelSetNormals.SaveToTextFile("lsnormals.txt");
@@ -469,7 +481,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 //quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("afterWeights");
 
-                quadRuleGlobal.OutputQuadratureRuleAsVtpXML($"bosssj{jCell}e{edgeIndex}.vtp");
+                //quadRuleGlobal.OutputQuadratureRuleAsVtpXML($"bosssj{jCell}e{edgeIndex}.vtp");
                 return quadRule;
             }
 
@@ -532,8 +544,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return CalculateQuadRuleSetSingle(edgeMask, RequestedOrder);
             }
 
-
-
             public IEnumerable<IChunkRulePair<QuadRule>> CalculateQuadRuleSetSingle(EdgeMask mask, int RequestedOrder) {
                 if (mask.MaskType != MaskType.Geometrical)
                     throw new ArgumentException("Expecting a geometrical mask.");
@@ -553,7 +563,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Rules.Add(RequestedOrder, ret.ToArray());
                 return ret.ToArray();
             }
-
 
             // to do
             public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> CalculateQuadRuleSetCombo(ExecutionMask mask, int requestedOrder) {
