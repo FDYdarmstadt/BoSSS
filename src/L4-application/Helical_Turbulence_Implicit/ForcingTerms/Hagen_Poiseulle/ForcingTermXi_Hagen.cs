@@ -7,7 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.ForcingTerms.Hagen_Poiseulle {
-    class ForcingTermXi_Hagen : IVolumeForm {
+    class ForcingTermXi_Hagen : IVolumeForm,
+        ISupportsJacobianComponent {
 
         public IList<string> ArgumentOrdering {
             get {
@@ -69,6 +70,14 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Forcin
 
 
             ////return -ExactResidual(cpv.Xglobal, t) * V;
+        }
+
+
+        /// <summary>
+        /// Linear component - derivative is just this.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
     }
 }

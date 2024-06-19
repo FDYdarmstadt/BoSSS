@@ -6,7 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit {
-    class TransientTerm : IVolumeForm {
+    class TransientTerm : IVolumeForm,
+        ISupportsJacobianComponent {
 
 
         double factor;
@@ -39,6 +40,14 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit {
             double r = cpv.Xglobal[0];
             return U[0] * V * factor * Globals.f_function_(r);
 
+        }
+
+
+        /// <summary>
+        /// Linear component - derivative is just this.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
     }
 }
