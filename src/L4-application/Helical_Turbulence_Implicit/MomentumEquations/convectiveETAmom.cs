@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP.Utils;
@@ -12,8 +13,9 @@ using System.Text;
 
 namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations {
     class convectiveETAmom : IEdgeForm, // edge integrals
-                         IVolumeForm     // volume integrals {
-{
+                         IVolumeForm, // volume integrals
+                        ISupportsJacobianComponent 
+        {
 
         public convectiveETAmom() {
 
@@ -201,6 +203,12 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
             }
 
             return Acc;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var DerivEdg = new EdgeFormDifferentiator(this, SpatialDimension);
+            var DerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { DerivEdg, DerivVol };
         }
 
     }
