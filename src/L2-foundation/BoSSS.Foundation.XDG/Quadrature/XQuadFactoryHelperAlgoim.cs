@@ -47,11 +47,18 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
+
             CheckKref(levSetIndex, KrefVol);
             bool negativeLevelSet = CheckJmp(jmp);
+            var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
 
             var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol, negativeLevelSet);
-            return algoimFactory.GetEdgeVolumeFactory();
+
+            var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+                    algoimFactory.GetCellBoundaryVolumeFactory(),
+                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+
+            return r;
         }
 
         public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -69,7 +76,6 @@ namespace BoSSS.Foundation.XDG {
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             throw new NotImplementedException();
         }
-
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref) {
             CheckKref(levSetIndex, Kref);
@@ -109,8 +115,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Checks if reference element exists
         /// </summary>
-        /// <param name="jmp"></param>
-        /// <exception cref="NotImplementedException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         private void CheckKref(int levSetIndex, RefElement KrefVol) {
             if (!this.m_LevelSetDatas[levSetIndex].GridDat.Grid.RefElements.Contains(KrefVol, (a, b) => object.ReferenceEquals(a, b)))
                 throw new ArgumentException();
