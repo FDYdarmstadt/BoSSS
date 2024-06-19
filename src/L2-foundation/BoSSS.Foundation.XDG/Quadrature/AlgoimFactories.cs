@@ -46,6 +46,16 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return factory;
         }
 
+        public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundarySurfaceFactory() {
+            var factory = new CellBoundaryFactory() {
+                m_Owner = this,
+                m_Rules = this.m_CellBoundaryRules
+            };
+            factory.useMetrics = true;
+            factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules; 
+            return factory;
+        }
+
         public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundaryVolumeFactory() {
             var factory = new CellBoundaryFactory() {
                 m_Owner = this,

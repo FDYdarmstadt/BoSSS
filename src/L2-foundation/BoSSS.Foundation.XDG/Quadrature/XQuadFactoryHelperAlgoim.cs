@@ -47,7 +47,6 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
-
             CheckKref(levSetIndex, KrefVol);
             bool negativeLevelSet = CheckJmp(jmp);
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
@@ -70,7 +69,16 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
-            throw new NotImplementedException();
+            CheckKref(levSetIndex, KrefVol);
+            var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
+
+            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+
+            var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+                    algoimFactory.GetCellBoundarySurfaceFactory(),
+                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+
+            return r;
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
