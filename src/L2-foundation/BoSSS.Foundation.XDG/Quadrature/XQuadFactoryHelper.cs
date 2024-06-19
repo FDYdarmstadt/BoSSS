@@ -27,7 +27,6 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.XDG.Quadrature;
 using IntersectingQuadrature;
-using static BoSSS.Foundation.XDG.XQuadFactoryHelper;
 
 namespace BoSSS.Foundation.XDG {
 

@@ -33,7 +33,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>> m_QuadFactoryHelpersHistory = null;
+        HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
         
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.
@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// The centralized approach should avoid multiple creation of the same quadrature rule.
         /// </remarks>
-        XQuadFactoryHelper GetXQuadFactoryHelper(XQuadFactoryHelper.MomentFittingVariants variant, int HistoryIndex = 1) {
+        XQuadFactoryHelperBase GetXQuadFactoryHelper(XQuadFactoryHelperBase.MomentFittingVariants variant, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
             
             if (!dict.ContainsKey(variant)) {
