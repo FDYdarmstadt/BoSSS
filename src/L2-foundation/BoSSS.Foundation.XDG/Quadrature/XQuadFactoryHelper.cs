@@ -40,62 +40,6 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class XQuadFactoryHelper : XQuadFactoryHelperBase {
 
-        /// <summary>
-        /// Different variants of the moment-fitting procedure for the creation
-        /// of the surface and volume quadrature rules.
-        /// </summary>
-        public enum MomentFittingVariants {
-
-            /// <summary>
-            /// The original method published in 2013 which uses a two-step
-            /// procedure: The surface rules are created first and then used to
-            /// create the volume rules
-            /// </summary>
-            Classic,
-
-            /// <summary>
-            /// One-step variant proposed by Florian (see XNSE paper, submitted
-            /// 2015). Surface and volume rules are created using a single
-            /// moment-fitting by additionally enforcing Gauss' theorem on the
-            /// discrete level.
-            /// </summary>
-            OneStepGauss,
-
-            /// <summary>
-            /// Same as <see cref="OneStepGauss"/>, but additionally enforces
-            /// Stokes' theorem on a discrete level.
-            /// </summary>
-            OneStepGaussAndStokes,
-
-            /// <summary>
-            /// Two step-procedure: using Stokes theorem to create surface rules, 
-            /// and the Gauss theorem to create Volume rules.
-            /// </summary>
-            TwoStepStokesAndGauss,
-
-
-            /// <summary>
-            /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
-            /// </summary>
-            ExactCircle,
-
-            /// <summary>
-            /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
-            /// obtained throug recursive subdivision, as described in 
-            /// (Saye 2015)
-            /// </summary>
-            /// <remarks>
-            /// High-Order Quadrature Methods for Implicitly Defined Surfaces and Volumes in Hyperrectangles,
-            /// R. Saye, SIAM Journal on Scientific Computing, 2015
-            /// </remarks>
-            Saye,
-            /// <summary>
-            /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
-            /// obtained through recursive subdivision, as described in 
-            /// (Saye 2022)
-            /// </summary>
-            Algoim,
-        }
 
         /// <summary>
         /// Used type of the HMF.
@@ -340,7 +284,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates an edge quadrature rule factory for edges cut by two level sets.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
             switch (CutCellQuadratureType)
             {
@@ -470,7 +414,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates a volume quadrature rule factory for cells cut by two level sets.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
             switch (CutCellQuadratureType)
             {
@@ -607,7 +551,7 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory for integrating over a surface.
         /// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
             switch (CutCellQuadratureType)
             {
