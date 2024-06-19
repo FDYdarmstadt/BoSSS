@@ -24,6 +24,6 @@ namespace CutEdgeQuadrature {
 
         double EdgeArea { get; }
 
-        MomentFittingVariants MomentFittingVariant { get; }
+        MomentFittingVariants MomentFittingVariant { get; set; }
     }
 }
