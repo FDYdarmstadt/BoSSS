@@ -55,22 +55,15 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
             double Acc = 0;
-
-            double ur0 = cpv.Parameters[0];
-            double uxi0 = cpv.Parameters[1];
-            double ueta0 = cpv.Parameters[2];
-
             double r = cpv.Xglobal[0];
-            double xi = cpv.Xglobal[1];
             double a = Globals.a;
 
             double B_term = Globals.B_term_(r);
             double f_function = Globals.f_function_(r);
-            double df_function = Globals.df_function_(r);
 
-            Acc += ur0 * GradU[2, 0] * f_function * V;                   // Term 4  
-            Acc += 1.0 / B_term * uxi0 * GradU[2, 1] * f_function * V;   // Term 5
-            Acc += a * a * B_term * B_term / r * ur0 * U[2] * f_function * V;      // Term 1
+            Acc += U[0] * GradU[2, 0] * f_function * V;                   // Term 4  
+            Acc += 1.0 / B_term * U[1]   * GradU[2, 1] * f_function * V;   // Term 5
+            Acc += a * a * B_term * B_term / r * U[0] * U[2] * f_function * V;      // Term 1
 
 
 
@@ -87,15 +80,6 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
         public double InnerEdgeForm(ref CommonParams inp, double[] Uin, double[] Uout, double[,] _Grad_uIN, double[,] _Grad_uOUT, double V_IN, double V_OT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             // Terme 2 & 3 Wurden hier abgedeckt. Herleitung siehe unten mit Vergleich zum Paper
             double Acc = 0;
-
-            double ur0_IN = inp.Parameters_IN[0];
-            double uxi0_IN = inp.Parameters_IN[1];
-            double ueta0_IN = inp.Parameters_IN[2];
-
-            double ur0_OT = inp.Parameters_OUT[0];
-            double uxi0_OT = inp.Parameters_OUT[1];
-            double ueta0_OT = inp.Parameters_OUT[2];
-
             double Flux = 0;
             double Influx = 0;
             double Outflux = 0;
@@ -110,19 +94,19 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
             double B_term = Globals.B_term_(r);
             double f_function = Globals.f_function_(r);
 
-            if (ur0_IN * inp.Normal[0] + uxi0_IN * inp.Normal[1] > 0) { // Upwind Flux
-                Flux += (ur0_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxi0_IN * uetaVel_IN) * inp.Normal[1];
+            if (urVel_IN * inp.Normal[0] + uxiVel_IN * inp.Normal[1] > 0) { // Upwind Flux
+                Flux += (urVel_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_IN * uetaVel_IN) * inp.Normal[1];
                 // Erster Term aus Gleichung 4.7 mit Upwind flux
                 // Da Audruck positiv, deswegen Inner_Values
             } else {
-                Flux += (ur0_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxi0_OT * uetaVel_OT) * inp.Normal[1];
+                Flux += (urVel_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_OT * uetaVel_OT) * inp.Normal[1];
                 // Erster Term aus Gleichung 4.7 mit Upwind flux. 
                 // Da Audruck negativ, deswegen Outer_Values
             }
 
-            Influx += (ur0_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxi0_IN * uetaVel_IN) * inp.Normal[1];
+            Influx += (urVel_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_IN * uetaVel_IN) * inp.Normal[1];
             // Zweiter Term aus GLeichung 4.9
-            Outflux += (ur0_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxi0_OT * uetaVel_OT) * inp.Normal[1];
+            Outflux += (urVel_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_OT * uetaVel_OT) * inp.Normal[1];
             // Dritter Term aus GLeichung 4.9
             // Zusammenfassung der Teilterme
             // Vorzeichen nach Acc nicht ganz klar! += oder -= 
@@ -149,16 +133,8 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
 
             double Acc = 0;
 
-            double ur0_IN = inp.Parameters_IN[0];
-            double uxi0_IN = inp.Parameters_IN[1];
-            double ueta0_IN = inp.Parameters_IN[2];
-
             double[] UD;
             UD = UDiri(inp.X);
-
-            double ur0_OT = UD[0];
-            double uxi0_OT = UD[1];
-            double ueta0_OT = UD[2];
 
             double Flux = 0;
             double Influx = 0;
@@ -186,19 +162,19 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
                 // Bei der inneren Edge für r=0 wird die Funktion f(r) durch aktiv durch B(r)^2 ersetzt,
                 // um Singularitäten zu eleminieren. An den anderen Kanten wird dies nicht explizit geamcht. 
                 // Wieso eigentlich nicht????
-                if (ur0_IN * inp.Normal[0] + uxi0_IN * inp.Normal[1] > 0) { // Upwind_Flux
+                if (urVel_IN * inp.Normal[0] + uxiVel_IN * inp.Normal[1] > 0) { // Upwind_Flux
                     // Erster Term aus Gleichung 4.7 mit Upwind flux
                     // Da Audruck positiv, deswegen Inner_Values
-                    Flux += (ur0_IN * uetaVel_IN) * inp.Normal[0] * f_function + B_term * (uxi0_IN * uetaVel_IN) * inp.Normal[1];
+                    Flux += (urVel_IN * uetaVel_IN) * inp.Normal[0] * f_function + B_term * (uxiVel_IN * uetaVel_IN) * inp.Normal[1];
                 } else {
                     // Erster Term aus Gleichung 4.7 mit Upwind flux
                     // Da Audruck negativ, deswegen Outer_Values
-                    Flux += (ur0_OT * uetaVel_OT) * inp.Normal[0] * f_function + B_term * (uxi0_OT * uetaVel_OT) * inp.Normal[1];
+                    Flux += (urVel_OT * uetaVel_OT) * inp.Normal[0] * f_function + B_term * (uxiVel_OT * uetaVel_OT) * inp.Normal[1];
                 }
 
-                Influx += (ur0_IN * uetaVel_IN) * inp.Normal[0] * f_function + B_term * (uxi0_IN * uetaVel_IN) * inp.Normal[1];
+                Influx += (urVel_IN * uetaVel_IN) * inp.Normal[0] * f_function + B_term * (uxiVel_IN * uetaVel_IN) * inp.Normal[1];
                 // Zweiter Term aus GLeichung 4.9
-                Outflux += (ur0_OT * uetaVel_OT) * inp.Normal[0] * f_function + B_term * (uxi0_OT * uetaVel_OT) * inp.Normal[1];
+                Outflux += (urVel_OT * uetaVel_OT) * inp.Normal[0] * f_function + B_term * (uxiVel_OT * uetaVel_OT) * inp.Normal[1];
                 // Dritter Term aus GLeichung 4.9
                 Acc += (Flux - Influx) * Vin;
                 // Boudary, deswegen nur die Innenwerte!
@@ -206,19 +182,19 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
 
             } else if (Globals.BoundaryType(inp.X) == BoundaryTypeE.Dirichlet) {
 
-                if (ur0_IN * inp.Normal[0] + uxi0_IN * inp.Normal[1] > 0) { // Upwind_Flux
+                if (urVel_IN * inp.Normal[0] + uxiVel_IN * inp.Normal[1] > 0) { // Upwind_Flux
                     // Erster Term aus Gleichung 4.7 mit Upwind flux
                     // Da Audruck positiv, deswegen Inner_Values
-                    Flux += (ur0_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxi0_IN * uetaVel_IN) * inp.Normal[1];
+                    Flux += (urVel_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_IN * uetaVel_IN) * inp.Normal[1];
                 } else {
                     // Erster Term aus Gleichung 4.7 mit Upwind flux
                     // Da Audruck negativ, deswegen Outer_Values
-                    Flux += (ur0_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxi0_OT * uetaVel_OT) * inp.Normal[1];
+                    Flux += (urVel_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_OT * uetaVel_OT) * inp.Normal[1];
                 }
 
-                Influx += (ur0_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxi0_IN * uetaVel_IN) * inp.Normal[1];
+                Influx += (urVel_IN * uetaVel_IN) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_IN * uetaVel_IN) * inp.Normal[1];
                 // Zweiter Term aus GLeichung 4.9
-                Outflux += (ur0_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxi0_OT * uetaVel_OT) * inp.Normal[1];
+                Outflux += (urVel_OT * uetaVel_OT) * inp.Normal[0] + (1.0 / B_term) * (uxiVel_OT * uetaVel_OT) * inp.Normal[1];
                 // Dritter Term aus GLeichung 4.9
                 Acc += (Flux - Influx) * Vin * f_function;
                 // Boudary, deswegen nur die Innenwerte!
