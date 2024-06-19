@@ -26,6 +26,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
 
             var c = BoSSS.Application.IncompressibleNSE.DNS_Hagen_Poiseulle.HagenPoiseulle();
+            c.ImmediatePlotPeriod = 1;
             var solver = new Helical_Turbulence_Implicit_Main();
             solver.Init(c);
             solver.RunSolverMode();
@@ -214,6 +215,11 @@ namespace BoSSS.Application.IncompressibleNSE {
                     op.EquationComponents["ResidualMomentum_XI"].Add(comps_forcing_XI);
                 }
             }
+            Console.WriteLine("Wo soll ich da zuweisen?!");
+            Globals.DirichletValue_uR = (X => this.Control.BoundaryValues["Dirichlet_inner_wall"].Values["Velocity_R"].Evaluate(X, 0));
+            Globals.DirichletValue_uXi = (X => this.Control.BoundaryValues["Dirichlet_inner_wall"].Values["Velocity_XI"].Evaluate(X, 0));
+            Globals.DirichletValue_uEta = (X => this.Control.BoundaryValues["Dirichlet_inner_wall"].Values["Velocity_ETA"].Evaluate(X, 0));
+            Globals.BoundaryType = X => BoundaryTypeE.Dirichlet;
             // commit & return
             // ===============
             op.Commit();
