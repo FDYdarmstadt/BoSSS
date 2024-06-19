@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP.Utils;
@@ -12,7 +13,8 @@ using System.Text;
 
 namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations {
     class convectiveXImom : IEdgeForm, // edge integrals
-                         IVolumeForm     // volume integrals {
+                         IVolumeForm, // volume integrals
+                        ISupportsJacobianComponent      
 {
 
         public convectiveXImom() {
@@ -21,7 +23,7 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
         // Velocity components
 
         public IList<String> ArgumentOrdering {
-            get { return new string[] {"Velocity_R", "Velocity_XI", "Velocity_ETA" }; }
+            get { return new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" }; }
         }
 
         public TermActivationFlags VolTerms {
@@ -48,7 +50,7 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
 
         /// The parameter list:
         public IList<string> ParameterOrdering {
-            get { return new string[] {"Velocity_R0", "Velocity_XI0", "Velocity_ETA0" }; }
+            get { return new string[] { "Velocity_R0", "Velocity_XI0", "Velocity_ETA0" }; }
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -70,13 +72,6 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
 
             return Acc;
         }
-
-        //public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-        //    for(int i = 0; i < 3; i++) {
-        //        Console.WriteLine($"Remember: u_xi Convektive is null !!!!!!");
-        //    }
-        //    return 0;
-        //}
 
         public double InnerEdgeForm(ref CommonParams inp, double[] Uin, double[] Uout, double[,] _Grad_uIN, double[,] _Grad_uOUT, double V_IN, double V_OT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             // Terme 2 & 3 Wurden hier abgedeckt. Herleitung siehe unten mit Vergleich zum Paper
@@ -204,6 +199,13 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
             // Boudary, deswegen nur die Innenwerte!
 
             return Acc;
+        }
+
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var DerivEdg = new EdgeFormDifferentiator(this, SpatialDimension);
+            var DerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { DerivEdg, DerivVol };
         }
 
     }
