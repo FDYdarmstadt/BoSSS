@@ -191,10 +191,10 @@ namespace BoSSS.Application.IncompressibleNSE {
 
 
 
-            Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>0 "));
-            Ctrl.AddInitialValue("Velocity_R", new Formula($"(X) => 0"));
-            Ctrl.AddInitialValue("Velocity_ETA", new Formula($"(X) => {MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * b} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(X[0]*4* {nu})"));
-            Ctrl.AddInitialValue("Velocity_XI", new Formula($"(X) => -{MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * a} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(4* {nu})"));
+            //Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>0 "));
+            //Ctrl.AddInitialValue("Velocity_R", new Formula($"(X) => 0"));
+            //Ctrl.AddInitialValue("Velocity_ETA", new Formula($"(X) => {MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * b} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(X[0]*4* {nu})"));
+            //Ctrl.AddInitialValue("Velocity_XI", new Formula($"(X) => -{MaxAmp} *(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} ))) * ({a * a} * ({Ctrl.rMax * Ctrl.rMax} - X[0]*X[0]) )/(4* {nu})"));
             // Boundary Conditions
             // ==============
             Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_R", new Formula("(X,t) =>  0", true));
