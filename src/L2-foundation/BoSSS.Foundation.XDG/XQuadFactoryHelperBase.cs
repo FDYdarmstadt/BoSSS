@@ -69,6 +69,14 @@ namespace BoSSS.Foundation.XDG {
             Algoim,
         }
 
+        /// <summary>
+        /// Used type of the HMF.
+        /// </summary>
+        public MomentFittingVariants CutCellQuadratureType {
+            get;
+            protected set;
+        }
+
         internal XQuadFactoryHelperBase(LevelSetTracker.LevelSetData[] lsDatas) {
             //var lsTrk = lsDatas[0].Tracker;
             int iHi = lsDatas[0].HistoryIndex;
