@@ -10,7 +10,8 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations {
     class Gradient_pressure_xiMomentum :
             BoSSS.Foundation.IEdgeForm, // edge integrals
-            BoSSS.Foundation.IVolumeForm     // volume integrals
+            BoSSS.Foundation.IVolumeForm,     // volume integrals
+            BoSSS.Foundation.ISupportsJacobianComponent // For Jacobian, required for Newton Solver
     {
         public Gradient_pressure_xiMomentum(int _d) {
             this.d = _d;
@@ -151,6 +152,14 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
             }
 
             return (-1.0) * Acc; // Multiplikation mit -1, da die NS-Gleichung=RHS
+        }
+
+
+        /// <summary>
+        /// Linear component - derivative is just this.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
     }
 }

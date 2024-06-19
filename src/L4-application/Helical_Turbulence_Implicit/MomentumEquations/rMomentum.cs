@@ -12,8 +12,8 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.MomentumEquations {
     class rMomentum :
             IEdgeForm, // edge integrals
-            IVolumeForm     // volume integrals
-
+            IVolumeForm,     // volume integrals
+        ISupportsJacobianComponent // For Jacobian, required for Newton Solver
     {
 
 
@@ -361,6 +361,14 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
                 throw new NotImplementedException();
             }
             return (-1.0) * Acc; // Weil NS=Rhs. Terme werden auf die andere Seite der Gleichung gebracht.
+        }
+
+
+        /// <summary>
+        /// Linear component - derivative is just this.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
     }
 }

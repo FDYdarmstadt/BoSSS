@@ -16,7 +16,9 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Contin
 
     public class Conti :
             BoSSS.Foundation.IEdgeForm, // edge integrals
-            BoSSS.Foundation.IVolumeForm     // volume integrals
+            BoSSS.Foundation.IVolumeForm,     // volume integrals
+            BoSSS.Foundation.ISupportsJacobianComponent // For Jacobian, required for Newton Solver
+
     {
 
         public Conti(int _ResolutionXI) {
@@ -208,6 +210,14 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Contin
             }
 
             return Acc;
+        }
+
+
+        /// <summary>
+        /// Linear component - derivative is just this.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
 
     }

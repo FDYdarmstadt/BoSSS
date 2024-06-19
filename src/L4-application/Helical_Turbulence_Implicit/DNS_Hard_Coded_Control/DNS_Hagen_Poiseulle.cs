@@ -125,7 +125,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             // DG degree
             // =========
             Ctrl.dg_degree = degree;
-             Ctrl.SetDGdegree(degree+1);
+             Ctrl.SetDGdegree(degree);
             // Initial Values
             // ==============
             double a = Globals.a;
@@ -152,7 +152,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             if (rMin < 10e-6) {
                 Globals.activeMult = Globals.Multiplier.Bsq;
             } else {
-                Globals.activeMult = Globals.Multiplier.Bsq;
+                Globals.activeMult = Globals.Multiplier.one;
             }
             return Ctrl;
         }
