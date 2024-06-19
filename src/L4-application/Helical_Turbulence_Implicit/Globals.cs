@@ -60,7 +60,6 @@ namespace BoSSS.Application.IncompressibleNSE {
         static public Func<double[], double> DirichletValue_uR;
         static public Func<double[], double> DirichletValue_uXi;
         static public Func<double[], double> DirichletValue_uEta;
-        static public Func<double[], double> DirichletValue_psi;
         static public Func<double[], double> etaMomSourceTerm;
 
 

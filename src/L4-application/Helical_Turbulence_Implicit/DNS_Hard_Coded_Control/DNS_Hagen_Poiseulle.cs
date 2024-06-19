@@ -33,7 +33,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// <summary>
         /// laminar solution for a Hagen Poiseulle flow (aka. flow in a circular pipe)
         /// </summary>
-        public static IncompressibleControl HagenPoiseulle(string _DbPath = null, int degree = 3, int noOfCellsR = 32, int noOfCellsXi = 32, int dtRefining = 4, int bdfOrder = 1, double rMin = 0.3) {
+        public static IncompressibleControl HagenPoiseulle(string _DbPath = null, int degree = 3, int noOfCellsR = 32, int noOfCellsXi = 32, int bdfOrder = 1, double rMin = 0.3) {
 
             IncompressibleControl Ctrl = new IncompressibleControl();
             #region db
@@ -60,7 +60,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             // Solver Options
             if (transient) {
-                Ctrl.NoOfTimesteps = 10;
+                Ctrl.NoOfTimesteps = 1000;
                 Ctrl.TimesteppingMode = AppControl._TimesteppingMode.Transient;
                 Ctrl.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
                 Ctrl.dtFixed = 0.01;
@@ -132,6 +132,64 @@ namespace BoSSS.Application.IncompressibleNSE {
             double b = Globals.b;
             double nu = Globals.nu;
             Ctrl.HagenPoisseulle = true;
+
+            var random = 0.1 * MaxAmp / 4;
+            // Initial Values
+            // ==============
+            string InitialValue_ur_p =
+            "static class MyInitialValue_ur_p {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+            + " public static double GenerateRandomValue(double[] X, double t) {"
+            + "    var random = new Random();"
+            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
+            + "   return randomValue;"
+            + " }"
+            + "}";
+            string InitialValue_uxi =
+             "static class MyInitialValue_uxi {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = - " + MaxAmp + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) * (" + a * a + " * (" + Ctrl.rMax * Ctrl.rMax + " - X[0] * X[0])) / (4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+
+            string InitialValue_ueta =
+             "static class MyInitialValue_ueta {" // class must be static
+                                                  // Warning: static constants are allowed,
+                                                  // but any changes outside of the current text box in BoSSSpad
+                                                  // will not be recorded for the code that is passed to the solver.
+                                                  // A method, which should be used for an initial value,
+                                                  // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = " + MaxAmp + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] +" + b * b + "))) * (" + a * b + " * (" + Ctrl.rMax * Ctrl.rMax + " - X[0] * X[0])) / (X[0] *4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+
+            var Velocity_R_and_Pressure_0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur_p.GenerateRandomValue", true, InitialValue_ur_p);
+            var Velocity_XI_0 = new BoSSS.Solution.Control.Formula("MyInitialValue_uxi.GenerateRandomValue", true, InitialValue_uxi);
+            var Velocity_ETA_0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ueta.GenerateRandomValue", true, InitialValue_ueta);
+
+
+            Ctrl.AddInitialValue("Pressure", Velocity_R_and_Pressure_0);
+            Ctrl.AddInitialValue("Velocity_R", Velocity_R_and_Pressure_0);
+            Ctrl.AddInitialValue("Velocity_ETA", Velocity_ETA_0);
+            Ctrl.AddInitialValue("Velocity_XI", Velocity_XI_0);
+
+
 
             Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>0 "));
             Ctrl.AddInitialValue("Velocity_R", new Formula($"(X) => 0"));

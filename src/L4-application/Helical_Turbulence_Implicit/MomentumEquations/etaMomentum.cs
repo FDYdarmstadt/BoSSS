@@ -278,7 +278,6 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
                 Globals.DirichletValue_uR(X),
                 Globals.DirichletValue_uXi(X),
                 Globals.DirichletValue_uEta(X),
-                Globals.DirichletValue_psi(X)
             };
 
         }

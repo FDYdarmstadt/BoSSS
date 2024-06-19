@@ -149,7 +149,6 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Contin
             return new double[] {
                 Globals.DirichletValue_uR(X),
                 Globals.DirichletValue_uXi(X),
-                Globals.DirichletValue_psi(X)
             };
 
         }
