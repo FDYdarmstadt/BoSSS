@@ -302,6 +302,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return CalculateQuadRuleSetSingle(cellMask, RequestedOrder);
             }
 
+            /// <summary>
+            /// Combines different edge rules into a single CellBoundaryQuadRule rule.
+            /// </summary>
+            /// <param name="rules">An array of edge rules to be combined.</param>
+            /// <returns>A combined <c>CellBoundaryQuadRule</c> with arranged <c>NumbersOfNodesPerFace</c>.</returns>
             CellBoundaryQuadRule CombineEdgeRules(QuadRule[] rules) {
                 int numberOfNodes = 0;
                 foreach (QuadRule rule in rules) {
