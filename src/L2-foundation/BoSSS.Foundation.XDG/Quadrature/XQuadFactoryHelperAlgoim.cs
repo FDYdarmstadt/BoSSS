@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG {
 
 
     /// <summary>
-    /// Auxiliary class that helps with the creation of XDG-quadrature schemes;
+    /// Auxiliary class that helps with the creation of XDG-quadrature schemes for Algoim <see cref="AlgoimFactories"/>;
     /// instances can be obtained via <see cref="LevelSetTracker.GetXQuadFactoryHelper"/>.
     /// </summary>
     public class XQuadFactoryHelperAlgoim : XQuadFactoryHelperBase {
@@ -43,6 +43,7 @@ namespace BoSSS.Foundation.XDG {
 
         public XQuadFactoryHelperAlgoim(LevelSetTracker.LevelSetData[] lsDatas) : base(lsDatas) {
 
+            //there are some methods explilictly rely on this propery
             this.CutCellQuadratureType = MomentFittingVariants.Algoim;
         }
 
