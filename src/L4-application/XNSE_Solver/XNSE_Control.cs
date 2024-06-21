@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
     /// <summary>
-    /// 
+    /// Solver control object for incompressible multi-phase solver.
     /// </summary>
     [DataContract]
     [Serializable]

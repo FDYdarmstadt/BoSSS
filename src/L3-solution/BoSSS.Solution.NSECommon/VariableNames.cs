@@ -1802,5 +1802,11 @@ namespace BoSSS.Solution.NSECommon {
         /// vector of orientation of a rigid object, used in XNSERO - y component
         /// </summary>
         public const string OrientationVectorY = "OrientationVectorY";
+
+
+        /// <summary>
+        /// Electric potential, dimensi is Voltage
+        /// </summary>
+        public const string ElectricPotential = "ElectricPotential";
     }
 }
