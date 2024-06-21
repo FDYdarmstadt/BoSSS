@@ -169,6 +169,50 @@ namespace BoSSS.Application.IncompressibleNSE {
 
         [DataMember]
         public int restartTimeStep;
+
+
+        /// <summary>
+        /// Timestepper scheme
+        /// </summary>
+        [DataMember]
+        public TimesteppingScheme Timestepper_Scheme;
+
+        /// <summary>
+        /// Timestepping scheme
+        /// </summary>
+        public enum TimesteppingScheme {
+
+            /// <summary>
+            /// ImplicitEuler
+            /// </summary>
+            ImplicitEuler = 1,
+            /// <summary>
+            /// CrankNicolson
+            /// </summary>
+            CrankNicolson = 2,
+            /// <summary>
+            /// BDF2
+            /// </summary>
+            BDF2 = 3,
+            /// <summary>
+            /// BDF3
+            /// </summary>
+            BDF3 = 4,
+            /// <summary>
+            /// BDF4
+            /// </summary>
+            BDF4 = 5,
+            /// <summary>
+            /// BDF5
+            /// </summary>
+            BDF5 = 6,
+            /// <summary>
+            /// BDF6
+            /// </summary>
+            BDF6 = 7
+
+
+        }
     }
 
 }
