@@ -33,7 +33,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// <summary>
         /// laminar solution for a Hagen Poiseulle flow (aka. flow in a circular pipe)
         /// </summary>
-        public static IncompressibleControl HagenPoiseulle(string _DbPath = null, int degree = 3, int noOfCellsR = 32, int noOfCellsXi = 32, int bdfOrder = 1, double rMin = 0.3) {
+        public static IncompressibleControl HagenPoiseulle(string _DbPath = null, int degree = 3, int noOfCellsR = 32, int noOfCellsXi = 32, int bdfOrder = 1, double rMin = 0.4) {
 
             IncompressibleControl Ctrl = new IncompressibleControl();
             #region db
@@ -42,7 +42,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             //Ctrl.DbPath = null;
             Ctrl.DbPath = _DbPath;
 
-            const double MaxAmp = 5;
+            const double MaxAmp = 16;
 
             if (rMin != 0) {
                 for (int i = 0; i < 9; i++)
@@ -55,7 +55,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             Ctrl.ProjectName = "NStransient";
             Ctrl.SessionName = "degree= " + degree + " " + "noOfCellsR= " + noOfCellsR + " " + "noOfCellsXi= " + noOfCellsXi;
             Ctrl.rMin = rMin;
-            Ctrl.rMax = 1;
+            Ctrl.rMax = 2;
             #endregion
 
             // Solver Options
@@ -68,10 +68,8 @@ namespace BoSSS.Application.IncompressibleNSE {
                 Ctrl.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 Ctrl.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
             }
-
             Ctrl.Resolution_R = noOfCellsR;
             Ctrl.Resolution_Xi = noOfCellsXi;
-
             Ctrl.GridFunc = delegate {
 
                 double[] xnodes = GenericBlas.Linspace(rMin, Ctrl.rMax, noOfCellsR + 1);
@@ -80,23 +78,6 @@ namespace BoSSS.Application.IncompressibleNSE {
                 GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear,
                     periodicX: false,
                     periodicY: true);
-
-                grd.EdgeTagNames.Add(1, "Dirichlet_rmax");
-                grd.EdgeTagNames.Add(2, "Dirichlet_rmin");
-                grd.EdgeTagNames.Add(3, "Stuff");
-
-                grd.DefineEdgeTags(delegate (double[] _X) {
-                    var X = _X;
-                    double r, xi;
-                    r = X[0];
-                    xi = X[1];
-                    if (Math.Abs(r - Ctrl.rMax) < 1E-8)
-                        return 1;
-                    else if (Ctrl.rMin >= 1E-6 && Math.Abs(r - Ctrl.rMin) < 1E-8)
-                        return 2;
-                    else
-                        return 3;
-                });
 
 
                 grd.DefineEdgeTags(delegate (double[] _X) {
@@ -115,13 +96,6 @@ namespace BoSSS.Application.IncompressibleNSE {
 
                 return grd;
             };
-            if (bdfOrder == 3) {
-                Ctrl.TimeSteppingScheme = TimeSteppingScheme.BDF3;
-            } else if (bdfOrder == 1) {
-                Ctrl.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            } else {
-                throw new ArgumentException("Unsupported BDF scheme: " + bdfOrder);
-            }
             // DG degree
             // =========
             Ctrl.dg_degree = degree;
@@ -133,7 +107,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             double nu = Globals.nu;
             Ctrl.HagenPoisseulle = true;
 
-            var random = 0.1 * MaxAmp / 4;
+            var random = 0.1 *MaxAmp/ 4;
             // Initial Values
             // ==============
             string InitialValue_ur_p =
