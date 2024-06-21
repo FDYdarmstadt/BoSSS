@@ -50,9 +50,10 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
 
 
         /// The parameter list:
-        public IList<string> ParameterOrdering {
-            get { return new string[] { "Velocity_R0", "Velocity_XI0", "Velocity_ETA0" }; }
-        }
+        public IList<string> ParameterOrdering => null;
+        //{
+        //    get { return new string[] { "Velocity_R0", "Velocity_XI0", "Velocity_ETA0" }; }
+        //}
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
@@ -63,8 +64,8 @@ namespace BoSSS.Application.IncompressibleNSE.Helical_Turbulence_Implicit.Moment
             double B_term = Globals.B_term_(r);
             double f_function = Globals.f_function_(r);
 
-            Acc += U[0] * GradU[2, 0] * f_function * V;                   // Term 4  
-            Acc += 1.0 / B_term * U[1]   * GradU[2, 1] * f_function * V;   // Term 5
+            Acc += U[0] * GradU[2, 0] * f_function * V;                        // Term 4  
+            Acc += 1.0 / B_term * U[1]   * GradU[2, 1] * f_function * V;       // Term 5
             Acc += a * a * B_term * B_term / r * U[0] * U[2] * f_function * V;      // Term 1
 
 
