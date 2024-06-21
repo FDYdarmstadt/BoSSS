@@ -9,6 +9,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,6 +25,16 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             InitMPI();
 
+
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
 
             var c = BoSSS.Application.IncompressibleNSE.DNS_Hagen_Poiseulle.HagenPoiseulle();
             c.ImmediatePlotPeriod = 1;
@@ -47,8 +58,8 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// </summary>
         [InstantiateFromControlFile(new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" },
             null,
-            true, true,
-            IOListOption.ControlFileDetermined)]
+            true,  CapDimension:false,
+            ioListOpt: IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> Velocity;
 
         /// <summary>
@@ -57,8 +68,8 @@ namespace BoSSS.Application.IncompressibleNSE {
         [InstantiateFromControlFile(
             new string[] { "Gravity_R", "Gravity_XI", "Gravity_ETA"},
             new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" },
-            true, true,
-            IOListOption.ControlFileDetermined)]
+            true, CapDimension: false,
+            ioListOpt: IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> Gravity;
 
         /// <summary>
@@ -66,8 +77,8 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// </summary>
         [InstantiateFromControlFile(new string[] { "ResidualMomentum_R", "ResidualMomentum_XI", "ResidualMomentum_ETA" },
             new string[] { "Velocity_R", "Velocity_XI", "Velocity_ETA" },
-            true, true,
-            IOListOption.ControlFileDetermined)]
+            true, CapDimension:false,
+            ioListOpt: IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> ResidualMomentum;
 
         /// <summary>
