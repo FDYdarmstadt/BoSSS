@@ -121,14 +121,14 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__XDGIST_BowShock()
         {
-            // delete the database if it is more than 25 days old;
+            // delete the database if it is more than 75 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "XESF_BowShock_ConvStudy",
                 "XESF_BowShock_ConvStudy",
                 "DELETE_XDGISTBowShock",
-                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 75, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb");
             ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb");
