@@ -295,6 +295,8 @@ namespace BoSSS.Solution.NSECommon {
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
+
+        public const string ElectricPoissonEquation = "ElectricPoissonEq";
     }
 
     
