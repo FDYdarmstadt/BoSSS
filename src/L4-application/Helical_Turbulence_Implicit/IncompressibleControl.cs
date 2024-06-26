@@ -20,6 +20,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// </summary>
         public IncompressibleControl() {
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            base.NonLinearSolver.MinSolverIterations = 100;
         }
 
 
