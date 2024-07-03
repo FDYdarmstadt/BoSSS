@@ -12,25 +12,27 @@ namespace XNSE_ParallelTests {
 
     public class XNSE_ParallelTests {
 
+        [Test]
+        public static void Test_ChannelFlow2D() {
+            var C = Controls.Testbase_ChannelFlow2D(true, false);
+            RunTest(C, "ChannelFlow2D_baseCase");
+        }
+
 
         static void Main(string[] args) {
 
             // to test individual setups
-            var C = Controls.Testbase_ChannelFlow2D(true, true);
+            var C = Controls.Testbase_ChannelFlow2D(true, false);
 
             RunTest(C, "localTestcase");
 
         }
 
 
-        [Test]
-        public static void Test_ChannelFlow2D() {
-            var C = Controls.Testbase_ChannelFlow2D(true, true);
-            RunTest(C, "ChannelFlow2D_baseCase");
-        }
-    
-
         private static void RunTest(XNSE_Control control, string testcaseName) {
+
+            System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", "1");
+            BoSSS.Solution.Application.InitMPI();
 
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
