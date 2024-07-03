@@ -458,7 +458,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;

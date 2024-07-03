@@ -29,7 +29,7 @@ namespace BoSSS.Foundation {
     /// 
     /// The typical use-case of this class is as follows:
     /// 1. Instantiate (<see cref="TestingIO.TestingIO(IGridData, string, bool, int)"/>)
-    /// 2. Add Vectors, DG fields, etc. (<see cref="AddVector(string, IEnumerable{double})"/>, <see cref="AddDGField(ConventionalDGField)"/>, <see cref="AddColumn(string, ExecutionMask.ItemInfo)"/>)
+    /// 2. Add Vectors, DG fields, etc. (<see cref="AddVector(string, IEnumerable{double})"/>, <see cref="AddDGField(DGField)"/>, <see cref="AddColumn(string, ExecutionMask.ItemInfo)"/>)
     ///    to this IO object; 
     /// 3. Call <see cref="DoIOnow"/> th either save the current data or load the reference data 
     /// 4. Use functions such as <see cref="AllAbsErr"/>, <see cref="AllRelErr"/> to compute difference norms between reference and current data
@@ -316,7 +316,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Absolute L2 for DG fields
         /// </summary>
-        public double AbsError(ConventionalDGField f) {
+        public double AbsError(DGField f) {
             if(GridDat.MpiSize == ReferenceMPISize)
                 return 0.0;
 
@@ -570,7 +570,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Adds a DG field
         /// </summary>
-        public void AddDGField(ConventionalDGField f) {
+        public void AddDGField(DGField f) {
             if(!object.ReferenceEquals(GridDat, f.GridDat))
                 throw new ArgumentException("DG field is defined on different mesh");
 
@@ -586,7 +586,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Adds a DG field
         /// </summary>
-        public ConventionalDGField LocalError(ConventionalDGField f) {
+        public DGField LocalError(DGField f) {
             if(!object.ReferenceEquals(GridDat, f.GridDat))
                 throw new ArgumentException("DG field is defined on different mesh");
 
@@ -611,7 +611,7 @@ namespace BoSSS.Foundation {
         /// Overwrites the memory of a DG field with the reference data 
         /// </summary>
         /// <param name="f"></param>
-        public void OverwriteDGField(ConventionalDGField f) {
+        public void OverwriteDGField(DGField f) {
             if(!object.ReferenceEquals(GridDat, f.GridDat))
                 throw new ArgumentException("DG field is defined on different mesh");
 

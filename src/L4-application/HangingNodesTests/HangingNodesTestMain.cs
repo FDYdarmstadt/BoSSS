@@ -253,7 +253,7 @@ namespace HangingNodesTests {
             }
             foreach(var kv in err) {
                 if(kv.Key != "GlobalID")
-                    Assert.LessOrEqual(kv.Value, 1e-10, $"Cell Metric Comparison Error for {kv.Key} = {kv.Value}, this is to high!");
+                    Assert.LessOrEqual(kv.Value, 1e-10, $"Cell Metric Comparison Error for {kv.Key} = {kv.Value}, this is too high!");
             }
             
         }
@@ -334,10 +334,10 @@ namespace HangingNodesTests {
                 Console.WriteLine($"{Description[i]}: MomRes : {MomentumRes[i]}, TempRes : {TemperatureRes[i]}");
             }
             for (int i = 0; i < MomentumRes.Count; i++) {
-                Assert.Less(MomentumRes[i].Abs(), 1e-6, "Momentum Residual to high.");
+                Assert.Less(MomentumRes[i].Abs(), 1e-6, "Momentum Residual too high.");
             }
             for (int i = 0; i < TemperatureRes.Count; i++) {
-                Assert.Less(TemperatureRes[i].Abs(), 1e-6, "Temperature Residual to high.");
+                Assert.Less(TemperatureRes[i].Abs(), 1e-6, "Temperature Residual too high.");
             }
         }
 

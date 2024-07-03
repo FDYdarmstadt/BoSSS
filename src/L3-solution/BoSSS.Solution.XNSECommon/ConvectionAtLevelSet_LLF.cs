@@ -344,7 +344,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         public IList<string> ArgumentOrdering {
             get {
-                return new string[] { VariableNames.Velocity_d(m_d) };
+                return VariableNames.VelocityVector(m_D);
             }
         }
         public IList<string> ParameterOrdering {

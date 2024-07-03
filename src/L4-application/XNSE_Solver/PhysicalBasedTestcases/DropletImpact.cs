@@ -512,7 +512,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ctrl.RestartInfo = Tuple.Create(rstID, restartSessionInfo.Timesteps.Last().TimeStepNumber);
             ctrl.DbPath = _DbPath;
 
-            ctrl.SessionName = "DropletRebound_Gauthier\tDropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6_DebugRun";
+            ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6_DebugRun";
 
             return (XNSE_Control)ctrl;
 
