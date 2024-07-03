@@ -5,11 +5,23 @@ using System.Drawing;
 using BoSSS.Application.XNSE_Solver;
 using XNSE_ParallelTets;
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 
 namespace XNSE_ParallelTests {
 
 
     public class XNSE_ParallelTests {
+
+
+        static void Main(string[] args) {
+
+            // to test individual setups
+            var C = Controls.Testbase_ChannelFlow2D(true, true);
+
+            RunTest(C, "localTestcase");
+
+        }
+
 
         [Test]
         public static void Test_ChannelFlow2D() {
@@ -23,6 +35,8 @@ namespace XNSE_ParallelTests {
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
 
+            Console.Write($"Running {testcaseName} on {procs} procs");
+
             List<double> MomentumRes = new List<double>();
 
             using (var solver = new XNSE()) {
@@ -32,7 +46,7 @@ namespace XNSE_ParallelTests {
                     MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                     CompareParallelRun(solver, testcaseName);
                 } catch (Exception e) {
-                    Console.WriteLine($"proc {procs}: failed");
+                    Console.WriteLine($"run on {procs} procs failed");
                     Console.WriteLine(e.Message);
                     Console.WriteLine(e.StackTrace);
                     MomentumRes.Add(-1.0);

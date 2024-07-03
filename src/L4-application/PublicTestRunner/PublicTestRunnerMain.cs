@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution;
 using ilPSP;
@@ -162,7 +163,8 @@ namespace PublicTestRunner {
                         typeof(IntersectingLevelSetTest.AllUpTest),
                         typeof(BUIDT.Tests.BUIDTTestProgram),
                         typeof(SAIDT.Tests.SAIDTTestProgram),
-                        typeof(XESF.Tests.XESFTestProgram)
+                        typeof(XESF.Tests.XESFTestProgram),
+                        typeof(XNSE_ParallelTests.XNSE_ParallelTests)
                 };
             }
         }
