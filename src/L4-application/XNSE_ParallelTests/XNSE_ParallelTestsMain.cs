@@ -49,18 +49,19 @@ namespace XNSE_ParallelTests {
             List<double> MomentumRes = new List<double>();
 
             using (var solver = new XNSE()) {
-                try {
+                //try {
                     solver.Init(control);
                     solver.RunSolverMode();
                     int D = solver.Grid.SpatialDimension;
                     MomentumRes.Add(solver.CurrentResidual.Fields.Take(D).Sum(f => f.L2Norm()).MPISum());
+
                     CompareParallelRun(solver, testcaseName);
-                } catch (Exception e) {
-                    Console.WriteLine($"run on {procs} procs failed");
-                    Console.WriteLine(e.Message);
-                    Console.WriteLine(e.StackTrace);
-                    MomentumRes.Add(-1.0);
-                }
+                //} catch (Exception e) {
+                //    Console.WriteLine($"run on {procs} procs failed");
+                //    Console.WriteLine(e.Message);
+                //    Console.WriteLine(e.StackTrace);
+                //    MomentumRes.Add(-1.0);
+                //}
             }
 
             for (int i = 0; i < MomentumRes.Count; i++) {
