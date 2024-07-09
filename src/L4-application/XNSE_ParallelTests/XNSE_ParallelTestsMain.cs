@@ -9,7 +9,7 @@ using BoSSS.Foundation.XDG;
 
 namespace XNSE_ParallelTests {
 
-
+    [TestFixture]
     public class XNSE_ParallelTests {
 
         [Test]
@@ -52,7 +52,8 @@ namespace XNSE_ParallelTests {
                 try {
                     solver.Init(control);
                     solver.RunSolverMode();
-                    MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
+                    int D = solver.Grid.SpatialDimension;
+                    MomentumRes.Add(solver.CurrentResidual.Fields.Take(D).Sum(f => f.L2Norm()).MPISum());
                     CompareParallelRun(solver, testcaseName);
                 } catch (Exception e) {
                     Console.WriteLine($"run on {procs} procs failed");
@@ -72,13 +73,14 @@ namespace XNSE_ParallelTests {
             int RefMPIsize = 1;
 
             var FieldChecker = new TestingIO(solver.GridData, $"SolutionsFields_{testcaseName}.csv", true, RefMPIsize);
-            for (int d = 0; d < solver.GridData.SpatialDimension; d++) {
+            int D = solver.GridData.SpatialDimension;
+            for (int d = 0; d < D; d++) {
                 FieldChecker.AddDGField(solver.Velocity[d]);
             }
             FieldChecker.AddDGField(solver.Pressure);
             FieldChecker.DoIOnow();
 
-            for (int d = 0; d < solver.GridData.SpatialDimension; d++) {
+            for (int d = 0; d < D; d++) {
                 Console.WriteLine($"absolute L2 error for {solver.Velocity[d].Identification} field: {FieldChecker.AbsError(solver.Velocity[d])}");
                 Assert.Less(FieldChecker.AbsError(solver.Velocity[d]), 1.0e-9, $"Mismatch in velocity{d} field between single-core and parallel run.");
             }
