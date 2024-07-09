@@ -14,15 +14,22 @@ namespace XNSE_ParallelTests {
 
         [Test]
         public static void Test_ChannelFlow2D() {
-            var C = Controls.Testbase_ChannelFlow2D(true, false);
+            var C = Controls.Test_ChannelFlow2D(true, false);
             RunTest(C, "ChannelFlow2D_baseCase");
+        }
+
+        [Test]
+        public static void Test_ChannelFlow3D() {
+            var C = Controls.Test_ChannelFlow3D(true, false);
+            RunTest(C, "ChannelFlow3D_baseCase");
         }
 
 
         static void Main(string[] args) {
 
             // to test individual setups
-            var C = Controls.Testbase_ChannelFlow2D(true, false);
+            //var C = Controls.Test_ChannelFlow2D(true, false);
+            var C = Controls.Test_ChannelFlow3D(true, false);
 
             RunTest(C, "localTestcase");
 
@@ -31,13 +38,13 @@ namespace XNSE_ParallelTests {
 
         private static void RunTest(XNSE_Control control, string testcaseName) {
 
-            System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", "1");
-            BoSSS.Solution.Application.InitMPI();
+            //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", "1");
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
 
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
 
-            Console.Write($"Running {testcaseName} on {procs} procs");
+            Console.WriteLine($"Running {testcaseName} on {procs} procs");
 
             List<double> MomentumRes = new List<double>();
 
@@ -72,9 +79,11 @@ namespace XNSE_ParallelTests {
             FieldChecker.DoIOnow();
 
             for (int d = 0; d < solver.GridData.SpatialDimension; d++) {
-                Assert.Less(FieldChecker.AbsError(solver.Velocity[d]), 1.0e-8, $"Mismatch in velocity{d} field between single-core and parallel run.");
+                Console.WriteLine($"absolute L2 error for {solver.Velocity[d].Identification} field: {FieldChecker.AbsError(solver.Velocity[d])}");
+                Assert.Less(FieldChecker.AbsError(solver.Velocity[d]), 1.0e-9, $"Mismatch in velocity{d} field between single-core and parallel run.");
             }
-            Assert.Less(FieldChecker.AbsError(solver.Pressure), 1.0e-8, "Mismatch in pressure field between single-core and parallel run.");
+            Console.WriteLine($"absolute L2 error for {solver.Pressure.Identification} field: {FieldChecker.AbsError(solver.Pressure)}");
+            Assert.Less(FieldChecker.AbsError(solver.Pressure), 1.0e-9, "Mismatch in pressure field between single-core and parallel run.");
         } 
 
     }
