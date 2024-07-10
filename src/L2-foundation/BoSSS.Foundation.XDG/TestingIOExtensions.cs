@@ -75,7 +75,7 @@ namespace BoSSS.Foundation.XDG {
 
             var trk = f.Basis.Tracker;
             foreach (string spc in trk.SpeciesNames) {
-                var fs = f.GetSpeciesShadowField(spc);
+                var fs = err.GetSpeciesShadowField(spc);
                 t.OverwriteDGField(fs);
             }
             err.Acc(-1.0, f);

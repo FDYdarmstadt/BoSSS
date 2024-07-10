@@ -139,8 +139,8 @@ namespace XNSE_ParallelTets {
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.dtFixed = 0.5;
-            C.NoOfTimesteps = 4;
+            C.dtFixed = 0.25;
+            C.NoOfTimesteps = 8;
 
             {
                 C.AdaptiveMeshRefinement = useAMR;
@@ -260,7 +260,7 @@ namespace XNSE_ParallelTets {
             //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
 
 
-            double[] center = new double[] { W / 2.0, (H / 2.0) + 0.0, L / 2.0 };
+            double[] center = new double[] { W / 2.0, (H / 2.0) + 0.0, H / 2.0 };
             double radius = 0.4;
 
             C.InitialValues_Evaluators.Add("Phi",
@@ -289,8 +289,8 @@ namespace XNSE_ParallelTets {
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.dtFixed = 0.5;
-            C.NoOfTimesteps = 4;
+            C.dtFixed = 0.25;
+            C.NoOfTimesteps = 8;
 
             {
                 C.AdaptiveMeshRefinement = useAMR;
