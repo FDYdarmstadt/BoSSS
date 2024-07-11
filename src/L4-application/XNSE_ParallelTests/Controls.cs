@@ -279,7 +279,7 @@ namespace XNSE_ParallelTets {
 
             C.ReInitPeriod = 4;
 
-            C.AgglomerationThreshold = 0.0;
+            //C.AgglomerationThreshold = 0.0;
 
             // C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             // C.NonLinearSolver.ConvergenceCriterion = 1e-9;
@@ -288,8 +288,8 @@ namespace XNSE_ParallelTets {
             // C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.dtFixed = 0.25;
             C.NoOfTimesteps = 1;
