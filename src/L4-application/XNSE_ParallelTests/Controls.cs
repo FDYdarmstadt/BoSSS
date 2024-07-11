@@ -170,7 +170,7 @@ namespace XNSE_ParallelTets {
                 mu_A = 1.0,
                 mu_B = 1.0,
 
-                Sigma = 0.1,
+                Sigma = 0.0,
 
                 IncludeConvection = nonlinear,
                 Material = true
@@ -292,8 +292,8 @@ namespace XNSE_ParallelTets {
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.dtFixed = 0.25;
-            C.NoOfTimesteps = 1;
+            //C.dtFixed = 0.25;
+            //C.NoOfTimesteps = 1;
 
             {
                 C.AdaptiveMeshRefinement = useAMR;
