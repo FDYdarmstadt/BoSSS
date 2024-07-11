@@ -140,7 +140,7 @@ namespace XNSE_ParallelTets {
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.dtFixed = 0.25;
-            C.NoOfTimesteps = 8;
+            C.NoOfTimesteps = 1;
 
             {
                 C.AdaptiveMeshRefinement = useAMR;
@@ -290,7 +290,7 @@ namespace XNSE_ParallelTets {
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.dtFixed = 0.25;
-            C.NoOfTimesteps = 8;
+            C.NoOfTimesteps = 1;
 
             {
                 C.AdaptiveMeshRefinement = useAMR;
