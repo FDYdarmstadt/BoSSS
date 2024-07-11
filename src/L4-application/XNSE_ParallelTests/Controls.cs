@@ -264,7 +264,8 @@ namespace XNSE_ParallelTets {
             double radius = 0.4;
 
             C.InitialValues_Evaluators.Add("Phi",
-                (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
+                //(X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
+                (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()) - radius.Pow2())  // quadratic form
                 );
 
             #endregion
@@ -275,7 +276,7 @@ namespace XNSE_ParallelTets {
             #region solver
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.None;
 
             C.ReInitPeriod = 4;
 
