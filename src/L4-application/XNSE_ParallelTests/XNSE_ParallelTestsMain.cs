@@ -14,13 +14,13 @@ namespace XNSE_ParallelTests {
 
         [Test]
         public static void Test_ChannelFlow2D() {
-            var C = Controls.Test_ChannelFlow2D(true, false);
+            var C = Controls.Test_ChannelFlow2D(false, false);
             RunTest(C, "ChannelFlow2D_baseCase");
         }
 
         [Test]
         public static void Test_ChannelFlow3D() {
-            var C = Controls.Test_ChannelFlow3D(true, false);
+            var C = Controls.Test_ChannelFlow3D(false, false);
             RunTest(C, "ChannelFlow3D_baseCase");
         }
 
