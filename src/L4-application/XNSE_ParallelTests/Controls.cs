@@ -279,6 +279,8 @@ namespace XNSE_ParallelTets {
 
             C.ReInitPeriod = 4;
 
+            C.AgglomerationThreshold = 0.0;
+
             // C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             // C.NonLinearSolver.ConvergenceCriterion = 1e-9;
             C.NonLinearSolver.MaxSolverIterations = 50;
