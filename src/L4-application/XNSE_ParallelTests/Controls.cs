@@ -288,7 +288,7 @@ namespace XNSE_ParallelTets {
 
             // C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
 
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
