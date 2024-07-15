@@ -151,7 +151,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             }
         }
         public static bool steady = false;
-        public static bool pressureStabilConti = false;
+        public static bool pressureStabilConti = true;
         public static bool pressureStabilEtaMom = false;
 
         public static double MaxAmp = 5.0;
