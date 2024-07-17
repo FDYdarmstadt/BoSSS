@@ -540,6 +540,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
             ctrl.NoOfTimesteps = numTimeSteps;
 
+            ((XNSE_Control)ctrl).Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+
             ctrl.DbPath = _DbPath;
             ctrl.savetodb = false;
 
@@ -573,6 +575,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
             ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
             ctrl.NoOfTimesteps = numTimeSteps;
+
+            ((XNSE_Control)ctrl).Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
             ctrl.DbPath = _DbPath;
             ctrl.savetodb = false;
@@ -624,6 +628,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
             ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
             ctrl.NoOfTimesteps = numTimeSteps;
+
+            ((XNSE_Control)ctrl).Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
             ctrl.DbPath = _DbPath;
             ctrl.savetodb = false;
