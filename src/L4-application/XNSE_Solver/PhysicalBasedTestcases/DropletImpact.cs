@@ -493,13 +493,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         public static XNSE_Control DropletReboundGauthier_Restart() {
 
             string _DbPath = @"\\dc3\userspace\smuda\hpccluster\DropletRebound_Gauthier";
-            var DatabaseInfo = BoSSS.Foundation.IO.DatabaseInfo.Open(_DbPath);
-
             var rstID = new Guid("4048fd03-ba72-488c-a363-66df1b140d15");
-            var restartSessionInfo = new SessionInfo(rstID, DatabaseInfo);
+            int RestartTimestep = -1;
 
-            //var ctrl = restartSessionInfo.GetControl();
-            string sessionDir = DatabaseDriver.GetSessionDirectory(restartSessionInfo);
+            string sessionDir = Path.Combine(_DbPath, StandardFsDriver.SessionsDir, rstID.ToString());
             string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
 
             string ctrlfileContent = File.ReadAllText(path_obj);
@@ -509,10 +506,129 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
 
-            ctrl.RestartInfo = Tuple.Create(rstID, restartSessionInfo.Timesteps.Last().TimeStepNumber);
+            ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
             ctrl.DbPath = _DbPath;
 
             ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6_DebugRun";
+
+            return (XNSE_Control)ctrl;
+
+        }
+
+        /// <summary>
+        /// cases for testing on jenkins - not to be changed!!!
+        /// DropletReboundGauthier_8x12x8AMR1_k2_ReI4_restart3 - 4x4 multicore simulation
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control DropletReboundGauthier_8x12x8AMR1_k2_ReI4_Restart(int numTimeSteps = 1) {
+
+            string _DbPath = @"\\fdygitrunner\ValidationTests\databases\DropletRebound_Gauthier";
+            var rstID = new Guid("2cd1d33d-5099-414d-b532-95096879a027");
+            int RestartTimestep = 77;
+
+            string sessionDir = Path.Combine(_DbPath, StandardFsDriver.SessionsDir, rstID.ToString());
+            string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
+
+            string ctrlfileContent = File.ReadAllText(path_obj);
+
+            var ctrl = AppControl.Deserialize(ctrlfileContent);
+
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+
+            ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
+            ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
+            ctrl.NoOfTimesteps = numTimeSteps;
+
+            ctrl.DbPath = _DbPath;
+            ctrl.savetodb = false;
+
+            ctrl.SessionName = "DropletReboundGauthier_8x12x8AMR1_k2_ReI4_restart4";
+
+            return (XNSE_Control)ctrl;
+
+        }
+
+        /// <summary>
+        /// cases for testing on jenkins - not to be changed!!!
+        /// DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart5 - 4x4 multicore simulation
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control DropletReboundGauthier_8x8x8AMR1_k3_ReI4_Restart(int numTimeSteps = 1) {
+
+            string _DbPath = @"\\fdygitrunner\ValidationTests\databases\DropletRebound_Gauthier";
+            var rstID = new Guid("4048fd03-ba72-488c-a363-66df1b140d15");
+            int RestartTimestep = -1;
+
+            string sessionDir = Path.Combine(_DbPath, StandardFsDriver.SessionsDir, rstID.ToString());
+            string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
+
+            string ctrlfileContent = File.ReadAllText(path_obj);
+
+            var ctrl = AppControl.Deserialize(ctrlfileContent);
+
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+
+            ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
+            ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
+            ctrl.NoOfTimesteps = numTimeSteps;
+
+            ctrl.DbPath = _DbPath;
+            ctrl.savetodb = false;
+
+            ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6";
+
+            return (XNSE_Control)ctrl;
+
+        }
+
+        /// <summary>
+        /// cases for testing on jenkins - not to be changed!!!
+        /// case 1: DropletReboundGauthier_8x8x8AMR0_k3_ReI4_restart1 - single core simulation
+        /// case 2: DropletReboundGauthier_8x8x8AMR0_k3_ReI4_2cores_restart1 - 2 core simulation
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control DropletReboundGauthier_8x8x8AMR0_k3_ReI4_Restart(int caseNum = 1, int numTimeSteps = 1) {
+
+            string _DbPath = @"\\fdygitrunner\ValidationTests\databases\DropletRebound_Gauthier";
+
+            Guid rstID;
+            int RestartTimestep;
+            switch (caseNum) {
+                case 1: {
+                        rstID = new Guid("57e8f3ff-209a-4b66-bfcc-049279c44627");   // single core simulation
+                        RestartTimestep = 66;
+                        break;
+                    }
+                case 2: {
+                        rstID = new Guid("1a8cfde2-27a6-4c58-b4ed-0607a243731a");   // 2 core simulation
+                        RestartTimestep = 77;
+                        break;
+                    }
+                default: {
+                        throw new ArgumentOutOfRangeException();
+                    }
+            }
+
+            string sessionDir = Path.Combine(_DbPath, StandardFsDriver.SessionsDir, rstID.ToString());
+            string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
+
+            string ctrlfileContent = File.ReadAllText(path_obj);
+
+            var ctrl = AppControl.Deserialize(ctrlfileContent);
+
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+
+            ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
+            ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
+            ctrl.NoOfTimesteps = numTimeSteps;
+
+            ctrl.DbPath = _DbPath;
+            ctrl.savetodb = false;
+
+            ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR0_k3_ReI4_restart2";
 
             return (XNSE_Control)ctrl;
 

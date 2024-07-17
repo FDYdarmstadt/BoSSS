@@ -266,7 +266,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         //AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
                         EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
-                        //fullReInit = true;
                         break;
                     }
                 case 3: {
@@ -277,7 +276,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                         EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
-                        fullReInit = true;
                         break;
                     }
                 case 4: {
@@ -695,23 +693,6 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-
-        /// <summary>
-        /// Control Options for ReInit
-        /// </summary>
-        [DataMember]
-        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
-
-        /// <summary>
-        /// Control Options for ExtVel
-        /// </summary>
-        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
-
-        /// <summary>
-        /// three-step reinitialization with preconditioning fast-marching
-        /// </summary>
-        [DataMember]
-        public bool fullReInit = false;
 
         /// <summary>
         /// switch for the computation of the coupled heat solver

@@ -31,7 +31,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true, int ReInitPeriod = 0) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -46,8 +46,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.m_grd = grd;
             timeStepOrder = 2;
 
-            this.ReInit_Period = ReInitPeriod;
-            ReInit_Control = new EllipticReInitAlgoControl();
+            //this.ReInit_Period = ReInitPeriod;
+            //ReInit_Control = new EllipticReInitAlgoControl();
         }
 
         IGridData m_grd;
@@ -168,9 +168,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
 
-        private EllipticReInitAlgoControl ReInit_Control;
+        private EllipticReInitAlgoControl ReInit_Control = new EllipticReInitAlgoControl();
         private int ReInit_TimestepIndex = 0;
         private int ReInit_Period = 0;
+
+        public void InitializeReInit(EllipticReInitAlgoControl RI_ctrl, int RI_tsI, int RI_p) {
+            ReInit_Control = RI_ctrl;
+            ReInit_TimestepIndex = RI_tsI;
+            ReInit_Period = RI_p;
+        }
 
         /// <summary>
         /// 

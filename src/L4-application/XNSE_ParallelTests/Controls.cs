@@ -220,8 +220,44 @@ namespace XNSE_ParallelTets {
                     return et;
                 });
 
+                grd.AddPredefinedPartitioning("TwoProcSplit_XDirection", delegate (double[] X) {
+                    int rank;
+                    double x = X[0];
+                    if (x < (W / 2.0))
+                        rank = 0;
+                    else
+                        rank = 1;
+
+                    return rank;
+                });
+
+                grd.AddPredefinedPartitioning("TwoProcSplit_YDirection", delegate (double[] X) {
+                    int rank;
+                    double y = X[1];
+                    if (y < (L / 2.0))
+                        rank = 0;
+                    else
+                        rank = 1;
+
+                    return rank;
+                });
+
+                grd.AddPredefinedPartitioning("TwoProcSplit_ZDirection", delegate (double[] X) {
+                    int rank;
+                    double z = X[2];
+                    if (z < (H / 2.0))
+                        rank = 0;
+                    else
+                        rank = 1;
+
+                    return rank;
+                });
+
                 return grd;
             };
+
+            C.GridPartType = GridPartType.Predefined;
+            C.GridPartOptions = "TwoProcSplit_ZDirection";
 
             //C.GridFunc = delegate () {
             //    double[] Ynodes = GenericBlas.Linspace(0, 1, 4 + 1);
@@ -298,7 +334,8 @@ namespace XNSE_ParallelTets {
             //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
 
 
-            double[] center = new double[] { W / 2.0, (H / 2.0) + 0.0, H / 2.0 };
+            double x_d = 0.0; double y_d = 0.0; double z_d = 0.0;
+            double[] center = new double[] { (W / 2.0) + x_d, (H / 2.0) + y_d, (H / 2.0) + z_d };
             double radius = 0.4;
 
             C.InitialValues_Evaluators.Add("Phi",
@@ -308,7 +345,7 @@ namespace XNSE_ParallelTets {
                 );
 
             //C.InitialValues_Evaluators.Add("Phi",
-            //    (X => (-0.55 + X[2]) + 0.5 * (-0.5 + X[0]).Pow2() + 0.05 * Math.Cos(2.0 * Math.PI * X[1]))
+            //    (X => (-0.7 + X[2]) + 0.5 * (-0.5 + X[0]).Pow2() + 0.05 * Math.Cos(2.0 * Math.PI * X[1]))
             //    );
 
             #endregion
@@ -317,8 +354,6 @@ namespace XNSE_ParallelTets {
             // solver options
             // ==============
             #region solver
-
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.LSContiProjectionMethod = ContinuityProjectionOption.None;

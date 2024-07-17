@@ -1,4 +1,6 @@
 ﻿using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.EllipticExtension;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.XdgTimestepping;
@@ -142,6 +144,26 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         [DataMember]
         public int ReInitPeriod = 0;
+
+        /// <summary>
+        /// in case of a restart set for internal timestep number within the ls evolver
+        /// </summary>
+        [DataMember]
+        public int ReInitTimestepIndex = 0;
+
+
+        /// <summary>
+        /// Control Options for ReInit
+        /// </summary>
+        [DataMember]
+        public EllipticReInitAlgoControl ReInitControl = new EllipticReInitAlgoControl();
+
+        /// <summary>
+        /// Control Options for ExtVel
+        /// </summary>
+        public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+
+
 
         /// <summary>
         /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set
