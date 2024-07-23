@@ -75,7 +75,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             double[] CoeffOldIter = (double[])InitialValueForCoeff.Clone();
             double[] CoeffNewIter = (double[])InitialValueForCoeff.Clone();
             double[] CoeffLookAhead = (double[])InitialValueForCoeff.Clone();
-            double lambda = 20.0;//0.165;
+            double lambda = 0.165;//20
 
             //double[] derivOldIter = new double[InitialValueForCoeff.Length];
             //double[] derivNewIter = Differentiate(CoeffOldIter, EllipsePar0, dt, time, meanVelocity);
@@ -390,7 +390,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 //double alphaMin = -Math.PI + angle ;
                 //double alphaMax = -angle;
                 //double TotalIntegral_RefVal = IntegrationOverEllipse.IntegralCalculation(EllipseCoeff, EllipsePar0, fsqr, alphaMin, alphaMax, dt, time, velocity);
-                Console.WriteLine($"integral_bosss: {TotalIntegral}");
+                //Console.WriteLine($"integral_bosss: {TotalIntegral}");
                 // Console.WriteLine($"integral_diff: {TotalIntegral_RefVal - TotalIntegral}");
             }
 
