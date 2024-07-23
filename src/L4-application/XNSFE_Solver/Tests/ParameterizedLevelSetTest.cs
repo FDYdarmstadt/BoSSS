@@ -15,7 +15,6 @@ using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.Grid.Classic;
-//using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -117,7 +116,153 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         }
     }
 
+    public static class ParameterizedLevelSet_Translation {
 
+        public static XNSFE_Control Translation() {
+            XNSFE_Control C = new XNSFE_Control();
+
+            double Lx = 1.0;
+            double Ly = 5 * Lx;
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-Lx, Lx, 20 + 1);
+                double[] Ynodes = GenericBlas.Linspace(-Ly, Ly, 100 + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+                grd.EdgeTagNames.Add(1, "NavierSlip_Linear_ZeroGradient");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet_ZeroGradient");
+                grd.EdgeTagNames.Add(3, "Velocity_Inlet_ZeroGradient");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if ((Math.Abs(X[0] - Xnodes.First()) < 1e-8) || (Math.Abs(X[0] - Xnodes.Last()) < 1e-8))
+                        return 1; // walls
+                    else if ((Math.Abs(X[1] - Ynodes.Last()) < 1e-8))
+                        return 2; // upper border
+                    else if ((Math.Abs(X[1] - Ynodes.First()) < 1e-8))
+                        return 3; // bottom
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            double xSemiAxis0 = 1.5;
+            double ySemiAxis0 = 1.0;
+            double yCenter0 = 0.0;
+
+            C.AddBoundaryValue("NavierSlip_Linear_ZeroGradient");
+            C.AddBoundaryValue("Pressure_Outlet_ZeroGradient");
+            C.AddBoundaryValue("Velocity_Inlet_ZeroGradient");
+
+            double ka = 0.0;
+            double kb = 0.0;
+            double kc = 1.0;
+            Func<double[], double> VelFunc = (X => kc - (xSemiAxis0 * ySemiAxis0 * kb * (xSemiAxis0.Pow2() - X[0].Pow2()) + ySemiAxis0.Pow2() * ka * X[0].Pow2()) / ((ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt() * xSemiAxis0.Pow2() * xSemiAxis0));
+            C.InitialValues_Evaluators.Add("VelocityY#A", VelFunc);
+            C.InitialValues_Evaluators.Add("VelocityY#B", VelFunc);
+
+            Func<double[], double> PhiFunc = (X => X[1] - yCenter0 + (ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt());
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            C.SkipSolveAndEvaluateResidual = true;
+
+
+            C.SetDGdegree(2);
+
+            C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.LieSplitting;
+            C.Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.ParameterizedLevelSet;
+
+            if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
+                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl(xSemiAxis0, ySemiAxis0, yCenter0);
+            }
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
+            C.dtFixed = 0.01;
+            C.NoOfTimesteps = 10;
+            C.Endtime = 1.0;
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 2;
+
+            return C;
+        }
+    }
+
+    public static class ParameterizedLevelSet_ShapeChange {
+
+        public static XNSFE_Control ShapeChange() {
+            XNSFE_Control C = new XNSFE_Control();
+
+            double Lx = 1.0;
+            double Ly = 5 * Lx;
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-Lx, Lx, 20 + 1);
+                double[] Ynodes = GenericBlas.Linspace(-Ly, Ly, 100 + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+                grd.EdgeTagNames.Add(1, "NavierSlip_Linear_ZeroGradient");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet_ZeroGradient");
+                grd.EdgeTagNames.Add(3, "Velocity_Inlet_ZeroGradient");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if ((Math.Abs(X[0] - Xnodes.First()) < 1e-8) || (Math.Abs(X[0] - Xnodes.Last()) < 1e-8))
+                        return 1; // walls
+                    else if ((Math.Abs(X[1] - Ynodes.Last()) < 1e-8))
+                        return 2; // upper border
+                    else if ((Math.Abs(X[1] - Ynodes.First()) < 1e-8))
+                        return 3; // bottom
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            double xSemiAxis0 = 1.5;
+            double ySemiAxis0 = 1.0;
+            double yCenter0 = 0.0;
+
+            C.AddBoundaryValue("NavierSlip_Linear_ZeroGradient");
+            C.AddBoundaryValue("Pressure_Outlet_ZeroGradient");
+            C.AddBoundaryValue("Velocity_Inlet_ZeroGradient");
+
+            double ka = 0.0;
+            double kb = -0.5;
+            double kc = 0.0;
+            Func<double[], double> VelFunc = (X => kc - (xSemiAxis0 * ySemiAxis0 * kb * (xSemiAxis0.Pow2() - X[0].Pow2()) + ySemiAxis0.Pow2() * ka * X[0].Pow2()) / ((ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt() * xSemiAxis0.Pow2() * xSemiAxis0));
+            C.InitialValues_Evaluators.Add("VelocityY#A", VelFunc);
+            C.InitialValues_Evaluators.Add("VelocityY#B", VelFunc);
+
+            Func<double[], double> PhiFunc = (X => X[1] - yCenter0 + (ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt());
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            C.SkipSolveAndEvaluateResidual = true;
+
+
+            C.SetDGdegree(2);
+
+            C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.LieSplitting;
+            C.Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.ParameterizedLevelSet;
+
+            if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
+                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl(xSemiAxis0, ySemiAxis0, yCenter0);
+            }
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
+            C.dtFixed = 0.01;
+            C.NoOfTimesteps = 10;
+            C.Endtime = 1.0;
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 2;
+
+            return C;
+        }
+    }
 
     class ParameterizedLevelSetTest : IXNSFETest {
 

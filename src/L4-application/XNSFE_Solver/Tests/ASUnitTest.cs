@@ -97,6 +97,69 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "XSNFEScalingTest-p" + deg+"-Setup" + Setup });
         }
 
+        public static void ParameterizedLevelSetTest_Translation() {
+
+            var C = BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_Translation.Translation();
+            using (var solver = new XNSFE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                //-------------------Evaluate Error(For Interface Velocity) ---------------------------------------- 
+
+                var velocityLS = solver.RegisteredFields.Where(s => s.Identification == "VelocityY@Phi").SingleOrDefault();
+                double eps = 1e-05;
+
+                double minVelocityLS; double maxVelocityLS;
+
+                velocityLS.GetExtremalValues(out minVelocityLS, out maxVelocityLS);
+
+                Console.WriteLine("Mimimum Level-Set Velocity is {0}", minVelocityLS);
+                Console.WriteLine("Maximum Level-Set Velocity is {0}", maxVelocityLS);
+
+
+                Assert.Greater(eps, minVelocityLS, "Mimimum Level-Set Velocity is smaller than expected");
+                Assert.Less(-eps, minVelocityLS, "Mimimum Level-Set Velocity is higher than expected");
+
+                Assert.Greater(1.0 + eps, maxVelocityLS, "Maximum Level-Set Velocity is smaller than expected");
+                Assert.Less(1.0 - eps, maxVelocityLS, "Maximum Level-Set Velocity is higher than expected");
+
+                Console.WriteLine("Calculation finished successfully.");
+            }
+            
+
+        }
+
+        public static void ParameterizedLevelSetTest_ShapeChange() {
+
+            var C = BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_ShapeChange.ShapeChange();
+            using (var solver = new XNSFE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                //-------------------Evaluate Error(For Interface Velocity) ---------------------------------------- 
+
+                var velocityLS = solver.RegisteredFields.Where(s => s.Identification == "VelocityY@Phi").SingleOrDefault();
+                double eps = 1e-05;
+
+                double minVelocityLS; double maxVelocityLS;
+
+                velocityLS.GetExtremalValues(out minVelocityLS, out maxVelocityLS);
+
+                Console.WriteLine("Mimimum Level-Set Velocity is {0}", minVelocityLS);
+                Console.WriteLine("Maximum Level-Set Velocity is {0}", maxVelocityLS);
+
+
+                Assert.Greater(eps, minVelocityLS, "Mimimum Level-Set Velocity is smaller than expected");
+                Assert.Less(-eps, minVelocityLS, "Mimimum Level-Set Velocity is higher than expected");
+
+                Assert.Greater(0.5 + eps, maxVelocityLS, "Maximum Level-Set Velocity is smaller than expected");
+                Assert.Less(0.5 - eps, maxVelocityLS, "Maximum Level-Set Velocity is higher than expected");
+
+                Console.WriteLine("Calculation finished successfully.");
+            }
+
+        }
+
         /// <summary>
         /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSetTest"/>
         /// </summary>

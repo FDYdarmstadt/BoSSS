@@ -574,7 +574,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double h0 = 2e-2;
             double xSemiAxis0 = 1.1 * R;
             double ySemiAxis0 = 1e-2;
-            double yCenter0 = h0 + ySemiAxis0;
+            double yCenter0 = h0;
 
             Func<double[], double> PhiFunc = (X => X[1] - yCenter0 + (ySemiAxis0.Pow2() * (1 - X[0].Pow2() / xSemiAxis0.Pow2())).Sqrt());
 
