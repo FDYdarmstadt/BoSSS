@@ -262,19 +262,24 @@ namespace BoSSS.Foundation.Quadrature {
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;
                 } else {
+                    Console.WriteLine("Scaling 0.5 ?");
                     qrEdge.Nodes.Scale(0.5);
                     qrEdge.Weights.Scale(0.5);
                     return qrEdge;
                 }
             }
 
+            //givenRule.OutputQuadratureRuleAsVtpXML($"givenRule{iFace}");
+            //givenRule.Nodes.SaveToTextFileUnsteady($"nodes{iFace}i0{i0}iE{iE}");
             MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
             MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
             NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, qrEdge == null);
 
             // transform from the cell coordinate system to the face
+            //NodesVol.SaveToTextFileUnsteady($"NodesVol{iFace}");
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
             Nodes.LockForever();
+            //Nodes.SaveToTextFileUnsteady($"NodesFace{iFace}");
 
             //Debug.Assert((Weigts.Sum() - grd.Grid.GridSimplex.EdgeSimplex.Volume).Abs() < 1.0e-6, "i've forgotten the gramian");
 
