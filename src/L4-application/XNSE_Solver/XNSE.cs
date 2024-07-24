@@ -211,7 +211,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                 //See remarks
-                quadOrder *= 2;
+                quadOrder *= 4;
                 quadOrder += 1;
             } 
 

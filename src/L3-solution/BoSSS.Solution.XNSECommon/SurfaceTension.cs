@@ -1235,12 +1235,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             double[] EdgeNormal = inp.Normal;
             double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
+            //Console.WriteLine("SurfaceNormal_IN = ({0}, {1}, {2})", SurfaceNormal_IN[0], SurfaceNormal_IN[1], SurfaceNormal_IN[2]);
             double[] SurfaceNormal_OUT = SurfaceNormal(inp.Parameters_OUT);
+            //Console.WriteLine("SurfaceNormal_OUT = ({0}, {1}, {2})", SurfaceNormal_OUT[0], SurfaceNormal_OUT[1], SurfaceNormal_OUT[2]);
 
             double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
-            //Console.WriteLine("Tangente_IN = ({0}, {1})", Tangente_IN[0], Tangente_IN[1]);
+            //Console.WriteLine("Tangente_IN = ({0}, {1}, {2})", Tangente_IN[0], Tangente_IN[1], Tangente_IN[2]);
             double[] Tangente_OUT = Tangent(SurfaceNormal_OUT, EdgeNormal);
-            //Console.WriteLine("Tangente_OUT = ({0}, {1})", Tangente_OUT[0], Tangente_OUT[1]);
+            //Console.WriteLine("Tangente_OUT = ({0}, {1}, {2})", Tangente_OUT[0], Tangente_OUT[1], Tangente_OUT[2]);
 
             //double m_sigmaMax = Math.Max(m_sigma[inp.jCellIn], m_sigma[inp.jCellOut]);
             double acc = 0.5 * m_sigma* (Tangente_IN[m_comp] + Tangente_OUT[m_comp]) * (_vA - _vB);

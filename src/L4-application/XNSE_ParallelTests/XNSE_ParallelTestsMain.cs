@@ -28,7 +28,7 @@ namespace XNSE_ParallelTests {
         static void Main(string[] args) {
 
             // to test individual setups
-            //var C = Controls.Test_ChannelFlow2D(true, false);
+            //var C = Controls.Test_ChannelFlow2D(false, false);
             var C = Controls.Test_ChannelFlow3D(false, false);
 
             //C.PlotAgglomeration = true;
@@ -88,15 +88,15 @@ namespace XNSE_ParallelTests {
             XDGField[] errorFields = new XDGField[D + 1];
             for (int d = 0; d < D; d++) {
                 Console.WriteLine($"absolute L2 error for {solver.Velocity[d].Identification} field: {FieldChecker.AbsError(solver.Velocity[d])}");
-                //errorFields[d] = FieldChecker.LocalError(solver.Velocity[d]);
+                errorFields[d] = FieldChecker.LocalError(solver.Velocity[d]);
                 //Assert.Less(FieldChecker.AbsError(solver.Velocity[d]), 1.0e-9, $"Mismatch in velocity{d} field between single-core and parallel run.");
             }
             Console.WriteLine($"absolute L2 error for {solver.Pressure.Identification} field: {FieldChecker.AbsError(solver.Pressure)}");
-            //errorFields[D] = FieldChecker.LocalError(solver.Pressure);
+            errorFields[D] = FieldChecker.LocalError(solver.Pressure);
             //Assert.Less(FieldChecker.AbsError(solver.Pressure), 1.0e-9, "Mismatch in pressure field between single-core and parallel run.");
 
 
-            //BoSSS.Solution.Tecplot.Tecplot.PlotFields(errorFields, "XNSE_ParallelTests-ErrorFields", 0.0, 3);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(errorFields, "XNSE_ParallelTests-ErrorFields", 0.0, 3);
         } 
 
     }
