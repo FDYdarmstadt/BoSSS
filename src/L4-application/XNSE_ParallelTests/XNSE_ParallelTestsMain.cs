@@ -6,6 +6,7 @@ using BoSSS.Application.XNSE_Solver;
 using XNSE_ParallelTets;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
 
 namespace XNSE_ParallelTests {
 
@@ -58,6 +59,7 @@ namespace XNSE_ParallelTests {
                     solver.RunSolverMode();
                     int D = solver.Grid.SpatialDimension;
                     //MomentumRes.Add(solver.CurrentResidual.Fields.Take(D).Sum(f => f.L2Norm()).MPISum());
+                    CheckLevelSetProperties(solver);
                     CompareParallelRun(solver, testcaseName);
                 } catch (Exception e) {
                     Console.WriteLine($"run on {procs} procs failed");
@@ -97,7 +99,19 @@ namespace XNSE_ParallelTests {
 
 
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(errorFields, "XNSE_ParallelTests-ErrorFields", 0.0, 3);
-        } 
+        }
 
+        private static void CheckLevelSetProperties(XNSE solver) {
+
+            double radius = 0.4;
+            double volumeSphere = (4.0 / 3.0) * Math.PI * radius.Pow(3);
+            double volume = XNSEUtils.GetSpeciesArea(solver.LsTrk, solver.LsTrk.GetSpeciesId("A"), solver.QuadOrder());
+            Console.WriteLine($"droplet volume: {volume} (error compared to analytic sphere: {volume - volumeSphere})");
+
+            double surfaceAreaSphere = 4.0 * Math.PI * radius.Pow(2);
+            double surfaceArea = XNSEUtils.GetInterfaceLength(solver.LsTrk, solver.QuadOrder());
+            Console.WriteLine($"droplet volume: {surfaceArea} (error compared to analytic sphere: {surfaceArea - surfaceAreaSphere})");
+
+        }
     }
 }
