@@ -1810,5 +1810,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Electric potential, dimensi is Voltage
         /// </summary>
         public const string ElectricPotential = "ElectricPotential";
+
+        public const string FreechargeDensity = "FreechargeDensity";
     }
 }

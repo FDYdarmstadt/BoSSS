@@ -49,6 +49,7 @@
     <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21459.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\MultiphaseElectroHydroDynamic\MultiphaseElectroHydroDynamic.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
