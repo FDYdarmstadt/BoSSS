@@ -46,7 +46,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             DeleteOldPlotFiles();
             //Tests.ParameterizedLevelSetTest_Elemental.Test();
             //Tests.ParameterizedLevelSet_Translation.Test();
-            Tests.ASUnitTest.ParameterizedLevelSetTest_Translation();
+            Tests.ASUnitTest.ParameterizedLevelSetTest_ShapeChange();
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.TransientEvaporationTest(0.0, 3, 0.1, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected, NonLinearSolverCode.Newton, Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2);
             System.Environment.Exit(111);

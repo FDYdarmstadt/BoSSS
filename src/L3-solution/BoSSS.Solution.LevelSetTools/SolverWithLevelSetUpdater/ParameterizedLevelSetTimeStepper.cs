@@ -72,39 +72,69 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <returns></returns>
         public static double[] Minimi(double[] InitialValueForCoeff, double[] EllipsePar0, Func<double[], double[], double, double, SinglePhaseField[], double> F, Func<double[], double[], double, double, SinglePhaseField[], double[]> Differentiate, double dt, double time, SinglePhaseField[]  meanVelocity) {
 
-            double[] CoeffOldIter = (double[])InitialValueForCoeff.Clone();
+            //double[] CoeffOldIter = (double[])InitialValueForCoeff.Clone();
             double[] CoeffNewIter = (double[])InitialValueForCoeff.Clone();
             double[] CoeffLookAhead = (double[])InitialValueForCoeff.Clone();
-            double lambda = 0.165;//20
+            double lambda = 20.0;// 0.165;//20
 
             //double[] derivOldIter = new double[InitialValueForCoeff.Length];
             //double[] derivNewIter = Differentiate(CoeffOldIter, EllipsePar0, dt, time, meanVelocity);
 
             //double funcNewIter = F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
 
-
             double[] deriv = new double[InitialValueForCoeff.Length];
             double eps = GenericBlas.MachineEps.Sqrt();
-            double gamma = 0.9;
+            double gamma = 0.99;
             double[] grad_acc = new double[3] { 0.0, 0.0, 0.0};
 
+            double[] G = new double[3] { 0.0, 0.0, 0.0 }; //sum of squares of gradients
+            double[] correctedG = new double[3] { 0.0, 0.0, 0.0 }; //sum of squares of gradients
+            double[] lambda_ad = new double[3] { 0.0, 0.0, 0.0 }; //sum of squares of gradients
+            double beta = 0.999; // decay rate for zero-bias correction
+           // int t = 0; // time step conter for G
+
+      
 
             int itermax = 10000000;
+            Stopwatch stw = Stopwatch.StartNew();
 
             for (int i = 1; i < itermax; ++i) {
                 //Update Schema
                 //var funcOldIter = funcNewIter;
-                for (int n = 0; n < CoeffOldIter.Length; ++n) {
-                    CoeffLookAhead[n] = CoeffOldIter[n] - gamma * grad_acc[n];
+                //t+=1; // increment time step for G
+
+                //for adagrad
+                //for (int n = 0; n < CoeffNewIter.Length; ++n) {
+                //    CoeffLookAhead[n] = CoeffNewIter[n] - gamma * grad_acc[n];
+                //}
+
+                deriv = Differentiate(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
+                for (int d = 0; d < deriv.Length; ++d) {
+                    G[d] += deriv[d] * deriv[d];
+                    correctedG[d] = G[d] / (1 - Math.Pow(beta, i));
+                    lambda_ad[d] = lambda / (Math.Sqrt(correctedG[d] + eps));
+                    //derivOldIter[d] = derivNewIter[d];
+                    grad_acc[d] = grad_acc[d] * gamma + lambda_ad[d] * deriv[d];
+                    //derivNewIter[d] = grad_acc[d];
+                    CoeffNewIter[d] -= grad_acc[d];//lambda * derivOldIter[d];
                 }
 
-                deriv = Differentiate(CoeffLookAhead, EllipsePar0, dt, time, meanVelocity);
-                for (int d = 0; d < deriv.Length; ++d) {
-                    //derivOldIter[d] = derivNewIter[d];
-                    grad_acc[d] = grad_acc[d] * gamma + lambda * deriv[d];
-                    //derivNewIter[d] = grad_acc[d];
-                    CoeffNewIter[d] = CoeffOldIter[d] - grad_acc[d];//lambda * derivOldIter[d];
-                }
+                // for Adam
+                //deriv = Differentiate(CoeffOldIter, EllipsePar0, dt, time, meanVelocity);
+                //for (int d = 0; d < deriv.Length; ++d) {
+                //    // Update biased first moment estimate
+                //    m[d] = beta1 * m[d] + (1 - beta1) * deriv[d];
+                //    // Update biased second moment estimate
+                //    v[d] = beta2 * v[d] + (1 - beta2) * deriv[d] * deriv[d];
+                //    // Compute bias-corrected first moment estimate
+                //    double mHat = m[d] / (1 - Math.Pow(beta1, i));
+                //    // Compute bias-corrected second moment estimate
+                //    double vHat = v[d] / (1 - Math.Pow(beta2, i));
+                //    // Update parameters
+                //    CoeffNewIter[d] = CoeffOldIter[d] - lambda * mHat / (Math.Sqrt(vHat) + eps);
+
+                //}
+
                 //CoeffNewIter[0] = Math.Max(0.0, CoeffNewIter[0]);
                 //CoeffNewIter[0] = Math.Min(1.0, CoeffNewIter[0]);
 
@@ -119,12 +149,12 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 //double numerator = 0.0;
                 //double denumerator = 0.0;
                 double exitCriteria = 0.0;
-                for (int j = 0; j < CoeffOldIter.Length; ++j) {
+                for (int j = 0; j < CoeffNewIter.Length; ++j) {
                     //exitCriteria += (CoeffNewIter[j] - CoeffOldIter[j]) * (CoeffNewIter[j] - CoeffOldIter[j]);
                     exitCriteria += deriv[j] * deriv[j];
                     //numerator +=(CoeffNewIter[j] - CoeffOldIter[j]) * (derivNewIter[j] - derivOldIter[j]);
                     //denumerator += (derivNewIter[j] - derivOldIter[j]) * (derivNewIter[j] - derivOldIter[j]);
-                    CoeffOldIter[j] = CoeffNewIter[j];
+                    //CoeffOldIter[j] = CoeffNewIter[j];
                     //Console.WriteLine($"derivOldIter: {derivOldIter[j]}, derivNewIter: {derivNewIter[j]}");
                     //Console.WriteLine($"numerator: {numerator}, denumerator: {denumerator}");
                 }
@@ -133,9 +163,12 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 //lambda = Math.Max(numerator / (denumerator + eps), 0.165);
                 //if (numerator.IsNaNorInf() || denumerator.IsNaNorInf() || lambda.IsNaNorInf())
                 //    throw new ArithmeticException($"breakdown in minimizer: {numerator}, {denumerator}, {lambda}");
+
+
                 Console.WriteLine("iter {0}: \t [{1}]", i, string.Join(", ", CoeffNewIter));
                 Console.WriteLine("            \t [{1}] \t {2} ", i, string.Join(", ", deriv), deriv.L2Norm());
-                Console.WriteLine("lambda_p: \t [{1}]", i, string.Join(", ", lambda));
+                Console.WriteLine("            \t[{1}]", i, string.Join(", ", correctedG));
+                Console.WriteLine("            \t[{1}]", i, string.Join(", ", lambda_ad));
 
                 //Exit loop condition
                 if (Math.Sqrt(exitCriteria) < eps) {
@@ -146,6 +179,9 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 }
                
             }
+            stw.Stop();
+            Console.WriteLine($"Elapsed Time minimization: {stw.Elapsed}");
+            stw.Reset();
 
             Console.WriteLine($"Minimum of function: {F(CoeffNewIter, EllipsePar0, dt, time, meanVelocity)} at  X value: [{string.Join(", ", CoeffNewIter)}]");
             return CoeffNewIter;
@@ -217,6 +253,8 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             double[] XLeft = (double[])X.Clone();
             double[] XRight = (double[])X.Clone();
 
+            //Stopwatch stw1 = Stopwatch.StartNew();
+
             for (int i = 0; i < L; ++i) {
                 if (i > 0) {
                     XLeft[i - 1] = X[i - 1];
@@ -229,7 +267,12 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 dF_dX[i] = 0.5 * (F(XRight, EllPar0, dt, time, meanVelocity) - F(XLeft, EllPar0, dt, time, meanVelocity)) / gridStepSize;
                 //Console.WriteLine($"XLeft: {XLeft[i]}, XRight: {XRight[i]}, dF_dX: {dF_dX[i]}");
             }
+
+            //stw1.Stop();
+            //Console.WriteLine($"Elapsed Time grad: {stw1.Elapsed}");
+            //stw1.Reset();
             return dF_dX;
+ 
         };
     }
 
@@ -336,7 +379,6 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
         static double f(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double[] velocity) {
 
-
             double SquareRoot = (EllipsePar0[1].Pow2() * (1 - x.Pow2() / EllipsePar0[0].Pow2())).Sqrt();
             double numer = EllipsePar0[1] * EllipseCoeff[1] * EllipsePar0[0] * (EllipsePar0[0].Pow2() - x.Pow2()) + x.Pow2() * EllipsePar0[1].Pow2() * EllipseCoeff[0];
             double DerivFuncEllipse = -EllipseCoeff[2] + numer / (SquareRoot * EllipsePar0[0].Pow2() * EllipsePar0[0]);
@@ -356,6 +398,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
         public double F(double[] EllipseCoeff, double[] EllipsePar0, double dt, double time, SinglePhaseField[] meanVelocity) {
 
+            //Stopwatch stw3 = Stopwatch.StartNew();
             void VectorizedEvaluate(int i0, int Length, QuadRule rule, MultidimensionalArray EvalResult) {
                 var PhysicalNodes = gdat.GlobalNodes.GetValue_Cell(rule.Nodes, i0, Length);
                 var VelocityValues = MultidimensionalArray.Create(Length, rule.NoOfNodes, 2);
@@ -393,6 +436,10 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 //Console.WriteLine($"integral_bosss: {TotalIntegral}");
                 // Console.WriteLine($"integral_diff: {TotalIntegral_RefVal - TotalIntegral}");
             }
+
+            //stw3.Stop();
+            //Console.WriteLine($"Elapsed Time Integral Calculation: {stw3.Elapsed}");
+            //stw3.Reset();
 
             return TotalIntegral;
 
