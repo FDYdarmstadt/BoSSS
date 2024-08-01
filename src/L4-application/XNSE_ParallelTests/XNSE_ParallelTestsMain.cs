@@ -6,6 +6,7 @@ using BoSSS.Application.XNSE_Solver;
 using XNSE_ParallelTets;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon;
 
 namespace XNSE_ParallelTests {
@@ -30,7 +31,7 @@ namespace XNSE_ParallelTests {
 
             // to test individual setups
             //var C = Controls.Test_ChannelFlow2D(false, false);
-            var C = Controls.Test_ChannelFlow3D(false, false);
+            var C = Controls.Test_ChannelFlow2D(false, false);
 
             //C.PlotAgglomeration = true;
             C.ImmediatePlotPeriod = 1;
@@ -103,14 +104,34 @@ namespace XNSE_ParallelTests {
 
         private static void CheckLevelSetProperties(XNSE solver) {
 
-            double radius = 0.4;
-            double volumeSphere = (4.0 / 3.0) * Math.PI * radius.Pow(3);
-            double volume = XNSEUtils.GetSpeciesArea(solver.LsTrk, solver.LsTrk.GetSpeciesId("A"), solver.QuadOrder());
-            Console.WriteLine($"droplet volume: {volume} (error compared to analytic sphere: {volume - volumeSphere})");
+            int D = solver.LsTrk.GridDat.SpatialDimension;
 
-            double surfaceAreaSphere = 4.0 * Math.PI * radius.Pow(2);
+            double radius = 0.4;
+
+            Func<double[], double> LSfunc = X => -1;
+            double volumeDrop = 0.0;
+            double surfaceAreaDrop = 0.0;
+            if (D == 2) {
+                LSfunc = (X => ((X[0] - 1.0).Pow2() + (X[1] - 1.0).Pow2()) - radius.Pow2());
+                volumeDrop = Math.PI * radius.Pow(2);
+                surfaceAreaDrop = 2.0 * Math.PI * radius;
+            }
+
+            if (D == 3) {
+                LSfunc = (X => ((X[0] - 1.0).Pow2() + (X[1] - 1.0).Pow2() + (X[2] - 1.0).Pow2()) - radius.Pow2());
+                volumeDrop = (4.0 / 3.0) * Math.PI * radius.Pow(3);
+                surfaceAreaDrop = 4.0 * Math.PI * radius.Pow(2);
+            }
+   
+            double error = ((SinglePhaseField)solver.LsTrk.LevelSets[0]).L2Error(LSfunc.Vectorize(), solver.QuadOrder());
+            Console.WriteLine($"LS projection error: {error}");
+
+            double volume = XNSEUtils.GetSpeciesArea(solver.LsTrk, solver.LsTrk.GetSpeciesId("A"), solver.QuadOrder());
+            Console.WriteLine($"droplet volume: {volume} (error compared to analytic sphere: {volume - volumeDrop})");
+
             double surfaceArea = XNSEUtils.GetInterfaceLength(solver.LsTrk, solver.QuadOrder());
-            Console.WriteLine($"droplet volume: {surfaceArea} (error compared to analytic sphere: {surfaceArea - surfaceAreaSphere})");
+            Console.WriteLine($"droplet surface: {surfaceArea} (error compared to analytic sphere: {surfaceArea - surfaceAreaDrop})");
+
 
         }
     }
