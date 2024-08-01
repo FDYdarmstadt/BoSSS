@@ -27,6 +27,8 @@ using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Tracing;
+using BoSSS.Solution.Tecplot;
+using System.Reflection;
 
 namespace BoSSS.Solution.Statistic {
     
@@ -263,22 +265,38 @@ namespace BoSSS.Solution.Statistic {
                 
 
                     double[] L2Error = new double[gDataS.Length - 1];
-
-                    for(int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
+                    List<DGField> errFields = new List<DGField>();
+                    List<DGField> injectionSolutionFields = new List<DGField>();
+                    int dgDegree = 0;
+                    for (int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
                         //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);
                         tr.Info(string.Format("Computing L2 error of '{0}' on level {1} ...", index, iLevel));
 
                         DGField Error = injectedFields[index].Last().CloneAs();
                         DGField injSol = injectedFields[index].ElementAt(iLevel);
+
+                        dgDegree = Error.Basis.Degree;
+
+                        Error.Identification += gDataS[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                        injSol.Identification += gDataS[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+
                         Error.Acc(-1.0, injSol);
+
+                        injectionSolutionFields.Add(injSol);
+                        errFields.Add(Error);
 
                         L2Error[iLevel] = NormFuncS[index](Error);
 
-                        //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
                         tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
                     }
-
                     Errors.Add(IdentificationS[index], L2Error);
+
+
+                    if (IdentificationS[index].Equals("VelocityX")) {
+                        Tecplot.Tecplot.PlotFields(errFields, IdentificationS[index] + $"k{dgDegree}" + "_err", 0.0, 0);
+                        Tecplot.Tecplot.PlotFields(injectionSolutionFields, IdentificationS[index] + $"k{dgDegree}" + "_injSol", 0.0, 0);
+                    }
+
                 }
 
                 GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();

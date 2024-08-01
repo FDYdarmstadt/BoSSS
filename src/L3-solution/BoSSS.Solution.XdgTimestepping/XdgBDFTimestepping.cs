@@ -1537,8 +1537,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
                         RHS.ScaleV(-1);
 
-                        //MaMa.SaveToTextFile("Suche_den_Stokes_Anteil.txt");
-                        //System.SaveToTextFile("Suche_den_Stokes_Anteil2.txt");
+
                         // update the multigrid operator
                         csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                         MultigridOperator mgOperator;
@@ -1656,12 +1655,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.NextIteration(true);
                 }
 
-                bool calculateCondNumbers = false;
+                //bool calculateCondNumbers = false;
                 
-                if (calculateCondNumbers) {
-                    var table = base.OperatorAnalysis(plotStencilCondNumViz: false, calculateStencils: false, calculateMassMatrix: true);
-                    table.SaveToTextFileDebugUnsteady("CondEst", ".txt",true);
-                }
+                //if (calculateCondNumbers) {
+                //    var table = base.OperatorAnalysis(plotStencilCondNumViz: false, calculateStencils: false, calculateMassMatrix: true);
+                //    table.SaveToTextFileDebugUnsteady("CondEst", ".txt",true);
+                //}
 
                 int newLsTrkPushCount = m_LsTrk.PushCount;
                 if (newLsTrkPushCount != oldLsTrkPushCount)
