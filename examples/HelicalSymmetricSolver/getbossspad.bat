@@ -1,2 +1,2 @@
 dotnet publish ..\..\src\L4-application\BoSSSpad\BoSSSpad.csproj -c Release -v q -o .
-dotnet publish ..\..\..\internal\src\private-ak\L4-application\StokesHelical_Ak\StokesHelical_Ak.csproj -c Release -v q -o . > build2.out 
+dotnet publish ..\..\src\L4-application\StokesHelical_Ak\StokesHelical_Ak.csproj -c Release -v q -o . > build2.out 
