@@ -128,7 +128,7 @@ namespace ValidationTestRunner {
                 "XESF_BowShock_ConvStudy",
                 "XESF_BowShock_ConvStudy",
                 "DELETE_XDGISTBowShock",
-                new TimeSpan(days: 75, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb");
             ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb");
