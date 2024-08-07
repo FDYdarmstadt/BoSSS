@@ -20,7 +20,7 @@ namespace BoSSS.Solution.Statistic {
     public enum NormType {
 
         /// <summary>
-        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors_L2(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>; 
+        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors_L2(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, bool)"/>; 
         /// very accurate, but requires geometrically embedded meshes
         /// </summary>
         L2_embedded,
