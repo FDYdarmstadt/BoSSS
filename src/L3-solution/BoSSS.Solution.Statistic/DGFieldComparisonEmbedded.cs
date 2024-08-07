@@ -83,8 +83,9 @@ namespace BoSSS.Solution.Statistic {
         /// On exit, the number of degrees-of-freedom 
         /// (for each field specified in <paramref name="fields"/>).
         /// </param>
+        /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
         public static void ComputeErrors_L2(IList<IEnumerable<DGField>> fields,
-        out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+        out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, bool plotFields = false) {
 
             ComputeErrors(NormTypeFactory(fields, NormType.L2_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
@@ -170,14 +171,15 @@ namespace BoSSS.Solution.Statistic {
         /// On exit, the number of degrees-of-freedom 
         /// (for each field specified in <paramref name="fields"/>).
         /// </param>
+        /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
         public static void ComputeErrors(IList<IEnumerable<DGField>> fields, NormType[] normTypes,
-            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, bool plotFields = false) {
 
             if (fields.First().Count() != normTypes.Length)
                 throw new ArgumentException("mismatch between number of fields and number of specified norms");
 
             ComputeErrors(normTypes.Select(nt => NormTypeFactory(nt)).ToArray(),
-                fields, out GridRes, out __DOFs, out Errors);
+                fields, out GridRes, out __DOFs, out Errors, plotFields: plotFields);
         }
 
 
@@ -186,7 +188,9 @@ namespace BoSSS.Solution.Statistic {
             Func<DGField, double>[] NormFuncS,
             IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors,
-            Func<ilPSP.Vector, bool> SelectionFunc = null) {
+            Func<ilPSP.Vector, bool> SelectionFunc = null,
+            bool plotFields = false
+            ) {
             using(var tr = new FuncTrace()) {
 
                 // Grids and coarse-to-fine -- mappings.
@@ -292,7 +296,7 @@ namespace BoSSS.Solution.Statistic {
                     Errors.Add(IdentificationS[index], L2Error);
 
 
-                    if (IdentificationS[index].Equals("VelocityX")) {
+                    if (plotFields && IdentificationS[index].Equals("VelocityX")) {
                         Tecplot.Tecplot.PlotFields(errFields, IdentificationS[index] + $"k{dgDegree}" + "_err", 0.0, 0);
                         Tecplot.Tecplot.PlotFields(injectionSolutionFields, IdentificationS[index] + $"k{dgDegree}" + "_injSol", 0.0, 0);
                     }
@@ -428,11 +432,13 @@ namespace BoSSS.Solution.Statistic {
         /// <param name="SelectionFunc">
         /// if specified, all cells where this evaluates as false are ignored. 
         /// </param>
+        /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
         public static void ComputeErrors_L2(IEnumerable<string> FieldsToCompare,
             IEnumerable<ITimestepInfo> timestepS,
             out double[] GridRes, 
             out Dictionary<string,long[]> __DOFs, 
-            out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {  
+            out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null,
+            bool plotFields = false) {  
             using (var tr = new FuncTrace()) {
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
                     throw new ArgumentException("empty list of field names.");
@@ -505,7 +511,7 @@ namespace BoSSS.Solution.Statistic {
                 }
 
                 // continue in other routine
-                ComputeErrors_L2(fields, out GridRes, out __DOFs, out L2Errors);
+                ComputeErrors_L2(fields, out GridRes, out __DOFs, out L2Errors, plotFields);
             }
         }
 

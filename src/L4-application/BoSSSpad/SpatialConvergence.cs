@@ -67,7 +67,8 @@ namespace BoSSS.Application.BoSSSpad {
             /// Updates all columns related to convergence plots
             /// </summary>
             /// <param name="timeStep">for which time step (-1 for the latest)</param>
-            public void Update(int timeStep = -1) {
+            /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
+            public void Update(int timeStep = -1, bool plotFields = false) {
                 // Get all sessions which are successfully terminated
                 // ==================================================
                 var SuccSessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
