@@ -68,10 +68,16 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             /// <param name="timeStep">for which time step (-1 for the latest)</param>
             /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
-            public void Update(int timeStep = -1, bool plotFields = false) {
+            /// <param name="allSessions">include all sessions regardless of successfulTermination (earlier time steps can be retrived)</param>
+            public void Update(int timeStep = -1, bool plotFields = false, bool allSessions = false) {
                 // Get all sessions which are successfully terminated
                 // ==================================================
-                var SuccSessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
+                ISessionInfo[] SuccSessions;
+
+                if (allSessions)
+                    SuccSessions = owner.Sessions.ToArray();
+                else
+                    SuccSessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
 
                 // Group the sessions according to polynomial degree 
                 // =================================================
