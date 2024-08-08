@@ -8,6 +8,8 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Foundation.Grid;
+using System.Collections;
 
 namespace XNSE_ParallelTests {
 
@@ -30,8 +32,8 @@ namespace XNSE_ParallelTests {
         static void Main(string[] args) {
 
             // to test individual setups
-            //var C = Controls.Test_ChannelFlow2D(false, false);
             var C = Controls.Test_ChannelFlow2D(false, false);
+            //var C = Controls.Test_ChannelFlow3D(false, false);
 
             //C.PlotAgglomeration = true;
             C.ImmediatePlotPeriod = 1;
@@ -60,7 +62,7 @@ namespace XNSE_ParallelTests {
                     solver.RunSolverMode();
                     int D = solver.Grid.SpatialDimension;
                     //MomentumRes.Add(solver.CurrentResidual.Fields.Take(D).Sum(f => f.L2Norm()).MPISum());
-                    CheckLevelSetProperties(solver);
+                    //CheckLevelSetProperties(solver);
                     CompareParallelRun(solver, testcaseName);
                 } catch (Exception e) {
                     Console.WriteLine($"run on {procs} procs failed");
@@ -89,13 +91,16 @@ namespace XNSE_ParallelTests {
             FieldChecker.DoIOnow();
 
             XDGField[] errorFields = new XDGField[D + 1];
+            XDGField err;
             for (int d = 0; d < D; d++) {
                 Console.WriteLine($"absolute L2 error for {solver.Velocity[d].Identification} field: {FieldChecker.AbsError(solver.Velocity[d])}");
-                errorFields[d] = FieldChecker.LocalError(solver.Velocity[d]);
+                err = FieldChecker.LocalError(solver.Velocity[d]);
+                errorFields[d] = err;
                 //Assert.Less(FieldChecker.AbsError(solver.Velocity[d]), 1.0e-9, $"Mismatch in velocity{d} field between single-core and parallel run.");
             }
             Console.WriteLine($"absolute L2 error for {solver.Pressure.Identification} field: {FieldChecker.AbsError(solver.Pressure)}");
-            errorFields[D] = FieldChecker.LocalError(solver.Pressure);
+            err = FieldChecker.LocalError(solver.Pressure);
+            errorFields[D] = err;
             //Assert.Less(FieldChecker.AbsError(solver.Pressure), 1.0e-9, "Mismatch in pressure field between single-core and parallel run.");
 
 

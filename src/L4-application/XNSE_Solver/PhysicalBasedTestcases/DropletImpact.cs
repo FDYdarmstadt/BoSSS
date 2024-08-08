@@ -551,6 +551,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         }
 
+
         /// <summary>
         /// cases for testing on jenkins - not to be changed!!!
         /// DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart5 - 4x4 multicore simulation

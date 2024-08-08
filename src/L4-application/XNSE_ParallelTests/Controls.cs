@@ -42,7 +42,7 @@ namespace XNSE_ParallelTets {
                 Material = true
             };
 
-            C.SkipSolveAndEvaluateResidual = true;
+            //C.SkipSolveAndEvaluateResidual = true;
 
             // grid generation
             // ===============
@@ -51,30 +51,32 @@ namespace XNSE_ParallelTets {
             double H = 2;
             int Lscale = 1;
             double L = Lscale * H;
-            int kelem = 16;
+            int kelem = 15;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, (Lscale * kelem) + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
-                grd.EdgeTagNames.Add(1, "wall_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
+                grd.EdgeTagNames.Add(1, "wall_box");
 
-                grd.EdgeTagNames.Add(3, "velocity_inlet_left");
-                //grd.EdgeTagNames.Add(4, "velocity_inlet_right");
-                grd.EdgeTagNames.Add(4, "pressure_outlet_right");
+                //grd.EdgeTagNames.Add(1, "wall_lower");
+                //grd.EdgeTagNames.Add(2, "wall_upper");
+
+                //grd.EdgeTagNames.Add(3, "velocity_inlet_left");
+                ////grd.EdgeTagNames.Add(4, "velocity_inlet_right");
+                //grd.EdgeTagNames.Add(4, "pressure_outlet_right");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
                     if (Math.Abs(X[1]) <= 1.0e-8)
                         et = 1;
                     if (Math.Abs(X[1] - H) <= 1.0e-8)
-                        et = 2;
+                        et = 1;
                     if (Math.Abs(X[0]) <= 1.0e-8)
-                        et = 3;
+                        et = 1;
                     if (Math.Abs(X[0] - L) <= 1.0e-8)
-                        et = 4;
+                        et = 1;
 
                     return et;
                 });
@@ -89,17 +91,19 @@ namespace XNSE_ParallelTets {
             // ===================
             #region BC
 
-            double U = 0.0; // 0.125;
+            C.AddBoundaryValue("wall_box");
 
-            C.AddBoundaryValue("wall_lower");
-            C.AddBoundaryValue("wall_upper");
+            //double U = 0.0; // 0.125;
 
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
+            //C.AddBoundaryValue("wall_lower");
+            //C.AddBoundaryValue("wall_upper");
 
-            //C.AddBoundaryValue("velocity_inlet_right", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
-            //C.AddBoundaryValue("velocity_inlet_right", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
-            C.AddBoundaryValue("pressure_outlet_right");
+            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
+            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
+
+            ////C.AddBoundaryValue("velocity_inlet_right", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
+            ////C.AddBoundaryValue("velocity_inlet_right", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
+            //C.AddBoundaryValue("pressure_outlet_right");
 
             #endregion
 
@@ -122,11 +126,10 @@ namespace XNSE_ParallelTets {
             double radius = 0.4;
 
             C.InitialValues_Evaluators.Add("Phi",
-                (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-                //(X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - radius.Pow2())  // quadratic form
+                //(X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - radius.Pow2())  // quadratic form
                 //(X => -1.0)
-                ); ;
-
+                );
 
             C.InitialValues_Evaluators.Add("Pressure#A", X => sigma * (1.0 / radius));
 
@@ -137,12 +140,12 @@ namespace XNSE_ParallelTets {
             // ==============
             #region solver
 
-            //C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.None;
 
-            C.ReInitPeriod = 4;
+            //C.ReInitPeriod = 4;
 
             // C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             // C.NonLinearSolver.ConvergenceCriterion = 1e-9;
@@ -151,7 +154,7 @@ namespace XNSE_ParallelTets {
             // C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //C.dtFixed = 0.25;
@@ -192,7 +195,7 @@ namespace XNSE_ParallelTets {
                 Material = true
             };
 
-            C.SkipSolveAndEvaluateResidual = true;
+            //C.SkipSolveAndEvaluateResidual = true;
 
 
             // grid generation
@@ -203,7 +206,7 @@ namespace XNSE_ParallelTets {
             double W = H;
             int Lscale = 1;
             double L = Lscale * H;
-            int kelem = 8;
+            int kelem = 4;
 
             C.GridFunc = delegate () {
                 double[] Ynodes = GenericBlas.Linspace(0, L, (Lscale * kelem) + 1);
@@ -212,6 +215,7 @@ namespace XNSE_ParallelTets {
                 var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes, periodicY: false);
 
                 grd.EdgeTagNames.Add(1, "wall_box");
+                //grd.EdgeTagNames.Add(1, "pressure_outlet_openbox");
 
                 //grd.EdgeTagNames.Add(1, "wall_lower");
                 //grd.EdgeTagNames.Add(2, "wall_upper");
@@ -322,14 +326,14 @@ namespace XNSE_ParallelTets {
             // ===================
             #region BC
 
-            double U = 0.0;
 
             C.AddBoundaryValue("wall_box");
+            //C.AddBoundaryValue("pressure_outlet_openbox");
 
             //C.AddBoundaryValue("wall_lower");
             //C.AddBoundaryValue("wall_upper");
 
-            //double H = 1.0;
+            //double U = 0.125;
 
             //C.AddBoundaryValue("velocity_inlet_front", "VelocityY#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[2] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
             //C.AddBoundaryValue("velocity_inlet_front", "VelocityY#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[2] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
@@ -366,14 +370,13 @@ namespace XNSE_ParallelTets {
             C.InitialValues_Evaluators.Add("Phi",
                 //(X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
                 (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()) - radius.Pow2())  // quadratic form
-                //(X => radius.Pow2() - ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()))  // quadratic form
-                                                                                                                                           //(X => -1.0)
-                ); 
+                                                                                                                            //(X => -1.0)
+                );
 
-            C.InitialValues_Evaluators.Add("Pressure#A", X => sigma*2.0*(1.0/radius) );
+            C.InitialValues_Evaluators.Add("Pressure#A", X => sigma * 2.0 * (1.0 / radius));
 
             //C.InitialValues_Evaluators.Add("Phi",
-            //    (X => (-0.7 + X[2]) + 0.5 * (-0.5 + X[0]).Pow2() + 0.05 * Math.Cos(2.0 * Math.PI * X[1]))
+            //    (X => (-0.7 + X[2]) + 0.5 * (-0.5 + X[0]).Pow2() + 0.5 * Math.Cos(2.0 * Math.PI * X[1]))
             //    );
 
             #endregion
