@@ -38,6 +38,15 @@ namespace BoSSS.Application.XNSFE_Solver {
         // ===========
         static void Main(string[] args) {
             //InitMPI(args);
+            //DeleteOldPlotFiles();
+            //using (var solver = new XNSFE()) {
+            //    solver.Init(ThermalSlip_HardcodedControls.HeatedWall_3PhaseDemo(true));
+            //    solver.RunSolverMode();
+            //}
+
+            //FinalizeMPI();
+            //System.Environment.Exit(-111);
+
             //ilPSP.Environment.InitThreading(true, 8);
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
@@ -245,8 +254,8 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
 
             opFactory.AddEquation(new SolidHeat("C", D, thermBoundaryMap, config));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config, Control.HeatSourceIBM));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config, Control.HeatSourceIBM));            
 
             // we need these "dummy" equations, otherwise the matrix has zero rows/columns
             // If this is to be used frequently something more sophisticated should be implemented, e.g. strike out rows for unused variables...

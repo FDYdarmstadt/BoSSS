@@ -226,6 +226,11 @@ namespace BoSSS.Solution.XheatCommon {
         bool isHeatSource { get; }
 
         /// <summary>
+        /// include interface heat source
+        /// </summary>
+        bool isHeatSourceIBM { get; }
+
+        /// <summary>
         /// include transport operator
         /// </summary>
         bool isHeatTransport { get; }
