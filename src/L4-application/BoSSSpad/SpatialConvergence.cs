@@ -68,22 +68,19 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             /// <param name="timeStep">for which time step (-1 for the latest)</param>
             /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
-            /// <param name="allSessions">include all sessions regardless of successfulTermination (earlier time steps can be retrived)</param>
-            public void Update(int timeStep = -1, bool plotFields = false, bool allSessions = false) {
+            /// <param name="sessions">list of sessions for the study (if null only the successfully terminated simulations)</param>
+            public void Update(int timeStep = -1, bool plotFields = false, ISessionInfo[] sessions = null) {
                 // Get all sessions which are successfully terminated
                 // ==================================================
-                ISessionInfo[] SuccSessions;
+                if (sessions is null)
+                    sessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
 
-                if (allSessions)
-                    SuccSessions = owner.Sessions.ToArray();
-                else
-                    SuccSessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
 
                 // Group the sessions according to polynomial degree 
                 // =================================================
                 System.Func<int[],int[],bool> eqFunc = (A,B) => ArrayTools.AreEqual(A,B);
                 var comp = eqFunc.ToEqualityComparer();
-                var SessionGroups = SuccSessions.GroupBy(GetDGDegreeKey, comp).ToArray();
+                var SessionGroups = sessions.GroupBy(GetDGDegreeKey, comp).ToArray();
 
 
                 // Spatial convergence for each session group
