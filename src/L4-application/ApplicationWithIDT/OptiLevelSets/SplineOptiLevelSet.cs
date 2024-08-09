@@ -88,50 +88,6 @@ namespace ApplicationWithIDT.OptiLevelSets {
 
         int numberOfNodes;
 
-        /// <summary>
-        /// Makes the Spline Representing the Zero Set discontinuous at a given Node by adding a point
-        /// </summary>
-        public void MakeDiscontinuousAt(int index) {
-            if(y[index + 1] - y[index] < 1e-14 || y[index] - y[index - 1] < 1e-14) {
-                Console.WriteLine("Spline already discontinuous at this point");
-
-            } else {
-                var new_y = new double[y.Length + 1];
-                var new_x = new double[y.Length + 1];
-                MultidimensionalArray new_params = MultidimensionalArray.Create(0);
-                switch(m_Mode) {
-                    case Mode.Deg1:
-                    new_params = MultidimensionalArray.Create(m_AllParams.Length + 1);
-                    break;
-                    case Mode.Deg2:
-                    case Mode.Deg3:
-                    new_params = MultidimensionalArray.Create(m_AllParams.Length + 2);
-                    break;
-                }
-                int oldj = 0;
-                for(int j = 0; j < new_y.Length; j++) {
-                    new_params[j] = m_AllParams[oldj];
-                    new_y[j] = y[oldj];
-                    new_x[j] = x[oldj];
-                    if(j == index) {
-                        oldj -= 1;
-                    }
-                    oldj++;
-                }
-                for(int j = new_y.Length; j < new_params.Length; j++) {
-                    new_params[j] = m_AllParams[oldj];
-                    new_y[j] = y[oldj];
-                    new_x[j] = x[oldj];
-                    if(j == new_y.Length + index) {
-                        oldj -= 1;
-                    }
-                    oldj++;
-                }
-                m_AllParams = new_params;
-                y = new_y;
-                x = new_x;
-            }
-        }
 
         public void Interpolate(CellMask region = null) {
             GetSpline();
@@ -189,13 +145,13 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         /// <param name="points"></param>
         public void GetSplineOverDetermined(MultidimensionalArray points) {
-            //GetSplineOverDeterminedNew(points);
+            //GetSplineOverDeterminedV2(points);
             GetSplineOverDeterminedOld(points);
 
             GetSpline();
         }
 
-        public void GetSplineOverDeterminedNew(MultidimensionalArray points) {
+        public void GetSplineOverDeterminedV2(MultidimensionalArray points) {
             #region new version
             #region Mapping CellToPoints
             /// the purpose if this part is to obtain mapping between the y-Cells and the Points (e.g Cell 0 (= [ y[0],y[1] ]) -> (0,1,2,3) (= [yPoins[0],yPoins[1],yPoins[2],yPoins[3]]) )
