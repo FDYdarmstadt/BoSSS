@@ -1055,9 +1055,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return Flx_InCell * V;
         }        
 
-        // only parameter dependent, leave empty
+        // only parameter dependent, return self
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
     }
 
@@ -1110,9 +1110,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return Flx_InCell * V;
         }
 
-        // only parameter dependent, leave empty
+        // only parameter dependent, return self
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
     }
 
