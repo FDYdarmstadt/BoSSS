@@ -165,7 +165,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var RotationCenter = m_RotationCenter;
             var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("Sphere");
-            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double[] RotationArm = new double[SpaceDim];
@@ -223,7 +223,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //var RotationCenter = m_RotationCenter;
             //var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("CollidingSphere");
-            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double[] posL = new double[SpaceDim];
@@ -263,7 +263,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //var RotationCenter = m_RotationCenter;
             //var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("MovingSphere");
-            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double[] posL = new double[SpaceDim];
