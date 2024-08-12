@@ -284,8 +284,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     EdgeMask CCplusBnd = CCplus.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(CCplus.GetAllInnerEdgesMask()));
                     foreach (int iEdge in CCplusBnd.ItemEnum) {
                         Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
-                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.Length);
-                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.Length);
+                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
                         phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
 
                         if (phiIn.Max() * phiIn.Min() < 0 || phiOut.Max() * phiOut.Min() < 0) {
