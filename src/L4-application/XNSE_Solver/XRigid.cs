@@ -19,7 +19,8 @@ namespace BoSSS.Application.XNSE_Solver {
         Cube = 2,
         Torus = 3,
         CollidingSpheres = 4, //a temporary test case (highly experimental) TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
-        Popcorn = 5
+        Popcorn = 5,
+        MovingSphere = 6
     }
 
     [DataContract]
@@ -110,7 +111,6 @@ namespace BoSSS.Application.XNSE_Solver {
             m_RotationAxis = Axis;
         }
 
-
         /// <summary>
         /// Tilt the object around an axis
         /// </summary>
@@ -146,6 +146,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     break;
                 case Shape.Popcorn:
                     DefinePopcorn();
+                    break;
+                case Shape.MovingSphere:
+                    DefineMovingSphere();
                     break;
                 default:
                     throw new NotSupportedException();
@@ -211,7 +214,6 @@ namespace BoSSS.Application.XNSE_Solver {
             SetPhi(PhiFunc);
         }
 
-
         private void DefineCollidingSpheres() {
             //var pos = m_pos;
             //var anglevelocity = m_angleVelocity;
@@ -246,6 +248,43 @@ namespace BoSSS.Application.XNSE_Solver {
                         return Math.Max(L, R);
                     default:
                     throw new NotImplementedException();
+                }
+            };
+            SetPhi(PhiFunc);
+        }
+
+        private void DefineMovingSphere()
+        {
+            //var pos = m_pos;
+            //var anglevelocity = m_angleVelocity;
+            var SpaceDim = m_SpaceDim;
+            var particleRad = m_partRadius;
+            var rateOfRadius = m_rateOfRadius;
+            //var RotationCenter = m_RotationCenter;
+            //var RotationAxis = m_RotationAxis;
+            m_ctrl.Tags.Add("MovingSphere");
+            m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double[] posL = new double[SpaceDim];
+                posL[0] = -1.5 * particleRad + (rateOfRadius * t) * particleRad; // (initial pos + change)
+
+                double L;
+
+                switch (SpaceDim)
+                {
+                    case 2:
+                        // circle
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) + particleRad * particleRad;
+
+                        return L;
+                    case 3:
+                        // sphere
+                        L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) - (X[2] - posL[2]) * (X[2] - posL[2]) + particleRad * particleRad;
+
+                        return L;
+                    default:
+                        throw new NotImplementedException();
                 }
             };
             SetPhi(PhiFunc);
@@ -482,7 +521,6 @@ namespace BoSSS.Application.XNSE_Solver {
             SetPhi(PhiFunc);
         }
 
-
         private void SetVelocityAtIB() {
             var pos = m_pos;
             var rotCenter = m_RotationCenter;
@@ -539,7 +577,44 @@ namespace BoSSS.Application.XNSE_Solver {
                     return pointVelocity;
                 };
 
-            } else{
+            } else if(theShape == Shape.MovingSphere) {
+
+                VelocityAtIB = delegate (double[] X, double t) {
+                    if (pos.Length != X.Length)
+                        throw new ArgumentException("check dimension of center of mass");
+
+
+                    double[] posL = new double[SpaceDim];
+                    posL[0] = -1.5 * particleRad + (rateOfRadius * t) * particleRad; // (initial pos + change)
+
+                    double L;
+
+                    switch (SpaceDim)
+                    {
+                        case 2:
+                            // circle
+                            L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) + particleRad * particleRad;
+                            break;
+                        case 3:
+                            // sphere
+                            L = -(X[0] - posL[0]) * (X[0] - posL[0]) - (X[1] - posL[1]) * (X[1] - posL[1]) - (X[2] - posL[2]) * (X[2] - posL[2]) + particleRad * particleRad;
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+
+                    double[] pointVel = new double[SpaceDim];
+                    double tol = -1E-8;
+                    if (L > tol)
+                    {
+                        pointVel[0] += rateOfRadius;
+                    }
+
+                    Vector pointVelocity = new Vector(pointVel);
+                    return pointVelocity;
+                };
+
+            } else {
 
             VelocityAtIB = delegate (double[] x, double time) {
                 if (pos.Length != x.Length)
