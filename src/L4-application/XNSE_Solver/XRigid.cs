@@ -47,6 +47,8 @@ namespace BoSSS.Application.XNSE_Solver {
         private double[] m_RotationCenter;
         [DataMember]
         private Shape theShape = Shape.None;
+        [DataMember]
+        private bool m_staticShape = false;
 
         [NonSerialized]
         private XNSE_Control m_ctrl;
@@ -70,13 +72,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
-        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0, double rateOfRadius = 0.0) {
+        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0, double rateOfRadius = 0.0, bool staticShape = false) {
             m_pos = pos;
             m_angleVelocity = angleVelocity;
             m_partRadius = majorRadius;
             m_SpaceDim = SpaceDim;
             m_ringRadius = minorRadius;
             m_rateOfRadius = rateOfRadius;
+            m_staticShape = staticShape;
         }
 
         public void SpecifyShape(Shape shape) {
@@ -168,8 +171,11 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 double[] RotationArm = new double[SpaceDim];
-                double angle = -(anglevelocity * t) % (2 * Math.PI);
+                double angle = m_staticShape ? 0 : -(anglevelocity * t) % (2 * Math.PI);
                 double dynamicRadius = rateOfRadius == 0.0 ? particleRad : Math.Max((1 + rateOfRadius * t) * particleRad, 0.0);
                 Vector rotAxis;
                 switch (RotationAxis) {
@@ -226,6 +232,9 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 double[] posL = new double[SpaceDim];
                 posL[0] = - 1.5 * particleRad  + (rateOfRadius * t) * particleRad; // (initial pos + change)
 
@@ -266,6 +275,9 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 double[] posL = new double[SpaceDim];
                 posL[0] = -1.5 * particleRad + (rateOfRadius * t) * particleRad; // (initial pos + change)
 
@@ -303,10 +315,12 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 Vector TiltVector = new Vector(tiltVector);
 
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
-
                 Vector rotAxis;
 
                 switch (RotationAxis) {
@@ -400,6 +414,9 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 Vector TiltVector = new Vector(tiltVector);
 
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
@@ -468,6 +485,9 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                if (m_staticShape) //static shape -> stay at the initial position
+                    t = 0;
+
                 Vector TiltVector = new Vector(tiltVector);
 
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
