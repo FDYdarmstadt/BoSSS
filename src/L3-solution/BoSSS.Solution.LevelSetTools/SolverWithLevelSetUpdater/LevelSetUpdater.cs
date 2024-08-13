@@ -6,6 +6,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 
@@ -293,6 +294,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         }
                     }
 
+                    FalseContactline = FalseContactline.MPIOr();
+
                     if (FalseContactline) {
                         Console.WriteLine("Error in continuity projection, extending computation to nearband!");
                         EnforceContinuity(true);
@@ -303,14 +306,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     EdgeMask NearBnd = Near1.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(Near1.GetAllInnerEdgesMask()));
                     foreach (int iEdge in NearBnd.ItemEnum) {
                         Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
-                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.Length);
-                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.Length);
+                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
                         phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
 
                         if (phiIn.Max() * phiIn.Min() < 0) {
                             FalseContactline = true;
-                        }
+                        }   
                     }
+
+                    FalseContactline = FalseContactline.MPIOr();
 
                     if (FalseContactline) {
                         throw new ApplicationException("Continuity projection failed, cannot recover!");
