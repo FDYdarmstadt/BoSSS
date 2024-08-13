@@ -69,6 +69,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// <param name="timeStep">for which time step (-1 for the latest)</param>
             /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
             /// <param name="sessions">list of sessions for the study (if null only the successfully terminated simulations)</param>
+            /// <remarks>Be aware Timesteps can have intermediate times, so check also physical time </remarks>
             public void Update(int timeStep = -1, bool plotFields = false, ISessionInfo[] sessions = null) {
                 // Get all sessions which are successfully terminated
                 // ==================================================
