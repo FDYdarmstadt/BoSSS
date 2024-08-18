@@ -170,10 +170,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public void SetExactSolutionForSteadyRotatingSphere() {
             m_ctrl.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            //m_ctrl.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            m_ctrl.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
             m_ctrl.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => -m_angleVelocity * m_partRadius * m_partRadius * X[1] / (X[0] * X[0] + X[1] * X[1]), (X, t) => m_angleVelocity * m_partRadius * m_partRadius * X[0] / (X[0] * X[0] + X[1] * X[1]) });
             m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0 });
+            m_ctrl.ExactSolutionPressure.Add("A", new Func<double[], double, double> ( (X, t) => 0 ));
+            m_ctrl.ExactSolutionPressure.Add("C", new Func<double[], double, double>((X, t) => 0));
         }
 
         private void DefineSphere() {
