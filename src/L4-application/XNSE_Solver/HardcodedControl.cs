@@ -6560,6 +6560,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // DG degrees and configuration
             // ==========
+            C.FieldOptions.Clear();
+            //Console.WriteLine("Field options" + C.FieldOptions.Count);
             C.SetFieldOptions(k, Math.Max(k, 8)); // (velocity degree,level set) (pressure degree = k-1)
             C.saveperiod = 10;
             C.DynamicLoadBalancing_On = false;
@@ -6576,11 +6578,11 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Rigidbody.SetRotationAxis(rotAxis);
             C.UseImmersedBoundary = true;
 
-            // Set initial and boundary conditions
-            // ============
-            C.AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
-            C.AddInitialValue("Pressure", new Formula(@"X => 0"));
-            C.AddBoundaryValue("Pressure_Outlet");
+            //// Set initial and boundary conditions
+            //// ============
+            //C.AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
+            //C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            //C.AddBoundaryValue("Pressure_Outlet");
 
             // Solver options
             // ===================
@@ -6595,7 +6597,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.SessionName += "_MUMPS";
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 0;
-            C.NonLinearSolver.MaxSolverIterations = 30;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.verbose = true;
             C.AdaptiveMeshRefinement = AMR;
 
