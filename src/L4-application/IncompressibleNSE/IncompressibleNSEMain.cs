@@ -7,6 +7,8 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +20,33 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// </summary>
     public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<IncompressibleControl> {
 
+
+
+
+
         static void Main(string[] args) {
+
+            InitMPI();
+
+
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+
+            var c = BoSSS.Application.IncompressibleNSE.ControlExamples.ChannelFlow(k : 2, GridRes : 10, transient : true);
+            c.ImmediatePlotPeriod = 1;
+            var solver = new IncompressibleNSEMain();
+            solver.Init(c);
+            solver.RunSolverMode();
+            Process.Start("mpiexec");
+
+
             _Main(args, false, delegate () {
                 var p = new IncompressibleNSEMain();
                 return p;
