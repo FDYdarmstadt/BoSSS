@@ -26,25 +26,25 @@ namespace BoSSS.Application.IncompressibleNSE {
 
         static void Main(string[] args) {
 
-            InitMPI();
+            //InitMPI();
 
 
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                Console.Write("rm");
-                foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
-                    Console.Write(" " + pltFile.Name);
-                    pltFile.Delete();
-                }
-                Console.WriteLine(";");
-            }
+            //if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+            //    var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            //    Console.Write("rm");
+            //    foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
+            //        Console.Write(" " + pltFile.Name);
+            //        pltFile.Delete();
+            //    }
+            //    Console.WriteLine(";");
+            //}
 
-            var c = BoSSS.Application.IncompressibleNSE.ControlExamples.ChannelFlow(k : 2, GridRes : 10, transient : true);
-            c.ImmediatePlotPeriod = 1;
-            var solver = new IncompressibleNSEMain();
-            solver.Init(c);
-            solver.RunSolverMode();
-            Process.Start("mpiexec");
+            //var c = BoSSS.Application.IncompressibleNSE.ControlExamples.ChannelFlow(k : 2, GridRes : 10, transient : true);
+            //c.ImmediatePlotPeriod = 1;
+            //var solver = new IncompressibleNSEMain();
+            //solver.Init(c);
+            //solver.RunSolverMode();
+            //Process.Start("mpiexec"); 
 
 
             _Main(args, false, delegate () {

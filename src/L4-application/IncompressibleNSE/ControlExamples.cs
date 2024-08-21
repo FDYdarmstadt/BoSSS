@@ -34,7 +34,7 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// </summary>
     static public class ControlExamples {
 
-        static public IncompressibleControl ChannelFlow(int k = 2, int GridRes = 10, bool transient = true) {
+        static public IncompressibleControl ChannelFlow(int k = 2, int GridRes = 10, bool transient = false) {
             //BoSSS.Application.IncompressibleNSE.ControlExamples.ChannelFlow(k:2,GridRes:4)
             IncompressibleControl C = new IncompressibleControl();
 

@@ -257,12 +257,9 @@ namespace BoSSS.Solution {
                     throw new ApplicationException("illegal use of 'InstantiateFromControlFileAttribute' (with Scalar Declaration) on a Vector class");
 
 
-                //int D = ctx.SpatialDimension;
-                //int D = at.m_FieldIdentifications.Length;
-
-                //int D = ctx.SpatialDimension + 1;
-                Console.WriteLine("Changes from Akbari! Velocity has 3 Components, but takes only 2. Since Grid has dimesnion 2");
-                int D = ((IEnumerable<CustomAttributeTypedArgument>)f.CustomAttributes.First().ConstructorArguments.First().Value).Count();
+                int D = ctx.SpatialDimension;
+                // Console.WriteLine("Changes from Akbari! Velocity has 3 Components, but takes only 2. Since Grid has dimesnion 2");
+                // int D = ((IEnumerable<CustomAttributeTypedArgument>)f.CustomAttributes.First().ConstructorArguments.First().Value).Count();
 
                 string[] cName = at.GetControlFileNames(f, D);
                 string[] iName = at.GetInCodeIdentifications(f, D);
