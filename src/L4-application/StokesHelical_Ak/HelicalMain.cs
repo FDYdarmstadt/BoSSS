@@ -65,13 +65,13 @@ namespace StokesHelical_Ak {
 
 
 
-            //var c = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: 4, noOfCellsR: 32, noOfCellsXi: 32);
-            //c.ImmediatePlotPeriod = 1;
-            //c.NoOfTimesteps = 5;
-            //var solver = new HelicalMain();
-            //solver.Init(c);
-            //solver.RunSolverMode();
-            //Process.Start("mpiexec");
+            var c = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: 4, noOfCellsR: 32, noOfCellsXi: 32);
+            c.ImmediatePlotPeriod = 1;
+            c.NoOfTimesteps = 5;
+            var solver = new HelicalMain();
+            solver.Init(c);
+            solver.RunSolverMode();
+            Process.Start("mpiexec");
             ////StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
             ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix
             //// StokesHelical_Ak.HardcodedControl.TSFP();
@@ -532,7 +532,7 @@ namespace StokesHelical_Ak {
             tmpOp.EquationComponents["zmom"].Add(new TransientTerm(1, 1));
             tmpOp.EquationComponents["etamom"].Add(new TransientTerm(1, 2));
 
-            diffOp_implicit.TemporalOperator = tmpOp;
+            diffOp_implicit.TemporalOperator = tmpOp; 
             //#########################################
             // TEMPORAL OPERATOR WITH BSQ NEEDED for transient and rMin=0
             //#########################################
@@ -540,8 +540,8 @@ namespace StokesHelical_Ak {
                 diffOp_implicit.DomainVar, 
                 new string[] { "ur0", "uxi0", "ueta0" }, 
                 diffOp_implicit.CodomainVar, QuadOrderFunc.NonLinear(3));
-            int order = Control.FieldOptions["ur"].Degree;
 
+            int order = Control.FieldOptions["ur"].Degree;
             double penalty = this.Control.penaltySafety * order * order;
             int noOfCells = this.Control.Resolution_Xi;
             Conti myContiNew = new Conti(noOfCells);
