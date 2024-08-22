@@ -2440,6 +2440,7 @@ namespace BoSSS.Foundation.IO {
         /// Check for condition number loggings 
         /// </summary>
         /// <param name="pSessions"></param>
+        /// <returns>An array of dictionaries, where each dictionary represents a session, with keys as column names (string) and values as a list of doubles.</returns>
         public static Dictionary<string, List<double>>[] CheckForCondLogging(this IEnumerable<ISessionInfo> pSessions)
         {
             string[] allColumnNames = new string[] { ""};
