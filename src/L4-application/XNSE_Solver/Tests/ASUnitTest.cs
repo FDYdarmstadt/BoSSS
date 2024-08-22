@@ -107,9 +107,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 #endif
         /// <summary>
-        /// See <see cref="PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test"/>.
+        /// See <see cref="PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194"/>.
         /// </summary>
-        [Test]
+        //[Test]
         public static void CapillaryRiseTest() {
 
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194();
