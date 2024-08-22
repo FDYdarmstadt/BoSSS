@@ -2441,16 +2441,19 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="pSessions"></param>
         /// <returns>An array of dictionaries, where each dictionary represents a session, with keys as column names (string) and values as a list of doubles.</returns>
-        public static Dictionary<string, List<double>>[] CheckForCondLogging(this IEnumerable<ISessionInfo> pSessions)
+        public static Dictionary<Guid, Dictionary<string, List<double>>> CheckForCondLogging(this IEnumerable<ISessionInfo> pSessions)
         {
             string[] allColumnNames = new string[] { ""};
             int numberSessions = pSessions.Count();
-            Dictionary<string, List<double>>[] logsForAllSessions = new Dictionary<string, List<double>>[numberSessions];
+
+            //the so-called database the first key: session Id, second key: column name, value: list of entries
+            Dictionary<Guid, Dictionary<string, List<double>>> logsForAllSessions = new Dictionary<Guid, Dictionary<string, List<double>>>(numberSessions);
+            
             for (int j = 0; j < numberSessions; j++){
                 ISessionInfo currentSession = pSessions.Pick(j);
                 //Initiate the "database", it should suffice the need
                 Dictionary<string, List<double>> logs = new Dictionary<string, List<double>>();
-                logsForAllSessions[j] = logs;
+                logsForAllSessions[currentSession.ID] = logs;
 
                 Console.WriteLine("Session: {0}", currentSession.ID);
                 string path = @currentSession.Database.Path + "\\sessions\\" + currentSession.ID + "\\CondNumbers.txt";
