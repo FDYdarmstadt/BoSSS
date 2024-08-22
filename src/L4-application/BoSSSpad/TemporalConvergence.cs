@@ -19,7 +19,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Assistant to add spatial convergence data to the session table; 
+        /// Assistant to add temporal convergence data to the session table; 
         /// Not updated automatically, call <see cref="TemporalConvergence.Update"/> in order to re-evaluate errors
         /// </summary>
         public TemporalConvergence tConvergence {
