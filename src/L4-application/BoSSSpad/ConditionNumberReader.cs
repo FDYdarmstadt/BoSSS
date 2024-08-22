@@ -99,7 +99,7 @@ namespace BoSSS.Application.BoSSSpad
             /// Updates all columns related to convergence plots
             /// </summary>
             /// <param name="sessions">list of sessions for the study (if null, only the successfully terminated simulations)</param>
-            /// <param name="operation">which operation to perform in the list (if null, Enumerable.Max)</param>
+            /// <param name="operation">which operation to perform in the list, e.g., Enumerable.Max (if null, returns all the entries)</param>
             /// <param name="columnNames">which colums to be extracted (if null, all the possible columns)</param> 
             /// <param name="marker">string marker in the session table (columnname + marker)</param>
             /// <remarks>Be aware that column names can vary for different dimensions.</remarks>
@@ -110,9 +110,6 @@ namespace BoSSS.Application.BoSSSpad
 
                 // Check if any specific column is provided. (Be aware that column names can vary for different dimensions.)
                 columnNames ??= GetColumnNames(sessions);
-
-                // If no operation is provided, use Enumerable.Max
-                operation ??= Enumerable.Max;
 
                 // Get the table for the sessions
                 var condTable = sessions.CheckForCondLogging();
@@ -131,7 +128,7 @@ namespace BoSSS.Application.BoSSSpad
                         object ret = 0.0;
 
                         if (condTable.ContainsKey(s.ID))
-                            ret = operation(condTable[s.ID][colName]);
+                            ret = operation == null ? condTable[s.ID][colName] : operation(condTable[s.ID][colName]); // if operation null, return the list. Otherwise, apply the operation
 
                         return ret;
                     });

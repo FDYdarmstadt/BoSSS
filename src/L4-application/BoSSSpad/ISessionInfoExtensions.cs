@@ -2492,7 +2492,8 @@ namespace BoSSS.Foundation.IO {
                         //Check if it is NaN or Infinity
                         if (Double.TryParse(value, out valueDouble)){
                             logs[currentColumn].Add(valueDouble);
-                        } else {                    
+                        } else {
+                            logs[currentColumn].Add(double.NaN);
                             Console.WriteLine($"The value '{value}' could not be converted to a double for line {k} at column {i} in session {currentSession.Name}.");
                         }
                     }
