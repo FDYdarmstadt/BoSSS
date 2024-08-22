@@ -87,16 +87,16 @@ namespace BoSSS.Application.XNSE_Solver {
 =======
 
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.CapillaryRiseTest();
->>>>>>> ff85935fe0 (corrected velocity for ParamLS)
+           // InitMPI();
+           // DeleteOldPlotFiles();
+           // BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.CapillaryRiseTest();
             //BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194;
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2); 
             //System.Environment.Exit(111);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
 
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
+          //  System.Environment.Exit(111);
 
             /*
             var plots = new List<Plot2Ddata>();

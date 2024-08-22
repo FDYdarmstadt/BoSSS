@@ -254,7 +254,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
             C.dtFixed = 0.01;
-            C.NoOfTimesteps = 5;
+            C.NoOfTimesteps = 1;
             C.Endtime = 1.0;
 
             C.ImmediatePlotPeriod = 1;

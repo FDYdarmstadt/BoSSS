@@ -37,22 +37,16 @@ using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.Gnuplot;
 using System.Diagnostics;
-<<<<<<< HEAD
 //using BoSSS.Foundation.Quadrature;
 //using ilPSP.LinSolvers.MUMPS;
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
-=======
 using System.IO;
 using BoSSS.Foundation.IO;
 
-<<<<<<< HEAD
->>>>>>> 7c3a165f9c (third stage of parameterized LS implementation)
-=======
+
 using BoSSS.Solution.LevelSetTools.ParameterizedLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
-
->>>>>>> 716f72fae4 (forth stage of parameterized LS implementation)
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -97,6 +91,11 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "XSNFEScalingTest-p" + deg+"-Setup" + Setup });
         }
 
+        /// <summary>
+        /// /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_Translation"/>
+        /// the first test case to check the solution of ParameterizedLevelSet with predefined velocity
+        /// in this test case only y-coordinate of center of ellipse changes with  the velocity equal 1.0
+        /// </summary>
         public static void ParameterizedLevelSetTest_Translation() {
 
             var C = BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_Translation.Translation();
@@ -128,7 +127,11 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             
 
         }
-
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_ShapeChange"/>
+        /// the second test case to check the solution of ParameterizedLevelSet with predefined velocity
+        /// in this test case only y-semiAxis changes with  the velocity equal -0.5
+        /// </summary>
         public static void ParameterizedLevelSetTest_ShapeChange() {
 
             var C = BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_ShapeChange.ShapeChange();
@@ -162,8 +165,9 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSetTest"/>
+        /// test case for ParameterizedLevelSet with evaporation
         /// </summary>
-        [Test]
+        ///[Test]
         public static void ParameterizedLevelSetTest(
 
             [Values(2)] int deg

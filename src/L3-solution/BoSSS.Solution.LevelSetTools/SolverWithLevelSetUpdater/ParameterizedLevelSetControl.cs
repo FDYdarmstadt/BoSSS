@@ -14,16 +14,16 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
     public class ParameterizedLevelSetControl : ILevSetControl {
 
         /// <summary>
-        /// 
+        /// x-semiAxis of elliptic interface
         /// </summary>
         public double  xSemiAxis;
         /// <summary>
-        /// 
+        /// y-semiAxis of elliptic interface
         /// </summary>
         public double ySemiAxis;
 
         /// <summary>
-        /// 
+        /// y-coordinate of center of ellipse
         /// </summary>
         public double yCenter;
 
@@ -32,9 +32,6 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// </summary>
         public Parameterized_Timestepper Timestepper = Parameterized_Timestepper.ExplicitEuler;
 
-        /// <summary>
-        /// 
-        /// </summary>
         public ParameterizedLevelSetControl(double xSemiAxis, double ySemiAxis, double yCenter) {
             this.xSemiAxis = xSemiAxis;
             this.ySemiAxis = ySemiAxis;
