@@ -165,9 +165,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(2.0, 2.0, 2.0); // xSemiAxis0, ySemiAxis0, yCenter0
+            C.ParameterizedLevelSetControl = new ParameterizedLevelSetControlEllipse(2.0, 2.0, 2.0); // xSemiAxis0, ySemiAxis0, yCenter0
 
-            Func<double[], double>  PhiFunc = (X => X[1] - C.ParameterizedLevelSetControl.yCenter + C.ParameterizedLevelSetControl.ySemiAxis * (1 - X[0].Pow2() / C.ParameterizedLevelSetControl.xSemiAxis.Pow2()).Sqrt());
+            Func<double[], double>  PhiFunc = C.ParameterizedLevelSetControl.PhiFunc;
 
             Func<double[], double>  VelocityFunc = (X => (0.1 - 0.1 * X[0].Pow2()/L.Pow2()));
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);

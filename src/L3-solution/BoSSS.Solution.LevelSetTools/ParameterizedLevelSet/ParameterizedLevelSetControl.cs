@@ -20,6 +20,8 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// See <see cref="Parameterized_Timestepper"/>
         /// </summary>
         public Parameterized_Timestepper Timestepper = Parameterized_Timestepper.ExplicitEuler;
+        
+        abstract public double PhiFunc(double[] X);
     }
 
     [Serializable]
@@ -48,6 +50,10 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         }
 
         public override double[] CurveParametes => new double[] { xSemiAxis, ySemiAxis, yCenter };
+
+        public override double PhiFunc(double[] X) {
+            return X[1] - yCenter + ySemiAxis * (1 - X[0].Pow2() / xSemiAxis.Pow2()).Sqrt();
+        }
     }
 
 
@@ -63,6 +69,10 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         }
 
         public override double[] CurveParametes => throw new NotImplementedException();
+
+        public override double PhiFunc(double[] X) {
+            throw new NotImplementedException();
+        }
     }
 
 
