@@ -23,12 +23,12 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
     public enum Parameterized_Timestepper {
         ExplicitEuler,
     }
-   
+
     public class ParameterizedLevelSetTimeStepper {
 
         protected Parameterized_Timestepper Timestepper;
 
-   
+
         public ParameterizedLevelSetTimeStepper(ParameterizedLevelSetControl Control) {
 
             this.Timestepper = Control.Timestepper;
@@ -41,27 +41,26 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <param name="dt"></param> time step size
         /// <param name="time"></param> 
         /// <param name="meanVelocity"></param> velocity from a flow solver
-        /// <param name="xSemi0"></param> x-SemiAxis of ellipse
-        /// <param name="ySemi0"></param> y-SemiAxis of ellipse
-        /// <param name="yCenter0"></param> y-coordinate of center of ellipse
         /// <param name="gdat"></param>
         /// <param name="levSetQuadScheme"></param>
         /// <param name="quadOrder"></param>
+        /// <param name="CurveParams0"></param>
         /// <returns></returns>
-        public double[] MoveLevelSet(double dt, double time, SinglePhaseField[] meanVelocity, double xSemi0, double ySemi0, double yCenter0, IGridData gdat, CellQuadratureScheme levSetQuadScheme, int quadOrder) {
+        public double[] MoveLevelSet(double dt, double time, SinglePhaseField[] meanVelocity, double[] CurveParams0, IGridData gdat, MyRealF_Base myf) {
 
-            double[] CoeffValues0 = new double[3] { 0.0, 0.0, 0.0};
-            double[] ParamValues0 = new double[3] { xSemi0, ySemi0, yCenter0 };
-
-            var myf = new MyRealF(levSetQuadScheme, gdat, quadOrder);
+            double[] ParamValues0 = CurveParams0.CloneAs();
+            double[] CoeffValues0 = new double[ParamValues0.Length];
 
 
-            var CoeffValues1 = GradientMinimizationMethod.Minimi(CoeffValues0, ParamValues0, myf.F, NumericalGradient.Differentiate(myf.F), dt, time, meanVelocity);
+            var CoeffValues1 = GradientMinimizationMethod.Minimi(CoeffValues0, ParamValues0,
+                myf.F,
+                NumericalGradient.Differentiate(myf.F),
+                dt, time, meanVelocity);
             //var CoeffValues1 = GradientMinimizationMethod.Minimi_Newton(CoeffValues0, ParamValues0, myf.F, NumericalGradient.CalculateHessian(myf.F), NumericalGradient.Differentiate(myf.F), dt, time, meanVelocity);
 
             double[] ParamValues1 = new double[CoeffValues1.Length];
             for (int i = 0; i < CoeffValues1.Length; i++) {
-                 ParamValues1[i] = CoeffValues1[i] * dt + ParamValues0[i]; 
+                ParamValues1[i] = CoeffValues1[i] * dt + ParamValues0[i];
             }
             return ParamValues1;
         }
@@ -70,10 +69,14 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
     public static class GradientMinimizationMethod {
 
-       /// <summary>
-       /// minimization method 
-       /// </summary>
-        public static double[] Minimi(double[] InitialValueForCoeff, double[] EllipsePar0, Func<double[], double[], double, double, SinglePhaseField[], double> F, Func<double[], double[], double, double, SinglePhaseField[], double[]> Differentiate, double dt, double time, SinglePhaseField[]  meanVelocity) {
+        /// <summary>
+        /// minimization method,
+        /// Adagrad with zero-bias correction
+        /// </summary>
+        public static double[] Minimi(double[] InitialValueForCoeff, double[] EllipsePar0,
+            Func<double[], double[], double, double, SinglePhaseField[], double> F,
+            Func<double[], double[], double, double, SinglePhaseField[], double[]> Differentiate,
+            double dt, double time, SinglePhaseField[] meanVelocity) {
 
             double[] CoeffNewIter = (double[])InitialValueForCoeff.Clone();
             //double[] CoeffLookAhead = (double[])InitialValueForCoeff.Clone();
@@ -82,7 +85,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             double[] deriv = new double[InitialValueForCoeff.Length]; // derivative of function
             double eps = 1e-06;//GenericBlas.MachineEps.Sqrt(); 
             double gamma = 0.99; // learning rate
-            double[] grad_acc = new double[3] { 0.0, 0.0, 0.0}; // accumulated gradient values
+            double[] grad_acc = new double[3] { 0.0, 0.0, 0.0 }; // accumulated gradient values
 
             double[] G = new double[3] { 0.0, 0.0, 0.0 }; //sum of squares of gradients
             double[] correctedG = new double[3] { 0.0, 0.0, 0.0 }; //corrected sum of squares of gradients for zero-bias correction
@@ -95,12 +98,12 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
             for (int i = 1; i < itermax; ++i) {
                 //Update Schema
-                deriv = Differentiate(CoeffNewIter, EllipsePar0, dt, time, meanVelocity); 
+                deriv = Differentiate(CoeffNewIter, EllipsePar0, dt, time, meanVelocity);
                 for (int d = 0; d < deriv.Length; ++d) {
                     G[d] += deriv[d] * deriv[d];
                     correctedG[d] = G[d] / (1 - Math.Pow(beta, i));
                     lambda_ad[d] = lambda / (Math.Sqrt(correctedG[d] + eps));
-                    
+
                     grad_acc[d] = grad_acc[d] * gamma + lambda_ad[d] * deriv[d];
                     CoeffNewIter[d] -= grad_acc[d]; // to update parameters
                 }
@@ -126,7 +129,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
                 if (i == itermax) {
                     throw new ApplicationException("Increase the number of iterations for the gradient method!");
                 }
-               
+
             }
             stw.Stop();
             Console.WriteLine($"Elapsed Time minimization: {stw.Elapsed}");
@@ -194,75 +197,75 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
     /// </summary>
     public static class NumericalGradient {
 
-    static public Func<double[], double[], double, double, SinglePhaseField[], double[]> Differentiate(Func<double[], double[], double, double, SinglePhaseField[], double> F) {
+        static public Func<double[], double[], double, double, SinglePhaseField[], double[]> Differentiate(Func<double[], double[], double, double, SinglePhaseField[], double> F) {
 
-        return delegate (double[] X, double[] EllPar0, double dt, double time, SinglePhaseField[] meanVelocity) {
-            double gridStepSize = GenericBlas.MachineEps.Sqrt();  //1e-14; 
-            int L = X.Length;
-            double[] dF_dX = new double[L];
+            return delegate (double[] X, double[] EllPar0, double dt, double time, SinglePhaseField[] meanVelocity) {
+                double gridStepSize = GenericBlas.MachineEps.Sqrt();  //1e-14; 
+                int L = X.Length;
+                double[] dF_dX = new double[L];
 
 
-            double[] XLeft = (double[])X.Clone();
-            double[] XRight = (double[])X.Clone();
+                double[] XLeft = (double[])X.Clone();
+                double[] XRight = (double[])X.Clone();
 
-            for (int i = 0; i < L; ++i) {
-                if (i > 0) {
-                    XLeft[i - 1] = X[i - 1];
-                    XRight[i - 1] = X[i - 1];
-                }
-
-                XLeft[i] -= gridStepSize;
-                XRight[i] += gridStepSize;
-
-                dF_dX[i] = 0.5 * (F(XRight, EllPar0, dt, time, meanVelocity) - F(XLeft, EllPar0, dt, time, meanVelocity)) / gridStepSize;
-            }
-
-            return dF_dX;
- 
-        };
-    }
-
-      // CalculateHessian is not finished yet
-    static public Func<double[], double[], double, double, SinglePhaseField[], MultidimensionalArray> CalculateHessian(Func<double[], double[], double, double, SinglePhaseField[], double> F) {
-
-        return delegate (double[] X, double[] EllPar0, double dt, double time, SinglePhaseField[] meanVelocity) {
-            double gridStepSize = 1e-12;
-            int L = X.Length;
-            MultidimensionalArray hessian = MultidimensionalArray.Create(L, L);
-            double[] X_plus_h = new double[L];
-            double[] X_minus_h = new double[L];
-
-            for (int i = 0; i < L; ++i) {
-                for (int j = 0; j < L; ++j) {
-
-                    X_plus_h = (double[])X.Clone();
-                    X_minus_h = (double[])X.Clone();
-
-                    X_plus_h[i] += gridStepSize;
-                    X_plus_h[j] += gridStepSize;
-                    X_minus_h[i] -= gridStepSize;
-                    X_minus_h[j] -= gridStepSize;
-
-                    double f_plus_plus = F(X_plus_h, EllPar0, dt, time, meanVelocity);
-                    X_plus_h[j] -= 2 * gridStepSize;  // adjust jth component only
-                    double f_plus_minus = F(X_plus_h, EllPar0, dt, time, meanVelocity);
-                    X_minus_h[j] += 2 * gridStepSize;  // revert jth component to minus and add 2*h
-                    double f_minus_plus = F(X_minus_h, EllPar0, dt, time, meanVelocity);
-                    X_minus_h[j] -= 2 * gridStepSize; // adjust jth component only
-                    double f_minus_minus = F(X_minus_h, EllPar0, dt, time, meanVelocity);
-
-                    if (i == j) {
-                        hessian[i, j] = (f_plus_plus - 2 * F(X, EllPar0, dt, time, meanVelocity) + f_minus_minus) / gridStepSize.Pow2();
-                    } else {
-                        hessian[i, j] = (f_plus_plus - f_plus_minus - f_minus_plus + f_minus_minus) / (4 * gridStepSize.Pow2());
+                for (int i = 0; i < L; ++i) {
+                    if (i > 0) {
+                        XLeft[i - 1] = X[i - 1];
+                        XRight[i - 1] = X[i - 1];
                     }
 
-                }
-            }
+                    XLeft[i] -= gridStepSize;
+                    XRight[i] += gridStepSize;
 
-            return hessian;
-        };
-    }
+                    dF_dX[i] = 0.5 * (F(XRight, EllPar0, dt, time, meanVelocity) - F(XLeft, EllPar0, dt, time, meanVelocity)) / gridStepSize;
+                }
+
+                return dF_dX;
+
+            };
+        }
+
+        // CalculateHessian is not finished yet
+        static public Func<double[], double[], double, double, SinglePhaseField[], MultidimensionalArray> CalculateHessian(Func<double[], double[], double, double, SinglePhaseField[], double> F) {
+
+            return delegate (double[] X, double[] EllPar0, double dt, double time, SinglePhaseField[] meanVelocity) {
+                double gridStepSize = 1e-12;
+                int L = X.Length;
+                MultidimensionalArray hessian = MultidimensionalArray.Create(L, L);
+                double[] X_plus_h = new double[L];
+                double[] X_minus_h = new double[L];
+
+                for (int i = 0; i < L; ++i) {
+                    for (int j = 0; j < L; ++j) {
+
+                        X_plus_h = (double[])X.Clone();
+                        X_minus_h = (double[])X.Clone();
+
+                        X_plus_h[i] += gridStepSize;
+                        X_plus_h[j] += gridStepSize;
+                        X_minus_h[i] -= gridStepSize;
+                        X_minus_h[j] -= gridStepSize;
+
+                        double f_plus_plus = F(X_plus_h, EllPar0, dt, time, meanVelocity);
+                        X_plus_h[j] -= 2 * gridStepSize;  // adjust jth component only
+                        double f_plus_minus = F(X_plus_h, EllPar0, dt, time, meanVelocity);
+                        X_minus_h[j] += 2 * gridStepSize;  // revert jth component to minus and add 2*h
+                        double f_minus_plus = F(X_minus_h, EllPar0, dt, time, meanVelocity);
+                        X_minus_h[j] -= 2 * gridStepSize; // adjust jth component only
+                        double f_minus_minus = F(X_minus_h, EllPar0, dt, time, meanVelocity);
+
+                        if (i == j) {
+                            hessian[i, j] = (f_plus_plus - 2 * F(X, EllPar0, dt, time, meanVelocity) + f_minus_minus) / gridStepSize.Pow2();
+                        } else {
+                            hessian[i, j] = (f_plus_plus - f_plus_minus - f_minus_plus + f_minus_minus) / (4 * gridStepSize.Pow2());
+                        }
+
+                    }
+                }
+
+                return hessian;
+            };
+        }
 
     }
     //public static class IntegrationOverEllipse {
@@ -312,39 +315,26 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
     //}
 
 
-    public class MyRealF {
+    public abstract class MyRealF_Base {
 
         CellQuadratureScheme levSetQuadScheme;
         IGridData gdat;
         int quadOrder;
 
-        public MyRealF(CellQuadratureScheme _levSetQuadScheme, IGridData _gdat, int _quadOrder) {
+        public MyRealF_Base(CellQuadratureScheme _levSetQuadScheme, IGridData _gdat, int _quadOrder) {
             levSetQuadScheme = _levSetQuadScheme;
             gdat = _gdat;
             quadOrder = _quadOrder;
         }
 
-
-        /// <summary>
-        /// calculation of the function f obtained after substitution the level-set function in the level-set evolution equation
-        /// </summary>
-        static double f(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double[] velocity) {
-
-            double SquareRoot = (EllipsePar0[1].Pow2() * (1 - x.Pow2() / EllipsePar0[0].Pow2())).Sqrt();
-            double numer = EllipsePar0[1] * EllipseCoeff[1] * EllipsePar0[0] * (EllipsePar0[0].Pow2() - x.Pow2()) + x.Pow2() * EllipsePar0[1].Pow2() * EllipseCoeff[0];
-            double DerivFuncEllipse = -EllipseCoeff[2] + numer / (SquareRoot * EllipsePar0[0].Pow2() * EllipsePar0[0]);
-            double Gradx = -EllipsePar0[1].Pow2() * x / (EllipsePar0[0].Pow2() * SquareRoot);
-            double Grady = 1.0;
-            double res = velocity[0] * Gradx + velocity[1] * Grady;
-            return DerivFuncEllipse + res;
-
-        }
+        
+        protected abstract double f(double[] TemporalChangeCoeff, double[] CurvePar0, double x, double y, double timeStep, double time, double[] velocity);
 
         /// <summary>
         /// squaring of the function f
         /// </summary>
-        static double fsqr(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double[] velocity) {
-            var fval = f(EllipseCoeff, EllipsePar0, x, y, timeStep, time, velocity);
+        double fsqr(double[] TemporalChangeCoeff, double[] CurvePar0, double x, double y, double timeStep, double time, double[] velocity) {
+            var fval = f(TemporalChangeCoeff, CurvePar0, x, y, timeStep, time, velocity);
             return fval * fval;
         }
 
@@ -384,7 +374,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             q.Execute();
 
             {
-               
+
                 //Console.WriteLine($"integral_bosss: {TotalIntegral}");
                 // Console.WriteLine($"integral_diff: {TotalIntegral_RefVal - TotalIntegral}");
             }
@@ -393,6 +383,31 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
 
         }
+
+    }
+
+    public class MyRealF_Ellipse : MyRealF_Base {
+
+        public MyRealF_Ellipse(CellQuadratureScheme _levSetQuadScheme, IGridData _gdat, int _quadOrder)
+            : base(_levSetQuadScheme, _gdat, _quadOrder) //
+        { }
+
+        /// <summary>
+        /// calculation of the function f obtained after substitution the level-set function in the level-set evolution equation
+        /// </summary>
+        override protected double f(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double time, double[] velocity) {
+
+            double SquareRoot = (EllipsePar0[1].Pow2() * (1 - x.Pow2() / EllipsePar0[0].Pow2())).Sqrt();
+            double numer = EllipsePar0[1] * EllipseCoeff[1] * EllipsePar0[0] * (EllipsePar0[0].Pow2() - x.Pow2()) + x.Pow2() * EllipsePar0[1].Pow2() * EllipseCoeff[0];
+            double DerivFuncEllipse = -EllipseCoeff[2] + numer / (SquareRoot * EllipsePar0[0].Pow2() * EllipsePar0[0]);
+            double Gradx = -EllipsePar0[1].Pow2() * x / (EllipsePar0[0].Pow2() * SquareRoot);
+            double Grady = 1.0;
+            double res = velocity[0] * Gradx + velocity[1] * Grady;
+            return DerivFuncEllipse + res;
+
+        }
+        
+
 
     }
 }

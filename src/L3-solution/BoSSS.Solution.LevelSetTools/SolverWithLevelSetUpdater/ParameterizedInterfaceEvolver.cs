@@ -18,31 +18,72 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// Derivative of <see cref="LevelSet"/>, mainly for the aesthetics 
     /// of having a pair of evolver and level-set.
     /// </summary>
-    public class ParameterizedLevelSet : LevelSet {
+    abstract public class ParameterizedLevelSet : LevelSet {
+        
+
+        public ParameterizedLevelSet( Basis b, string id) : base(b, id) {
+           
+        }
+
+        protected abstract void ImplicitFromCurve(MultidimensionalArray X, MultidimensionalArray phi);
+
+        public void Project() {
+            this.ProjectField(1.0, ImplicitFromCurve);
+        }
+
+        abstract public double[] Parameters { get; set; }
+
+
+        abstract public MyRealF_Base GetIntegrandForMinimi(CellQuadratureScheme _levSetQuadScheme, int _quadOrder);
+    }
+
+
+    /// <summary>
+    /// Derivative of <see cref="LevelSet"/>, mainly for the aesthetics 
+    /// of having a pair of evolver and level-set.
+    /// </summary>
+    public class ParameterizedLevelSetEllipse : ParameterizedLevelSet {
         internal double xSemiAxis;
         internal double ySemiAxis;
         internal double yCenter;
 
-        public ParameterizedLevelSet(ParameterizedLevelSetControl control, Basis b, string id) : base(b, id) {
+        public ParameterizedLevelSetEllipse(ParameterizedLevelSetControlEllipse control, Basis b, string id) : base(b, id) {
             this.xSemiAxis = control.xSemiAxis;
             this.ySemiAxis = control.ySemiAxis;
             this.yCenter = control.yCenter;
         }
 
-        void Ellipsis(MultidimensionalArray X, MultidimensionalArray phi) {
+        public override double[] Parameters {
+            get {
+                return new double[] { xSemiAxis, ySemiAxis, yCenter };
+            }
+            set {
+                if (value.Length != 3)
+                    throw new ArgumentException("expecting exactly 3 parameters for the ellipse");
+                xSemiAxis = value[0];
+                ySemiAxis = value[1];
+                yCenter = value[2];
+            }
+        }
+
+        public override MyRealF_Base GetIntegrandForMinimi(CellQuadratureScheme _levSetQuadScheme, int _quadOrder) {
+            return new MyRealF_Ellipse(_levSetQuadScheme, this.GridDat, _quadOrder);
+        }
+
+        protected override void ImplicitFromCurve(MultidimensionalArray X, MultidimensionalArray phi) {
             int NoOfNodes = X.GetLength(0);
             for (int i = 0; i < NoOfNodes; i++) {
                 double x = X[i, 0];
                 double y = X[i, 1];
-                phi[i] = y - yCenter +  Math.Sqrt(ySemiAxis.Pow2() * (1 - x.Pow2() / xSemiAxis.Pow2()));
+                phi[i] = y - yCenter + Math.Sqrt(ySemiAxis.Pow2() * (1 - x.Pow2() / xSemiAxis.Pow2()));
             }
         }
 
-        public void Project() {
-            this.ProjectField(1.0, Ellipsis);
-        }
-
+        
     }
+
+
+
 
     /// <summary>
     /// 
@@ -119,11 +160,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var quadScheme = levelSet.Tracker.GetXDGSpaceMetrics(levelSet.Tracker.SpeciesIdS, this.m_HMForder).XQuadSchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
 
                 //update of elliptic parameters
-                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, meanVelocity, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter, levelSet.CGLevelSet.GridDat, quadScheme, m_HMForder);
+                var myF = ls.GetIntegrandForMinimi(quadScheme, m_HMForder);
+                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, time, meanVelocity, ls.Parameters, levelSet.CGLevelSet.GridDat, myF);
 
-                ls.xSemiAxis = Param1[0];
-                ls.ySemiAxis = Param1[1];
-                ls.yCenter = Param1[2];
+                ls.Parameters = Param1;
                 ((ParameterizedLevelSet)levelSet.DGLevelSet).Project();
 
             }

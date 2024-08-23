@@ -205,7 +205,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
             C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
             if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet){
-                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
+                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControlEllipse(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
             }
 
             
@@ -353,7 +353,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
-                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
+                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControlEllipse(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
             }
             //C.SkipSolveAndEvaluateResidual = true;
             XNSFESolverTest(Tst, C);
