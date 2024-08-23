@@ -437,7 +437,6 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
 
-<<<<<<< HEAD
                     // compute serial results for checking
                     // (to be removed/de-activated)
                     MultidimensionalArray checkResults;
@@ -451,54 +450,6 @@ namespace BoSSS.Foundation.Quadrature {
                                 if (iThread > 0)
                                     ItemOffset[iThread] = ItemOffset[iThread - 1] + ItemsPerThread[iThread - 1];
                                 allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, true, ItemOffset[iThread], null);
-=======
-                    //if (OberOasch && Bulkcnt == 0)
-                    //    Console.WriteLine("Max Chunk length: " + MaxChunkLength);
-
-                    int j = chunk.i0;
-                    int ChunkLength = MaxChunkLength;
-                    int ChunkEnd = chunk.i0 + chunk.Len;
-
-                    
-                    while (j < ChunkEnd) {
-                        Bulkcnt++;
-
-                        // limit bulksize 
-                        long l_ChunkLength = ChunkLength;
-                        if ((j + l_ChunkLength) > ChunkEnd) {
-                            ChunkLength = checked((int)(l_ChunkLength - (j + l_ChunkLength - ChunkEnd)));
-                        }
-                       
-
-                        // DEBUG check
-#if DEBUG
-                        CheckQuadratureChunk(j, ChunkLength, CurrentRuleRefElementIndex);
-#endif
-                        
-                        // reallocate buffers if bulksize was changed
-                        stpwAlloc.Start();
-                        if (ChunkLength != oldBulksize || m_CurrentRule.NoOfNodes != oldNoOfNodes) {
-                            AllocateBuffersInternal(ChunkLength, m_CurrentRule.Nodes);
-                            AllocateBuffers(ChunkLength, m_CurrentRule.Nodes);
-                            oldBulksize = ChunkLength;
-                            oldNoOfNodes = m_CurrentRule.NoOfNodes;
-                        }
-                        stpwAlloc.Stop();
-
-                        
-                        if(this.m_ExEvaluate == null) {
-
-                            // evaluation of integrand
-                            // =======================
-                            stpwEval.Start();
-                            m_EvalResults.Clear();
-                            if(this.CurrentRule.IsEmpty) {
-                                // this is an empty rule
-                                m_EvalResults.Clear();
-                            } else {
-                                // normal evaluation
-                                this.Evaluate(j, ChunkLength, this.CurrentRule, m_EvalResults);
->>>>>>> b7f11eee5f (before adding new level-set evolver)
                             }
                         }
                     } else {
@@ -507,15 +458,15 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     var errorList = new List<(int item, double err, double threshold)>[NumThreads];
-                    ilPSP.Environment.ParallelFor(0, NumThreads, 
-                        delegate(int iThread) {
+                    ilPSP.Environment.ParallelFor(0, NumThreads,
+                        delegate (int iThread) {
                             errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], allThreads);
                         });
 
                     if (errorList.Any(l => l != null)) {
                         int errCnt = 0;
                         using (var wrt = new StringWriter()) {
-                            
+
                             foreach (var checkErrors in errorList) {
                                 bool brk = false;
                                 if (checkErrors != null) {
