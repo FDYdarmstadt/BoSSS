@@ -131,10 +131,6 @@ namespace BoSSS.Solution.Statistic {
 
 
         static public double L2Distance(this XDGField A, XDGField B, string[] speciesNames, bool IgnoreMeanValue = false) {
-<<<<<<< HEAD
-=======
-
->>>>>>> b7f11eee5f (before adding new level-set evolver)
             XDGField fine, coarse;
             if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
                 fine = A;
@@ -144,12 +140,6 @@ namespace BoSSS.Solution.Statistic {
                 coarse = A;
             }
 
-<<<<<<< HEAD
-
-=======
-            //Debugger.Launch();
->>>>>>> b7f11eee5f (before adding new level-set evolver)
-
             var trackerB = coarse.Basis.Tracker;
             int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
             int quadOrder = maxDeg * 3 + 3;
@@ -157,23 +147,12 @@ namespace BoSSS.Solution.Statistic {
             var schemeFactory = trackerB.GetXDGSpaceMetrics(speciesNames.Select(spc => trackerB.GetSpeciesId(spc)), quadOrder).XQuadSchemeHelper;
 
             double totNorm = 0;
-<<<<<<< HEAD
             foreach (string spc in speciesNames) {
 
-=======
-            foreach(string spc in speciesNames) {
-            
->>>>>>> b7f11eee5f (before adding new level-set evolver)
                 var spc_id = trackerB.GetSpeciesId(spc);
 
                 if (IgnoreMeanValue == true)
                     throw new NotImplementedException();
-
-<<<<<<< HEAD
-
-=======
-                
->>>>>>> b7f11eee5f (before adding new level-set evolver)
                 var A_spc = fine.GetSpeciesShadowField(spc);
                 var B_spc = coarse.GetSpeciesShadowField(spc);
 
@@ -184,13 +163,6 @@ namespace BoSSS.Solution.Statistic {
             return totNorm;
 
         }
-
-
-
-<<<<<<< HEAD
-=======
-
->>>>>>> b7f11eee5f (before adding new level-set evolver)
 
         /// <summary>
         /// Approximate L2 distance between two DG fields; this also supports DG fields on different meshes, 
@@ -261,11 +233,6 @@ namespace BoSSS.Solution.Statistic {
                         coarse = A;
                     }
 
-<<<<<<< HEAD
-
-=======
-                    
->>>>>>> b7f11eee5f (before adding new level-set evolver)
                     var CompQuadRule = scheme.SaveCompile(coarse.GridDat, quadOrder); // use over-integration
                     var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
 

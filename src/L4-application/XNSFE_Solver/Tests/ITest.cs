@@ -74,9 +74,9 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         /// Some volumetric heat source.
         /// </summary>
         Func<double[], double> GetQ(string species);
-        /// <summary>
-        /// contact angle
-        /// </summary>
-        double theta_e { get; }
+        ///// <summary>
+        ///// contact angle
+        ///// </summary>
+        //double theta_e { get; }
     }
 }

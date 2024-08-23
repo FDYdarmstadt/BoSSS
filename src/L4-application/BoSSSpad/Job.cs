@@ -1574,11 +1574,6 @@ namespace BoSSS.Application.BoSSSpad {
                         return;
                     }
                 }
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 63a3266241 (attempt to fix b problems)
 
                 if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
                     Console.WriteLine($"BoSSSpad is configured to run from a backup, `RunWorkflowFromBackup` = {BoSSSshell.WorkflowMgm.RunWorkflowFromBackup} ; ");

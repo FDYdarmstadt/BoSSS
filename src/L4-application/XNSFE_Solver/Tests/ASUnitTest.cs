@@ -1032,7 +1032,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.PhysicalParameters.mu_B = tst.mu_B;
             C.PhysicalParameters.Sigma = tst.Sigma;
             C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
-            C.PhysicalParameters.theta_e = tst.theta_e;
+
             // initial values and exact solution
             // =================================
 

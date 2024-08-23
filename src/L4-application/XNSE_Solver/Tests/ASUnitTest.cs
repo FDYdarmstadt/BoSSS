@@ -37,13 +37,10 @@ using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.AdvancedSolvers;
-<<<<<<< HEAD
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
-=======
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using System.IO;
 using BoSSS.Foundation.IO;
->>>>>>> 7c3a165f9c (third stage of parameterized LS implementation)
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
