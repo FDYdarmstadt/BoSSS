@@ -665,7 +665,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
             if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {     
-                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl(xSemiAxis0, ySemiAxis0, yCenter0);
+                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControlEllipse(xSemiAxis0, ySemiAxis0, yCenter0);
             }
 
             //int Nsp = 256;

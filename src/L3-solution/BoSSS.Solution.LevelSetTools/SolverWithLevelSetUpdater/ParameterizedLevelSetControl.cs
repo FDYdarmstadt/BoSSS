@@ -11,12 +11,24 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
     /// <summary>
     /// Encapsulation of Options for FourierLevSet
     /// </summary>
-    public class ParameterizedLevelSetControl : ILevSetControl {
+    [Serializable]
+    abstract public class ParameterizedLevelSetControl : ILevSetControl {
+
+        public abstract double[] CurveParametes { get; }
+
+        /// <summary>
+        /// See <see cref="Parameterized_Timestepper"/>
+        /// </summary>
+        public Parameterized_Timestepper Timestepper = Parameterized_Timestepper.ExplicitEuler;
+    }
+
+    [Serializable]
+    public class ParameterizedLevelSetControlEllipse : ParameterizedLevelSetControl {
 
         /// <summary>
         /// x-semiAxis of elliptic interface
         /// </summary>
-        public double  xSemiAxis;
+        public double xSemiAxis;
         /// <summary>
         /// y-semiAxis of elliptic interface
         /// </summary>
@@ -27,19 +39,35 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// </summary>
         public double yCenter;
 
-        /// <summary>
-        /// See <see cref="Parameterized_Timestepper"/>
-        /// </summary>
-        public Parameterized_Timestepper Timestepper = Parameterized_Timestepper.ExplicitEuler;
 
-        public ParameterizedLevelSetControl(double xSemiAxis, double ySemiAxis, double yCenter) {
+        public ParameterizedLevelSetControlEllipse(double xSemiAxis, double ySemiAxis, double yCenter) {
             this.xSemiAxis = xSemiAxis;
             this.ySemiAxis = ySemiAxis;
             this.yCenter = yCenter;
 
         }
 
+        public override double[] CurveParametes => new double[] { xSemiAxis, ySemiAxis, yCenter };
     }
+
+
+    [Serializable]
+    public class ParameterizedLevelSetControPolynomial : ParameterizedLevelSetControl {
+
+        
+
+
+        public ParameterizedLevelSetControPolynomial(double xSemiAxis, double ySemiAxis, double yCenter) {
+
+
+        }
+
+        public override double[] CurveParametes => throw new NotImplementedException();
+    }
+
+
+
+
 
     public static class ParameterizedLevelSetFactory {
 

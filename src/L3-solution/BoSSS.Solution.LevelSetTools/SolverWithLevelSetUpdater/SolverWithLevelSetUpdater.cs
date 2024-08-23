@@ -191,8 +191,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.ParameterizedLevelSet:
-                        ParameterizedLevelSet paramLevelSetDG = new ParameterizedLevelSet(this.Control.ParameterizedLevelSetControl, new Basis(GridData, levelSetDegree), LevelSetDG);
-                        DGlevelSets[iLevSet] = paramLevelSetDG;
+                        if (this.Control.ParameterizedLevelSetControl is LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControlEllipse plsce) {
+                            ParameterizedLevelSet paramLevelSetDG = new ParameterizedLevelSetEllipse(plsce, new Basis(GridData, levelSetDegree), LevelSetDG);
+                            DGlevelSets[iLevSet] = paramLevelSetDG;
+                        } else if (this.Control.ParameterizedLevelSetControl is LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControPolynomial plscp) {
+                            throw new NotImplementedException("todo Irina");
+                        } else {
+                            throw new NotImplementedException();
+                        }
                         break;
 
                     default:

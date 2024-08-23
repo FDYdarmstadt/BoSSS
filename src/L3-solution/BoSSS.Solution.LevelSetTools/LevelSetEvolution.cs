@@ -123,5 +123,6 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <see cref="BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.ParameterizedInterfaceEvolver"/>.
         /// </remarks>
         ParameterizedLevelSet,
+
     }
 }

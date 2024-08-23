@@ -100,7 +100,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.ParameterizedLevelSet;
 
             if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
-                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl(xSemiAxis0, ySemiAxis0, yCenter0);
+                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControlEllipse(xSemiAxis0, ySemiAxis0, yCenter0);
             }
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -174,7 +174,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.ParameterizedLevelSet;
 
             if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
-                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl(xSemiAxis0, ySemiAxis0, yCenter0);
+                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControlEllipse(xSemiAxis0, ySemiAxis0, yCenter0);
             }
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -248,7 +248,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.ParameterizedLevelSet;
 
             if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
-                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl(xSemiAxis0, ySemiAxis0, yCenter0);
+                C.ParameterizedLevelSetControl = new BoSSS.Solution.LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControlEllipse(xSemiAxis0, ySemiAxis0, yCenter0);
             }
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
