@@ -2080,7 +2080,7 @@ namespace BoSSS.Foundation.IO {
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities.LogfileName: {
-                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity" };
+                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "mean velocity - x", "mean velocity - y" };
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {

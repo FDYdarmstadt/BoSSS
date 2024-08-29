@@ -2,12 +2,14 @@
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
@@ -255,6 +257,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// 
             /// </summary>
             internal void EnforceContinuity() {
+
+                EnforceContinuityWithPreEnforcer();
+
+                if (!IsInterfaceClosed()) {
+                    EnforceContinuityWithPreEnforcer(ContinuityProjectionOption.ConstrainedDG);
+                }
+            }
+
+            /// <summary>
+            /// The preEnforcer ensures that the projection is performed on new cut-cells in case of a moving interface
+            /// Sometimes (so far only 2D) one need to do the projection on the nearband in order to remove holes in the interface
+            /// </summary>
+            /// <param name="ProjOpt"></param>
+            internal void EnforceContinuityWithPreEnforcer(ContinuityProjectionOption ProjOpt = ContinuityProjectionOption.None) {
+
                 LevelSetTracker Tracker = phaseInterface.Tracker;
                 CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
@@ -265,7 +282,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     phaseInterface.CGLevelSet.Basis,
                     phaseInterface.DGLevelSet.Basis,
                     Tracker.GridDat,
-                    ContinuityProjectionOption.None);
+                    ProjOpt);
                 LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
                 preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
                 LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
@@ -276,10 +293,58 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
 
-
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
                 preTracker.Dispose();
+
             }
+
+            /// <summary>
+            /// Checks for inner contact points/lines
+            /// </summary>
+            /// <returns></returns>
+            internal bool IsInterfaceClosed() {
+
+                LevelSetTracker LsTrk = phaseInterface.Tracker;
+                LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+                LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+                testTracker.UpdateTracker(0.0);
+
+                int order = preCGLevelSet.Basis.Degree;
+                var testFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
+                EdgeMask CutCellInnerBoundaryEdgeMask = LsTrk.Regions.GetCutCellMask().AllEdges().Except(LsTrk.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(LsTrk.GridDat.BoundaryEdges);
+                EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, CutCellInnerBoundaryEdgeMask);
+
+                double result = 0.0;
+                int D = LsTrk.GridDat.SpatialDimension;
+                EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    SurfaceElement_BoundaryEdge.Compile(LsTrk.GridDat, 0),
+                    delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                        // inner quadrature node
+                        NodeSet Enode_l = QR.Nodes;
+                        int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
+                        NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
+                        NodeSet Vnode_g = Vnode_l.CloneAs();
+                        int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
+                        LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
+                        //if (D == 2)
+                        //    Console.WriteLine("inner quadrature node: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
+                        //else
+                        //    Console.WriteLine("inner quadrature node: ({0},{1},{2})", Vnode_g[0, 0], Vnode_g[0, 1], Vnode_g[0, 2]);
+
+                        EvalResult.SetAll(1.0);
+
+                    },
+                    delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                        for (int i = 0; i < length; i++) {
+                            result += ResultsOfIntegration[i, 0];
+                        }
+                    }
+                ).Execute();
+
+                return result == 0.0;
+            }
+
 
             public void UpdateParameters(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,
