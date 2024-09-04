@@ -589,6 +589,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
 
         /// <summary>
+        /// Exact solution, electric potential, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionElectricPotential;
+
+        /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         public ScalarFunctionTimeDep GetGravity(string species, int d) {
