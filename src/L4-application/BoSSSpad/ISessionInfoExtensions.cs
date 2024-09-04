@@ -2132,7 +2132,7 @@ namespace BoSSS.Foundation.IO {
 
                     } else {
 
-                        string pathR = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).RestartedFrom + logName;
+                        string pathR = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).RestartedFrom + "\\" + logName + ".txt";
                         string[] linesR = File.ReadAllLines(pathR);
 
                         int len = (lines.Length - 1) + (linesR.Length - 1);

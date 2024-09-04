@@ -6,6 +6,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
+using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -261,7 +262,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 EnforceContinuityWithPreEnforcer();
 
                 if (!IsInterfaceClosed()) {
-                    EnforceContinuityWithPreEnforcer(ContinuityProjectionOption.ConstrainedDG);
+                    Console.WriteLine("Enforce continuity on nearband");
+                    //EnforceContinuityWithPreEnforcer(ContinuityProjectionOption.ConstrainedDG);
+
+                    LevelSetTracker Tracker = phaseInterface.Tracker;
+                    CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
+                    CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
+
+                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
                 }
             }
 
@@ -317,7 +325,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double result = 0.0;
                 int D = LsTrk.GridDat.SpatialDimension;
                 EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                    SurfaceElement_BoundaryEdge.Compile(LsTrk.GridDat, 0),
+                    SurfaceElement_BoundaryEdge.Compile(LsTrk.GridDat, order),
                     delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                         // inner quadrature node
@@ -341,6 +349,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         }
                     }
                 ).Execute();
+                testTracker.Dispose();
+
+                if(result > 0)
+                    Console.WriteLine("Interface not closed: result = {0}", result);
 
                 return result == 0.0;
             }
