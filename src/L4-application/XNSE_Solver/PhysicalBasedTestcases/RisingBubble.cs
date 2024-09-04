@@ -1185,15 +1185,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double sigma = 24.5;
 
             C.DbPath = @"P:\hpccluster\RisingBubble2D";
-            //Guid restartID = new Guid("d3fbafe6-263c-4031-ab07-a8453141fd8e");
-            Guid restartID = new Guid("e2070804-256b-40bb-ac6f-1c50e6ab0d27");
+            Guid restartID = new Guid("d3fbafe6-263c-4031-ab07-a8453141fd8e");
+            //Guid restartID = new Guid("e2070804-256b-40bb-ac6f-1c50e6ab0d27");
            
-            int restartTS = 1103;
+            int restartTS = 1101;
 
             double dt = 0.002;
             int numTs = 1500;
 
-            string restartName = "RB2D_fullDomain_20x40AMR0_k3_testcase1_OneStepGaussAndStokes_restart3";
+            string restartName = "RB2D_fullDomain_20x40AMR0_k3_testcase1_TransposeToFix_restart3";
             C.savetodb = false;
             // ===========================
 
@@ -1226,7 +1226,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // C.ReInitPeriod = 50;
 
             // C.SkipSolveAndEvaluateResidual = true;
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             // C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             // C.NonLinearSolver.ConvergenceCriterion = 1e-9;

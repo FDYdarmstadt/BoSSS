@@ -1434,18 +1434,18 @@ namespace ilPSP {
             }
 
             // If it is L type, convert it to U or vice versa
-            target.SwitchStructure();
+            target.SwitchStructure(source);
 
         }
 
-            static public void SwitchStructure<M1>(this M1 source) where M1 : IMatrix {
+            static public void SwitchStructure<M1, M2>(this M1 target, M2 source) where M1 : IMatrix where M2 : IMatrix {
 
                 switch (source.StructureType) {
                 case MatrixStructure.LowerTriangular:
-                    source.StructureType = MatrixStructure.UpperTriangular;
+                    target.StructureType = MatrixStructure.UpperTriangular;
                     break;
                 case MatrixStructure.UpperTriangular:
-                    source.StructureType = MatrixStructure.LowerTriangular;
+                    target.StructureType = MatrixStructure.LowerTriangular;
                     break;
                 }
 
