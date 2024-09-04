@@ -176,7 +176,6 @@ namespace BUIDT
             c.InitialValueFunctionsPerSpecies.Clear();
             c.InitialValueFunctionsPerSpecies.Add("L", x => x[0] < 0.5 * x[1] ? 0.75 : 0.25);
             c.InitialValueFunctionsPerSpecies.Add("R", x => x[0] < 0.5 * x[1] ? 0.75 : 0.25);
-            c.UseP0ProjectionAsInitialGuess = true;
             c.AgglomerationThreshold = agg;
             return c;
         }
@@ -230,7 +229,6 @@ namespace BUIDT
             };
 
             c.LevelSetTwoInitialValue = x => x[0] - 0.44;
-            c.UseP0ProjectionAsInitialGuess = true;
             c.NonlinearQuadratureDegree = 10;
             c.SuperSampling = 4;
             c.AgglomerationThreshold = agg;
@@ -321,12 +319,11 @@ namespace BUIDT
                 return ExactSolUnsmooth(X);
                 //return mu2 * (X[0] - 1)  / (mu2 * X[1] + 1);
             });
-            c.UseP0ProjectionAsInitialGuess = false;
             //double ExactSolSmooth(double[] X) {
             //    return mu1 * SmoothedHeaviSide(ShockSpeed(X[1]) - X[0]) + mu2 * (X[0] - 1) * (1 - SmoothedHeaviSide(X[0] - ShockSpeed(X[1]))) / (mu2 * X[1] + 1);
             //}
-
-            c.MeritFunctionType = MeritFunctionType.FullyL2Merit;
+            c.GetInitialValue = GetInitialValue.FromP0Timestepping;
+            c.MeritFunctionType = MeritFunctionType.L2Merit;
             c.DirichletBoundaryMap = x => ExactSolUnsmooth(x);
             c.ApplyReiInit = applyReInit;
             c.OptiLevelSetType = optiLevelSetType;

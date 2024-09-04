@@ -682,17 +682,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 
-                unsafe
-                {
-                    double[] sendBuf = new double[] { Integral };
-                    double[] rvcBuf = new double[1];
-
-                    fixed (double* pSend = sendBuf, pRcv = rvcBuf) {
-                        csMPI.Raw.Allreduce((IntPtr)pSend, (IntPtr)pRcv, 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
-                    }
-
-                    return rvcBuf[0];
-                }
+                return Integral.MPISum();
             }
 
         }

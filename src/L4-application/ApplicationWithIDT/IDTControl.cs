@@ -13,9 +13,14 @@ using System.Runtime.Serialization;
 
 
 namespace ApplicationWithIDT {
+    /// <summary>
+    /// Defines the base Control object class used in the ApplicationWithIDT solvers.
+    /// </summary>
     public class IDTControl : CompressibleControl {
 
-
+        /// <summary>
+        /// Creates Default IDTControl
+        /// </summary>
         public IDTControl() {
             InitialValueFunctionsPerSpecies = new Dictionary<string, Func<double[], double>>();
             InitialValueFunctionsPerSpecies.Add("L", x => 0);
@@ -30,14 +35,7 @@ namespace ApplicationWithIDT {
             this.SpeciesTable[0, 1] = "R";
             this.SpeciesTable[1, 0] = "A";
             this.SpeciesTable[1, 1] = "B";
-            //this.QueryHandler.AddQuery("Gamma
-            //this.QueryHandler.AddQuery("Gamma", delegate (IApplication<AppControl> app, double time) { return this.gamma; });
-            //this.QueryHandler.AddQuery("Alpha", delegate (IApplication<AppControl> app, double time) { return this.alpha; });
-            //this.QueryHandler.AddQuery("Mu", delegate (IApplication<AppControl> app, double time) { return this.mu; });
-            //this.QueryHandler.AddQuery("EnrichedResidualNorm", delegate (IApplication<AppControl> app, double time) { return this.obj_f; });
-            //this.QueryHandler.AddQuery("ResidualNorm", delegate (IApplication<AppControl> app, double time) { return this.res_l2; });
-            //this.QueryHandler.AddQuery("AlphaMin", delegate (IApplication<AppControl> app, double time) { return this.Control.Alpha_Min; });
-
+            base.NoOfMultigridLevels = 1;
         }
 
         //[ExclusiveLowerBound(0.0)]
@@ -205,7 +203,7 @@ namespace ApplicationWithIDT {
         public double reInit_c3 { get; set; } = 1e-2; // c_8 close to eq. (70) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
         public double Kappa { get; set; } = 0.5;
 
-        public double[] reInitTols { get; set; } = new double[] { -2e-1,-2e-1,0,0,0,0};
+        public double[] reInitTols { get; set; } = new double[] { -2e-1, -2e-1, -2e-1, -2e-1, -2e-1, 0 };
 
         /// <summary>
         /// Staggered solver
@@ -246,7 +244,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// Merit Function used in GLobalization algorithm
         /// </summary>
-        public MeritFunctionType MeritFunctionType { get; set; } = MeritFunctionType.FullyL2Merit;
+        public MeritFunctionType MeritFunctionType { get; set; } = MeritFunctionType.L1Merit;
         
 
         /// <summary>
@@ -307,6 +305,7 @@ namespace ApplicationWithIDT {
         FromDB_Partial_SeedInflowExactly,
         FromAVRun,
         FromP0Timestepping,
+        OneFullNewtonStep,
     }
     /// <summary>
     /// this enum controls the Globalization Strategy
@@ -318,7 +317,9 @@ namespace ApplicationWithIDT {
         ZickZackSearch
     }
 
-
+    /// <summary>
+    /// enum controling the termination strategy
+    /// </summary>
     public enum TerminationStrategy {
         Skyline =0,
         SkylineWithDifferntTermNs,
@@ -348,6 +349,8 @@ namespace ApplicationWithIDT {
     /// FromOldSimulation: LevelSet is loaded from DB from an old simulation
     /// FromParams: User specifies basis Functions in the ControlFile
     /// FromFunction: User specifies a Func<double[],double> object witch is projected onto an ONB
+    /// FromReconstructionFromPoints: Reconstructs the level set from a set of points specified in a txt file.
+    /// DirectyFromTimestep: Uses an old timestep of a XDG shock tracking simulation
     /// </summary>
     public enum GetLevelSet {
         FromReconstruction,
@@ -371,8 +374,8 @@ namespace ApplicationWithIDT {
     /// the enum controls the Merit Function the globalization uses
     /// </summary>
     public enum MeritFunctionType {
-        ExactMerit,
-        FullyL2Merit
+        L1Merit,
+        L2Merit
     }
     /// <summary>
     /// This enum controls where we get the grid from
@@ -390,12 +393,8 @@ namespace ApplicationWithIDT {
         Unsteady
     }
     /// <summary>
-    /// For the staggered solver, controls when the Basis degree is changed
+    /// Type of objective function/optimization problem chosen (f_err in f=f_err+f_phi)
     /// </summary>
-    //public enum StaggerdRunConfig {
-    //    ConstantTimesteps,
-    //    StagnatingLineSearch
-    //}
     public enum OptProblemType {
         FullEnRes,
         EnResOnlyCutCells,
@@ -403,7 +402,9 @@ namespace ApplicationWithIDT {
         RankineHugoniotFull,
         RankineHugoniotOnlyInterface
     }
-
+    /// <summary>
+    /// Variant of f_phi chosen (s.t. f=f_err+f_phi)
+    /// </summary>
     public enum FphiType {
         None,
         CurvatureAll,
@@ -411,7 +412,9 @@ namespace ApplicationWithIDT {
         PerssonSensorAll,
         PerssonSensorCut
     }
-
+    /// <summary>
+    /// Variant of reinitialization mode. The use can chose if the same tolerance is set for all p degrees or if a custom tolerance for each degree is specified.
+    /// </summary>
     public enum ReInitMode {
         OneTolForAllP,
         OneTolForEachP,

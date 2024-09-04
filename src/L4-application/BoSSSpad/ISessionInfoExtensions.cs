@@ -34,6 +34,7 @@ using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
 using BoSSS.Solution.Statistic;
 using BoSSS.Application.XdgPoisson3;
+using BoSSS.Solution;
 
 namespace BoSSS.Foundation.IO {
 
@@ -414,7 +415,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// An array of profiling trees, one for each MPI rank; the index into the returned array corresponds with <paramref name="Ranks"/>.
         /// </returns>
-        public static MethodCallRecord[] GetProfiling(this ISessionInfo session, params int[] Ranks) {
+        public static OnlineProfiling[] GetProfiling(this ISessionInfo session, params int[] Ranks) {
             // find
             string sessDir = DatabaseDriver.GetSessionDirectory(session);
             string[] TextFiles = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
@@ -444,13 +445,13 @@ namespace BoSSS.Foundation.IO {
 
             
             // load 
-            var R = new MethodCallRecord[Ranks.Max() + 1];
+            var R = new OnlineProfiling[Ranks.Max() + 1];
             for(int i = 0; i < Ranks.Length; i++) {
                 int rnk = Ranks[i];
 
                 var f = TextFilesSorted[i];
                 var JSON = File.ReadAllText(f);
-                var mcr = MethodCallRecord.Deserialize(JSON);
+                var mcr = OnlineProfiling.Deserialize(JSON);
 
                 if (R[rnk] != null)
                     throw new IOException("It seems profiling info was written more than once for MPI rank " + rnk + ".");
@@ -468,7 +469,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session"></param>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public static MethodCallRecord GetProfilingOfRank(this ISessionInfo session, int rank) {
+        public static OnlineProfiling GetProfilingOfRank(this ISessionInfo session, int rank) {
 
             // check if within bounds
             int MPISize = session.ComputeNodeNames.Count;
@@ -491,7 +492,7 @@ namespace BoSSS.Foundation.IO {
             // load 
             var f = pathf;
             var JSON = File.ReadAllText(f);
-            var mcr = MethodCallRecord.Deserialize(JSON);
+            var mcr = OnlineProfiling.Deserialize(JSON);
 
             return mcr;
         }
@@ -523,7 +524,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>
         public static void PrintTotalImbalance(this ISessionInfo SI, int printcnt = 0) {
-            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling());
+            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling().Select(p => p.RootCall).ToArray());
             PrintImbalance(dictImbalances, printcnt);
         }
 
@@ -538,7 +539,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>
         public static void PrintMPIImbalance(this ISessionInfo SI, int printcnt = 0) {
-            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling());
+            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling().Select(p => p.RootCall).ToArray());
             PrintImbalance(dictImbalances, printcnt);
         }
 
@@ -1860,18 +1861,18 @@ namespace BoSSS.Foundation.IO {
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
-            var mcr = sessions.Pick(idx).GetProfiling();
+            var profiling = sessions.Pick(idx).GetProfiling();
 
             // Find methods if none given
             if (methods == null) {
                 
-                var findMainMethod = mcr[0].FindChild(mainMethod);
+                var findMainMethod = profiling[0].RootCall.FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
                 
                 if (findMainMethod != null) {
                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 } else {
-                    mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                    mostExpensive = profiling[0].RootCall.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 }
 
                 methods = new string[maxNumberMethods];
@@ -1892,7 +1893,7 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberSessions; i++) {
 
                 // was missing
-                mcr = sessions.Pick(i).GetProfiling();
+                profiling = sessions.Pick(i).GetProfiling();
 
                 // Get number of processors and save for later
                 int fileCount = (from file in Directory.EnumerateFiles(@path + "\\sessions\\" + sessions.Pick(i).ID, "profiling_bin.*", SearchOption.AllDirectories)
@@ -1912,9 +1913,9 @@ namespace BoSSS.Foundation.IO {
                         double[] tempFractions = new double[numberMethods];
                         int occurence = methods.Take(k+1).Where(x => x.Equals(methods[k])).Count();
 
-                        value = mcr[j].FindChild(mainMethod);
+                        value = profiling[j].RootCall.FindChild(mainMethod);
                         if (value == null) {
-                            value = mcr[j];
+                            value = profiling[j].RootCall;
                         }
                         if (exclusive) {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;

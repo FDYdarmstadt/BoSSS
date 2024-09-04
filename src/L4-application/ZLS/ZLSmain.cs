@@ -15,6 +15,10 @@ namespace ZwoLevelSetSolver {
 
         static void Main(string[] args) {
             //BoSSS.Solution.Application.InitMPI();
+            //ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest(2);
+            //Assert.IsTrue(false, "remove me");
+
+            //BoSSS.Solution.Application.InitMPI();
             //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
             RunSolver(args);

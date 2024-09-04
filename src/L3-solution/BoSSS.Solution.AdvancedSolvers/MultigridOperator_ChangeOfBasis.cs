@@ -273,8 +273,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // compute preconditioner matrices
                 // ===============================
                 using (var bt = new BlockTrace("compute-pc", tr)) {
-                    Stopwatch stw_Data = new Stopwatch(); stw_Data.Reset();
-                    Stopwatch stw_Comp = new Stopwatch(); stw_Comp.Reset();
+                    //Stopwatch stw_Data = new Stopwatch(); stw_Data.Reset();
+                    //Stopwatch stw_Comp = new Stopwatch(); stw_Comp.Reset();
 
 
                     __LeftPreCond = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
@@ -309,6 +309,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //if (this.Mapping.GetLength(jCell) == 0)
                             //    // void cell
                             //    continue;
+                            
 
                             for (int i = 0; i < LL; i++) { // for each configuration item...
                                 var conf = m_Config[i];
@@ -341,10 +342,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // extract blocks from operator and mass matrix
                                 // --------------------------------------------
 
-                                stw_Data.Start();
+                                //stw_Data.Start();
                                 ExtractBlock(_i0s, _Lns, true, MassMatrix, ref tmp.MassBlock[i]);
                                 ExtractBlock(_i0s, _Lns, true, OpMatrix, ref tmp.OperatorBlock[i]);
-                                stw_Data.Stop();
+                                //stw_Data.Stop();
                                 double MassBlkNrm = tmp.MassBlock[i].InfNorm();
                                 double OperatorBlkNrm = tmp.OperatorBlock[i].InfNorm();
                                 int NN = tmp.MassBlock[i].NoOfRows;
@@ -396,7 +397,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     // ---------------
 
 
-                                    stw_Comp.Start();
+                                    //stw_Comp.Start();
                                     int Rank;
                                     tmp.PCleftBlock[i].Clear();
                                     tmp.PCrightBlock[i].Clear();
@@ -408,11 +409,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     } else {
                                         Debug.Assert(idr == null);
                                     }
-                                    stw_Comp.Stop();
+                                    //stw_Comp.Stop();
 
                                     // write block back
                                     // ----------------
-                                    stw_Data.Start();
+                                    //stw_Data.Start();
                                     ExtractBlock(_i0s, _Lns, false, LeftPreCond, ref tmp.PCleftBlock[i]);
                                     ExtractBlock(_i0s, _Lns, false, RightPreCond, ref tmp.PCrightBlock[i]);
 
@@ -441,7 +442,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                     ExtractBlock(_i0s, _Lns, false, LeftPreCondInv, ref tmp.PCleftBlock_inv[i]);
 
-                                    stw_Data.Stop();
+                                    //stw_Data.Stop();
                                 }
                             }
                             return tmp;
@@ -451,8 +452,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     IndefRows.Sort();
 
-                    bt.LogDummyblock(stw_Data.Elapsed.Ticks, "Change_of_Basis_data_copy");
-                    bt.LogDummyblock(stw_Comp.Elapsed.Ticks, "Change_of_Basis_compute");
+                    //bt.LogDummyblock(stw_Data.Elapsed.Ticks, "Change_of_Basis_data_copy");
+                    //bt.LogDummyblock(stw_Comp.Elapsed.Ticks, "Change_of_Basis_compute");
                 }
 
 
@@ -1061,13 +1062,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray In_MassMatrixBlock, MultidimensionalArray In_OperatorMatrixBlock, 
             MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC,
             MultidimensionalArray work ) {
-
+            double tol = 1.0e-32;
             var SymmPart = work;
             In_OperatorMatrixBlock.TransposeTo(SymmPart);
             SymmPart.Acc(1.0, In_OperatorMatrixBlock);
             SymmPart.Scale(0.5);
 
-            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false); //check the zero entries on Mass Matrix
+            int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, tol, false); //check the zero entries on Mass Matrix
 
             int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
             int[] _IndefRows = ZerosEntries;
@@ -1088,7 +1089,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC); //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC);
 
                 var dummyOUT_rightPC = OUT_rightPC.CloneAs(); //we need to clone to assign MatrixStructure (alternatively one can modify the MultidimensinaolArray.Create method)
-                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, dummyOUT_rightPC, 1.0e-12, true);
+                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, dummyOUT_rightPC, tol, true);
 
                 if (!ZerosEntries2.SetEquals(ZerosEntries)) {
 
