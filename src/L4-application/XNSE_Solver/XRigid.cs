@@ -171,12 +171,31 @@ namespace BoSSS.Application.XNSE_Solver {
         public void SetExactSolutionForSteadyRotatingSphere() {
             m_ctrl.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             m_ctrl.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            if (m_RotationAxis != "z")
+                throw new NotImplementedException("Exact solution is provided only for rotations around z axis");
 
-            m_ctrl.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => -m_angleVelocity * m_partRadius * m_partRadius * X[1] / (X[0] * X[0] + X[1] * X[1]), (X, t) => m_angleVelocity * m_partRadius * m_partRadius * X[0] / (X[0] * X[0] + X[1] * X[1]) });
-            m_ctrl.ExactSolutionPressure.Add("A", new Func<double[], double, double> ( (X, t) => 0 ));
+            if (m_SpaceDim == 2) { 
+                m_ctrl.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { 
+                    (X, t) => -m_angleVelocity * m_partRadius * m_partRadius * X[1] / (X[0] * X[0] + X[1] * X[1]), 
+                    (X, t) => m_angleVelocity * m_partRadius * m_partRadius * X[0] / (X[0] * X[0] + X[1] * X[1]) 
+                });
+                m_ctrl.ExactSolutionPressure.Add("A", new Func<double[], double, double> ( (X, t) => 0 ));
 
-            m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0 });
-            m_ctrl.ExactSolutionPressure.Add("C", new Func<double[], double, double>((X, t) => 0));
+                m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0 });
+                m_ctrl.ExactSolutionPressure.Add("C", new Func<double[], double, double>((X, t) => 0));
+            } else if (m_SpaceDim == 3) {
+                m_ctrl.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] {                  
+                    (X, t) => -m_angleVelocity * m_partRadius * m_partRadius * m_partRadius * X[1] / Math.Pow((X[0] * X[0] + X[1] * X[1] + X[2] * X[2]), 1.5),
+                    (X, t) => m_angleVelocity * m_partRadius * m_partRadius * m_partRadius * X[0] / Math.Pow((X[0] * X[0] + X[1] * X[1] + X[2] * X[2]), 1.5),
+                    (X, t) => 0
+                });
+                m_ctrl.ExactSolutionPressure.Add("A", new Func<double[], double, double>((X, t) => 0));
+
+                m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0 });
+                m_ctrl.ExactSolutionPressure.Add("C", new Func<double[], double, double>((X, t) => 0));
+            } else {
+                throw new NotImplementedException();
+            }
         }
 
         private void DefineSphere() {
