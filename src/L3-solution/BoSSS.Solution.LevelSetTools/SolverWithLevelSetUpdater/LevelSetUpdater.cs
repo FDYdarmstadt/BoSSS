@@ -8,6 +8,8 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Utils;
+using MPI.Wrappers;
+using NUnit.Framework.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -351,7 +353,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ).Execute();
                 testTracker.Dispose();
 
-                if(result > 0)
+                result = result.MPISum();
+                if (result > 0)
                     Console.WriteLine("Interface not closed: result = {0}", result);
 
                 return result == 0.0;

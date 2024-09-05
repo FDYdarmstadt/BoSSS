@@ -1414,7 +1414,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { }; // only parameter dependent, not present in jacobian
+            return new IEquationComponent[] { this }; 
         }
     }
 
