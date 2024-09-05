@@ -1903,7 +1903,7 @@ namespace BoSSS.Foundation.XDG {
                                             } else if (v > 0) {
                                                 PosEdge = true;
                                             }
-
+                                            // [Toprak] why v*v not only v?
                                             quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
 
                                             nodeIndex++;
