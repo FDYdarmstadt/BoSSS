@@ -1,5 +1,6 @@
 ﻿﻿
 using BoSSS.Foundation;
+using BoSSS.Foundation.Caching;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
@@ -330,19 +331,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     SurfaceElement_BoundaryEdge.Compile(LsTrk.GridDat, order),
                     delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
-                        // inner quadrature node
-                        NodeSet Enode_l = QR.Nodes;
-                        int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
-                        NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
-                        NodeSet Vnode_g = Vnode_l.CloneAs();
-                        int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
-                        LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
-                        //if (D == 2)
-                        //    Console.WriteLine("inner quadrature node: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
-                        //else
-                        //    Console.WriteLine("inner quadrature node: ({0},{1},{2})", Vnode_g[0, 0], Vnode_g[0, 1], Vnode_g[0, 2]);
-
-                        EvalResult.SetAll(1.0);
+                        for (int i = 0; i < length; i++) {
+                            EdgeInfo edgInfo = LsTrk.GridDat.Edges.Info[i0 + i];
+                            double edgSign = 1.0;
+                            if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
+                                double[] edgNormal = LsTrk.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
+                                edgSign = edgNormal.Sum();
+                            }
+                            for (int qn = 0; qn < QR.NoOfNodes; qn++) {
+                                EvalResult[i, qn, 0] = 1.0 * edgSign;
+                            }
+                        }
+                        //EvalResult.SetAll(1.0);
 
                     },
                     delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
