@@ -21,8 +21,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     abstract public class ParameterizedLevelSet : LevelSet {
         
 
-        public ParameterizedLevelSet( Basis b, string id) : base(b, id) {
-           
+        public ParameterizedLevelSet(Basis b, string id) : base(b, id) {
         }
 
         protected abstract void ImplicitFromCurve(MultidimensionalArray X, MultidimensionalArray phi);
@@ -32,6 +31,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         abstract public double[] Parameters { get; set; }
+
 
 
         abstract public MyRealF_Base GetIntegrandForMinimi(CellQuadratureScheme _levSetQuadScheme, int _quadOrder);
@@ -51,6 +51,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.xSemiAxis = control.xSemiAxis;
             this.ySemiAxis = control.ySemiAxis;
             this.yCenter = control.yCenter;
+
         }
 
         public override double[] Parameters {
@@ -70,6 +71,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return new MyRealF_Ellipse(_levSetQuadScheme, this.GridDat, _quadOrder);
         }
 
+        
         protected override void ImplicitFromCurve(MultidimensionalArray X, MultidimensionalArray phi) {
             int NoOfNodes = X.GetLength(0);
             for (int i = 0; i < NoOfNodes; i++) {
@@ -78,7 +80,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 phi[i] = y - yCenter + Math.Sqrt(ySemiAxis.Pow2() * (1 - x.Pow2() / xSemiAxis.Pow2()));
             }
         }
-
+        
         
     }
 
