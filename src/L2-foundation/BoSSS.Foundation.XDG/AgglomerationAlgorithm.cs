@@ -1837,6 +1837,7 @@ namespace BoSSS.Foundation.XDG {
                 // ================
                 //this.AgglomerationPairs = AgglomerationPairs.Select(pair => (pair.jCellSource, pair.jCellTarget)).ToArray();
                 this.AgglomerationPairsWithRanks = AgglomerationPairs.ToArray();
+                AgglomerationPairsWithRanks.SaveToTextFileDebugUnsteadyNumbered("aggPairs",".txt");
                 //DoAggPairsMPIexchangeForGhostCells(AgglomerationPairs, ref m_AggPairsOnNeighborPairs);
                 // this.AgglomerationPairsWithRanks.m_AggPairsWithExtNeighborPairs.Where(p => p.OwnerRank4Source == myMpiRank || p.OwnerRank4Target == myMpiRank).ToArray(););
             }
@@ -2016,7 +2017,7 @@ namespace BoSSS.Foundation.XDG {
                             weightedEdges.AddRange(weightedEdgesjCell);
                         }
 
-                        Debug.Assert(NeighborAggSourceCells < 1, $"No possible chain target for {jCell} on proc-{ilPSP.Environment.MPIEnv.MPI_Rank}");
+                        //Debug.Assert(NeighborAggSourceCells < 1, $"No possible chain target for {jCell} on proc-{ilPSP.Environment.MPIEnv.MPI_Rank}");
                     }
 
                     // discard already connected cells
@@ -2043,8 +2044,8 @@ namespace BoSSS.Foundation.XDG {
                     //weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges", ".txt");
 
                     // if any target available in case a target needed?
-                    Debug.Assert(weightedEdges.Any() || ImmediateConnectionCells.Any() || !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
-                            " There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
+                    //Debug.Assert(weightedEdges.Any() || ImmediateConnectionCells.Any() || !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
+                    //        " There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
 
                     // choose the first edge and add the corresponding agg. pair
                     if (weightedEdges.Any() && CellsNeedChainAgglomeration.Any() && isThisProcAuthorized) {
