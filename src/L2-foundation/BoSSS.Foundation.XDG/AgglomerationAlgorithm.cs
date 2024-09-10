@@ -2379,8 +2379,7 @@ namespace BoSSS.Foundation.XDG {
 
                 }
 
-            } else
-            {
+            } else {
                 // create only local groups
                 while (possibleGroupTargets.Count > 0)
                 { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
@@ -2430,7 +2429,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
             }
-            AgglomerationPairs = AgglomerationPairs.Where(p => p.jCellSource != p.jCellTarget).ToList(); //remove self mapped elements due to the agglomeration groups
+            AgglomerationPairs.RemoveAll(p => p.jCellSource == p.jCellTarget);   //remove self mapped elements due to the agglomeration groups
         }
 
         /// <summary>
