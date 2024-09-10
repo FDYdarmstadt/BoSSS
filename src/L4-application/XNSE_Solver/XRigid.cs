@@ -191,7 +191,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 });
                 m_ctrl.ExactSolutionPressure.Add("A", new Func<double[], double, double>((X, t) => 0));
 
-                m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0 });
+                m_ctrl.ExactSolutionVelocity.Add("C", new Func<double[], double, double>[] { (X, t) => 0, (X, t) => 0, (X, t) => 0 });
                 m_ctrl.ExactSolutionPressure.Add("C", new Func<double[], double, double>((X, t) => 0));
             } else {
                 throw new NotImplementedException();
