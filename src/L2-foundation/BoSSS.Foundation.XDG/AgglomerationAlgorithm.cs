@@ -1816,7 +1816,6 @@ namespace BoSSS.Foundation.XDG {
                 // ================
                 //this.AgglomerationPairs = AgglomerationPairs.Select(pair => (pair.jCellSource, pair.jCellTarget)).ToArray();
                 this.AgglomerationPairsWithRanks = AgglomerationPairs.ToArray();
-                AgglomerationPairsWithRanks.SaveToTextFileDebugUnsteadyNumbered("aggPairs",".txt");
                 //DoAggPairsMPIexchangeForGhostCells(AgglomerationPairs, ref m_AggPairsOnNeighborPairs);
                 // this.AgglomerationPairsWithRanks.m_AggPairsWithExtNeighborPairs.Where(p => p.OwnerRank4Source == myMpiRank || p.OwnerRank4Target == myMpiRank).ToArray(););
             }
@@ -1867,7 +1866,7 @@ namespace BoSSS.Foundation.XDG {
 
                 List<(double SpeciesFrac, double Dist, int AggLevel, int jCell, int jCellNeigh, int targetCell, int targetRank)> weightedEdges = new List<(double, double, int, int, int, int, int)>();
                 List<int> ImmediateConnectionCells = new List<int>(CellsNeedChainAgglomeration.Count);
-                bool isThisProcAuthorized = true;
+                //bool isThisProcAuthorized = true;
 
                 // Any cell to be agglomerated in a chain on the local proc (a parallel variation of Kruskal's algorithm for Minimum Spanning Forest adapted to our context
                 if (CellsNeedChainAgglomeration.Count > 0) {
@@ -1915,9 +1914,6 @@ namespace BoSSS.Foundation.XDG {
                                 int TargetCellOfTargetPair = TargetPair.jCellTarget; //looking for the final target
                                 int possibleTarget; // due to the mpi boundaries we may select the neighbor as target instead of the final target
                                 int targetRank = -1; //by default assigned an invalid value to ensure code works
-
-                                // To turn off the direct agg to the final target, assign the below to -1
-                                // TargetCellOfTargetPair = -1; // normally the code is able to choose a target that forms higher level agg. chains. However, it is decided to be handled in CellAgglomerator.cs
 
                                 // if TargetCellOfTargetPair is one of ext/ghost cells or already on local proc
                                 bool IsTargetCellKnown = TargetCellOfTargetPair >= 0 && TargetPair.OwnerRank4Target >= 0;
@@ -1996,58 +1992,58 @@ namespace BoSSS.Foundation.XDG {
                     // sort remaining edges
                     weightedEdges = weightedEdges.OrderBy(p => p.Dist).ThenByDescending(p => p.SpeciesFrac).ToList(); // (ascending, descending)
 
-                }
+                    //// check if this proc has the globally best edge (only if required)
+                    //if (m_globalAgglomerationMapping && InterProcessChainAgglomeration > 0)
+                    //{
+                    //    var bestEdge = weightedEdges.FirstOrDefault();
 
-                // check if this proc has the globally best edge (only if required)
-                if (m_globalAgglomerationMapping && InterProcessChainAgglomeration > 0)
-                {
-                    var bestEdge = weightedEdges.FirstOrDefault();
+                    //    //convert the local number to the global and then create a new tuple with it
+                    //    var globalCellNumberForBestEdge = grdDat.CellPartitioning.i0 + (long)bestEdge.jCell;
+                    //    var bestEdgeWithGlobalIndex = new { Dist = bestEdge.Dist, SpeciesFrac = bestEdge.SpeciesFrac, GlobalCellNumber = globalCellNumberForBestEdge };
+                    //    var allBestEdges = bestEdgeWithGlobalIndex.MPIAllGatherO();
+                    //    var bestGlobalEdge = allBestEdges.OrderBy(p => p.Dist).ThenByDescending(p => p.SpeciesFrac).ThenBy(p => p.GlobalCellNumber).First();
+                    //    //isThisProcAuthorized = bestGlobalEdge.GlobalCellNumber == globalCellNumberForBestEdge ? true : false;
+                    //}
+                    //weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges", ".txt");
 
-                    //convert the local number to the global and then create a new tuple with it
-                    var globalCellNumberForBestEdge = grdDat.CellPartitioning.i0 + (long)bestEdge.jCell;
-                    var bestEdgeWithGlobalIndex = new { Dist = bestEdge.Dist, SpeciesFrac = bestEdge.SpeciesFrac, GlobalCellNumber = globalCellNumberForBestEdge };
-                    var allBestEdges = bestEdgeWithGlobalIndex.MPIAllGatherO();
-                    var bestGlobalEdge = allBestEdges.OrderBy(p => p.Dist).ThenByDescending(p => p.SpeciesFrac).ThenBy(p => p.GlobalCellNumber).First();
-                    //isThisProcAuthorized = bestGlobalEdge.GlobalCellNumber == globalCellNumberForBestEdge ? true : false;
-                }
-                //weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges", ".txt");
+                    // if any target available in case a target needed?
+                    Debug.Assert((weightedEdges.Any() || ImmediateConnectionCells.Any()) && !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
+                            " There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
 
-                // if any target available in case a target needed?
-                Debug.Assert((weightedEdges.Any() || ImmediateConnectionCells.Any()) && !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
-                        " There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
-
-                // choose the first edge and add the corresponding agg. pair
-                if (weightedEdges.Any() && CellsNeedChainAgglomeration.Any() && isThisProcAuthorized)
-                {
-                    var aggConnectionEdge = weightedEdges.First();
-
-
-                    // AddToList
-                    if (aggConnectionEdge.targetRank > -1)
+                    // choose the first edge and add the corresponding agg. pair
+                    if (weightedEdges.Any() && CellsNeedChainAgglomeration.Any())
                     {
-                        //Get the target info from the target pair
-                        var TargetPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellSource == aggConnectionEdge.jCellNeigh).First();
-                        double SpeciesFrac = TargetPair.fracTarget;
-                        Vector posTarget = TargetPair.posTarget;
+                        var aggConnectionEdge = weightedEdges.First();
 
-                        //Add new pair
-                        //var SourceCell2Edge_jCell = Cell2Edge[aggConnectionEdge.jCell];
-                        var newPair = new CellAgglomerator.AgglomerationPair()
+
+                        // AddToList
+                        if (aggConnectionEdge.targetRank > -1)
                         {
-                            jCellTarget = aggConnectionEdge.targetCell,
-                            posTarget = posTarget,
-                            fracTarget = SpeciesFrac,
-                            jCellSource = aggConnectionEdge.jCell,
-                            OwnerRank4Target = aggConnectionEdge.targetRank,
-                            OwnerRank4Source = myMpiRank,
-                            AgglomerationLevel = aggConnectionEdge.AggLevel
+                            //Get the target info from the target pair
+                            var TargetPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellSource == aggConnectionEdge.jCellNeigh).First();
+                            double SpeciesFrac = TargetPair.fracTarget;
+                            Vector posTarget = TargetPair.posTarget;
 
-                        };
+                            //Add new pair
+                            //var SourceCell2Edge_jCell = Cell2Edge[aggConnectionEdge.jCell];
+                            var newPair = new CellAgglomerator.AgglomerationPair()
+                            {
+                                jCellTarget = aggConnectionEdge.targetCell,
+                                posTarget = posTarget,
+                                fracTarget = SpeciesFrac,
+                                jCellSource = aggConnectionEdge.jCell,
+                                OwnerRank4Target = aggConnectionEdge.targetRank,
+                                OwnerRank4Source = myMpiRank,
+                                AgglomerationLevel = aggConnectionEdge.AggLevel
 
-                        LoopChainAgglomerationPairs.Add(newPair);
-                        CellsNeedChainAgglomeration.Remove(aggConnectionEdge.jCell);
-                        anyUpdate = true;
+                            };
+
+                            LoopChainAgglomerationPairs.Add(newPair);
+                            CellsNeedChainAgglomeration.Remove(aggConnectionEdge.jCell);
+                            anyUpdate = true;
+                        }
                     }
+
                 }
 
                 #region update lists and variables for the while loop
@@ -2175,10 +2171,14 @@ namespace BoSSS.Foundation.XDG {
                         double frac_neigh = spcVol_neigh / totVol_neigh;
 
                         // max?
-                        if (frac_neigh > frac_neigh_max) {
+                        if (frac_neigh > frac_neigh_max)
+                        {
                             frac_neigh_max = frac_neigh;
                             jCellNeigh_max = jCellNeigh;
-                        }
+                        } //should iterate in ascending order anyway
+                        //else if (frac_neigh == frac_neigh_max) {
+                        //    jCellNeigh_max = Math.Min(jCellNeigh_max, jCellNeigh);
+                        //}
                     }
 
 
@@ -2259,6 +2259,7 @@ namespace BoSSS.Foundation.XDG {
                     var cellWithMaxVolume = possibleGroupTargets
                             .Select(p => (CellNumber: p, CellVolume: CellVolumes[p]))
                             .OrderByDescending(p => p.CellVolume)
+                            .ThenBy(p => p.CellNumber)
                             .FirstOrDefault(); //due to MPIAllGatherO trivial or non-trivial every processor needs to send data
 
                     int localCellNumberWithMaxVolume = cellWithMaxVolume.CellNumber;
@@ -2313,6 +2314,7 @@ namespace BoSSS.Foundation.XDG {
                     int cellNumberWithMaxVolume = possibleGroupTargets
                             .Select(p => new { CellNumber = p, CellVolume = CellVolumes[p] })
                             .OrderByDescending(p => p.CellVolume)
+                            .ThenBy(p => p.CellNumber)
                             .First()
                             .CellNumber;
 
@@ -2386,149 +2388,150 @@ namespace BoSSS.Foundation.XDG {
 
             int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
 
-            Basis b = new Basis(grdDat, 0);
-            DGField[] CellVolumesViz = new DGField[1 + (oldCellVolumes != null ? oldCellVolumes.Length : 0)];
-            for (int n = -1; n < CellVolumesViz.Length - 1; n++) {
-                MultidimensionalArray vol = n < 0 ? CellVolumes : oldCellVolumes[n];
-                CellVolumesViz[n + 1] = new SinglePhaseField(b, "VolumeAtTime" + (-n));
-                for (int j = 0; j < Jup; j++) {
-                    CellVolumesViz[n + 1].SetMeanValue(j, vol[j]);
-                }
-            }
+            if (Katastrophenplot != null) { 
 
-            DGField AgglomCellsViz = new SinglePhaseField(b, "Cells2Agglom");
-            foreach (int j in AgglomCellsList) {
-                AgglomCellsViz.SetMeanValue(j, 1);
-            }
-
-            DGField FailedViz = new SinglePhaseField(b, "FailedCells");
-            BitArray FailCellsMarker = new BitArray(Jup);
-            foreach (int j in failCells) {
-                FailedViz.SetMeanValue(j, 1);
-                FailCellsMarker.Set(j, true);
-            }
-
-            if (failCells.Count > 0) {
-                CellMask FailCells = new CellMask(grdDat, FailCellsMarker);
-                FailCells.SaveToTextFile($"aggFailCells{grdDat.MpiRank}.csv");
-            }
-
-
-            DGField CellNumbers = new SinglePhaseField(b, "CellNumbers");
-            CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = j0 + j;
+                Basis b = new Basis(grdDat, 0);
+                DGField[] CellVolumesViz = new DGField[1 + (oldCellVolumes != null ? oldCellVolumes.Length : 0)];
+                for (int n = -1; n < CellVolumesViz.Length - 1; n++) {
+                    MultidimensionalArray vol = n < 0 ? CellVolumes : oldCellVolumes[n];
+                    CellVolumesViz[n + 1] = new SinglePhaseField(b, "VolumeAtTime" + (-n));
+                    for (int j = 0; j < Jup; j++) {
+                        CellVolumesViz[n + 1].SetMeanValue(j, vol[j]);
                     }
                 }
-            }, new CellQuadratureScheme());
 
-
-            DGField CellNumbersGlob = new SinglePhaseField(b, "CellNumbersGlob");
-            CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    long gidx = grdDat.CellPartitioning.i0 + j0 + j;
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = gidx;
-                    }
+                DGField AgglomCellsViz = new SinglePhaseField(b, "Cells2Agglom");
+                foreach (int j in AgglomCellsList) {
+                    AgglomCellsViz.SetMeanValue(j, 1);
                 }
-            }, new CellQuadratureScheme());
 
-
-            DGField GlobalID = new SinglePhaseField(b, "GlobalID");
-            GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    long gid = this.grdDat.iLogicalCells.GetGlobalID(j + j0); ;
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = gid;
-                    }
+                DGField FailedViz = new SinglePhaseField(b, "FailedCells");
+                BitArray FailCellsMarker = new BitArray(Jup);
+                foreach (int j in failCells) {
+                    FailedViz.SetMeanValue(j, 1);
+                    FailCellsMarker.Set(j, true);
                 }
-            }, new CellQuadratureScheme());
-            int my_rank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
-            DGField MPIRank = new SinglePhaseField(b, "MPIRank");
-            MPIRank.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = my_rank;
-                    }
+                if (failCells.Count > 0) {
+                    CellMask FailCells = new CellMask(grdDat, FailCellsMarker);
+                    FailCells.SaveToTextFile($"aggFailCells{grdDat.MpiRank}.csv");
                 }
-            }, new CellQuadratureScheme());
 
-            DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
 
-            DGField LvSetDist = new SinglePhaseField(b, "LvSetDist");
-            LvSetDist.AccLevelSetDist(1, Tracker, 1);
+                DGField CellNumbers = new SinglePhaseField(b, "CellNumbers");
+                CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = j0 + j;
+                        }
+                    }
+                }, new CellQuadratureScheme());
 
-            DGField Identity = new SinglePhaseField(b, "Identity");
-            Identity.Clear();
-            Identity.AccConstant(1);
 
-            DGField AggCandidates = new SinglePhaseField(b, "aggCandidate");
-            AggCandidates.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                if (aggCandidates[j]) AggCandidates.SetMeanValue(j, 1);
-            }
+                DGField CellNumbersGlob = new SinglePhaseField(b, "CellNumbersGlob");
+                CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        long gidx = grdDat.CellPartitioning.i0 + j0 + j;
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = gidx;
+                        }
+                    }
+                }, new CellQuadratureScheme());
 
-            DGField AggTargets = new SinglePhaseField(b, "aggTarget");
-            AggTargets.Clear();
-            foreach (int jCell in aggTargets) {
-                if(jCell < grdDat.Cells.NoOfLocalUpdatedCells) AggTargets.SetMeanValue(jCell, 1);
-            }
 
-            DGField PairIdentification = new SinglePhaseField(b, "pairTargetNo");
-            PairIdentification.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                PairIdentification.SetMeanValue(j, pairIdentification[j]);
-            }
+                DGField GlobalID = new SinglePhaseField(b, "GlobalID");
+                GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        long gid = this.grdDat.iLogicalCells.GetGlobalID(j + j0); ;
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = gid;
+                        }
+                    }
+                }, new CellQuadratureScheme());
+                int my_rank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
-            DGField PairColor = new SinglePhaseField(b, "pairColor");
-            PairColor.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                PairColor.SetMeanValue(j, pairColor[j]);
-            }
+                DGField MPIRank = new SinglePhaseField(b, "MPIRank");
+                MPIRank.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = my_rank;
+                        }
+                    }
+                }, new CellQuadratureScheme());
 
-            if (aggDirection[0].Dim > 0) {
-                DGField AggDirX = new SinglePhaseField(b, "aggDirX");
-                AggDirX.Clear();
+                DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
+
+                DGField LvSetDist = new SinglePhaseField(b, "LvSetDist");
+                LvSetDist.AccLevelSetDist(1, Tracker, 1);
+
+                DGField Identity = new SinglePhaseField(b, "Identity");
+                Identity.Clear();
+                Identity.AccConstant(1);
+
+                DGField AggCandidates = new SinglePhaseField(b, "aggCandidate");
+                AggCandidates.Clear();
                 for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                    AggDirX.SetMeanValue(j, aggDirection[j][0]);
+                    if (aggCandidates[j]) AggCandidates.SetMeanValue(j, 1);
                 }
-                CellVolumesViz = CellVolumesViz.Cat(AggDirX);
-            } 
-            if (aggDirection[0].Dim > 1) {
-                DGField AggDirY = new SinglePhaseField(b, "aggDirY");
-                AggDirY.Clear();
+
+                DGField AggTargets = new SinglePhaseField(b, "aggTarget");
+                AggTargets.Clear();
+                foreach (int jCell in aggTargets) {
+                    if(jCell < grdDat.Cells.NoOfLocalUpdatedCells) AggTargets.SetMeanValue(jCell, 1);
+                }
+
+                DGField PairIdentification = new SinglePhaseField(b, "pairTargetNo");
+                PairIdentification.Clear();
                 for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                    AggDirY.SetMeanValue(j, aggDirection[j][1]);
+                    PairIdentification.SetMeanValue(j, pairIdentification[j]);
                 }
-                CellVolumesViz = CellVolumesViz.Cat(AggDirY);
-            } 
-            if (aggDirection[0].Dim > 2) {
-                DGField AggDirZ = new SinglePhaseField(b, "aggDirZ");
-                AggDirZ.Clear();
+
+                DGField PairColor = new SinglePhaseField(b, "pairColor");
+                PairColor.Clear();
                 for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                    AggDirZ.SetMeanValue(j, aggDirection[j][2]);
+                    PairColor.SetMeanValue(j, pairColor[j]);
                 }
-                CellVolumesViz = CellVolumesViz.Cat(AggDirZ);
-            }
-            if (aggDirection[0].Dim > 3 || aggDirection[0].Dim < 1) {
-                    throw new ArgumentOutOfRangeException("Agglomeration fail plot can only support 1D,2D and 3D geometries");
-            }
+
+                if (aggDirection[0].Dim > 0) {
+                    DGField AggDirX = new SinglePhaseField(b, "aggDirX");
+                    AggDirX.Clear();
+                    for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                        AggDirX.SetMeanValue(j, aggDirection[j][0]);
+                    }
+                    CellVolumesViz = CellVolumesViz.Cat(AggDirX);
+                } 
+                if (aggDirection[0].Dim > 1) {
+                    DGField AggDirY = new SinglePhaseField(b, "aggDirY");
+                    AggDirY.Clear();
+                    for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                        AggDirY.SetMeanValue(j, aggDirection[j][1]);
+                    }
+                    CellVolumesViz = CellVolumesViz.Cat(AggDirY);
+                } 
+                if (aggDirection[0].Dim > 2) {
+                    DGField AggDirZ = new SinglePhaseField(b, "aggDirZ");
+                    AggDirZ.Clear();
+                    for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                        AggDirZ.SetMeanValue(j, aggDirection[j][2]);
+                    }
+                    CellVolumesViz = CellVolumesViz.Cat(AggDirZ);
+                }
+                if (aggDirection[0].Dim > 3 || aggDirection[0].Dim < 1) {
+                        throw new ArgumentOutOfRangeException("Agglomeration fail plot can only support 1D,2D and 3D geometries");
+                }
           
-            DGField VolFrac = new SinglePhaseField(b, "volFrac");
-            VolFrac.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                VolFrac.SetMeanValue(j, volFrac[j]);
-            }
+                DGField VolFrac = new SinglePhaseField(b, "volFrac");
+                VolFrac.Clear();
+                for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                    VolFrac.SetMeanValue(j, volFrac[j]);
+                }
 
-            if (Katastrophenplot != null)
                 Katastrophenplot(CellVolumesViz.Cat(MPIRank,AgglomCellsViz, AggCandidates, AggTargets, FailedViz, LevelSets, LvSetDist, CellNumbers, CellNumbersGlob, GlobalID, PairIdentification, PairColor, VolFrac),Tag);
-
+            }
 
             if (failCells.Count.MPISum() > 0) { 
                string message = ($"!!! Warning: Agglomeration failed - no candidate for agglomeration found for {failCells.Count.MPISum()} cells. ");
@@ -2561,7 +2564,6 @@ namespace BoSSS.Foundation.XDG {
             iEdge--;  // Adjust edge index for 0-based indexing
             return (iEdge, ThisCell, OtherCell);
         }
-
 
         /// <summary>
         /// Result of the algorithm
