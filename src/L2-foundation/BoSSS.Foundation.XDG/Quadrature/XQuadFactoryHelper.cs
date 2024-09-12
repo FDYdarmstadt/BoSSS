@@ -246,7 +246,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Quadrature rule on cell boundaries
         /// </summary>
-        IQuadRuleFactory<CellBoundaryQuadRule> GetCellFaceFactory(int levSetIndex, RefElement Kref, JumpTypes jumpType) {
+        public IQuadRuleFactory<CellBoundaryQuadRule> GetCellFaceFactory(int levSetIndex, RefElement Kref, JumpTypes jumpType) {
             int D = this.m_LevelSetDatas[0].GridDat.SpatialDimension;
 
             if (D == 2) {

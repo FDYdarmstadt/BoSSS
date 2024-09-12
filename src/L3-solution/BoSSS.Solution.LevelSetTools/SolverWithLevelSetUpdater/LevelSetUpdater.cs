@@ -9,6 +9,7 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Utils;
+using MathNet.Numerics.LinearAlgebra.Factorization;
 using MPI.Wrappers;
 using NUnit.Framework.Interfaces;
 using System;
@@ -325,6 +326,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 EdgeMask CutCellInnerBoundaryEdgeMask = LsTrk.Regions.GetCutCellMask().AllEdges().Except(LsTrk.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(LsTrk.GridDat.BoundaryEdges);
                 EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, CutCellInnerBoundaryEdgeMask);
 
+                //ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                //int rank = LsTrk.GridDat.MpiRank;
+
+                //var cellPart = LsTrk.GridDat.CellPartitioning;
+                //Console.WriteLine($"proc {rank}: no of local cells {LsTrk.GridDat.Cells.NoOfLocalUpdatedCells} - ({cellPart.i0}, {cellPart.iE-1})");
+
                 double result = 0.0;
                 int D = LsTrk.GridDat.SpatialDimension;
                 EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
@@ -347,17 +354,29 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     },
                     delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
                         for (int i = 0; i < length; i++) {
+                            //if (resOfIntg != 0) {
+                            //    int[,] cellIdx = LsTrk.GridDat.Edges.CellIndices;
+                            //    long jIn = (rank == 0) ? cellIdx[i0 + i, 0] : cellIdx[i0 + i, 0] + cellPart.i0;
+                            //    long jOut = (rank == 0) ? cellIdx[i0 + i, 1] : cellIdx[i0 + i, 1] - LsTrk.GridDat.Cells.NoOfExternalCells;
+                            //    Console.WriteLine($"proc {rank} - edge {i0 + i} ({jIn}, {jOut}): integration result = {ResultsOfIntegration[i, 0]}");
+                            //}
                             result += ResultsOfIntegration[i, 0];
                         }
                     }
                 ).Execute();
                 testTracker.Dispose();
 
+                //Console.WriteLine($"proc {LsTrk.GridDat.MpiRank}: result = {result}");
+                //ilPSP.Environment.StdoutOnlyOnRank0 = true;
+
                 result = result.MPISum();
-                if (result > 0)
+                bool isClosed = Math.Abs(result) < 1e-10;
+
+                if (!isClosed)
                     Console.WriteLine("Interface not closed: result = {0}", result);
 
-                return result == 0.0;
+
+                return isClosed;
             }
 
 

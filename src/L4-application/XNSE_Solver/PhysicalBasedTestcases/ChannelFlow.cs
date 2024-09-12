@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 4, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -137,7 +137,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.beta_S = 0.05;
             //C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -245,31 +245,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-
-            //Func<double[], double> PhiFunc = (X => -1.0); // X[1] - (H / 2.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
-            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
-
-
-            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.0, H / 2.0 } : new double[] { (H / 2.0) + 0.0, H / 2.0, H / 2.0 };
-            double radius = 0.4;
-
-            if (D == 2) {
-                //C.InitialValues_Evaluators.Add("Phi",
-                //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-                //    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-                //    );
-                C.InitialValues_Evaluators_TimeDep.Add("Phi",
-                    ((X, t) => ((X[0] - (center[0] + t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-                    );
-            } else {
-                C.InitialValues_Evaluators.Add("Phi",
-                    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-                    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
-                    );
-            }
-
-
-
             double U = 0.0;
 
             //if (D == 3) {
@@ -309,6 +284,37 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //double Pjump = sigma / radius;
             //C.InitialValues_Evaluators.Add("Pressure#A", X => (2.0 - X[0]) + Pjump);
             //C.InitialValues_Evaluators.Add("Pressure#B", X => 2.0 - X[0]);
+
+
+
+            //Func<double[], double> PhiFunc = (X => -1.0); // X[1] - (H / 2.1)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+
+            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.0, H / 2.0 } : new double[] { (H / 2.0) + 0.0, H / 2.0, H / 2.0 };
+            double radius = 0.4;
+
+            if (D == 2) {
+                //C.InitialValues_Evaluators.Add("Phi",
+                //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                //    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                //    );
+                C.InitialValues_Evaluators_TimeDep.Add("Phi",
+                    ((X, t) => ((X[0] - (center[0] + t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                    );
+            } else {
+                //C.InitialValues_Evaluators.Add("Phi",
+                //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                //    //(X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
+                //    );
+                C.InitialValues_Evaluators_TimeDep.Add("Phi",
+                   //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                   //(X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
+                   ((X, t) => ((X[0] - (center[0] + U * t)).Pow2() + (X[1] - center[1]).Pow2() + (X[2] - center[2]).Pow2()).Sqrt() - radius)  // signed-distance form
+                   );
+            }
+
+
 
             //var database = new DatabaseInfo(_DbPath);
             //Guid restartID = new Guid("cf6bd7bf-a19f-409e-b8c2-0b89388daad6");
@@ -418,7 +424,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ReInitPeriod = 1;
             //C.ReInitOnRestart = true;  
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
@@ -433,7 +439,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
@@ -460,7 +466,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 100; // 500;
+            C.NoOfTimesteps = 1; // 500;
             C.saveperiod = 10;
 
             #endregion
