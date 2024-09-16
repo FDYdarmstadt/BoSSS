@@ -258,7 +258,7 @@ namespace BoSSS.Solution {
 
 
                 int D = ctx.SpatialDimension;
-                // Console.WriteLine("Changes from Akbari! Velocity has 3 Components, but takes only 2. Since Grid has dimesnion 2");
+                 // Console.WriteLine("Changes from Akbari! Velocity has 3 Components, but takes only 2. Since Grid has dimesnion 2");
                 // int D = ((IEnumerable<CustomAttributeTypedArgument>)f.CustomAttributes.First().ConstructorArguments.First().Value).Count();
 
                 string[] cName = at.GetControlFileNames(f, D);

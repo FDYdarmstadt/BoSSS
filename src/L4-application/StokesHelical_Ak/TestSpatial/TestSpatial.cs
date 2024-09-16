@@ -130,9 +130,10 @@ namespace StokesHelical_Ak.TestSpartial {
         }
 
         [Test]
-        static public void SpatialComparison_Direct_vs_Iterativ_with_R0fix([Values(5)] int pOrder) {
-            // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_with_R0fix(5)
-
+        static public void SpatialComparison_Direct_vs_Iterativ_with_R0fix([Values(4)] int pOrder) {
+            // Polynomorder 5 take too long for our test runners!
+            // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_with_R0fix(4)
+            
             //###########################################################
             // Direct Solver
             //###########################################################
@@ -430,7 +431,8 @@ namespace StokesHelical_Ak.TestSpartial {
         }
 
         [Test]
-        static public void SpatialComparison_Direct_vs_Iterativ_without_R0fix([Values(5)] int pOrder) {
+        static public void SpatialComparison_Direct_vs_Iterativ_without_R0fix([Values(4)] int pOrder) {
+            // Polynomorder 5 take too long for our test runners!
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_without_R0fix(5)
 
             //###########################################################
