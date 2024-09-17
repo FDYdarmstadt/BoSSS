@@ -162,22 +162,26 @@ namespace StokesHelical_Ak.TestSpartial {
             psiErrorLx = helical_direct.psiErrorLx;
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi = 5e-9;
+            //double thresholdPsi = 5e-9; // Poly Order 5
+            double thresholdPsi = 5e-7; // Poly Order 4
             Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi);
             Assert.LessOrEqual(psiErrorLx, thresholdPsi, "Error. psiErrorLx not fulfilled");
 
-            double thresholdUr = 1e-11;
+            //double thresholdUr = 1e-11; // Poly Order 5
+            double thresholdUr = 1e-9; // Poly Order 4
             Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr);
             Assert.LessOrEqual(urErrorLx, thresholdUr, "Error. urErrorL2 not fulfilled");
 
-            double thresholdUeta = 1e-11;
+            //double thresholdUeta = 1e-11; // Poly Order 5
+            double thresholdUeta = 1e-9; // Poly Order 4
             Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta);
             Assert.LessOrEqual(uetaErrorLx, thresholdUeta, "Error. uetaErrorL2 not fulfilled");
 
-            double thresholdUxi = 1e-11;
+            //double thresholdUxi = 1e-11; // Poly Order 5
+            double thresholdUxi = 1e-9; // Poly Order 4
             Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi);
             Assert.LessOrEqual(uxiErrorLx, thresholdUxi, "Error. uxiErrorL2 not fulfilled");
@@ -200,22 +204,26 @@ namespace StokesHelical_Ak.TestSpartial {
             psiErrorLx = helical_iterativ.psiErrorLx;
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi_ = 5e-9;
+            //double thresholdPsi_ = 5e-9; // Poly Order 5
+            double thresholdPsi_ = 5e-7; // Poly Order 4
             Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi_);
             Assert.LessOrEqual(psiErrorLx, thresholdPsi_, "Error. psiErrorLx not fulfilled");
 
-            double thresholdUr_ = 1e-10;
+            //double thresholdUr_ = 1e-10; // Poly Order 5
+            double thresholdUr_ = 1e-8; // Poly Order 4
             Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr_);
             Assert.LessOrEqual(urErrorLx, thresholdUr_, "Error. urErrorL2 not fulfilled");
 
-            double thresholdUeta_ = 2e-8;
+            //double thresholdUeta_ = 2e-8; // Poly Order 5
+            double thresholdUeta_ = 2e-6; // Poly Order 4
             Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta_);
             Assert.LessOrEqual(uetaErrorLx, thresholdUeta_, "Error. uetaErrorL2 not fulfilled");
 
-            double thresholdUxi_ = 1e-8;
+            //double thresholdUxi_ = 1e-8; // Poly Order 5
+            double thresholdUxi_ = 1e-6; // Poly Order 4
             Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi_);
             Assert.LessOrEqual(uxiErrorLx, thresholdUxi_, "Error. uxiErrorL2 not fulfilled");
@@ -232,7 +240,8 @@ namespace StokesHelical_Ak.TestSpartial {
                 diff[i] = helicalSolVec_iterativ[i] - helicalSolVec_direct[i];
             }
 
-            double diff_threshold = 4e-7;
+            //double diff_threshold = 4e-7; // Poly Order 5
+            double diff_threshold = 4e-5; // Poly Order 4
             Console.WriteLine("L2 norm of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm());
             Console.WriteLine("If L2 norm of the difference is {0} < {1} than good :) ", diff.L2Norm(), diff_threshold);
             Assert.LessOrEqual(diff.L2Norm(), diff_threshold, "Error. L2 norm of the difference not fulfilled");
@@ -463,22 +472,26 @@ namespace StokesHelical_Ak.TestSpartial {
             psiErrorLx = helical_direct.psiErrorLx;
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi = 5e-9;
+            //double thresholdPsi = 5e-9;   // Poly Order 5
+            double thresholdPsi = 5e-7;     // Poly Order 4
             Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi);
             Assert.LessOrEqual(psiErrorLx, thresholdPsi, "Error. psiErrorLx not fulfilled");
 
-            double thresholdUr = 1e-11;
+            double thresholdUr = 1e-11;// Poly Order 5
+            //double thresholdUr = 1e-9;// Poly Order 4
             Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr);
             Assert.LessOrEqual(urErrorLx, thresholdUr, "Error. urErrorL2 not fulfilled");
 
-            double thresholdUeta = 1e-11;
+            //double thresholdUeta = 1e-11;// Poly Order 5
+            double thresholdUeta = 1e-9;// Poly Order 4
             Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta);
             Assert.LessOrEqual(uetaErrorLx, thresholdUeta, "Error. uetaErrorL2 not fulfilled");
 
-            double thresholdUxi = 1e-11;
+            //double thresholdUxi = 1e-11;// Poly Order 5
+            double thresholdUxi = 1e-9;// Poly Order 4
             Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi);
             Assert.LessOrEqual(uxiErrorLx, thresholdUxi, "Error. uxiErrorL2 not fulfilled");
@@ -501,22 +514,26 @@ namespace StokesHelical_Ak.TestSpartial {
             psiErrorLx = helical_iterativ.psiErrorLx;
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi_ = 5e-9;
+            //double thresholdPsi_ = 5e-9; // Poly Order 5
+            double thresholdPsi_ = 5e-7; // Poly Order 4
             Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx);
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi_);
             Assert.LessOrEqual(psiErrorLx, thresholdPsi_, "Error. psiErrorLx not fulfilled");
 
-            double thresholdUr_ = 1e-10;
+            //double thresholdUr_ = 1e-10; // Poly Order 5
+            double thresholdUr_ = 1e-8; // Poly Order 4
             Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr_);
             Assert.LessOrEqual(urErrorLx, thresholdUr_, "Error. urErrorL2 not fulfilled");
 
-            double thresholdUeta_ = 2e-8;
+            //double thresholdUeta_ = 2e-8; // Poly Order 5
+            double thresholdUeta_ = 2e-6; // Poly Order 4
             Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx);
             Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx, thresholdUeta_);
             Assert.LessOrEqual(uetaErrorLx, thresholdUeta_, "Error. uetaErrorL2 not fulfilled");
 
-            double thresholdUxi_ = 1e-8;
+            //double thresholdUxi_ = 1e-8;  // Poly Order 5
+            double thresholdUxi_ = 1e-6;  // Poly Order 4
             Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx);
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx, thresholdUxi_);
             Assert.LessOrEqual(uxiErrorLx, thresholdUxi_, "Error. uxiErrorL2 not fulfilled");
@@ -533,7 +550,8 @@ namespace StokesHelical_Ak.TestSpartial {
                 diff[i] = helicalSolVec_iterativ[i] - helicalSolVec_direct[i];
             }
 
-            double diff_threshold = 4e-7;
+            //double diff_threshold = 4e-7; // Poly Order 5
+            double diff_threshold = 4e-5; // Poly Order 4
             Console.WriteLine("L2 norm of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm());
             Console.WriteLine("If L2 norm of the difference is {0} < {1} than good :) ", diff.L2Norm(), diff_threshold);
             Assert.LessOrEqual(diff.L2Norm(), diff_threshold, "Error. L2 norm of the difference not fulfilled");
