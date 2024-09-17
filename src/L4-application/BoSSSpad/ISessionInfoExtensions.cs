@@ -2435,6 +2435,74 @@ namespace BoSSS.Foundation.IO {
 
         }
 
+
+        /// <summary>
+        /// Check for condition number loggings 
+        /// </summary>
+        /// <param name="pSessions"></param>
+        /// <returns>An array of dictionaries, where each dictionary represents a session, with keys as column names (string) and values as a list of doubles.</returns>
+        public static Dictionary<Guid, Dictionary<string, List<double>>> CheckForCondLogging(this IEnumerable<ISessionInfo> pSessions)
+        {
+            string[] allColumnNames = new string[] { ""};
+            int numberSessions = pSessions.Count();
+
+            //the so-called database the first key: session Id, second key: column name, value: list of entries
+            Dictionary<Guid, Dictionary<string, List<double>>> logsForAllSessions = new Dictionary<Guid, Dictionary<string, List<double>>>(numberSessions);
+            
+            for (int j = 0; j < numberSessions; j++){
+                ISessionInfo currentSession = pSessions.Pick(j);
+                //Initiate the "database", it should suffice the need
+                Dictionary<string, List<double>> logs = new Dictionary<string, List<double>>();
+                logsForAllSessions[currentSession.ID] = logs;
+
+                Console.WriteLine("Session: {0}", currentSession.ID);
+                string path = @currentSession.Database.Path + "\\sessions\\" + currentSession.ID + "\\CondNumbers.txt";
+                string[] lines;
+                string header;
+
+                try{ //reading
+                    lines = File.ReadAllLines(path);
+                    header = lines[0];
+                } catch{
+                    Console.WriteLine("no logging file available");
+                    continue;
+                }
+
+                //Get column names
+                var columnsNames = header.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
+                if (!allColumnNames.SequenceEqual(columnsNames)) {
+                    allColumnNames = columnsNames;
+                    allColumnNames.ForEach(c => Console.Write(c + ", "));
+                    Console.WriteLine("");
+                }
+                //Initiate a list for each column and add to the database
+                for (int i = 0; i < columnsNames.Length; i++){
+                    string columnName = columnsNames[i];
+                    var list = new List<double>();
+                    logs.Add(columnName, list);  
+                }
+
+                // loop for each line in the log
+                for (int k = 1; k < lines.Length; k++){
+                    for (int i = 0; i < columnsNames.Length; i++){
+                        string currentColumn = columnsNames[i];
+                        string value = lines[k].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i];
+                        double valueDouble;
+
+                        //Check if it is NaN or Infinity
+                        if (Double.TryParse(value, out valueDouble)){
+                            logs[currentColumn].Add(valueDouble);
+                        } else {
+                            logs[currentColumn].Add(double.NaN);
+                            Console.WriteLine($"The value '{value}' could not be converted to a double for line {k} at column {i} in session {currentSession.Name}.");
+                        }
+                    }
+                }
+
+            }
+            return logsForAllSessions;
+        }
+
         /// <summary>
         /// Plots selected energy over time if an  "Energy.txt" exists.
         /// </summary>

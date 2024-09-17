@@ -35,6 +35,10 @@ using CutCellQuadrature.TestCases;
 using ilPSP;
 using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Classic;
+using System.Runtime.InteropServices;
+using ilPSP.Utils;
+using static ilPSP.Utils.UnsafeAlgoim;
+using System.Xml;
 
 namespace CutCellQuadrature {
 
@@ -56,7 +60,9 @@ namespace CutCellQuadrature {
 
         EquivalentPolynomials,
 
-        SayeGaussRules
+        SayeGaussRules,
+
+        Algoim
     }
 
     public partial class Program : Application {
@@ -71,13 +77,24 @@ namespace CutCellQuadrature {
             //new SingleSquareStraightLineLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new SingleSquareParabolaLengthTestCase(GridSizes.Small, GridTypes.Structured),
+
             //new SingleSquareParabolaVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
 
             //new SingleCubeSurfaceTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
-            //new TwoCircles2DVolume(GridSizes.Small),
+            //new Saye2022EllipseArea(GridSizes.Single),
+            //new Saye2022EllipseArea(GridSizes.Tiny),
+
+            //new TwoCircles2DVolume(GridSizes.Tiny),
+            new TwoCircles2DVolume(GridSizes.Small),
+            //new TwoCircles2DVolume(GridSizes.Normal),
+            //new TwoCircles2DVolume(GridSizes.Large),
+            //new TwoCircles2DSurface(GridSizes.Tiny),
             //new TwoCircles2DSurface(GridSizes.Small),
+            //new TwoCircles2DSurface(GridSizes.Normal),
+            //new TwoCircles2DSurface(GridSizes.Large),
             
             //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Normal, GridTypes.Structured),
@@ -117,7 +134,7 @@ namespace CutCellQuadrature {
             //new MinGibou1EllipseArea(GridSizes.Huge, GridTypes.Structured),
 
 
-            
+
             //new Smereka4EllipsoidSurface(GridSizes.Tiny, GridTypes.Structured),
             //new Smereka4EllipsoidSurface(GridSizes.Small, GridTypes.Structured),
             //new Smereka4EllipsoidSurface(GridSizes.Normal, GridTypes.Structured),
@@ -144,7 +161,7 @@ namespace CutCellQuadrature {
             //new CircleVolume2DTestCase(GridSizes.Normal, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Large, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Huge, GridTypes.Structured),
-            
+
 
             //new CircleArcLength(GridSizes.Small, GridTypes.Structured)
             //new Olshanskii(GridSizes.Tiny, GridTypes.PseudoStructured),
@@ -158,6 +175,8 @@ namespace CutCellQuadrature {
 
         static void Main(string[] args) {
             InitMPI(args);
+
+
 
             foreach (var testCase in testCases) {
 
@@ -259,8 +278,8 @@ namespace CutCellQuadrature {
              */
 
             // Export options
-            int plotSuperSampling = 3;
-            bool logVolumeNodes = true;
+            int plotSuperSampling = 0;
+            bool logVolumeNodes = false;
             int logVolumeNodes_selectedCell = -1;
             bool logSurfaceNodes = false;
             bool logConsole = true;
@@ -268,8 +287,8 @@ namespace CutCellQuadrature {
 
             // Quadrature variant
 
-            Modes mode = Modes.SayeGaussRules;
-            int[] orders = new int[] { 7};
+            Modes mode = Modes.Algoim;
+            int[] orders = Enumerable.Range(0, 10).ToArray();
 
             //Modes mode = Modes.HMFClassic;
             //int[] orders = new int[] { 3, 4, 5, 6, 7, 8 };
@@ -700,7 +719,22 @@ namespace CutCellQuadrature {
                         edgeFactory = null;
                         break;
                     }
+                case Modes.Algoim: //
+{
+                        AlgoimFactories FactoryFactory = new AlgoimFactories(
+                                levelSetTracker.DataHistories[0].Current,
+                                this.Grid.RefElements[0]
+                            );
 
+                        if (testCase is ISurfaceTestCase) {
+                            volumeFactory = FactoryFactory.GetSurfaceFactory();
+                        } else {
+                            volumeFactory = FactoryFactory.GetVolumeFactory();
+                        }
+
+                        edgeFactory = null;
+                        break;
+                    }
                 case Modes.EquivalentPolynomials: //
                     {
                         var lineAndPointFactory = new LineAndPointQuadratureFactory(
@@ -742,7 +776,8 @@ namespace CutCellQuadrature {
                 || mode == Modes.HMFOneStepGauss
                 || mode == Modes.HMFOneStepGaussAndStokes
                 || mode == Modes.EquivalentPolynomials
-                || mode == Modes.SayeGaussRules) {
+                || mode == Modes.SayeGaussRules
+                || mode == Modes.Algoim) {
 
                 result = PerformVolumeQuadrature(
                     mode, volumeFactory, cutCellGrid, order, localTimer);
@@ -817,6 +852,12 @@ namespace CutCellQuadrature {
                         continue;
                     }
 
+                    rule.OutputQuadratureRuleAsVtpXML("nodesUntransformedForj" + cell + ".vtp");
+                    
+                    var globalRule = rule.CloneAs();
+                    globalRule.OutputQuadratureRuleAsVtpXML("nodesForj" + cell + ".vtp");
+
+
                     for (int k = 0; k < rule.NoOfNodes; k++) {
                         double weight = rule.Weights[k];
 
@@ -849,6 +890,104 @@ namespace CutCellQuadrature {
                 }
             }
         }
+
+
+        public static void OutputQuadratureRuleAsVtpXML(MultidimensionalArray globalVertices, MultidimensionalArray weights, int dim, string filePath) {
+            if (dim != 2 && dim != 3) {
+                Console.Error.WriteLine("XML output is supported only for 2D and 3D schemes.");
+            }
+
+            try {
+                using (XmlWriter writer = XmlWriter.Create(filePath, new XmlWriterSettings { Indent = true })) {
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("VTKFile");
+                    writer.WriteAttributeString("type", "PolyData");
+                    writer.WriteAttributeString("version", "0.1");
+                    writer.WriteAttributeString("byte_order", "LittleEndian");
+
+                    writer.WriteStartElement("PolyData");
+                    writer.WriteStartElement("Piece");
+                    writer.WriteAttributeString("NumberOfPoints", weights.Length.ToString());
+                    writer.WriteAttributeString("NumberOfVerts", weights.Length.ToString());
+                    writer.WriteAttributeString("NumberOfLines", "0");
+                    writer.WriteAttributeString("NumberOfStrips", "0");
+                    writer.WriteAttributeString("NumberOfPolys", "0");
+
+                    // Points
+                    writer.WriteStartElement("Points");
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Float32");
+                    writer.WriteAttributeString("Name", "Points");
+                    writer.WriteAttributeString("NumberOfComponents", "3");
+                    writer.WriteAttributeString("format", "ascii");
+                    for (int i = 0; i < weights.Length; i++) {
+                        writer.WriteString($"{globalVertices[0, i, 0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
+                    }
+                    //if (globalVertices.Dimension == 3) { 
+                    //    for (int i = 0; i < weights.Length; i++) {
+                    //        writer.WriteString($"{globalVertices[0,i,0]} {globalVertices[0, i, 1]} {(dim == 3 ? globalVertices[0, i, 2] : 0.0)}\n");
+                    //    }
+                    //} else { 
+                    //    for (int i = 0; i < weights.Length; i++) {
+                    //        writer.WriteString($"{globalVertices[i, 0]} {globalVertices[i, 1]} {(dim == 3 ? globalVertices[i, 2] : 0.0)}\n");
+                    //    }
+                    //}
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // Points
+
+                    // Verts
+                    writer.WriteStartElement("Verts");
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Int32");
+                    writer.WriteAttributeString("Name", "connectivity");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for (int i = 0; i < weights.Length; i++) {
+                        writer.WriteString($"{i}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Int32");
+                    writer.WriteAttributeString("Name", "offsets");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for (int i = 1; i <= weights.Length; i++) {
+                        writer.WriteString($"{i}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // Verts
+
+                    // PointData
+                    writer.WriteStartElement("PointData");
+                    writer.WriteAttributeString("Scalars", "w");
+
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Float32");
+                    writer.WriteAttributeString("Name", "w");
+                    writer.WriteAttributeString("NumberOfComponents", "1");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for (int i = 0; i < weights.Length; i++) {
+                        writer.WriteString($"{weights[i]}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // PointData
+
+                    writer.WriteEndElement(); // Piece
+                    writer.WriteEndElement(); // PolyData
+                    writer.WriteEndElement(); // VTKFile
+
+                    writer.WriteEndDocument();
+                }
+            } catch (Exception ex) {
+                Console.WriteLine("Error opening file: " + ex.Message);
+            }
+        }
+
 
         private double PerformVolumeQuadrature(Modes mode, IQuadRuleFactory<QuadRule> factory, SubGrid cutCellGrid, int order, Stopwatch timer) {
             using (new FuncTrace()) {
@@ -901,9 +1040,20 @@ namespace CutCellQuadrature {
 
         private void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling, SubGrid subGrid) {
             Tecplot tecplot = new Tecplot(GridData, true, false, (uint)superSampling, subGrid.VolumeMask);
+            Basis b = new Basis(GridData, 0);
+
+            DGField CellNumbers = new SinglePhaseField(b, "CellNumbers");
+            CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = j0 + j;
+                    }
+                }
+            }, new CellQuadratureScheme());
             //Tecplot tecplot = new Tecplot(m_Context, true, false, (uint)superSampling, null);
             string path = Path.Combine(Path.GetFullPath("."), "plot_" + testCase.GetType().Name);
-            tecplot.PlotFields(path, physTime, m_IOFields);
+            tecplot.PlotFields(path, physTime, m_IOFields.Cat(CellNumbers));
         }
 
         private static double Regression(double[] xValues, double[] yValues) {
