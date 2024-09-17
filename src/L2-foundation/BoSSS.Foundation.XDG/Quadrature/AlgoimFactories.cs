@@ -136,12 +136,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             public bool useMetrics = false;
 
-            internal delegate UnsafeAlgoim.QuadScheme GetQuadratureRule(int dim, int p, int q, int[] lengths, double[] x, double[] y);
-
-            /// <summary>
-            /// which quadrature rule to take a look at (e.g.,  <see cref="Algoim.GetSurfaceQuadratureRules(int, int, int, int[], double[], double[])"/> or <see cref="Algoim.GetVolumeQuadratureRules(int, int, int, int[], double[], double[])(int, int, int, int[], double[], double[])"/>)
-            /// </summary>
             internal GetQuadratureRule m_CalculateQuadRule;
+
+            internal delegate UnsafeAlgoim.QuadScheme GetQuadratureRule(int dim, int p, int q, int[] lengths, double[] x, double[] y);
 
             public LevelSetTracker.LevelSetData lsData => m_Owner.lsData;
 
