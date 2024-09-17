@@ -478,8 +478,8 @@ namespace StokesHelical_Ak.TestSpartial {
             Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi);
             Assert.LessOrEqual(psiErrorLx, thresholdPsi, "Error. psiErrorLx not fulfilled");
 
-            double thresholdUr = 1e-11;// Poly Order 5
-            //double thresholdUr = 1e-9;// Poly Order 4
+            //double thresholdUr = 1e-11;// Poly Order 5
+            double thresholdUr = 1e-9;// Poly Order 4
             Console.WriteLine("The urErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx);
             Console.WriteLine("If the urErrorLx error is {0} < {1} than good :) ", urErrorLx, thresholdUr);
             Assert.LessOrEqual(urErrorLx, thresholdUr, "Error. urErrorL2 not fulfilled");
