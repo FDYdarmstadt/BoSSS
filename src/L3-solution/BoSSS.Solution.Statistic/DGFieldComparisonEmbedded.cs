@@ -456,8 +456,23 @@ namespace BoSSS.Solution.Statistic {
                 }
 
                 var Tracker = (fields.FirstOrDefault(f => f is XDGField) as XDGField)?.Basis?.Tracker;
-                if (Tracker == null)
-                    throw new NotSupportedException("unable to find tracker");
+
+                if (Tracker != null || SelectionFunc != null) {
+                    foreach (var fenum in fields) {
+                        foreach (var f in fenum) {
+                            var mask = SelectionFunc != null
+                                ? CellMask.GetCellMask((GridData)f.GridDat, SelectionFunc)
+                                : Tracker.Regions.GetCutCellMask4LevSet(0); // [Toprak] this is hardcoded, speak with Irina
+
+                            Console.WriteLine("number of cut-out cells: {0}", mask.NoOfItemsLocally);
+
+                            f.Clear(mask);
+                        }
+                    }
+                } else {
+                    throw new NotSupportedException("To check out cut cells either a tracker or a selection function must be supplied");
+                }
+
 
 
                 //// clear cut-out cells 
@@ -473,18 +488,6 @@ namespace BoSSS.Solution.Statistic {
                 //    }
                 //}
 
-                // clear cut-out cells 
-                foreach (var fenum in fields) {
-                    foreach (var f in fenum) {
-                        var mask = Tracker.Regions.GetCutCellMask4LevSet(0);
-                        f.Clear(mask);
-
-                        //SelectionFunc = X => (X[1] < (3.0/9.0) && ( ((X[0] > 3.0 * (1.5 / 9.0)) && (X[0] < 6.0 * (1.5 / 9.0))) || ((X[0] < -3.0 * (1.5 / 9.0)) && (X[0] > -6.0 * (1.5 / 9.0)))));
-                        //CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
-                        //Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
-                        //f.Clear(cutout);
-                    }
-                }
 
 
                 // sort according to grid resolution
