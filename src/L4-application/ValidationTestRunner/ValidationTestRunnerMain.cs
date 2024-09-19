@@ -137,9 +137,13 @@ namespace ValidationTestRunner {
             Console.WriteLine("RheologyConfinedCylinder @ FDYcluster");
         }
 
+        #region rckmnn Worksheets
+        // Worksheets to the simulations displayed in the dissertation of rieckmann. It is coarsely indicated which section they belong to.
+
         /// <summary>
         /// Contact Line at heated wall,
         /// Maintainer: Matthias Rieckmann
+        /// Section 7.3
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb", "XNSFE_Solver/HeatedWall_Validation/*.json")]
         [Test]
@@ -165,6 +169,7 @@ namespace ValidationTestRunner {
         /// <summary>
         /// Contact Line at heated wall,
         /// Maintainer: Matthias Rieckmann
+        /// Section 7.3
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_*.ipynb", "XNSFE_Solver/HeatedWall_Validation/HeatedWall_Validation.zip")]
         [Test]
@@ -192,6 +197,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Printing Nip Stokes Simulations
+        /// Section 5.1
         /// </summary>
         [NUnitFileToCopyHack("PrintingNip/*.ipynb", "PrintingNip/*.sh", "PrintingNip/*.tex", "PrintingNip/*.txt")]
         [Test]
@@ -236,6 +242,29 @@ namespace ValidationTestRunner {
 
             Console.WriteLine("PrintingNip @ FDYcluster");
         }
+
+        /// <summary>
+        /// Demo Simulation of 3 phases with evaporation and contactline
+        /// Section 7.3
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Simple/*.ipynb")]
+        [Test]
+        static public void Run__3PhaseDemo() {
+            // test just confirms runnability of worksheet, no hard data is compared (it is just a qualitative example)
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__3PhaseDemo
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "3PhaseDemo",
+                "3PhaseDemo*",
+                "delete_3PhaseDemo",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Simple/HeatedWall90DegSimple_3PhaseDemo.ipynb");
+
+            Console.WriteLine("3Phase Demo @ FDYcluster");
+        }
+
+        #endregion
 
         /// <summary>
         /// Test of the Low-Mach solver;
