@@ -8,6 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\private-ak\L4-application\StokesHelical_Ak\StokesHelical_Ak.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
@@ -47,6 +48,7 @@
     <ProjectReference Include="..\XDGTest\XDGTest.csproj" />
     <ProjectReference Include="..\XdgTimesteppingTest\XdgTimesteppingTest.csproj" />
     <ProjectReference Include="..\XESF\XESF.csproj" />
+    <ProjectReference Include="..\XESTSF\XESTSF.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver_LargeMPItest\XNSE_Solver_LargeMPItest.csproj" />
