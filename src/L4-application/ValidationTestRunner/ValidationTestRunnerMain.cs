@@ -11,6 +11,7 @@ using System.Diagnostics;
 using SAIDT;
 using BoSSS.Application.TutorialTests;
 using System.Threading;
+using FreeXNSE;
 
 namespace ValidationTestRunner {
 
@@ -23,7 +24,8 @@ namespace ValidationTestRunner {
             get {
                 var ret = new Type[] {
                     typeof(ValidationTestRunnerMain),
-                    typeof(SAIDTMain) // required to have the SAIDT binary available
+                    typeof(SAIDTMain), // required to have the SAIDT binary available
+                    typeof(FreeXNSE.FreeXNSE) // required to have the FreeXNSE binary available
                 };
                 return ret;
             }
@@ -241,6 +243,69 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/Part5_PrintingNip_Validation.ipynb");
 
             Console.WriteLine("PrintingNip @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
+        /// Section 7.1
+        /// </summary>
+        [NUnitFileToCopyHack("FreeXNSE/ContactLineSingularity/*.ipynb")]
+        [Test]
+        static public void Run__ContactLineSingularity() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__ContactLineSingularity
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "ContactLineSingularity",
+                "ContactLineSingularity*",
+                "delete_ContactLineSingularity",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactLineSingularity/ContactLineModeling.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactLineSingularity/ContactLineModeling_Postprocessing.ipynb");
+
+            Console.WriteLine("ContactLineSingularity @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
+        /// Section 7.1
+        /// </summary>
+        [NUnitFileToCopyHack("FreeXNSE/SlugInChannel/*.ipynb")]
+        [Test]
+        static public void Run__SlugInChannel() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlugInChannel
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "SlugInChannel",
+                "SlugInChannel*",
+                "delete_SlugInChannel",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/SlugInChannel/ContactLineModelingSlugInChannel.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/SlugInChannel/ContactLineModelingSlugInChannel_Postprocessing.ipynb");
+
+            Console.WriteLine("SlugInChannel @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
+        /// Section 7.1
+        /// </summary>
+        [NUnitFileToCopyHack("FreeXNSE/ContactAngleHysteresis/*.ipynb")]
+        [Test]
+        static public void Run__ContactAngleHysteresis() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__ContactAngleHysteresis
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "ContactAngleHysteresis",
+                "ContactAngleHysteresis*",
+                "delete_ContactAngleHysteresis",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactAngleHysteresis/ContactLineModelingContactAngleHysteresis.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactAngleHysteresis/ContactLineModelingContactAngleHysteresis_Postprocessing.ipynb");
+
+            Console.WriteLine("ContactAngleHysteresis @ FDYcluster");
         }
 
         /// <summary>
