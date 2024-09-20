@@ -29,6 +29,8 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Tracing;
 using BoSSS.Solution.Tecplot;
 using System.Reflection;
+using System.Diagnostics;
+using System.Runtime.ConstrainedExecution;
 
 namespace BoSSS.Solution.Statistic {
     
@@ -455,34 +457,33 @@ namespace BoSSS.Solution.Statistic {
                     //Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
                 }
 
-                var Tracker = (fields.FirstOrDefault(f => f is XDGField) as XDGField)?.Basis?.Tracker;
-                if (Tracker == null)
-                    throw new NotSupportedException("unable to find tracker");
+                // [Toprak]: deactivated since it will clear all the cut cells if a tracker found. Not sure it is desirable (should be discussed with Irina)
+                //LevelSetTracker Tracker = null; // (fields.FirstOrDefault(f => f is XDGField) as XDGField)?.Basis?.Tracker;  
+
+                    //if (Tracker != null || SelectionFunc != null) {
+                    //    foreach (var fenum in fields) {
+                    //        foreach (var f in fenum) {
+                    //            var mask = SelectionFunc != null
+                    //                ? CellMask.GetCellMask((GridData)f.GridDat, SelectionFunc)
+                    //                : Tracker.Regions.GetCutCellMask4LevSet(0); // [Toprak] this is hardcoded, speak with Irina
+
+                    //            Console.WriteLine("number of cut-out cells: {0}", mask.NoOfItemsLocally);
+
+                    //            f.Clear(mask);
+                    //        }
+                    //    }
+                    //} 
 
 
-                //// clear cut-out cells 
-                //if (SelectionFunc != null) {
-                //    foreach (var fenum in fields) {
-                //        foreach (var f in fenum) {
-                //            GridData grd = (GridData)f.GridDat;
-                //            //SelectionFunc = X => (X[1] < (3.0/9.0) && ( ((X[0] > 3.0 * (1.5 / 9.0)) && (X[0] < 6.0 * (1.5 / 9.0))) || ((X[0] < -3.0 * (1.5 / 9.0)) && (X[0] > -6.0 * (1.5 / 9.0)))));
-                //            CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
-                //            Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
-                //            f.Clear(cutout);
-                //        }
-                //    }
-                //}
-
-                // clear cut-out cells 
-                foreach (var fenum in fields) {
-                    foreach (var f in fenum) {
-                        var mask = Tracker.Regions.GetCutCellMask4LevSet(0);
-                        f.Clear(mask);
-
-                        //SelectionFunc = X => (X[1] < (3.0/9.0) && ( ((X[0] > 3.0 * (1.5 / 9.0)) && (X[0] < 6.0 * (1.5 / 9.0))) || ((X[0] < -3.0 * (1.5 / 9.0)) && (X[0] > -6.0 * (1.5 / 9.0)))));
-                        //CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
-                        //Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
-                        //f.Clear(cutout);
+                    // clear cut-out cells 
+                if (SelectionFunc != null) {
+                    foreach (var fenum in fields) {
+                        foreach (var f in fenum) {
+                            GridData grd = (GridData)f.GridDat;
+                            CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
+                            Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
+                            f.Clear(cutout);
+                        }
                     }
                 }
 
