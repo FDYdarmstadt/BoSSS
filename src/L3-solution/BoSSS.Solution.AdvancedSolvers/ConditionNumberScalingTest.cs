@@ -447,7 +447,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     var prop = solver.OperatorAnalysis(
                         new OperatorAnalysisConfig() {
                             CalculateStencilConditionNumbers = m_config.ComputeStencilCondNo,
-                            CalculateGlobalConditionNumbers = m_config.ComputeGlobalCondNo
+                            CalculateGlobalConditionNumbers = m_config.ComputeGlobalCondNo,
+                            PlotStencilConditionNumbers = true
+                            
                         });
                     Console.WriteLine("  finished analysis.");
 
