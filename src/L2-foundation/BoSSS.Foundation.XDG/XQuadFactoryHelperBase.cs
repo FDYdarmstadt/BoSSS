@@ -45,7 +45,6 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             TwoStepStokesAndGauss,
 
-
             /// <summary>
             /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
             /// </summary>
@@ -61,6 +60,7 @@ namespace BoSSS.Foundation.XDG {
             /// R. Saye, SIAM Journal on Scientific Computing, 2015
             /// </remarks>
             Saye,
+
             /// <summary>
             /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
             /// obtained through recursive subdivision, as described in 
