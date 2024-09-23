@@ -125,8 +125,6 @@ namespace BoSSS.Solution {
                         throw new ApplicationException("error initializing vector field '" + fi.Name + "': mismatch in spatial dimension.");
                     return ArrayTools.GetSubVector(m_ControlFileNames, 0, D);
                 } else {
-                    if (m_ControlFileNames.Length != D)
-                        throw new ApplicationException("error initializing vector field '" + fi.Name + "': mismatch in spatial dimension.");
                     return m_ControlFileNames;
                 }
             } else {
@@ -141,8 +139,6 @@ namespace BoSSS.Solution {
                         throw new ApplicationException("Length of field identification vector is to small; (Field '" + fi.Name + "')");
                     return ArrayTools.GetSubVector(m_FieldIdentifications, 0, D);
                 } else {
-                    if (m_FieldIdentifications.Length != D)
-                        throw new ApplicationException("Mismatch in Length of field identification vector; (Field '" + fi.Name + "')");
                     return m_FieldIdentifications;
                 }
             } else {

@@ -36,7 +36,7 @@ namespace BoSSS.Solution.Utils {
     public delegate double _2D(double x0, double x1);
 
     /// <summary>
-    /// 2D function f(x,y,z) or (1+2)D function f(t,x,y), non-vectorized
+    /// 3D function f(x,y,z) or (1+2)D function f(t,x,y), non-vectorized
     /// </summary>
     public delegate double _3D(double x0, double x1, double x3);
 

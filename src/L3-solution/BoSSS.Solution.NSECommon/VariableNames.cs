@@ -53,7 +53,13 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         Multiphase,
 
-
+        /// <summary>
+        /// Incompressible Helical Symmetric Flows,
+        /// i.e. solving equations for
+        /// mass, momentum in Helical Coordintaes.
+        /// Attention \frac{\partial}{\partial \eta} = 0. 
+        /// Due to helical symmetry. 
+        /// </summary>
         Helical,
 
         /// <summary>
@@ -297,7 +303,7 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-    
+
     /// <summary>
     /// predefined variable names for velocity, pressure, etc. that should be used
     /// by all Navier-Stokes - Solvers

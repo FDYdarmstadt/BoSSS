@@ -458,15 +458,15 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     var errorList = new List<(int item, double err, double threshold)>[NumThreads];
-                    ilPSP.Environment.ParallelFor(0, NumThreads, 
-                        delegate(int iThread) {
+                    ilPSP.Environment.ParallelFor(0, NumThreads,
+                        delegate (int iThread) {
                             errorList[iThread] = allThreads[iThread].ExecuteThread(iThread, NumThreads, _compositeRuleS[iThread], checkResults, false, ItemOffset[iThread], allThreads);
                         });
 
                     if (errorList.Any(l => l != null)) {
                         int errCnt = 0;
                         using (var wrt = new StringWriter()) {
-                            
+
                             foreach (var checkErrors in errorList) {
                                 bool brk = false;
                                 if (checkErrors != null) {

@@ -231,6 +231,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
         }
 
+        /// <summary>
+        /// quadrature degree used for the operator evaluation or linearization w.r.t. current unknown, residual and parameter degrees.
+        /// </summary>
+        public int GetOperatorQuadOrder() {
+            return Operator.GetOrderFromQuadOrderFunction(
+                this.CurrentState.Fields.Select(f => f.Basis),
+                this.Parameters.Select(f => f.Basis),
+                this.CurrentResidual.Fields.Select(f => f.Basis)
+                );
+        }
+
 
         /// <summary>
         /// initialization of <see cref="ApplicationWithSolver{T}.Timestepping"/>

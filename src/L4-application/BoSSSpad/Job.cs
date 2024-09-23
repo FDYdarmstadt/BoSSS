@@ -1559,12 +1559,10 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
-
-
+                
                 // ================
                 // status
                 // ================
-
                 var stat = GetStatus(true);
                 if (stat != JobStatus.Unknown) {
                     int sc = this.SubmitCount;
@@ -1587,7 +1585,6 @@ namespace BoSSS.Application.BoSSSpad {
                 // ========================================================================
 
                 Console.WriteLine($"Deploying job {this.Name} ... ");
-
                 // some database syncing might be necessary 
                 FiddleControlFile(AssignedBatchProc);
 

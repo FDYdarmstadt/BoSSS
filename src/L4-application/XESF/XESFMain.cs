@@ -1354,7 +1354,9 @@ namespace XESF
         public static void RunTests()
         {
             BoSSS.Solution.Application.InitMPI(num_threads:1);
-            XESFMain.DeleteOldPlotFiles();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+
+            Console.WriteLine("!!!!!!!!!!!!!!!! WARNING: OPENMP Paralelization turned off !!!!!!!!!!!!");
             List<string> fails = new List<string>();
 
             try { SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22(); } catch { fails.Add("SAIDTTestProgram.CurvedShock_Eccomas22"); }

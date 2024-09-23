@@ -110,6 +110,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         double T0 => 1.0;
         double alpha => this.Massflux * this.h_vap / (this.k_B * this.T0);
 
+        public double theta_e => throw new NotImplementedException();
+
         public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
 
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();

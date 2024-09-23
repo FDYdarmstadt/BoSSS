@@ -274,8 +274,8 @@ namespace BoSSS.Foundation.XDG {
             m_DataHistories = _DataHistories.ToList().AsReadOnly();
             m_LevelSetHistories = _LevelSetHistories.ToList().AsReadOnly();
             m_RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
-            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>>(
-                new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>());
+            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<XQuadFactoryHelperBase.MomentFittingVariants, XQuadFactoryHelperBase>>(
+                new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>());
             m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
 
             this.IncreaseHistoryLength(1); // at least one previous time-step is required to support update of XDG fields
@@ -866,7 +866,7 @@ namespace BoSSS.Foundation.XDG {
 
             m_RegionsHistory.Push((r1) => r1.CloneAs(), (r1, r0) => r1);
 
-            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>(), (r1, r0) => r1);
+            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>(), (r1, r0) => r1);
 
             m_XDGSpaceMetricsHistory.Push((r1) => NewXDGSpaceMetricsCache(), (r1,r0) => r1);
 
@@ -1903,7 +1903,7 @@ namespace BoSSS.Foundation.XDG {
                                             } else if (v > 0) {
                                                 PosEdge = true;
                                             }
-
+                                            // [Toprak] why v*v not only v?
                                             quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
 
                                             nodeIndex++;

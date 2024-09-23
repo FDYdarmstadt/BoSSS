@@ -62,19 +62,26 @@ namespace BoSSS.Application.BoSSSpad {
                 return a;
             }
 
+
             /// <summary>
             /// Updates all columns related to convergence plots
             /// </summary>
-            public void Update() {
+            /// <param name="timeStep">for which time step (-1 for the latest)</param>
+            /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
+            /// <param name="sessions">list of sessions for the study (if null only the successfully terminated simulations)</param>
+            /// <remarks>Be aware Timesteps can have intermediate times, so check also physical time </remarks>
+            public void Update(int timeStep = -1, bool plotFields = false, ISessionInfo[] sessions = null) {
                 // Get all sessions which are successfully terminated
                 // ==================================================
-                var SuccSessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
+                if (sessions is null)
+                    sessions = owner.Sessions.Where(sess => sess.SuccessfulTermination == true).ToArray();
+
 
                 // Group the sessions according to polynomial degree 
                 // =================================================
                 System.Func<int[],int[],bool> eqFunc = (A,B) => ArrayTools.AreEqual(A,B);
                 var comp = eqFunc.ToEqualityComparer();
-                var SessionGroups = SuccSessions.GroupBy(GetDGDegreeKey, comp).ToArray();
+                var SessionGroups = sessions.GroupBy(GetDGDegreeKey, comp).ToArray();
 
 
                 // Spatial convergence for each session group
@@ -91,7 +98,13 @@ namespace BoSSS.Application.BoSSSpad {
                     if(spatialSeries.Count() <= 1)
                         continue;
 
-                    ITimestepInfo[] tsiS = spatialSeries.Select(sess => sess.Timesteps.Last()).ToArray();
+                    // define the timestep for the study
+                    ITimestepInfo[] tsiS;
+                    if (timeStep < 0)
+                        tsiS = spatialSeries.Select(sess => sess.Timesteps.Last()).ToArray();
+                    else
+                        tsiS = spatialSeries.Select(sess => sess.Timesteps.ElementAt(timeStep)).ToArray();
+
 
                     // find DG field identifications which are present in _all_ timesteps
                     var commonFieldIds = new HashSet<string>();

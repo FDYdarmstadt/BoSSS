@@ -28,6 +28,10 @@ namespace CutCellQuadrature.TestCases {
     /// Grid solution
     /// </summary>
     public enum GridSizes {
+        /// <summary>
+        /// Single cell, no resolution
+        /// </summary>
+        Single,
 
         /// <summary>
         /// Coarsest resolution
@@ -45,14 +49,30 @@ namespace CutCellQuadrature.TestCases {
         Normal,
 
         /// <summary>
-        /// Second finest resolution
+        /// Finer resolution
         /// </summary>
         Large,
 
         /// <summary>
-        /// Finest resolution
+        /// High resolution
         /// </summary>
-        Huge
+        Huge,
+
+        /// <summary>
+        /// Higher resolution
+        /// </summary>
+        Ultra,
+
+        /// <summary>
+        /// Even higher resolution
+        /// </summary>
+        Mega,
+
+        /// <summary>
+        /// Highest resolution
+        /// </summary>
+        Giga
+
     }
 
     /// <summary>

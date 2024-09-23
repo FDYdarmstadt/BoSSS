@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static BoSSS.Foundation.XDG.XQuadFactoryHelper;
+using static BoSSS.Foundation.XDG.XQuadFactoryHelperBase;
 
 namespace CutEdgeQuadrature {
 
@@ -24,6 +24,6 @@ namespace CutEdgeQuadrature {
 
         double EdgeArea { get; }
 
-        MomentFittingVariants MomentFittingVariant { get; }
+        MomentFittingVariants MomentFittingVariant { get; set; }
     }
 }

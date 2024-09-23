@@ -936,10 +936,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     var Kref = gridData.iGeomCells.GetRefElement(jCell);
                     int NoOfFaces = Kref.NoOfFaces;
 
-                    if(jCell == 1410) {
-                        Console.WriteLine();
-                    }
-
                     for (int e = 0; e < NoOfFaces; e++) { // loop over faces...
                         MultidimensionalArray levelSetNormals =
                             LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, jCell, CurrentRule, e);

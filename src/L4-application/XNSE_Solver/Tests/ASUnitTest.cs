@@ -38,6 +38,9 @@ using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.AdvancedSolvers;
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
+using System.IO;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -100,6 +103,21 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingViscosityJumpTest(3, vmode, CutCellQuadratureType);
         }
 #endif
+        /// <summary>
+        /// See <see cref="PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194"/>.
+        /// </summary>
+        //[Test]
+        public static void CapillaryRiseTest() {
+
+            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194();
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
+            }
+            
+        }
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
@@ -122,6 +140,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingViscosityJumpTest-p" + deg });
         }
+
 
 #if !DEBUG
         /// <summary>

@@ -11,6 +11,7 @@ using System.Diagnostics;
 using SAIDT;
 using BoSSS.Application.TutorialTests;
 using System.Threading;
+using XESTSF;
 
 namespace ValidationTestRunner {
 
@@ -23,6 +24,7 @@ namespace ValidationTestRunner {
             get {
                 var ret = new Type[] {
                     typeof(ValidationTestRunnerMain),
+                    typeof(XESTSFMain),
                     typeof(SAIDTMain) // required to have the SAIDT binary available
                 };
                 return ret;
@@ -114,6 +116,75 @@ namespace ValidationTestRunner {
 
 
         /// <summary>
+        /// XDG-IST Solver, 
+        /// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
+        /// </summary>
+        //[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
+        //[Test]
+        static public void Run__XDGIST_BowShock()
+        {
+            // delete the database if it is more than 75 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "XESF_BowShock_ConvStudy",
+                "XESF_BowShock_ConvStudy",
+                "DELETE_XDGISTBowShock",
+                new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb");
+
+            Console.WriteLine("XDGISTBowShock @ FDYcluster");
+        }
+
+        /// <summary>
+        /// XDG-IST Solver, 
+        /// thesis results for: Vandergrift: Implicit Discontinuous Galerkin Shock Tracking Methods for Compressible Flows with Shocks (2024)
+        /// </summary>
+        //[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb")]
+        //[Test]
+        static public void Run__XDGIST_1DShockAcoustic() {
+
+            // delete the database if it is more than 25 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "XESTSF_ShockAcousticInteraction1D_ConvergenceStudy",
+                "XESTSF_ShockAcousticInteraction1D_ConvergenceStudy",
+                "DELETE_XESTSFShockAcousticInteraction1D",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb");
+
+            Console.WriteLine("XDGIST1DShockAcoustic @ FDYcluster");
+        }
+
+        /// <summary>
+        /// CNS Solver, 
+        /// thesis results for: Vandergrift: Implicit Discontinuous Galerkin Shock Tracking Methods for Compressible Flows with Shocks (2024)
+        /// </summary>
+        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy_PostProcessing.ipynb")]
+        [Test]
+        static public void Run__CNS_1DShockAcoustic()
+        {
+            // delete the database if it is more than 25 days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "CNS_AcousticWave1D_ConvStudy",
+                "CNS_AcousticWave1D_ConvStudy",
+                "DELETE_CNSShockAcousticInteraction1D",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("ShockFitting/Studies/ConvergenceStudy/CNSAcousticWave1DHPC_ConvStudy_PostProcessing.ipynb");
+
+            Console.WriteLine("CNS1DShockAcoustic @ FDYcluster");
+        }
+
+        /// <summary>
         /// Rheology Solver, 
         /// publication results for: Kikker, Kummer, Oberlack: A fully coupled high-order discontinuous Galerkin solver for viscoelastic fluid flow, https://onlinelibrary.wiley.com/doi/10.1002/fld.4950
         /// </summary>
@@ -136,6 +207,57 @@ namespace ValidationTestRunner {
 
             Console.WriteLine("RheologyConfinedCylinder @ FDYcluster");
         }
+
+
+        /// <summary>
+        /// Hagen-Poiseulle flow (aka. pipe flow) for the helical symmetric solver
+        /// Maintainer: Schahin Akbari
+        /// </summary>
+        //[NUnitFileToCopyHack("HelicalSymmetricSolver/HagenPoiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb")]
+        //[Test]
+        static public void Run__Helical_HagenPoiseulle() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_HagenPoiseulle
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Helical_HagenPoiseulle",
+                "Helical_HagenPoiseulle*",
+                "DELETE_Helical_HagenPoiseulle",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/HagenPoiseulle.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb");
+
+            Console.WriteLine("Helical_HagenPoiseulle @ FDYcluster");
+        }
+
+
+        /// <summary>
+        /// Centrifugal flow (aka. centrifugal flow) for the helical symmetric solver
+        /// Maintainer: Schahin Akbari
+        /// </summary>
+        //[NUnitFileToCopyHack("HelicalSymmetricSolver/Centrifugal.ipynb", "HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb")]
+        //[Test]
+        static public void Run__Helical_Centrifugal() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_Centrifugal
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Helical_Centrifugal",
+                "Helical_Centrifugal*",
+                "DELETE_Helical_Centrifugal",
+                new TimeSpan(days: 25, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Centrifugal.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb");
+
+            Console.WriteLine("Helical_Centrifugal @ FDYcluster");
+        }
+
 
         /// <summary>
         /// Contact Line at heated wall,
@@ -1112,11 +1234,13 @@ namespace ValidationTestRunner {
             if(EnforceDeletionEnvVar != null) {
                 string really = System.Environment.GetEnvironmentVariable(EnforceDeletionEnvVar) ?? "";
                 string really2 = System.Environment.GetEnvironmentVariable("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER") ?? "";
-                if(really.IsNonEmpty() || really2.IsNonEmpty() || masterEnforceDeletion) {
-                    if(really.Trim() != "0" || really2.Trim() != "0") {
-                        Console.WriteLine($"Enforcing deletion of old runs, since environment variables {EnforceDeletionEnvVar}/BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER are set to {really}/{really2} (not 0) or file 'BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt' exists!");
-                        enforce = true;
-                    }
+                if ((really.IsNonEmpty() && really.Trim() != "0")
+                    || (really2.IsNonEmpty() && really2.Trim() != "0")
+                    || masterEnforceDeletion) {
+
+                    Console.WriteLine($"Enforcing deletion of old runs, since environment variables {EnforceDeletionEnvVar}/BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER are set to {really}/{really2} (not 0) or file 'BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER.txt' exists!");
+                    enforce = true;
+
                 }
             }
 
