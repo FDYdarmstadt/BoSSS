@@ -1430,6 +1430,9 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.ComputeNodeNames.Clear();
                 CurrentSessionInfo.ComputeNodeNames.AddRange(ilPSP.Environment.MPIEnv.HostnameForRank);
 
+                //set number of threads per mpi rank
+                CurrentSessionInfo.ThreadPerMPIRank = ilPSP.Environment.NumThreads;
+
                 // save
                 this.CurrentSessionInfo.Save();
             }
