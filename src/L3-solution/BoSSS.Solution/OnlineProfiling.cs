@@ -78,7 +78,7 @@ namespace BoSSS.Solution {
         [DataMember]
         public DateTime AppEndTime;
 
-        [DataMember]
+        [JsonIgnore]
         public AppControl Ctrl;
 
 

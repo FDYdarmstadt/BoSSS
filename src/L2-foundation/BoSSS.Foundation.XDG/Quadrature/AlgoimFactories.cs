@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory() {
-            var factory = new Factory() {
+            var factory = new AlgoimFactory() {
                 m_Owner = this,
                 m_Rules = this.m_SurfaceRules
             };
@@ -38,7 +38,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public IQuadRuleFactory<QuadRule> GetVolumeFactory() {
-            var factory = new Factory() {
+            var factory = new AlgoimFactory() {
                 m_Owner = this,
                 m_Rules = this.m_SurfaceRules
             };
@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundarySurfaceFactory() {
-            var factory = new CellBoundaryFactory() {
+            var factory = new AlgoimCellBoundaryFactory() {
                 m_Owner = this,
                 m_Rules = this.m_CellBoundaryRules
             };
@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundaryVolumeFactory() {
-            var factory = new CellBoundaryFactory() {
+            var factory = new AlgoimCellBoundaryFactory() {
                 m_Owner = this,
                 m_Rules = this.m_CellBoundaryRules
             };
@@ -66,7 +66,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgeVolumeFactoryOnEdge() {
-            var factory = new EdgeRuleFactoryOnEdge() {
+            var factory = new AlgoimEdgeRuleFactoryOnEdge() {
                 m_Owner = this,
                 m_Rules = this.m_EdgeRules
             };
@@ -123,7 +123,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         #region Edge rules
 
-        class Factory : IQuadRuleFactory<QuadRule> {
+        class AlgoimFactory : IQuadRuleFactory<QuadRule> {
             internal AlgoimFactories m_Owner;
 
             internal Dictionary<int, ChunkRulePair<QuadRule>[]> m_Rules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
@@ -171,8 +171,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 foreach (int cell in mask.ItemEnum) {
                     var quadRule = GetNodesAndWeights(cell, RequestedOrder);
-                        ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
-                    
+                        ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));                    
                 }
 
                 m_Rules.Add(RequestedOrder, ret.ToArray());
@@ -260,7 +259,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         }
 
-        class CellBoundaryFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
+        class AlgoimCellBoundaryFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
             internal AlgoimFactories m_Owner;
 
             internal Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_Rules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
@@ -501,7 +500,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         }
 
-        class EdgeRuleFactoryOnEdge : IQuadRuleFactory<QuadRule> {
+        class AlgoimEdgeRuleFactoryOnEdge : IQuadRuleFactory<QuadRule> {
             internal AlgoimFactories m_Owner;
 
             internal Dictionary<int, ChunkRulePair<QuadRule>[]> m_Rules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
