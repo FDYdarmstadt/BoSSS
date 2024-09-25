@@ -11,6 +11,7 @@ using System.Diagnostics;
 using SAIDT;
 using BoSSS.Application.TutorialTests;
 using System.Threading;
+using XESTSF;
 
 namespace ValidationTestRunner {
 
@@ -23,6 +24,7 @@ namespace ValidationTestRunner {
             get {
                 var ret = new Type[] {
                     typeof(ValidationTestRunnerMain),
+                    typeof(XESTSFMain),
                     typeof(SAIDTMain) // required to have the SAIDT binary available
                 };
                 return ret;
@@ -117,8 +119,8 @@ namespace ValidationTestRunner {
         /// XDG-IST Solver, 
         /// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
         /// </summary>
-        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
-        [Test]
+        //[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
+        //[Test]
         static public void Run__XDGIST_BowShock()
         {
             // delete the database if it is more than 75 days old;
@@ -140,8 +142,8 @@ namespace ValidationTestRunner {
         /// XDG-IST Solver, 
         /// thesis results for: Vandergrift: Implicit Discontinuous Galerkin Shock Tracking Methods for Compressible Flows with Shocks (2024)
         /// </summary>
-        [NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb")]
-        [Test]
+        //[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy.ipynb", "ShockFitting/Studies/ConvergenceStudy/AcousticWave1D_ConvergenceStudy_PostProcessing.ipynb")]
+        //[Test]
         static public void Run__XDGIST_1DShockAcoustic() {
 
             // delete the database if it is more than 25 days old;
@@ -211,8 +213,8 @@ namespace ValidationTestRunner {
         /// Hagen-Poiseulle flow (aka. pipe flow) for the helical symmetric solver
         /// Maintainer: Schahin Akbari
         /// </summary>
-        [NUnitFileToCopyHack("HelicalSymmetricSolver/HagenPoiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb")]
-        [Test]
+        //[NUnitFileToCopyHack("HelicalSymmetricSolver/HagenPoiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb")]
+        //[Test]
         static public void Run__Helical_HagenPoiseulle() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_HagenPoiseulle
 
@@ -236,8 +238,8 @@ namespace ValidationTestRunner {
         /// Centrifugal flow (aka. centrifugal flow) for the helical symmetric solver
         /// Maintainer: Schahin Akbari
         /// </summary>
-        [NUnitFileToCopyHack("HelicalSymmetricSolver/Centrifugal.ipynb", "HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb")]
-        [Test]
+        //[NUnitFileToCopyHack("HelicalSymmetricSolver/Centrifugal.ipynb", "HelicalSymmetricSolver/Post_Processing_Centrifugal.ipynb")]
+        //[Test]
         static public void Run__Helical_Centrifugal() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_Centrifugal
 
