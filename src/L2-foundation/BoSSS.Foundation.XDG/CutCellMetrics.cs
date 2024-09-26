@@ -199,7 +199,7 @@ namespace BoSSS.Foundation.XDG {
                     var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
 
 
-                    var cutEdgeQuad = BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
+                    BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
                         edgeRule,
                         _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
@@ -214,9 +214,7 @@ namespace BoSSS.Foundation.XDG {
                                 edgArea[iEdge] = ResultsOfIntegration[i, 0];
                                 Debug.Assert(!(double.IsNaN(edgArea[iEdge]) || double.IsInfinity(edgArea[iEdge])));
                             }
-                        });
-                    cutEdgeQuad.ExecuteParallel = true;
-                    cutEdgeQuad.Execute();
+                        }).Execute();
 
                     // sum up edges for surface
                     // ------------------------
@@ -246,7 +244,7 @@ namespace BoSSS.Foundation.XDG {
                     var volRule = volScheme.Compile(gd, this.CutCellQuadratureOrder);
                     tr.Info("Checkpoint1.4");
 
-                    var cutVolQuad = BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
+                    BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
                         volRule,
                         _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
@@ -255,16 +253,14 @@ namespace BoSSS.Foundation.XDG {
                         },
                         _SaveIntegrationResults: delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) //
                         {
-                            for (int i = 0; i < Length; i++) {
+                            for(int i = 0; i < Length; i++) {
                                 int jCell = i + i0;
                                 Debug.Assert(cellVol[jCell] == 0);
                                 cellVol[jCell] = ResultsOfIntegration[i, 0];
                                 //Console.WriteLine("cellVol " + cellVol[jCell] + " of cell " + jCell);
                                 Debug.Assert(!(double.IsNaN(cellVol[jCell]) || double.IsInfinity(cellVol[jCell])));
                             }
-                        });
-                    cutVolQuad.ExecuteParallel = true;
-                    cutEdgeQuad.Execute();
+                        }).Execute();
                 }
 
                 tr.Info("Checkpoint2");
@@ -300,7 +296,7 @@ namespace BoSSS.Foundation.XDG {
 
                                         CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
                                         var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
-                                        var interSurfaceQuad = BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
+                                        BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                                             new int[] { 1 }, gd,
                                             rule,
                                             _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -318,9 +314,7 @@ namespace BoSSS.Foundation.XDG {
                                                         Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iLocalSpcB, 0]) || double.IsInfinity(cellMetrics[jCell, iLocalSpcB, 0])));
                                                     }
                                                 }
-                                            });
-                                        interSurfaceQuad.ExecuteParallel = true;
-                                        interSurfaceQuad.Execute();
+                                            }).Execute();
                                     }
                                 }
                             }

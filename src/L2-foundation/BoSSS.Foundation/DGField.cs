@@ -280,7 +280,6 @@ namespace BoSSS.Foundation {
                 //Stopwatch w = new Stopwatch();
                 //w.Start();
                 var pq = new ProjectionQuadrature(this, alpha, func, rule);
-                pq.ExecuteParallel = true;
                 pq.Execute();
                 //w.Stop();
                 //Console.WriteLine("Projection took: " + w.Elapsed.TotalSeconds + " seconds.");
