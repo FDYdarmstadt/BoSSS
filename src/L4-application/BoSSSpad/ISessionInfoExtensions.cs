@@ -1699,8 +1699,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// The number of threads per mpi rank used for this simulation
         /// </summary>
-        public static int NumberOfThreadsPerRank(this ISessionInfo session)
-        {
+        public static int NumberOfThreadsPerRank(this ISessionInfo session) {
             return session.ThreadPerMPIRank;
         }
 

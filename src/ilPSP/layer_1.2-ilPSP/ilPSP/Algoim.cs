@@ -49,14 +49,14 @@ namespace ilPSP.Utils {
 
         public static string[] GetLibname(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new string[] { "Algoimwrapper.dll", "Algoimwrapper.dll", "Algoimwrapper.dll", "Algoimwrapper.so" };
+                case Parallelism.SEQ: return new string[] { "Algoimwrapper.dll", "Algoimwrapper.dll", "Algoimwrapper.dll", "libBoSSSnative_seq.so" };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
         public static GetNameMangling[] GetGetNameMangling(Parallelism par) {
             switch (par) {
-                case Parallelism.SEQ: return new GetNameMangling[] { s => s, s => s, s => s, DynLibLoader.BoSSS_Prefix };
+                case Parallelism.SEQ: return new GetNameMangling[] { DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix, DynLibLoader.BoSSS_Prefix };
                 default: throw new ArgumentOutOfRangeException();
             }
         }
