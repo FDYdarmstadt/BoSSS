@@ -42,7 +42,7 @@ namespace XNSE_ParallelTets {
                 Material = true
             };
 
-            //C.SkipSolveAndEvaluateResidual = true;
+            C.SkipSolveAndEvaluateResidual = true;
 
             // grid generation
             // ===============

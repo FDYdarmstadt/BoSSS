@@ -36,8 +36,8 @@ namespace XNSE_ParallelTests {
             //var C = Controls.Test_ChannelFlow3D(false, false);
 
             //C.PlotAgglomeration = true;
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
 
             RunTest(C, "localTestcase");
 
