@@ -31,6 +31,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.LevelSetTools;
 using System.Collections;
 using MPI.Wrappers;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -1552,7 +1553,10 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
-
+        /// <summary>
+        /// Computes the capillary time step restriction for <param name="hmin"></param>
+        /// </summary>
+        /// <returns></returns>
         static public double GetCapillaryTimeStep(double rhoA, double rhoB, double sigma, double hmin, int LSdegree) {
 
             double dt_sigma = Math.Sqrt((rhoA + rhoB) * Math.Pow(hmin / (double)(LSdegree + 1), 3.0) / (2 * Math.PI * Math.Abs(sigma)));
@@ -1561,7 +1565,302 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
+        #region integral properties
+
+        /// <summary>
+        /// Checks the Gauss theorem for species <param name="spcId"></param> in cut-cell <param name="jCell"></param> with the given test field <param name="testField"></param>
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <param name="LsTrk"></param>
+        /// <param name="spcId"></param>
+        /// <param name="testField"></param>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public static (double error, double gaussInVolume, double gaussAtInterface, double gaussAtEdges) CheckGaussInCutCell(int jCell, LevelSetTracker LsTrk, SpeciesId spcId, VectorField<SinglePhaseField> testField, int order) {
+
+            GridData grdDat = LsTrk.GridDat;
+            BitArray cellIntDomBA = new BitArray(grdDat.Cells.NoOfLocalUpdatedCells);
+            cellIntDomBA[jCell] = true;
+            CellMask cellIntDom = new CellMask(grdDat, cellIntDomBA); //, MaskType.Geometrical);
+
+            XQuadSchemeHelper schemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadSchemeHelper;
+
+            // ========================================================
+            double gaussInVolume = 0.0;
+            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                schemeHelper.GetLevelSetquadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                    int qN = QR.NoOfNodes;
+                    int D = LsTrk.GridDat.SpatialDimension;
+
+                    for (int d = 0; d < D; d++) {
+
+                        var fGrad_d = MultidimensionalArray.Create(length, qN, D);
+                        testField[d].EvaluateGradient(i0, length, QR.Nodes, fGrad_d, 0, 0.0);
+
+                        for (int i = 0; i < length; i++) {
+                            for (int qn = 0; qn < qN; qn++) {
+                                EvalResult[i, qn, 0] += fGrad_d[i, qn, d];
+                            }
+                        }
+                    }
+                    //EvalResult.SetAll(1.0);
+                },
+                delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < length; i++) {
+                        gaussInVolume += ResultsOfIntegration[i, 0];
+                    }
+                }
+            ).Execute();
+
+            // =========================================================
+            double gaussAtInterface = 0.0;
+            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                schemeHelper.GetLevelSetquadScheme(0, cellIntDom).Compile(LsTrk.GridDat, order),
+                delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                    int qN = QR.NoOfNodes;
+                    int D = LsTrk.GridDat.SpatialDimension;
+
+                    var LsNormals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(QR.Nodes, i0, length);        // TODO change direction for spcId_B
+
+                    for (int d = 0; d < D; d++) {
+
+                        var fEval_d = MultidimensionalArray.Create(length, qN);
+                        testField[d].Evaluate(i0, length, QR.Nodes, fEval_d);
+
+                        for (int i = 0; i < length; i++) {
+                            for (int qn = 0; qn < qN; qn++) {
+                                EvalResult[i, qn, 0] += fEval_d[i, qn] * LsNormals[i, qn, d];
+                            }
+                        }
+                    }
+                    // EvalResult.SetAll(1.0);
+
+                },
+                delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < length; i++) {
+                        gaussAtInterface += ResultsOfIntegration[i, 0];
+                    }
+                }
+            ).Execute();
+
+            // =========================================================
+            BitArray edgeIntDomBA = new BitArray(grdDat.iGeomEdges.Count);
+            var jCell2Edges = grdDat.Cells.Cells2Edges[jCell];
+            foreach (int iE in jCell2Edges) {
+                if (iE < 0)
+                    edgeIntDomBA[(-iE) - 1] = true;
+                else
+                    edgeIntDomBA[iE - 1] = true;
+            }
+            EdgeMask edgeIntDom = new EdgeMask(grdDat, edgeIntDomBA);
+
+            double gaussAtCutEdges = 0.0;
+            EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                schemeHelper.GetEdgeQuadScheme(spcId, IntegrationDomain: edgeIntDom).Compile(LsTrk.GridDat, order),
+                delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                    int qN = QR.NoOfNodes;
+                    int D = LsTrk.GridDat.SpatialDimension;
+
+                    for (int d = 0; d < D; d++) {
+
+                        var fEvalEdgeIN_d = MultidimensionalArray.Create(length, qN);
+                        var fEvalEdgeOUT_d = MultidimensionalArray.Create(length, qN);
+                        testField[d].EvaluateEdge(i0, length, QR.Nodes, fEvalEdgeIN_d, fEvalEdgeOUT_d);
+
+                        for (int i = 0; i < length; i++) {
+                            double[] EdgeNormal = LsTrk.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
+                            if (LsTrk.GridDat.Edges.CellIndices[i0 + i, 1] == jCell) {
+                                // Console.WriteLine($"jCell {jCell} OUT on edge {i0 + i} - change direction");
+                                EdgeNormal.ScaleV(-1.0);
+                            }
+                            // Console.WriteLine($"Edge normal: ({EdgeNormal[0]}, {EdgeNormal[1]})");
+
+                            for (int qn = 0; qn < qN; qn++) {
+                                EvalResult[i, qn, 0] += fEvalEdgeIN_d[i, qn] * EdgeNormal[d];
+                            }
+                        }
+                    }
+                    // EvalResult.SetAll(1.0);
+
+                },
+                delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < length; i++) {
+                        // Console.WriteLine($"edge {i0 + i}");
+                        gaussAtCutEdges += ResultsOfIntegration[i, 0];
+                    }
+                }
+            ).Execute();
+
+            // =========================================================
+            double error = gaussInVolume - gaussAtInterface - gaussAtCutEdges;
+
+            return (error, gaussInVolume, gaussAtInterface, gaussAtCutEdges);
+
+        }
 
 
+        /// <summary>
+        /// Checks the special Stokes theorem in cut-cell <param name="jCell"></param> with the given test field <param name="testField"></param>
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <param name="LsTrk"></param>
+        /// <param name="spcId_A"></param>
+        /// <param name="testField"></param>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public static (double error, double stokesAtInterface, double stokesAtEdges) CheckStokesForCell(int jCell, LevelSetTracker LsTrk, VectorField<SinglePhaseField> testField, int order) {
+
+            GridData grdDat = LsTrk.GridDat;
+            BitArray cellIntDomBA = new BitArray(grdDat.Cells.NoOfLocalUpdatedCells);
+            cellIntDomBA[jCell] = true;
+            CellMask cellIntDom = new CellMask(grdDat, cellIntDomBA); //, MaskType.Geometrical);
+
+            XQuadSchemeHelper schemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadSchemeHelper;
+
+            // ========================================================
+            double stokesAtInterface = 0.0;
+            CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                schemeHelper.GetLevelSetquadScheme(0, cellIntDom, order).Compile(LsTrk.GridDat, order),
+                delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                    int qN = QR.NoOfNodes;
+                    int D = LsTrk.GridDat.SpatialDimension;
+
+                    var LsNormals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(QR.Nodes, i0, length);
+
+                    var curv = MultidimensionalArray.Create(length, qN);
+                    ((LevelSet)LsTrk.LevelSets[0]).EvaluateTotalCurvature(i0, length, QR.Nodes, curv);
+                    // curv.Scale(0.5);    // mean curvature
+
+                    for (int d = 0; d < D; d++) {
+
+                        var fEval_d = MultidimensionalArray.Create(length, qN);
+                        testField[d].Evaluate(i0, length, QR.Nodes, fEval_d);
+
+                        for (int i = 0; i < length; i++) {
+                            for (int qn = 0; qn < qN; qn++) {
+                                EvalResult[i, qn, 0] += curv[i, qn] * LsNormals[i, qn, d] * fEval_d[i, qn];
+                            }
+                        }
+                    }
+
+                },
+                delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < length; i++) {
+                        stokesAtInterface += ResultsOfIntegration[i, 0];
+                    }
+                }
+            ).Execute();
+
+            // =========================================================
+            BitArray edgeIntDomBA = new BitArray(grdDat.iGeomEdges.Count);
+            var jCell2Edges = grdDat.Cells.Cells2Edges[jCell];
+            foreach (int iE in jCell2Edges) {
+                if (iE < 0)
+                    edgeIntDomBA[(-iE) - 1] = true;
+                else
+                    edgeIntDomBA[iE - 1] = true;
+            }
+            EdgeMask edgeIntDom = new EdgeMask(grdDat, edgeIntDomBA);
+
+            var testFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
+            EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, edgeIntDom);
+
+            double stokesAtEdges = 0.0;
+            EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                SurfaceElement_BoundaryEdge.Compile(LsTrk.GridDat, order),
+                delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                    int qN = QR.NoOfNodes;
+                    int D = LsTrk.GridDat.SpatialDimension;
+
+                    for (int i = 0; i < length; i++) {
+
+                        double[] EdgeNormal = LsTrk.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
+                        if (LsTrk.GridDat.Edges.CellIndices[i0 + i, 1] == jCell) {
+                            // Console.WriteLine($"jCell {jCell} OUT on edge {i0 + i} - change direction");
+                            EdgeNormal.ScaleV(-1.0);
+                        }
+                        // Console.WriteLine($"normal at Edge {i0+i} : ({EdgeNormal[0]}, {EdgeNormal[1]})");
+                        // Console.WriteLine($"normal at Edge {i0+i} : ({EdgeNormal[0]}, {EdgeNormal[1]}, , {EdgeNormal[2]})");
+
+                        // Console.WriteLine($"edge {i0 + i} - number of nodes {qN}");
+                        int trf = (LsTrk.GridDat.Edges.CellIndices[i0 + i, 0] == jCell) ? LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0 + i, 0] : LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0 + i, 1];
+                        NodeSet VolNodes = QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
+                        // Console.WriteLine($"volume node: ({VolNodes[0, 0]}, {VolNodes[0, 1]})");  
+
+                        var LsNormals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(VolNodes, jCell, length);
+                        // var phiGrad = MultidimensionalArray.Create(length, qN, D);
+                        // ((LevelSet)LsTrk.LevelSets[0]).EvaluateGradient(jCell, length, VolNodes, phiGrad);
+
+                        for (int d = 0; d < D; d++) {
+
+                            var fEval = MultidimensionalArray.Create(length, qN);
+                            testField[d].Evaluate(jCell, length, VolNodes, fEval);
+
+                            for (int qn = 0; qn < qN; qn++) {
+                                // Console.WriteLine($"LevelSet normal at Edge {i0+i}: ({LsNormals[i, qn, 0]}, {LsNormals[i, qn, 1]})");
+                                // Console.WriteLine($"LevelSet normal at Edge {i0+i}: ({LsNormals[i, qn, 0]}, {LsNormals[i, qn, 1]}, {LsNormals[i, qn, 2]})");
+                                // double[] LsNormal = new double[] { phiGrad[i, qn, 0], phiGrad[i, qn, 1] };
+                                // LsNormal.Normalize();
+                                // Console.WriteLine($"PhiGrad normal at Edge {i0+i}: ({LsNormal[0]}, {LsNormal[1]})");
+
+                                double[] LsTangent = new double[D];
+                                for (int d1 = 0; d1 < D; d1++) {
+                                    for (int d2 = 0; d2 < D; d2++) {
+                                        double nn = LsNormals[i, qn, d1] * LsNormals[i, qn, d2];
+                                        if (d1 == d2) {
+                                            LsTangent[d1] += (1 - nn) * EdgeNormal[d2];
+                                        } else {
+                                            LsTangent[d1] += -nn * EdgeNormal[d2];
+                                        }
+                                    }
+                                }
+                                LsTangent = LsTangent.Normalize();
+
+                                // double tangentCheck = GenericBlas.InnerProd(LsTangent, LsNormals.ExtractSubArrayShallow(i, qn, -1).To1DArray());
+                                // Console.WriteLine($"LsTangent * LsNormals = {tangentCheck}");                       
+
+                                // if (D != 2) 
+                                //     throw new ArgumentException();
+
+                                // double[] LsTangent = new double[2];
+
+                                // LsTangent[0] = -LsNormals[i, qn, 1];
+                                // LsTangent[1] = LsNormals[i, qn, 0];
+
+                                // if (GenericBlas.InnerProd(LsTangent, EdgeNormal) < 0.0) {
+                                //     // Console.WriteLine($"LsTangent change direction");
+                                //     // LsTangent.ScaleV(-1.0);
+                                //     Console.WriteLine($"LsTangent NOT pointing outward!");
+                                // }
+
+                                // Console.WriteLine($"LS tangent: ({LsTangent[0]}, {LsTangent[1]})");  
+                                // Console.WriteLine($"LS tangent: ({LsTangent[0]}, {LsTangent[1]} , {LsTangent[2]})");  
+                                EvalResult[i, qn, 0] += LsTangent[d] * fEval[i, qn];
+                            }
+                        }
+                    }
+
+                },
+                delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < length; i++) {
+                        stokesAtEdges += ResultsOfIntegration[i, 0];
+                    }
+                }
+            ).Execute();
+
+            // =========================================================
+            double error = stokesAtInterface + stokesAtEdges;
+
+            return (error, stokesAtInterface, stokesAtEdges);
+        }
+
+
+        #endregion
     }
 }

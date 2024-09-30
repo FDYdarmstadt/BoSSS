@@ -23,11 +23,13 @@ using System.Threading.Tasks;
 
 using ilPSP;
 using ilPSP.Utils;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.LevelSetTools;
-
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -211,6 +213,67 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
+        static void CheckIntegralProperties(XNSE solver) {
+
+            var LsTrk = solver.LsTrk;
+            var CCmask = LsTrk.Regions.GetCutCellMask();
+
+            Basis testBasis = new Basis(LsTrk.GridDat, 0);
+
+            SinglePhaseField testFieldX = new SinglePhaseField(testBasis);
+            Func<double[], double> fx = (X => 1.0);
+            testFieldX.ProjectField(fx);
+            SinglePhaseField testFieldY = new SinglePhaseField(testBasis);
+            Func<double[], double> fy = (X => 1.0);
+            testFieldY.ProjectField(fy);
+            SinglePhaseField testFieldZ = new SinglePhaseField(testBasis);
+            Func<double[], double> fz = (X => 1.0);
+            testFieldZ.ProjectField(fz);
+
+            VectorField<SinglePhaseField> testField = (LsTrk.GridDat.SpatialDimension == 2) ?
+                testField = new VectorField<SinglePhaseField>(new SinglePhaseField[] { testFieldX, testFieldY }) :
+                testField = new VectorField<SinglePhaseField>(new SinglePhaseField[] { testFieldX, testFieldY, testFieldZ });
+
+            int order = 2 * ((LevelSet)LsTrk.LevelSets[0]).Basis.Degree + 1;
+
+
+            // check gauss
+            // ===========
+            double totalGaussError = 0.0;
+            Dictionary<int, (double error, double gaussInVolume, double gaussAtInterface, double gaussAtEdges)> gaussErrorPerCell = new Dictionary<int, (double error, double gaussInVolume, double gaussAtInterface, double gaussAtEdges)>();
+            SinglePhaseField gaussErrorField = new SinglePhaseField(new Basis(LsTrk.GridDat, 0), "gaussError");
+
+            foreach (int jC in CCmask.ItemEnum) {
+                var result = XNSEUtils.CheckGaussInCutCell(jC, LsTrk, LsTrk.GetSpeciesId("A"), testField, order);
+                Console.WriteLine($"Gauss error in Cell {jC}: {result.error}");
+                totalGaussError += result.error.Abs();
+                gaussErrorPerCell.Add(jC, result);
+                gaussErrorField.SetMeanValue(jC, result.error);
+            }
+
+            Console.WriteLine($"total Gauss error = {totalGaussError}");
+            //Assert.LessOrEqual(totalGaussError, 0.0, $"Gauss error above threshold.");
+
+            // check stokes
+            // ============
+            double totalStokesError = 0.0;
+            Dictionary<int, (double error, double stokesAtInterface, double stokesAtEdges)> stokesErrorPerCell = new Dictionary<int, (double error, double stokesAtInterface, double stokesAtEdges)>();
+            SinglePhaseField stokesErrorField = new SinglePhaseField(new Basis(LsTrk.GridDat, 0), "stokesError");
+
+            foreach (int jC in CCmask.ItemEnum) {
+                var result = XNSEUtils.CheckStokesForCell(jC, LsTrk, testField, order);
+                Console.WriteLine($"Stokes error in Cell {jC}: {result.error}");
+                stokesErrorPerCell.Add(jC, result);
+                totalStokesError += result.error.Abs();
+                stokesErrorField.SetMeanValue(jC, result.error);
+            }
+            
+            Console.WriteLine($"total Stokes error = {totalStokesError}");
+            //Assert.LessOrEqual(totalStokesError, 0.0, $"Stokes error above threshold.");
+
+        }
+
+
         [Test]
         public static void TestStaticDroplet2D_ExactSolution() {
 
@@ -219,10 +282,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //ctrl.ImmediatePlotPeriod = 1;
             //ctrl.SuperSampling = 3;
 
-            using (var TestRun = new XNSE()) {
+            using (var TestSolver = new XNSE()) {
 
-                TestRun.Init(ctrl);
-                TestRun.RunSolverMode();
+                TestSolver.Init(ctrl);
+                TestSolver.RunSolverMode();
+
+                CheckIntegralProperties(TestSolver);
+
             }
 
         }
