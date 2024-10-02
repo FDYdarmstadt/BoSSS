@@ -723,7 +723,8 @@ namespace CutCellQuadrature {
 {
                         AlgoimFactories FactoryFactory = new AlgoimFactories(
                                 levelSetTracker.DataHistories[0].Current,
-                                this.Grid.RefElements[0]
+                                this.Grid.RefElements[0],
+                                callSurfaceAndVolumeAtOnce: false
                             );
 
                         if (testCase is ISurfaceTestCase) {

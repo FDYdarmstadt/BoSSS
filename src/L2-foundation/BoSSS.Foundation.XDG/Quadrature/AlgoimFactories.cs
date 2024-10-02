@@ -134,6 +134,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             bool VolumeSign => m_Owner.VolumeSign;
 
+            CellMask m_MaxGridMask => m_Owner.MaxGrid;
+
             bool m_SurfaceAndVolumeAtOnce => spaceDim > 1 ? m_Owner.SurfaceAndVolumeAtOnce : false;
 
             public bool useMetrics = false;
@@ -161,13 +163,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                 if (!m_Rules.ContainsKey(RequestedOrder)) {
                     if (m_SurfaceAndVolumeAtOnce)
-                        CalculateQuadRuleSetCombo(m_Owner.MaxGrid, RequestedOrder);
+                        CalculateQuadRuleSetCombo(RequestedOrder);
                     else
-                        CalculateQuadRuleSetSingle(m_Owner.MaxGrid, RequestedOrder);
+                        CalculateQuadRuleSetSingle(RequestedOrder);
                 }
 
                 // check if all the mask or a submask is requested
-                if (mask.NoOfItemsLocally == m_Owner.MaxGrid.NoOfItemsLocally) {
+                if (mask.NoOfItemsLocally == m_MaxGridMask.NoOfItemsLocally) {
                     return m_Rules[RequestedOrder];
                 } else {
                     var Rule = m_Rules[RequestedOrder];
@@ -193,14 +195,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
                     return Ret;
                 }
-                }
+            }
 
-                private void CalculateQuadRuleSetSingle(ExecutionMask mask, int RequestedOrder) {
+            private void CalculateQuadRuleSetSingle(int RequestedOrder) {
                 List<ChunkRulePair<QuadRule>> ret = new List<ChunkRulePair<QuadRule>>();
 
-                foreach (int cell in mask.ItemEnum) {
+                foreach (int cell in m_MaxGridMask.ItemEnum) {
                     var quadRule = GetNodesAndWeights(cell, RequestedOrder);
-                        ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));                    
+                    ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
                 }
 
                 m_Rules.Add(RequestedOrder, ret.ToArray());
@@ -209,14 +211,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             /// <summary>
             /// Combo rule calculation for surface and volume rules at the same time. Returns the values of either but stores both in cache once calculated
             /// </summary>
-            /// <param name="mask"></param>
             /// <param name="RequestedOrder"></param>
             /// <returns></returns>
-            private void CalculateQuadRuleSetCombo(ExecutionMask mask, int RequestedOrder) {
+            private void CalculateQuadRuleSetCombo(int RequestedOrder) {
                 List<ChunkRulePair<QuadRule>> retSurf = new List<ChunkRulePair<QuadRule>>();
                 List<ChunkRulePair<QuadRule>> retVol = new List<ChunkRulePair<QuadRule>>();
 
-                foreach (int cell in mask.ItemEnum) {
+                foreach (int cell in m_MaxGridMask.ItemEnum) {
                     var quadRule = GetNodesAndWeightsCombo(cell, RequestedOrder);
                     retSurf.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule[0]));
                     retVol.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule[1]));
