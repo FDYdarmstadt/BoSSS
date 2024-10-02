@@ -271,10 +271,19 @@ namespace ApplicationWithIDT {
         }
 
     }
+    /// <summary>
+    /// Enriched Residual objective function, where only components belonging to the Nearband of the interface are considered (i.e. test functions with support in the nearband)
+    /// </summary>
     public class SFNearBandEnRes : SFFullEnRes {
         public SFNearBandEnRes(XDifferentialOperatorMk2 Op_cons, int pDiff) : base(Op_cons, pDiff) {
             is_GetConsFromObj = false;
         }
+        /// <summary>
+        /// Computes the full enriched residual and sets all entries to zero which are not on the near band
+        /// </summary>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="obj_out"></param>
+        /// <param name="ConservativeFields"></param>
         public override void EvalObjective<V>(V obj_out, XDGField[] ConservativeFields) {
             base.EvalObjective(obj_out, ConservativeFields);
             var tracker = ConservativeFields[0].Basis.Tracker;
@@ -291,6 +300,12 @@ namespace ApplicationWithIDT {
                 }
             }
         }
+        /// <summary>
+        /// Computes the full enriched residual Jacobian and sets all entries to zero which are not on the near band
+        /// </summary>
+        /// <param name="ConservativeFields"></param>
+        /// <param name="lHint"></param>
+        /// <returns></returns>
         public override MsrMatrix GetObjJacobian(XDGField[] ConservativeFields, LinearizationHint lHint) {
             var Jobj = base.GetObjJacobian(ConservativeFields, lHint);
             var tracker = ConservativeFields[0].Basis.Tracker;
@@ -309,10 +324,19 @@ namespace ApplicationWithIDT {
             return Jobj;
         }
     }
+    /// <summary>
+    /// Enriched Residual objective function, where only components belonging to the cut cells are considered (i.e. test functions with support in the cut-cells)
+    /// </summary>
     public class SFCutCellEnRes : SFFullEnRes {
         public SFCutCellEnRes(XDifferentialOperatorMk2 Op_cons, int pDiff) : base(Op_cons, pDiff) {
             is_GetConsFromObj = false;
         }
+        /// <summary>
+        /// Computes the full enriched residual and sets all entries to zero which are not from a cut-cell
+        /// </summary>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="obj_out"></param>
+        /// <param name="ConservativeFields"></param>
         public override void EvalObjective<V>(V obj_out, XDGField[] ConservativeFields) {
             base.EvalObjective(obj_out, ConservativeFields);
             var tracker = ConservativeFields[0].Basis.Tracker;
@@ -323,12 +347,18 @@ namespace ApplicationWithIDT {
             for(int iRow = 0; iRow < (int)obj_map.TotalLength; iRow++) {
                 obj_map.LocalFieldCoordinateIndex(iRow, out int iField, out int jCell, out int nMode);
                 if(NB.Contains(jCell)) {
-                    continue; // do nothing if cell is in near-band
+                    continue; // do nothing if cell is in cut-cell
                 } else {
                     obj_out[iRow] = 0; //set unneeded entries to zero
                 }
             }
         }
+        /// <summary>
+        /// Computes the full enriched residual Jacobian and sets all entries to zero which are not from a cut-cell
+        /// </summary>
+        /// <param name="ConservativeFields"></param>
+        /// <param name="lHint"></param>
+        /// <returns></returns>
         public override MsrMatrix GetObjJacobian(XDGField[] ConservativeFields, LinearizationHint lHint) {
             var Jobj = base.GetObjJacobian(ConservativeFields, lHint);
             var tracker = ConservativeFields[0].Basis.Tracker;
@@ -339,7 +369,7 @@ namespace ApplicationWithIDT {
             for(int iRow = 0; iRow < (int)obj_map.TotalLength; iRow++) {
                 obj_map.LocalFieldCoordinateIndex(iRow, out int iField, out int jCell, out int nMode);
                 if(NB.Contains(jCell)) {
-                    continue; // do nothing if cell is in near-band
+                    continue; // do nothing if cell is cut-cell
                 } else {
                     Jobj.ClearRow(iRow); //set unneeded entries to zero
                 }
@@ -347,9 +377,17 @@ namespace ApplicationWithIDT {
             return Jobj;
         }
     }
-
+    /// <summary>
+    /// Generic objective function associated to the weak from corresponding to the Rankine-Hugoniot jump conditions
+    /// </summary>
     public class SFRankineHugoniotBase : OptProbBase {
         int pDiff;
+        /// <summary>
+        /// The spatial operator encoding the Rankine-Hugoniot conditions (different for each system of conservation laws) is a input to the constructor. It must be constructed in the solver initialization.
+        /// </summary>
+        /// <param name="Op_cons"></param>
+        /// <param name="Op_obj"></param>
+        /// <param name="pDiff"></param>
         public SFRankineHugoniotBase(XDifferentialOperatorMk2 Op_cons, XDifferentialOperatorMk2 Op_obj, int pDiff)
                             : base(Op_cons, Op_obj) {
             is_GetConsFromObj = false;

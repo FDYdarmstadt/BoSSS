@@ -57,6 +57,32 @@ namespace CutCellQuadrature {
         }
 
         [Test]
+        public static void Test3DSphereVolumeAlgoim() {
+            ITestCase testCase = new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured);
+            testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+            Program app = new Program(testCase);
+            app.Init(null);
+            app.SetUpEnvironment();
+            app.SetInitial(0);
+
+            int i = 1;
+            while (testCase.ProceedToNextShift()) {
+                double referenceValue = app.SetUpConfiguration();
+                var result = app.PerformConfiguration(
+                    Modes.Algoim,
+                    7,
+                    rootFindingAlgorithm: new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
+
+                Assert.That(
+                    relError < 1e-2,
+                    "Relative error too large for shift number " + i);
+                i++;
+            }
+        }
+
+        [Test]
         public static void Test3DSphereSurface() {
             ITestCase testCase = new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
@@ -82,6 +108,31 @@ namespace CutCellQuadrature {
             }
         }
 
+        [Test]
+        public static void Test3DSphereSurfaceAlgoim() {
+            ITestCase testCase = new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Tiny, GridTypes.Structured);
+            testCase.ScaleShifts(0.5 * testCase.GridSpacing);
+
+            Program app = new Program(testCase);
+            app.Init(null);
+            app.SetUpEnvironment();
+            app.SetInitial(0);
+
+            int i = 1;
+            while (testCase.ProceedToNextShift()) {
+                double referenceValue = app.SetUpConfiguration();
+                var result = app.PerformConfiguration(
+                    Modes.Algoim,
+                    7,
+                    rootFindingAlgorithm: new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                double relError = Math.Abs(result.Item1 - referenceValue) / testCase.Solution;
+
+                Assert.That(
+                    relError < 1e-2,
+                    "Relative error too large for shift number " + i);
+                i++;
+            }
+        }
 
 
         //Due to the sharp kinks of cube shape, the analytical results are not accurate.

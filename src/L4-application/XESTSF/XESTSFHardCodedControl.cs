@@ -194,7 +194,7 @@ namespace XESTSF {
             }
 
                 // Functions for the perturbations
-                Func<double[], double> pressure_per = delegate (double[] X) {
+            Func<double[], double> pressure_per = delegate (double[] X) {
                 if(X[0] > 0) {
                     if(X[0] < shockPosition) {
                         return p_amp_neg*pressureL * f_waveform(X[0] + (velocityL - cL) * X[1]) + p_amp_pos * pressureL * f_waveform(X[0] - (velocityL + cL) * X[1]);

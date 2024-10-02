@@ -47,6 +47,7 @@
     <ProjectReference Include="..\XDGTest\XDGTest.csproj" />
     <ProjectReference Include="..\XdgTimesteppingTest\XdgTimesteppingTest.csproj" />
     <ProjectReference Include="..\XESF\XESF.csproj" />
+    <ProjectReference Include="..\XESTSF\XESTSF.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver_LargeMPItest\XNSE_Solver_LargeMPItest.csproj" />

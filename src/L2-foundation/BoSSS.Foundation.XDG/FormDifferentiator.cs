@@ -1,4 +1,4 @@
-﻿using ilPSP;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;

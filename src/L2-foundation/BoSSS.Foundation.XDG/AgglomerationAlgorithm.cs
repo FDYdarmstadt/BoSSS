@@ -82,18 +82,8 @@ namespace BoSSS.Foundation.XDG {
                 // Collect neighbors and determine if there is a non-empty edge which connects cell 'jCell' to some other cell
                 bool NonEmptyEdgeAvailable = false;
                 for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
-                    int iEdge = Cell2Edge_jCell[e];
-                    int OtherCell, ThisCell;
-                    if (iEdge < 0) {
-                        // cell 'jCell' is the OUT-cell of edge 'iEdge'
-                        OtherCell = 0;
-                        ThisCell = 1;
-                        iEdge *= -1;
-                    } else {
-                        OtherCell = 1;
-                        ThisCell = 0;
-                    }
-                    iEdge--;
+                    var (iEdge, ThisCell, OtherCell) = GetEdgeInfo(Cell2Edge_jCell[e]);
+
                     int jCellNeigh = Edge2Cell[iEdge, OtherCell];
                     double EdgeArea_iEdge = m_edgeArea[iEdge];
                     Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
@@ -340,19 +330,30 @@ namespace BoSSS.Foundation.XDG {
         bool AgglomerateDeceased;
         string Tag;
 
+        private List<CellAgglomerator.AgglomerationPair> m_AggPairsOnNeighborPairs;
+        private List<CellAgglomerator.AgglomerationPair> m_AggPairs;
+        private List<int> m_failCells;
+        private List<int> m_CellsNeedChainAgglomeration;
+        private List<AgglomerationGroup> m_aggGroups;
+
         MultidimensionalArray CellVolumes;
-
         MultidimensionalArray edgeArea;
-
-
         MultidimensionalArray[] oldCellVolumes;
 
         bool ExceptionOnFailedAgglomeration;
-
-
+        bool m_globalAgglomerationMapping = true; //to force agglomeration mapping such that every iteration is done by a processor (see e.g., group agglomeration), practically not needed for most of the cases
+        string marker = ""; //marker for debugging purposes
 
         /// <summary>
-        /// 
+        /// edges with a measure below or equal to this threshold are
+        ///  considered to be 'empty', therefore they should not be used for agglomeration;
+        ///  there is, as always, an exception: if all inner edges which belong to a
+        ///  cell that should be agglomerated, the criterion mentioned above must be ignored.
+        /// </summary>
+        static double EmptyEdgeTreshold = 1.0e-10;
+
+        /// <summary>
+        /// reference level set tracker
         /// </summary>
         public LevelSetTracker Tracker {
             get;
@@ -368,7 +369,18 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        /// <summary>
+        /// reference grid data
+        /// </summary>
         GridData grdDat => Tracker.GridDat;
+
+        /// <summary>
+        /// returns the unique pairs on this this processor and neighbors pairs (not all pairs of the neighbor procs)
+        /// </summary>
+        private List<CellAgglomerator.AgglomerationPair> m_AggPairsWithExtNeighborPairs
+        {
+            get => m_AggPairsOnNeighborPairs.ToList().Union(m_AggPairs).Distinct().ToList();
+        }
 
         /// <summary>
         /// 1st pass: of agglomeration algorithm, Identification of agglomeration sources
@@ -652,14 +664,6 @@ namespace BoSSS.Foundation.XDG {
 
             }
         }
-
-        /// <summary>
-        /// edges with a measure below or equal to this threshold are
-        ///  considered to be 'empty', therefore they should not be used for agglomeration;
-        ///  there is, as always, an exception: if all inner edges which belong to a
-        ///  cell that should be agglomerated, the criterion mentioned above must be ignored.
-        /// </summary>
-        static double EmptyEdgeTreshold = 1.0e-10;
 
         /// <summary>
         /// 2nd pass of agglomeration algorithm, Identification of agglomeration targets
@@ -1045,6 +1049,7 @@ namespace BoSSS.Foundation.XDG {
         //    AggSourceCellsOnExtNeighborPairs = AggSourceCellsOnExtNeighborPairs.Distinct().ToList();
         //    return InterProcessAgglomeration;
         //}
+
         /// <summary>
         /// Exchange the local agglomeration pairs with their neighbors (only the ranks that is adjacent to the cells in a pair)
         /// </summary>
@@ -1072,18 +1077,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // loop over faces/neighbor cells...
                 for (int e = 0; e < NoOfEdges_4_jCell; e++) {
-                    int iEdge = Cell2Edge_jCell[e];
-                    int OtherCell, ThisCell;
-                    if (iEdge < 0) {
-                        // cell 'jCell' is the OUT-cell of edge 'iEdge'
-                        OtherCell = 0;
-                        ThisCell = 1;
-                        iEdge *= -1;
-                    } else {
-                        OtherCell = 1;
-                        ThisCell = 0;
-                    }
-                    iEdge--;
+                    var (iEdge, ThisCell, OtherCell) = GetEdgeInfo(Cell2Edge_jCell[e]);
                     int jCellNeigh = Edge2Cell[iEdge, OtherCell];
                     Debug.Assert(Edge2Cell[iEdge, ThisCell] == jAggSource);
 
@@ -1174,22 +1168,12 @@ namespace BoSSS.Foundation.XDG {
             return InterProcessAgglomeration;
         }
 
-        private List<CellAgglomerator.AgglomerationPair> m_AggPairsOnNeighborPairs;
-        private List<CellAgglomerator.AgglomerationPair> m_AggPairs;
-        private List<int> m_failCells;
-        private List<int> m_CellsNeedChainAgglomeration;
-
-        private List<CellAgglomerator.AgglomerationPair> m_AggPairsWithExtNeighborPairs {
-            get => m_AggPairsOnNeighborPairs.ToList().Union(m_AggPairs).Distinct().ToList();
-        }
-
         /// <summary>
         /// 2nd pass of agglomeration algorithm, Identification of agglomeration targets
         /// </summary>
         /// <remarks>
         /// Revised algorithm, in use since Dec. 2021
         /// </remarks>
-        //[MethodImpl(MethodImplOptions.NoInlining)] //too see which lines throw exception.
         protected virtual void FindAgglomerationTargets_Mk2(
             List<int> AgglomSourceCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
@@ -1722,8 +1706,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        List<AgglomerationGroup> m_aggGroups;
-
         /// <summary>
         /// 3rd pass of agglomeration algorithm, Identification of agglomeration targets
         /// </summary>
@@ -1738,7 +1720,7 @@ namespace BoSSS.Foundation.XDG {
                 Partitioning CellPart = Tracker.GridDat.CellPartitioning;
                 int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
 
-                // The incoming AggCandidates represent newborn or vanishing cells if they are false
+                // The incoming AggCandidates represent newborn or vanishing cells
                 List<int> CellsRequireTopologyChanges = NewbornCellsList.Union(VanishingCellsList).ToList();
 
                 // Initiate new agglomeration pair list
@@ -1777,123 +1759,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // If there are still cells waiting for agglomeration, this means that we can perhaps create agg groups with source cells
                 m_aggGroups = new List<AgglomerationGroup>();
-
-                var possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList(); //cells requiring topology change cannot be a target at any point
-                bool globalAgg = true;
-
-                marker = "grp";
-
-                if (globalAgg) {
-                    //create global groups (costly as the remaining cells are usually close to each other but results in unique agg. mapping)
-                    while (possibleGroupTargets.Count.MPIMax() > 0) { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
-
-                        //choose the local biggest cell
-                        var cellWithMaxVolume = possibleGroupTargets
-                                .Select(p =>  ( CellNumber: p, CellVolume: CellVolumes[p] ))
-                                .OrderByDescending(p => p.CellVolume)
-                                .FirstOrDefault(); //due to MPIAllGatherO trivial or non-trivial every processor needs to send data
-
-                        int localCellNumberWithMaxVolume = cellWithMaxVolume.CellNumber;
-
-                        //convert the local number to the global and then create a new tuple with it
-                        var globalCellNumberWithMaxVolume = grdDat.CellPartitioning.i0 + (long)localCellNumberWithMaxVolume;
-                        var cellWithMaxVolumeGlobal = new { GlobalCellNumber = globalCellNumberWithMaxVolume, CellVolume = cellWithMaxVolume.CellVolume };
-
-                        //Gather all the biggest cells from each processor and choose the global biggest (cells can have the same volume so use global cell index as a second criterion)
-                        var cellWithMaxVolumeArray = cellWithMaxVolumeGlobal.MPIAllGatherO();
-                        var cellWithGlobalMaxVolume = cellWithMaxVolumeArray.OrderByDescending(c => c.CellVolume).ThenBy(c => c.GlobalCellNumber).First();
-
-                        //check if this processor has the biggest cell
-                        if (cellWithGlobalMaxVolume.GlobalCellNumber == globalCellNumberWithMaxVolume && possibleGroupTargets.Count != 0) {
-
-                            //mark the cell as candidate
-                            var aggGroupLoop = new AgglomerationGroup(localCellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
-                            m_aggGroups.Add(aggGroupLoop);
-
-                            m_CellsNeedChainAgglomeration.Remove(localCellNumberWithMaxVolume);
-                            bool anyUpdates = true;
-
-                            while (anyUpdates) {
-                                var intersection = aggGroupLoop.GetNeighbors.Intersect(m_CellsNeedChainAgglomeration);
-                                anyUpdates = intersection.Any();
-                                foreach (int cell in intersection) {
-                                    aggGroupLoop.Add(cell);
-                                    m_CellsNeedChainAgglomeration.Remove(cell);
-                                }
-                            }
-
-                            // add groups into the pairs list
-                            AgglomerationPairs.AddRange(aggGroupLoop.GetAggPairs);
-                            //if (aggGroupLoop.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
-                            //    m_failCells.AddRange(aggGroupLoop.GetCells);
-                            //}
-                        }
-
-
-                        //re-run chain agglomerations to attach source cells from other processors
-                        SearchChainAgglomeration_Mk3(m_CellsNeedChainAgglomeration, AggCandidates, AggSourcesWithExternalCell);
-
-                        possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
-                    }
-
-                    // So far if a cell that requires topology change cannot be mapped, this means a topologicalFailure
-                    m_failCells.AddRange(m_CellsNeedChainAgglomeration);
-                    var topologicalFailures = m_failCells.Intersect(CellsRequireTopologyChanges);
-                    if (topologicalFailures.Any())
-                        topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
-
-                    // Debugging info
-                    if (m_aggGroups.Any() && PlotAgglomeration) { 
-                        m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(), ".txt");
-
-                    }
-
-                } else {
-                    // create only local groups
-                    while (possibleGroupTargets.Count > 0) { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
-                        int cellNumberWithMaxVolume = possibleGroupTargets
-                                .Select(p => new { CellNumber = p, CellVolume = CellVolumes[p] })
-                                .OrderByDescending(p => p.CellVolume)
-                                .First()
-                                .CellNumber;
-
-                        var aggGroupLoop = new AgglomerationGroup(cellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
-                        m_aggGroups.Add(aggGroupLoop);
-
-                        m_CellsNeedChainAgglomeration.Remove(cellNumberWithMaxVolume);
-                        bool anyUpdates = true;
-
-                        while (anyUpdates) {
-                            var intersection = aggGroupLoop.GetNeighbors.Intersect(m_CellsNeedChainAgglomeration);
-                            anyUpdates = intersection.Any();
-                            foreach (int cell in intersection) {
-                                aggGroupLoop.Add(cell);
-                                m_CellsNeedChainAgglomeration.Remove(cell);
-                            }
-                        }
-                        possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
-                    }
-
-                    // So far if a cell that requires topology change cannot be mapped, this means a topologicalFailure
-                    m_failCells.AddRange(m_CellsNeedChainAgglomeration);
-                    var topologicalFailures = m_failCells.Intersect(CellsRequireTopologyChanges);
-                    if (topologicalFailures.Any())
-                        topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
-
-                    // Debugging info
-                    if (m_aggGroups.Any() && PlotAgglomeration)
-                        m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(), ".txt");
-
-                    // add groups into the pairs list
-                    foreach (var group in m_aggGroups) {
-                        AgglomerationPairs.AddRange(group.GetAggPairs);
-                        if (group.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
-                            m_failCells.AddRange(group.GetCells);
-                        }
-                    }
-
-                }
-                AgglomerationPairs = AgglomerationPairs.Where(p => p.jCellSource != p.jCellTarget).ToList(); //remove self mapped elements due to the agglomeration groups
+                SearchGroupAgglomeration_Mk3(m_CellsNeedChainAgglomeration, AggCandidates, AggSourcesWithExternalCell, CellsRequireTopologyChanges);
 
                 // In case of still failed cases
                 #region AgglomerationKatastrophe               
@@ -1948,15 +1814,20 @@ namespace BoSSS.Foundation.XDG {
 
                 // store & return;
                 // ================
-                this.AgglomerationPairs = AgglomerationPairs.Select(pair => (pair.jCellSource, pair.jCellTarget)).ToArray();
+                //this.AgglomerationPairs = AgglomerationPairs.Select(pair => (pair.jCellSource, pair.jCellTarget)).ToArray();
                 this.AgglomerationPairsWithRanks = AgglomerationPairs.ToArray();
                 //DoAggPairsMPIexchangeForGhostCells(AgglomerationPairs, ref m_AggPairsOnNeighborPairs);
                 // this.AgglomerationPairsWithRanks.m_AggPairsWithExtNeighborPairs.Where(p => p.OwnerRank4Source == myMpiRank || p.OwnerRank4Target == myMpiRank).ToArray(););
             }
         }
 
-        string marker = "";
-
+        /// <summary>
+        /// searches chaing agglomeration targets
+        /// </summary>
+        /// <param name="CellsNeedChainAgglomeration"></param>
+        /// <param name="AggCandidates"></param>
+        /// <param name="AggSourcesWithExternalCell"></param>
+        /// <exception cref="ArgumentException"></exception>
         protected virtual void SearchChainAgglomeration_Mk3(List<int> CellsNeedChainAgglomeration, BitArray AggCandidates,
             BitArray AggSourcesWithExternalCell
             ) {
@@ -1995,6 +1866,7 @@ namespace BoSSS.Foundation.XDG {
 
                 List<(double SpeciesFrac, double Dist, int AggLevel, int jCell, int jCellNeigh, int targetCell, int targetRank)> weightedEdges = new List<(double, double, int, int, int, int, int)>();
                 List<int> ImmediateConnectionCells = new List<int>(CellsNeedChainAgglomeration.Count);
+                //bool isThisProcAuthorized = true;
 
                 // Any cell to be agglomerated in a chain on the local proc (a parallel variation of Kruskal's algorithm for Minimum Spanning Forest adapted to our context
                 if (CellsNeedChainAgglomeration.Count > 0) {
@@ -2011,18 +1883,7 @@ namespace BoSSS.Foundation.XDG {
                         int PairedNeighborAggSourceCells = 0;
                         for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
                             bool IsPossibleTarget = false;
-                            int iEdge = Cell2Edge_jCell[e];
-                            int OtherCell, ThisCell;
-                            if (iEdge < 0) {
-                                // cell 'jCell' is the OUT-cell of edge 'iEdge'
-                                OtherCell = 0;
-                                ThisCell = 1;
-                                iEdge *= -1;
-                            } else {
-                                OtherCell = 1;
-                                ThisCell = 0;
-                            }
-                            iEdge--;
+                            var (iEdge, ThisCell, OtherCell) = GetEdgeInfo(Cell2Edge_jCell[e]);
                             int jCellNeigh = Edge2Cell[iEdge, OtherCell];
                             double EdgeArea_iEdge = edgeArea[iEdge];
                             Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
@@ -2053,9 +1914,6 @@ namespace BoSSS.Foundation.XDG {
                                 int TargetCellOfTargetPair = TargetPair.jCellTarget; //looking for the final target
                                 int possibleTarget; // due to the mpi boundaries we may select the neighbor as target instead of the final target
                                 int targetRank = -1; //by default assigned an invalid value to ensure code works
-
-                                // To turn off the direct agg to the final target, assign the below to -1
-                                // TargetCellOfTargetPair = -1; // normally the code is able to choose a target that forms higher level agg. chains. However, it is decided to be handled in CellAgglomerator.cs
 
                                 // if TargetCellOfTargetPair is one of ext/ghost cells or already on local proc
                                 bool IsTargetCellKnown = TargetCellOfTargetPair >= 0 && TargetPair.OwnerRank4Target >= 0;
@@ -2123,7 +1981,6 @@ namespace BoSSS.Foundation.XDG {
                             weightedEdges.AddRange(weightedEdgesjCell);
                         }
 
-                        Debug.Assert(NeighborAggSourceCells < 1, $"No possible chain target for {jCell} on proc-{ilPSP.Environment.MPIEnv.MPI_Rank}");
                     }
 
                     // discard already connected cells
@@ -2135,19 +1992,33 @@ namespace BoSSS.Foundation.XDG {
                     // sort remaining edges
                     weightedEdges = weightedEdges.OrderBy(p => p.Dist).ThenByDescending(p => p.SpeciesFrac).ToList(); // (ascending, descending)
 
+                    //// check if this proc has the globally best edge (only if required)
+                    //if (m_globalAgglomerationMapping && InterProcessChainAgglomeration > 0)
+                    //{
+                    //    var bestEdge = weightedEdges.FirstOrDefault();
+
+                    //    //convert the local number to the global and then create a new tuple with it
+                    //    var globalCellNumberForBestEdge = grdDat.CellPartitioning.i0 + (long)bestEdge.jCell;
+                    //    var bestEdgeWithGlobalIndex = new { Dist = bestEdge.Dist, SpeciesFrac = bestEdge.SpeciesFrac, GlobalCellNumber = globalCellNumberForBestEdge };
+                    //    var allBestEdges = bestEdgeWithGlobalIndex.MPIAllGatherO();
+                    //    var bestGlobalEdge = allBestEdges.OrderBy(p => p.Dist).ThenByDescending(p => p.SpeciesFrac).ThenBy(p => p.GlobalCellNumber).First();
+                    //    //isThisProcAuthorized = bestGlobalEdge.GlobalCellNumber == globalCellNumberForBestEdge ? true : false;
+                    //}
                     //weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges", ".txt");
 
                     // if any target available in case a target needed?
-                    Debug.Assert(weightedEdges.Any() || ImmediateConnectionCells.Any() || !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
+                    Debug.Assert((weightedEdges.Any() || ImmediateConnectionCells.Any()) && !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
                             " There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
 
                     // choose the first edge and add the corresponding agg. pair
-                    if (weightedEdges.Any() && CellsNeedChainAgglomeration.Any()) {
+                    if (weightedEdges.Any() && CellsNeedChainAgglomeration.Any())
+                    {
                         var aggConnectionEdge = weightedEdges.First();
 
 
                         // AddToList
-                        if (aggConnectionEdge.targetRank > -1) {
+                        if (aggConnectionEdge.targetRank > -1)
+                        {
                             //Get the target info from the target pair
                             var TargetPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellSource == aggConnectionEdge.jCellNeigh).First();
                             double SpeciesFrac = TargetPair.fracTarget;
@@ -2155,7 +2026,8 @@ namespace BoSSS.Foundation.XDG {
 
                             //Add new pair
                             //var SourceCell2Edge_jCell = Cell2Edge[aggConnectionEdge.jCell];
-                            var newPair = new CellAgglomerator.AgglomerationPair() {
+                            var newPair = new CellAgglomerator.AgglomerationPair()
+                            {
                                 jCellTarget = aggConnectionEdge.targetCell,
                                 posTarget = posTarget,
                                 fracTarget = SpeciesFrac,
@@ -2171,8 +2043,8 @@ namespace BoSSS.Foundation.XDG {
                             anyUpdate = true;
                         }
                     }
-                }
 
+                }
 
                 #region update lists and variables for the while loop
                 ChainCountMax = CellsNeedChainAgglomeration.Count;
@@ -2197,6 +2069,13 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
+        /// <summary>
+        /// searches direct agglomeration targets
+        /// </summary>
+        /// <param name="AgglomSourceCellsList"></param>
+        /// <param name="AggCandidates"></param>
+        /// <param name="AggSourcesWithExternalCell"></param>
+        /// <exception cref="ArgumentException"></exception>
         protected virtual void SearchDirectAgglomeration_Mk3(
             List<int> AgglomSourceCellsList, BitArray AggCandidates, BitArray AggSourcesWithExternalCell
             ) {
@@ -2213,16 +2092,8 @@ namespace BoSSS.Foundation.XDG {
 
                 var AgglomerationPairs = m_AggPairs;
 
-
                 if (edgeArea.GetLength(0) != NoOfEdges)
                     throw new ArgumentException();
-
-                //double EmptyEdgeTreshold = 1.0e-10; // edges with a measure below or equal to this threshold are
-                //                                     considered to be 'empty', therefore they should not be used for agglomeration;
-                //                                     there is, as always, an exception: if all inner edges which belong to a
-                //                                     cell that should be agglomerated, the criterion mentioned above must be ignored.
-
-
 
                 // pass 2: determine agglomeration targets
                 // ---------------------------------------
@@ -2246,18 +2117,7 @@ namespace BoSSS.Foundation.XDG {
                     // Collect neighbors and determine if there is a non-empty edge which connects cell 'jCell' to some other cell
                     bool NonEmptyEdgeAvailable = false;
                     for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
-                        int iEdge = Cell2Edge_jCell[e];
-                        int OtherCell, ThisCell;
-                        if (iEdge < 0) {
-                            // cell 'jCell' is the OUT-cell of edge 'iEdge'
-                            OtherCell = 0;
-                            ThisCell = 1;
-                            iEdge *= -1;
-                        } else {
-                            OtherCell = 1;
-                            ThisCell = 0;
-                        }
-                        iEdge--;
+                        var (iEdge, ThisCell, OtherCell) = GetEdgeInfo(Cell2Edge_jCell[e]);
                         int jCellNeigh = Edge2Cell[iEdge, OtherCell];
                         double EdgeArea_iEdge = edgeArea[iEdge];
                         Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
@@ -2285,11 +2145,6 @@ namespace BoSSS.Foundation.XDG {
                         int iEdge = (int)neighbors[e, 1];
                         double EdgeArea_iEdge = neighbors[e, 2];
 
-                        //if (print) {
-                        //    Console.WriteLine("  testing with cell " + jCellNeigh);
-                        //    Console.WriteLine("    connecting edge area: " + EdgeArea_iEdge + " NonEmptyEdgeAvailable ? " + NonEmptyEdgeAvailable);
-                        //}
-
                         // check exclusion criteria for neighbour cells: 
                         if (jCellNeigh < 0 // boundary edge
                             || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG // no agglomeration across periodic edge
@@ -2301,7 +2156,6 @@ namespace BoSSS.Foundation.XDG {
                             // no neighbor for agglomeration
 
                             //Console.WriteLine($"    Ignoring: r1? {jCellNeigh < 0}, r2? {EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG}, r3? {(EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)}");
-
 
                             //Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
                             continue;
@@ -2316,14 +2170,15 @@ namespace BoSSS.Foundation.XDG {
                         double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
                         double frac_neigh = spcVol_neigh / totVol_neigh;
 
-                        //if (print)
-                        //    Console.WriteLine("    neighbour fraction: " + frac_neigh);
-
                         // max?
-                        if (frac_neigh > frac_neigh_max) {
+                        if (frac_neigh > frac_neigh_max)
+                        {
                             frac_neigh_max = frac_neigh;
                             jCellNeigh_max = jCellNeigh;
-                        }
+                        } //should iterate in ascending order anyway
+                        //else if (frac_neigh == frac_neigh_max) {
+                        //    jCellNeigh_max = Math.Min(jCellNeigh_max, jCellNeigh);
+                        //}
                     }
 
 
@@ -2382,7 +2237,150 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        /// <summary>
+        /// creates agglomeration groups from cut cells isolated from uncut cells, with the biggests being targets
+        /// </summary>
+        /// <param name="CellsNeedChainAgglomeration"></param>
+        /// <param name="AggCandidates"></param>
+        /// <param name="AggSourcesWithExternalCell"></param>
+        /// <param name="CellsRequireTopologyChanges"></param>
+        protected virtual void SearchGroupAgglomeration_Mk3(List<int> CellsNeedChainAgglomeration, BitArray AggCandidates, BitArray AggSourcesWithExternalCell, List<int> CellsRequireTopologyChanges) {
+            var possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList(); //cells requiring topology change cannot be a target at any point
+            var AgglomerationPairs = m_AggPairs; // Get already assigned pairs
 
+            marker = "grp";
+
+            if (m_globalAgglomerationMapping)
+            {
+                //create global groups (costly as the remaining cells are usually close to each other but results in unique agg. mapping)
+                while (possibleGroupTargets.Count.MPIMax() > 0) { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
+
+                    //choose the local biggest cell
+                    var cellWithMaxVolume = possibleGroupTargets
+                            .Select(p => (CellNumber: p, CellVolume: CellVolumes[p]))
+                            .OrderByDescending(p => p.CellVolume)
+                            .ThenBy(p => p.CellNumber)
+                            .FirstOrDefault(); //due to MPIAllGatherO trivial or non-trivial every processor needs to send data
+
+                    int localCellNumberWithMaxVolume = cellWithMaxVolume.CellNumber;
+
+                    //convert the local number to the global and then create a new tuple with it
+                    var globalCellNumberWithMaxVolume = grdDat.CellPartitioning.i0 + (long)localCellNumberWithMaxVolume;
+                    var cellWithMaxVolumeGlobal = new { GlobalCellNumber = globalCellNumberWithMaxVolume, CellVolume = cellWithMaxVolume.CellVolume };
+
+                    //Gather all the biggest cells from each processor and choose the global biggest (cells can have the same volume so use global cell index as a second criterion)
+                    var cellWithMaxVolumeArray = cellWithMaxVolumeGlobal.MPIAllGatherO();
+                    var cellWithGlobalMaxVolume = cellWithMaxVolumeArray.OrderByDescending(c => c.CellVolume).ThenBy(c => c.GlobalCellNumber).First();
+
+                    //check if this processor has the biggest cell
+                    if (cellWithGlobalMaxVolume.GlobalCellNumber == globalCellNumberWithMaxVolume && possibleGroupTargets.Count != 0) {
+
+                        //mark the cell as candidate
+                        var aggGroupLoop = new AgglomerationGroup(localCellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
+                        m_aggGroups.Add(aggGroupLoop);
+
+                        m_CellsNeedChainAgglomeration.Remove(localCellNumberWithMaxVolume);
+                        bool anyUpdates = true;
+
+                        while (anyUpdates)
+                        {
+                            var intersection = aggGroupLoop.GetNeighbors.Intersect(m_CellsNeedChainAgglomeration);
+                            anyUpdates = intersection.Any();
+                            foreach (int cell in intersection)
+                            {
+                                aggGroupLoop.Add(cell);
+                                m_CellsNeedChainAgglomeration.Remove(cell);
+                            }
+                        }
+
+                        // add groups into the pairs list
+                        AgglomerationPairs.AddRange(aggGroupLoop.GetAggPairs);
+                        //if (aggGroupLoop.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
+                        //    m_failCells.AddRange(aggGroupLoop.GetCells);
+                        //}
+                    } 
+
+                    //re-run chain agglomerations to attach source cells from other processors
+                    SearchChainAgglomeration_Mk3(m_CellsNeedChainAgglomeration, AggCandidates, AggSourcesWithExternalCell);
+
+                    possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
+                }
+
+
+            } else {
+                // create only local groups
+                while (possibleGroupTargets.Count > 0)
+                { //these cells have at least one adjacent source cell, in contrast to failedCells, which do not have any neighbor to form agglomeration. So, let's group them.
+                    int cellNumberWithMaxVolume = possibleGroupTargets
+                            .Select(p => new { CellNumber = p, CellVolume = CellVolumes[p] })
+                            .OrderByDescending(p => p.CellVolume)
+                            .ThenBy(p => p.CellNumber)
+                            .First()
+                            .CellNumber;
+
+                    var aggGroupLoop = new AgglomerationGroup(cellNumberWithMaxVolume, Tracker, CellVolumes, edgeArea);
+                    m_aggGroups.Add(aggGroupLoop);
+
+                    m_CellsNeedChainAgglomeration.Remove(cellNumberWithMaxVolume);
+                    bool anyUpdates = true;
+
+                    while (anyUpdates)
+                    {
+                        var intersection = aggGroupLoop.GetNeighbors.Intersect(m_CellsNeedChainAgglomeration);
+                        anyUpdates = intersection.Any();
+                        foreach (int cell in intersection)
+                        {
+                            aggGroupLoop.Add(cell);
+                            m_CellsNeedChainAgglomeration.Remove(cell);
+                        }
+                    }
+                    possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
+                }
+
+                // add groups into the pairs list
+                foreach (var group in m_aggGroups)
+                {
+                    AgglomerationPairs.AddRange(group.GetAggPairs);
+                    //if (group.SumFractions < AgglomerationThreshold)
+                    //{  //mark unsuccessful groups as failure and add them the fail list
+                    //    m_failCells.AddRange(group.GetCells);
+                    //}
+                }
+
+            }
+
+            // So far if a cell that requires topology change cannot be mapped, this means a topologicalFailure
+            m_failCells.AddRange(m_CellsNeedChainAgglomeration);
+            var topologicalFailures = m_failCells.Intersect(CellsRequireTopologyChanges);
+            if (topologicalFailures.Any())
+                topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
+
+            // Debugging info
+            if (m_aggGroups.Any() && PlotAgglomeration)
+            {
+                m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(), ".txt");
+
+            }
+            AgglomerationPairs.RemoveAll(p => p.jCellSource == p.jCellTarget);   //remove self mapped elements due to the agglomeration groups
+        }
+
+        /// <summary>
+        /// plot failure as tecplot
+        /// </summary>
+        /// <param name="ExceptionOnFailedAgglomeration"></param>
+        /// <param name="CellVolumes"></param>
+        /// <param name="oldCellVolumes"></param>
+        /// <param name="AgglomCellsList"></param>
+        /// <param name="failCells"></param>
+        /// <param name="aggCandidates"></param>
+        /// <param name="aggTargets"></param>
+        /// <param name="pairIdentification"></param>
+        /// <param name="pairColor"></param>
+        /// <param name="aggDirection"></param>
+        /// <param name="volFrac"></param>
+        /// <param name="Tag"></param>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <exception cref="Exception"></exception>
         private void PlotFail(bool ExceptionOnFailedAgglomeration, MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, List<int> failCells, BitArray aggCandidates, int[] aggTargets, int[] pairIdentification, int[] pairColor, Vector[] aggDirection, double[] volFrac, string Tag = "") {
             // ++++++++++++++++++++++++++
             // Error handling / reporting
@@ -2390,149 +2388,150 @@ namespace BoSSS.Foundation.XDG {
 
             int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
 
-            Basis b = new Basis(grdDat, 0);
-            DGField[] CellVolumesViz = new DGField[1 + (oldCellVolumes != null ? oldCellVolumes.Length : 0)];
-            for (int n = -1; n < CellVolumesViz.Length - 1; n++) {
-                MultidimensionalArray vol = n < 0 ? CellVolumes : oldCellVolumes[n];
-                CellVolumesViz[n + 1] = new SinglePhaseField(b, "VolumeAtTime" + (-n));
-                for (int j = 0; j < Jup; j++) {
-                    CellVolumesViz[n + 1].SetMeanValue(j, vol[j]);
-                }
-            }
+            if (Katastrophenplot != null) { 
 
-            DGField AgglomCellsViz = new SinglePhaseField(b, "Cells2Agglom");
-            foreach (int j in AgglomCellsList) {
-                AgglomCellsViz.SetMeanValue(j, 1);
-            }
-
-            DGField FailedViz = new SinglePhaseField(b, "FailedCells");
-            BitArray FailCellsMarker = new BitArray(Jup);
-            foreach (int j in failCells) {
-                FailedViz.SetMeanValue(j, 1);
-                FailCellsMarker.Set(j, true);
-            }
-
-            if (failCells.Count > 0) {
-                CellMask FailCells = new CellMask(grdDat, FailCellsMarker);
-                FailCells.SaveToTextFile($"aggFailCells{grdDat.MpiRank}.csv");
-            }
-
-
-            DGField CellNumbers = new SinglePhaseField(b, "CellNumbers");
-            CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = j0 + j;
+                Basis b = new Basis(grdDat, 0);
+                DGField[] CellVolumesViz = new DGField[1 + (oldCellVolumes != null ? oldCellVolumes.Length : 0)];
+                for (int n = -1; n < CellVolumesViz.Length - 1; n++) {
+                    MultidimensionalArray vol = n < 0 ? CellVolumes : oldCellVolumes[n];
+                    CellVolumesViz[n + 1] = new SinglePhaseField(b, "VolumeAtTime" + (-n));
+                    for (int j = 0; j < Jup; j++) {
+                        CellVolumesViz[n + 1].SetMeanValue(j, vol[j]);
                     }
                 }
-            }, new CellQuadratureScheme());
 
-
-            DGField CellNumbersGlob = new SinglePhaseField(b, "CellNumbersGlob");
-            CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    long gidx = grdDat.CellPartitioning.i0 + j0 + j;
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = gidx;
-                    }
+                DGField AgglomCellsViz = new SinglePhaseField(b, "Cells2Agglom");
+                foreach (int j in AgglomCellsList) {
+                    AgglomCellsViz.SetMeanValue(j, 1);
                 }
-            }, new CellQuadratureScheme());
 
-
-            DGField GlobalID = new SinglePhaseField(b, "GlobalID");
-            GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    long gid = this.grdDat.iLogicalCells.GetGlobalID(j + j0); ;
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = gid;
-                    }
+                DGField FailedViz = new SinglePhaseField(b, "FailedCells");
+                BitArray FailCellsMarker = new BitArray(Jup);
+                foreach (int j in failCells) {
+                    FailedViz.SetMeanValue(j, 1);
+                    FailCellsMarker.Set(j, true);
                 }
-            }, new CellQuadratureScheme());
-            int my_rank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
-            DGField MPIRank = new SinglePhaseField(b, "MPIRank");
-            MPIRank.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                int K = result.GetLength(1); // No nof Nodes
-                for (int j = 0; j < Len; j++) {
-                    for (int k = 0; k < K; k++) {
-                        result[j, k] = my_rank;
-                    }
+                if (failCells.Count > 0) {
+                    CellMask FailCells = new CellMask(grdDat, FailCellsMarker);
+                    FailCells.SaveToTextFile($"aggFailCells{grdDat.MpiRank}.csv");
                 }
-            }, new CellQuadratureScheme());
 
-            DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
 
-            DGField LvSetDist = new SinglePhaseField(b, "LvSetDist");
-            LvSetDist.AccLevelSetDist(1, Tracker, 1);
+                DGField CellNumbers = new SinglePhaseField(b, "CellNumbers");
+                CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = j0 + j;
+                        }
+                    }
+                }, new CellQuadratureScheme());
 
-            DGField Identity = new SinglePhaseField(b, "Identity");
-            Identity.Clear();
-            Identity.AccConstant(1);
 
-            DGField AggCandidates = new SinglePhaseField(b, "aggCandidate");
-            AggCandidates.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                if (aggCandidates[j]) AggCandidates.SetMeanValue(j, 1);
-            }
+                DGField CellNumbersGlob = new SinglePhaseField(b, "CellNumbersGlob");
+                CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        long gidx = grdDat.CellPartitioning.i0 + j0 + j;
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = gidx;
+                        }
+                    }
+                }, new CellQuadratureScheme());
 
-            DGField AggTargets = new SinglePhaseField(b, "aggTarget");
-            AggTargets.Clear();
-            foreach (int jCell in aggTargets) {
-                if(jCell < grdDat.Cells.NoOfLocalUpdatedCells) AggTargets.SetMeanValue(jCell, 1);
-            }
 
-            DGField PairIdentification = new SinglePhaseField(b, "pairTargetNo");
-            PairIdentification.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                PairIdentification.SetMeanValue(j, pairIdentification[j]);
-            }
+                DGField GlobalID = new SinglePhaseField(b, "GlobalID");
+                GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        long gid = this.grdDat.iLogicalCells.GetGlobalID(j + j0); ;
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = gid;
+                        }
+                    }
+                }, new CellQuadratureScheme());
+                int my_rank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
-            DGField PairColor = new SinglePhaseField(b, "pairColor");
-            PairColor.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                PairColor.SetMeanValue(j, pairColor[j]);
-            }
+                DGField MPIRank = new SinglePhaseField(b, "MPIRank");
+                MPIRank.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = my_rank;
+                        }
+                    }
+                }, new CellQuadratureScheme());
 
-            if (aggDirection[0].Dim > 0) {
-                DGField AggDirX = new SinglePhaseField(b, "aggDirX");
-                AggDirX.Clear();
+                DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
+
+                DGField LvSetDist = new SinglePhaseField(b, "LvSetDist");
+                LvSetDist.AccLevelSetDist(1, Tracker, 1);
+
+                DGField Identity = new SinglePhaseField(b, "Identity");
+                Identity.Clear();
+                Identity.AccConstant(1);
+
+                DGField AggCandidates = new SinglePhaseField(b, "aggCandidate");
+                AggCandidates.Clear();
                 for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                    AggDirX.SetMeanValue(j, aggDirection[j][0]);
+                    if (aggCandidates[j]) AggCandidates.SetMeanValue(j, 1);
                 }
-                CellVolumesViz = CellVolumesViz.Cat(AggDirX);
-            } 
-            if (aggDirection[0].Dim > 1) {
-                DGField AggDirY = new SinglePhaseField(b, "aggDirY");
-                AggDirY.Clear();
+
+                DGField AggTargets = new SinglePhaseField(b, "aggTarget");
+                AggTargets.Clear();
+                foreach (int jCell in aggTargets) {
+                    if(jCell < grdDat.Cells.NoOfLocalUpdatedCells) AggTargets.SetMeanValue(jCell, 1);
+                }
+
+                DGField PairIdentification = new SinglePhaseField(b, "pairTargetNo");
+                PairIdentification.Clear();
                 for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                    AggDirY.SetMeanValue(j, aggDirection[j][1]);
+                    PairIdentification.SetMeanValue(j, pairIdentification[j]);
                 }
-                CellVolumesViz = CellVolumesViz.Cat(AggDirY);
-            } 
-            if (aggDirection[0].Dim > 2) {
-                DGField AggDirZ = new SinglePhaseField(b, "aggDirZ");
-                AggDirZ.Clear();
+
+                DGField PairColor = new SinglePhaseField(b, "pairColor");
+                PairColor.Clear();
                 for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                    AggDirZ.SetMeanValue(j, aggDirection[j][2]);
+                    PairColor.SetMeanValue(j, pairColor[j]);
                 }
-                CellVolumesViz = CellVolumesViz.Cat(AggDirZ);
-            }
-            if (aggDirection[0].Dim > 3 || aggDirection[0].Dim < 1) {
-                    throw new ArgumentOutOfRangeException("Agglomeration fail plot can only support 1D,2D and 3D geometries");
-            }
+
+                if (aggDirection[0].Dim > 0) {
+                    DGField AggDirX = new SinglePhaseField(b, "aggDirX");
+                    AggDirX.Clear();
+                    for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                        AggDirX.SetMeanValue(j, aggDirection[j][0]);
+                    }
+                    CellVolumesViz = CellVolumesViz.Cat(AggDirX);
+                } 
+                if (aggDirection[0].Dim > 1) {
+                    DGField AggDirY = new SinglePhaseField(b, "aggDirY");
+                    AggDirY.Clear();
+                    for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                        AggDirY.SetMeanValue(j, aggDirection[j][1]);
+                    }
+                    CellVolumesViz = CellVolumesViz.Cat(AggDirY);
+                } 
+                if (aggDirection[0].Dim > 2) {
+                    DGField AggDirZ = new SinglePhaseField(b, "aggDirZ");
+                    AggDirZ.Clear();
+                    for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                        AggDirZ.SetMeanValue(j, aggDirection[j][2]);
+                    }
+                    CellVolumesViz = CellVolumesViz.Cat(AggDirZ);
+                }
+                if (aggDirection[0].Dim > 3 || aggDirection[0].Dim < 1) {
+                        throw new ArgumentOutOfRangeException("Agglomeration fail plot can only support 1D,2D and 3D geometries");
+                }
           
-            DGField VolFrac = new SinglePhaseField(b, "volFrac");
-            VolFrac.Clear();
-            for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
-                VolFrac.SetMeanValue(j, volFrac[j]);
-            }
+                DGField VolFrac = new SinglePhaseField(b, "volFrac");
+                VolFrac.Clear();
+                for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                    VolFrac.SetMeanValue(j, volFrac[j]);
+                }
 
-            if (Katastrophenplot != null)
                 Katastrophenplot(CellVolumesViz.Cat(MPIRank,AgglomCellsViz, AggCandidates, AggTargets, FailedViz, LevelSets, LvSetDist, CellNumbers, CellNumbersGlob, GlobalID, PairIdentification, PairColor, VolFrac),Tag);
-
+            }
 
             if (failCells.Count.MPISum() > 0) { 
                string message = ($"!!! Warning: Agglomeration failed - no candidate for agglomeration found for {failCells.Count.MPISum()} cells. ");
@@ -2543,6 +2542,28 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        /// <summary>
+        /// returns the cell indices for an edge
+        /// </summary>
+        /// <param name="iEdge">local edge index</param>
+        /// <returns></returns>
+        static (int iEdge, int ThisCell, int OtherCell) GetEdgeInfo(int iEdge)
+        {
+            int OtherCell, ThisCell;
+            if (iEdge < 0)
+            {
+                // Cell is the OUT-cell of edge
+                OtherCell = 0;
+                ThisCell = 1;
+                iEdge *= -1;
+            } else
+            {
+                OtherCell = 1;
+                ThisCell = 0;
+            }
+            iEdge--;  // Adjust edge index for 0-based indexing
+            return (iEdge, ThisCell, OtherCell);
+        }
 
         /// <summary>
         /// Result of the algorithm

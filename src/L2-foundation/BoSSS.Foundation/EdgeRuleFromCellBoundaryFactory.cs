@@ -205,7 +205,7 @@ namespace BoSSS.Foundation.Quadrature {
                     var CellBndR = cellBndRule[iChunk[i]].Rule;
                     QuadRule qrEdge = null;
 
-                    if(Faces[i] >= 0)
+                    if(Faces[i] >= 0) //check if it is conforming or not (negative values: non-conformal)
                         qrEdge = this.CombineQr(null, CellBndR, Faces[i] - 333);
                     else {                       
                         qrEdge = this.CombineQrNonConformal(null, CellBndR, -Faces[i] - 333, EdgeIndices[i], Cells[i]);                        
@@ -246,10 +246,10 @@ namespace BoSSS.Foundation.Quadrature {
             // extract edge rule
             // -----------------
 
-            int i0 = 0, iE = 0;
+            int i0 = 0, iE = 0; //determine where the edge rule is stored from the cluster
             for (int i = 0; i < iFace; i++)
-                i0 += givenRule.NumbersOfNodesPerFace[i];
-            iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1;
+                i0 += givenRule.NumbersOfNodesPerFace[i]; //accumulate the number of nodes for the previous faces (e.g., i0 for iFace=2 : NumbersOfNodesPerFace[0] + NumbersOfNodesPerFace[1])
+            iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1; //end index of the node belonging to iFace
 
             if (iE < i0) {
                 // rule is empty (measure is zero).
@@ -262,18 +262,24 @@ namespace BoSSS.Foundation.Quadrature {
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;
                 } else {
+                    Console.WriteLine("Scaling 0.5 ?");
                     qrEdge.Nodes.Scale(0.5);
                     qrEdge.Weights.Scale(0.5);
                     return qrEdge;
                 }
             }
 
+            //givenRule.OutputQuadratureRuleAsVtpXML($"givenRule{iFace}");
+            //givenRule.Nodes.SaveToTextFileUnsteady($"nodes{iFace}i0{i0}iE{iE}");
             MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
             MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
             NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, qrEdge == null);
 
+            // transform from the cell coordinate system to the face
+            //NodesVol.SaveToTextFileUnsteady($"NodesVol{iFace}");
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
             Nodes.LockForever();
+            //Nodes.SaveToTextFileUnsteady($"NodesFace{iFace}");
 
             //Debug.Assert((Weigts.Sum() - grd.Grid.GridSimplex.EdgeSimplex.Volume).Abs() < 1.0e-6, "i've forgotten the gramian");
 

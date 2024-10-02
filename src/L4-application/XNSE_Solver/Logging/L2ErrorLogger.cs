@@ -50,9 +50,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double[] Ret = new double[D + 1];
 
             string[] fluidSpecies;
-            fluidSpecies = this.SolverMainOverride.XOperator.Species.ToArray();
-
-
 
             if (this.Control.ExactSolutionVelocity == null && this.Control.ExactSolutionPressure == null)
                 // nothing to do
@@ -71,6 +68,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // Velocity error
             // ==============
             if (this.Control.ExactSolutionVelocity != null) {
+                fluidSpecies = this.Control.ExactSolutionVelocity.Keys.ToArray();
+
                 Dictionary<string, double[]> L2Error_Species = new Dictionary<string, double[]>();
                 double[] L2Error = new double[D];
 
@@ -103,6 +102,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // pressure error
             // ==============
             if (this.Control.ExactSolutionPressure != null) {
+                fluidSpecies = this.Control.ExactSolutionPressure.Keys.ToArray();
 
                 // pass 1: mean value of pressure difference
                 double DiffInt = 0, Volume = 0;
