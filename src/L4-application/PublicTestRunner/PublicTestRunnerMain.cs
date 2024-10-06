@@ -129,7 +129,6 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        typeof(StokesHelical_Ak.HelicalMain),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program)
                     };
@@ -163,7 +162,8 @@ namespace PublicTestRunner {
                         typeof(IntersectingLevelSetTest.AllUpTest),
                         typeof(BUIDT.Tests.BUIDTTestProgram),
                         typeof(SAIDT.Tests.SAIDTTestProgram),
-                        typeof(XESF.Tests.XESFTestProgram)
+                        typeof(XESF.Tests.XESFTestProgram),
+                        typeof(StokesHelical_Ak.HelicalMain)
                 };
             }
         }
