@@ -130,7 +130,7 @@ namespace StokesHelical_Ak.TestSpartial {
         }
 
         [Test]
-        static public void SpatialComparison_Direct_vs_Iterativ_with_R0fix([Values(4)] int pOrder) {
+        static public void SpatialComparison_Direct_vs_Iterativ_with_R0fix([Values(5)] int pOrder) {
             // Polynomorder 5 take too long for our test runners!
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_with_R0fix(4)
             
@@ -440,7 +440,7 @@ namespace StokesHelical_Ak.TestSpartial {
         }
 
         [Test]
-        static public void SpatialComparison_Direct_vs_Iterativ_without_R0fix([Values(4)] int pOrder) {
+        static public void SpatialComparison_Direct_vs_Iterativ_without_R0fix([Values(5)] int pOrder) {
             // Polynomorder 5 take too long for our test runners!
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_without_R0fix(5)
 
@@ -756,7 +756,7 @@ namespace StokesHelical_Ak.TestSpartial {
             }
         }
 
-
+         
         /// <summary>
         /// Tests a steady-state Centrifuge flow (aka. Centrifuge flow).
         /// The solver computes a stationary Stokes solution, this is achieved by:
