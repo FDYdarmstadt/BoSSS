@@ -213,8 +213,8 @@ namespace ValidationTestRunner {
         /// Hagen-Poiseulle flow (aka. pipe flow) for the helical symmetric solver
         /// Maintainer: Schahin Akbari
         /// </summary>
-        //[NUnitFileToCopyHack("HelicalSymmetricSolver/HagenPoiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb")]
-        //[Test]
+        [NUnitFileToCopyHack("HelicalSymmetricSolver/HagenPoiseulle.ipynb", "HelicalSymmetricSolver/Post_Processing_HagenPoiseulle.ipynb")]
+        [Test]
         static public void Run__Helical_HagenPoiseulle() {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__Helical_HagenPoiseulle
 
