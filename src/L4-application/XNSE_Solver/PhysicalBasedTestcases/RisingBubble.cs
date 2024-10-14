@@ -1193,7 +1193,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double dt = 0.002;
             int numTs = 1500;
 
-            string restartName = "RB2D_fullDomain_20x40AMR0_k3_testcase1_TransposeToFix_restart3";
+            string restartName = "RB2D_fullDomain_20x40AMR0_k3_testcase1_withAMRgaussCheck_restart3";
             C.savetodb = false;
             // ===========================
 
@@ -1244,14 +1244,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.saveperiod = 1;
 
-            //if (AMRlevel > 0) {
-            //    C.AdaptiveMeshRefinement = true;
-            //    C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlevel });
-            //    C.AMR_startUpSweeps = AMRlevel;
-            //}
+            {
+                C.AdaptiveMeshRefinement = true;
+                int AMRlevel = 1;
+                C.activeAMRlevelIndicators.Add(new AMRwithGaussCheck() { maxRefinementLevel = AMRlevel });
+                C.AMR_startUpSweeps = AMRlevel;
+            }
 
             C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
-            // C.TracingNamespaces = \"BoSSS.Solution.AdvancedSolvers\";
+            C.TracingNamespaces = "BoSSS.Solution.XNSECommon";
 
 
             C.SessionName = restartName;

@@ -1860,7 +1860,7 @@ namespace BoSSS.Solution.XNSECommon {
             return (error, stokesAtInterface, stokesAtEdges);
         }
 
-
         #endregion
+
     }
 }

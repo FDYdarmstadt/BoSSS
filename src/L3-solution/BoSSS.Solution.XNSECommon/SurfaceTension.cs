@@ -1116,6 +1116,83 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
     }
 
+    public class IsotropicSurfaceTension_LaplaceBeltrami_LevelSetForm : ILevelSetForm, ISupportsJacobianComponent {
+
+        int m_d;
+        int m_D;
+        double m_sigma;
+
+        public IsotropicSurfaceTension_LaplaceBeltrami_LevelSetForm(int d, int D, double sigma) {
+            m_d = d;
+            m_D = D;
+            m_sigma = sigma;    
+        }
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double acc = 0;
+
+            double[,] Psurf = SurfaceProjection(inp.Normal);
+
+            for (int d = 0; d < inp.D; d++)
+                acc += -m_sigma * Psurf[m_d, d] * 0.5 * (Grad_vA[d] + Grad_vB[d]);
+
+            return -acc;
+
+        }
+
+        protected static double[,] SurfaceProjection(double[] Nsurf) {
+
+            int D = Nsurf.Length;
+            double[,] P = new double[D, D];
+
+            for (int d = 0; d < D; d++) {
+                for (int dd = 0; dd < D; dd++) {
+                    if (dd == d)
+                        P[d, dd] = (1 - Nsurf[d] * Nsurf[dd]);
+                    else
+                        P[d, dd] = (0 - Nsurf[d] * Nsurf[dd]);
+                }
+            }
+
+            return P;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public string PositiveSpecies {
+            get { return "B"; }
+        }
+
+        public string NegativeSpecies {
+            get { return "A"; }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.GradV;
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get { return null; }
+        }
+
+
+    }
+
     public class IsotropicSurfaceTension_LaplaceBeltrami : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 
         int m_comp;
@@ -1207,22 +1284,19 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[] Nsurf = SurfaceNormal(cpv.Parameters);
             double[,] Psurf = SurfaceProjection(Nsurf);
 
-            //double[,] Psurf2 = new double[cpv.D, cpv.D];
+            for (int d = 0; d < cpv.D; d++)
+                acc += -m_sigma * Psurf[m_comp, d] * GradV[d];
+
+            //double[,] PsurfGradV = new double[cpv.D, cpv.D];
             //for (int d1 = 0; d1 < cpv.D; d1++) {
             //    for (int d2 = 0; d2 < cpv.D; d2++) {
-            //        for (int dd = 0; dd < cpv.D; dd++) {
-            //            Psurf2[d1, d2] += Psurf[d1, dd] * Psurf[dd, d2];
-            //        }
+            //        PsurfGradV[d1, d2] = Psurf[d1, m_comp] * GradV[d2];
             //    }
             //}
 
-            for (int d = 0; d < cpv.D; d++)
-                acc += - m_sigma * Psurf[m_comp, d] * GradV[d];
-
-            // stabilization
-            //for(int d = 0; d < cpv.D; d++) {
-            //    for(int dd = 0; dd < cpv.D; dd++) {
-            //        acc += -0.1 * GradU[m_comp, d] * Nsurf[d] * GradV[dd] * Nsurf[dd];
+            //for (int d1 = 0; d1 < cpv.D; d1++) {
+            //    for (int d2 = 0; d2 < cpv.D; d2++) {
+            //        acc += -m_sigma * Psurf[d1, d2] * PsurfGradV[d1, d2];
             //    }
             //}
 
@@ -1236,6 +1310,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
             double[] SurfaceNormal_OUT = SurfaceNormal(inp.Parameters_OUT);
 
+            //Console.WriteLine("EdgeNormal = ({0}, {1})", EdgeNormal[0], EdgeNormal[1]);
             double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
             //Console.WriteLine("Tangente_IN = ({0}, {1})", Tangente_IN[0], Tangente_IN[1]);
             double[] Tangente_OUT = Tangent(SurfaceNormal_OUT, EdgeNormal);

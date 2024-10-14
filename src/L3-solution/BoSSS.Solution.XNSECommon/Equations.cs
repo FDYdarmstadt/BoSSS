@@ -404,6 +404,7 @@ namespace BoSSS.Solution.XNSECommon {
             // =================
             if (config.isPressureGradient) {
                 var presLs = new Solution.XNSECommon.Operator.Pressure.PressureFormAtLevelSet(d, dimension);
+                //var presLs = new Solution.XNSECommon.Operator.Pressure.PressureFormAtSurfaceVolume(d, dimension);
                 AddComponent(presLs);
             }
 
@@ -530,6 +531,7 @@ namespace BoSSS.Solution.XNSECommon {
                         //IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami_Parameter(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         //AddSurfaceComponent(isoSurfT);
                         //AddParameter(BoSSS.Solution.NSECommon.VariableNames.MaxSigma);
+                        //AddComponent(new IsotropicSurfaceTension_LaplaceBeltrami_LevelSetForm(d, D, sigma));
                         IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, sigma * 0.5, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         AddSurfaceComponent(isoSurfT);
                     }

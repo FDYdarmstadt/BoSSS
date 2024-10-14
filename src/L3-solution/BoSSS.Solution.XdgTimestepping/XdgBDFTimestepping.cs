@@ -37,6 +37,8 @@ using System.IO;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Queries;
 using NUnit.Framework.Constraints;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.Voronoi;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -1062,7 +1064,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);
 
-                
 
 
                 // assemble system
@@ -1610,12 +1611,67 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 #if DEBUG
                     {
-
+                        Console.WriteLine("AssembleMatrixCallback() ...");
                         this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
-
+                        Console.WriteLine("... done");
                         double[] checkResidual = new double[checkAffine.Length];
                         checkResidual.SetV(checkAffine, -1.0);
                         checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
+
+
+                        int jCell = 7;
+                        var rowPart = checkSystem._RowPartitioning;
+                        long blki0 = rowPart.GetBlockI0(jCell);
+                        int blkLen = rowPart.GetBlockLen(jCell);
+                        for (int i = 0; i < blkLen; i++) {
+                            Console.WriteLine("====================");
+                            long rowIdx = blki0 + i;
+                            double rowResi = checkResidual[rowIdx];
+                            if (rowResi.Abs() > 1.0e-13) { 
+                                Console.WriteLine($"residual at index {rowIdx}: {rowResi}");
+
+                                long[] indices = null;
+                                double[] values = null;
+                                var ret = checkSystem.GetRow(rowIdx, ref indices, ref values);
+                                //Console.WriteLine($"system col indices: {indices.ToConcatString("[", ",", "]")}");
+
+                                Dictionary<long, List<int>> occupiedCells = new Dictionary<long, List<int>>();
+                                var colPart = checkSystem._ColPartitioning;
+                                foreach (int idx in indices) {
+                                    long jC = colPart.GetBlockIndex(idx);
+                                    if (occupiedCells.Keys.Contains(jC)) {
+                                        occupiedCells.TryGetValue(jC, out List<int> occValues);
+                                        occValues.Add(idx);
+                                    } else {
+                                        List<int> IdxPerCell = new List<int> { idx };
+                                        occupiedCells.Add(jC, IdxPerCell);
+                                    }
+
+                                }
+                                //for (int e = 0; e < occupiedCells.Count; e++) {
+                                //    var entry = occupiedCells.ElementAt(e);
+                                //    Console.WriteLine($"occupied indices for cell {entry.Key}: " +
+                                //        $"{entry.Value.ToConcatString("[", ",", "]")} ({colPart.GetBlockI0(entry.Key)})");
+                                //}
+
+                                //Console.WriteLine($"system col values: {values.ToConcatString("[", ",", "]")}");
+
+                                double checkRowAffine = 0.0;
+                                for (int vI = 0; vI < values.Length; vI++) {
+                                    int loclIdx = CurrentStateMapping.Global2LocalIndex(indices[vI]);
+                                    CurrentStateMapping.LocalFieldCoordinateIndex(loclIdx, out DGField f, out int j, out int n);
+                                    double cVal = f.Coordinates[j, n];
+                                    checkRowAffine += values[vI] * cVal;
+                                    if (cVal != 0.0)
+                                        Console.WriteLine($"global index {indices[vI]}: field {f.Identification}, cell {j}, mode {n}, coord {cVal}, col value {values[vI]}");
+                                }
+                                Console.WriteLine($"evaluated affine at index {rowIdx}: {checkRowAffine}");
+
+                                double rowAffi = checkAffine[rowIdx];
+                                Console.WriteLine($"affine at index {rowIdx}: {rowAffi}");
+                            }
+                        }
+
 
                         Console.WriteLine("Norm of evaluated residual: " + base.Residuals.MPI_L2Norm());
                         Console.WriteLine("Norm of reference residual: " + checkResidual.MPI_L2Norm());

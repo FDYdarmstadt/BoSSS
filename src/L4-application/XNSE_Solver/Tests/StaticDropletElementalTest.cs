@@ -46,11 +46,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// 2D static droplet test case
         /// </summary>
         /// <returns></returns>
-        static public XNSE_Control StaticDroplet2D_ExactEvalution(bool quadraticLS = true, int BCsetup = 1, bool useAMR = false) { 
+        static public XNSE_Control StaticDroplet2D_ExactEvalution(int k, bool quadraticLS = true, int BCsetup = 0, bool useAMR = false) { 
         
             var C = new XNSE_Control();
 
-            int k = 1;
             C.SetDGdegree(k);
 
             // Physical Parameters
@@ -274,13 +273,31 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
+        static void GetResidualCoordinates(DGField field, CellMask mask = null) {
+
+            if (mask == null) {
+                mask = CellMask.GetFullMask(field.GridDat);
+            }
+
+            foreach (int jCell in mask.ItemEnum) {
+                Console.WriteLine($"==============");
+                Console.WriteLine($"jCell {jCell}:");
+                double[] coords = field.Coordinates.GetRow(jCell);
+                for (int i = 0; i < coords.Length; i++) {
+                    Console.WriteLine($"coord[{i}] = {coords[i]}");
+                }
+            }
+
+        }
+
+
         [Test]
         public static void TestStaticDroplet2D_ExactSolution() {
 
-            var ctrl = StaticDroplet2D_ExactEvalution();
+            var ctrl = StaticDroplet2D_ExactEvalution(1);
 
-            //ctrl.ImmediatePlotPeriod = 1;
-            //ctrl.SuperSampling = 3;
+            ctrl.ImmediatePlotPeriod = 1;
+            ctrl.SuperSampling = 5;
 
             using (var TestSolver = new XNSE()) {
 
@@ -288,6 +305,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 TestSolver.RunSolverMode();
 
                 CheckIntegralProperties(TestSolver);
+
+                //CellMask ccMask = TestSolver.LsTrk.Regions.GetCutCellMask();
+                //DGField ResXmom = TestSolver.CurrentResidual.Fields[0];
+                //Console.WriteLine("Residual X-momentum");
+                //GetResidualCoordinates(ResXmom, ccMask);
+
+                //DGField ResYmom = TestSolver.CurrentResidual.Fields[1];
+                //Console.WriteLine("Residual Y-momentum");
+                //GetResidualCoordinates(ResYmom, ccMask);
 
             }
 
