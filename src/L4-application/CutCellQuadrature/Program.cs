@@ -181,6 +181,17 @@ namespace CutCellQuadrature {
             foreach (var testCase in testCases) {
 
                 Program app = new Program(testCase);
+                app.m_mode = Modes.Algoim;
+                app.Init(null);
+                //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
+                app.RunSolverMode();
+                app.ProfilingLog();
+            }
+
+            foreach (var testCase in testCases) {
+
+                Program app = new Program(testCase);
+                app.m_mode = Modes.SayeGaussRules;
                 app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
                 app.RunSolverMode();
@@ -251,6 +262,8 @@ namespace CutCellQuadrature {
             }
         }
 
+        Modes m_mode = Modes.Algoim;
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Stopwatch globalWatch = new Stopwatch();
             globalWatch.Start();
@@ -287,7 +300,7 @@ namespace CutCellQuadrature {
 
             // Quadrature variant
 
-            Modes mode = Modes.Algoim;
+            Modes mode = m_mode;
             int[] orders = Enumerable.Range(0, 10).ToArray();
 
             //Modes mode = Modes.HMFClassic;
@@ -502,7 +515,7 @@ namespace CutCellQuadrature {
             }
 
             globalWatch.Stop();
-            Console.WriteLine("Finished case " + testCase.GetType().Name + " after " + globalWatch.ElapsedMilliseconds + "ms");
+            Console.WriteLine("Finished case " + testCase.GetType().Name + " with  " + m_mode.ToString() + " after " + globalWatch.ElapsedMilliseconds + "ms");
 
             return dt;
         }
