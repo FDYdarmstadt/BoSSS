@@ -860,10 +860,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } else {
 
                     }
-
+                    Console.WriteLine("Experimental study for iterative solver is activated");
                     // pre-smoother
                     // ------------
-
+                    var ResBeforePreSmoother = new double[L];
+                    Array.Copy(Res, ResBeforePreSmoother, L);
                     {
                         if (PreSmoother != null && skipPreSmooth == false) {
                             VerivyCurrentResidual(X, B, Res, iIter);
@@ -884,6 +885,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             skipPreSmooth = false;
                         }
                     }
+                    var ResAfterPreSmoother = new double[L]; 
+                    Array.Copy(Res, ResAfterPreSmoother, L);
+
+                    Array.Copy(ResBeforePreSmoother, Res, L);
 
                     // coarse grid correction
                     // ----------------------
