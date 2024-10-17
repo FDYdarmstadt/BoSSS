@@ -499,6 +499,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             [DataMember]
             public int m_omega = 1;
 
+            /// <summary> skip the pre-smoother </summary>
+            [DataMember]
+            public bool SkipPreSmoother = false;
+
+            /// <summary> Pre-smoother and coarse grid correction do not work sequential (i.e., residual from presmoother is not supplied to coarse grid solver) </summary>
+            [DataMember]
+            public bool NonSerialPreSmoother = false;
+
             /// <summary>
             /// 
             /// </summary>
@@ -776,7 +784,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        
+       
         /// <summary>
         /// the multigrid iterations for a linear problem
         /// </summary>
@@ -836,7 +844,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ortho.Clear();
                 bool bIterate = true;
 
-                bool skipPreSmooth = false;
+                bool skipPreSmoothInFollowingIters = false;
+
+                // Be aware that we have two options for skipping the pre-smoother: one for the following iterations (determined at post smoother), the second for skipping in general from config.
+                if (config.SkipPreSmoother)
+                    Console.WriteLine($"Skipping pre-smoother");
 
 
                 ISolverSmootherTemplate[] allSmooters;
@@ -860,13 +872,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } else {
 
                     }
-                    Console.WriteLine("Experimental study for iterative solver is activated");
+                    Console.WriteLine($"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}, current level {iLevel}, iteration: {iIter} and res norm: {resNorm}");
                     // pre-smoother
                     // ------------
-                    var ResBeforePreSmoother = new double[L];
-                    Array.Copy(Res, ResBeforePreSmoother, L);
+                    double[] ResBeforePreSmoother = null, ResAfterPreSmoother = null;
+                    if (config.NonSerialPreSmoother && !config.SkipPreSmoother) {  
+                        ResBeforePreSmoother = new double[L];
+                        Array.Copy(Res, ResBeforePreSmoother, L);
+                    }
                     {
-                        if (PreSmoother != null && skipPreSmooth == false) {
+                        // Be aware that we have two options for skipping the pre-smoother: one for the following iterations (determined at post smoother), the second for skipping in general from config.
+                        if (PreSmoother != null && !skipPreSmoothInFollowingIters && !config.SkipPreSmoother) {
                             VerivyCurrentResidual(X, B, Res, iIter);
 
                             double[] PreCorr = new double[L];
@@ -882,14 +898,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 break;
                             }
 
-                            skipPreSmooth = false;
+                            skipPreSmoothInFollowingIters = false;
                         }
                     }
-                    var ResAfterPreSmoother = new double[L]; 
-                    Array.Copy(Res, ResAfterPreSmoother, L);
-
-                    Array.Copy(ResBeforePreSmoother, Res, L);
-
+                    
+                    if (config.NonSerialPreSmoother && !config.SkipPreSmoother) {
+                        ResAfterPreSmoother = new double[L];
+                        Array.Copy(Res, ResAfterPreSmoother, L);
+                        Array.Copy(ResBeforePreSmoother, Res, L);
+                    }
+                    
                     // coarse grid correction
                     // ----------------------
                     CrseLevelTime.Start();
@@ -1025,7 +1043,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
 
                                 if (ortho.CancellationTriggered) {
-                                    skipPreSmooth = true; // most of the time, the pre-smoother does nothing different than the post-smoother; So, if we cancel post-smoothing there is no need to do pre-smoothing in the next loop.
+                                    skipPreSmoothInFollowingIters = true; // most of the time, the pre-smoother does nothing different than the post-smoother; So, if we cancel post-smoothing there is no need to do pre-smoothing in the next loop.
 
                                     iPostSmooter++;
                                     if(iPostSmooter >= allSmooters.Length)
