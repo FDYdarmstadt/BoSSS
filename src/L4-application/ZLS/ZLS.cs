@@ -159,6 +159,7 @@ namespace ZwoLevelSetSolver {
             //Update Calls
             dt = GetTimestep();
 
+            /*
             // check grid symmetry:
             double xAsymmetry = this.GridData.GridAsymmetry(0);
             Console.WriteLine("  ---   x Mesh Asymmetry: " + xAsymmetry);
@@ -169,7 +170,7 @@ namespace ZwoLevelSetSolver {
                 Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetries.ToConcatString("(", ", ", ")")}");    
             };
             Newton.DiagnosticFunction(this.CurrentStateVector.Mapping);
-
+            */
 
 
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
