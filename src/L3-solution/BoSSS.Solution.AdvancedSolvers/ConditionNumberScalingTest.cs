@@ -28,11 +28,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         public class Config {
 
             public const string TotCondNo = "TotCondNo-*";
-            public const string StencilCondNo_innerUncut = "StencilCondNo-innerUncut-*";
-            public const string StencilCondNo_innerCut = "StencilCondNo-innerCut-*";
-            public const string StencilCondNo_bndyUncut = "StencilCondNo-bndyUncut-*";
-            public const string StencilCondNo_bndyCut = "StencilCondNo-bndyCut-*";
+            public const string StencilCondNo_innerUncut = "OpStencilCondNo-innerUncut-*"; 
+            public const string StencilCondNo_innerCut = "OpStencilCondNo-innerCut-*";
+            public const string StencilCondNo_bndyUncut = "OpStencilCondNo-bndyUncut-*";
+            public const string StencilCondNo_bndyCut = "OpStencilCondNo-bndyCut-*";
 
+            //This is original one. But those names doesn't match the names used in "CalculateStencilNumbers()"
+            //public const string StencilCondNo_innerUncut = "StencilCondNo-innerUncut-*";
+            //public const string StencilCondNo_innerCut = "StencilCondNo-innerCut-*";
+            //public const string StencilCondNo_bndyUncut = "StencilCondNo-bndyUncut-*";
+            //public const string StencilCondNo_bndyCut = "StencilCondNo-bndyCut-*";
 
             public Config() {
                 this.ExpectedSlopes = new Dictionary<string, (XAxisDesignation, double, double)>();
