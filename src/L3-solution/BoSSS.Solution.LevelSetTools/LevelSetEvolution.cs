@@ -76,6 +76,11 @@ namespace BoSSS.Solution.LevelSetTools {
         Phasefield,
 
         /// <summary>
+        /// Use this when you want to use a custom solution only implemented in a higher level
+        /// </summary>
+        CustomLevelSet,
+
+        /// <summary>
         /// Level Set is moved by advection particles.
         /// This evolution features three subtypes <see cref="BoSSS.Application.SemiLagrangianLevelSetTestSuite.LagrangianMode"/>
         /// </summary>

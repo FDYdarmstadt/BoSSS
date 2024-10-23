@@ -145,7 +145,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// boundary condition mapping, mainly required for the Stokes extension, where a velocity boundary condition is required.
         /// </summary>
         protected abstract IncompressibleBoundaryCondMap GetBcMap();
-        
+
+        protected virtual LevelSet CustomLevelSet(int iLevSet) => throw new NotImplementedException();
+
+        protected virtual ILevelSetEvolver CustomEvolver(int iLevSet) => throw new NotImplementedException();
+
+        protected virtual void CustomInitializeLevelSet(DualLevelSet pair) => throw new NotImplementedException();
+
         /// <summary>
         /// Instantiate the level-set-system (fields for storing, evolution operators, ...) 
         /// Before creating XDG-fields one need to
@@ -180,10 +186,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.StokesExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Phasefield:
-                    case LevelSetEvolution.None: 
-                    case LevelSetEvolution.SplineLS: {
+                    case LevelSetEvolution.None: {
                         LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                         DGlevelSets[iLevSet] = levelSetDG;
+                        break;
+                    }
+                    case LevelSetEvolution.SplineLS: {
+                            SplineLevelSet levelSetDG = new SplineLevelSet(Control.Phi0Initial, Control, new Basis(GridData, levelSetDegree), LevelSetDG, 30);                            
+                            DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }
                     case LevelSetEvolution.RigidObject: {
@@ -201,6 +211,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         }
                         break;
 
+                    case LevelSetEvolution.CustomLevelSet: {
+                        DGlevelSets[iLevSet] = CustomLevelSet(iLevSet);
+                        break;
+                    }
                     default:
 
                         throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
@@ -302,7 +316,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             lsUpdater.AddEvolver(LevelSetCG, paramEvolver);
                             break;
                         }
-
+                    case LevelSetEvolution.CustomLevelSet: {
+                            lsUpdater.AddEvolver(LevelSetCG, CustomEvolver(iLevSet));
+                            break;
+                        }
                     case LevelSetEvolution.None: {
                             break;
                         }
@@ -343,6 +360,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
         */
+
 
         /// <summary>
         /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG
@@ -398,7 +416,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.SplineLS: {
                         int nodeCount = 30;
                         Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
-                        SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
+                        SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, Control, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
                         if (time != 0.0)
                             Console.WriteLine("Warning: no time dependent initial value");
                         pair.DGLevelSet = SplineLevelSet;
@@ -410,6 +428,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         (pair.DGLevelSet as ParameterizedLevelSet).Project();
                         break;
                     }
+                    case LevelSetEvolution.CustomLevelSet:
+                        CustomInitializeLevelSet(pair);
+                        break;
                     default:
                         throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
                 }
@@ -500,7 +521,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         */
 
 
-        (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) GetLsUpdaterInputFields(DGField[] domainFields) {
+        protected (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) GetLsUpdaterInputFields(DGField[] domainFields) {
             var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
             for(int iVar = 0; iVar < domainFields.Length; iVar++) {
                 if(!domainFields[iVar].GridDat.IsAlive())
