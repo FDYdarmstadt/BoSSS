@@ -21,7 +21,12 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 1.8;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant => XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+            get => _momentFittingVariant;
+            set => _momentFittingVariant = value;
+        }
     }
 
     class SkewLinearLevelSet : IEdgeQuadratureTest3D {
@@ -38,7 +43,12 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 3.5;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant => XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+            get => _momentFittingVariant;
+            set => _momentFittingVariant = value;
+        }
     }
 
     class QuadraticLevelSet : IEdgeQuadratureTest3D {
@@ -55,7 +65,12 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 2.0;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant => XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+            get => _momentFittingVariant;
+            set => _momentFittingVariant = value;
+        }
     }
 
     class CubicLevelSet : IEdgeQuadratureTest3D {
@@ -72,6 +87,11 @@ namespace CutEdgeQuadrature.QuadratureTests {
 
         public double EdgeArea => 2.0;
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant => XQuadFactoryHelper.MomentFittingVariants.Saye;
+        private XQuadFactoryHelper.MomentFittingVariants _momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+            get => _momentFittingVariant;
+            set => _momentFittingVariant = value;
+        }
     }
 }

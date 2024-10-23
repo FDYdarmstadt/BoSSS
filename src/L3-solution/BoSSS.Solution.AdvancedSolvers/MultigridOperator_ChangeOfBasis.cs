@@ -601,6 +601,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             L.StructureType = MatrixStructure.LowerTriangular;
             R.Clear();
             //R.StructureType = MatrixStructure.UpperTriangular; // will be set in L.TransposeTo(R)
+
             L.AccEye(1.0);
 #if DEBUG
             var Mbefore = M.CloneAs();

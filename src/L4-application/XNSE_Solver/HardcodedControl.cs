@@ -39,6 +39,7 @@ using BoSSS.Application.XNSE_Solver.Loadbalancing;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using MathNet.Numerics.LinearAlgebra.Factorization;
 using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -6523,6 +6524,108 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PostprocessingModules.Add(new Logging.CondLogger(config));
             return C;
         }
+
+        public static XNSE_Control SteadyRotatingSphereNSE(double aggThreshold = 0.2) {
+            //Major parameters
+            int k = 1;
+            int NoOfTimeSteps = 320; //for calculation of angular velocity
+            bool Steady = true;
+            int SpaceDim = 2;
+            double partRad = 0.6;
+            Shape Gshape = Shape.Sphere;
+            double viscosity = 0.01;
+            bool IncludeConvection = true;
+            bool AMR = false;
+            string rotAxis = "z";
+
+            //Get the default control file for mesh and minor details
+            var C = RotatingTiltedXRigid(k, 15, SpaceDim, false, shape: Gshape, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: partRad);
+
+            // Physical Parameters
+            // =================== 
+            const double rhoA = 1;
+            const double Re = 500;
+            double muA = viscosity;
+            double partDia = 2 * partRad;
+            double VelocityMax = Re * muA / rhoA / partDia;
+            double anglev = VelocityMax / partRad;
+            double period = 2 * Math.PI / anglev;
+            double ts = period / NoOfTimeSteps;
+            double[] pos = new double[SpaceDim];
+
+            C.PhysicalParameters.IncludeConvection = IncludeConvection;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            // DG degrees and configuration
+            // ==========
+            C.FieldOptions.Clear();
+            //Console.WriteLine("Field options" + C.FieldOptions.Count);
+            C.SetFieldOptions(k, Math.Max(k, 8)); // (velocity degree,level set) (pressure degree = k-1)
+            C.saveperiod = 10;
+            C.DynamicLoadBalancing_On = false;
+            C.DynamicLoadBalancing_RedistributeAtStartup = false;
+            C.DynamicLoadBalancing_Period = 10;
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+
+            // rigid body and boundary conditions
+            // ===================
+            double rateOfRadius = Steady ? 0 : -1 / (double)NoOfTimeSteps / ts;
+            C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim, rateOfRadius: rateOfRadius, staticShape: Steady);
+            C.SessionName += $"dRdt{rateOfRadius:f2}";
+            C.Rigidbody.SpecifyShape(Gshape);
+            C.Rigidbody.SetRotationAxis(rotAxis);
+            C.UseImmersedBoundary = true;
+
+            //// Set initial and boundary conditions
+            //// ============
+            //C.AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
+            //C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            //C.AddBoundaryValue("Pressure_Outlet");
+
+            // Solver options
+            // ===================
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = aggThreshold;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None; // idle level set (used for evolving LS)
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //exp_Kcycle_schwarz.GetConfig();
+            C.SessionName += "_MUMPS";
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 0;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.verbose = true;
+            C.AdaptiveMeshRefinement = AMR;
+
+            // Timestepping
+            // ============
+            double dt = -1;
+            if (Steady)
+            {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                dt = 1000;
+                C.NoOfTimesteps = 1;
+                C.SessionName += "_Steady";
+            } else
+            {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+                dt = ts;
+                C.NoOfTimesteps = NoOfTimeSteps;
+            }
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.dtFixed = dt;
+            C.SkipSolveAndEvaluateResidual = false; //to save computational time for condition study
+            C.SessionName = "Solver" + !C.SkipSolveAndEvaluateResidual + "_" + C.SessionName;
+            C.PlotAgglomeration = false;
+
+            return C;
+        }
+
 
         public static XNSE_Control InfiniteConditionNumberTorus() {
             // this test case was resulting in infinite condition numbers

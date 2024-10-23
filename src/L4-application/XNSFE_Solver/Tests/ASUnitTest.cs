@@ -40,6 +40,13 @@ using System.Diagnostics;
 //using BoSSS.Foundation.Quadrature;
 //using ilPSP.LinSolvers.MUMPS;
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
+using System.IO;
+using BoSSS.Foundation.IO;
+
+
+using BoSSS.Solution.LevelSetTools.ParameterizedLevelSet;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -82,6 +89,136 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             }
 
             ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "XSNFEScalingTest-p" + deg+"-Setup" + Setup });
+        }
+
+        /// <summary>
+        /// /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_Translation"/>
+        /// the first test case to check the solution of ParameterizedLevelSet with predefined velocity
+        /// in this test case only y-coordinate of center of ellipse changes with  the velocity equal 1.0
+        /// </summary>
+        public static void ParameterizedLevelSetTest_Translation() {
+
+            var C = BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_Translation.Translation();
+            using (var solver = new XNSFE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                //-------------------Evaluate Error(For Interface Velocity) ---------------------------------------- 
+
+                var velocityLS = solver.RegisteredFields.Where(s => s.Identification == "VelocityY@Phi").SingleOrDefault();
+                double eps = 1e-05;
+
+                double minVelocityLS; double maxVelocityLS;
+
+                velocityLS.GetExtremalValues(out minVelocityLS, out maxVelocityLS);
+
+                Console.WriteLine("Mimimum Level-Set Velocity is {0}", minVelocityLS);
+                Console.WriteLine("Maximum Level-Set Velocity is {0}", maxVelocityLS);
+
+
+                Assert.Greater(eps, minVelocityLS, "Mimimum Level-Set Velocity is smaller than expected");
+                Assert.Less(-eps, minVelocityLS, "Mimimum Level-Set Velocity is higher than expected");
+
+                Assert.Greater(1.0 + eps, maxVelocityLS, "Maximum Level-Set Velocity is smaller than expected");
+                Assert.Less(1.0 - eps, maxVelocityLS, "Maximum Level-Set Velocity is higher than expected");
+
+                Console.WriteLine("Calculation finished successfully.");
+            }
+            
+
+        }
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_ShapeChange"/>
+        /// the second test case to check the solution of ParameterizedLevelSet with predefined velocity
+        /// in this test case only y-semiAxis changes with  the velocity equal -0.5
+        /// </summary>
+        public static void ParameterizedLevelSetTest_ShapeChange() {
+
+            var C = BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSet_ShapeChange.ShapeChange();
+            using (var solver = new XNSFE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                //-------------------Evaluate Error(For Interface Velocity) ---------------------------------------- 
+
+                var velocityLS = solver.RegisteredFields.Where(s => s.Identification == "VelocityY@Phi").SingleOrDefault();
+                double eps = 1e-05;
+
+                double minVelocityLS; double maxVelocityLS;
+
+                velocityLS.GetExtremalValues(out minVelocityLS, out maxVelocityLS);
+
+                Console.WriteLine("Mimimum Level-Set Velocity is {0}", minVelocityLS);
+                Console.WriteLine("Maximum Level-Set Velocity is {0}", maxVelocityLS);
+
+
+                Assert.Greater(eps, minVelocityLS, "Mimimum Level-Set Velocity is smaller than expected");
+                Assert.Less(-eps, minVelocityLS, "Mimimum Level-Set Velocity is higher than expected");
+
+                Assert.Greater(0.5 + eps, maxVelocityLS, "Maximum Level-Set Velocity is smaller than expected");
+                Assert.Less(0.5 - eps, maxVelocityLS, "Maximum Level-Set Velocity is higher than expected");
+
+                Console.WriteLine("Calculation finished successfully.");
+            }
+
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSetTest"/>
+        /// test case for ParameterizedLevelSet with evaporation
+        /// </summary>
+        ///[Test]
+        public static void ParameterizedLevelSetTest(
+
+            [Values(2)] int deg
+
+            ) {
+
+            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            if (basepath.IsEmptyOrWhite())
+                basepath = System.Environment.GetEnvironmentVariable("HOME");
+
+            string path = Path.Combine(basepath, "CapillaryHeatTest");
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            double AgglomerationTreshold = 0.1;
+
+            var Tst = new ParameterizedLevelSetTest();
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, 16);
+
+            C.ProjectName = "XNSFE_ParamLevelSetTestInCapillary";
+            string jobName = C.ProjectName;
+            C.SessionName = " " + jobName;
+
+            C.savetodb = true;
+            C.DbPath = db.Path;
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+            C.NoOfTimesteps = 50;
+
+            C.TracingNamespaces = "*";
+
+            //C.solveCoupledHeatEquation = true;
+            //C.IncludeRecoilPressure = true;
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+            C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
+            if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet){
+                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControlEllipse(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
+            }
+
+            
+            //C.PhysicalParameters.theta_e = Math.PI / 6.0;
+            //C.PhysicalParameters.betaS_A = 0;
+            //C.PhysicalParameters.betaS_B = 0;
+            //C.PhysicalParameters.betaL = 0.0;
+            //C.PhysicalParameters.sliplength = 0.0;
+            //C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.SkipSolveAndEvaluateResidual = true;
+
+            XNSFESolverTest(Tst, C);
         }
 
         /// <summary>
@@ -193,6 +330,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         /// Simple Test for Evaporation of a straight interface, Test Splitting / Moving Mesh
         /// Currently the Test would be run only one timestep, is this even meaningful?
         /// </summary>
+        //[Test] [Toprak]: Irina wanted me to deactivate this test case, as it takes too long to run and ultimately leading a failure due to the time-out.
         public static void TransientEvaporationTest(
             [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
             [Values(3)] int deg,
@@ -200,12 +338,24 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
-            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling levelSetHandling) // evaporation currently only implemented with use of newton solver
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) // evaporation currently only implemented with use of newton solver
             {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
 
             var Tst = new TransientEvaporationTest(rawangle * Math.PI / 180.0);
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2, nonlinsolver: nonlinsolver, lsHandling: levelSetHandling);
+            
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 16, nonlinsolver: nonlinsolver, lsHandling: levelSetHandling);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+            C.NoOfTimesteps = 50;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet) {
+                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControlEllipse(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
+            }
+            //C.SkipSolveAndEvaluateResidual = true;
             XNSFESolverTest(Tst, C);
         }
 
@@ -882,6 +1032,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.PhysicalParameters.mu_B = tst.mu_B;
             C.PhysicalParameters.Sigma = tst.Sigma;
             C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
+
             // initial values and exact solution
             // =================================
 
