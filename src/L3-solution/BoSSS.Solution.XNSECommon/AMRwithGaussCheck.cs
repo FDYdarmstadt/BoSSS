@@ -60,11 +60,14 @@ namespace BoSSS.Solution.XNSECommon {
                         continue;
 
                     var result = XNSEUtils.CheckGaussInCutCell(j, LsTrk, LsTrk.GetSpeciesId("A"), testField, LsTrk.GetCachedOrders().Max());
-                    if (result.error.Abs() > errThreshhold && currentLevel < maxRefinementLevel) {
-                        tr.Info($"Gauss theorem error in cell {j} above threhhold {errThreshhold}: {result.error} ");
+                    bool gaussViolated = result.error.Abs() > errThreshhold;
+                    if (gaussViolated) {
+                        tr.Info($"Gauss theorem error in cell {j} above threshhold {errThreshhold}: {result.error} ");
+                    }
+                    if (gaussViolated && currentLevel < maxRefinementLevel) {
                         levels[j] = 1;
                         cellsToRefine++;
-                    } else if (result.error.Abs() < errThreshhold && currentLevel > 0) {
+                    } else if (!gaussViolated && currentLevel > 0) {
                         levels[j] = -1;
                         cellsToCoarse++;
                     }
