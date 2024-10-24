@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using ilPSP;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
     
@@ -58,7 +59,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
         double pFree;
 
         public double InnerEdgeForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
+ 
             if (!freeSurface) {
                 return -(vB - vA) * inp.Normal[m_d] * 0.5 * (pB[0] + pA[0]);
             } else {
@@ -103,5 +104,50 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
      
     }
 
+    public class PressureFormAtSurfaceVolume : IVolumeForm {
 
+        int m_d;
+        int m_D;
+
+        public PressureFormAtSurfaceVolume(int _d, int _D) {
+            m_d = _d;
+            m_D = _D;
+        }
+
+        public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Pressure };
+            }
+        }
+
+        public virtual IList<string> ParameterOrdering {
+            get {
+                return VariableNames.NormalVector(m_D);
+            }
+        }
+
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            //return -(vB - vA) * inp.Normal[m_d] * 0.5 * (pB[0] + pA[0]);
+            return 0.5 * U[0] * SurfaceNormal(cpv.Parameters)[m_d] * V;
+        }
+
+        protected static double[] SurfaceNormal(double[] param) {
+
+            double[] N = new double[param.Length];
+
+            for (int d = 0; d < param.Length; d++) {
+                N[d] = param[d];
+            }
+
+            return N.Normalize();
+        }
+
+    }
 }

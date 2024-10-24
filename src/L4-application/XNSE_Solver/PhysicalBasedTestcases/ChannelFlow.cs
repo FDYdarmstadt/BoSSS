@@ -89,7 +89,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            if(D == 3) {
+            if (D == 3) {
                 C.FieldOptions.Add("VelocityZ", new FieldOpts() {
                     Degree = p,
                     SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -344,21 +344,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             switch (wallBC) {
                 case 0:
-                goto default;
+                    goto default;
                 case 1:
-                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
-                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
-                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
-                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
-                break;
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
+                    break;
                 case 2:
-                C.AddBoundaryValue("navierslip_linear_lower");
-                C.AddBoundaryValue("navierslip_linear_upper");
-                break;
+                    C.AddBoundaryValue("navierslip_linear_lower");
+                    C.AddBoundaryValue("navierslip_linear_upper");
+                    break;
                 default:
-                C.AddBoundaryValue("wall_lower");
-                C.AddBoundaryValue("wall_upper");
-                break;
+                    C.AddBoundaryValue("wall_lower");
+                    C.AddBoundaryValue("wall_upper");
+                    break;
             }
 
 

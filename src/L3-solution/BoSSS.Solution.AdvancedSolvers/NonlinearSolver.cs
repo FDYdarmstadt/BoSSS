@@ -447,59 +447,61 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// a change in the mean/average value of the respective variable must **not** have any effect on the residual.
         /// </summary>
         public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
+            using (var ft = new FuncTrace()) {
+                ft.InfoToConsole = true;
 
-            int L = this.CurrentLin.Mapping.LocalLength;
+                int L = this.CurrentLin.Mapping.LocalLength;
 
-            if (CurrentLin.FreeMeanValue.Any()) {
+                if (CurrentLin.FreeMeanValue.Any()) {
 
-                double[] ResidualBeforMeanCor = new double[L];
-                double[] ResidualAfterMeanCor = new double[L];
+                    double[] ResidualBeforMeanCor = new double[L];
+                    double[] ResidualAfterMeanCor = new double[L];
 
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
-                double SolNormA = SolutionVec.MPI_L2Norm();
+                    EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
+                    double SolNormA = SolutionVec.MPI_L2Norm();
 
 
-                DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
-                bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
-                if (flds.Length != FreeMeanValue.Length)
-                    throw new ApplicationException();
+                    DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
+                    bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
+                    if (flds.Length != FreeMeanValue.Length)
+                        throw new ApplicationException();
 
-                const double arbitrary_distortion_value = 2000.1234;
+                    const double arbitrary_distortion_value = 2000.1234;
 
-                for (int iFld = 0; iFld < flds.Length; iFld++) {
-                    if (FreeMeanValue[iFld]) {
-                        flds[iFld].AccConstant(arbitrary_distortion_value);
+                    for (int iFld = 0; iFld < flds.Length; iFld++) {
+                        if (FreeMeanValue[iFld]) {
+                            flds[iFld].AccConstant(arbitrary_distortion_value);
+                        }
                     }
-                }
 
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
-                double SolNormB = SolutionVec.L2Norm();
+                    EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
+                    double SolNormB = SolutionVec.L2Norm();
 
-                for (int iFld = 0; iFld < flds.Length; iFld++) {
-                    if (FreeMeanValue[iFld]) {
-                        flds[iFld].AccConstant(-arbitrary_distortion_value);
+                    for (int iFld = 0; iFld < flds.Length; iFld++) {
+                        if (FreeMeanValue[iFld]) {
+                            flds[iFld].AccConstant(-arbitrary_distortion_value);
+                        }
                     }
-                }
-                
 
-                //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
-                //ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
-                //DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
-                //Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
-
-                double Dist = ResidualBeforMeanCor.MPI_L2Dist(ResidualAfterMeanCor);
-                double ResNormA = ResidualBeforMeanCor.MPI_L2Norm();
-                double ResNormB = ResidualAfterMeanCor.MPI_L2Norm();
+                    double Dist = ResidualBeforMeanCor.MPI_L2Dist(ResidualAfterMeanCor);
+                    double ResNormA = ResidualBeforMeanCor.MPI_L2Norm();
+                    double ResNormB = ResidualAfterMeanCor.MPI_L2Norm();
 
 
 
-                double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(ResNormA, ResNormB) * 1e-7), Math.Abs(SolNormA - SolNormB) * 1e-7);
-                if (Dist > RefVal) {
-                    Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
-                    //throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                    double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(ResNormA, ResNormB) * 1e-7), Math.Abs(SolNormA - SolNormB) * 1e-7);
+                    if (Dist > RefVal) {
+                        ft.Error($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                        Console.Error.WriteLine($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+                        //throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
+
+                        double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
+                        ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
+                        DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
+                        Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
+                    }
                 }
             }
-
         }
 
 

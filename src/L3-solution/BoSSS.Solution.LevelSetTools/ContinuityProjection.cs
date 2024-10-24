@@ -139,6 +139,7 @@ namespace BoSSS.Solution.LevelSetTools {
         /// </param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
             using(var ft = new FuncTrace()) {
+                //ft.InfoToConsole = true;
                 //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
 
                 MyProjection.MakeContinuous(DGLevelSet, LevelSet, Domain);
@@ -146,7 +147,7 @@ namespace BoSSS.Solution.LevelSetTools {
                 double Jnorm = JumpNorm(LevelSet, Domain);
                 ft.Info($"jump norm after continuity projection = {Jnorm}");
 
-                if(myOption != ContinuityProjectionOption.None && setFarFieldConstant) {
+                if (myOption != ContinuityProjectionOption.None && setFarFieldConstant) {
                     SetFarField(LevelSet, Domain, PosMask);
                 }
             }
@@ -218,11 +219,11 @@ namespace BoSSS.Solution.LevelSetTools {
                     NodeSet NS = QR.Nodes;
                     EvalResult.Clear();
                     int NoOfNodes = NS.NoOfNodes;
-                    for (int j = 0; j < Length; j++) {
-                        int iEdge = j + i0;
+                    for (int i = 0; i < Length; i++) {
+                        int iEdge = i + i0;
                         int jCell_IN = grd.Edges.CellIndices[iEdge, 0];
                         int jCell_OT = grd.Edges.CellIndices[iEdge, 1];
-                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
+                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { i, 0, 0 }, new int[] { i, NoOfNodes - 1, -1 });
 
                         if (jCell_OT >= 0) {
 

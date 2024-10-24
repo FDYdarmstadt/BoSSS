@@ -59,10 +59,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
             bool steadyInterface = false;
 
-            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            //_DbPath = @"D:\local\local_test_db";
-            string _DbPath = null; // @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            string _DbPath = @"D:\local\local_test_db";
+            //string _DbPath = null; // @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
             //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
+
+            //C.SkipSolveAndEvaluateResidual = true;
+
 
             // basic database options
             // ======================
@@ -71,8 +74,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "StaticDroplet";
-            //C.ProjectDescription = "Static droplet";
-            //C.SessionName = "SD_meshStudy_Hysing_mesh" + kelem; // "_AMR"+AMRlvl;
+            C.ProjectDescription = "Static droplet";
+            C.SessionName = "SD_gravitySaveToDb"; // "_AMR"+AMRlvl;
 
             C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
@@ -99,9 +102,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     SaveToDB = FieldOpts.SaveToDBOpt.TRUE
                 });
             }
-            //C.FieldOptions.Add("GravityY", new FieldOpts() {
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
+            C.FieldOptions.Add("GravityY#A", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY#B", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
             C.FieldOptions.Add("Pressure", new FieldOpts() {
                 Degree = p - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -110,7 +116,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = Math.Max(2, p),
+                Degree = Math.Max(2, p + 1),
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
@@ -267,8 +273,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
             C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
-            //C.InitialValues_Evaluators.Add("GravityY#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
+            C.InitialValues_Evaluators.Add("GravityY#A", X => 1.0);
+            C.InitialValues_Evaluators.Add("GravityY#B", X => 1.0);
 
 
             //C.UseRampUpForInitialVelocityField = true;
@@ -338,7 +344,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
-
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //if (AMRlvl > 0) {
@@ -356,13 +362,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.adaptiveReInit = false;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver = LinearSolverCode.automatic.GetConfig();
+            //C.LinearSolver = LinearSolverCode.automatic.GetConfig();
             //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.NonLinearSolver.MaxSolverIterations = 50; 
-            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LevelSet_ConvergenceCriterion = 1e-7;
+            //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            //C.LevelSet_ConvergenceCriterion = 1e-7;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
@@ -377,7 +383,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = 1.0 * sigma;
             //C.PhysicalParameters.lambda_I = 2.0 * sigma;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 

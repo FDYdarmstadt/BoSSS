@@ -114,6 +114,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public FourierLevSetControl FourierLevSetControl;
 
         /// <summary>
+        /// Options for the initialization of the Parameterized Level-set
+        /// </summary>
+        [DataMember]
+        public LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl ParameterizedLevelSetControl;
+
+        /// <summary>
         /// Options for the initialization of the Phasefield Level-set
         /// </summary>
         [DataMember]

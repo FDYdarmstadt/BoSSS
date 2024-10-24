@@ -25,7 +25,8 @@ using System;
 using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
-    class StaticDropletTest : IXNSETest {
+
+    class StaticDropletScalingTest : IXNSETest {
 
         public bool TestImmersedBoundary => false;
 

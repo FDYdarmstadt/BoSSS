@@ -140,7 +140,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public override void SetDGdegree(int p) {
-            SetFieldOptions(p, Math.Max(2, p));
+            SetFieldOptions(p, Math.Max(2, p + 1));
         }
 
         /// <summary>

@@ -341,6 +341,46 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// Creates Chebyshev nodes between two points (first kind).
+        /// </summary>
+        /// <param name="a">minimum</param>
+        /// <param name="b">maximum</param>
+        /// <param name="n">number of nodes desired</param>
+        /// <returns>
+        /// an array of length <paramref name="n"/>,
+        /// with first entry equal to <paramref name="a"/>, 
+        /// last entry equal to <paramref name="b"/>, and 
+        /// all other points linear interpolated in between. 
+        /// </returns>
+        public static double[] ChebyshevNodesFirstKind(double a, double b, int n) {
+            double[] points = new double[n];
+            for (int i = 0; i < n; i++) {
+                points[i] = (a + b) / 2 + (b - a) / 2 * Math.Cos(Math.PI * (2 * i + 1) / (2 * n));
+            }
+            return points;
+        }
+
+        /// <summary>
+        /// Creates Chebyshev nodes between two points (second kind: includes end points).
+        /// </summary>
+        /// <param name="a">minimum</param>
+        /// <param name="b">maximum</param>
+        /// <param name="n">number of nodes desired</param>
+        /// <returns>
+        /// an array of length <paramref name="n"/>,
+        /// with first entry equal to <paramref name="a"/>, 
+        /// last entry equal to <paramref name="b"/>, and 
+        /// all other points linear interpolated in between. 
+        /// </returns>
+        public static double[] ChebyshevNodesSecondKind(double a, double b, int n) {
+            double[] points = new double[n];
+            for (int i = 0; i < n; i++) {
+                points[i] = (a + b) / 2 + (b - a) / 2 * Math.Cos(Math.PI * i / (n - 1));
+            }
+            return points;
+        }
+
+        /// <summary>
         /// Random vector with <paramref name="n"/> entries.
         /// </summary>
         public static double[] RandomVec(int n, int seed = 0) {
