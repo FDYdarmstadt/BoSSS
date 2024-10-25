@@ -114,10 +114,10 @@ namespace BoSSS.Foundation.XDG {
         /// <exception cref="NotImplementedException"></exception>
         private bool CheckJmp(JumpTypes jmp) {
             if (jmp == JumpTypes.Heaviside)
-                return false; //we are looking for positive level set values
+                return false; //we are looking for positive level set values, i.e., ls(x)>0
             else if (jmp == JumpTypes.OneMinusHeaviside)
-                return true; //we are looking for negative level set values
-            else
+                return true; //we are looking for negative level set values, i.e., ls(x)<0
+			else
                 throw new NotImplementedException();
         }
 
