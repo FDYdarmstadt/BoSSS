@@ -35,9 +35,6 @@ namespace StokesHelical_Ak {
 
             HelicalControl Ctrl = new HelicalControl();
             #region db
-            //Ctrl.DbPath = @"P:\BoSSSpostprocessing\Akbari"; // _DbPath;
-            // Ctrl.DbPath = @"\\dc3\userspace\akbari\cluster\Helical_DNS";
-            //Ctrl.DbPath = null;
             Ctrl.DbPath = _DbPath;
 
             const double MaxAmp = 5;
@@ -68,11 +65,6 @@ namespace StokesHelical_Ak {
                 GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear,
                     periodicX: false,
                     periodicY: true);
-                //for(int i = 0; i < 9; i++)
-                //    Console.WriteLine("Remember: turn periodic on again !!!!!! All Dirichlet!!");
-
-                //GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear,
-                //periodicY: true);
 
                 grd.EdgeTagNames.Add(1, "Dirichlet_rmax");
                 grd.EdgeTagNames.Add(2, "Dirichlet_rmin");
@@ -90,27 +82,6 @@ namespace StokesHelical_Ak {
                     else
                         return 3;
                 });
-
-                //grd.DefineEdgeTags(delegate (double[] _X) {
-                //    var X = _X;
-                //    double r, xi;
-                //    r = X[0];
-                //    xi = X[1];
-                //    if(Math.Abs(r - Ctrl.rMax) < 1E-8) {
-                //        return "Dirichlet_rmax";
-                //    }
-                //if(Math.Abs(r - Ctrl.rMin) < 1E-8) {
-                //    return "Dirichlet_rmin";
-                //}
-
-                //Math.Abs(xi - 2 * Math.PI) < 1E-8 || Math.Abs(xi - 0) < 1E-8)
-                //        return 1;
-                //    else
-                //        return 2;
-                //    throw new ArgumentException("unknown bndy coordinate: " + new Vector(r, xi));
-                //});
-
-
                 return grd;
             };
             double dt = Tend / (dtRefining * 100);

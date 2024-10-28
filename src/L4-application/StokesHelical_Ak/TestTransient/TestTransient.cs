@@ -121,7 +121,6 @@ namespace StokesHelical_Ak.TestTransient {
             Assert.That(uxiErrorL2.First() < thresholdUxi, "Error. uxiErrorL2 not fullfilled");
         }
 
-
         [Test]
         // Convergence for BDF3
         static public void TimeConvergenceBDF3_no_R0fix() {
@@ -133,7 +132,7 @@ namespace StokesHelical_Ak.TestTransient {
             double[] psiErrorL2 = new double[timeSteps.Length];
             double[] timeStepSize = new double[timeSteps.Length];
             HelicalControl[] timeConvergence = new HelicalControl[timeSteps.Length];
-            string[] timeSchemes = new string[] {"BDF3" };
+            string[] timeSchemes = new string[] {"BDF3"};
             for(int ell = 0; ell < timeSchemes.Length; ell++) {
                 for(int i = 0; i < timeSteps.Length; i++) {
                     timeConvergence[i] = StokesHelical_Ak.HardcodedControl.ManSol_Transient_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0.1);

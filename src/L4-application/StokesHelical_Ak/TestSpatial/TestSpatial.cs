@@ -31,7 +31,7 @@ namespace StokesHelical_Ak.TestSpartial {
 
         [Test]
         static public void SpatialConvergence_with_R0fix([Values(2, 3, 4, 5)] int pOrder) {
-            // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialConvergence_without_R0fix
+            // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialConvergence_without_R0fix(X)
 
             int[] gridSize = new int[] { 64, 32, 16, 8, 4 };
             double[] h = new double[gridSize.Length];

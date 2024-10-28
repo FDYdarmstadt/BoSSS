@@ -143,12 +143,8 @@ namespace StokesHelical_Ak.TestRestart {
                         var referenceField = tsiReference.Fields.Single(f => f.Identification == field.Identification);
                         // Adjust the reference field coordinates by subtracting the current field coordinates
                         referenceField.Coordinates.Acc(-1.0, field.Coordinates);
-                        // OutPut
                         Console.WriteLine($"Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}");
-                        // Check if the adjusted coordinates' L2 norm is greater than 0 (indicating a discrepancy)
                         Assert.LessOrEqual(referenceField.L2Norm(), 1E-13, $"ERROR!!!:Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}. Should be less or equal {1E-13}");
-
-                        // Check if the adjusted coordinates' L2 norm is greater than 0 (indicating a discrepancy)
                         if(referenceField.L2Norm() > 1E-13) {
                             Console.WriteLine($"Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}");
                             comparisonFailed = true;
@@ -156,7 +152,6 @@ namespace StokesHelical_Ak.TestRestart {
                     }
                 }
 
-                // Assert that there were no comparison failures
                 if(comparisonFailed) {
                     Console.WriteLine("Comparison between reference solution and restart solution not equal.");
                     throw new InvalidOperationException("Comparison between reference solution and restart solution not equal.");

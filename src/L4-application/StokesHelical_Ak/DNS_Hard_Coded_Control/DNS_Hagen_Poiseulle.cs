@@ -92,27 +92,6 @@ namespace StokesHelical_Ak {
                     else
                         return 3;
                 });
-
-                //grd.DefineEdgeTags(delegate (double[] _X) {
-                //    var X = _X;
-                //    double r, xi;
-                //    r = X[0];
-                //    xi = X[1];
-                //    if(Math.Abs(r - Ctrl.rMax) < 1E-8) {
-                //        return "Dirichlet_rmax";
-                //    }
-                //if(Math.Abs(r - Ctrl.rMin) < 1E-8) {
-                //    return "Dirichlet_rmin";
-                //}
-
-                //Math.Abs(xi - 2 * Math.PI) < 1E-8 || Math.Abs(xi - 0) < 1E-8)
-                //        return 1;
-                //    else
-                //        return 2;
-                //    throw new ArgumentException("unknown bndy coordinate: " + new Vector(r, xi));
-                //});
-
-
                 return grd;
             };
             double dt = Tend / (dtRefining * 10);

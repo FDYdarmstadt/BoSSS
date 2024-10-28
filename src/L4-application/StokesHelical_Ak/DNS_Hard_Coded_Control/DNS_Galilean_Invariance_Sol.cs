@@ -35,9 +35,6 @@ namespace StokesHelical_Ak {
 
             HelicalControl Ctrl = new HelicalControl();
             #region db
-            //Ctrl.DbPath = @"P:\BoSSSpostprocessing\Akbari"; // _DbPath;
-            // Ctrl.DbPath = @"\\dc3\userspace\akbari\cluster\Helical_DNS";
-            //Ctrl.DbPath = null;
             Ctrl.DbPath = _DbPath;
 
             const double MaxAmp = 0.5;
