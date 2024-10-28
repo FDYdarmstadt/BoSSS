@@ -107,6 +107,9 @@ namespace StokesHelical_Ak {
             return Ctrl;
         }
 
+
+        #endregion
+
         #region transient         
         // DDD Paper Equation: 4.4 (a,b,c,d)
         // Convergance is confirmed!
