@@ -70,11 +70,6 @@ namespace StokesHelical_Ak {
                 GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear, 
                     periodicX: false,
                     periodicY: true);
-                //for(int i = 0; i < 9; i++)
-                //    Console.WriteLine("Remember: turn periodic on again !!!!!! All Dirichlet!!");
-
-                //GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear,
-                //periodicY: true);
 
                 grd.EdgeTagNames.Add(1, "Dirichlet_rmax");
                 grd.EdgeTagNames.Add(2, "Dirichlet_rmin");
@@ -107,7 +102,6 @@ namespace StokesHelical_Ak {
             //Ctrl.NoOfTimesteps = dtRefining * 200*4;
             Ctrl.NoOfTimesteps = dtRefining;
             Ctrl.steady = false;
-            Ctrl.ExactResidual = false;
 
             // DG degree
             // =========

@@ -490,7 +490,7 @@ namespace StokesHelical_Ak {
             this.Control.PressureReferencePoint = true;
             if(Control.rMin < 10e-6) {
                 this.Control.R0fixOn = true;
-                if(Control.ExactResidual == true) {
+                if(Control.DDD_Man_Sol == true) {
                     if(Control.steady == true) {
                         // Das ist hier noch nicht so sicher!
                         Globals.activeMult = Globals.Multiplier.Bsq;
@@ -564,9 +564,9 @@ namespace StokesHelical_Ak {
                 Console.WriteLine("Solvinng only Stokes/convective terms deactivated");
             }
             // +++++++++++++++++++++++++
-            // Exact Solution
+            // Manufactured Solution of DDD
             // +++++++++++++++++++++++++
-            if(Control.ExactResidual) {
+            if (Control.DDD_Man_Sol) {
                 diffOp_implicit.EquationComponents["rmom"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermR());
                 diffOp_implicit.EquationComponents["zmom"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermXi());
                 diffOp_implicit.EquationComponents["etamom"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermEta());
@@ -607,7 +607,7 @@ namespace StokesHelical_Ak {
                 Tecplot plt1 = new Tecplot(GridData, true, false, (uint)superSampling);
                 List<DGField> FieldsToPlot;
 
-                if(Control.ExactResidual) {
+                if(Control.DDD_Man_Sol) {
                     FieldsToPlot = m_IOFields.ToList();
                     FieldsToPlot = new List<DGField> { ur, uxi, ueta, Residual_MomR, Residual_MomZ, Residual_MomETA };
                 } else {
@@ -682,9 +682,8 @@ namespace StokesHelical_Ak {
                 } else {
                     m_Splitting_Timestepper.Solve(phystime + dt, this.Control.restartTimeStep, TimestepInt, this.Control.RestartInfo != null, Unnn_restart_, Unn_restart_, Un_restart_, this.Control.GetBDFOrder());
                 }
-                if(this.Control.ExactResidual == true) {
+                if(this.Control.DDD_Man_Sol == true) {
                     ComputeErrorsAndResiduals(phystime + dt, TimestepNo);
-                    // Beim Restart werden hier irgendwie immer neue Error_Felder angelegt
                 }
                 //Stopclock
                 stopwatch.Stop();
@@ -784,10 +783,10 @@ namespace StokesHelical_Ak {
                 this.error_MomETA = L2errorS[2];
                 this.error_Conti = L2errorS[3];
 
-                // exact solution
+                // Manufactured Solution of DDD
                 // ==============
-                if(this.Control.steady == true) {
-                    if(!Control.ExactResidual) {
+                if (this.Control.steady == true) {
+                    if(!Control.DDD_Man_Sol) {
                         urExact.ProjectField(Globals.DirichletValue_uR);
                         uetaExact.ProjectField(Globals.DirichletValue_uEta);
                         uxiExact.ProjectField(Globals.DirichletValue_uXi);

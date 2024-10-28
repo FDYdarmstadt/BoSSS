@@ -98,7 +98,7 @@ namespace StokesHelical_Ak {
                 | TermSwitch.Viscosity_2ndOrder_MomR;
 
         [DataMember]
-        public bool ExactResidual = true;
+        public bool DDD_Man_Sol = false;
 
 
         [DataMember]

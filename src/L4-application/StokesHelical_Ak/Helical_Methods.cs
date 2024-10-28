@@ -175,7 +175,7 @@ namespace StokesHelical_Ak {
             var exactFields_nn = fieldNames.Select(name => new SinglePhaseField(CurrentSolution.Fields[Array.IndexOf(fieldNames, name)].Basis, $"{name}Exact_nn")).ToArray();
             var guessFields = fieldNames.Select(name => new SinglePhaseField(CurrentSolution.Fields[Array.IndexOf(fieldNames, name)].Basis, $"{name}Guess_n")).ToArray();
 
-            if(this.Control.ExactResidual == false) {
+            if(this.Control.DDD_Man_Sol == false) {
                 UpdateGuessFields(guessFields, dt);
             } else {
                 UpdateExactFields(exactFields_n, exactFields_nn, Time, dt);

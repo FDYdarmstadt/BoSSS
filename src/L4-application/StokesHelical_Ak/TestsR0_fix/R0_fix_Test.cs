@@ -35,12 +35,7 @@ namespace StokesHelical_Ak.NUnitTestsR0_fix {
                 p.Init(ctrl);
                 p.RunSolverMode();
                 Assert.That(Globals.activeMult == Globals.Multiplier.Bsq,
-                String.Format("Multiplier is not f(r)=B(r)^2"));
-                // Note: Fk, 13dec23: I think, `pressureStabilConti`  is essential, therefore it is turned on globally.
-                //Assert.That(Globals.pressureStabilConti == false,
-                //    String.Format(
-                //        "Pressure Stabilization in Conti equation is true. No pressure stabilization for this unit test!")
-                //    );
+                String.Format("Multiplier is not f(r)=B(r)^2"));  // Note: Fk, 13dec23: I think, `pressureStabilConti`  is essential, therefore it is turned on globally.
                 Assert.That(Globals.pressureStabilEtaMom == false,
                     String.Format(
                         "Pressure Stabilization in Eta momentum equation is true. No pressure stabilization for this unit test!")
@@ -52,30 +47,5 @@ namespace StokesHelical_Ak.NUnitTestsR0_fix {
                 Console.WriteLine("R0_fix is working correctly!");
             }
         }
-
-        /*
-        /// <summary>
-        /// verifies certain properties which the <see cref="R0fix"/> should comply with:
-        /// - Prolongation and subsequent restriction must be an identity operation
-        /// </summary>
-        [Test]
-        static public void TestR0_Fix([Values(2, 3, 4, 5, 6)] int pOrder) {
-            using(HelicalMain p = new HelicalMain()) {
-                var ctrl = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 3, noOfCellsXi: 3, dtRefining: 1, _DbPath: null, bdfOrder: 1);
-                ctrl.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
-
-                // overwrite the globals
-                Globals.activeMult = Globals.Multiplier.Bsq;
-                Globals.pressureStabilEtaMom = false;  // no pressure stabilization for this test
-                p.Init(ctrl);
-                p.RunSolverMode();
-
-                p.CurrentSolution.SaveToTextFile("U0.txt");
-                
-                R0fix myR0fix = new R0fix(p.CurrentSolution.Mapping, p.Control.rMin);
-                myR0fix.InternalChecks();
-            }
-        }
-        */
     }
 }

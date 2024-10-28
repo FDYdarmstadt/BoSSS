@@ -30,7 +30,7 @@ namespace StokesHelical_Ak.TestSpartial {
     static public class TestSpatial {
 
         [Test]
-        static public void SpatialConvergence_with_R0fix([Values(2, 3, 4, 5)] int pOrder) {
+        static public void SpatialConvergence_with_R0fix_DDD_Paper_([Values(2, 3, 4, 5)] int pOrder) {
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialConvergence_without_R0fix(X)
 
             int[] gridSize = new int[] { 64, 32, 16, 8, 4 };
@@ -250,7 +250,7 @@ namespace StokesHelical_Ak.TestSpartial {
 
 
         [Test]
-        static public void HangingNodes_with_R0fix([Values(4)] int pOrder) {
+        static public void HangingNodes_with_R0fix_DDD_Paper_([Values(4)] int pOrder) {
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.HangingNodes_with_R0fix(5)
 
             int gridSize = 64;
@@ -334,15 +334,6 @@ namespace StokesHelical_Ak.TestSpartial {
         [Test]
         static public void SpatialConvergence_without_R0fix([Values(2, 3, 4, 5)] int pOrder) {
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialConvergence_without_R0fix 
-
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //Console.WriteLine("remove testcode");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
             ilPSP.Environment.NumThreads = 1;
 
@@ -441,7 +432,6 @@ namespace StokesHelical_Ak.TestSpartial {
 
         [Test]
         static public void SpatialComparison_Direct_vs_Iterativ_without_R0fix([Values(5)] int pOrder) {
-            // Polynomorder 5 take too long for our test runners!
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_without_R0fix(5)
 
             //###########################################################
@@ -559,7 +549,7 @@ namespace StokesHelical_Ak.TestSpartial {
         }
 
         [Test]
-        static public void HangingNodes_without_R0fix([Values(4)] int pOrder) {
+        static public void HangNodes_without_R0fix_DDD_Paper_([Values(4)] int pOrder) {
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.HangingNodes_with_R0fix(5)
 
             int gridSize = 64;
