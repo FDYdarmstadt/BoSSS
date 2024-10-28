@@ -226,7 +226,7 @@ namespace ilPSP.Utils {
         public struct QuadSchemeCombo {
             public int dimension;
             public int lengthSurf;   //length of surface quadrature rule
-            public int lengthVol;    //length of voluume quadrature rule
+            public int lengthVol;    //length of volume quadrature rule
             public double[] nodes;
             public double[] weights;
 
@@ -432,16 +432,26 @@ namespace ilPSP.Utils {
         _GetVolumeScheme GetVolumeScheme;
         _GetSurfaceScheme GetSurfaceScheme;
         _GetComboScheme GetComboScheme;
+		_GetVolumeSchemeTwoLS GetVolumeSchemeTwoLS;
+		_GetSurfaceSchemeTwoLS GetSurfaceSchemeTwoLS;
+		_GetComboSchemeTwoLS GetComboSchemeTwoLS;
 #pragma warning restore 649
 
-        // Defines a delegate that can point to the method matching its signature.
-        public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
+		// Defines a delegate that can point to the method matching its signature.
+		public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
-        public unsafe delegate QuadSchemeUnmanaged _GetSurfaceScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
+		public unsafe delegate QuadSchemeUnmanaged _GetSurfaceScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
         public unsafe delegate QuadSchemeComboUnmanaged _GetComboScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
-        public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
+		public unsafe delegate QuadSchemeUnmanaged _GetVolumeSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+
+		public unsafe delegate QuadSchemeUnmanaged _GetSurfaceSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+
+		public unsafe delegate QuadSchemeComboUnmanaged _GetComboSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+
+
+		public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
             get { return GetVolumeScheme; }
         }
 
@@ -453,7 +463,19 @@ namespace ilPSP.Utils {
             get { return GetComboScheme; }
         }
 
-    }
+		public unsafe _GetVolumeSchemeTwoLS getUnmanagedVolumeSchemeTwoLS {
+			get { return GetVolumeSchemeTwoLS; }
+		}
+
+		public unsafe _GetSurfaceSchemeTwoLS getUnmanagedSurfaceSchemeTwoLS {
+			get { return GetSurfaceSchemeTwoLS; }
+		}
+
+		public unsafe _GetComboSchemeTwoLS getUnmanagedComboSchemeTwoLS {
+			get { return GetComboSchemeTwoLS; }
+		}
+
+	}
 
 
 
