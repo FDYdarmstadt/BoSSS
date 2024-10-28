@@ -13,6 +13,8 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.Utils;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
@@ -261,7 +263,67 @@ namespace StokesHelical_Ak.TestSpartial {
             double uxiErrorLx;
             double psiErrorLx;
             HelicalControl spaceConvergence_hangingNodes = new HelicalControl();
-            spaceConvergence_hangingNodes = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Hanging_Nodes(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_hangingNodes = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+
+            // Grid
+            #region Grid
+            spaceConvergence_hangingNodes.GridFunc = delegate {
+                int numberOfSegments = 4;
+                // Initialisierung einer Liste für die Gitter
+                GridCommons[] grids = new GridCommons[numberOfSegments];
+                // Basisanzahl der Zellen im ersten Segment
+                int N = (gridSize + 1) / numberOfSegments;
+                // Startpunkt für xNodes
+                double xStart = r_min;
+                // Die Schrittweite für xNodes-Bereiche erhöhen
+                double xStep = (spaceConvergence_hangingNodes.rMax / numberOfSegments) - xStart;
+
+                for (int i = 0; i < numberOfSegments; i++) {
+                    // Berechnung der Knotenanzahl für das aktuelle Segment
+                    int nodesInSegment = N * (int)Math.Pow(2, i) + 1;
+
+                    // Bestimmung der x-Bereichsgrenzen für das aktuelle Segment
+                    double xEnd = xStart + xStep;
+
+                    // Erzeugung der x-Knoten und y-Knoten für das aktuelle Segment
+                    double[] xNodes = GenericBlas.Linspace(xStart, xEnd, nodesInSegment);
+                    double[] yNodes = GenericBlas.Linspace(0, 2 * Math.PI, nodesInSegment);
+
+                    // Erstellung des Gitters für das aktuelle Segment und Hinzufügen in die Liste
+                    grids[i] = Grid2D.Cartesian2DGrid(xNodes, yNodes, type: CellType.Square_Linear);
+                    // Aktualisierung des Startpunkts für den nächsten Durchlauf
+                    xStart = xEnd;
+                }
+
+                // Zusammenführen der Gitter aus der Liste
+                var grdJ = grids[0];
+                for (int i = 1; i < grids.Length; i++) {
+                    grdJ = GridCommons.MergeLogically(grids[i], grdJ);
+                }
+                // Versiegelung des zusammengeführten Gitters
+                GridCommons grd = GridCommons.Seal(grdJ, 4);
+
+                // Hinzufügen der Edge Tag Names und Definition der Edge Tags...
+                // (Füge hier den restlichen Teil deines Codes ein)
+
+                grd.EdgeTagNames.Add(1, "Dirichlet");
+                grd.EdgeTagNames.Add(2, "Stuff");
+
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    double r, xi;
+                    r = X[0];
+                    xi = X[1];
+                    if (Math.Abs(r - spaceConvergence_hangingNodes.rMax) < 1E-8 || (spaceConvergence_hangingNodes.rMin >= 1E-6 && Math.Abs(r - spaceConvergence_hangingNodes.rMin) < 1E-8))
+                        return 1;
+                    else
+                        return 2;
+                });
+                return grd;
+            };
+            #endregion
+
+
             var helical_hangingNodes = new HelicalMain();
             helical_hangingNodes.Init(spaceConvergence_hangingNodes);
             helical_hangingNodes.RunSolverMode();
@@ -559,7 +621,65 @@ namespace StokesHelical_Ak.TestSpartial {
             double uxiErrorLx;
             double psiErrorLx;
             HelicalControl spaceConvergence_hangingNodes = new HelicalControl();
-            spaceConvergence_hangingNodes = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Hanging_Nodes(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_hangingNodes = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+
+            // Grid
+            #region Grid
+            spaceConvergence_hangingNodes.GridFunc = delegate {
+                int numberOfSegments = 4;
+                // Initialisierung einer Liste für die Gitter
+                GridCommons[] grids = new GridCommons[numberOfSegments];
+                // Basisanzahl der Zellen im ersten Segment
+                int N = (gridSize + 1) / numberOfSegments;
+                // Startpunkt für xNodes
+                double xStart = r_min;
+                // Die Schrittweite für xNodes-Bereiche erhöhen
+                double xStep = (spaceConvergence_hangingNodes.rMax / numberOfSegments) - xStart;
+
+                for (int i = 0; i < numberOfSegments; i++) {
+                    // Berechnung der Knotenanzahl für das aktuelle Segment
+                    int nodesInSegment = N * (int)Math.Pow(2, i) + 1;
+
+                    // Bestimmung der x-Bereichsgrenzen für das aktuelle Segment
+                    double xEnd = xStart + xStep;
+
+                    // Erzeugung der x-Knoten und y-Knoten für das aktuelle Segment
+                    double[] xNodes = GenericBlas.Linspace(xStart, xEnd, nodesInSegment);
+                    double[] yNodes = GenericBlas.Linspace(0, 2 * Math.PI, nodesInSegment);
+
+                    // Erstellung des Gitters für das aktuelle Segment und Hinzufügen in die Liste
+                    grids[i] = Grid2D.Cartesian2DGrid(xNodes, yNodes, type: CellType.Square_Linear);
+                    // Aktualisierung des Startpunkts für den nächsten Durchlauf
+                    xStart = xEnd;
+                }
+
+                // Zusammenführen der Gitter aus der Liste
+                var grdJ = grids[0];
+                for (int i = 1; i < grids.Length; i++) {
+                    grdJ = GridCommons.MergeLogically(grids[i], grdJ);
+                }
+                // Versiegelung des zusammengeführten Gitters
+                GridCommons grd = GridCommons.Seal(grdJ, 4);
+
+                // Hinzufügen der Edge Tag Names und Definition der Edge Tags...
+                // (Füge hier den restlichen Teil deines Codes ein)
+
+                grd.EdgeTagNames.Add(1, "Dirichlet");
+                grd.EdgeTagNames.Add(2, "Stuff");
+
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    double r, xi;
+                    r = X[0];
+                    xi = X[1];
+                    if (Math.Abs(r - spaceConvergence_hangingNodes.rMax) < 1E-8 || (spaceConvergence_hangingNodes.rMin >= 1E-6 && Math.Abs(r - spaceConvergence_hangingNodes.rMin) < 1E-8))
+                        return 1;
+                    else
+                        return 2;
+                });
+                return grd;
+            };
+            #endregion
             var helical_hangingNodes = new HelicalMain();
             helical_hangingNodes.Init(spaceConvergence_hangingNodes);
             helical_hangingNodes.RunSolverMode();
