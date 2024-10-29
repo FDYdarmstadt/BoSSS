@@ -689,7 +689,95 @@ namespace ilPSP.Utils {
             return ret;
         }
 
-        internal static void ActivateSEQ() {
+		public static QuadScheme GetSurfaceQuadratureRulesTwoLSTest() {
+
+			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+			Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+
+			int n = 2; // number of points in one axis (degree + 1) 
+			int spaceDim = 2;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * 2]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+            double[] xB = xA;
+
+			int[] sA = { n, n };
+			int[] sB = sA;   //same for sB
+
+			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(2, 3, 3, 5, sA, sB, xA, xB, yA, yB);
+			QuadScheme ret = new QuadScheme(retC);
+			retC.FreeMemory();
+			ret.OutputQuadratureRuleAsVtpXML("AlgoimSurfTwoLSTest.vtp");
+            return ret;
+		}
+
+		public static QuadScheme GetVolumeQuadratureRulesTwoLSTest() {
+
+			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+			Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+
+			int n = 2; // number of points in one axis (degree + 1) 
+			int spaceDim = 2;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * 2]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+			double[] xB = xA;
+
+			int[] sA = { n, n };
+			int[] sB = sA;   //same for sB
+
+			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(2, 3, 3, 5, sA, sB, xA, xB, yA, yB);
+			QuadScheme ret = new QuadScheme(retC);
+			retC.FreeMemory();
+			ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTest.vtp");
+			double area = 0;
+
+			foreach (var w in ret.weights)
+				area += w;
+
+			Console.WriteLine($"Calculated area {area}, theoretical 3/2");
+			return ret;
+		}
+
+		internal static void ActivateSEQ() {
             m_Algoim = m_seq_Algoim;
         }
 
