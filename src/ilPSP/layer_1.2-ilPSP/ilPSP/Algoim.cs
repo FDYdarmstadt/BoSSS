@@ -80,7 +80,7 @@ namespace ilPSP.Utils {
     public sealed class UnsafeAlgoim : DynLibLoader {
 
 
-        [StructLayout(LayoutKind.Sequential)]
+		[StructLayout(LayoutKind.Sequential)]
         public struct QuadSchemeUnmanaged {
             public int dimension;
             public int size;
@@ -94,7 +94,7 @@ namespace ilPSP.Utils {
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+		[StructLayout(LayoutKind.Sequential)]
         public struct QuadSchemeComboUnmanaged {
             public int dimension;
             public int sizeSurf;   //size of surface quadrature rule
@@ -430,28 +430,30 @@ namespace ilPSP.Utils {
 
 #pragma warning disable 649
         _GetVolumeScheme GetVolumeScheme;
-        _GetSurfaceScheme GetSurfaceScheme;
+		_GetSurfaceScheme GetSurfaceScheme;
         _GetComboScheme GetComboScheme;
-		_GetVolumeSchemeTwoLS GetVolumeSchemeTwoLS;
-		_GetSurfaceSchemeTwoLS GetSurfaceSchemeTwoLS;
-		_GetComboSchemeTwoLS GetComboSchemeTwoLS;
+        _GetVolumeSchemeTwoLS GetVolumeSchemeTwoLS;
+        _GetSurfaceSchemeTwoLS GetSurfaceSchemeTwoLS;
+        _GetComboSchemeTwoLS GetComboSchemeTwoLS;
 #pragma warning restore 649
 
-		// Defines a delegate that can point to the method matching its signature.
-		public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
+        // Defines a delegate that can point to the method matching its signature.
+        // The number of parameters can be seen too many but utilizing int/double arrays instead of a user defined struct,
+        // facilities memory management and handover it to garbage collector.
+        public unsafe delegate QuadSchemeUnmanaged _GetVolumeScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
 		public unsafe delegate QuadSchemeUnmanaged _GetSurfaceScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
         public unsafe delegate QuadSchemeComboUnmanaged _GetComboScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
-		public unsafe delegate QuadSchemeUnmanaged _GetVolumeSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+        public unsafe delegate QuadSchemeUnmanaged _GetVolumeSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
 
-		public unsafe delegate QuadSchemeUnmanaged _GetSurfaceSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+        public unsafe delegate QuadSchemeUnmanaged _GetSurfaceSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
 
-		public unsafe delegate QuadSchemeComboUnmanaged _GetComboSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+        public unsafe delegate QuadSchemeComboUnmanaged _GetComboSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
 
 
-		public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
+        public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
             get { return GetVolumeScheme; }
         }
 
@@ -463,19 +465,19 @@ namespace ilPSP.Utils {
             get { return GetComboScheme; }
         }
 
-		public unsafe _GetVolumeSchemeTwoLS getUnmanagedVolumeSchemeTwoLS {
-			get { return GetVolumeSchemeTwoLS; }
-		}
+        public unsafe _GetVolumeSchemeTwoLS getUnmanagedVolumeSchemeTwoLS {
+            get { return GetVolumeSchemeTwoLS; }
+        }
 
-		public unsafe _GetSurfaceSchemeTwoLS getUnmanagedSurfaceSchemeTwoLS {
-			get { return GetSurfaceSchemeTwoLS; }
-		}
+        public unsafe _GetSurfaceSchemeTwoLS getUnmanagedSurfaceSchemeTwoLS {
+            get { return GetSurfaceSchemeTwoLS; }
+        }
 
-		public unsafe _GetComboSchemeTwoLS getUnmanagedComboSchemeTwoLS {
-			get { return GetComboSchemeTwoLS; }
-		}
+        public unsafe _GetComboSchemeTwoLS getUnmanagedComboSchemeTwoLS {
+            get { return GetComboSchemeTwoLS; }
+        }
 
-	}
+    }
 
 
 
@@ -522,35 +524,79 @@ namespace ilPSP.Utils {
             return ret;
         }
 
-        /// <summary>
-        /// Returns the volume quadrature rules for the given parameters
-        /// </summary>
-        /// <param name="dim">dimension of space</param>
-        /// <param name="p">degree of level set (will be used for Berstein pol. interpolation)</param>
-        /// <param name="q">quadrature order</param>
-        /// <param name="lengths"> array for the lengths in each axis</param>
-        /// <param name="x">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths)</param>
-        /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
-        /// <returns></returns>
-        public static QuadScheme GetVolumeQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+		/// <summary>
+		/// Returns the volume quadrature rules for the given parameters
+		/// </summary>
+		/// <param name="dim">dimension of space</param>
+		/// <param name="p1">degree of level set 1 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="p2">degree of level set 2 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="q">quadrature order</param>
+		/// <param name="lengths1">array for the lengths in each axis for level set 1</param>
+		/// <param name="lengths2">array for the lengths in each axis for level set 2</param>
+		/// <param name="x1">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths), for level set 1</param>
+		/// <param name="x2">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths), for level set 2</param>
+		/// <param name="y1">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 1</param>
+		/// <param name="y2">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 2</param>
+		/// <returns>Quadrature scheme with nodes and weights (size determined by Algoim)</returns>
+		public static QuadScheme GetSurfaceQuadratureRules(int dim, int p1, int p2, int q, int[] lengths1, int[] lengths2, double[] x1, double[] x2, double[] y1, double[] y2) {
+
+			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(dim, p1, p2, q, lengths1, lengths2, x1, x2, y1, y2);
+			QuadScheme ret = new QuadScheme(retC);
+			retC.FreeMemory();
+			return ret;
+		}
+
+		/// <summary>
+		/// Returns the volume quadrature rules for the given parameters
+		/// </summary>
+		/// <param name="dim">dimension of space</param>
+		/// <param name="p">degree of level set (will be used for Berstein pol. interpolation)</param>
+		/// <param name="q">quadrature order</param>
+		/// <param name="lengths"> array for the lengths in each axis</param>
+		/// <param name="x">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths)</param>
+		/// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
+		/// <returns></returns>
+		public static QuadScheme GetVolumeQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
 
             QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeScheme(dim, p, q, lengths, x, y);
-            QuadScheme ret = new QuadScheme(retC);
+			QuadScheme ret = new QuadScheme(retC);
             retC.FreeMemory();
             return ret;
         }
 
-        /// <summary>
-        /// Returns the surface + volume quadrature rules for the given parameters
-        /// </summary>
-        /// <param name="dim">dimension of space</param>
-        /// <param name="p">degree of level set (will be used for Berstein pol. interpolation)</param>
-        /// <param name="q">quadrature order</param>
-        /// <param name="lengths"> array for the lengths in each axis</param>
-        /// <param name="x">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths)</param>
-        /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
-        /// <returns></returns>
-        public static QuadSchemeCombo GetComboQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+		/// <summary>
+		/// Returns the volume quadrature rules for the given parameters
+		/// </summary>
+		/// <param name="dim">dimension of space</param>
+		/// <param name="p1">degree of level set 1 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="p2">degree of level set 2 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="q">quadrature order</param>
+		/// <param name="lengths1">array for the lengths in each axis for level set 1</param>
+		/// <param name="lengths2">array for the lengths in each axis for level set 2</param>
+		/// <param name="x1">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths), for level set 1</param>
+		/// <param name="x2">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths), for level set 2</param>
+		/// <param name="y1">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 1</param>
+		/// <param name="y2">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 2</param>
+		/// <returns>Quadrature scheme with nodes and weights (size determined by Algoim)</returns>
+		public static QuadScheme GetVolumeQuadratureRules(int dim, int p1, int p2, int q, int[] lengths1, int[] lengths2, double[] x1, double[] x2, double[] y1, double[] y2) {
+
+			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(dim, p1, p2, q, lengths1, lengths2, x1, x2, y1, y2);
+			QuadScheme ret = new QuadScheme(retC);
+			retC.FreeMemory();
+			return ret;
+		}
+
+		/// <summary>
+		/// Returns the surface + volume quadrature rules for the given parameters
+		/// </summary>
+		/// <param name="dim">dimension of space</param>
+		/// <param name="p">degree of level set (will be used for Berstein pol. interpolation)</param>
+		/// <param name="q">quadrature order</param>
+		/// <param name="lengths"> array for the lengths in each axis</param>
+		/// <param name="x">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths)</param>
+		/// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
+		/// <returns></returns>
+		public static QuadSchemeCombo GetComboQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
 
             QuadSchemeComboUnmanaged retC = m_Algoim.getUnmanagedComboScheme(dim, p, q, lengths, x, y);
             QuadSchemeCombo ret = new QuadSchemeCombo(retC);
@@ -558,7 +604,29 @@ namespace ilPSP.Utils {
             return ret;
         }
 
-        public static QuadScheme GetSurfaceQuadratureRulesTest() {
+		/// <summary>
+		/// Returns the volume quadrature rules for the given parameters
+		/// </summary>
+		/// <param name="dim">dimension of space</param>
+		/// <param name="p1">degree of level set 1 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="p2">degree of level set 2 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="q">quadrature order</param>
+		/// <param name="lengths1">array for the lengths in each axis for level set 1</param>
+		/// <param name="lengths2">array for the lengths in each axis for level set 2</param>
+		/// <param name="x1">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths), for level set 1</param>
+		/// <param name="x2">concatenated array for nodes in each axis (not repeated) (its length = sum of lengths), for level set 2</param>
+		/// <param name="y1">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 1</param>
+		/// <param name="y2">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 2</param>
+		/// <returns>Quadrature scheme with nodes and weights (size determined by Algoim)</returns>
+		public static QuadSchemeCombo GetComboQuadratureRules(int dim, int p1, int p2, int q, int[] lengths1, int[] lengths2, double[] x1, double[] x2, double[] y1, double[] y2) {
+
+			QuadSchemeComboUnmanaged retC = m_Algoim.getUnmanagedComboSchemeTwoLS(dim, p1, p2, q, lengths1, lengths2, x1, x2, y1, y2);
+			QuadSchemeCombo ret = new QuadSchemeCombo(retC);
+			retC.FreeMemory();
+			return ret;
+		}
+
+		public static QuadScheme GetSurfaceQuadratureRulesTest() {
 
             // Hardcoded example values
             // Define points_1dy array
