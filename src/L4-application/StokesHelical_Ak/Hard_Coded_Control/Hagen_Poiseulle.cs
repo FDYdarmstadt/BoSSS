@@ -31,39 +31,34 @@ namespace StokesHelical_Ak {
 
 
         /// <summary>
-        /// laminar solution for a Hagen Poiseulle flow (aka. flow in a circular pipe)
+        /// Hagen Poiseulle flow (aka. flow in a circular pipe)
         /// </summary>
         public static HelicalControl HagenPoiseulle(string _DbPath = null, int degree = 5, int noOfCellsR = 512, int noOfCellsXi = 512, int dtRefining = 4, int bdfOrder = 3, double Tend = 2 * Math.PI, double rMin = 0) {
 
             HelicalControl Ctrl = new HelicalControl();
+            // Database
+            // ==============
             #region db
-            //Ctrl.DbPath = @"P:\BoSSSpostprocessing\Akbari"; // _DbPath;
-            // Ctrl.DbPath = @"\\dc3\userspace\akbari\cluster\Helical_DNS";
-            //Ctrl.DbPath = null;
             Ctrl.DbPath = _DbPath;
-
-            const double MaxAmp = 5;
-
-            if(rMin != 0) {
-                for(int i = 0; i < 9; i++)
-                    Console.WriteLine($"Remember: r min = {rMin} !!!!!!");
-            }
-            Ctrl.maxAmpli = MaxAmp;
-
-
-            Ctrl.savetodb = Ctrl.DbPath != null;
-            Ctrl.ProjectName = "NStransient";
-            Ctrl.SessionName = "degree= " + degree + " " + "noOfCellsR= " + noOfCellsR + " " + "noOfCellsXi= " + noOfCellsXi;
-            Ctrl.rMin = rMin;
-            Ctrl.rMax = 1;
             #endregion
 
-            //Ctrl.savetodb = true;
+            // Settings
+            // ==============
+            #region Settings
+            const double MaxAmp = 5;
+            Ctrl.maxAmpli = MaxAmp;
+            Ctrl.rMin = rMin;
+            Ctrl.rMax = 1;
+            Ctrl.HagenPoisseulle = true;
+            Ctrl.dg_degree = degree;
+            Ctrl.SetDGdegree(degree);
+            #endregion
+            // Grid
+            // ==============
+            #region Grid
             Ctrl.Resolution_R = noOfCellsR;
             Ctrl.Resolution_Xi = noOfCellsXi;
-
             Ctrl.GridFunc = delegate {
-
                 double[] xnodes = GenericBlas.Linspace(rMin, Ctrl.rMax, noOfCellsR + 1);
                 double[] ynodes = GenericBlas.Linspace(0, 2 * Math.PI, noOfCellsXi + 1);
 
@@ -89,6 +84,11 @@ namespace StokesHelical_Ak {
                 });
                 return grd;
             };
+            #endregion
+
+            // Timestepping
+            // ==============
+            #region TimeStepping
             double dt = Tend / (dtRefining * 10);
 
             Ctrl.dtFixed = dt;
@@ -102,18 +102,13 @@ namespace StokesHelical_Ak {
             //Ctrl.NoOfTimesteps = dtRefining * 200*4;
             Ctrl.NoOfTimesteps = dtRefining;
             Ctrl.steady = false;
-
-            // DG degree
-            // =========
-            Ctrl.dg_degree = degree;
-            Ctrl.SetDGdegree(degree);
-
+            #endregion
             // Initial Values
             // ==============
+            #region InitialValues
             double a = Globals.a;
             double b = Globals.b;
             double nu = Globals.nu;
-            Ctrl.HagenPoisseulle = true;
 
             string InitialValue =
             "static class MyInitialValue {" // class must be static
@@ -134,17 +129,24 @@ namespace StokesHelical_Ak {
             //Ctrl.AddInitialValue("ueta", fo);
             //Ctrl.AddInitialValue("uxi", fo);
 
-            Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>0 "));
-            Ctrl.AddInitialValue("ur", new Formula($"(X) => 0"));
-            Ctrl.AddInitialValue("ueta", new Formula($"(X) => {MaxAmp} *(X[0]/(Math.Sqrt({ a * a} * X[0] * X[0] + { b * b} ))) * ({a * b} * ({Ctrl.rMax* Ctrl.rMax} - X[0]*X[0]) )/(X[0]*4* {nu})"));
-            Ctrl.AddInitialValue("uxi", new Formula($"(X) => -{MaxAmp} *(X[0]/(Math.Sqrt({ a * a} * X[0] * X[0] + { b * b} ))) * ({a * a} * ({Ctrl.rMax* Ctrl.rMax} - X[0]*X[0]) )/(4* {nu})"));
+            //Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>0 "));
+            //Ctrl.AddInitialValue("ur", new Formula($"(X) => 0"));
+            //Ctrl.AddInitialValue("ueta", new Formula($"(X) => {MaxAmp} *(X[0]/(Math.Sqrt({ a * a} * X[0] * X[0] + { b * b} ))) * ({a * b} * ({Ctrl.rMax* Ctrl.rMax} - X[0]*X[0]) )/(X[0]*4* {nu})"));
+            //Ctrl.AddInitialValue("uxi", new Formula($"(X) => -{MaxAmp} *(X[0]/(Math.Sqrt({ a * a} * X[0] * X[0] + { b * b} ))) * ({a * a} * ({Ctrl.rMax* Ctrl.rMax} - X[0]*X[0]) )/(4* {nu})"));
+
+            Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>   0"));
+            Ctrl.AddInitialValue("ur", new Formula($"(X) =>         0"));
+            Ctrl.AddInitialValue("ueta", new Formula($"(X) =>       0"));
+            Ctrl.AddInitialValue("uxi", new Formula($"(X) =>        0"));
+            #endregion
             // Boundary Conditions
             // ==============
+            #region BoundaryConditions
             Ctrl.AddBoundaryValue("Dirichlet", "ur", new Formula("(X,t) =>  0", true));
             Ctrl.AddBoundaryValue("Dirichlet", "ueta", new Formula("(X,t) =>0", true));
             Ctrl.AddBoundaryValue("Dirichlet", "uxi", new Formula("(X,t) => 0", true));
             Ctrl.AddBoundaryValue("Dirichlet", "Pressure", new Formula("(X,t) =>0", true));
-
+            #endregion
             //Ctrl.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { ConvergenceCriterion = 1e-13 , TargetBlockSize =1000000};
             return Ctrl;
 

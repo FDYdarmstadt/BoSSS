@@ -29,31 +29,32 @@ namespace StokesHelical_Ak {
     internal class Centrifuge {
 
         /// <summary>
-        /// laminar solution for a Centrifuge flow (aka. flow in a rotating pipe)
+        /// Centrifuge flow (aka. flow in a rotating pipe)
         /// </summary>
         public static HelicalControl Centrifuge_Flow(string _DbPath = null, int degree = 3, int noOfCellsR = 64, int noOfCellsXi = 64, int dtRefining = 128, int bdfOrder = 3, double Tend = 2 * Math.PI, double rMin = 0) {
 
             HelicalControl Ctrl = new HelicalControl();
+
+            // Data Base
+            // ==============
             #region db
             Ctrl.DbPath = _DbPath;
-
-            const double MaxAmp = 5;
-
-            if(rMin != 0) {
-                for(int i = 0; i < 9; i++)
-                    Console.WriteLine($"Remember: r min = {rMin} !!!!!!");
-            }
-            Ctrl.maxAmpli = MaxAmp;
-
-
-            Ctrl.savetodb = Ctrl.DbPath != null;
-            Ctrl.ProjectName = "NStransient";
-            Ctrl.SessionName = "degree= " + degree + " " + "noOfCellsR= " + noOfCellsR + " " + "noOfCellsXi= " + noOfCellsXi;
-            Ctrl.rMin = rMin;
-            Ctrl.rMax = 1;
             #endregion
 
-            //Ctrl.savetodb = true;
+            // Settings
+            // ==============
+            #region Settings
+            const double MaxAmp = 5;
+            Ctrl.maxAmpli = MaxAmp;
+            Ctrl.rMin = rMin;
+            Ctrl.rMax = 1;
+            Ctrl.dg_degree = degree;
+            Ctrl.SetDGdegree(degree);
+            #endregion
+
+            // Grid
+            // ==============
+            #region Grid            
             Ctrl.Resolution_R = noOfCellsR;
             Ctrl.Resolution_Xi = noOfCellsXi;
 
@@ -84,8 +85,12 @@ namespace StokesHelical_Ak {
                 });
                 return grd;
             };
-            double dt = Tend / (dtRefining * 100);
+            #endregion
 
+            // Time Stepping
+            // ==============
+            #region Timestepping
+            double dt = Tend / (dtRefining * 100);
             Ctrl.dtFixed = dt;
             if(bdfOrder == 3) {
                 Ctrl.TimeSteppingScheme = TimeSteppingScheme.BDF3;
@@ -97,19 +102,14 @@ namespace StokesHelical_Ak {
             //Ctrl.NoOfTimesteps = dtRefining * 200*4;
             Ctrl.NoOfTimesteps = dtRefining*100 ;
             Ctrl.steady = false;
-
-            // DG degree
-            // =========
-            Ctrl.dg_degree = degree;
-            Ctrl.SetDGdegree(degree);
+            #endregion
 
             // Initial Values
             // ==============
+            #region InitialValue
             double a = Globals.a;
             double b = Globals.b;
             double nu = Globals.nu;
-            Ctrl.HagenPoisseulle = false;
-
 
             string InitialValue =
             "static class MyInitialValue {" // class must be static
@@ -134,12 +134,17 @@ namespace StokesHelical_Ak {
             Ctrl.AddInitialValue("ur", new Formula("(X) => 0"));
             Ctrl.AddInitialValue("ueta", new Formula($"(X) => 0"));
             Ctrl.AddInitialValue("uxi", new Formula($"(X) => 0"));
+            #endregion
+
             // Boundary Conditions
             // ==============
+            #region BoundaryCOnditions
             Ctrl.AddBoundaryValue("Dirichlet", "ur", new Formula("(X,t) =>  0", true));
             Ctrl.AddBoundaryValue("Dirichlet", "ueta", new Formula($"(X,t) =>(X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} )))*{a}*{MaxAmp}* X[0]", true));
             Ctrl.AddBoundaryValue("Dirichlet", "uxi", new Formula($"(X,t) => (X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} )))*{b}*{MaxAmp}", true));
             Ctrl.AddBoundaryValue("Dirichlet", "Pressure", new Formula("(X,t) =>0", true));
+            #endregion
+
             //Ctrl.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { ConvergenceCriterion = 1e-13 , TargetBlockSize =1000000};
             return Ctrl;
         }
