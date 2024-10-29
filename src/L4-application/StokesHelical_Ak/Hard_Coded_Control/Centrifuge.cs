@@ -26,7 +26,7 @@ using System.Web;
 using BoSSS.Solution.AdvancedSolvers;
 
 namespace StokesHelical_Ak {
-    internal class DNS_Centrifuge {
+    internal class Centrifuge {
 
         /// <summary>
         /// laminar solution for a Centrifuge flow (aka. flow in a rotating pipe)

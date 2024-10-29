@@ -13,6 +13,7 @@ using MathNet.Numerics.Distributions;
 using NUnit.Framework;
 using NUnit.Framework.Constraints;
 using NUnitLite;
+using StokesHelical_Ak.Hard_Coded_Control;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -22,8 +23,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace StokesHelical_Ak.TestTransient {
-      [TestFixture]
+namespace StokesHelical_Ak.TestTransient
+{
+    [TestFixture]
     static public class TestTransient {
 
 
@@ -41,7 +43,7 @@ namespace StokesHelical_Ak.TestTransient {
             string[] timeSchemes = new string[] { "BDF1"};
             for(int ell = 0; ell < timeSchemes.Length; ell++) {
                 for(int i = 0; i < timeSteps.Length; i++) {
-                    timeConvergence[i] = StokesHelical_Ak.HardcodedControl.ManSol_Transient_DDD_Paper(noOfCellsR:32, noOfCellsXi:32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree:5, rMin:0.1);
+                    timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR:32, noOfCellsXi:32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree:5, rMin:0.1);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
@@ -135,7 +137,7 @@ namespace StokesHelical_Ak.TestTransient {
             string[] timeSchemes = new string[] {"BDF3"};
             for(int ell = 0; ell < timeSchemes.Length; ell++) {
                 for(int i = 0; i < timeSteps.Length; i++) {
-                    timeConvergence[i] = StokesHelical_Ak.HardcodedControl.ManSol_Transient_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0.1);
+                    timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0.1);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
@@ -228,7 +230,7 @@ namespace StokesHelical_Ak.TestTransient {
             string[] timeSchemes = new string[] { "BDF1"};
             for(int ell = 0; ell < timeSchemes.Length; ell++) {
                 for(int i = 0; i < timeSteps.Length; i++) {
-                    timeConvergence[i] = StokesHelical_Ak.HardcodedControl.ManSol_Transient_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0);
+                    timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
@@ -322,7 +324,7 @@ namespace StokesHelical_Ak.TestTransient {
             string[] timeSchemes = new string[] { "BDF3" };
             for(int ell = 0; ell < timeSchemes.Length; ell++) {
                 for(int i = 0; i < timeSteps.Length; i++) {
-                    timeConvergence[i] = StokesHelical_Ak.HardcodedControl.ManSol_Transient_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0);
+                    timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
@@ -420,8 +422,9 @@ namespace StokesHelical_Ak.TestTransient {
 
 
             //ilPSP.Environment.NumThreads = 1;
-            var ctrlStat = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 1E50, _DbPath:tempDB.Path, bdfOrder:1);
+            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 1E50, _DbPath:tempDB.Path, bdfOrder:1);
 
+            // Initial Values = 0!
             ctrlStat.InitialValues.Clear();
             ctrlStat.InitialValues_Evaluators.Clear();
             ctrlStat.savetodb = true;
@@ -443,6 +446,7 @@ namespace StokesHelical_Ak.TestTransient {
                 double b = Globals.b;
                 double MaxAmp = solverStat.Control.maxAmpli;
 
+                // Exact Solution
                 Func<double[], double> uxi = (X) => -MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * a * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (4 * nu);
                 Func<double[], double> ueta = (X) => MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * b * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (X[0] * 4 * nu);
                 Func<double[], double> ur = (X) => 0;
@@ -475,9 +479,10 @@ namespace StokesHelical_Ak.TestTransient {
                 SteadyStateSolution = solverStat.CurrentSolution.ToArray();
             }
 
-            //SplittingTimestepper.Uninfty = SteadyStateSolution.CloneAs();
+            // Restart Solution from Exact Solution!!!!!
+            // Now dt = 0.0001
 
-            var ctrlTransient = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
+            var ctrlTransient = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
             ctrlTransient.GridFunc = null;
             ctrlTransient.RestartInfo = new Tuple<Guid, TimestepNumber>(steadyStateSession, null); // 2nd arg null -> take last timestep;
             ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
@@ -545,7 +550,7 @@ namespace StokesHelical_Ak.TestTransient {
             ) {
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
 
-            var ctrlStat = StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
+            var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
 
             double a = Globals.a;
             double b = Globals.b;

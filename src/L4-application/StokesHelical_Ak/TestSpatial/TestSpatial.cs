@@ -25,8 +25,10 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Solution.XNSECommon;
 using System.Security.Policy;
+using StokesHelical_Ak.Hard_Coded_Control;
 
-namespace StokesHelical_Ak.TestSpartial {
+namespace StokesHelical_Ak.TestSpartial
+{
 
     [TestFixture]
     static public class TestSpatial {
@@ -47,7 +49,7 @@ namespace StokesHelical_Ak.TestSpartial {
             for(int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for(int i = 0; i < gridSize.Length; i++) {
-                        spaceConvergence[i] = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell]);
+                        spaceConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell], steady : true);
                     }
 
                     Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
@@ -150,7 +152,7 @@ namespace StokesHelical_Ak.TestSpartial {
             HelicalControl spaceConvergence_direct = new HelicalControl();
             HelicalControl spaceConvergence_iterative = new HelicalControl();
 
-            spaceConvergence_direct = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_direct = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min, steady : true);
 
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
@@ -192,7 +194,7 @@ namespace StokesHelical_Ak.TestSpartial {
             // Iterativ Solver
             //###########################################################
 
-            spaceConvergence_iterative = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_iterative = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min, steady: true);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
             var helical_iterativ = new HelicalMain();
             helical_iterativ.Init(spaceConvergence_iterative);
@@ -263,7 +265,7 @@ namespace StokesHelical_Ak.TestSpartial {
             double uxiErrorLx;
             double psiErrorLx;
             HelicalControl spaceConvergence_hangingNodes = new HelicalControl();
-            spaceConvergence_hangingNodes = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_hangingNodes = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min, steady: true);
 
             // Grid
             #region Grid
@@ -368,7 +370,7 @@ namespace StokesHelical_Ak.TestSpartial {
             for(int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for(int i = 0; i < gridSize.Length; i++) {
-                        gridSeries[i] = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell]);
+                        gridSeries[i] = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell], steady: true);
                     }
 
                     // StencilCondNo-bndyUncut
@@ -411,7 +413,7 @@ namespace StokesHelical_Ak.TestSpartial {
             for(int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for(int i = 0; i < gridSize.Length; i++) {
-                        spaceConvergence[i] = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell]);
+                        spaceConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell], steady: true);
                     }
                     Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
 
@@ -510,7 +512,7 @@ namespace StokesHelical_Ak.TestSpartial {
             HelicalControl spaceConvergence_direct = new HelicalControl();
             HelicalControl spaceConvergence_iterative = new HelicalControl();
 
-            spaceConvergence_direct = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_direct = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min, steady: true);
 
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
@@ -552,7 +554,7 @@ namespace StokesHelical_Ak.TestSpartial {
             // Iterativ Solver
             //###########################################################
 
-            spaceConvergence_iterative = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_iterative = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min, steady: true);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
             var helical_iterativ = new HelicalMain();
             helical_iterativ.Init(spaceConvergence_iterative);
@@ -621,7 +623,7 @@ namespace StokesHelical_Ak.TestSpartial {
             double uxiErrorLx;
             double psiErrorLx;
             HelicalControl spaceConvergence_hangingNodes = new HelicalControl();
-            spaceConvergence_hangingNodes = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min);
+            spaceConvergence_hangingNodes = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, rMin: r_min, steady: true);
 
             // Grid
             #region Grid
@@ -723,7 +725,7 @@ namespace StokesHelical_Ak.TestSpartial {
             for(int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for(int i = 0; i < gridSize.Length; i++) {
-                        gridSeries[i] = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell]);
+                        gridSeries[i] = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell], steady: true );
                     }
 
                     ConditionNumberScalingTest.Perform(gridSeries, new ConditionNumberScalingTest.Config() { plot = true, title = "ConditionNumberScaling_without_R0fix-p" + pOrder, ComputeGlobalCondNo = false });
@@ -770,7 +772,7 @@ namespace StokesHelical_Ak.TestSpartial {
             for(int ell = 0; ell < r_min.Length; ell++) {
                 //ilPSP.Environment.NumThreads = 1;
                 for(int i = 0; i < gridSize.Length; i++) {
-                    spaceConvergence_HP[i] = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50);
+                    spaceConvergence_HP[i] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50);
                 }
 
                 Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence_HP.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
@@ -904,7 +906,7 @@ namespace StokesHelical_Ak.TestSpartial {
             for(int ell = 0; ell < r_min.Length; ell++) {
                 //ilPSP.Environment.NumThreads = 1;
                 for(int i = 0; i < gridSize.Length; i++) {
-                    spaceConvergence_HP[i] = StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50);
+                    spaceConvergence_HP[i] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50);
                 }
 
                 Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence_HP.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");

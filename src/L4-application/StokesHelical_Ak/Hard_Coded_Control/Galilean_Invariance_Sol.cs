@@ -26,7 +26,7 @@ using System.Web;
 using BoSSS.Solution.AdvancedSolvers;
 
 namespace StokesHelical_Ak {
-    internal class DNS_Galilean_Invariance_Sol {
+    internal class Galilean_Invariance_Sol {
         /// <summary>
         /// ATTENTION!!!!!!! Singularity at r =0;
         /// Exact Solution for helically symetric Navier Stokes Equation. (Dierkes et. al. 2020, Equation )

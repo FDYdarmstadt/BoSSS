@@ -65,7 +65,7 @@ namespace StokesHelical_Ak {
 
 
 
-            var c = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: 4, noOfCellsR: 32, noOfCellsXi: 32);
+            var c = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: 4, noOfCellsR: 32, noOfCellsXi: 32);
             c.ImmediatePlotPeriod = 1;
             c.NoOfTimesteps = 5;
             var solver = new HelicalMain();
@@ -74,7 +74,7 @@ namespace StokesHelical_Ak {
             Process.Start("mpiexec");
             ////StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
             ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix
-            //// StokesHelical_Ak.HardcodedControl.TSFP();
+            //// StokesHelical_Ak.Man_Sol_DDD.TSFP();
             ////StokesHelical_Ak.TestTransient.TestTransient.PseudoSteadyCentrifuge();
             ////StokesHelical_Ak.NUnitTestsR0_fix.R0_fix_Test.TestR0_Fix(2);
             //FinalizeMPI();

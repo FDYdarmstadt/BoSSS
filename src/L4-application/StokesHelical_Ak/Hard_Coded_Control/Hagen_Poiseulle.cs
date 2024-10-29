@@ -27,7 +27,7 @@ using BoSSS.Solution.AdvancedSolvers;
 
 namespace StokesHelical_Ak {
 
-    public static class DNS_Hagen_Poiseulle {
+    public static class Hagen_Poiseulle {
 
 
         /// <summary>

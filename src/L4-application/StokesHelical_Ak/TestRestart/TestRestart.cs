@@ -53,7 +53,7 @@ namespace StokesHelical_Ak.TestRestart {
             int deGREE = 2;
 
             // Create and configure the HelicalControl object for the first simulation run.
-            HelicalControl referenceContrl = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 3, degree: deGREE);
+            HelicalControl referenceContrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 3, degree: deGREE);
 
             // Set the database path and related settings.
 
@@ -165,7 +165,7 @@ namespace StokesHelical_Ak.TestRestart {
             int deGREE = 2;
 
             // Create and configure the HelicalControl object for the first simulation run.
-            HelicalControl referenceContrl = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 1, degree: deGREE);
+            HelicalControl referenceContrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 1, degree: deGREE);
 
             // Set the database path and related settings.
 

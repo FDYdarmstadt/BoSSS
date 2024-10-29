@@ -6,6 +6,7 @@ using ilPSP;
 using ilPSP.Utils;
 using MathNet.Numerics.Distributions;
 using NUnit.Framework;
+using StokesHelical_Ak.Hard_Coded_Control;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,7 +16,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace StokesHelical_Ak.NUnitTestsR0_fix {
+namespace StokesHelical_Ak.NUnitTestsR0_fix
+{
 
     [TestFixture]
     static public class R0_fix_Test {
@@ -28,7 +30,7 @@ namespace StokesHelical_Ak.NUnitTestsR0_fix {
         [Test]
         static public void TestR0_Fix_AtSolution([Values(2, 3, 4, 5, 6)] int pOrder) {
             using(HelicalMain p = new HelicalMain()) {
-                var ctrl = StokesHelical_Ak.HardcodedControl.ManSol_Steady_DDD_Paper(degree: pOrder, noOfCellsR: 32, noOfCellsXi: 32,  rMin: 0.0);
+                var ctrl = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: 32, noOfCellsXi: 32,  rMin: 0.0,steady:true);
                 // overwrite the globals
                 Globals.activeMult = Globals.Multiplier.Bsq;
                 Globals.pressureStabilEtaMom = false;  // no pressure stabilization for this test

@@ -53,4 +53,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="HardcodedControlTests\" />
+  </ItemGroup>
 </Project>
