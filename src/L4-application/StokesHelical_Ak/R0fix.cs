@@ -50,36 +50,6 @@ namespace StokesHelical_Ak {
             }
         }
 
-
-        internal void InternalChecks() {
-
-            Trafo.SaveToTextFileSparse("Prolo.txt");
-            TrafoTranspose.SaveToTextFileSparse("Restr.txt");
-
-        }
-
-
-        /* Fk, 11apr24: deactivated, because seemingly un-used
-
-        public R0fix(UnsetteledCoordinateMapping map, double rMin, bool old) {
-            //public R0fix(UnsetteledCoordinateMapping map, R0condType[] condType) {
-             //if(map.BasisS.Count != condType.Length)
-             //    throw new ArgumentException("mismatch between number of DG basis objects and number of R0-condition specifiers.");
-             if(rMin < 10e-6) {
-                 m_map = map;
-                 if(old == true) {
-                     (Trafo, UnusedDofs_local, UnusedDofs_global) = CreateTrafoMatrix2(map);
-                     TrafoTranspose = Trafo.Transpose();
-                     R0BndyCells = GetR0BndyCells(map.GridDat);
-                 } else {
-                     (Trafo, UnusedDofs_local, UnusedDofs_global) = CreateTrafoMatrix(map);
-                     TrafoTranspose = Trafo.Transpose();
-                     R0BndyCells = GetR0BndyCells(map.GridDat);
-                 }
-             }
-         }
-
-        */
         public static MultidimensionalArray GetImplicitCondition_Value0(Basis B) {
             if(B.GridDat.SpatialDimension != 2)
                 throw new NotSupportedException();

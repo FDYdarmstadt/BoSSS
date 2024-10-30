@@ -648,47 +648,10 @@ namespace StokesHelical_Ak {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
 
-                //RHS.Clear();
-                //RHS.AccV(1.0, RHS_SS);
-                //RHS.AccV(1.0, RHS_instat);
-
                 MgOperator.UseSolver(newSolver, Uvec, RHS);
                 tr.Info($"Solver {newSolver} converged? {newSolver.Converged}, no of iterations: {newSolver.ThisLevelIterations}");
 
 
-
-                //  RHS.AccV(1.0, RHS_instat);
-
-                //double errSol_l2 = Uvec.MPI_L2Dist(Uinfty);
-                //Console.WriteLine("Solution distance: " + errSol_l2);
-                // Console.WriteLine("Solution distance: " + errSol_l2);
-
-                /*
-
-                newSolver.ResetStat();
-                var Resi = RHS.CloneAs();
-                double[] RHSpc = new double[RHS.Length];
-                MgOperator.TransformRhsInto(RHS, RHSpc, false);
-                double[] Upc = new double[Uvec.Length];
-                MgOperator.TransformSolInto(Uinfty, Upc);
-
-
-                Resi.SetV(RHSpc);
-                MgOperator.OperatorMatrix.SpMV(-1.0, Upc, 1.0, Resi);
-                double L2Resi = Resi.L2Norm();
-                Console.WriteLine(" L2Resi = " + L2Resi);
-
-
-                var ResiVec = new CoordinateVector(Uvec.Fields.Select(f => f.CloneAs()));
-                MgOperator.TransformRhsFrom(ResiVec, Resi);
-                Tecplot.PlotFields(ResiVec.Fields, "Resi", 0.0, 2);
-
-
-
-                MgOperator.OperatorMatrix.SaveToTextFileSparse($"OpMatrix_StokesSystem_with_dt={dt}.txt");
-                RHSpc.SaveToTextFile($"RHS_StokesSystem_with_dt={this.dt}.txt");
-                Upc.SaveToTextFile($"Solution_StokesSystem_with_dt={this.dt}.txt");
-                */
             }
         }
 

@@ -737,6 +737,146 @@ namespace StokesHelical_Ak.TestSpartial
             }
         }
 
+
+        /// <summary>
+        /// Tests a steady-state Hagen Poiseulle flow (aka. Pipe flow).
+        /// The solver computes a stationary Stokes solution, this is achieved by:
+        /// - setting the initial values to 0.0, so that the convective terms, which are explicitly treated, in the first time-step are 0
+        /// - computing one very long time-step, so that the (1/dt)-contributions and the initial value are negligible
+        /// Beside spatial convergence, one also expects the radial velocity and the pressure to be close to 0.0.
+        /// </summary>
+        /// <remarks>
+        /// Note:
+        /// - there is no Navier-Stokes version of this, since the explicit treatment of the convective terms with a large time-step is not numerically stable.
+        /// </remarks>
+        [Test]
+        static public void SteadyHagenPoiseulle_VarRe_Stokes([Values(2, 3, 4, 5)] int pOrder) {
+
+            int[] gridSize = new int[] { 64, 32, 16, 8, 4 };
+            int[] amplitude = new int[] { 1, 10, 100, 1000,10000,100000,1000000};      
+            double[] h = new double[gridSize.Length];
+            double[] r_min = new double[] { 0 };
+            double[] ur_L2_Error = new double[gridSize.Length];
+            double[] ueta_L2_Error = new double[gridSize.Length];
+            double[] uxi_L2_Error = new double[gridSize.Length];
+            double[] pressure_L2_Error = new double[gridSize.Length];
+
+            HelicalControl[,] spaceConvergence_HP = new HelicalControl[gridSize.Length, amplitude.Length];
+            SinglePhaseField[] exSol_ur = new SinglePhaseField[gridSize.Length];
+            SinglePhaseField[] exSol_ueta = new SinglePhaseField[gridSize.Length];
+            SinglePhaseField[] exSol_uxi = new SinglePhaseField[gridSize.Length];
+            SinglePhaseField[] exSol_pressure = new SinglePhaseField[gridSize.Length];
+
+            double nu = Globals.nu;
+            double a = Globals.a;
+            double b = Globals.b;
+
+            for (int ell = 0; ell < r_min.Length; ell++) {
+
+                //ilPSP.Environment.NumThreads = 1;
+                for (int k = 0; k < amplitude.Length; k++) {
+                    for (int i = 0; i < gridSize.Length; i++) {
+                        spaceConvergence_HP[i,k] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmpl: amplitude[k]);
+                    }
+                }
+                // Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence_HP.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
+                for (int k = 0; k < amplitude.Length; k++) {
+                    for (int i = 0; i < gridSize.Length; i++) {
+                        Assert.IsTrue(spaceConvergence_HP[i,k].PressureReferencePoint, $"Pressure Reference Point must be true (i = {i})");
+                        spaceConvergence_HP[i, k].InitialValues.Clear();
+                        spaceConvergence_HP[i, k].InitialValues_Evaluators.Clear();
+                        spaceConvergence_HP[i, k].savetodb = false;
+                        spaceConvergence_HP[i, k].TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+
+                        // Exakte Loesung
+                        double MaxAmp = spaceConvergence_HP[i, k].maxAmpli;
+                        Func<double[], double> uxi = (X) => -MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * a * (spaceConvergence_HP[i, k].rMax * spaceConvergence_HP[i, k].rMax - X[0] * X[0])) / (4 * nu);
+                        Func<double[], double> ueta = (X) => MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * b * (spaceConvergence_HP[i, k].rMax * spaceConvergence_HP[i, k].rMax - X[0] * X[0])) / (X[0] * 4 * nu);
+                        Func<double[], double> ur = (X) => 0;
+                        Func<double[], double> pressure = (X) => 0;
+
+                        using (var solver = new HelicalMain()) {
+                            solver.Init(spaceConvergence_HP[i, k]);
+                            solver.RunSolverMode();
+                            Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
+                            Assert.IsTrue(spaceConvergence_HP[i, k].R0fixOn, "R0fix must be turned on");
+                            Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, "Pressure Reference Point has to be true");
+                            h[i] = 2 * Math.PI / gridSize[i];
+                            // Deep Copy
+                            exSol_ur[i] = solver.ur.CloneAs();
+                            exSol_ueta[i] = solver.ueta.CloneAs();
+                            exSol_uxi[i] = solver.uxi.CloneAs();
+                            exSol_pressure[i] = solver.Pressure.CloneAs();
+
+                            //Exakte Lösung auf SinglePhaseField
+                            exSol_ur[i].ProjectField(ur);
+                            exSol_ueta[i].ProjectField(ueta);
+                            exSol_uxi[i].ProjectField(uxi);
+                            exSol_pressure[i].ProjectField(pressure);
+
+                            //L2 Fehler berechnen. Meine Loesung vs richtige Loesung
+                            ur_L2_Error[i] = solver.ur.L2Error(exSol_ur[i]);
+                            uxi_L2_Error[i] = solver.uxi.L2Error(exSol_uxi[i]);
+                            ueta_L2_Error[i] = solver.ueta.L2Error(exSol_ueta[i]);
+                            pressure_L2_Error[i] = solver.Pressure.L2Error(exSol_pressure[i]);
+
+
+                            Console.WriteLine($"ur       L2 Error: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0)");
+                            Console.WriteLine($"uxi      L2 Error: {uxi_L2_Error[i]:0.###e-00}");
+                            Console.WriteLine($"ueta     L2 Error: {ueta_L2_Error[i]:0.###e-00}");
+                            Console.WriteLine($"pressure L2 Error: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0)");
+
+
+                            // Assert.LessOrEqual(ur_L2_Error[i], 1.0e-11, $"ur L2 Error out of range: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0 )");
+                            // Assert.LessOrEqual(pressure_L2_Error[i], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0)");
+                        }
+                    }
+                    using (var gp = new Gnuplot()) {
+                        gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
+                        gp.OutputFile = $"SpatialConvergence Amplitude {amplitude[k]} with R0fix p{pOrder}.png";
+                        gp.SetTitle($"Spatial Convergence Hagen Poiseulle Amplitude {amplitude[k]} with R0fix p{pOrder}");
+                        gp.PlotLogXLogY(h, ur_L2_Error, title: "ur", format: new PlotFormat("-sr"));
+                        gp.PlotLogXLogY(h, ueta_L2_Error, title: "ueta", format: new PlotFormat("-^b"));
+                        gp.PlotLogXLogY(h, uxi_L2_Error, title: "uxi", format: new PlotFormat("-xm"));
+                        gp.PlotLogXLogY(h, pressure_L2_Error, title: "psi", format: new PlotFormat("-*k"));
+                        gp.RunAndExit();
+                        //Console.WriteLine("endless loop");
+                        //while(true) ;
+                    }
+                }
+
+
+                (double slope, double intercept) regressionUeta = DoubleExtensions.LogLogRegression(h, ueta_L2_Error);
+                (double slope, double intercept) regressionUxi = DoubleExtensions.LogLogRegression(h, uxi_L2_Error);
+
+                Console.WriteLine("Order_" + pOrder);
+                Console.WriteLine("slopeUETA_" + regressionUeta.slope);
+                Console.WriteLine("slopeUXI_" + regressionUxi.slope);
+
+                double tolerance = 0.75;
+
+                // Since Ur and pressure are zero, there are no slops
+                // Therefore, looking at nslopes for Ueta und Uxi
+                if (pOrder != 5) {
+                    Assert.GreaterOrEqual(regressionUeta.slope, pOrder + 1 - tolerance, String.Format("Convergence rate for Ueta lower than expected (was {0} but should be {1} +- {2})", regressionUeta.slope, pOrder + 1, tolerance));
+                    Assert.GreaterOrEqual(regressionUxi.slope, pOrder + 1 - tolerance, String.Format("Convergence rate for Uxi lower than expected (was {0} but should be {1} +- {2})", regressionUxi.slope, pOrder + 1, tolerance));
+                }
+                if (pOrder == 5) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // error thresholds are specified for the SECOUND!!!!! finest grid with pOrder == 5
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    Assert.LessOrEqual(ur_L2_Error[1], 1.0e-10, $"ur L2 Error out of range: {ur_L2_Error[1]:0.###e-00} (should be close to 0.0 )");
+                    Assert.LessOrEqual(uxi_L2_Error[1], 1.0e-10, $"uxi L2 Error out of range: {uxi_L2_Error[1]:0.###e-00} (should be close to 0.0)");
+                    Assert.LessOrEqual(ueta_L2_Error[1], 1.0e-10, $"ueta L2 Error out of range: {ueta_L2_Error[1]:0.###e-00} (should be close to 0.0)");
+                    Assert.LessOrEqual(pressure_L2_Error[1], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[1]:0.###e-00} (should be close to 0.0)");
+                }
+            }
+        }
+
+
+
+
         /// <summary>
         /// Tests a steady-state Hagen Poiseulle flow (aka. Pipe flow).
         /// The solver computes a stationary Stokes solution, this is achieved by:
@@ -751,7 +891,7 @@ namespace StokesHelical_Ak.TestSpartial
         [Test]
         static public void SteadyHagenPoiseulle_Stokes([Values(2, 3, 4, 5)] int pOrder) {
 
-            int[] gridSize = new int[] { 64, 32, 16, 8, 4 };
+            int[] gridSize = new int[] {64,32, 16, 8, 4 };
             double[] h = new double[gridSize.Length];
             double[] r_min = new double[] { 0 };
             double[] ur_L2_Error = new double[gridSize.Length];
@@ -827,10 +967,10 @@ namespace StokesHelical_Ak.TestSpartial
                     }
                 }
 
-                using(var gp = new Gnuplot()) {
+                using(var gp = new Gnuplot("C:\\Program Files\\gnuplot\\bin")) {
                     gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
-                    gp.OutputFile = $"SpatialConvergence_with_R0fix-p{pOrder}.png";
-                    gp.SetTitle($"SpatialConvergence_Hagen_Poiseulle_with_R0fix-p{pOrder}");
+                    gp.OutputFile = $"SpatialConvergence with R0fix p{pOrder}.png";
+                    gp.SetTitle($"SpatialConvergence Hagen Poiseulle with R0fix p{pOrder}");
                     gp.PlotLogXLogY(h, ur_L2_Error, title: "ur", format: new PlotFormat("-sr"));
                     gp.PlotLogXLogY(h, ueta_L2_Error, title: "ueta", format: new PlotFormat("-^b"));
                     gp.PlotLogXLogY(h, uxi_L2_Error, title: "uxi", format: new PlotFormat("-xm"));
