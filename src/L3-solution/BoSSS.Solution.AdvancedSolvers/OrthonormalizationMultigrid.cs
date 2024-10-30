@@ -872,7 +872,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } else {
 
                     }
-                    Console.WriteLine($"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}, current level {iLevel}, iteration: {iIter} and res norm: {resNorm}");
+                                        
+                    //Console.WriteLine($"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}, current level {iLevel}, iteration: {iIter} and res norm: {resNorm}");
+                    
                     // pre-smoother
                     // ------------
                     double[] ResBeforePreSmoother = null, ResAfterPreSmoother = null;

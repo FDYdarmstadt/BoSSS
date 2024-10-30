@@ -335,7 +335,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (SkipPreSmoother)
                     tr.Info("Skipping pre-smoother is enabled.");
                 else if (NonSerialPreSmoother) {
-                    tr.Info("NonSerialPreSmoother is enable, so coarse grid and pre-smoother are independent.");
+                    tr.Info("NonSerialPreSmoother is enabled, so coarse grid and pre-smoother are independent.");
                 }
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
