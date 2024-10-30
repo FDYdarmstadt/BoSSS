@@ -103,8 +103,11 @@ namespace BoSSS.Foundation.XDG {
             return algoimFactory.GetVolumeFactory();
         }
 
-        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement Kref, IQuadRuleFactory<QuadRule> backupFactory) {
+			CheckKref(levSetIndex0, Kref);
+			bool[] negativeLevelSets = new bool[] { CheckJmp(jmp0), CheckJmp(jmp1)};
+			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, Kref, negativeLevelSets);
+			return algoimFactory.GetVolumeFactory();
         }
 
         /// <summary>
