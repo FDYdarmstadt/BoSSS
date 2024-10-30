@@ -103,8 +103,11 @@ namespace BoSSS.Foundation.XDG {
             return algoimFactory.GetVolumeFactory();
         }
 
-        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement Kref, IQuadRuleFactory<QuadRule> backupFactory) {
+			CheckKref(levSetIndex0, Kref);
+			bool[] negativeLevelSets = new bool[] { CheckJmp(jmp0), CheckJmp(jmp1)};
+			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, Kref, negativeLevelSets);
+			return algoimFactory.GetVolumeFactory();
         }
 
         /// <summary>
@@ -114,10 +117,10 @@ namespace BoSSS.Foundation.XDG {
         /// <exception cref="NotImplementedException"></exception>
         private bool CheckJmp(JumpTypes jmp) {
             if (jmp == JumpTypes.Heaviside)
-                return false; //we are looking for positive level set values
+                return false; //we are looking for positive level set values, i.e., ls(x)>0
             else if (jmp == JumpTypes.OneMinusHeaviside)
-                return true; //we are looking for negative level set values
-            else
+                return true; //we are looking for negative level set values, i.e., ls(x)<0
+			else
                 throw new NotImplementedException();
         }
 

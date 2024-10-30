@@ -23,6 +23,7 @@ using System.Diagnostics;
 using BoSSS.Foundation.Grid.RefElements;
 using System.Xml;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -136,18 +137,26 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="grd">grid</param>
         /// <param name="jCell">local cell index</param>
         public void TransformLocal2Global(GridCommons grd, int jCell) {
-            MultidimensionalArray globalVertices = MultidimensionalArray.Create(1,NoOfNodes, grd.SpatialDimension);
-
-            grd.GridData.TransformLocal2Global(Nodes, jCell, 1, globalVertices, 0);
-            Nodes.Set(globalVertices.ExtractSubArrayShallow(0,-1,-1));
+            TransformLocal2Global(grd.GridData, jCell);
         }
 
+		/// <summary>
+		/// Transforms the nodes from jCell local coordinates to global
+		/// </summary>
+		/// <param name="grdData">grid data</param>
+		/// <param name="jCell">local cell index</param>
+		public void TransformLocal2Global(IGridData grdData, int jCell) {
+			MultidimensionalArray globalVertices = MultidimensionalArray.Create(1, NoOfNodes, SpatialDim);
 
-        /// <summary>
-        /// Writes a xml file for visualization (Use .vtp extension for Paraview)
-        /// </summary>
-        /// <param name="filePath"></param>
-        public void OutputQuadratureRuleAsVtpXML(string filePath) {
+			grdData.TransformLocal2Global(Nodes, jCell, 1, globalVertices, 0);
+			Nodes.Set(globalVertices.ExtractSubArrayShallow(0, -1, -1));
+		}
+
+		/// <summary>
+		/// Writes a xml file for visualization (Use .vtp extension for Paraview)
+		/// </summary>
+		/// <param name="filePath"></param>
+		public void OutputQuadratureRuleAsVtpXML(string filePath) {
             if (SpatialDim != 2 && SpatialDim != 3) {
                 Console.Error.WriteLine("XML output is supported only for 2D and 3D schemes.");
             }

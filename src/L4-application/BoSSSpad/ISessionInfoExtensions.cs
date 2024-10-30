@@ -1697,6 +1697,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// The number of threads per mpi rank used for this simulation
+        /// </summary>
+        public static int NumberOfThreadsPerRank(this ISessionInfo session) {
+            return session.ThreadPerMPIRank;
+        }
+
+        /// <summary>
         /// Function to evaluate results of calculations of FixedCylinder, OscillatingCylinder, ParticleInShear and Particle in Gravity
         /// </summary>
         /// <param name="sessions"></param>
