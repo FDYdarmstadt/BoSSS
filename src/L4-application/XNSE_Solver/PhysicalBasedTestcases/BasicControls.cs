@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
@@ -938,7 +939,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 diff = 1.0,
                 CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
                 TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
-                theta = new Formula($"X => Math.PI/2.0")
+                theta = "X => Math.PI/2.0"
             };
 
 
@@ -1061,7 +1062,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 diff = 1.0,
                 CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
                 TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
-                theta = new Formula($"X => X[1] < 1e-8 ? Math.PI / 4.0 : Math.PI/2.0")
+                theta = "X => X[1] < 1e-8 ? Math.PI / 4.0 : Math.PI/2.0"
             };
 
 
@@ -1185,7 +1186,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 diff = 1.0,
                 CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
                 TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
-                theta = new Formula($"X => Math.PI/2.0")
+                theta = "X => Math.PI/2.0"
             };
 
 
@@ -1230,7 +1231,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="p"></param>
         /// <param name="kelem"></param>
         /// <returns></returns>
-        public static XNSE_Control BoxStaticDropletWall(int p = 3, int kelem = 10, double theta = Math.PI/4.0) {
+        public static XNSE_Control BoxStaticDropletWall(int p = 2, int kelem = 10, int amrlevel = 2, double theta = Math.PI/4.0) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1250,11 +1251,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region physics
 
             #region material
-            C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.rho_B = 0.1;
+            C.PhysicalParameters.rho_A = 1000;
+            C.PhysicalParameters.rho_B = 1000;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
-            C.PhysicalParameters.Sigma = 1.0;
+            C.PhysicalParameters.Sigma = 0.0;
             C.PhysicalParameters.theta_e = theta;
 
             C.PhysicalParameters.betaS_A = 0.0;
@@ -1266,8 +1267,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region grid
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 2);
-                double[] Ynodes = GenericBlas.Linspace(0, 1, kelem + 2);
+                double[] Xnodes = GenericBlas.Linspace(-1, 1, 2 * kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, 1, kelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
                 grd.EdgeTagNames.Add(1, "NavierSlip_linear");
@@ -1288,7 +1289,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region initial condition            
 
-            double cahn = 4 * (1.0 / kelem) / (2 * p + 1);
+            double cahn = 2 * 4 * 1.0 / (kelem * Math.Pow(2.0, amrlevel)) / (2 * p + 1);
             double r = 0.5;
             double y0 = r * Math.Cos(theta);
             C.InitialValues_Evaluators.Add("Phi", (X) => Math.Tanh((Math.Sqrt(Math.Pow(X[0], 2) + Math.Pow(X[1]+y0, 2)) - r) / (Math.Sqrt(2) * cahn)));
@@ -1309,10 +1310,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
             C.PhasefieldControl = new Solution.LevelSetTools.PhasefieldLevelSet.PhasefieldSettings() {
                 cahn = cahn,
-                diff = 1.0,
+                diff = 10,
                 CorrectionType = Solution.LevelSetTools.PhasefieldLevelSet.Correction.None,
                 TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler,
-                theta = new Formula($"X => X[1] < 1e-8 ? {theta} : Math.PI/2.0")
+                theta = $"X => X[1] < 1e-8 ? {theta} : Math.PI/2.0"
             };
 
 
@@ -1339,7 +1340,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1000;
+            C.Endtime = 1;
             C.NoOfTimesteps = 100;
             C.saveperiod = 1;
 
@@ -1349,6 +1350,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============================================
             C.PostprocessingModules.Add(new XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging());
 
+            C.AdaptiveMeshRefinement = amrlevel > 0;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = amrlevel });
+            C.AMR_startUpSweeps = amrlevel;
 
             return C;
         }
