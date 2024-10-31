@@ -1434,18 +1434,18 @@ namespace ilPSP {
             }
 
             // If it is L type, convert it to U or vice versa
-            target.SwitchStructure();
+            target.SwitchStructure(source);
 
         }
 
-            static public void SwitchStructure<M1>(this M1 source) where M1 : IMatrix {
+            static public void SwitchStructure<M1, M2>(this M1 target, M2 source) where M1 : IMatrix where M2 : IMatrix {
 
                 switch (source.StructureType) {
                 case MatrixStructure.LowerTriangular:
-                    source.StructureType = MatrixStructure.UpperTriangular;
+                    target.StructureType = MatrixStructure.UpperTriangular;
                     break;
                 case MatrixStructure.UpperTriangular:
-                    source.StructureType = MatrixStructure.LowerTriangular;
+                    target.StructureType = MatrixStructure.LowerTriangular;
                     break;
                 }
 
@@ -3549,6 +3549,25 @@ namespace ilPSP {
             int I1 = inp.NoOfCols;
             for(int i = 0; i < I1; i++)
                 inp[RowNo, i] = 0.0;
+        }
+
+        /// <summary>
+        /// clears the <paramref name="ColNo"/>-th column from <paramref name="inp"/> .
+        /// </summary>
+        /// <param name="inp">
+        /// matrix that should be altered
+        /// </param>
+        /// <param name="ColNo">
+        /// column index of the column to set
+        /// </param>
+        public static void ClearCol(this IMatrix inp, int ColNo) {
+
+            if (ColNo < 0 || ColNo >= inp.NoOfCols)
+                throw new IndexOutOfRangeException("ColNo out of range");
+
+            int I1 = inp.NoOfRows;
+            for (int i = 0; i < I1; i++)
+                inp[i, ColNo] = 0.0;
         }
 
         /// <summary>

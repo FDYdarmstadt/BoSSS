@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.XDG {
         
 
         /// <summary>
-        /// Increases <see cref="HistoryLength"/> to <paramref name="ReqLeng"/>, if the latter is smaler.
+        /// Increases <see cref="HistoryLength"/> to <paramref name="ReqLeng"/>, if the latter is smaller.
         /// </summary>
         /// <param name="ReqLeng">The requested length</param>
         /// <returns>
@@ -274,8 +274,8 @@ namespace BoSSS.Foundation.XDG {
             m_DataHistories = _DataHistories.ToList().AsReadOnly();
             m_LevelSetHistories = _LevelSetHistories.ToList().AsReadOnly();
             m_RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
-            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>>(
-                new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>());
+            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<XQuadFactoryHelperBase.MomentFittingVariants, XQuadFactoryHelperBase>>(
+                new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>());
             m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
 
             this.IncreaseHistoryLength(1); // at least one previous time-step is required to support update of XDG fields
@@ -848,6 +848,7 @@ namespace BoSSS.Foundation.XDG {
             int PHL = PopulatedHistoryLength;
             int HL = this.HistoryLength;
 
+
             Debug.Assert(NoOfLs == m_LevelSets.Count);
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
                 m_LevelSetHistories[iLs].Push((ls1) => ls1, (ls1, ls0) => ls1.CloneAs());
@@ -865,9 +866,10 @@ namespace BoSSS.Foundation.XDG {
 
             m_RegionsHistory.Push((r1) => r1.CloneAs(), (r1, r0) => r1);
 
-            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>(), (r1, r0) => r1);
+            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>(), (r1, r0) => r1);
 
             m_XDGSpaceMetricsHistory.Push((r1) => NewXDGSpaceMetricsCache(), (r1,r0) => r1);
+
 
 #if DEBUG
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
@@ -1659,7 +1661,34 @@ namespace BoSSS.Foundation.XDG {
             MPIUpdate(this.Regions.m_LevSetRegions, this.GridDat);
             this.Regions.Recalc_LenToNextchange();
         }
-        
+
+
+        /// <summary>
+        /// used for cleaning up the current timestep when loading a restart
+        /// </summary>
+        /// <param name="PhysTime"></param>
+        public void ResetCurrentTimeLevel(double PhysTime) {
+
+            // invalidate everything we got so far
+            // ===================================
+
+            this.Regions.InvalidateCaches();
+            for (int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                this.DataHistories[iLs].Current.ClearCaches();
+            }
+
+            m_QuadFactoryHelpersHistory.Current.Clear();
+
+            m_XDGSpaceMetricsHistory.Current.Clear();
+
+
+            // update tracker
+            // ==============
+            UpdateTracker(PhysTime);
+
+        }
+
+
         /// <summary>
         /// Must be called after changing the level-set;
         /// Invoking this method updates the state of cells (e.g. cut, -near, +near, etc.), <see cref="Regions"/>.
@@ -1823,7 +1852,7 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
-
+                    //Environment.ParallelFor(
                     var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
                     foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
                         int j = t_j0_Len.Item1;
@@ -1844,7 +1873,7 @@ namespace BoSSS.Foundation.XDG {
 
                             if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                // Use the accelerated bernstein cut cell finding technique for dg levelsets
+                                // Use the accelerated Bernstein cut cell finding technique for dg levelsets
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 var data = this.m_DataHistories[levSetind].Current;
                                 NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1}), false); // only use edge nodes
@@ -1874,7 +1903,7 @@ namespace BoSSS.Foundation.XDG {
                                             } else if (v > 0) {
                                                 PosEdge = true;
                                             }
-
+                                            // [Toprak] why v*v not only v?
                                             quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
 
                                             nodeIndex++;

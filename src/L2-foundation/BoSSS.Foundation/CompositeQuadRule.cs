@@ -22,6 +22,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
@@ -151,17 +152,62 @@ namespace BoSSS.Foundation.Quadrature {
                 }
             }
         }
-    }
 
-    /// <summary>
-    /// Instances of this class describe which quadrature rule should be used
-    /// at which quadrature item (cell or edge).
-    /// </summary>
-    /// <remarks>
-    /// The main motivation behind this class is the re-use of quadrature nodes
-    /// and/or weights.
-    /// </remarks>
-    public sealed class CompositeQuadRule<TQuadRule> : ICompositeQuadRule<TQuadRule>
+        /// <summary>
+        /// Write the edge quadrature rules into vtp files (importable to paraview)
+        /// </summary>
+        /// <param name="chunRulePairList">the lsit of edge quadrature rules</param>
+        /// <param name="gd">grid data</param>
+        /// <param name="filename">filename header</param>
+        public static void ToVtpFilesEdge(this ICompositeQuadRule<QuadRule> chunRulePairList, IGridData gd, string filename) {
+			foreach (var chunkRulePair in chunRulePairList) {
+				foreach (int edge in chunkRulePair.Chunk.Elements) {
+					var loopEdgeRule = chunkRulePair.Rule;
+					int iTrafo = gd.iGeomEdges.Edge2CellTrafoIndex[edge, 0];
+					int localEdge = gd.iGeomEdges.FaceIndices[edge, 0];
+					int jCell = gd.iGeomEdges.CellIndices[edge, 0];
+
+					// Create cell-based quadrature rule (to express them in cell coordinates)
+					RefElement KrefCell = gd.iGeomCells.GetRefElement(jCell);
+					var cellNodes = loopEdgeRule.Nodes.GetVolumeNodeSet(gd, iTrafo, false);
+					var cellRule = QuadRule.CreateEmpty(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
+					cellRule.Nodes = cellNodes;
+
+					// Transform cell-based local coordinates to global coordinates
+					cellRule.TransformLocal2Global(gd, jCell);
+					cellRule.OutputQuadratureRuleAsVtpXML(filename + "For" + "j" + jCell + "e" + edge + ".vtp");
+				}
+			}
+		}
+
+		/// <summary>
+		/// Write the cell quadrature rules (volume or surface) into vtp files (importable to paraview)
+		/// </summary>
+		/// <param name="chunRulePairList">the lsit of edge quadrature rules</param>
+		/// <param name="gd">grid data</param>
+		/// <param name="filename">filename header</param>
+		public static void ToVtpFilesCell(this ICompositeQuadRule<QuadRule> chunRulePairList, IGridData gd, string filename) {
+			foreach (var chunkRulePair in chunRulePairList) {
+				foreach (int jCell in chunkRulePair.Chunk.Elements) {
+					var loopCellRule = chunkRulePair.Rule;
+
+					// Transform cell-based local coordinates to global coordinates
+					loopCellRule.TransformLocal2Global(gd, jCell);
+					loopCellRule.OutputQuadratureRuleAsVtpXML(filename + "For" + "j" + jCell + ".vtp");
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	/// Instances of this class describe which quadrature rule should be used
+	/// at which quadrature item (cell or edge).
+	/// </summary>
+	/// <remarks>
+	/// The main motivation behind this class is the re-use of quadrature nodes
+	/// and/or weights.
+	/// </remarks>
+	public sealed class CompositeQuadRule<TQuadRule> : ICompositeQuadRule<TQuadRule>
         where TQuadRule : QuadRule {
 
         /// <summary>

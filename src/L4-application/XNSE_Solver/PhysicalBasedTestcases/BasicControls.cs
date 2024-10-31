@@ -150,7 +150,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region timestepping
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -298,7 +298,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region timestepping
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -463,7 +463,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region timestepping
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -632,7 +632,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region timestepping
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -831,7 +831,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region timestepping
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;

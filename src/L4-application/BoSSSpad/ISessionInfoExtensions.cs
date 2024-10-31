@@ -34,6 +34,7 @@ using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
 using BoSSS.Solution.Statistic;
 using BoSSS.Application.XdgPoisson3;
+using BoSSS.Solution;
 
 namespace BoSSS.Foundation.IO {
 
@@ -414,7 +415,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// An array of profiling trees, one for each MPI rank; the index into the returned array corresponds with <paramref name="Ranks"/>.
         /// </returns>
-        public static MethodCallRecord[] GetProfiling(this ISessionInfo session, params int[] Ranks) {
+        public static OnlineProfiling[] GetProfiling(this ISessionInfo session, params int[] Ranks) {
             // find
             string sessDir = DatabaseDriver.GetSessionDirectory(session);
             string[] TextFiles = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
@@ -444,13 +445,13 @@ namespace BoSSS.Foundation.IO {
 
             
             // load 
-            var R = new MethodCallRecord[Ranks.Max() + 1];
+            var R = new OnlineProfiling[Ranks.Max() + 1];
             for(int i = 0; i < Ranks.Length; i++) {
                 int rnk = Ranks[i];
 
                 var f = TextFilesSorted[i];
                 var JSON = File.ReadAllText(f);
-                var mcr = MethodCallRecord.Deserialize(JSON);
+                var mcr = OnlineProfiling.Deserialize(JSON);
 
                 if (R[rnk] != null)
                     throw new IOException("It seems profiling info was written more than once for MPI rank " + rnk + ".");
@@ -468,7 +469,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session"></param>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public static MethodCallRecord GetProfilingOfRank(this ISessionInfo session, int rank) {
+        public static OnlineProfiling GetProfilingOfRank(this ISessionInfo session, int rank) {
 
             // check if within bounds
             int MPISize = session.ComputeNodeNames.Count;
@@ -491,7 +492,7 @@ namespace BoSSS.Foundation.IO {
             // load 
             var f = pathf;
             var JSON = File.ReadAllText(f);
-            var mcr = MethodCallRecord.Deserialize(JSON);
+            var mcr = OnlineProfiling.Deserialize(JSON);
 
             return mcr;
         }
@@ -523,7 +524,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>
         public static void PrintTotalImbalance(this ISessionInfo SI, int printcnt = 0) {
-            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling());
+            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling().Select(p => p.RootCall).ToArray());
             PrintImbalance(dictImbalances, printcnt);
         }
 
@@ -538,7 +539,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>
         public static void PrintMPIImbalance(this ISessionInfo SI, int printcnt = 0) {
-            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling());
+            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling().Select(p => p.RootCall).ToArray());
             PrintImbalance(dictImbalances, printcnt);
         }
 
@@ -1169,6 +1170,7 @@ namespace BoSSS.Foundation.IO {
         public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true, NormType normType = NormType.L2_approximate) {
             ISessionInfo[] _session = sessions.ToArray();
             ITimestepInfo[] _timesteps = sessions.Select(s => s.Timesteps.Last()).ToArray();
+            //Debugger.Launch();
             return _timesteps.ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof, normType);
         }
 
@@ -1695,6 +1697,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// The number of threads per mpi rank used for this simulation
+        /// </summary>
+        public static int NumberOfThreadsPerRank(this ISessionInfo session) {
+            return session.ThreadPerMPIRank;
+        }
+
+        /// <summary>
         /// Function to evaluate results of calculations of FixedCylinder, OscillatingCylinder, ParticleInShear and Particle in Gravity
         /// </summary>
         /// <param name="sessions"></param>
@@ -1860,18 +1869,18 @@ namespace BoSSS.Foundation.IO {
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
-            var mcr = sessions.Pick(idx).GetProfiling();
+            var profiling = sessions.Pick(idx).GetProfiling();
 
             // Find methods if none given
             if (methods == null) {
                 
-                var findMainMethod = mcr[0].FindChild(mainMethod);
+                var findMainMethod = profiling[0].RootCall.FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
                 
                 if (findMainMethod != null) {
                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 } else {
-                    mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                    mostExpensive = profiling[0].RootCall.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 }
 
                 methods = new string[maxNumberMethods];
@@ -1892,7 +1901,7 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberSessions; i++) {
 
                 // was missing
-                mcr = sessions.Pick(i).GetProfiling();
+                profiling = sessions.Pick(i).GetProfiling();
 
                 // Get number of processors and save for later
                 int fileCount = (from file in Directory.EnumerateFiles(@path + "\\sessions\\" + sessions.Pick(i).ID, "profiling_bin.*", SearchOption.AllDirectories)
@@ -1912,9 +1921,9 @@ namespace BoSSS.Foundation.IO {
                         double[] tempFractions = new double[numberMethods];
                         int occurence = methods.Take(k+1).Where(x => x.Equals(methods[k])).Count();
 
-                        value = mcr[j].FindChild(mainMethod);
+                        value = profiling[j].RootCall.FindChild(mainMethod);
                         if (value == null) {
-                            value = mcr[j];
+                            value = profiling[j].RootCall;
                         }
                         if (exclusive) {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
@@ -2205,7 +2214,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess) {
 
-            string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+            string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-Velocity", "contact-angle" };
 
             // check number of contact lines
             string path = @sess.Pick(0).Database.Path + "\\sessions\\" + sess.Pick(0).ID + "\\ContactAngle.txt";
@@ -2442,6 +2451,74 @@ namespace BoSSS.Foundation.IO {
                 }
             }
 
+        }
+
+
+        /// <summary>
+        /// Check for condition number loggings 
+        /// </summary>
+        /// <param name="pSessions"></param>
+        /// <returns>An array of dictionaries, where each dictionary represents a session, with keys as column names (string) and values as a list of doubles.</returns>
+        public static Dictionary<Guid, Dictionary<string, List<double>>> CheckForCondLogging(this IEnumerable<ISessionInfo> pSessions)
+        {
+            string[] allColumnNames = new string[] { ""};
+            int numberSessions = pSessions.Count();
+
+            //the so-called database the first key: session Id, second key: column name, value: list of entries
+            Dictionary<Guid, Dictionary<string, List<double>>> logsForAllSessions = new Dictionary<Guid, Dictionary<string, List<double>>>(numberSessions);
+            
+            for (int j = 0; j < numberSessions; j++){
+                ISessionInfo currentSession = pSessions.Pick(j);
+                //Initiate the "database", it should suffice the need
+                Dictionary<string, List<double>> logs = new Dictionary<string, List<double>>();
+                logsForAllSessions[currentSession.ID] = logs;
+
+                Console.WriteLine("Session: {0}", currentSession.ID);
+                string path = @currentSession.Database.Path + "\\sessions\\" + currentSession.ID + "\\CondNumbers.txt";
+                string[] lines;
+                string header;
+
+                try{ //reading
+                    lines = File.ReadAllLines(path);
+                    header = lines[0];
+                } catch{
+                    Console.WriteLine("no logging file available");
+                    continue;
+                }
+
+                //Get column names
+                var columnsNames = header.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
+                if (!allColumnNames.SequenceEqual(columnsNames)) {
+                    allColumnNames = columnsNames;
+                    allColumnNames.ForEach(c => Console.Write(c + ", "));
+                    Console.WriteLine("");
+                }
+                //Initiate a list for each column and add to the database
+                for (int i = 0; i < columnsNames.Length; i++){
+                    string columnName = columnsNames[i];
+                    var list = new List<double>();
+                    logs.Add(columnName, list);  
+                }
+
+                // loop for each line in the log
+                for (int k = 1; k < lines.Length; k++){
+                    for (int i = 0; i < columnsNames.Length; i++){
+                        string currentColumn = columnsNames[i];
+                        string value = lines[k].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i];
+                        double valueDouble;
+
+                        //Check if it is NaN or Infinity
+                        if (Double.TryParse(value, out valueDouble)){
+                            logs[currentColumn].Add(valueDouble);
+                        } else {
+                            logs[currentColumn].Add(double.NaN);
+                            Console.WriteLine($"The value '{value}' could not be converted to a double for line {k} at column {i} in session {currentSession.Name}.");
+                        }
+                    }
+                }
+
+            }
+            return logsForAllSessions;
         }
 
         /// <summary>

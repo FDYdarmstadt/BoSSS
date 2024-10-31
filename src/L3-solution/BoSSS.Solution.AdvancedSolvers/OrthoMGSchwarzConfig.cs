@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
@@ -122,6 +123,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public override string Shortname => "OrthoMG w Add Swz";
+
+        /// <summary> skip the pre-smoother </summary>
+        [DataMember]
+        public bool SkipPreSmoother = false;
+
+        /// <summary> Pre-smoother and coarse grid correction do not work sequential (i.e., residual from presmoother is not supplied to coarse grid solver) </summary>
+        [DataMember]
+        public bool NonSerialPreSmoother = false;
 
         /// <summary>
         /// 
@@ -303,7 +312,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-
+        /// <summary>
+        /// Configures the multigrid operator with a chain of solvers and smoothers.
+        /// </summary>
+        /// <param name="op"></param>
+        /// <param name="SchwarzblockSize"></param>
+        /// <returns></returns>
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int, int> SchwarzblockSize) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
@@ -316,6 +330,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int FinerLevelGlobalBlocks = int.MaxValue;
                 int FinerLevelLocalBlocks = FinerLevelGlobalBlocks / mpiSz;
 
+                tr.Info($"Setting multigrid configuration ...");
+
+                if (SkipPreSmoother)
+                    tr.Info("Skipping pre-smoother is enabled.");
+                else if (NonSerialPreSmoother) {
+                    tr.Info("NonSerialPreSmoother is enabled, so coarse grid and pre-smoother are independent.");
+                }
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
                     int iLevel = op_lv.LevelIndex;
@@ -430,9 +451,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         };
                         _levelSolver4.config.m_omega = 1; // v-cycle
                         //_levelSolver4.config.m_omega = 2; // w-cycle
+                        _levelSolver4.config.SkipPreSmoother = this.SkipPreSmoother;
+                        _levelSolver4.config.NonSerialPreSmoother = this.NonSerialPreSmoother;
 
-
-                        if(altSmooth3 != null) {
+                        if (altSmooth3 != null) {
                             _levelSolver4.AdditionalPostSmoothers = new[] { altSmooth3 }; 
                         }
 

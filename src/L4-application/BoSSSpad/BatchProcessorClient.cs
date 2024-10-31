@@ -324,6 +324,51 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="DeployDir"></param>
         public abstract (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir);
 
+
+        /// <summary>
+        /// Time at which the job was started
+        /// </summary>
+        virtual public DateTime? GetStartTime(string idToken, object optInfo, string DeployDir) {
+            string stdout_path = GetStdoutFile(idToken, DeployDir);
+            if (stdout_path.IsEmptyOrWhite())
+                return null;
+            var FI = new FileInfo(stdout_path);
+            if (!FI.Exists)
+                return null;
+
+            return FI.CreationTime;
+        }
+
+        /// <summary>
+        /// last time we know the job did something
+        /// </summary>
+        virtual public DateTime? GetEndTime(string idToken, object optInfo, string DeployDir) {
+            string stdout_path = GetStdoutFile(idToken, DeployDir);
+            if (stdout_path.IsEmptyOrWhite())
+                return null;
+            var FI = new FileInfo(stdout_path);
+            if (!FI.Exists)
+                return null;
+
+            return FI.LastWriteTime;
+        }
+
+        /// <summary>
+        /// Runtime of job so far
+        /// </summary>
+        virtual public TimeSpan GetRunTime(string idToken, object optInfo, string DeployDir) {
+            string stdout_path = GetStdoutFile(idToken, DeployDir);
+            if (stdout_path.IsEmptyOrWhite())
+                return new TimeSpan(0);
+            var FI = new FileInfo(stdout_path);
+            if (!FI.Exists)
+                return new TimeSpan(0);
+
+            return FI.LastWriteTime - FI.CreationTime;
+        }
+
+
+
         /// <summary>
         /// Path to standard output file, if present - otherwise null.
         /// </summary>

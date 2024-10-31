@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 
 namespace ilPSP.LinSolvers {
 
+
     /// <summary>
     /// Extension functions for the <see cref="BlockMsrMatrix"/>.
     /// </summary>

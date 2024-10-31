@@ -53,6 +53,12 @@ namespace BoSSS.Application.XNSFE_Solver {
         }
 
         /// <summary>
+        /// include interface heat source on the liquid solid wall, right now only a string formula is supported
+        /// </summary>
+        [DataMember]
+        public Dictionary<string, string> HeatSourceIBM;
+
+        /// <summary>
         /// include recoil pressure.
         /// </summary>
         [DataMember]

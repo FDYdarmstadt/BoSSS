@@ -48,12 +48,27 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         [CodeGenExport]
         public void BoSSSInitialize() {
+
+            // Save original stdout and stderr
+            TextWriter originalOut = Console.Out;
+            TextWriter originalError = Console.Error;
+
             try {
-                Console.WriteLine("Test");
-                mustFinalizeMPI |= BoSSS.Solution.Application.InitMPI();
+                // Mute stdout and stderr
+                using (var muteWriter = new StringWriter()) {
+                    Console.SetOut(muteWriter);
+                    Console.SetError(muteWriter);
+
+                    // Call BoSSS init but we don't want to see output 
+                    mustFinalizeMPI |= BoSSS.Solution.Application.InitMPI();
+                }
             } catch (Exception ex) {
                 Console.WriteLine(ex);
                 throw;
+            } finally {
+                // Restore original stdout and stderr
+                Console.SetOut(originalOut);
+                Console.SetError(originalError);
             }
         }
 

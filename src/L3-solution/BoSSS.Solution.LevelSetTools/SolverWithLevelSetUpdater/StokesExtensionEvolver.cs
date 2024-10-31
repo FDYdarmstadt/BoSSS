@@ -168,7 +168,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         private EllipticReInitAlgoControl ReInit_Control;
-        private int ReInit_TimestepIndex = 0;
+        private static int ReInit_TimestepIndex = 0;
         private int ReInit_Period = 0;
 
         /// <summary>
@@ -189,7 +189,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
             // after level-set evolution and for initializing non-signed-distance level set fields
-            if(ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
+            if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
 
                 Console.WriteLine("Performing ReInit");
                 ReInit_Control.Potential = ReInitPotential.BastingSingleWell;

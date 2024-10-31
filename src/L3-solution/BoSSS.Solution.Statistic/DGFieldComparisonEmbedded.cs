@@ -27,6 +27,10 @@ using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Tracing;
+using BoSSS.Solution.Tecplot;
+using System.Reflection;
+using System.Diagnostics;
+using System.Runtime.ConstrainedExecution;
 
 namespace BoSSS.Solution.Statistic {
     
@@ -81,8 +85,9 @@ namespace BoSSS.Solution.Statistic {
         /// On exit, the number of degrees-of-freedom 
         /// (for each field specified in <paramref name="fields"/>).
         /// </param>
+        /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
         public static void ComputeErrors_L2(IList<IEnumerable<DGField>> fields,
-        out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+        out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, bool plotFields = false) {
 
             ComputeErrors(NormTypeFactory(fields, NormType.L2_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
@@ -168,14 +173,15 @@ namespace BoSSS.Solution.Statistic {
         /// On exit, the number of degrees-of-freedom 
         /// (for each field specified in <paramref name="fields"/>).
         /// </param>
+        /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
         public static void ComputeErrors(IList<IEnumerable<DGField>> fields, NormType[] normTypes,
-            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, bool plotFields = false) {
 
             if (fields.First().Count() != normTypes.Length)
                 throw new ArgumentException("mismatch between number of fields and number of specified norms");
 
             ComputeErrors(normTypes.Select(nt => NormTypeFactory(nt)).ToArray(),
-                fields, out GridRes, out __DOFs, out Errors);
+                fields, out GridRes, out __DOFs, out Errors, plotFields: plotFields);
         }
 
 
@@ -184,7 +190,9 @@ namespace BoSSS.Solution.Statistic {
             Func<DGField, double>[] NormFuncS,
             IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors,
-            Func<ilPSP.Vector, bool> SelectionFunc = null) {
+            Func<ilPSP.Vector, bool> SelectionFunc = null,
+            bool plotFields = false
+            ) {
             using(var tr = new FuncTrace()) {
 
                 // Grids and coarse-to-fine -- mappings.
@@ -263,22 +271,38 @@ namespace BoSSS.Solution.Statistic {
                 
 
                     double[] L2Error = new double[gDataS.Length - 1];
-
-                    for(int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
+                    List<DGField> errFields = new List<DGField>();
+                    List<DGField> injectionSolutionFields = new List<DGField>();
+                    int dgDegree = 0;
+                    for (int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
                         //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);
                         tr.Info(string.Format("Computing L2 error of '{0}' on level {1} ...", index, iLevel));
 
                         DGField Error = injectedFields[index].Last().CloneAs();
                         DGField injSol = injectedFields[index].ElementAt(iLevel);
+
+                        dgDegree = Error.Basis.Degree;
+
+                        Error.Identification += gDataS[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                        injSol.Identification += gDataS[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+
                         Error.Acc(-1.0, injSol);
+
+                        injectionSolutionFields.Add(injSol);
+                        errFields.Add(Error);
 
                         L2Error[iLevel] = NormFuncS[index](Error);
 
-                        //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
                         tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
                     }
-
                     Errors.Add(IdentificationS[index], L2Error);
+
+
+                    if (plotFields && IdentificationS[index].Equals("VelocityX")) {
+                        Tecplot.Tecplot.PlotFields(errFields, IdentificationS[index] + $"k{dgDegree}" + "_err", 0.0, 0);
+                        Tecplot.Tecplot.PlotFields(injectionSolutionFields, IdentificationS[index] + $"k{dgDegree}" + "_injSol", 0.0, 0);
+                    }
+
                 }
 
                 GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
@@ -410,11 +434,13 @@ namespace BoSSS.Solution.Statistic {
         /// <param name="SelectionFunc">
         /// if specified, all cells where this evaluates as false are ignored. 
         /// </param>
+        /// <param name="plotFields">plotting the error and injection fields for visual inspection</param>
         public static void ComputeErrors_L2(IEnumerable<string> FieldsToCompare,
             IEnumerable<ITimestepInfo> timestepS,
             out double[] GridRes, 
             out Dictionary<string,long[]> __DOFs, 
-            out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {  
+            out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null,
+            bool plotFields = false) {  
             using (var tr = new FuncTrace()) {
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
                     throw new ArgumentException("empty list of field names.");
@@ -431,13 +457,29 @@ namespace BoSSS.Solution.Statistic {
                     //Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
                 }
 
+                // [Toprak]: deactivated since it will clear all the cut cells if a tracker found. Not sure it is desirable (should be discussed with Irina)
+                //LevelSetTracker Tracker = null; // (fields.FirstOrDefault(f => f is XDGField) as XDGField)?.Basis?.Tracker;  
 
-                // clear cut-out cells 
+                    //if (Tracker != null || SelectionFunc != null) {
+                    //    foreach (var fenum in fields) {
+                    //        foreach (var f in fenum) {
+                    //            var mask = SelectionFunc != null
+                    //                ? CellMask.GetCellMask((GridData)f.GridDat, SelectionFunc)
+                    //                : Tracker.Regions.GetCutCellMask4LevSet(0); // [Toprak] this is hardcoded, speak with Irina
+
+                    //            Console.WriteLine("number of cut-out cells: {0}", mask.NoOfItemsLocally);
+
+                    //            f.Clear(mask);
+                    //        }
+                    //    }
+                    //} 
+
+
+                    // clear cut-out cells 
                 if (SelectionFunc != null) {
                     foreach (var fenum in fields) {
                         foreach (var f in fenum) {
                             GridData grd = (GridData)f.GridDat;
-                            //SelectionFunc = X => (X[1] < (3.0/9.0) && ( ((X[0] > 3.0 * (1.5 / 9.0)) && (X[0] < 6.0 * (1.5 / 9.0))) || ((X[0] < -3.0 * (1.5 / 9.0)) && (X[0] > -6.0 * (1.5 / 9.0)))));
                             CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
                             Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
                             f.Clear(cutout);
@@ -470,7 +512,7 @@ namespace BoSSS.Solution.Statistic {
                 }
 
                 // continue in other routine
-                ComputeErrors_L2(fields, out GridRes, out __DOFs, out L2Errors);
+                ComputeErrors_L2(fields, out GridRes, out __DOFs, out L2Errors, plotFields);
             }
         }
 

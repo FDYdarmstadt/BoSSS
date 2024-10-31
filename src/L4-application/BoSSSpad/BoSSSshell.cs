@@ -82,7 +82,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             BoSSS.Solution.Application.InitMPI();
             bool InBatchMode = !System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName).IsEmptyOrWhite();
-            BoSSS.Solution.Application.InitMPI( num_threads: (InBatchMode ? 1 : null));
+            BoSSS.Solution.Application.InitMPI(num_threads: (InBatchMode ? 1 : null));
 
 
             CallRandomStuff();

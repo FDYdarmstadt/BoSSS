@@ -1,5 +1,4 @@
-﻿using BoSSS.Application.BoSSSpad;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Gnuplot;
@@ -91,10 +90,10 @@ namespace ApplicationWithIDT {
         public XDGField[] GetConsFields(string equation) {
             if(equation == "iEuler2D") {
                 XDGField[] ConsFields = new XDGField[4];
-                ConsFields[0] = (XDGField) this.GetField("rho");
-                ConsFields[1] = (XDGField)this.GetField("m0");
-                ConsFields[2] = (XDGField)this.GetField("m1");
-                ConsFields[3] = (XDGField)this.GetField("rhoE");
+                ConsFields[0] = (XDGField) this.Fields.Single(f => f.Identification.Equals("rho"));
+                ConsFields[1] = (XDGField)this.Fields.Single(f => f.Identification.Equals("m0"));
+                ConsFields[2] = (XDGField)this.Fields.Single(f => f.Identification.Equals("m1"));
+                ConsFields[3] = (XDGField)this.Fields.Single(f => f.Identification.Equals("rhoE"));
                 return ConsFields;
             //} else if(equation == "iEuler3D") {
             //    XDGField[] ConsFields = new XDGField[5];
@@ -104,7 +103,7 @@ namespace ApplicationWithIDT {
             //    return ConsFields;
             } else {
                 XDGField[] ConsFields = new XDGField[1];
-                ConsFields[0] = (XDGField)this.GetField("c");
+                ConsFields[0] = (XDGField)this.Fields.Single(f => f.Identification.Equals("c"));
                 return ConsFields; 
             }
             
