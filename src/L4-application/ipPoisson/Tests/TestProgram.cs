@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.AdvancedSolvers.Testing;
@@ -38,7 +39,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
     /// NUnit tests
     /// </summary>
     [TestFixture]
-    static class TestProgram {
+    public static class TestProgram {
 
 
 
@@ -350,24 +351,29 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// Convergence against exact solution on a 2D half circular OGrid.
         /// </summary>
         [Test()]
-        public static void TestOperatorConvergenceCustom([Values(2, 3)] int dgDeg) {
-
+        public static double[] TestOperatorConvergenceCustom([Values(2, 3)] int dgDeg, int setup = 6) {
 
             var Controls = new List<SipControl>();
             {
                 int[] ResS = new int[] { 2, 3, 5, 9, 17 };
                
                 foreach (int res in ResS) {
-                    var C = SipHardcodedControl.HalfCircle(res, dgDeg);
+                    var C = SipHardcodedControl.HalfCircle(res, dgDeg, setup);
                     //C.TracingNamespaces = "*";
-                    C.ImmediatePlotPeriod = 1;
-                    C.SuperSampling = 1;
+                    //C.ImmediatePlotPeriod = 1;
+                    //C.SuperSampling = 1;
                     C.savetodb = false;
+                    //if (C.savetodb) {
+                    //    var db = DatabaseInfo.CreateOrOpen(@"Q:\cluster\databases\TemperatureBoundaryCondition");
+                    //    C.SetDatabase(db);
+                    //    C.ProjectName = "TemperatureBoundaryCondition";
+                    //    C.SessionName = "P" + dgDeg + "_Res" + res + "_Case" + setup;
+                    //}
                     Controls.Add(C);
                 }
             }
 
-            SipSolverConvergenceTest(Controls, false, new double[] { dgDeg + 0.5 });
+            return SipSolverConvergenceTest(Controls, false, new double[] { dgDeg + 0.5 });
         }
 
         /// <summary>
@@ -399,8 +405,8 @@ namespace BoSSS.Application.SipPoisson.Tests {
             SipSolverConvergenceTest(Controls, true, new double[] { dgDeg + 0.5 });
         }
 
-
-        private static void SipSolverConvergenceTest(IEnumerable<SipControl> _CS, bool useExactSolution, double[] ExpectedSlopes) {
+        public static bool FailAssertion = true;
+        private static double[] SipSolverConvergenceTest(IEnumerable<SipControl> _CS, bool useExactSolution, double[] ExpectedSlopes) {
             var CS = _CS.ToArray();
             int NoOfMeshes = CS.Length;
 
@@ -443,8 +449,11 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
                 Console.WriteLine("Running ipPoisson Convergence Tests");
                 List<IEnumerable<DGField>> solutionOnDifferentResolutions = new List<IEnumerable<DGField>>();
-                foreach (var C in _CS) {
-                    using (var solver = new SipPoissonMain()) {
+                for (int k = 0; k < CS.Length; k++) {
+                    var C = CS[k];
+                    var solver = new SipPoissonMain();
+                    solvers[k] = solver;
+                    {
                         solver.Init(C);
                         solver.RunSolverMode();
                         solutionOnDifferentResolutions.Add(new DGField[] { solver.T });
@@ -470,20 +479,24 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             //hS = hS.Take(hS.Length - 1).ToArray();    
 
+            double[] slopes = new double[errorS.GetLength(1)];
             for (int i = 0; i < errorS.GetLength(1); i++) {
                 var slope = hS.LogLogRegressionSlope( errorS.GetColumn(i));
-
+                slopes[i] = slope;
                 Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
             }
 
-            for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegressionSlope( errorS.GetColumn(i));
-                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            if (FailAssertion) {
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    var slope = hS.LogLogRegressionSlope(errorS.GetColumn(i));
+                    Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+                }
             }
 
             foreach (var s in solvers) {
                 s.Dispose();
             }
+            return slopes;
         }
     }
 }

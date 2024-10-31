@@ -549,7 +549,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Poisson Equation on a half circle r = 0.8, Dirichlet everywhere
         /// </summary>
-        public static SipControl HalfCircle(int Res = 5, int deg = 5) {
+        public static SipControl HalfCircle(int Res = 5, int deg = 5, int setup = 6) {
 
             //var grd = Grid2D.HalfOgrid(0.4, 0.8, 2, 2);
 
@@ -579,33 +579,100 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            //R.AddBoundaryValue("Dirichlet_bot", "T", X => 1.0 / 8.0 * Math.Sin(2 * Math.PI * (X[0] - 0.8) / (2 * 0.8)));
-            //R.AddBoundaryValue("Dirichlet_bot", "T", X => Math.Abs(X[0]) < 0.4 ? Math.Exp(-1.0 / (1.0 - (X[0]/0.4).Pow2())) / Math.Exp(-1.0) : 0.0);
-            //R.AddBoundaryValue("Dirichlet_top", "T", X => 0.0);
-
-            //Func<double[], double> TFunc = X => {
-            //    double r = (X - new Vector(new double[] { 0.0, -0.01 })).L2Norm();
-            //    return Math.Log(r);
-            //};
-
-            //Func<double[], double> TFunc = X => {
-            //    return Math.Sin(X[0])*Math.Exp(X[1]);
-            //};
-            //R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
-            //R.AddBoundaryValue("Dirichlet_top", "T", TFunc);
-
-            var lines = File.ReadAllLines("boundarycond.txt");
-            double[] nodes = new double[lines.Length];
-            double[] values = new double[lines.Length];
-            for(int i = 0; i < lines.Length; i++) {
-                string[] xy = lines[i].Split('\t');
-                nodes[i] = Convert.ToDouble(xy[0]);
-                values[i] = Convert.ToDouble(xy[1]);
+            switch (setup) {
+                case 0: {
+                        Func<double[], double> TFunc = X => {
+                            return Math.Sin(X[0]) * Math.Exp(X[1]);
+                        };
+                        R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+                        R.AddBoundaryValue("Dirichlet_top", "T", TFunc);
+                        break;
+                    }
+                case 1: {
+                        Func<double[], double> TFunc = X => {
+                            double r = (X - new Vector(new double[] { 0.0, -0.0 })).L2Norm();
+                            return Math.Log(r);
+                        };
+                        R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+                        R.AddBoundaryValue("Dirichlet_top", "T", TFunc);
+                        break;
+                    }
+                case 2: {
+                        Func<double[], double> TFunc = X => {
+                            double r = (X - new Vector(new double[] { 0.0, -0.01 })).L2Norm();
+                            return Math.Log(r);
+                        };
+                        R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+                        R.AddBoundaryValue("Dirichlet_top", "T", TFunc);
+                        break;
+                    }
+                case 3: {
+                        Func<double[], double> TFunc = X => {
+                            double r = (X - new Vector(new double[] { 0.0, -0.1 })).L2Norm();
+                            return Math.Log(r);
+                        };
+                        R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+                        R.AddBoundaryValue("Dirichlet_top", "T", TFunc);
+                        break;
+                    }
+                case 4: {
+                        Func<double[], double> TFunc = X => {
+                            double r = (X - new Vector(new double[] { 0.0, -1 })).L2Norm();
+                            return Math.Log(r);
+                        };
+                        R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+                        R.AddBoundaryValue("Dirichlet_top", "T", TFunc);
+                        break;
+                    }
+                case 5: {
+                        R.AddBoundaryValue("Dirichlet_bot", "T", X => Math.Sin(2 * Math.PI * (X[0] - 0.8) / (2 * 0.8)));
+                        R.AddBoundaryValue("Dirichlet_top", "T", X => 0);
+                        break;
+                    }
+                case 6:
+                default: {
+                        var lines = File.ReadAllLines("boundarycond.txt");
+                        double[] nodes = new double[lines.Length];
+                        double[] values = new double[lines.Length];
+                        for (int i = 0; i < lines.Length; i++) {
+                            string[] xy = lines[i].Split('\t');
+                            nodes[i] = Convert.ToDouble(xy[0]);
+                            values[i] = Convert.ToDouble(xy[1]);
+                        }
+                        Spline1D TFunc = new Spline1D(nodes, values, 0, Spline1D.OutOfBoundsBehave.Clamp);
+                        R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+                        R.AddBoundaryValue("Dirichlet_top", "T", X => 0);
+                        break;
+                    }
             }
-            Spline1D TFunc = new Spline1D(nodes, values, 0, Spline1D.OutOfBoundsBehave.Clamp);
-            R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
-            //R.AddBoundaryValue("Dirichlet_bot", "T", X => Math.Sin(2 * Math.PI * (X[0] - 0.8) / (2 * 0.8)));
-            R.AddBoundaryValue("Dirichlet_top", "T", X => 0);
+
+            ////R.AddBoundaryValue("Dirichlet_bot", "T", X => 1.0 / 8.0 * Math.Sin(2 * Math.PI * (X[0] - 0.8) / (2 * 0.8)));
+            ////R.AddBoundaryValue("Dirichlet_bot", "T", X => Math.Abs(X[0]) < 0.4 ? Math.Exp(-1.0 / (1.0 - (X[0]/0.4).Pow2())) / Math.Exp(-1.0) : 0.0);
+            ////R.AddBoundaryValue("Dirichlet_top", "T", X => 0.0);
+
+            ////Func<double[], double> TFunc = X => {
+            ////    double r = (X - new Vector(new double[] { 0.0, -0.01 })).L2Norm();
+            ////    return Math.Log(r);
+            ////};
+
+            ////Func<double[], double> TFunc = X => {
+            ////    return Math.Sin(X[0])*Math.Exp(X[1]);
+            ////};
+            ////R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+            ////R.AddBoundaryValue("Dirichlet_top", "T", TFunc);
+
+            //var lines = File.ReadAllLines("boundarycond.txt");
+            //double[] nodes = new double[lines.Length];
+            //double[] values = new double[lines.Length];
+            //for(int i = 0; i < lines.Length; i++) {
+            //    string[] xy = lines[i].Split('\t');
+            //    nodes[i] = Convert.ToDouble(xy[0]);
+            //    values[i] = Convert.ToDouble(xy[1]);
+            //}
+            //Spline1D TFunc = new Spline1D(nodes, values, 0, Spline1D.OutOfBoundsBehave.Clamp);
+            //R.AddBoundaryValue("Dirichlet_bot", "T", TFunc);
+            ////R.AddBoundaryValue("Dirichlet_bot", "T", X => Math.Sin(2 * Math.PI * (X[0] - 0.8) / (2 * 0.8)));
+            //R.AddBoundaryValue("Dirichlet_top", "T", X => 0);
 
             R.AdaptiveMeshRefinement = false;
             R.NoOfTimesteps = 1;
