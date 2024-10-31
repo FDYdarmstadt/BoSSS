@@ -45,21 +45,39 @@ namespace BoSSS.Application.XNSFE_Solver {
             /*
             InitMPI(args);
             DeleteOldPlotFiles();
+
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 4);
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 5);
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 6);
+            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 7);
+
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 3, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 4, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 5, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 6, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 7, 5);
+            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 8, 5);
+
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 90.0);
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 90.0);
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 80.0);
+            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 80.0);
+
             //Tests.StaticDropletTest.StaticDropletScalingTest(2);
             //Tests.StaticDropletTest.StaticDropletConvergenceTest(4, true, 0.0, 80.0);
 
-            {
-                var C = Tests.StaticDropletTest.EvaporatigDropletTestControl(4, 4, true, 0.1, true, 1.0, 80.0);
-                //var C = StaticWedgeTestControl(deg, res, true, 0.1, evap, ls, theta);
-                C.SkipSolveAndEvaluateResidual = false;
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 2;
+            //{
+            //    var C = Tests.StaticDropletTest.EvaporatigDropletTestControl(4, 4, true, 0.1, true, 1.0, 80.0);
+            //    //var C = StaticWedgeTestControl(deg, res, true, 0.1, evap, ls, theta);
+            //    C.SkipSolveAndEvaluateResidual = false;
+            //    C.ImmediatePlotPeriod = 1;
+            //    C.SuperSampling = 2;
 
-                using (var solver = new XNSFE()) {
-                    solver.Init(C);
-                    solver.RunSolverMode();
-                }
-            }
+            //    using (var solver = new XNSFE()) {
+            //        solver.Init(C);
+            //        solver.RunSolverMode();
+            //    }
+            //}
 
             FinalizeMPI();
             System.Environment.Exit(-111);
