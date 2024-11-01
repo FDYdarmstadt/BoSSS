@@ -33,7 +33,7 @@ namespace StokesHelical_Ak {
         /// <summary>
         /// Hagen Poiseulle flow (aka. flow in a circular pipe)
         /// </summary>
-        public static HelicalControl HagenPoiseulle(string _DbPath = null, int degree = 5, int noOfCellsR = 512, int noOfCellsXi = 512, int dtRefining = 4, int bdfOrder = 3, double Tend = 2 * Math.PI, double rMin = 0, double MaxAmpl = 1) {
+        public static HelicalControl HagenPoiseulle(string _DbPath = null, int degree = 5, int noOfCellsR = 512, int noOfCellsXi = 512, int dtRefining = 4, int bdfOrder = 3, double Tend = 2 * Math.PI, double rMin = 0, double MaxAmp = 1) {
 
             HelicalControl Ctrl = new HelicalControl();
             // Database
@@ -45,7 +45,7 @@ namespace StokesHelical_Ak {
             // Settings
             // ==============
             #region Settings
-            Ctrl.maxAmpli = MaxAmpl;
+            Ctrl.maxAmpli = MaxAmp;
             Ctrl.rMin = rMin;
             Ctrl.rMax = 1;
             Ctrl.HagenPoisseulle = true;

@@ -65,7 +65,7 @@ namespace StokesHelical_Ak {
 
 
 
-            StokesHelical_Ak.TestSpartial.TestSpatial.SteadyHagenPoiseulle_VarRe_Stokes(3);
+            // StokesHelical_Ak.TestSpartial.TestSpatial.SteadyHagenPoiseulle_VarRe_Stokes(3);
             //c.ImmediatePlotPeriod = 1;
             //c.NoOfTimesteps = 5;
             //var solver = new HelicalMain();
