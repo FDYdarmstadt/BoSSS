@@ -162,7 +162,7 @@ namespace BoSSS.Foundation.XDG {
 				var edgeScheme = schH.GetEdgeQuadScheme(spc);
 				var chunRulePairList = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
 
-                chunRulePairList.ToVtpFilesEdge(gd, "edgeQuadFor" + spc + HMFvariant);
+                chunRulePairList.ToVtpFilesEdge(gd, "edgeQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
 			}
 		}
 
@@ -180,7 +180,7 @@ namespace BoSSS.Foundation.XDG {
 				var volScheme = schH.GetVolumeQuadScheme(spc);
 				var chunRulePairList = volScheme.Compile(gd, this.CutCellQuadratureOrder);
 
-                chunRulePairList.ToVtpFilesCell(gd, "volQuadFor" + spc + HMFvariant);
+                chunRulePairList.ToVtpFilesCell(gd, "volQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
 			}
 		}
 
@@ -219,7 +219,7 @@ namespace BoSSS.Foundation.XDG {
 
 									CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
 									var chunRulePairList = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
-									chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA + "-" + SpeciesB + HMFvariant);
+									chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA.ToString(XDGSpaceMetrics.Tracker) + "-" + SpeciesB.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
 								}
 							}
 						}
@@ -228,10 +228,10 @@ namespace BoSSS.Foundation.XDG {
 			}
 		}
 
-        /// <summary>
-        /// Computes Cell-volumes and edge areas before agglomeration.
-        /// </summary>
-        void ComputeNonAgglomeratedMetrics() {
+		/// <summary>
+		/// Computes Cell-volumes and edge areas before agglomeration.
+		/// </summary>
+		void ComputeNonAgglomeratedMetrics() {
             using(var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
 
@@ -276,9 +276,9 @@ namespace BoSSS.Foundation.XDG {
 
                     var edgeScheme = schH.GetEdgeQuadScheme(spc);
                     var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
+                    
 
-
-                    BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
+						BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
                         edgeRule,
                         _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
