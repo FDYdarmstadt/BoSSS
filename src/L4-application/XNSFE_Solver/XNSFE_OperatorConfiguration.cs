@@ -29,6 +29,7 @@ using BoSSS.Solution.EnergyCommon;
 using ilPSP;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Application.XNSE_Solver;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.XNSFE_Solver {  
     public class XNSFE_OperatorConfiguration : XNSE_OperatorConfiguration, IXHeat_Configuration {
@@ -45,6 +46,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             HeatTransport = control.ThermalParameters.IncludeConvection;
             HeatSource = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.HeatSource)) || control.FieldOptions.Keys.Where(k => k.Contains(VariableNames.HeatSource)).Any();
+            HeatSourceIBM = control.HeatSourceIBM != null;
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
             RecoilPressure = Evaporation & control.IncludeRecoilPressure;
@@ -109,6 +111,11 @@ namespace BoSSS.Application.XNSFE_Solver {
         public bool HeatSource;
 
         /// <summary>
+        /// include interface heat source on the liquid solid wall
+        /// </summary>
+        public bool HeatSourceIBM;
+
+        /// <summary>
         /// use upwind discretization
         /// </summary>
         public bool HeatUpwinding = false;
@@ -152,6 +159,10 @@ namespace BoSSS.Application.XNSFE_Solver {
 
         public bool isHeatSource {
             get { return HeatSource; }
+        }
+
+        public bool isHeatSourceIBM {
+            get { return HeatSourceIBM; }
         }
 
         public bool useUpwind {

@@ -51,7 +51,7 @@ namespace BoSSS.Application.MultigridTest {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(args);
             TestProgramCurvedMG.Init();
             TestProgramLinearMG.Init();
 
@@ -81,7 +81,7 @@ namespace BoSSS.Application.MultigridTest {
             }
 
 
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
 
