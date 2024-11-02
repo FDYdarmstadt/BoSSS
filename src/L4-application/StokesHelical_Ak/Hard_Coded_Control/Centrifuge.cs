@@ -89,8 +89,16 @@ namespace StokesHelical_Ak {
             // Time Stepping
             // ==============
             #region Timestepping
-            double dt = Tend / (dtRefining * 100);
-            Ctrl.dtFixed = dt;
+            if (Tend >= 10E10) {
+                Ctrl.dtFixed = Tend;
+                Ctrl.NoOfTimesteps = 1;
+                Ctrl.steady = true;
+            } else {
+                Ctrl.dtFixed = Tend / (dtRefining * 100);
+                Ctrl.NoOfTimesteps = dtRefining * 100;
+                Ctrl.steady = false;
+            }
+
             if(bdfOrder == 3) {
                 Ctrl.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             } else if(bdfOrder == 1) {
@@ -98,9 +106,8 @@ namespace StokesHelical_Ak {
             } else {
                 throw new ArgumentException("Unsupported BDF scheme: " + bdfOrder);
             }
-            //Ctrl.NoOfTimesteps = dtRefining * 200*4;
-            Ctrl.NoOfTimesteps = dtRefining*100 ;
-            Ctrl.steady = false;
+
+
             #endregion
 
             // Initial Values

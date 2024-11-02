@@ -1045,7 +1045,6 @@ namespace StokesHelical_Ak.TestSpartial
         /// </remarks>
         [Test]
         static public void Direct_vs_Iterativ_CF_Re_100000_with_R0fix([Values(5)] int pOrder) {
-            // Polynomorder 5 take too long for our test runners!
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_with_R0fix(4)
 
             //###########################################################
@@ -1056,14 +1055,29 @@ namespace StokesHelical_Ak.TestSpartial
             double h;
             double r_min = 0;
             double maxAmplitude = 100000;
-            double urErrorLx;
-            double uetaErrorLx;
-            double uxiErrorLx;
-            double psiErrorLx;
+            double ur_L2_Error;
+            double ueta_L2_Error;
+            double uxi_L2_Error;
+            double pressure_L2_Error;
             HelicalControl spaceConvergence_direct = new HelicalControl();
             HelicalControl spaceConvergence_iterative = new HelicalControl();
 
+            SinglePhaseField exSol_ur;
+            SinglePhaseField exSol_ueta;
+            SinglePhaseField exSol_uxi;
+            SinglePhaseField exSol_pressure;
+
+            double nu = Globals.nu;
+            double a = Globals.a;
+            double b = Globals.b;
+
+            Func<double[], double> ur = (X) => 0;
+            Func<double[], double> pressure = (X) => 0;
+            Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * maxAmplitude * X[0];
+            Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * maxAmplitude;
+
             spaceConvergence_direct = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+
 
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
@@ -1071,73 +1085,109 @@ namespace StokesHelical_Ak.TestSpartial
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
             Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
-            urErrorLx = helical_direct.urErrorLx;
-            uetaErrorLx = helical_direct.uetaErrorLx;
-            uxiErrorLx = helical_direct.uxiErrorLx;
-            psiErrorLx = helical_direct.psiErrorLx;
+
+
+            // Deep Copy
+            exSol_ur = helical_direct.ur.CloneAs();
+            exSol_ueta = helical_direct.ueta.CloneAs();
+            exSol_uxi = helical_direct.uxi.CloneAs();
+            exSol_pressure = helical_direct.Pressure.CloneAs();
+
+            //Exakte Lösung auf SinglePhaseField
+            exSol_ur.ProjectField(ur);
+            exSol_ueta.ProjectField(ueta);
+            exSol_uxi.ProjectField(uxi);
+            exSol_pressure.ProjectField(pressure);
+
+            //L2 Fehler berechnen. Meine Loesung vs richtige Loesung
+            ur_L2_Error = helical_direct.ur.L2Error(exSol_ur);
+            ueta_L2_Error = helical_direct.ueta.L2Error(exSol_ueta);
+            uxi_L2_Error = helical_direct.uxi.L2Error(exSol_uxi);
+            pressure_L2_Error = helical_direct.Pressure.L2Error(exSol_pressure);
+
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi = 5e-9; // Poly Order 5
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx / maxAmplitude);
-            Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi);
-            Assert.LessOrEqual(psiErrorLx / maxAmplitude, thresholdPsi, "Error. psiErrorLx not fulfilled");
-
             double thresholdUr = 1e-11; // Poly Order 5
-            Console.WriteLine("The urErrorLx/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx / maxAmplitude);
-            Console.WriteLine("If the urErrorLx / maxAmplitude error is {0} < {1} than good :) ", urErrorLx / maxAmplitude, thresholdUr);
-            Assert.LessOrEqual(urErrorLx / maxAmplitude, thresholdUr, "Error. urErrorL2 not fulfilled");
+            Console.WriteLine("The ur_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ur_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ur_L2_Error / maxAmplitude error is {0} < {1} than good :) ", ur_L2_Error / maxAmplitude, thresholdUr);
+            Assert.LessOrEqual(ur_L2_Error / maxAmplitude, thresholdUr, "Error. ur_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUeta = 1e-11; // Poly Order 5
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx / maxAmplitude);
-            Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx / maxAmplitude, thresholdUeta);
-            Assert.LessOrEqual(uetaErrorLx / maxAmplitude, thresholdUeta, "Error. uetaErrorL2 not fulfilled");
+            Console.WriteLine("The ueta_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ueta_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ueta_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", ueta_L2_Error / maxAmplitude, thresholdUeta);
+            Assert.LessOrEqual(ueta_L2_Error / maxAmplitude, thresholdUeta, "Error. ueta_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUxi = 1e-11; // Poly Order 5
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx / maxAmplitude);
-            Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx / maxAmplitude, thresholdUxi);
-            Assert.LessOrEqual(uxiErrorLx / maxAmplitude, thresholdUxi, "Error. uxiErrorL2 not fulfilled");
+            Console.WriteLine("The uxi_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, uxi_L2_Error / maxAmplitude);
+            Console.WriteLine("If the uxi_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", uxi_L2_Error / maxAmplitude, thresholdUxi);
+            Assert.LessOrEqual(uxi_L2_Error / maxAmplitude, thresholdUxi, "Error. uxi_L2_Error/ maxAmplitude not fulfilled");
+
+            double thresholdPsi = 5e-9; // Poly Order 5
+            Console.WriteLine("The pressure_L2_Error / maxAmplitude error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, pressure_L2_Error / maxAmplitude);
+            Console.WriteLine("If the pressure_L2_Error / maxAmplitude error is {0} < {1} than good :) ", pressure_L2_Error / maxAmplitude, thresholdPsi);
+            Assert.LessOrEqual(pressure_L2_Error / maxAmplitude, thresholdPsi, "Error. pressure_L2_Error not fulfilled");
             //###########################################################
             // Iterativ Solver
             //###########################################################
+
+
             spaceConvergence_iterative = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
-            var helical_iterativ = new HelicalMain();
-            helical_iterativ.Init(spaceConvergence_iterative);
-            helical_iterativ.RunSolverMode();
+
+
+            var helical_iterative = new HelicalMain();
+            helical_iterative.Init(spaceConvergence_iterative);
+            helical_iterative.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
             Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
-            urErrorLx = helical_iterativ.urErrorLx;
-            uetaErrorLx = helical_iterativ.uetaErrorLx;
-            uxiErrorLx = helical_iterativ.uxiErrorLx;
-            psiErrorLx = helical_iterativ.psiErrorLx;
+
+
+            // Deep Copy
+            exSol_ur = helical_iterative.ur.CloneAs();
+            exSol_ueta = helical_iterative.ueta.CloneAs();
+            exSol_uxi = helical_iterative.uxi.CloneAs();
+            exSol_pressure = helical_iterative.Pressure.CloneAs();
+
+            //Exakte Lösung auf SinglePhaseField
+            exSol_ur.ProjectField(ur);
+            exSol_ueta.ProjectField(ueta);
+            exSol_uxi.ProjectField(uxi);
+            exSol_pressure.ProjectField(pressure);
+
+            //L2 Fehler berechnen. Meine Loesung vs richtige Loesung
+            ur_L2_Error = helical_iterative.ur.L2Error(exSol_ur);
+            ueta_L2_Error = helical_iterative.ueta.L2Error(exSol_ueta);
+            uxi_L2_Error = helical_iterative.uxi.L2Error(exSol_uxi);
+            pressure_L2_Error = helical_iterative.Pressure.L2Error(exSol_pressure);
+
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi_ = 5e-9; // Poly Order 5
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx / maxAmplitude);
-            Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi_);
-            Assert.LessOrEqual(psiErrorLx / maxAmplitude, thresholdPsi_, "Error. psiErrorLx not fulfilled");
-
             double thresholdUr_ = 1e-11; // Poly Order 5
-            Console.WriteLine("The urErrorLx/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx / maxAmplitude);
-            Console.WriteLine("If the urErrorLx / maxAmplitude error is {0} < {1} than good :) ", urErrorLx / maxAmplitude, thresholdUr_);
-            Assert.LessOrEqual(urErrorLx / maxAmplitude, thresholdUr_, "Error. urErrorL2 not fulfilled");
+            Console.WriteLine("The ur_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ur_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ur_L2_Error / maxAmplitude error is {0} < {1} than good :) ", ur_L2_Error / maxAmplitude, thresholdUr_);
+            Assert.LessOrEqual(ur_L2_Error / maxAmplitude, thresholdUr_, "Error. ur_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUeta_ = 1e-11; // Poly Order 5
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx / maxAmplitude);
-            Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx / maxAmplitude, thresholdUeta_);
-            Assert.LessOrEqual(uetaErrorLx / maxAmplitude, thresholdUeta_, "Error. uetaErrorL2 not fulfilled");
+            Console.WriteLine("The ueta_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ueta_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ueta_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", ueta_L2_Error / maxAmplitude, thresholdUeta_);
+            Assert.LessOrEqual(ueta_L2_Error / maxAmplitude, thresholdUeta_, "Error. ueta_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUxi_ = 1e-11; // Poly Order 5
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx / maxAmplitude);
-            Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx / maxAmplitude, thresholdUxi_);
-            Assert.LessOrEqual(uxiErrorLx / maxAmplitude, thresholdUxi_, "Error. uxiErrorL2 not fulfilled");
+            Console.WriteLine("The uxi_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, uxi_L2_Error / maxAmplitude);
+            Console.WriteLine("If the uxi_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", uxi_L2_Error / maxAmplitude, thresholdUxi_);
+            Assert.LessOrEqual(uxi_L2_Error / maxAmplitude, thresholdUxi_, "Error. uxi_L2_Error/ maxAmplitude not fulfilled");
+
+            double thresholdPsi_ = 5e-9; // Poly Order 5
+            Console.WriteLine("The pressure_L2_Error / maxAmplitude error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, pressure_L2_Error / maxAmplitude);
+            Console.WriteLine("If the pressure_L2_Error / maxAmplitude error is {0} < {1} than good :) ", pressure_L2_Error / maxAmplitude, thresholdPsi_);
+            Assert.LessOrEqual(pressure_L2_Error / maxAmplitude, thresholdPsi_, "Error. pressure_L2_Error not fulfilled");
 
 
             CoordinateMapping helicalSol_direct = new CoordinateMapping(helical_direct.ur, helical_direct.ueta, helical_direct.uxi, helical_direct.Pressure);
             CoordinateVector helicalSolVec_direct = new CoordinateVector(helicalSol_direct);
 
-            CoordinateMapping helicalSol_iterativ = new CoordinateMapping(helical_iterativ.ur, helical_iterativ.ueta, helical_iterativ.uxi, helical_iterativ.Pressure);
+            CoordinateMapping helicalSol_iterativ = new CoordinateMapping(helical_iterative.ur, helical_iterative.ueta, helical_iterative.uxi, helical_iterative.Pressure);
             CoordinateVector helicalSolVec_iterativ = new CoordinateVector(helicalSol_iterativ);
 
             // calculate the difference
@@ -1148,9 +1198,9 @@ namespace StokesHelical_Ak.TestSpartial
 
             double diff_threshold = 4e-7; // Poly Order 5
             //double diff_threshold = 4e-5; // Poly Order 4
-            Console.WriteLine("L2 norm of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm());
-            Console.WriteLine("If L2 norm of the difference is {0} < {1} than good :) ", diff.L2Norm(), diff_threshold);
-            Assert.LessOrEqual(diff.L2Norm(), diff_threshold, "Error. L2 norm of the difference not fulfilled");
+            Console.WriteLine("L2 norm / maxAmplitude of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm() / maxAmplitude);
+            Console.WriteLine("If L2 norm / maxAmplitude of the difference is {0} < {1} than good :) ", diff.L2Norm() / maxAmplitude, diff_threshold);
+            Assert.LessOrEqual(diff.L2Norm() / maxAmplitude, diff_threshold, "Error. L2 norm of the difference not fulfilled");
 
         }
 
@@ -1170,8 +1220,7 @@ namespace StokesHelical_Ak.TestSpartial
         /// </remarks>
         [Test]
         static public void Direct_vs_Iterativ_CF_Re_10_with_R0fix([Values(5)] int pOrder) {
-            // Polynomorder 5 take too long for our test runners!
-            // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_with_R0fix(4)
+            // --test=StokesHelical_Ak.TestSpartial.TestSpatial.SpatialComparison_Direct_vs_Iterativ_with_R0fix(5)
 
             //###########################################################
             // Direct Solver
@@ -1181,14 +1230,29 @@ namespace StokesHelical_Ak.TestSpartial
             double h;
             double r_min = 0;
             double maxAmplitude = 10;
-            double urErrorLx;
-            double uetaErrorLx;
-            double uxiErrorLx;
-            double psiErrorLx;
+            double ur_L2_Error;
+            double ueta_L2_Error;
+            double uxi_L2_Error;
+            double pressure_L2_Error;
             HelicalControl spaceConvergence_direct = new HelicalControl();
             HelicalControl spaceConvergence_iterative = new HelicalControl();
 
+            SinglePhaseField exSol_ur;
+            SinglePhaseField exSol_ueta;
+            SinglePhaseField exSol_uxi;
+            SinglePhaseField exSol_pressure;
+
+            double nu = Globals.nu;
+            double a = Globals.a;
+            double b = Globals.b;
+
+            Func<double[], double> ur = (X) => 0;
+            Func<double[], double> pressure = (X) => 0;
+            Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * maxAmplitude * X[0];
+            Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * maxAmplitude;
+
             spaceConvergence_direct = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+
 
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
@@ -1196,73 +1260,109 @@ namespace StokesHelical_Ak.TestSpartial
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
             Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
-            urErrorLx = helical_direct.urErrorLx;
-            uetaErrorLx = helical_direct.uetaErrorLx;
-            uxiErrorLx = helical_direct.uxiErrorLx;
-            psiErrorLx = helical_direct.psiErrorLx;
+
+
+            // Deep Copy
+            exSol_ur = helical_direct.ur.CloneAs();
+            exSol_ueta = helical_direct.ueta.CloneAs();
+            exSol_uxi = helical_direct.uxi.CloneAs();
+            exSol_pressure = helical_direct.Pressure.CloneAs();
+
+            //Exakte Lösung auf SinglePhaseField
+            exSol_ur.ProjectField(ur);
+            exSol_ueta.ProjectField(ueta);
+            exSol_uxi.ProjectField(uxi);
+            exSol_pressure.ProjectField(pressure);
+
+            //L2 Fehler berechnen. Meine Loesung vs richtige Loesung
+            ur_L2_Error = helical_direct.ur.L2Error(exSol_ur);
+            ueta_L2_Error = helical_direct.ueta.L2Error(exSol_ueta);
+            uxi_L2_Error = helical_direct.uxi.L2Error(exSol_uxi);
+            pressure_L2_Error = helical_direct.Pressure.L2Error(exSol_pressure);
+
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi = 5e-9; // Poly Order 5
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx/ maxAmplitude);
-            Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi);
-            Assert.LessOrEqual(psiErrorLx / maxAmplitude, thresholdPsi, "Error. psiErrorLx not fulfilled");
-
             double thresholdUr = 1e-11; // Poly Order 5
-            Console.WriteLine("The urErrorLx/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx / maxAmplitude);
-            Console.WriteLine("If the urErrorLx / maxAmplitude error is {0} < {1} than good :) ", urErrorLx / maxAmplitude, thresholdUr);
-            Assert.LessOrEqual(urErrorLx / maxAmplitude, thresholdUr, "Error. urErrorL2 not fulfilled");
+            Console.WriteLine("The ur_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ur_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ur_L2_Error / maxAmplitude error is {0} < {1} than good :) ", ur_L2_Error / maxAmplitude, thresholdUr);
+            Assert.LessOrEqual(ur_L2_Error / maxAmplitude, thresholdUr, "Error. ur_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUeta = 1e-11; // Poly Order 5
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx / maxAmplitude);
-            Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx / maxAmplitude, thresholdUeta);
-            Assert.LessOrEqual(uetaErrorLx / maxAmplitude, thresholdUeta, "Error. uetaErrorL2 not fulfilled");
+            Console.WriteLine("The ueta_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ueta_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ueta_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", ueta_L2_Error / maxAmplitude, thresholdUeta);
+            Assert.LessOrEqual(ueta_L2_Error / maxAmplitude, thresholdUeta, "Error. ueta_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUxi = 1e-11; // Poly Order 5
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx / maxAmplitude);
-            Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx / maxAmplitude, thresholdUxi);
-            Assert.LessOrEqual(uxiErrorLx / maxAmplitude, thresholdUxi, "Error. uxiErrorL2 not fulfilled");
+            Console.WriteLine("The uxi_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, uxi_L2_Error / maxAmplitude);
+            Console.WriteLine("If the uxi_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", uxi_L2_Error / maxAmplitude, thresholdUxi);
+            Assert.LessOrEqual(uxi_L2_Error / maxAmplitude, thresholdUxi, "Error. uxi_L2_Error/ maxAmplitude not fulfilled");
+
+            double thresholdPsi = 5e-9; // Poly Order 5
+            Console.WriteLine("The pressure_L2_Error / maxAmplitude error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, pressure_L2_Error / maxAmplitude);
+            Console.WriteLine("If the pressure_L2_Error / maxAmplitude error is {0} < {1} than good :) ", pressure_L2_Error / maxAmplitude, thresholdPsi);
+            Assert.LessOrEqual(pressure_L2_Error / maxAmplitude, thresholdPsi, "Error. pressure_L2_Error not fulfilled");
             //###########################################################
             // Iterativ Solver
             //###########################################################
+
+
             spaceConvergence_iterative = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
-            var helical_iterativ = new HelicalMain();
-            helical_iterativ.Init(spaceConvergence_iterative);
-            helical_iterativ.RunSolverMode();
+
+
+            var helical_iterative = new HelicalMain();
+            helical_iterative.Init(spaceConvergence_iterative);
+            helical_iterative.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
             Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
-            urErrorLx = helical_iterativ.urErrorLx;
-            uetaErrorLx = helical_iterativ.uetaErrorLx;
-            uxiErrorLx = helical_iterativ.uxiErrorLx;
-            psiErrorLx = helical_iterativ.psiErrorLx;
+
+
+            // Deep Copy
+            exSol_ur = helical_iterative.ur.CloneAs();
+            exSol_ueta = helical_iterative.ueta.CloneAs();
+            exSol_uxi = helical_iterative.uxi.CloneAs();
+            exSol_pressure = helical_iterative.Pressure.CloneAs();
+
+            //Exakte Lösung auf SinglePhaseField
+            exSol_ur.ProjectField(ur);
+            exSol_ueta.ProjectField(ueta);
+            exSol_uxi.ProjectField(uxi);
+            exSol_pressure.ProjectField(pressure);
+
+            //L2 Fehler berechnen. Meine Loesung vs richtige Loesung
+            ur_L2_Error = helical_iterative.ur.L2Error(exSol_ur);
+            ueta_L2_Error = helical_iterative.ueta.L2Error(exSol_ueta);
+            uxi_L2_Error = helical_iterative.uxi.L2Error(exSol_uxi);
+            pressure_L2_Error = helical_iterative.Pressure.L2Error(exSol_pressure);
+
             h = 2 * Math.PI / gridSize;
 
-            double thresholdPsi_ = 5e-9; // Poly Order 5
-            Console.WriteLine("The psiErrorLx error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, psiErrorLx / maxAmplitude);
-            Console.WriteLine("If the psiErrorLx error is {0} < {1} than good :) ", psiErrorLx, thresholdPsi_);
-            Assert.LessOrEqual(psiErrorLx / maxAmplitude, thresholdPsi_, "Error. psiErrorLx not fulfilled");
-
             double thresholdUr_ = 1e-11; // Poly Order 5
-            Console.WriteLine("The urErrorLx/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, urErrorLx / maxAmplitude);
-            Console.WriteLine("If the urErrorLx / maxAmplitude error is {0} < {1} than good :) ", urErrorLx / maxAmplitude, thresholdUr_);
-            Assert.LessOrEqual(urErrorLx / maxAmplitude, thresholdUr_, "Error. urErrorL2 not fulfilled");
+            Console.WriteLine("The ur_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ur_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ur_L2_Error / maxAmplitude error is {0} < {1} than good :) ", ur_L2_Error / maxAmplitude, thresholdUr_);
+            Assert.LessOrEqual(ur_L2_Error / maxAmplitude, thresholdUr_, "Error. ur_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUeta_ = 1e-11; // Poly Order 5
-            Console.WriteLine("The uetaErrorLx error for {0} xi-Cells and {1} is = {2}", h, r_min, uetaErrorLx / maxAmplitude);
-            Console.WriteLine("If the uetaErrorLx error is {0} < {1} than good :) ", uetaErrorLx / maxAmplitude, thresholdUeta_);
-            Assert.LessOrEqual(uetaErrorLx / maxAmplitude, thresholdUeta_, "Error. uetaErrorL2 not fulfilled");
+            Console.WriteLine("The ueta_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, ueta_L2_Error / maxAmplitude);
+            Console.WriteLine("If the ueta_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", ueta_L2_Error / maxAmplitude, thresholdUeta_);
+            Assert.LessOrEqual(ueta_L2_Error / maxAmplitude, thresholdUeta_, "Error. ueta_L2_Error/ maxAmplitude not fulfilled");
 
             double thresholdUxi_ = 1e-11; // Poly Order 5
-            Console.WriteLine("The uxiErrorL2 error for {0} xi-Cells and {1} is = {2}", h, r_min, uxiErrorLx / maxAmplitude);
-            Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorLx / maxAmplitude, thresholdUxi_);
-            Assert.LessOrEqual(uxiErrorLx / maxAmplitude, thresholdUxi_, "Error. uxiErrorL2 not fulfilled");
+            Console.WriteLine("The uxi_L2_Error/ maxAmplitude error for {0} xi-Cells and {1} is = {2}", h, r_min, uxi_L2_Error / maxAmplitude);
+            Console.WriteLine("If the uxi_L2_Error/ maxAmplitude error is {0} < {1} than good :) ", uxi_L2_Error / maxAmplitude, thresholdUxi_);
+            Assert.LessOrEqual(uxi_L2_Error / maxAmplitude, thresholdUxi_, "Error. uxi_L2_Error/ maxAmplitude not fulfilled");
+
+            double thresholdPsi_ = 5e-9; // Poly Order 5
+            Console.WriteLine("The pressure_L2_Error / maxAmplitude error for {0} xi-Cells and rMin = {1} is = {2}", h, r_min, pressure_L2_Error / maxAmplitude);
+            Console.WriteLine("If the pressure_L2_Error / maxAmplitude error is {0} < {1} than good :) ", pressure_L2_Error / maxAmplitude, thresholdPsi_);
+            Assert.LessOrEqual(pressure_L2_Error / maxAmplitude, thresholdPsi_, "Error. pressure_L2_Error not fulfilled");
 
 
             CoordinateMapping helicalSol_direct = new CoordinateMapping(helical_direct.ur, helical_direct.ueta, helical_direct.uxi, helical_direct.Pressure);
             CoordinateVector helicalSolVec_direct = new CoordinateVector(helicalSol_direct);
 
-            CoordinateMapping helicalSol_iterativ = new CoordinateMapping(helical_iterativ.ur, helical_iterativ.ueta, helical_iterativ.uxi, helical_iterativ.Pressure);
+            CoordinateMapping helicalSol_iterativ = new CoordinateMapping(helical_iterative.ur, helical_iterative.ueta, helical_iterative.uxi, helical_iterative.Pressure);
             CoordinateVector helicalSolVec_iterativ = new CoordinateVector(helicalSol_iterativ);
 
             // calculate the difference
@@ -1273,9 +1373,9 @@ namespace StokesHelical_Ak.TestSpartial
 
             double diff_threshold = 4e-7; // Poly Order 5
             //double diff_threshold = 4e-5; // Poly Order 4
-            Console.WriteLine("L2 norm of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm());
-            Console.WriteLine("If L2 norm of the difference is {0} < {1} than good :) ", diff.L2Norm(), diff_threshold);
-            Assert.LessOrEqual(diff.L2Norm(), diff_threshold, "Error. L2 norm of the difference not fulfilled");
+            Console.WriteLine("L2 norm / maxAmplitude of the difference between iterativ Solver and direct solver is = {0}", diff.L2Norm() / maxAmplitude);
+            Console.WriteLine("If L2 norm / maxAmplitude of the difference is {0} < {1} than good :) ", diff.L2Norm() / maxAmplitude, diff_threshold);
+            Assert.LessOrEqual(diff.L2Norm() / maxAmplitude, diff_threshold, "Error. L2 norm of the difference not fulfilled");
 
         }
 
