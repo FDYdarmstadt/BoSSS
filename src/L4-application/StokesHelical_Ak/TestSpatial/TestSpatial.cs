@@ -128,8 +128,8 @@ namespace StokesHelical_Ak.TestSpartial
                             Console.WriteLine($"pressure L2 Error/{amplitude[k]}: {pressure_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0)");
 
 
-                            Assert.LessOrEqual(ur_L2_Error[i] / amplitude[k], 1.0e-11, $"ur L2 Error out of range: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0 )");
-                            Assert.LessOrEqual(pressure_L2_Error[i] / amplitude[k], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0)");
+                            Assert.LessOrEqual(ur_L2_Error[i] / amplitude[k], 1.0e-11, $"ur L2 Error / amplitude out of range: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0 )");
+                            Assert.LessOrEqual(pressure_L2_Error[i] / amplitude[k], 1.0e-10, $"pressure L2 Error / amplitude  out of range: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0)");
                         }
                     }
                     using (var gp = new Gnuplot()) {
@@ -162,12 +162,12 @@ namespace StokesHelical_Ak.TestSpartial
                     }
                     if (pOrder == 5) {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // error thresholds are specified for the SECOUND!!!!! finest grid with pOrder == 5 
+                        // error thresholds are specified for finest grid with pOrder == 5 
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        Assert.LessOrEqual(ur_L2_Error[1] / amplitude[k], 1.0e-10, $"ur L2 Error out of range: {ur_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
-                        Assert.LessOrEqual(uxi_L2_Error[1] / amplitude[k], 1.0e-10, $"uxi L2 Error out of range: {uxi_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(ueta_L2_Error[1] / amplitude[k], 1.0e-10, $"ueta L2 Error out of range: {ueta_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(pressure_L2_Error[1] / amplitude[k], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ur_L2_Error[0] / amplitude[k], 1.0e-10, $"ur L2 Error  / amplitude out of range: {ur_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
+                        Assert.LessOrEqual(uxi_L2_Error[0] / amplitude[k], 1.0e-10, $"uxi L2 Error  / amplitude out of range: {uxi_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ueta_L2_Error[0] / amplitude[k], 1.0e-10, $"ueta L2 Error  / amplitude out of range: {ueta_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(pressure_L2_Error[0] / amplitude[k], 1.0e-10, $"pressure L2 Error  / amplitude out of range: {pressure_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
                     }
                 }
             }
@@ -297,12 +297,12 @@ namespace StokesHelical_Ak.TestSpartial
                     }
                     if (pOrder == 5) {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // error thresholds are specified for the SECOUND!!!!! finest grid with pOrder == 5 
+                        // error thresholds are specified for the finest grid with pOrder == 5 
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        Assert.LessOrEqual(ur_L2_Error[1] / amplitude[k], 1.0e-10, $"ur L2 Error out of range: {ur_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
-                        Assert.LessOrEqual(uxi_L2_Error[1] / amplitude[k], 1.0e-10, $"uxi L2 Error out of range: {uxi_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(ueta_L2_Error[1] / amplitude[k], 1.0e-10, $"ueta L2 Error out of range: {ueta_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(pressure_L2_Error[1] / amplitude[k], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ur_L2_Error[0] / amplitude[k], 1.0e-10, $"ur L2 Error / amplitude out of range: {ur_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
+                        Assert.LessOrEqual(uxi_L2_Error[0] / amplitude[k], 1.0e-10, $"uxi L2 Error / amplitude out of range: {uxi_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ueta_L2_Error[0] / amplitude[k], 1.0e-10, $"ueta L2 Error / amplitude out of range: {ueta_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(pressure_L2_Error[0] / amplitude[k], 1.0e-10, $"pressure L2 Error / amplitude out of range: {pressure_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
                     }
                 }
             }
@@ -843,25 +843,25 @@ namespace StokesHelical_Ak.TestSpartial
                             pressure_L2_Error[i] = solver.Pressure.L2Error(exSol_pressure[i]);
 
 
-                            Console.WriteLine($"ur       L2 Error: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0)");
-                            Console.WriteLine($"uxi      L2 Error: {uxi_L2_Error[i]:0.###e-00}");
-                            Console.WriteLine($"ueta     L2 Error: {ueta_L2_Error[i]:0.###e-00}");
-                            Console.WriteLine($"pressure L2 Error: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0)");
+                            Console.WriteLine($"ur       L2 Error/{amplitude[k]}: {ur_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                            Console.WriteLine($"uxi      L2 Error/{amplitude[k]}: {uxi_L2_Error[i] / amplitude[k]:0.###e-00}");
+                            Console.WriteLine($"ueta     L2 Error/{amplitude[k]}: {ueta_L2_Error[i] / amplitude[k]:0.###e-00}");
+                            Console.WriteLine($"pressure L2 Error/{amplitude[k]}: {pressure_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0)");
 
 
-                            Assert.LessOrEqual(ur_L2_Error[i], 1.0e-11, $"ur L2 Error out of range: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0 )");
-                            Assert.LessOrEqual(pressure_L2_Error[i], 1.0e-10, $"Pressure L2 Error out of range: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0 )");
+                            Assert.LessOrEqual(ur_L2_Error[i] / amplitude[k], 1.0e-11, $"ur L2 Error / amplitude out of range: {ur_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
+                            Assert.LessOrEqual(pressure_L2_Error[i] / amplitude[k], 1.0e-10, $"Pressure L2 Error  / amplitude out of range: {pressure_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
                         }
                     }
 
                     using (var gp = new Gnuplot()) {
                         gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
-                        gp.OutputFile = $"SpatialConvergence_with_R0fix-p{pOrder}.png";
-                        gp.SetTitle($"SpatialConvergence_Hagen_Poiseulle_with_R0fix-p{pOrder}");
-                        gp.PlotLogXLogY(h, ur_L2_Error, title: "ur", format: new PlotFormat("-sr"));
-                        gp.PlotLogXLogY(h, ueta_L2_Error, title: "ueta", format: new PlotFormat("-^b"));
-                        gp.PlotLogXLogY(h, uxi_L2_Error, title: "uxi", format: new PlotFormat("-xm"));
-                        gp.PlotLogXLogY(h, pressure_L2_Error, title: "psi", format: new PlotFormat("-*k"));
+                        gp.OutputFile = $"SpatialConvergence Amplitude {amplitude[k]} with R0fix p{pOrder}.png";
+                        gp.SetTitle($"Spatial Convergence Centrifugal Flow Amplitude {amplitude[k]} with R0fix p{pOrder}");
+                        gp.PlotLogXLogY(h, ur_L2_Error, title: $"ur L2error/{amplitude[k]}", format: new PlotFormat("-sr"));
+                        gp.PlotLogXLogY(h, ueta_L2_Error, title: $"ueta L2error/{amplitude[k]}", format: new PlotFormat("-^b"));
+                        gp.PlotLogXLogY(h, uxi_L2_Error, title: $"uxi L2error/{amplitude[k]}", format: new PlotFormat("-xm"));
+                        gp.PlotLogXLogY(h, pressure_L2_Error, title: $"psi L2error/{amplitude[k]}", format: new PlotFormat("-*k"));
                         gp.RunAndExit();
                         //Console.WriteLine("endless loop");
                         //while(true) ;
@@ -886,10 +886,10 @@ namespace StokesHelical_Ak.TestSpartial
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // error thresholds are specified for the finest grid with pOrder == 5
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
-                        Assert.LessOrEqual(ur_L2_Error[1] / amplitude[k], 1.0e-10, $"ur L2 Error out of range: {ur_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
-                        Assert.LessOrEqual(uxi_L2_Error[1] / amplitude[k], 1.0e-10, $"uxi L2 Error out of range: {uxi_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(ueta_L2_Error[1] / amplitude[k], 1.0e-10, $"ueta L2 Error out of range: {ueta_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(pressure_L2_Error[1] / amplitude[k], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ur_L2_Error[0] / amplitude[k], 1.0e-10, $"ur L2 Error out of range: {ur_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
+                        Assert.LessOrEqual(uxi_L2_Error[0] / amplitude[k], 1.0e-10, $"uxi L2 Error out of range: {uxi_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ueta_L2_Error[0] / amplitude[k], 1.0e-10, $"ueta L2 Error out of range: {ueta_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(pressure_L2_Error[0] / amplitude[k], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
                     }
                 }
             }
@@ -977,26 +977,25 @@ namespace StokesHelical_Ak.TestSpartial
                             ueta_L2_Error[i] = solver.ueta.L2Error(exSol_ueta[i]);
                             pressure_L2_Error[i] = solver.Pressure.L2Error(exSol_pressure[i]);
 
+                            Console.WriteLine($"ur       L2 Error/{amplitude[k]}: {ur_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                            Console.WriteLine($"uxi      L2 Error/{amplitude[k]}: {uxi_L2_Error[i] / amplitude[k]:0.###e-00}");
+                            Console.WriteLine($"ueta     L2 Error/{amplitude[k]}: {ueta_L2_Error[i] / amplitude[k]:0.###e-00}");
+                            Console.WriteLine($"pressure L2 Error/{amplitude[k]}: {pressure_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0)");
 
-                            Console.WriteLine($"ur       L2 Error: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0)");
-                            Console.WriteLine($"uxi      L2 Error: {uxi_L2_Error[i]:0.###e-00}");
-                            Console.WriteLine($"ueta     L2 Error: {ueta_L2_Error[i]:0.###e-00}");
-                            Console.WriteLine($"pressure L2 Error: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0)");
 
-
-                            Assert.LessOrEqual(ur_L2_Error[i], 1.0e-11, $"ur L2 Error out of range: {ur_L2_Error[i]:0.###e-00} (should be close to 0.0 )");
-                            Assert.LessOrEqual(pressure_L2_Error[i], 1.0e-10, $"Pressure L2 Error out of range: {pressure_L2_Error[i]:0.###e-00} (should be close to 0.0 )");
+                            Assert.LessOrEqual(ur_L2_Error[i] / amplitude[k], 1.0e-11, $"ur L2 Error / amplitude out of range: {ur_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
+                            Assert.LessOrEqual(pressure_L2_Error[i] / amplitude[k], 1.0e-10, $"Pressure L2 Error/ amplitude out of range: {pressure_L2_Error[i] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
                         }
                     }
 
                     using (var gp = new Gnuplot()) {
                         gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
-                        gp.OutputFile = $"SpatialConvergence_with_R0fix-p{pOrder}.png";
-                        gp.SetTitle($"SpatialConvergence_Hagen_Poiseulle_with_R0fix-p{pOrder}");
-                        gp.PlotLogXLogY(h, ur_L2_Error, title: "ur", format: new PlotFormat("-sr"));
-                        gp.PlotLogXLogY(h, ueta_L2_Error, title: "ueta", format: new PlotFormat("-^b"));
-                        gp.PlotLogXLogY(h, uxi_L2_Error, title: "uxi", format: new PlotFormat("-xm"));
-                        gp.PlotLogXLogY(h, pressure_L2_Error, title: "psi", format: new PlotFormat("-*k"));
+                        gp.OutputFile = $"SpatialConvergence Amplitude {amplitude[k]} with R0fix p{pOrder}.png";
+                        gp.SetTitle($"Spatial Convergence Centrifugal Flow Amplitude {amplitude[k]} with R0fix p{pOrder}");
+                        gp.PlotLogXLogY(h, ur_L2_Error, title: $"ur L2error/{amplitude[k]}", format: new PlotFormat("-sr"));
+                        gp.PlotLogXLogY(h, ueta_L2_Error, title: $"ueta L2error/{amplitude[k]}", format: new PlotFormat("-^b"));
+                        gp.PlotLogXLogY(h, uxi_L2_Error, title: $"uxi L2error/{amplitude[k]}", format: new PlotFormat("-xm"));
+                        gp.PlotLogXLogY(h, pressure_L2_Error, title: $"psi L2error/{amplitude[k]}", format: new PlotFormat("-*k"));
                         gp.RunAndExit();
                         //Console.WriteLine("endless loop");
                         //while(true) ;
@@ -1021,10 +1020,10 @@ namespace StokesHelical_Ak.TestSpartial
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // error thresholds are specified for the finest grid with pOrder == 5
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
-                        Assert.LessOrEqual(ur_L2_Error[1] / amplitude[k], 1.0e-10, $"ur L2 Error out of range: {ur_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
-                        Assert.LessOrEqual(uxi_L2_Error[1] / amplitude[k], 1.0e-10, $"uxi L2 Error out of range: {uxi_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(ueta_L2_Error[1] / amplitude[k], 1.0e-10, $"ueta L2 Error out of range: {ueta_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
-                        Assert.LessOrEqual(pressure_L2_Error[1] / amplitude[k], 1.0e-10, $"pressure L2 Error out of range: {pressure_L2_Error[1] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ur_L2_Error[0] / amplitude[k], 1.0e-10, $"ur L2 Error / amplitude out of range: {ur_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0 )");
+                        Assert.LessOrEqual(uxi_L2_Error[0] / amplitude[k], 1.0e-10, $"uxi L2 Error / amplitude out of range: {uxi_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(ueta_L2_Error[0] / amplitude[k], 1.0e-10, $"ueta L2 Error / amplitude out of range: {ueta_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
+                        Assert.LessOrEqual(pressure_L2_Error[0] / amplitude[k], 1.0e-9, $"pressure L2 Error / amplitude out of range: {pressure_L2_Error[0] / amplitude[k]:0.###e-00} (should be close to 0.0)");
                     }
                 }
             }

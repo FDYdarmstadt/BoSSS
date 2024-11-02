@@ -63,7 +63,7 @@ namespace StokesHelical_Ak {
                 Console.WriteLine(";");
             }
 
-            StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
+            // StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
 
             // StokesHelical_Ak.TestSpartial.TestSpatial.SteadyHagenPoiseulle_VarRe_Stokes(3);
             //c.ImmediatePlotPeriod = 1;

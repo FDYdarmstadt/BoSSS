@@ -85,22 +85,26 @@ namespace StokesHelical_Ak {
             };
             #endregion
 
-            // Timestepping
+            // Time Stepping
             // ==============
-            #region TimeStepping
-            double dt = Tend / (dtRefining * 10);
+            #region Timestepping
+            if (Tend >= 10E10) {
+                Ctrl.dtFixed = Tend;
+                Ctrl.NoOfTimesteps = 1;
+                Ctrl.steady = true;
+            } else {
+                Ctrl.dtFixed = Tend / (dtRefining * 100);
+                Ctrl.NoOfTimesteps = dtRefining * 100;
+                Ctrl.steady = false;
+            }
 
-            Ctrl.dtFixed = dt;
-            if(bdfOrder == 3) {
+            if (bdfOrder == 3) {
                 Ctrl.TimeSteppingScheme = TimeSteppingScheme.BDF3;
-            } else if(bdfOrder == 1) {
+            } else if (bdfOrder == 1) {
                 Ctrl.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             } else {
                 throw new ArgumentException("Unsupported BDF scheme: " + bdfOrder);
             }
-            //Ctrl.NoOfTimesteps = dtRefining * 200*4;
-            Ctrl.NoOfTimesteps = dtRefining;
-            Ctrl.steady = false;
             #endregion
             // Initial Values
             // ==============
