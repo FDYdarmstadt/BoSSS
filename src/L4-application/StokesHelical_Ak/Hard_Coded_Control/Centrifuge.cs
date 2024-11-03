@@ -94,8 +94,8 @@ namespace StokesHelical_Ak {
                 Ctrl.NoOfTimesteps = 1;
                 Ctrl.steady = true;
             } else {
-                Ctrl.dtFixed = Tend / (dtRefining * 100);
-                Ctrl.NoOfTimesteps = dtRefining * 100;
+                Ctrl.dtFixed = Tend / (dtRefining);
+                Ctrl.NoOfTimesteps = dtRefining;
                 Ctrl.steady = false;
             }
 
