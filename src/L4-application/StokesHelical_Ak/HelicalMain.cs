@@ -394,11 +394,6 @@ namespace StokesHelical_Ak {
 
         }
 
-
-
-
-
-
         //Penalty Factor
         //============================================================//
         /// <summary>
@@ -488,7 +483,7 @@ namespace StokesHelical_Ak {
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             Console.WriteLine("Mit den RB auf Muss der PRP auf true sein!");//
             this.Control.PressureReferencePoint = true;
-            if(Control.rMin < 10e-6) {
+            if (Control.rMin < 10e-6) {
                 this.Control.R0fixOn = true;
                 if(Control.DDD_Man_Sol == true) {
                     if(Control.steady == true) {
@@ -572,7 +567,7 @@ namespace StokesHelical_Ak {
                 diffOp_implicit.EquationComponents["etamom"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermEta());
                 diffOp_implicit.EquationComponents["konti"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermConti());
             }
-            // Set Amplitude of HagenPoeuseulle, or rotating disc. Therefore, not in if statement
+            // Set max Amplitude of Respective Flow (HagenPoeuseulle, Centrifuge, Gaglilei, DDD , ...)
             Globals.MaxAmp = this.Control.maxAmpli;
             if(Control.HagenPoisseulle) {
                 diffOp_implicit.EquationComponents["zmom"].Add(new StokesHelical_Ak.ForcingTerms.Hagen_Poiseulle.ForcingTermXi_Hagen());
@@ -678,7 +673,7 @@ namespace StokesHelical_Ak {
                     Assert.IsTrue(Control.R0fixOn, "R0_fix should be true");
                     m_Splitting_Timestepper.Solve(phystime + dt, myR0fix, this.Control.restartTimeStep, TimestepInt, this.Control.RestartInfo != null, Unnn_restart_, Unn_restart_, Un_restart_, this.Control.GetBDFOrder());
                     // Ruecktransformation: note, fk, 11apr24: moved into Solve
-                    // myR0fix.CheckSolutionR0Compatibility(this.CurrentSolution);
+                     myR0fix.CheckSolutionR0Compatibility(this.CurrentSolution);
                 } else {
                     m_Splitting_Timestepper.Solve(phystime + dt, this.Control.restartTimeStep, TimestepInt, this.Control.RestartInfo != null, Unnn_restart_, Unn_restart_, Un_restart_, this.Control.GetBDFOrder());
                 }
@@ -693,8 +688,6 @@ namespace StokesHelical_Ak {
                 this.ResLogger.NextTimestep(false);
                 CoordinateMapping helicalSol = new CoordinateMapping(ur, uxi, ueta, Pressure);
                 CoordinateVector helicalSolVec = new CoordinateVector(helicalSol);
-                //helicalSolVec.SaveToTextFile($"After_PC_Solution_StokesSystem_with_dt={dt}.txt");
-                //helicalSolVec.SaveToTextFile("helicalSolution.txt");
                 return dt;
             }
         }

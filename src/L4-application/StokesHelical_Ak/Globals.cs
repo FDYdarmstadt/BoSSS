@@ -155,7 +155,7 @@ namespace StokesHelical_Ak {
         public static bool pressureStabilConti = false;
         public static bool pressureStabilEtaMom = false;
 
-        public static double MaxAmp = 5.0;
+        public static double MaxAmp = 1;
     }
 
 

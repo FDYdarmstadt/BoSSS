@@ -50,7 +50,6 @@ namespace StokesHelical_Ak {
         private ISparseSolver hiSolver;
         public HelicalControl() {
             base.NoOfMultigridLevels = 10000;
-            base.ImmediatePlotPeriod = 1;
             base.LinearSolver = new DirectSolver.Config() { WhichSolver = DirectSolver._whichSolver.PARDISO, };
             this.steady = false;
         }
@@ -168,7 +167,7 @@ namespace StokesHelical_Ak {
         public double rMin = 0.1;
 
         [DataMember]
-        public double maxAmpli = 0.01;
+        public double maxAmpli = 1;
 
         [DataMember]
         public double rMax = 1;

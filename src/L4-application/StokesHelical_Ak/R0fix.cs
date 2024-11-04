@@ -621,8 +621,8 @@ namespace StokesHelical_Ak {
                     Console.WriteLine($"R0Fix: {variables[varIndex]}, zero expected; AbsMax = {Math.Max(result_in.Min().MPIMin().Abs(), result_in.Max().MPIMax().Abs()):0.###e-00} (Min|Max Value = {result_in.Min().MPIMin():0.###e-00} | {result_in.Max().MPIMax():0.###e-00})");
 
                     if(throwException) {
-                        Assert.Less(result_in.Max().MPIMax().Abs(), 1E-14, "R0fix_exeption: Max value for {0} should be less than {2} but is {1}", variables[varIndex], result_in.Max(), 1E-14);
-                        Assert.Less(result_in.Min().MPIMin().Abs(), 1E-14, "R0fix_exeption: Min value for {0} should be less than {2} but is {1}", variables[varIndex], result_in.Min(), 1E-14);
+                        Assert.Less(result_in.Max().MPIMax().Abs(), 1E-14/ Globals.MaxAmp, "R0fix_exeption: Max value for {0} should be less than {2} but is {1} (Devided by Max Amplitude)", variables[varIndex], result_in.Max(), 1E-14 / Globals.MaxAmp);
+                        Assert.Less(result_in.Min().MPIMin().Abs(), 1E-14/ Globals.MaxAmp, "R0fix_exeption: Min value for {0} should be less than {2} but is {1} (Devided by Max Amplitude)", variables[varIndex], result_in.Min(), 1E-14 / Globals.MaxAmp);
                     }
                 } else if(varIndex >= 2) {
                     // Check for zero gradient in results

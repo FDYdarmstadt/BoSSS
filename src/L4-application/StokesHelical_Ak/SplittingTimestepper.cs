@@ -419,7 +419,7 @@ namespace StokesHelical_Ak {
                 }
 
                 if (diff / denNom <= 10E-6) {
-                    Un.SaveToTextFile($"Solution_StokesSystem_with_dt={this.dt}");
+                    // Un.SaveToTextFile($"Solution_StokesSystem_with_dt={this.dt}");
                     //RHS.SaveToTextFile($"RHS_StokesSystem_with_dt={this.dt}");
                     //Assert.That(diff / denNom >= 10E-3, "SteadyStateReached");
                 }
@@ -590,28 +590,18 @@ namespace StokesHelical_Ak {
 
         private void ApplyBDF1(double[] RHS) {
 
-            //double errUn_l2 = Un.MPI_L2Dist(Uinfty);
-            //Console.WriteLine("   errUn_l2 = " + errUn_l2);
-            //Un.SetV(Uinfty);
-
             // MassMatrix
             MassMatrix.SpMV(1.0 / dt, Un, 1.0, RHS);
             // RHS
             RHS.AccV(-1.0, Cn);
 
-            //var Conv = this.Uvec.CloneAs();
-            //Conv.RenameFields(i => "Conv" + i);
-            //Conv.SetV(Cn);
-            //Tecplot.PlotFields(Conv.Fields, "convective", 0.0, 3);
         }
-        private void CheckNecassarityOfPRP(BlockMsrMatrix oPmatrix, UnsetteledCoordinateMapping map, bool containsR0fix) {
-
-
+        private bool CheckNecassarityOfPRP(BlockMsrMatrix oPmatrix, UnsetteledCoordinateMapping map, bool containsR0fix) {
 
             // Definition
             double[] result1 = new double[map.LocalLength];
             double[] result2 = new double[map.LocalLength];
-            //double[] random = new double[map.GlobalCount];
+
             var random = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
             var random_With_Pres_Offset = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
 

@@ -31,13 +31,11 @@ namespace StokesHelical_Ak {
         /// ATTENTION!!!!!!! Singularity at r =0;
         /// Exact Solution for helically symetric Navier Stokes Equation. (Dierkes et. al. 2020, Equation )
         /// </summary>
-        public static HelicalControl Gali_Invar_Sol(string _DbPath = null, int degree = 2, int noOfCellsR = 4, int noOfCellsXi = 4, int dtRefining = 128, int bdfOrder = 1, double Tend = 2 * Math.PI, double rMin = 0) {
+        public static HelicalControl Gali_Invar_Sol(string _DbPath = null, int degree = 2, int noOfCellsR = 4, int noOfCellsXi = 4, int dtRefining = 128, int bdfOrder = 1, double Tend = 2 * Math.PI, double MaxAmp = 0.5,double rMin = 0) {
 
             HelicalControl Ctrl = new HelicalControl();
             #region db
             Ctrl.DbPath = _DbPath;
-
-            const double MaxAmp = 0.5;
             const double t0 = 2;
 
             if(rMin != 0) {

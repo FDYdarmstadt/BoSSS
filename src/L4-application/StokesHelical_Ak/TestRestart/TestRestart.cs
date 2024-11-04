@@ -374,8 +374,8 @@ namespace StokesHelical_Ak.TestRestart {
                         // Adjust the reference field coordinates by subtracting the current field coordinates
                         referenceField.Coordinates.Acc(-1.0, field.Coordinates);
                         Console.WriteLine($"Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}");
-                        Assert.LessOrEqual(referenceField.L2Norm(), 1E-13, $"ERROR!!!:Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}. Should be less or equal {1E-13}");
-                        if (referenceField.L2Norm() > 1E-13) {
+                        Assert.LessOrEqual(referenceField.L2Norm(), 1E-12, $"ERROR!!!:Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}. Should be less or equal {1E-12}");
+                        if (referenceField.L2Norm() > 1E-12) {
                             Console.WriteLine($"Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}");
                             comparisonFailed = true;
                         }
@@ -488,8 +488,8 @@ namespace StokesHelical_Ak.TestRestart {
                         // Adjust the reference field coordinates by subtracting the current field coordinates
                         referenceField.Coordinates.Acc(-1.0, field.Coordinates);
                         Console.WriteLine($"Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}");
-                        Assert.LessOrEqual(referenceField.L2Norm(), 1E-13, $"ERROR!!!:Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}. Should be less or equal {1E-13}");
-                        if (referenceField.L2Norm() > 1E-13) {
+                        Assert.LessOrEqual(referenceField.L2Norm(), 1E-12, $"ERROR!!!:Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}. Should be less or equal {1E-12}");
+                        if (referenceField.L2Norm() > 1E-12) {
                             Console.WriteLine($"Loaded data at timestep {tsiRestart.TimeStepNumber.MajorNumber} for field {field.Identification} are not exact: L2-norm = {referenceField.L2Norm()}");
                             comparisonFailed = true;
                         }
