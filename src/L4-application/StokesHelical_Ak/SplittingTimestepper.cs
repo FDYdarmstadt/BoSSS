@@ -596,7 +596,7 @@ namespace StokesHelical_Ak {
             RHS.AccV(-1.0, Cn);
 
         }
-        private bool CheckNecassarityOfPRP(BlockMsrMatrix oPmatrix, UnsetteledCoordinateMapping map, bool containsR0fix) {
+        private void CheckNecassarityOfPRP(BlockMsrMatrix oPmatrix, UnsetteledCoordinateMapping map, bool containsR0fix) {
 
             // Definition
             double[] result1 = new double[map.LocalLength];
