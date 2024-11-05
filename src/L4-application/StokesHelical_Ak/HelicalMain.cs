@@ -64,13 +64,13 @@ namespace StokesHelical_Ak {
             }
 
             // StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
-
+            var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:8,noOfCellsXi:8,Tend:10E20);
             // StokesHelical_Ak.TestSpartial.TestSpatial.SteadyHagenPoiseulle_VarRe_Stokes(3);
             //c.ImmediatePlotPeriod = 1;
             //c.NoOfTimesteps = 5;
-            //var solver = new HelicalMain();
-            //solver.Init(c);
-            //solver.RunSolverMode();
+            var solver = new HelicalMain();
+            solver.Init(fisch);
+            solver.RunSolverMode();
             //Process.Start("mpiexec");
             ////StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
             ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix
@@ -145,9 +145,6 @@ namespace StokesHelical_Ak {
         SinglePhaseField uetaError;
         SinglePhaseField psiError;
 
-        // Attributes for fields (Names), initialization of DG fields
-        //==============================================================
-
         // Velocity
 
         /// <summary>
@@ -181,24 +178,6 @@ namespace StokesHelical_Ak {
         SinglePhaseField Residual_MomR;
 
         CoordinateVector m_UnknownsVector = null;
-
-        ///// <summary>
-        ///// The dependent variables
-        ///// </summary>
-        //CoordinateVector UnknownsVector {
-        //    get {
-        //        if(m_UnknownsVector == null)
-        //            m_UnknownsVector = new CoordinateVector(ur, uxi, ueta, Pressure);
-        //        return m_UnknownsVector;
-        //    }
-        //}
-
-        //CoordinateMapping UnknownsMap {
-        //    get {
-        //        return UnknownsVector.Mapping;
-        //    }
-        //}
-
 
         CoordinateVector m_ResidualVector = null;
         /// <summary>
@@ -481,8 +460,6 @@ namespace StokesHelical_Ak {
         /// Setzt Operator Matrix aus Konti und Impulsgleichungen zusammen
         /// </summary>
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            Console.WriteLine("Mit den RB auf Muss der PRP auf true sein!");//
-            this.Control.PressureReferencePoint = true;
             if (Control.rMin < 10e-6) {
                 this.Control.R0fixOn = true;
                 if(Control.DDD_Man_Sol == true) {
@@ -569,7 +546,10 @@ namespace StokesHelical_Ak {
             }
             // Set max Amplitude of Respective Flow (HagenPoeuseulle, Centrifuge, Gaglilei, DDD , ...)
             Globals.MaxAmp = this.Control.maxAmpli;
-            if(Control.HagenPoisseulle) {
+            // +++++++++++++++++++++++++
+            // Frocing Terms act like a Pressure Gradient
+            // +++++++++++++++++++++++++
+            if (Control.HagenPoisseulle) {
                 diffOp_implicit.EquationComponents["zmom"].Add(new StokesHelical_Ak.ForcingTerms.Hagen_Poiseulle.ForcingTermXi_Hagen());
                 diffOp_implicit.EquationComponents["etamom"].Add(new StokesHelical_Ak.ForcingTerms.Hagen_Poiseulle.ForcingTermEta_Hagen());
             }
@@ -608,17 +588,6 @@ namespace StokesHelical_Ak {
                 } else {
                     FieldsToPlot = m_IOFields.ToList();
                 }
-                string time_dep;
-                if(this.Control.steady == true) {
-                    time_dep = "Steady_";
-                } else {
-                    time_dep = "Transient_";
-                }
-                DateTime now = DateTime.Now;
-                string dateString = now.ToString("dd.MM.yyyy");
-
-                Assert.IsTrue(Control.PressureReferencePoint, "Pressure Refference Point should be true");
-
                 if(Control.rMin < 10e-6) {
                     Assert.IsTrue(Control.R0fixOn, "R0_fix should be thrue");
                 }
@@ -672,7 +641,6 @@ namespace StokesHelical_Ak {
                     }
                     Assert.IsTrue(Control.R0fixOn, "R0_fix should be true");
                     m_Splitting_Timestepper.Solve(phystime + dt, myR0fix, this.Control.restartTimeStep, TimestepInt, this.Control.RestartInfo != null, Unnn_restart_, Unn_restart_, Un_restart_, this.Control.GetBDFOrder());
-                    // Ruecktransformation: note, fk, 11apr24: moved into Solve
                      myR0fix.CheckSolutionR0Compatibility(this.CurrentSolution);
                 } else {
                     m_Splitting_Timestepper.Solve(phystime + dt, this.Control.restartTimeStep, TimestepInt, this.Control.RestartInfo != null, Unnn_restart_, Unn_restart_, Un_restart_, this.Control.GetBDFOrder());

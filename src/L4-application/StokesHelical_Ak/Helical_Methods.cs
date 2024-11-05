@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.Voronoi;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
@@ -79,13 +80,17 @@ namespace StokesHelical_Ak {
             if(OpMatrix != null) {
                 OpMatrix.CheckForNanOrInfM();
             }
-            // if(BC requires than PRP){ //What exactly needed ?!?
-            if(base.Control.PressureReferencePoint) {
+
+            // ++++++++++++++++++++++++++++++++
+            // Check if a Pressure Reference Point is Necassary?!?
+            // ++++++++++++++++++++++++++++++++
+            base.Control.PressureReferencePoint = CheckNecassarityOfPRP(OpMatrix, Mapping, Control.rMin < 10e-6);
+
+
+            if (base.Control.PressureReferencePoint) {
                 Console.WriteLine("Ref point is used");
                 SetPressureReferencePoint(new double[] { 0.5, 0.5 }, this.CurrentSolution.Mapping, 3, OpMatrix, OpAffine);
-                //}
             }
-            //}
             OpAffine.CheckForNanOrInfV();
 
             if(Control.rMin < 10e-6) {
@@ -240,6 +245,45 @@ namespace StokesHelical_Ak {
 
             CoordinateVector _Unn = new CoordinateVector(exactFields_nn);
             m_Splitting_Timestepper.SetInitialExact(dt, Time, _Unn, _Un);
+        }
+        private bool CheckNecassarityOfPRP(BlockMsrMatrix oPmatrix, UnsetteledCoordinateMapping map, bool containsR0fix) {
+
+            // Definition
+            double[] result1 = new double[map.LocalLength];
+            double[] result2 = new double[map.LocalLength];
+
+            var random = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
+            var random_With_Pres_Offset = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
+
+            double[] diff = new double[map.LocalLength];
+            // Fill in Randoms
+            random.FillRandom(0);
+            random_With_Pres_Offset.SetV(random); // random_With_Pres_Offset <- random // Creat a real Copy not Reference type!
+
+            var pres = random_With_Pres_Offset.Fields[3]; // Fields[3] for pressure of course
+            if (containsR0fix) {
+                var R0mask = R0fix.GetR0BndyCells(map.GridDat);
+                pres.AccConstant(1.0, R0mask.Complement());
+
+                if (map.MpiRank == 0) {
+                    pres.SetMeanValue(0, pres.GetMeanValue(0) + 1.0);
+                }
+            } else {
+                // ++++++++
+                // r0 >> 0
+                // ++++++++
+                pres.AccConstant(1.0);
+            }
+            // Matrix Vector Multiplication
+            oPmatrix.SpMV(1.0, random, 0.0, result1);
+            oPmatrix.SpMV(1.0, random_With_Pres_Offset, 0.0, result2);
+
+            diff.SetV(result2);
+            diff.AccV(-1.0, result1);
+
+            Assert.That(diff.MPI_L2Norm() > 1E-5, "Pressure is not FIXED! Residual should change at least by {0} but only changes {1} when constant pressure is added", 1E-5, diff.Max() - diff.Min());
+            // Pressure Reference Point is needed
+            return true;
         }
 
         private void After_SetInitialOrLoadRestart(double time) {

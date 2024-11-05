@@ -65,22 +65,13 @@ namespace StokesHelical_Ak {
 
 
         public static double B_term_(double r) {
-            //double last_r = -1;
-            //double last_form = double.NaN;
             double last_form;
-
-            //if (r == last_r) {
-            //    return last_form;
-            //} else {
-            //    last_r = r;
             if(b == 0 && r == 0) {
                 last_form = 1.0 / a;
             } else {
                 last_form = r / Math.Sqrt(a * a * r * r + b * b);
             }
-
             return last_form;
-            //}
         }
 
         public static bool AtZeroRadius(double r) {
@@ -154,7 +145,6 @@ namespace StokesHelical_Ak {
         public static bool steady = false;
         public static bool pressureStabilConti = false;
         public static bool pressureStabilEtaMom = false;
-
         public static double MaxAmp = 1;
     }
 

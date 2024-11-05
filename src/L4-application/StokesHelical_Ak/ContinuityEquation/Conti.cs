@@ -115,11 +115,6 @@ namespace StokesHelical_Ak {
 
             Acc += 0.5 * (U_IN[0] + U_OT[0]) * f_function * inp.Normal[0] * (V_IN - V_OT);            // Term 5      // term diff(UR(r,xi),r) 
             Acc += 0.5 * (U_IN[1] + U_OT[1]) * f_function / B_term * inp.Normal[1] * (V_IN - V_OT);   // Term 6      // term diff(UXI(r,xi),xi)
-
-
-            // pressure stabilization term, U[2] is the pressure
-            //Acc += 1 / Globals.nu * 2 * Math.PI / 16 * (U_IN[2] - U_OT[2]) * (V_IN - V_OT) * Globals.penaltyScaling(r);
-            //Acc += 1 / Globals.nu * 2 * Math.PI / ResolutionXI * (U_IN[2] - U_OT[2]) * (V_IN - V_OT) * Globals.penaltyScaling(r);
               
 
             if(Globals.pressureStabilConti == true) {
@@ -185,7 +180,7 @@ namespace StokesHelical_Ak {
 
 
                 // All Dead Code! Never true. See Details on DePietro 2013
-                //if(Globals.pressureStabilConti == true) {
+                // if(Globals.pressureStabilConti == true) {
                 //    Acc += 1 / Globals.nu * 2 * Math.PI / ResolutionXI * (U_IN[2] - UD[2]) * (V_IN) * Globals.penaltyScaling(r);
                 //}
 

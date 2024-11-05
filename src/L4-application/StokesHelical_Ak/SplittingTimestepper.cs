@@ -82,7 +82,7 @@ namespace StokesHelical_Ak {
             BoSSS.Solution.AdvancedSolvers.ISolverFactory lc,
             MultigridOperator.ChangeOfBasisConfig[][] mgconfig,
             AggregationGridData[] mgseq,
-            R0fix r0fix, double _rMin, bool _PRP) {
+            R0fix r0fix, double _rMin, bool _m_PRP) {
             Uvec = new CoordinateVector(__U);
             dt = __dt;
             Impl = __Impl;
@@ -90,7 +90,7 @@ namespace StokesHelical_Ak {
             m_mgconfig = mgconfig;
             m_R0fix = r0fix;
             m_rMin = _rMin;
-            m_PRP = _PRP;
+            m_PRP = _m_PRP;
 
             // generate implicit solver
             // ========================
@@ -98,9 +98,8 @@ namespace StokesHelical_Ak {
                 OpAffine = new double[Umap.LocalLength];
                 OpMatrix = new BlockMsrMatrix(Umap, Umap);
                 Impl(OpMatrix, OpAffine, Umap, __U.Fields.ToArray(), null, 0.0, false);
+                // Assume and Check if PRP is required
 
-                // Check if PRP is required
-                CheckNecassarityOfPRP(OpMatrix, Umap, _rMin < 10e-6);
             }
 
             // generate explicit evaluator
@@ -118,12 +117,7 @@ namespace StokesHelical_Ak {
                 MassMatrix = new BlockMsrMatrix(Umap, Umap);
                 mtxBuilder.ComputeMatrix(MassMatrix, dummy);
 
-                if (_PRP == true) { // if(BC requires PRP){ //What BC exactly need PRP ?!?
-                                    // ++++++++++++++++++++++++++++++++++++
-                                    // apply pressure reference to mass matrix
-                                    // (should not change anything, since the conti/pressure block is zero in the mass matrix)
-                                    // ++++++++++++++++++++++++++++++++++++
-
+                if (m_PRP == true) { 
                     // We don't manipulate the matrix, we only check that it fullfills
                     // the requirements imposed by the pressure reference point.
                     this.Umap.GridDat.LocatePoint(new double[] { 0.5, 0.5 }, out _, out long GlobalIndex, out _, out bool onthisProc);
@@ -138,11 +132,7 @@ namespace StokesHelical_Ak {
                         if (MassMatrix.GetNoOfNonZerosPerRow(iRowGl) != 0)
                             throw new ArithmeticException("pressure ref pt is to be used, but mass matrix is occupied in respective row.");
                     }
-                    //}
                 }
-
-
-
                 Debug.Assert(dummy.L2NormPow2() == 0);
 
                 double factor;
@@ -595,43 +585,6 @@ namespace StokesHelical_Ak {
             // RHS
             RHS.AccV(-1.0, Cn);
 
-        }
-        private void CheckNecassarityOfPRP(BlockMsrMatrix oPmatrix, UnsetteledCoordinateMapping map, bool containsR0fix) {
-
-            // Definition
-            double[] result1 = new double[map.LocalLength];
-            double[] result2 = new double[map.LocalLength];
-
-            var random = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
-            var random_With_Pres_Offset = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
-
-            double[] diff = new double[map.LocalLength];
-            // Fill in Randoms
-            random.FillRandom(0);
-            random_With_Pres_Offset.SetV(random); // random_With_Pres_Offset <- random // Creat a real Copy not Reference type!
-
-            var pres = random_With_Pres_Offset.Fields[3]; // Fields[3] for pressure of course
-            if (containsR0fix) {
-                var R0mask = R0fix.GetR0BndyCells(map.GridDat);
-                pres.AccConstant(1.0, R0mask.Complement());
-
-                if (map.MpiRank == 0) {
-                    pres.SetMeanValue(0, pres.GetMeanValue(0) + 1.0);
-                }
-            } else {
-                // ++++++++
-                // r0 >> 0
-                // ++++++++
-                pres.AccConstant(1.0);
-            }
-            // Matrix Vector Multiplication
-            oPmatrix.SpMV(1.0, random, 0.0, result1);
-            oPmatrix.SpMV(1.0, random_With_Pres_Offset, 0.0, result2);
-
-            diff.SetV(result2);
-            diff.AccV(-1.0, result1);
-
-            Assert.That(diff.MPI_L2Norm() > 1E-5, "Pressure is not FIXED! Residual should change at least by {0} but only changes {1} when constant pressure is added", 1E-5, diff.Max() - diff.Min());
         }
 
         private void ExecuteSolver(double[] RHS, int currentTimestep) {
