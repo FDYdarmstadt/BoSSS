@@ -65,7 +65,8 @@ namespace StokesHelical_Ak {
 
             // StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
             // var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:8,noOfCellsXi:8,Tend:10E20);
-            // StokesHelical_Ak.TestTransient.TestTransient.PseudoSteady_CF_Re_10_Navier_Stokes_with_R0fix(2);
+             StokesHelical_Ak.TestSpartial.TestSpatial.ConditionNumberScaling_DDD_without_R0fix(2);
+             //StokesHelical_Ak.TestTransient.TestTransient.PseudoSteady_CF_Re_10_Navier_Stokes_with_R0fix(2);
             //c.ImmediatePlotPeriod = 1;
             //c.NoOfTimesteps = 5;
             //var solver = new HelicalMain();

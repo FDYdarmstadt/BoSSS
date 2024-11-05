@@ -281,7 +281,7 @@ namespace StokesHelical_Ak {
             diff.SetV(result2);
             diff.AccV(-1.0, result1);
 
-            Assert.That(diff.MPI_L2Norm() > 1E-5, "Pressure is not FIXED! Residual should change at least by {0} but only changes {1} when constant pressure is added", 1E-5, diff.Max() - diff.Min());
+            Assert.That(diff.MPI_L2Norm() < 1E-5, "Pressure is not FIXED! We can and an constant in the pressure, without affecting the solution --> PRP true", 1E-5, diff.Max() - diff.Min());
             // Pressure Reference Point is needed
             return true;
         }

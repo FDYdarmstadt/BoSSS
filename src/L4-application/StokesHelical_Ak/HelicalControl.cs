@@ -83,7 +83,7 @@ namespace StokesHelical_Ak {
         public double penaltySafety = 4;
 
         [DataMember]
-        public bool PressureReferencePoint = true;
+        public bool PressureReferencePoint = false;
 
         [DataMember]
         public TermSwitch TermSwitch =
