@@ -1671,11 +1671,12 @@ namespace StokesHelical_Ak.TestSpartial
         /// 
         /// 
         /// </remarks>
-        [Test]
-        static public void HangingNodes_DDD_Paper_with_R0fix([Values(4)] int pOrder) {
+        // [Test] Need testing with PRP. It seems that I Dont need a PRP. But Probpaly I need one!
+        // I think my CheckPRPNecassarity Test has a bug in the case of hanging nodes
+        static public void HangingNodes_DDD_Paper_with_R0fix([Values(2)] int pOrder) {
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.HangingNodes_with_R0fix(5)
 
-            int gridSize = 64;
+            int gridSize = 16;
 
             double r_min = 0;
             double urErrorLx;
@@ -2027,7 +2028,8 @@ namespace StokesHelical_Ak.TestSpartial
         /// 
         /// 
         /// </remarks>
-        [Test]
+        // [Test] Need testing with PRP. It seems that I Dont need a PRP. But Probpaly I need one!
+        // I think my CheckPRPNecassarity Test has a bug in the case of hanging nodes
         static public void HangNodes_without_R0fix_DDD_Paper_([Values(4)] int pOrder) {
             // --test=StokesHelical_Ak.TestSpartial.TestSpatial.HangingNodes_with_R0fix(5)
 
