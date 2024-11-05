@@ -825,6 +825,10 @@ namespace StokesHelical_Ak.TestTransient
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
             //ilPSP.Environment.NumThreads = 1;
             var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 10);
+            // clear Inital Values
+            ctrlStat.InitialValues.Clear();
+            ctrlStat.InitialValues_Evaluators.Clear();
+            // Set Initial Values to 1
             ctrlStat.AddInitialValue("Pressure", new Formula("(X) =>1"));
             ctrlStat.AddInitialValue("ur", new Formula("(X) => 1"));
             ctrlStat.AddInitialValue("ueta", new Formula($"(X) => 1"));
@@ -889,7 +893,7 @@ namespace StokesHelical_Ak.TestTransient
             ctrlTransient.RestartInfo = new Tuple<Guid, TimestepNumber>(steadyStateSession, null); // 2nd arg null -> take last timestep;
             ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
             ctrlTransient.NavierStokes = NavierStokes;
-
+            ctrlTransient.ImmediatePlotPeriod = 1;
             using (var solverTransient = new HelicalMain()) {
                 solverTransient.Init(ctrlTransient);
                 solverTransient.RunSolverMode();
