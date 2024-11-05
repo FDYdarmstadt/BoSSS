@@ -388,6 +388,27 @@ namespace ValidationTestRunner {
         }
 
         /// <summary>
+        /// CapillaryWave Simulations
+        /// Section 6.1
+        /// </summary>
+        [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/*.ipynb")]
+        [Test]
+        static public void Run__CapillaryWave() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__ViscousEddies
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "CapillaryWave",
+                "CapillaryWave*",
+                "delete_CapillaryWave",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/CapillaryWave/CapillaryWave.ipynb");
+
+            Console.WriteLine("CapillaryWave @ FDYcluster");
+        }
+
+        /// <summary>
         /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
         /// Section 7.1
         /// </summary>
