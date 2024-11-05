@@ -77,7 +77,7 @@ namespace StokesHelical_Ak.TestSpartial
                 //ilPSP.Environment.NumThreads = 1;
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: amplitude[k]);
+                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: amplitude[k]);
                     }
                 }
                 // Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence_HP.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
@@ -212,7 +212,7 @@ namespace StokesHelical_Ak.TestSpartial
                 //ilPSP.Environment.NumThreads = 1;
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: amplitude[k]);
+                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: amplitude[k]);
                     }
                 }
                 // Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence_HP.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
@@ -334,7 +334,7 @@ namespace StokesHelical_Ak.TestSpartial
             for (int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        gridSeries[i] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: 400000);
+                        gridSeries[i] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: 400000);
                     }
 
                     // StencilCondNo-bndyUncut
@@ -384,7 +384,7 @@ namespace StokesHelical_Ak.TestSpartial
             for (int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        gridSeries[i] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: 40);
+                        gridSeries[i] = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: 40);
                     }
 
                     // StencilCondNo-bndyUncut
@@ -442,7 +442,7 @@ namespace StokesHelical_Ak.TestSpartial
             HelicalControl spaceConvergence_direct = new HelicalControl();
             HelicalControl spaceConvergence_iterative = new HelicalControl();
 
-            spaceConvergence_direct = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_direct = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
 
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
@@ -478,7 +478,7 @@ namespace StokesHelical_Ak.TestSpartial
             //###########################################################
             // Iterativ Solver
             //###########################################################
-            spaceConvergence_iterative = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_iterative = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
             var helical_iterativ = new HelicalMain();
             helical_iterativ.Init(spaceConvergence_iterative);
@@ -565,7 +565,7 @@ namespace StokesHelical_Ak.TestSpartial
             HelicalControl spaceConvergence_direct = new HelicalControl();
             HelicalControl spaceConvergence_iterative = new HelicalControl();
 
-            spaceConvergence_direct = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_direct = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
 
             var helical_direct = new HelicalMain();
             helical_direct.Init(spaceConvergence_direct);
@@ -601,7 +601,7 @@ namespace StokesHelical_Ak.TestSpartial
             //###########################################################
             // Iterativ Solver
             //###########################################################
-            spaceConvergence_iterative = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_iterative = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
             var helical_iterativ = new HelicalMain();
             helical_iterativ.Init(spaceConvergence_iterative);
@@ -688,7 +688,7 @@ namespace StokesHelical_Ak.TestSpartial
             for (int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        gridSeries[i] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: MaxAmplitude);
+                        gridSeries[i] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: MaxAmplitude);
                     }
 
                     // StencilCondNo-bndyUncut
@@ -736,7 +736,7 @@ namespace StokesHelical_Ak.TestSpartial
             for (int ell = 0; ell < r_min.Length; ell++) {
                 {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        gridSeries[i] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: MaxAmplitude);
+                        gridSeries[i] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], deltaT: 1.0e50, MaxAmp: MaxAmplitude);
                     }
 
                     // StencilCondNo-bndyUncut
@@ -799,7 +799,7 @@ namespace StokesHelical_Ak.TestSpartial
                 //ilPSP.Environment.NumThreads = 1;
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: amplitude[k]);
+                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: amplitude[k]);
                     }
                 }
                 for (int k = 0; k < amplitude.Length; k++) {
@@ -934,7 +934,7 @@ namespace StokesHelical_Ak.TestSpartial
                 //ilPSP.Environment.NumThreads = 1;
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], dtRefining: 1, Tend: 1.0e50, MaxAmp: amplitude[k]);
+                        spaceConvergence_HP[i, k] = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: amplitude[k]);
                     }
                 }
                 for (int k = 0; k < amplitude.Length; k++) {
@@ -1075,7 +1075,7 @@ namespace StokesHelical_Ak.TestSpartial
             Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * maxAmplitude * X[0];
             Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * maxAmplitude;
 
-            spaceConvergence_direct = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_direct = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
 
 
             var helical_direct = new HelicalMain();
@@ -1130,7 +1130,7 @@ namespace StokesHelical_Ak.TestSpartial
             //###########################################################
 
 
-            spaceConvergence_iterative = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_iterative = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
 
 
@@ -1250,7 +1250,7 @@ namespace StokesHelical_Ak.TestSpartial
             Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * maxAmplitude * X[0];
             Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * maxAmplitude;
 
-            spaceConvergence_direct = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_direct = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
 
 
             var helical_direct = new HelicalMain();
@@ -1305,7 +1305,7 @@ namespace StokesHelical_Ak.TestSpartial
             //###########################################################
 
 
-            spaceConvergence_iterative = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, dtRefining: 1, Tend: 1.0e50, MaxAmp: maxAmplitude);
+            spaceConvergence_iterative = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: gridSize, noOfCellsXi: gridSize, numOfTimesteps: 1, deltaT: 1.0e50, MaxAmp: maxAmplitude);
             spaceConvergence_iterative.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { };
 
 

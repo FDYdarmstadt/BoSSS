@@ -33,7 +33,7 @@ namespace StokesHelical_Ak {
         /// <summary>
         /// Hagen Poiseulle flow (aka. flow in a circular pipe)
         /// </summary>
-        public static HelicalControl HagenPoiseulle(string _DbPath = null, int degree = 5, int noOfCellsR = 512, int noOfCellsXi = 512, int dtRefining = 4, int bdfOrder = 3, double Tend = 2 * Math.PI, double rMin = 0, double MaxAmp = 1) {
+        public static HelicalControl HagenPoiseulle(string _DbPath = null, int degree = 5, int noOfCellsR = 512, int noOfCellsXi = 512, int bdfOrder = 3, int numOfTimesteps = 1, double deltaT = 1, double rMin = 0, double MaxAmp = 1) {
 
             HelicalControl Ctrl = new HelicalControl();
             // Database
@@ -41,7 +41,6 @@ namespace StokesHelical_Ak {
             #region db
             Ctrl.DbPath = _DbPath;
             #endregion
-
             // Settings
             // ==============
             #region Settings
@@ -84,17 +83,16 @@ namespace StokesHelical_Ak {
                 return grd;
             };
             #endregion
-
             // Time Stepping
             // ==============
             #region Timestepping
-            if (Tend >= 10E10) {
-                Ctrl.dtFixed = Tend;
+            if (deltaT >= 10E10) {
+                Ctrl.dtFixed = deltaT;
                 Ctrl.NoOfTimesteps = 1;
                 Ctrl.steady = true;
             } else {
-                Ctrl.dtFixed = Tend / (dtRefining);
-                Ctrl.NoOfTimesteps = dtRefining;
+                Ctrl.dtFixed = deltaT;
+                Ctrl.NoOfTimesteps = numOfTimesteps;
                 Ctrl.steady = false;
             }
 

@@ -64,13 +64,13 @@ namespace StokesHelical_Ak {
             }
 
             // StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
-            var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:8,noOfCellsXi:8,Tend:10E20);
+            // var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:8,noOfCellsXi:8,Tend:10E20);
             // StokesHelical_Ak.TestSpartial.TestSpatial.SteadyHagenPoiseulle_VarRe_Stokes(3);
             //c.ImmediatePlotPeriod = 1;
             //c.NoOfTimesteps = 5;
-            var solver = new HelicalMain();
-            solver.Init(fisch);
-            solver.RunSolverMode();
+            //var solver = new HelicalMain();
+            //solver.Init(fisch);
+            //solver.RunSolverMode();
             //Process.Start("mpiexec");
             ////StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
             ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix

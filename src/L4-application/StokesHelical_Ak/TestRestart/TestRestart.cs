@@ -44,8 +44,13 @@ namespace StokesHelical_Ak.TestRestart {
     [TestFixture]
     internal class TestRestart {
         #region HagenPoiseulle
-        // TestRestart for BDF3 [[HagenPoiseulle]]
-        // ####################
+        /// <summary>
+        /// Restart Test for Hagen Poiseulle and BDF3. 
+        /// </summary>
+        /// <remarks>
+        /// Note: Timestep size and Grid Size not important.
+        /// Just testing restart.
+        ///  </remarks>
         [Test]
         static public void Restart_HP_BDF3_with_R0fix() {
             // Initialize the number of timesteps and cell configurations.
@@ -54,7 +59,7 @@ namespace StokesHelical_Ak.TestRestart {
             int deGREE = 2;
 
             // Create and configure the HelicalControl object for the first simulation run.
-            HelicalControl referenceContrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 3, degree: deGREE);
+            HelicalControl referenceContrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, deltaT:0.1 ,numOfTimesteps: timeSteps, bdfOrder: 3, degree: deGREE);
 
             // Set the database path and related settings.
 
@@ -158,8 +163,13 @@ namespace StokesHelical_Ak.TestRestart {
                 Console.WriteLine("Test successfull!");
             }
         }
-        // TestRestart for BDF1 [[HagenPoiseulle]]
-        // ####################
+        /// <summary>
+        /// Restart Test for Hagen Poiseulle and BDF1. 
+        /// </summary>
+        /// <remarks>
+        /// Note: Timestep size and Grid Size not important.
+        /// Just testing restart.
+        ///  </remarks>
         [Test]
         static public void Restart_HP_BDF1_with_R0fix() {
             // Initialize the number of timesteps and cell configurations.
@@ -168,7 +178,7 @@ namespace StokesHelical_Ak.TestRestart {
             int deGREE = 2;
 
             // Create and configure the HelicalControl object for the first simulation run.
-            HelicalControl referenceContrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 1, degree: deGREE);
+            HelicalControl referenceContrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, deltaT: 0.1, numOfTimesteps: timeSteps, bdfOrder: 1, degree: deGREE);
 
             // Set the database path and related settings.
 
@@ -275,8 +285,13 @@ namespace StokesHelical_Ak.TestRestart {
         #endregion
 
         #region Centrifuge
-        // TestRestart for BDF3 [[CentriFuge]]
-        // ####################
+        /// <summary>
+        /// Restart Test for Centrifugal flow and BDF3. 
+        /// </summary>
+        /// <remarks>
+        /// Note: Timestep size and Grid Size not important.
+        /// Just testing restart.
+        ///  </remarks>
         [Test]
         static public void Restart_CF_BDF3_with_R0fix() {
             // Initialize the number of timesteps and cell configurations.
@@ -285,7 +300,7 @@ namespace StokesHelical_Ak.TestRestart {
             int deGREE = 2;
 
             // Create and configure the HelicalControl object for the first simulation run.
-            HelicalControl referenceContrl = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 3, degree: deGREE);
+            HelicalControl referenceContrl = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, numOfTimesteps: timeSteps, deltaT : 0.1, bdfOrder: 3, degree: deGREE);
 
             // Set the database path and related settings.
 
@@ -389,8 +404,13 @@ namespace StokesHelical_Ak.TestRestart {
                 Console.WriteLine("Test successfull!");
             }
         }
-        // TestRestart for BDF1 [[CentriFuge]]
-        // ####################
+        /// <summary>
+        /// Restart Test for Centrifugal flow and BDF1. 
+        /// </summary>
+        /// <remarks>
+        /// Note: Timestep size and Grid Size not important.
+        /// Just testing restart.
+        ///  </remarks>
         [Test]
         static public void Restart_CF_BDF1_with_R0fix() {
             // Initialize the number of timesteps and cell configurations.
@@ -399,7 +419,7 @@ namespace StokesHelical_Ak.TestRestart {
             int deGREE = 2;
 
             // Create and configure the HelicalControl object for the first simulation run.
-            HelicalControl referenceContrl = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, dtRefining: timeSteps, bdfOrder: 1, degree: deGREE);
+            HelicalControl referenceContrl = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(noOfCellsR: noOfCells, noOfCellsXi: noOfCells, deltaT :0.1 , numOfTimesteps: timeSteps, bdfOrder: 1, degree: deGREE);
 
             // Set the database path and related settings.
 

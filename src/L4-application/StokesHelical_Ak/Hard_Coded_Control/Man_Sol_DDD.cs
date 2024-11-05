@@ -107,7 +107,6 @@ namespace StokesHelical_Ak.Hard_Coded_Control
         #endregion
       
         // DDD Paper Equation: 4.4 (a,b,c,d)
-        // Transient and Steady together
         public static HelicalControl ManSol_DDD_Paper(int degree = 3, int noOfCellsR = 32, int noOfCellsXi = 32, int dtRefining = 32, string bdfOrder = "BDF1", double rMin = 0, bool steady = false)
         {
 

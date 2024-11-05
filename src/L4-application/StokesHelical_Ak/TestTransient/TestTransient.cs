@@ -28,10 +28,10 @@ namespace StokesHelical_Ak.TestTransient
     [TestFixture]
     static public class TestTransient {
 
+        // Convergence for BDF1
 
         [Test]
-        // Convergence for BDF1
-        static public void TimeConvergenceBDF1_no_R0fix() {
+        static public void Transient_TimeConv_BDF1_DDD_no_R0fix() {
 
             int[] timeSteps = new int[] { 64, 32, 16, 8, 4 };
             double[] urErrorL2 = new double[timeSteps.Length];
@@ -122,10 +122,9 @@ namespace StokesHelical_Ak.TestTransient
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorL2.First(), thresholdUxi);
             Assert.That(uxiErrorL2.First() < thresholdUxi, "Error. uxiErrorL2 not fullfilled");
         }
-
         [Test]
         // Convergence for BDF3
-        static public void TimeConvergenceBDF3_no_R0fix() {
+        static public void Transient_TimeConv_BDF3_DDD_no_R0fix() {
 
             int[] timeSteps = new int[] { 64, 32, 16, 8, 4 };
             double[] urErrorL2 = new double[timeSteps.Length];
@@ -218,7 +217,7 @@ namespace StokesHelical_Ak.TestTransient
 
         [Test]
         // Convergence for BDF1
-        static public void TimeConvergenceBDF1_with_R0fix() {
+        static public void Transient_TimeConv_BDF1_DDD_with_R0fix() {
 
             int[] timeSteps = new int[] { 64, 32, 16, 8, 4 };
             double[] urErrorL2 = new double[timeSteps.Length];
@@ -312,7 +311,7 @@ namespace StokesHelical_Ak.TestTransient
 
         [Test]
         // Convergence for BDF3
-        static public void TimeConvergenceBDF3_with_R0fix() {
+        static public void Transient_TimeConv_BDF3_DDD_with_R0fix() {
 
             int[] timeSteps = new int[] { 64, 32, 16, 8, 4 };
             double[] urErrorL2 = new double[timeSteps.Length];
@@ -414,7 +413,7 @@ namespace StokesHelical_Ak.TestTransient
         /// <remarks>
         /// </remarks>
         [Test]
-        static public void PseudoSteadyHagenPoiseulle(
+        static public void PseudoSteady_HP_Stokes(
             [Values(2, 3, 4)] int pOrder = 4,
             [Values(false, true)] bool NavierStokes = false
             ) {
@@ -422,7 +421,7 @@ namespace StokesHelical_Ak.TestTransient
 
 
             //ilPSP.Environment.NumThreads = 1;
-            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 1E50, _DbPath:tempDB.Path, bdfOrder:1);
+            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath:tempDB.Path, bdfOrder:1);
 
             // Initial Values = 0!
             ctrlStat.InitialValues.Clear();
@@ -482,7 +481,7 @@ namespace StokesHelical_Ak.TestTransient
             // Restart Solution from Exact Solution!!!!!
             // Now dt = 0.0001
 
-            var ctrlTransient = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
+            var ctrlTransient = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
             ctrlTransient.GridFunc = null;
             ctrlTransient.RestartInfo = new Tuple<Guid, TimestepNumber>(steadyStateSession, null); // 2nd arg null -> take last timestep;
             ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
@@ -550,7 +549,7 @@ namespace StokesHelical_Ak.TestTransient
             ) {
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
 
-            var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, dtRefining: 1, Tend: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
+            var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
 
             double a = Globals.a;
             double b = Globals.b;
