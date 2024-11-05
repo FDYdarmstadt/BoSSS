@@ -81,13 +81,13 @@ namespace StokesHelical_Ak.TestRestart {
             SplittingTimestepper.BackupTimestep = -1;
             // AssertionForR0Fix
             Assert.That(referenceContrl.R0fixOn == true, "R0_fix should be true");
-            Assert.That(referenceContrl.PressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
+            Assert.That(Globals.pressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
             // Issue reminders based on global multipliers and minimum radius conditions.
             if(Globals.activeMult == Globals.Multiplier.one && referenceContrl.rMin < 10e-6) {
                 Console.WriteLine("Friendly Reminder: Multiplier One and rMin<10e-6");
             }
             Console.WriteLine($"Remember: R0_fix is {referenceContrl.R0fixOn}");
-            Console.WriteLine($"Remember: Calculating with PRP is {referenceContrl.PressureReferencePoint}");
+            Console.WriteLine($"Remember: Calculating with PRP is {Globals.pressureReferencePoint}");
 
             // Clone the original configuration for a second run with modifications for restart.
             Guid sessionID = solver.CurrentSessionInfo.ID;
@@ -200,13 +200,13 @@ namespace StokesHelical_Ak.TestRestart {
             SplittingTimestepper.BackupTimestep = -1;
             // AssertionForR0Fix
             Assert.That(referenceContrl.R0fixOn == true, "R0_fix should be true");
-            Assert.That(referenceContrl.PressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
+            Assert.That(Globals.pressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
             // Issue reminders based on global multipliers and minimum radius conditions.
             if (Globals.activeMult == Globals.Multiplier.one && referenceContrl.rMin < 10e-6) {
                 Console.WriteLine("Friendly Reminder: Multiplier One and rMin<10e-6");
             }
             Console.WriteLine($"Remember: R0_fix is {referenceContrl.R0fixOn}");
-            Console.WriteLine($"Remember: Calculating with PRP is {referenceContrl.PressureReferencePoint}");
+            Console.WriteLine($"Remember: Calculating with PRP is {Globals.pressureReferencePoint}");
 
             // Clone the original configuration for a second run with modifications for restart.
             Guid sessionID = solver.CurrentSessionInfo.ID;
@@ -322,13 +322,13 @@ namespace StokesHelical_Ak.TestRestart {
             SplittingTimestepper.BackupTimestep = -1;
             // AssertionForR0Fix
             Assert.That(referenceContrl.R0fixOn == true, "R0_fix should be true");
-            Assert.That(referenceContrl.PressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
+            Assert.That(Globals.pressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
             // Issue reminders based on global multipliers and minimum radius conditions.
             if (Globals.activeMult == Globals.Multiplier.one && referenceContrl.rMin < 10e-6) {
                 Console.WriteLine("Friendly Reminder: Multiplier One and rMin<10e-6");
             }
             Console.WriteLine($"Remember: R0_fix is {referenceContrl.R0fixOn}");
-            Console.WriteLine($"Remember: Calculating with PRP is {referenceContrl.PressureReferencePoint}");
+            Console.WriteLine($"Remember: Calculating with PRP is {Globals.pressureReferencePoint}");
 
             // Clone the original configuration for a second run with modifications for restart.
             Guid sessionID = solver.CurrentSessionInfo.ID;
@@ -441,13 +441,13 @@ namespace StokesHelical_Ak.TestRestart {
             SplittingTimestepper.BackupTimestep = -1;
             // AssertionForR0Fix
             Assert.That(referenceContrl.R0fixOn == true, "R0_fix should be true");
-            Assert.That(referenceContrl.PressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
+            Assert.That(Globals.pressureReferencePoint == true, "Calculation should proceed without PRP since R0 is on");
             // Issue reminders based on global multipliers and minimum radius conditions.
             if (Globals.activeMult == Globals.Multiplier.one && referenceContrl.rMin < 10e-6) {
                 Console.WriteLine("Friendly Reminder: Multiplier One and rMin<10e-6");
             }
             Console.WriteLine($"Remember: R0_fix is {referenceContrl.R0fixOn}");
-            Console.WriteLine($"Remember: Calculating with PRP is {referenceContrl.PressureReferencePoint}");
+            Console.WriteLine($"Remember: Calculating with PRP is {Globals.pressureReferencePoint}");
 
             // Clone the original configuration for a second run with modifications for restart.
             Guid sessionID = solver.CurrentSessionInfo.ID;

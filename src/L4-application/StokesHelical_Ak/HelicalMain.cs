@@ -64,16 +64,17 @@ namespace StokesHelical_Ak {
             }
 
             // StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
-            // var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:8,noOfCellsXi:8,Tend:10E20);
-             // StokesHelical_Ak.TestSpartial.TestSpatial.ConditionNumberScaling_DDD_without_R0fix(2);
-             //StokesHelical_Ak.TestTransient.TestTransient.PseudoSteady_CF_Re_10_Navier_Stokes_with_R0fix(2);
+             var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:3,noOfCellsXi:3,deltaT:10E20);
+            //StokesHelical_Ak.TestSpartial.TestSpatial.ConditionNumberScaling_DDD_without_R0fix(2);
+            //StokesHelical_Ak.TestRestart.TestRestart.Restart_HP_BDF3_with_R0fix();
+
             //c.ImmediatePlotPeriod = 1;
             //c.NoOfTimesteps = 5;
-            //var solver = new HelicalMain();
-            //solver.Init(fisch);
-            //solver.RunSolverMode();
+            var solver = new HelicalMain();
+            solver.Init(fisch);
+            solver.RunSolverMode();
             //Process.Start("mpiexec");
-            ////StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
+            //StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
             ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix
             //// StokesHelical_Ak.Man_Sol_DDD.TSFP();
             ////StokesHelical_Ak.TestTransient.TestTransient.PseudoSteadyCentrifuge();
@@ -245,65 +246,7 @@ namespace StokesHelical_Ak {
             }
         }
 
-        //Pressure Reference Point
-        //============================================================//
-        /// <summary>
-        /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
-        /// in order to fix the pressure at some reference point
-        /// </summary>
-        /// <param name="map">row mapping for <paramref name="Mtx"/> as well as <paramref name="rhs"/></param>
-        /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
-        /// <param name="Mtx"></param>
-        /// <param name="rhs"></param>
-        static public void SetPressureReferencePoint<T>(double[] Point, UnsetteledCoordinateMapping map, int iVar, BlockMsrMatrix Mtx, T rhs)
-            where T : IList<double> {
-            using(new FuncTrace()) {
-                var GridDat = map.GridDat;
 
-                if(rhs.Count != map.LocalLength)
-                    throw new ArgumentException();
-                if(Mtx != null) {
-                    if(!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
-                        throw new ArgumentException();
-                }
-
-                GridDat.LocatePoint(Point, out _, out long GlobalIndex, out _, out bool onthisProc);
-
-                long iRowGl = -111; // 
-                if(onthisProc) {
-                    iRowGl = map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalIndex, 0);
-                }
-                iRowGl = iRowGl.MPIMax(); // on all processes where this NOT set, the input is negative; thus we select the value from the respective processor, where it is set
-
-                // clear row
-                // ---------
-                if(onthisProc) {
-                    // ref. cell is on local MPI process
-                    // set matrix row to identity
-                    if(Mtx != null) {
-                        Mtx.ClearRow(iRowGl);
-                        Mtx.SetDiagonalElement(iRowGl, 1.0);
-                    }
-
-                    // clear RHS
-                    int iRowLoc = (int)(iRowGl - map.i0);
-                    rhs[iRowLoc] = 0;
-
-                    Console.WriteLine("Local row: " + iRowLoc);
-                }
-
-                // clear column
-                // ------------
-                if(Mtx != null) {
-                    for(long i = Mtx.RowPartitioning.i0; i < Mtx.RowPartitioning.iE; i++) {
-                        if(i != iRowGl) {
-                            Mtx[i, iRowGl] = 0;
-                        }
-                    }
-                }
-            }
-        }
-        //==============================================================//
 
         double[] Compute_C_restart(double[] u) {
             double[] C = new double[u.Length];
@@ -575,8 +518,10 @@ namespace StokesHelical_Ak {
                 this.CurrentSolution.Mapping, 
                 this.Control.GetFixedTimestep(), this.Control.GetBDFOrder(), 
                 this.Control.LinearSolver, this.MultigridOperatorConfig, base.MultigridSequence, 
-                myR0fix, this.Control.rMin, this.Control.PressureReferencePoint);
+                myR0fix, this.Control.rMin);
         }
+
+
 
         protected override void PlotCurrentState(double physTime, BoSSS.Foundation.IO.TimestepNumber timestepNo, int superSampling = 0) {
             using(new FuncTrace()) {
@@ -599,7 +544,7 @@ namespace StokesHelical_Ak {
                     throw new Exception("Mutiplier BSQ and rMin>10e-6");
                 }
 
-                string nameOf_Plot = "Hel__BDF_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + this.Control.PressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
+                string nameOf_Plot = "Hel__BDF_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
                               this.Control.Resolution_R.ToString() + "_DGd_" + this.Control.dg_degree + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
 
                 plt1.PlotFields(nameOf_Plot, physTime, m_IOFields);
@@ -660,6 +605,66 @@ namespace StokesHelical_Ak {
                 return dt;
             }
         }
+
+        //Pressure Reference Point
+        //============================================================//
+        /// <summary>
+        /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
+        /// in order to fix the pressure at some reference point
+        /// </summary>
+        /// <param name="map">row mapping for <paramref name="Mtx"/> as well as <paramref name="rhs"/></param>
+        /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
+        /// <param name="Mtx"></param>
+        /// <param name="rhs"></param>
+        static public void SetPressureReferencePoint<T>(double[] Point, UnsetteledCoordinateMapping map, int iVar, BlockMsrMatrix Mtx, T rhs)
+            where T : IList<double> {
+            using (new FuncTrace()) {
+                var GridDat = map.GridDat;
+
+                if (rhs.Count != map.LocalLength)
+                    throw new ArgumentException();
+                if (Mtx != null) {
+                    if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
+                        throw new ArgumentException();
+                }
+
+                GridDat.LocatePoint(Point, out _, out long GlobalIndex, out _, out bool onthisProc);
+
+                long iRowGl = -111; // 
+                if (onthisProc) {
+                    iRowGl = map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalIndex, 0);
+                }
+                iRowGl = iRowGl.MPIMax(); // on all processes where this NOT set, the input is negative; thus we select the value from the respective processor, where it is set
+
+                // clear row
+                // ---------
+                if (onthisProc) {
+                    // ref. cell is on local MPI process
+                    // set matrix row to identity
+                    if (Mtx != null) {
+                        Mtx.ClearRow(iRowGl);
+                        Mtx.SetDiagonalElement(iRowGl, 1.0);
+                    }
+
+                    // clear RHS
+                    int iRowLoc = (int)(iRowGl - map.i0);
+                    rhs[iRowLoc] = 0;
+
+                    Console.WriteLine("Local row: " + iRowLoc);
+                }
+
+                // clear column
+                // ------------
+                if (Mtx != null) {
+                    for (long i = Mtx.RowPartitioning.i0; i < Mtx.RowPartitioning.iE; i++) {
+                        if (i != iRowGl) {
+                            Mtx[i, iRowGl] = 0;
+                        }
+                    }
+                }
+            }
+        }
+        //==============================================================//
         void ComputeErrorsAndResiduals(double time, TimestepNumber timestepNo) {
             using(new FuncTrace()) {
                 var ResidualFields = ResidualMap.Fields;

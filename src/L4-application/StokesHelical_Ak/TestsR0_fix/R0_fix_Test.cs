@@ -45,7 +45,7 @@ namespace StokesHelical_Ak.NUnitTestsR0_fix
                 R0fix myR0fix = new R0fix(p.CurrentSolution.Mapping, p.Control.rMin);
                 myR0fix.CheckSolutionR0Compatibility(p.ur, p.uxi, p.ueta, p.Pressure);
                 Assert.That(ctrl.R0fixOn == true, "R0_fix have to be true!");
-                Assert.That(ctrl.PressureReferencePoint == true, "Pressure Reference Point have to be true!");
+                Assert.That(Globals.pressureReferencePoint, "Pressure Reference Point have to be true!");
                 Console.WriteLine("R0_fix is working correctly!");
             }
         }

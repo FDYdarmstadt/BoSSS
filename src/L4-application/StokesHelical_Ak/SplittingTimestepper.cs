@@ -46,6 +46,7 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -82,7 +83,7 @@ namespace StokesHelical_Ak {
             BoSSS.Solution.AdvancedSolvers.ISolverFactory lc,
             MultigridOperator.ChangeOfBasisConfig[][] mgconfig,
             AggregationGridData[] mgseq,
-            R0fix r0fix, double _rMin, bool _m_PRP) {
+            R0fix r0fix, double _rMin) {
             Uvec = new CoordinateVector(__U);
             dt = __dt;
             Impl = __Impl;
@@ -90,7 +91,6 @@ namespace StokesHelical_Ak {
             m_mgconfig = mgconfig;
             m_R0fix = r0fix;
             m_rMin = _rMin;
-            m_PRP = _m_PRP;
 
             // generate implicit solver
             // ========================
@@ -116,23 +116,6 @@ namespace StokesHelical_Ak {
                 var dummy = new double[Umap.LocalLength];
                 MassMatrix = new BlockMsrMatrix(Umap, Umap);
                 mtxBuilder.ComputeMatrix(MassMatrix, dummy);
-
-                if (m_PRP == true) { 
-                    // We don't manipulate the matrix, we only check that it fullfills
-                    // the requirements imposed by the pressure reference point.
-                    this.Umap.GridDat.LocatePoint(new double[] { 0.5, 0.5 }, out _, out long GlobalIndex, out _, out bool onthisProc);
-                    if (onthisProc) {
-                        long iRowGl = Umap.GlobalUniqueCoordinateIndex_FromGlobal(3, GlobalIndex, 0);
-
-                        if (OpMatrix.GetNoOfOffDiagonalNonZerosPerRow(iRowGl) != 0)
-                            throw new ArithmeticException("pressure ref pt is to be used, but there are off-diagonal non-zeros in operator matrix");
-                        if (OpMatrix[iRowGl, iRowGl] != 1.0)
-                            throw new ArithmeticException("pressure ref pt is to be used, diagonal element is expected to be 1.0, but is " + OpMatrix[iRowGl, iRowGl]);
-
-                        if (MassMatrix.GetNoOfNonZerosPerRow(iRowGl) != 0)
-                            throw new ArithmeticException("pressure ref pt is to be used, but mass matrix is occupied in respective row.");
-                    }
-                }
                 Debug.Assert(dummy.L2NormPow2() == 0);
 
                 double factor;
@@ -156,6 +139,33 @@ namespace StokesHelical_Ak {
                 } else {
                     OpMatrix.Acc(factor, MassMatrix);
                 }
+                // ++++++++++++++++++++++++++++++++
+                // Check if a Pressure Reference Point is Necassary?!?
+                // ++++++++++++++++++++++++++++++++
+                bool PressureReferencePoint = CheckNecassarityOfPRP(OpMatrix, __U, _rMin < 10E-5);
+
+                if (PressureReferencePoint) {
+                    Console.WriteLine("Ref point is used");
+                    HelicalMain.SetPressureReferencePoint(new double[] { 0.5, 0.5 }, __U, 3, OpMatrix, OpAffine);
+                }
+                m_PRP = PressureReferencePoint;
+                if (m_PRP == true) {
+                    // We don't manipulate the matrix, we only check that it fullfills
+                    // the requirements imposed by the pressure reference point.
+                    this.Umap.GridDat.LocatePoint(new double[] { 0.5, 0.5 }, out _, out long GlobalIndex, out _, out bool onthisProc);
+                    if (onthisProc) {
+                        long iRowGl = Umap.GlobalUniqueCoordinateIndex_FromGlobal(3, GlobalIndex, 0);
+
+                        if (OpMatrix.GetNoOfOffDiagonalNonZerosPerRow(iRowGl) != 0)
+                            throw new ArithmeticException("pressure ref pt is to be used, but there are off-diagonal non-zeros in operator matrix");
+                        if (OpMatrix[iRowGl, iRowGl] != 1.0)
+                            throw new ArithmeticException("pressure ref pt is to be used, diagonal element is expected to be 1.0, but is " + OpMatrix[iRowGl, iRowGl]);
+
+                        if (MassMatrix.GetNoOfNonZerosPerRow(iRowGl) != 0)
+                            throw new ArithmeticException("pressure ref pt is to be used, but mass matrix is occupied in respective row.");
+                    }
+                }
+                Globals.pressureReferencePoint = m_PRP;
             }
 
             // setup lin. solver
@@ -599,6 +609,51 @@ namespace StokesHelical_Ak {
         }
 
 
+
+        private bool CheckNecassarityOfPRP(BlockMsrMatrix oPmatrix, UnsetteledCoordinateMapping map, bool containsR0fix) {
+
+            // Definition
+            double[] result1 = new double[map.LocalLength];
+            double[] result2 = new double[map.LocalLength];
+
+            var random = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
+            var random_With_Pres_Offset = new CoordinateVector(map.BasisS.Select(basis => new SinglePhaseField(basis)));
+
+            double[] diff = new double[map.LocalLength];
+            // Fill in Randoms
+            random.FillRandom(0);
+            random_With_Pres_Offset.SetV(random); // random_With_Pres_Offset <- random // Creat a real Copy not Reference type!
+
+            var pres = random_With_Pres_Offset.Fields[3]; // Fields[3] for pressure of course
+            if (containsR0fix) {
+                var R0mask = R0fix.GetR0BndyCells(map.GridDat);
+                pres.AccConstant(1.0, R0mask.Complement());
+
+                if (map.MpiRank == 0) {
+                    pres.SetMeanValue(0, pres.GetMeanValue(0) + 1.0);
+                }
+            } else {
+                // ++++++++
+                // r0 >> 0
+                // ++++++++
+                pres.AccConstant(1.0);
+            }
+            // Matrix Vector Multiplication
+            oPmatrix.SpMV(1.0, random, 0.0, result1);
+            oPmatrix.SpMV(1.0, random_With_Pres_Offset, 0.0, result2);
+
+            diff.SetV(result2);
+            diff.AccV(-1.0, result1);
+
+            if (diff.MPI_L2Norm() < 1E-5) {
+                Console.WriteLine($"We can add a constant in the pressure, without affecting the solution-- > PRP true , 1E-5, diff.Max() - diff.Min())");
+                return true;
+            } else {
+                return false;
+            }
+            // Pressure Reference Point is needed
+
+        }
 
 
         /// <summary>

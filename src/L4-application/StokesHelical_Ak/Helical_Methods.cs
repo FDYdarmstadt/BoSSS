@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -70,10 +71,6 @@ namespace StokesHelical_Ak {
                 // Update Linarization AND RHS
                 // +++++++++++++++++++++++++++
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
-                // ++++++++++++++++++++++++++++++++
-                // Check if a Pressure Reference Point is Necassary?!?
-                // ++++++++++++++++++++++++++++++++
-                base.Control.PressureReferencePoint = CheckNecassarityOfPRP(OpMatrix, Mapping, Control.rMin < 10e-6);
             } else {
                 // ++++++++++++++++++++++++++++++++
                 // Update only RHS of linearization
@@ -85,12 +82,6 @@ namespace StokesHelical_Ak {
                 OpMatrix.CheckForNanOrInfM();
             }
 
-
-
-            if (base.Control.PressureReferencePoint) {
-                Console.WriteLine("Ref point is used");
-                SetPressureReferencePoint(new double[] { 0.5, 0.5 }, this.CurrentSolution.Mapping, 3, OpMatrix, OpAffine);
-            }
             OpAffine.CheckForNanOrInfV();
 
             if(Control.rMin < 10e-6) {
@@ -107,7 +98,8 @@ namespace StokesHelical_Ak {
                 OpAffine.ClearEntries();
                 OpAffine.AccV(1.0, OpAffineMod);
             }
-            //Console.WriteLine("Auskommetieren von R0 fix");
+
+
         }
 
         /// <summary>
@@ -281,9 +273,15 @@ namespace StokesHelical_Ak {
             diff.SetV(result2);
             diff.AccV(-1.0, result1);
 
-            Assert.That(diff.MPI_L2Norm() < 1E-5, "Pressure is not FIXED! We can and an constant in the pressure, without affecting the solution --> PRP true", 1E-5, diff.Max() - diff.Min());
+            if (diff.MPI_L2Norm() < 1E-5) {
+                Console.WriteLine($"We can add a constant in the pressure, without affecting the solution-- > PRP true , 1E-5, diff.Max() - diff.Min())"); 
+                return true;
+            } else { 
+
+            return false;
+            }
             // Pressure Reference Point is needed
-            return true;
+
         }
 
         private void After_SetInitialOrLoadRestart(double time) {

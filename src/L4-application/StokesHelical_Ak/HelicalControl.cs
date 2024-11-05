@@ -83,9 +83,6 @@ namespace StokesHelical_Ak {
         public double penaltySafety = 4;
 
         [DataMember]
-        public bool PressureReferencePoint = false;
-
-        [DataMember]
         public TermSwitch TermSwitch =
                 TermSwitch.Viscosity_1stOrder_MomXI
                 | TermSwitch.Pressure_MomXI

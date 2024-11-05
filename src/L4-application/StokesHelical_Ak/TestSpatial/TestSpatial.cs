@@ -83,7 +83,6 @@ namespace StokesHelical_Ak.TestSpartial
                 // Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence_HP.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, $"Pressure Reference Point must be true (i = {i})");
                         spaceConvergence_HP[i, k].InitialValues.Clear();
                         spaceConvergence_HP[i, k].InitialValues_Evaluators.Clear();
                         spaceConvergence_HP[i, k].savetodb = false;
@@ -101,7 +100,7 @@ namespace StokesHelical_Ak.TestSpartial
                             solver.RunSolverMode();
                             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
                             Assert.IsTrue(spaceConvergence_HP[i, k].R0fixOn, "R0fix must be turned on");
-                            Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, "Pressure Reference Point has to be true");
+                            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                             h[i] = 2 * Math.PI / gridSize[i];
                             // Deep Copy
                             exSol_ur[i] = solver.ur.CloneAs();
@@ -218,7 +217,6 @@ namespace StokesHelical_Ak.TestSpartial
                 // Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence_HP.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, $"Pressure Reference Point must be true (i = {i})");
                         spaceConvergence_HP[i, k].InitialValues.Clear();
                         spaceConvergence_HP[i, k].InitialValues_Evaluators.Clear();
                         spaceConvergence_HP[i, k].savetodb = false;
@@ -236,7 +234,7 @@ namespace StokesHelical_Ak.TestSpartial
                             solver.RunSolverMode();
                             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
                             Assert.IsTrue(spaceConvergence_HP[i, k].R0fixOn, "R0fix must be turned on");
-                            Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, "Pressure Reference Point has to be true");
+                            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                             h[i] = 2 * Math.PI / gridSize[i];
                             // Deep Copy
                             exSol_ur[i] = solver.ur.CloneAs();
@@ -351,7 +349,7 @@ namespace StokesHelical_Ak.TestSpartial
                     for (int i = 0; i < gridSize.Length; i++) {
                         Assert.IsTrue(gridSeries[i].R0fixOn, "R0fix must be turned on");
                         Assert.IsTrue(gridSeries[i].steady, "Should be steady");
-                        Assert.IsTrue(gridSeries[i].PressureReferencePoint, "Pressure Reference Point has to be true");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                     }
 
                 }
@@ -401,7 +399,7 @@ namespace StokesHelical_Ak.TestSpartial
                     for (int i = 0; i < gridSize.Length; i++) {
                         Assert.IsTrue(gridSeries[i].R0fixOn, "R0fix must be turned on");
                         Assert.IsTrue(gridSeries[i].steady, "Should be steady");
-                        Assert.IsTrue(gridSeries[i].PressureReferencePoint, "Pressure Reference Point has to be true");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                     }
 
                 }
@@ -449,7 +447,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_direct.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_direct.urErrorLx;
             uetaErrorLx = helical_direct.uetaErrorLx;
             uxiErrorLx = helical_direct.uxiErrorLx;
@@ -485,7 +483,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_iterativ.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_iterativ.urErrorLx;
             uetaErrorLx = helical_iterativ.uetaErrorLx;
             uxiErrorLx = helical_iterativ.uxiErrorLx;
@@ -572,7 +570,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_direct.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_direct.urErrorLx;
             uetaErrorLx = helical_direct.uetaErrorLx;
             uxiErrorLx = helical_direct.uxiErrorLx;
@@ -608,7 +606,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_iterativ.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_iterativ.urErrorLx;
             uetaErrorLx = helical_iterativ.uetaErrorLx;
             uxiErrorLx = helical_iterativ.uxiErrorLx;
@@ -678,7 +676,7 @@ namespace StokesHelical_Ak.TestSpartial
         /// -3) Here Only the Steady-state Solution is looked at. 
         /// </remarks>
         [Test]
-        static public void ConditionNumberScaling_CF_Re_100000_Stokes_with_R0fix([Values(2, 3, 4, 5)] int pOrder) {
+        static public void ConditionNumberScaling_CF_Re_100000_Stokes_with_R0fix([Values(2, 3, 4, 5)] int pOrder){
 
 
             int[] gridSize = new int[] { 4, 8, 16, 32, 64 };
@@ -705,7 +703,7 @@ namespace StokesHelical_Ak.TestSpartial
                     for (int i = 0; i < gridSize.Length; i++) {
                         Assert.IsTrue(gridSeries[i].R0fixOn, "R0fix must be turned on");
                         Assert.IsTrue(gridSeries[i].steady, "Should be steady");
-                        Assert.IsTrue(gridSeries[i].PressureReferencePoint, "Pressure Reference Point has to be true");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                     }
 
                 }
@@ -753,7 +751,7 @@ namespace StokesHelical_Ak.TestSpartial
                     for (int i = 0; i < gridSize.Length; i++) {
                         Assert.IsTrue(gridSeries[i].R0fixOn, "R0fix must be turned on");
                         Assert.IsTrue(gridSeries[i].steady, "Should be steady");
-                        Assert.IsTrue(gridSeries[i].PressureReferencePoint, "Pressure Reference Point has to be true");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                     }
 
                 }
@@ -804,7 +802,6 @@ namespace StokesHelical_Ak.TestSpartial
                 }
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, $"Pressure Reference Point must be true (i = {i})");
                         spaceConvergence_HP[i, k].InitialValues.Clear();
                         spaceConvergence_HP[i, k].InitialValues_Evaluators.Clear();
                         spaceConvergence_HP[i, k].savetodb = false;
@@ -822,7 +819,7 @@ namespace StokesHelical_Ak.TestSpartial
                             solver.RunSolverMode();
                             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
                             Assert.IsTrue(spaceConvergence_HP[i, k].R0fixOn, "R0fix must be turned on");
-                            Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, "Pressure Reference Point has to be true");
+                            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                             h[i] = 2 * Math.PI / gridSize[i];
                             // Deep Copy
                             exSol_ur[i] = solver.ur.CloneAs();
@@ -939,7 +936,6 @@ namespace StokesHelical_Ak.TestSpartial
                 }
                 for (int k = 0; k < amplitude.Length; k++) {
                     for (int i = 0; i < gridSize.Length; i++) {
-                        Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, $"Pressure Reference Point must be true (i = {i})");
                         spaceConvergence_HP[i, k].InitialValues.Clear();
                         spaceConvergence_HP[i, k].InitialValues_Evaluators.Clear();
                         spaceConvergence_HP[i, k].savetodb = false;
@@ -957,7 +953,7 @@ namespace StokesHelical_Ak.TestSpartial
                             solver.RunSolverMode();
                             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
                             Assert.IsTrue(spaceConvergence_HP[i, k].R0fixOn, "R0fix must be turned on");
-                            Assert.IsTrue(spaceConvergence_HP[i, k].PressureReferencePoint, "Pressure Reference Point has to be true");
+                            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                             h[i] = 2 * Math.PI / gridSize[i];
                             // Deep Copy
                             exSol_ur[i] = solver.ur.CloneAs();
@@ -1083,7 +1079,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_direct.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
 
 
             // Deep Copy
@@ -1139,7 +1135,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_iterative.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
 
 
             // Deep Copy
@@ -1258,7 +1254,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_direct.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
 
 
             // Deep Copy
@@ -1314,7 +1310,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_iterative.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
 
 
             // Deep Copy
@@ -1416,19 +1412,13 @@ namespace StokesHelical_Ak.TestSpartial
                     for (int i = 0; i < gridSize.Length; i++) {
                         spaceConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell], steady: true);
                     }
-
-                    Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
-                    for (int i = 0; i < gridSize.Length; i++) {
-                        Assert.IsTrue(spaceConvergence[i].PressureReferencePoint, $"Pressure Reference Point must be true (i = {i})");
-                    }
-
                     for (int i = 0; i < gridSize.Length; i++) {
                         var solver = new HelicalMain();
                         solver.Init(spaceConvergence[i]);
                         solver.RunSolverMode();
                         Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
                         Assert.IsTrue(spaceConvergence[i].R0fixOn, "R0fix must be turned on");
-                        Assert.IsTrue(spaceConvergence[i].PressureReferencePoint, "Pressure Reference Point has to be true");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                         urErrorLx[i] = solver.urErrorLx;
                         uetaErrorLx[i] = solver.uetaErrorLx;
                         uxiErrorLx[i] = solver.uxiErrorLx;
@@ -1535,7 +1525,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_direct.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_direct.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_direct.urErrorLx;
             uetaErrorLx = helical_direct.uetaErrorLx;
             uxiErrorLx = helical_direct.uxiErrorLx;
@@ -1573,7 +1563,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_iterativ.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_iterativ.urErrorLx;
             uetaErrorLx = helical_iterativ.uetaErrorLx;
             uxiErrorLx = helical_iterativ.uxiErrorLx;
@@ -1663,7 +1653,7 @@ namespace StokesHelical_Ak.TestSpartial
                     for (int i = 0; i < gridSize.Length; i++) {
                         Assert.IsTrue(gridSeries[i].R0fixOn, "R0fix must be turned on");
                         Assert.IsTrue(gridSeries[i].steady, "Should be steady");
-                        Assert.IsTrue(gridSeries[i].PressureReferencePoint, "Pressure Reference Point has to be true");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
                     }
 
                 }
@@ -1759,7 +1749,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_hangingNodes.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.Bsq, $"Multiplier expected to be {Globals.Multiplier.Bsq}");
             Assert.IsTrue(spaceConvergence_hangingNodes.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_hangingNodes.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_hangingNodes.urErrorLx;
             uetaErrorLx = helical_hangingNodes.uetaErrorLx;
             uxiErrorLx = helical_hangingNodes.uxiErrorLx;
@@ -1820,14 +1810,12 @@ namespace StokesHelical_Ak.TestSpartial
                     for (int i = 0; i < gridSize.Length; i++) {
                         spaceConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(degree: pOrder, noOfCellsR: gridSize[i], noOfCellsXi: gridSize[i], rMin: r_min[ell], steady: true);
                     }
-                    Console.WriteLine($"pOrder = {pOrder}, ell = {ell}, {spaceConvergence.Select(C => C.PressureReferencePoint).ToConcatString("[", ", ", "]")}");
-
                     for (int i = 0; i < gridSize.Length; i++) {
                         var solver = new HelicalMain();
                         solver.Init(spaceConvergence[i]);
                         solver.RunSolverMode();
                         Assert.IsFalse(spaceConvergence[i].R0fixOn, "R0fix should be false");
-                        Assert.IsTrue(spaceConvergence[i].PressureReferencePoint, "PressureReferencePoint should be true. Since R0_fix is false");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "PressureReferencePoint should be true. Since R0_fix is false");
                         Assert.IsTrue(spaceConvergence[i].steady, "Should be steady");
                         Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one}");
                         urErrorL2[i] = solver.urErrorL2;
@@ -1935,7 +1923,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_direct.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one}");
             Assert.IsFalse(spaceConvergence_direct.R0fixOn, "R0fix must be turned off");
-            Assert.IsTrue(spaceConvergence_direct.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_direct.urErrorLx;
             uetaErrorLx = helical_direct.uetaErrorLx;
             uxiErrorLx = helical_direct.uxiErrorLx;
@@ -1977,7 +1965,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_iterativ.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one}");
             Assert.IsFalse(spaceConvergence_iterative.R0fixOn, "R0fix must be turned on");
-            Assert.IsTrue(spaceConvergence_iterative.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_iterativ.urErrorLx;
             uetaErrorLx = helical_iterativ.uetaErrorLx;
             uxiErrorLx = helical_iterativ.uxiErrorLx;
@@ -2114,7 +2102,7 @@ namespace StokesHelical_Ak.TestSpartial
             helical_hangingNodes.RunSolverMode();
             Assert.AreEqual(Globals.activeMult, Globals.Multiplier.one, $"Multiplier expected to be {Globals.Multiplier.one}");
             Assert.IsFalse(spaceConvergence_hangingNodes.R0fixOn, "R0fix must be turned off");
-            Assert.IsTrue(spaceConvergence_hangingNodes.PressureReferencePoint, "Pressure Reference Point has to be true");
+            Assert.IsTrue(Globals.pressureReferencePoint, "Pressure Reference Point has to be true");
             urErrorLx = helical_hangingNodes.urErrorLx;
             uetaErrorLx = helical_hangingNodes.uetaErrorLx;
             uxiErrorLx = helical_hangingNodes.uxiErrorLx;
@@ -2170,7 +2158,7 @@ namespace StokesHelical_Ak.TestSpartial
                     ConditionNumberScalingTest.Perform(gridSeries, new ConditionNumberScalingTest.Config() { plot = true, title = "ConditionNumberScaling_without_R0fix-p" + pOrder, ComputeGlobalCondNo = false });
                     for (int i = 0; i < gridSize.Length; i++) {
                         Assert.IsFalse(gridSeries[i].R0fixOn, "R0fix must be turned off");
-                        Assert.IsTrue(gridSeries[i].PressureReferencePoint, "PressureReferencePoint should be true. Since R0_fix is false");
+                        Assert.IsTrue(Globals.pressureReferencePoint, "PressureReferencePoint should be true. Since R0_fix is false");
                     }
                 }
             }

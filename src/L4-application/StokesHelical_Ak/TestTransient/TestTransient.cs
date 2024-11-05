@@ -52,7 +52,7 @@ namespace StokesHelical_Ak.TestTransient
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
                     Assert.That(timeConvergence[i].R0fixOn == false, "R0_fix should be false");
-                    Assert.That(timeConvergence[i].PressureReferencePoint == true, "We have to calculate with PRP, since R0 is off");
+                    Assert.That(Globals.pressureReferencePoint == true, "We have to calculate with PRP, since R0 is off");
                     Assert.That(Globals.activeMult == Globals.Multiplier.one);
                     psiErrorL2[i] = solver.psiErrorL2;
                     urErrorL2[i] = solver.urErrorL2;
@@ -103,7 +103,7 @@ namespace StokesHelical_Ak.TestTransient
                 Assert.That(regressionPsi.slope >= order - tolerance, String.Format("Convergence rate for Psi lower than expected (was {0} but should be {1} +- {2})", regressionPsi.slope, order, tolerance));
             }
             Console.WriteLine("Remember: R0_fix is " + timeConvergence.First().R0fixOn);
-            Console.WriteLine("Remember: Calculating with PRP is " + timeConvergence.First().PressureReferencePoint);
+            Console.WriteLine("Remember: Calculating with PRP is " + Globals.pressureReferencePoint);
 
 
             double thresholdPsi = 5e-2;
@@ -149,7 +149,7 @@ namespace StokesHelical_Ak.TestTransient
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
                     Assert.That(timeConvergence[i].R0fixOn == false, "R0_fix should be false");
-                    Assert.That(timeConvergence[i].PressureReferencePoint == true, "We have to calculate with PRP, since R0 is off");
+                    Assert.That(Globals.pressureReferencePoint == true, "We have to calculate with PRP, since R0 is off");
                     Assert.That(Globals.activeMult == Globals.Multiplier.one);
                     psiErrorL2[i] = solver.psiErrorL2;
                     urErrorL2[i] = solver.urErrorL2;
@@ -200,7 +200,7 @@ namespace StokesHelical_Ak.TestTransient
                 Assert.That(regressionPsi.slope >= order - tolerance, String.Format("Convergence rate for Psi lower than expected (was {0} but should be {1} +- {2})", regressionPsi.slope, order, tolerance));
             }
             Console.WriteLine("Remember: R0_fix is " + timeConvergence.First().R0fixOn);
-            Console.WriteLine("Remember: Calculating with PRP is " + timeConvergence.First().PressureReferencePoint);
+            Console.WriteLine("Remember: Calculating with PRP is " + Globals.pressureReferencePoint);
 
             double thresholdPsi = 5e-4;
             Console.WriteLine("The psiErrorL2 error for {0} timesteps and {1} is = {2}", timeSteps.First(), timeSchemes.Last(), psiErrorL2.First());
@@ -247,7 +247,7 @@ namespace StokesHelical_Ak.TestTransient
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
                     Assert.That(timeConvergence[i].R0fixOn == true, "R0_fix should be true");
-                    Assert.That(timeConvergence[i].PressureReferencePoint == true, "We have to calculate with PRP");
+                    Assert.That(Globals.pressureReferencePoint == true, "We have to calculate with PRP");
                     if(Globals.activeMult == Globals.Multiplier.one && timeConvergence[i].rMin < 10e-6) {
                         Console.WriteLine("Friendly Reminder: Mutiplier One and rMin<10e-6");
                     }
@@ -299,7 +299,7 @@ namespace StokesHelical_Ak.TestTransient
                 Assert.That(regressionPsi.slope >= order - tolerance, String.Format("Convergence rate for Psi lower than expected (was {0} but should be {1} +- {2})", regressionPsi.slope, order, tolerance));
             }
             Console.WriteLine("Remember: R0_fix is " + timeConvergence.First().R0fixOn);
-            Console.WriteLine("Remember: Calculating with PRP is " + timeConvergence.First().PressureReferencePoint);
+            Console.WriteLine("Remember: Calculating with PRP is " + Globals.pressureReferencePoint);
 
             double thresholdPsi = 5e-2;
             Console.WriteLine("The psiErrorL2 error for {0} timesteps and {1} is = {2}", timeSteps.First(), timeSchemes.Last(), psiErrorL2.First());
@@ -346,7 +346,7 @@ namespace StokesHelical_Ak.TestTransient
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
                     Assert.That(timeConvergence[i].R0fixOn == true, "R0_fix should be true");
-                    Assert.That(timeConvergence[i].PressureReferencePoint == true, "We have to calculate without PRP, since R0 is on");
+                    Assert.That(Globals.pressureReferencePoint == true, "We have to calculate without PRP, since R0 is on");
                     if(Globals.activeMult == Globals.Multiplier.one && timeConvergence[i].rMin < 10e-6) {
                         Console.WriteLine("Friendly Reminder: Mutiplier One and rMin<10e-6");
                     }
@@ -398,7 +398,7 @@ namespace StokesHelical_Ak.TestTransient
                 Assert.That(regressionPsi.slope >= order - tolerance, String.Format("Convergence rate for Psi lower than expected (was {0} but should be {1} +- {2})", regressionPsi.slope, order, tolerance));
             }
             Console.WriteLine("Remember: R0_fix is " + timeConvergence.First().R0fixOn);
-            Console.WriteLine("Remember: Calculating with PRP is " + timeConvergence.First().PressureReferencePoint);
+            Console.WriteLine("Remember: Calculating with PRP is " + Globals.pressureReferencePoint);
 
             double thresholdPsi = 5e-4;
             Console.WriteLine("The psiErrorL2 error for {0} timesteps and {1} is = {2}", timeSteps.First(), timeSchemes.Last(), psiErrorL2.First());
