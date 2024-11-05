@@ -69,7 +69,11 @@ namespace StokesHelical_Ak {
                 // +++++++++++++++++++++++++++
                 // Update Linarization AND RHS
                 // +++++++++++++++++++++++++++
-                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine); 
+                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+                // ++++++++++++++++++++++++++++++++
+                // Check if a Pressure Reference Point is Necassary?!?
+                // ++++++++++++++++++++++++++++++++
+                base.Control.PressureReferencePoint = CheckNecassarityOfPRP(OpMatrix, Mapping, Control.rMin < 10e-6);
             } else {
                 // ++++++++++++++++++++++++++++++++
                 // Update only RHS of linearization
@@ -81,10 +85,6 @@ namespace StokesHelical_Ak {
                 OpMatrix.CheckForNanOrInfM();
             }
 
-            // ++++++++++++++++++++++++++++++++
-            // Check if a Pressure Reference Point is Necassary?!?
-            // ++++++++++++++++++++++++++++++++
-            base.Control.PressureReferencePoint = CheckNecassarityOfPRP(OpMatrix, Mapping, Control.rMin < 10e-6);
 
 
             if (base.Control.PressureReferencePoint) {
