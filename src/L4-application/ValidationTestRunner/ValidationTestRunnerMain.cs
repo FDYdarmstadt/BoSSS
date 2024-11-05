@@ -367,6 +367,27 @@ namespace ValidationTestRunner {
         }
 
         /// <summary>
+        /// Viscous Eddies (PrintingNip Stokes) Simulations
+        /// Section 5.2
+        /// </summary>
+        [NUnitFileToCopyHack("PrintingNip/*.ipynb")]
+        [Test]
+        static public void Run__ViscousEddies() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__ViscousEddies
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "ViscousEddies",
+                "ViscousEddies*",
+                "delete_ViscousEddies",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("PrintingNip/ViscousEddies_Run.ipynb");
+
+            Console.WriteLine("ViscousEddies @ FDYcluster");
+        }
+
+        /// <summary>
         /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
         /// Section 7.1
         /// </summary>
