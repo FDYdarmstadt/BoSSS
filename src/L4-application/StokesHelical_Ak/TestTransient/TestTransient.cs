@@ -678,6 +678,250 @@ namespace StokesHelical_Ak.TestTransient
             }
 
         }
+
+        /// <summary>
+        /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
+        /// With 10% White Noise over laminar Solutin
+        /// Reynolds 10
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
+        [Test]
+        static public void Transient_HP_Re_10_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
+
+            double maxAmpitude = 40;
+            var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
+            var ctrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1000, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, MaxAmp: maxAmpitude);
+
+            double a = Globals.a;
+            double b = Globals.b;
+            double nu = Globals.nu;
+            ctrl.savetodb = true;
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+            ctrl.ImmediatePlotPeriod = 10;
+
+
+            var random = 0.1 * maxAmpitude;
+            // Initial Values
+            // ==============
+            string InitialValue_ur_p =
+            "static class MyInitialValue_ur_p {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+            + " public static double GenerateRandomValue(double[] X, double t) {"
+            + "    var random = new Random();"
+            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
+            + "   return randomValue;"
+            + " }"
+            + "}";
+            string InitialValue_uxi =
+             "static class MyInitialValue_uxi {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) * (" + a * a + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+
+            string InitialValue_ueta =
+             "static class MyInitialValue_ueta {" // class must be static
+                                                  // Warning: static constants are allowed,
+                                                  // but any changes outside of the current text box in BoSSSpad
+                                                  // will not be recorded for the code that is passed to the solver.
+                                                  // A method, which should be used for an initial value,
+                                                  // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] +" + b * b + "))) * (" + a * b + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (X[0] *4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+
+            var ur0_p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur_p.GenerateRandomValue", true, InitialValue_ur_p);
+            var uxi0 = new BoSSS.Solution.Control.Formula("MyInitialValue_uxi.GenerateRandomValue", true, InitialValue_uxi);
+            var ueta0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ueta.GenerateRandomValue", true, InitialValue_ueta);
+
+
+            ctrl.AddInitialValue("Pressure", ur0_p0);
+            ctrl.AddInitialValue("ur", ur0_p0);
+            ctrl.AddInitialValue("ueta", ueta0);
+            ctrl.AddInitialValue("uxi", uxi0);
+
+            using (var solverStat = new HelicalMain()) {
+                solverStat.Init(ctrl);
+                solverStat.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverStat.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverStat.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverStat.Pressure.CloneAs();
+                SinglePhaseField pressureError = solverStat.Pressure.CloneAs();
+
+                // Exact Solution
+                Func<double[], double> uxi = (X) => -maxAmpitude * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * a * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (4 * nu);
+                Func<double[], double> ueta = (X) => maxAmpitude * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * b * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (X[0] * 4 * nu);
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => 0;
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                pressureError.ProjectField(pressure);
+                pressureError.Acc(-1, solverStat.Pressure);
+
+                double ur_L2 = solverStat.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverStat.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverStat.ueta.L2Error(exSol_ueta);
+
+                double psiErrorMean = pressureError.GetMeanValueTotal(null);
+                pressureError.AccConstant(-psiErrorMean);
+
+                double pressure_L2 = pressureError.L2Norm();
+                Console.WriteLine($"ur       L2 Error/maxAmpitude: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error/maxAmpitude: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error/maxAmpitude: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error/maxAmpitude: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-10, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-10, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-10, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-8, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+            }
+
+        }
+
+        /// <summary>
+        /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
+        /// With 10% White Noise over laminar Solutin
+        /// Reynolds 10000
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
+        [Test]
+        static public void Transient_HP_Re_2500_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
+
+            double maxAmpitude = 10000;
+            var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
+            var ctrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1000, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, MaxAmp: maxAmpitude);
+
+            double a = Globals.a;
+            double b = Globals.b;
+            double nu = Globals.nu;
+            ctrl.savetodb = true;
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+            ctrl.ImmediatePlotPeriod = 10;
+
+
+            var random = 0.1 * maxAmpitude;
+            // Initial Values
+            // ==============
+            string InitialValue_ur_p =
+            "static class MyInitialValue_ur_p {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+            + " public static double GenerateRandomValue(double[] X, double t) {"
+            + "    var random = new Random();"
+            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
+            + "   return randomValue;"
+            + " }"
+            + "}";
+            string InitialValue_uxi =
+             "static class MyInitialValue_uxi {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) * (" + a * a + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+
+            string InitialValue_ueta =
+             "static class MyInitialValue_ueta {" // class must be static
+                                                  // Warning: static constants are allowed,
+                                                  // but any changes outside of the current text box in BoSSSpad
+                                                  // will not be recorded for the code that is passed to the solver.
+                                                  // A method, which should be used for an initial value,
+                                                  // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] +" + b * b + "))) * (" + a * b + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (X[0] *4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+
+            var ur0_p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur_p.GenerateRandomValue", true, InitialValue_ur_p);
+            var uxi0 = new BoSSS.Solution.Control.Formula("MyInitialValue_uxi.GenerateRandomValue", true, InitialValue_uxi);
+            var ueta0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ueta.GenerateRandomValue", true, InitialValue_ueta);
+
+
+            ctrl.AddInitialValue("Pressure", ur0_p0);
+            ctrl.AddInitialValue("ur", ur0_p0);
+            ctrl.AddInitialValue("ueta", ueta0);
+            ctrl.AddInitialValue("uxi", uxi0);
+
+            using (var solverStat = new HelicalMain()) {
+                solverStat.Init(ctrl);
+                solverStat.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverStat.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverStat.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverStat.Pressure.CloneAs();
+                SinglePhaseField pressureError = solverStat.Pressure.CloneAs();
+
+                // Exact Solution
+                Func<double[], double> uxi = (X) => -maxAmpitude * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * a * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (4 * nu);
+                Func<double[], double> ueta = (X) => maxAmpitude * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * b * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (X[0] * 4 * nu);
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => 0;
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                pressureError.ProjectField(pressure);
+                pressureError.Acc(-1, solverStat.Pressure);
+
+                double ur_L2 = solverStat.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverStat.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverStat.ueta.L2Error(exSol_ueta);
+
+                double psiErrorMean = pressureError.GetMeanValueTotal(null);
+                pressureError.AccConstant(-psiErrorMean);
+
+                double pressure_L2 = pressureError.L2Norm();
+                Console.WriteLine($"ur       L2 Error/maxAmpitude: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error/maxAmpitude: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error/maxAmpitude: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error/maxAmpitude: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-10, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-10, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-10, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-8, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+            }
+
+        }
         #endregion
 
         #region Centrifugal Flow
@@ -943,29 +1187,99 @@ namespace StokesHelical_Ak.TestTransient
             }
 
         }
-        #endregion
-        static public void PseudoSteadyCentrifuge([Values(4)] int pOrder = 4) {
 
+        /// <summary>
+        /// Full Navier Stokes Cylindrical flow 
+        /// With 10% White Noise over laminar Solutin
+        /// Reynolds 10
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
+        [Test]
+        static public void Transient_CF_Re_10_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
+
+            double maxAmpitude = 10;
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
-            var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
+            var ctrl = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1000, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, MaxAmp: maxAmpitude);
 
             double a = Globals.a;
             double b = Globals.b;
-            double MaxAmp = ctrlStat.maxAmpli;
+            double nu = Globals.nu;
+            ctrl.savetodb = true;
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+            ctrl.ImmediatePlotPeriod = 10;
 
-            ctrlStat.savetodb = true;
-            ctrlStat.NoOfTimesteps = 1;
-            ctrlStat.ImmediatePlotPeriod = 1;
-            ctrlStat.InitialValues.Clear();
-            ctrlStat.InitialValues_Evaluators.Clear();
 
-            // Exact Solution
-            ctrlStat.AddInitialValue("Pressure", new Formula($"(X) => {MaxAmp} * {MaxAmp} * X[0] * X[0] *0.5"));
-            ctrlStat.AddInitialValue("ur", new Formula($"(X) => 0"));
-            ctrlStat.AddInitialValue("ueta", new Formula($"(X) => (X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} )))*{a}*{MaxAmp}* X[0]"));
-            ctrlStat.AddInitialValue("uxi", new Formula($"(X) => (X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} )))*{b}*{MaxAmp}"));
+            var random = 0.1 * maxAmpitude;
+            // Initial Values
+            // ==============
+            string InitialValue_p =
+            "static class MyInitialValue_p {" // class must be static
+                                              // Warning: static constants are allowed,
+                                              // but any changes outside of the current text box in BoSSSpad
+                                              // will not be recorded for the code that is passed to the solver.
+                                              // A method, which should be used for an initial value,
+                                              // must be static!
+            + " public static double GenerateRandomValue(double[] X, double t) {"
+            + "    var random = new Random();"
+            + "    double randomValue = " + maxAmpitude * maxAmpitude * 0.5 + "* X[0] * X[0] + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+            + "   return randomValue;"
+            + " }"
+            + "}";
+            string InitialValue_ur =
+            "static class MyInitialValue_ur {" // class must be static
+                                               // Warning: static constants are allowed,
+                                               // but any changes outside of the current text box in BoSSSpad
+                                               // will not be recorded for the code that is passed to the solver.
+                                               // A method, which should be used for an initial value,
+                                               // must be static!
+            + " public static double GenerateRandomValue(double[] X, double t) {"
+            + "    var random = new Random();"
+            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
+            + "   return randomValue;"
+            + " }"
+            + "}";
+            string InitialValue_uxi =
+             "static class MyInitialValue_uxi {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = " + maxAmpitude * b + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+            string InitialValue_ueta =
+             "static class MyInitialValue_ueta {" // class must be static
+                                                  // Warning: static constants are allowed,
+                                                  // but any changes outside of the current text box in BoSSSpad
+                                                  // will not be recorded for the code that is passed to the solver.
+                                                  // A method, which should be used for an initial value,
+                                                  // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = " + maxAmpitude * a + " * X[0] * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";" + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+            var p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_p.GenerateRandomValue", true, InitialValue_p);
+            var ur0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur.GenerateRandomValue", true, InitialValue_ur);
+            var uxi0 = new BoSSS.Solution.Control.Formula("MyInitialValue_uxi.GenerateRandomValue", true, InitialValue_uxi);
+            var ueta0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ueta.GenerateRandomValue", true, InitialValue_ueta);
+
+
+            ctrl.AddInitialValue("Pressure", p0);
+            ctrl.AddInitialValue("ur", ur0);
+            ctrl.AddInitialValue("ueta", ueta0);
+            ctrl.AddInitialValue("uxi", uxi0);
+
             using (var solverStat = new HelicalMain()) {
-                solverStat.Init(ctrlStat);
+                solverStat.Init(ctrl);
                 solverStat.RunSolverMode();
 
                 SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
@@ -975,9 +1289,9 @@ namespace StokesHelical_Ak.TestTransient
                 SinglePhaseField pressureError = solverStat.Pressure.CloneAs();
 
                 Func<double[], double> ur = (X) => 0;
-                Func<double[], double> pressure = (X) => MaxAmp * MaxAmp * X[0] * X[0] * 0.5;
-                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * MaxAmp * X[0];
-                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * MaxAmp;
+                Func<double[], double> pressure = (X) => maxAmpitude * maxAmpitude * X[0] * X[0] * 0.5;
+                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * maxAmpitude * X[0];
+                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * maxAmpitude;
 
                 exSol_ur.ProjectField(ur);
                 exSol_ueta.ProjectField(ueta);
@@ -993,17 +1307,151 @@ namespace StokesHelical_Ak.TestTransient
                 pressureError.AccConstant(-psiErrorMean);
 
                 double pressure_L2 = pressureError.L2Norm();
-                Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
-                Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
-                Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
-                Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ur       L2 Error/maxAmpitude: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error/maxAmpitude: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error/maxAmpitude: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error/maxAmpitude: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
 
-                Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(uxi_L2, 1.0e-10, $"uxi L2 Error out of range: {uxi_L2:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(ueta_L2, 1.0e-10, $"ueta L2 Error out of range: {ueta_L2:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(pressure_L2, 1.0e-8, $"pressure L2 Error out of range: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-10, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-10, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-10, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-8, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
             }
 
         }
+
+        /// <summary>
+        /// Full Navier Stokes Cylindrical flow 
+        /// With 10% White Noise over laminar Solutin
+        /// Reynolds 2500
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
+        [Test]
+        static public void Transient_CF_Re_2500_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
+
+            double maxAmpitude = 2500;
+            var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
+            var ctrl = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1000, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, MaxAmp: maxAmpitude);
+
+            double a = Globals.a;
+            double b = Globals.b;
+            double nu = Globals.nu;
+            ctrl.savetodb = true;
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+            ctrl.ImmediatePlotPeriod = 10;
+
+
+            var random = 0.1 * maxAmpitude;
+            // Initial Values
+            // ==============
+            string InitialValue_p =
+            "static class MyInitialValue_p {" // class must be static
+                                              // Warning: static constants are allowed,
+                                              // but any changes outside of the current text box in BoSSSpad
+                                              // will not be recorded for the code that is passed to the solver.
+                                              // A method, which should be used for an initial value,
+                                              // must be static!
+            + " public static double GenerateRandomValue(double[] X, double t) {"
+            + "    var random = new Random();"
+            + "    double randomValue = " + maxAmpitude * maxAmpitude * 0.5 + "* X[0] * X[0] + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+            + "   return randomValue;"
+            + " }"
+            + "}";
+            string InitialValue_ur =
+            "static class MyInitialValue_ur {" // class must be static
+                                               // Warning: static constants are allowed,
+                                               // but any changes outside of the current text box in BoSSSpad
+                                               // will not be recorded for the code that is passed to the solver.
+                                               // A method, which should be used for an initial value,
+                                               // must be static!
+            + " public static double GenerateRandomValue(double[] X, double t) {"
+            + "    var random = new Random();"
+            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
+            + "   return randomValue;"
+            + " }"
+            + "}";
+            string InitialValue_uxi =
+             "static class MyInitialValue_uxi {" // class must be static
+                                                 // Warning: static constants are allowed,
+                                                 // but any changes outside of the current text box in BoSSSpad
+                                                 // will not be recorded for the code that is passed to the solver.
+                                                 // A method, which should be used for an initial value,
+                                                 // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = " + maxAmpitude * b + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";"
+             + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+            string InitialValue_ueta =
+             "static class MyInitialValue_ueta {" // class must be static
+                                                  // Warning: static constants are allowed,
+                                                  // but any changes outside of the current text box in BoSSSpad
+                                                  // will not be recorded for the code that is passed to the solver.
+                                                  // A method, which should be used for an initial value,
+                                                  // must be static!
+             + " public static double GenerateRandomValue(double[] X, double t) {"
+             + "    var random = new Random();"
+             + "    double randomValue_and_lami = " + maxAmpitude * a + " * X[0] * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";" + "   return randomValue_and_lami;"
+             + " }"
+             + "}";
+
+            var p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_p.GenerateRandomValue", true, InitialValue_p);
+            var ur0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur.GenerateRandomValue", true, InitialValue_ur);
+            var uxi0 = new BoSSS.Solution.Control.Formula("MyInitialValue_uxi.GenerateRandomValue", true, InitialValue_uxi);
+            var ueta0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ueta.GenerateRandomValue", true, InitialValue_ueta);
+
+
+            ctrl.AddInitialValue("Pressure", p0);
+            ctrl.AddInitialValue("ur", ur0);
+            ctrl.AddInitialValue("ueta", ueta0);
+            ctrl.AddInitialValue("uxi", uxi0);
+
+            using (var solverStat = new HelicalMain()) {
+                solverStat.Init(ctrl);
+                solverStat.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverStat.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverStat.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverStat.Pressure.CloneAs();
+                SinglePhaseField pressureError = solverStat.Pressure.CloneAs();
+
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => maxAmpitude * maxAmpitude * X[0] * X[0] * 0.5;
+                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * maxAmpitude * X[0];
+                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * maxAmpitude;
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                pressureError.ProjectField(pressure);
+                pressureError.Acc(-1, solverStat.Pressure);
+
+                double ur_L2 = solverStat.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverStat.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverStat.ueta.L2Error(exSol_ueta);
+
+                double psiErrorMean = pressureError.GetMeanValueTotal(null);
+                pressureError.AccConstant(-psiErrorMean);
+
+                double pressure_L2 = pressureError.L2Norm();
+                Console.WriteLine($"ur       L2 Error/maxAmpitude: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error/maxAmpitude: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error/maxAmpitude: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error/maxAmpitude: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-10, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-10, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-10, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-8, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+            }
+
+        }
+        #endregion
+
     }
 }

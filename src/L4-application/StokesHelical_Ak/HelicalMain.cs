@@ -62,7 +62,7 @@ namespace StokesHelical_Ak {
                 }
                 Console.WriteLine(";");
             }
-            StokesHelical_Ak.TestSpartial.TestSpatial.HangingNodes_DDD_Paper_with_R0fix(2);
+            StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_10_Procent(3);
             // StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
             // var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:3,noOfCellsXi:3,deltaT:10E20);
             ////StokesHelical_Ak.TestSpartial.TestSpatial.ConditionNumberScaling_DDD_without_R0fix(2);
