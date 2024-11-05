@@ -28,8 +28,12 @@ namespace StokesHelical_Ak.TestTransient
     [TestFixture]
     static public class TestTransient {
 
-        // Convergence for BDF1
-
+        #region DDD
+        /// <summary>
+        /// Transient Tests for the Solution in Dr Dominiks Dierkes Paper (Formular 4.4) for BDF 1 and no R0fix
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
         [Test]
         static public void Transient_TimeConv_BDF1_DDD_no_R0fix() {
 
@@ -122,8 +126,12 @@ namespace StokesHelical_Ak.TestTransient
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorL2.First(), thresholdUxi);
             Assert.That(uxiErrorL2.First() < thresholdUxi, "Error. uxiErrorL2 not fullfilled");
         }
+        /// <summary>
+        /// Transient Tests for the Solution in Dr Dominiks Dierkes Paper (Formular 4.4) for BDF 3 and no R0fix
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
         [Test]
-        // Convergence for BDF3
         static public void Transient_TimeConv_BDF3_DDD_no_R0fix() {
 
             int[] timeSteps = new int[] { 64, 32, 16, 8, 4 };
@@ -215,8 +223,13 @@ namespace StokesHelical_Ak.TestTransient
             Assert.That(uxiErrorL2.First() < thresholdUxi, "Error. uxiErrorL2 not fullfilled");
         }
 
+        /// <summary>
+        /// Transient Tests for the Solution in Dr Dominiks Dierkes Paper (Formular 4.4) for BDF 1 and with R0fix
+        /// </summary>
+        /// <remarks>
+        /// ATTENTION MUTIPLIER IS ONE BUT should be BSQ (See in the Helical Main). Don't Know why BSQ is not working in this Testcase
+        /// </remarks>
         [Test]
-        // Convergence for BDF1
         static public void Transient_TimeConv_BDF1_DDD_with_R0fix() {
 
             int[] timeSteps = new int[] { 64, 32, 16, 8, 4 };
@@ -308,7 +321,12 @@ namespace StokesHelical_Ak.TestTransient
             Console.WriteLine("If the uxiErrorL2 error is {0} < {1} than good :) ", uxiErrorL2.First(), thresholdUxi);
             Assert.That(uxiErrorL2.First() < thresholdUxi, "Error. uxiErrorL2 not fullfilled");
         }
-
+        /// <summary>
+        /// Transient Tests for the Solution in Dr Dominiks Dierkes Paper (Formular 4.4) for BDF 3 and with R0fix
+        /// </summary>
+        /// <remarks>
+        ///  ATTENTION MUTIPLIER IS ONE BUT should be BSQ (See in the Helical Main). Don't Know why BSQ is not working in this Testcase
+        /// </remarks>
         [Test]
         // Convergence for BDF3
         static public void Transient_TimeConv_BDF3_DDD_with_R0fix() {
@@ -403,25 +421,22 @@ namespace StokesHelical_Ak.TestTransient
             Assert.That(uxiErrorL2.First() < thresholdUxi, "Error. uxiErrorL2 not fullfilled");
 
         }
+        #endregion
 
-
-
+        #region Hagen Poiseulle
         /// <summary>
-        /// Tests if a steady-state, laminar Hagen Poiseulle flow (aka. Pipe flow),
+        /// Tests if a steady-state, Stokes Hagen Poiseulle flow (aka. Pipe flow),
         /// is also the solution of the instationary solver.
         /// </summary>
         /// <remarks>
         /// </remarks>
         [Test]
-        static public void PseudoSteady_HP_Stokes(
-            [Values(2, 3, 4)] int pOrder = 4,
-            [Values(false, true)] bool NavierStokes = false
-            ) {
+        static public void PseudoSteady_HP_Re_10_Stokes_with_R0fix( [Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = false) {
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
 
 
             //ilPSP.Environment.NumThreads = 1;
-            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath:tempDB.Path, bdfOrder:1);
+            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath:tempDB.Path, bdfOrder:1, rMin :0, MaxAmp: 40);
 
             // Initial Values = 0!
             ctrlStat.InitialValues.Clear();
@@ -481,7 +496,7 @@ namespace StokesHelical_Ak.TestTransient
             // Restart Solution from Exact Solution!!!!!
             // Now dt = 0.0001
 
-            var ctrlTransient = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
+            var ctrlTransient = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 40);
             ctrlTransient.GridFunc = null;
             ctrlTransient.RestartInfo = new Tuple<Guid, TimestepNumber>(steadyStateSession, null); // 2nd arg null -> take last timestep;
             ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
@@ -536,19 +551,398 @@ namespace StokesHelical_Ak.TestTransient
 
         }
 
+
         /// <summary>
-        /// Tests if the exact solution for the, Centrifugal flow (aka. Centrifugal flow),
-        /// is also the solution of the instationary solver. Solver should find the exact Solution. 
-        /// For BDF1
+        /// Tests if a steady-state, Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
+        /// is also the solution of the instationary solver.
         /// </summary>
         /// <remarks>
         /// </remarks>
         [Test]
-        static public void PseudoSteadyCentrifuge(
-            [Values(4)] int pOrder = 4
-            ) {
+        static public void PseudoSteady_HP_Re_10_Navier_Stokes_with_R0fix( [Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = true) {
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
 
+
+            //ilPSP.Environment.NumThreads = 1;
+            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 40);
+
+            // Initial Values = 0!
+            ctrlStat.InitialValues.Clear();
+            ctrlStat.InitialValues_Evaluators.Clear();
+            ctrlStat.savetodb = true;
+            ctrlStat.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+
+            Guid steadyStateSession;
+            double[] SteadyStateSolution;
+            using (var solverStat = new HelicalMain()) {
+                solverStat.Init(ctrlStat);
+                solverStat.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverStat.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverStat.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverStat.Pressure.CloneAs();
+
+                double nu = Globals.nu;
+                double a = Globals.a;
+                double b = Globals.b;
+                double MaxAmp = solverStat.Control.maxAmpli;
+
+                // Exact Solution
+                Func<double[], double> uxi = (X) => -MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * a * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (4 * nu);
+                Func<double[], double> ueta = (X) => MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * b * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (X[0] * 4 * nu);
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => 0;
+
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                exSol_pressure.ProjectField(pressure);
+
+                double ur_L2 = solverStat.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverStat.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverStat.ueta.L2Error(exSol_ueta);
+                double pressure_L2 = solverStat.Pressure.L2Error(exSol_pressure);
+
+                Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
+                if (pOrder == 4) {
+                    Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error out of range: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                    Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error out of range: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                }
+                Assert.LessOrEqual(pressure_L2, 1.0e-10, $"pressure L2 Error out of range: {pressure_L2:0.###e-00} (should be close to 0.0)");
+
+                steadyStateSession = solverStat.CurrentSessionInfo.ID;
+                SteadyStateSolution = solverStat.CurrentSolution.ToArray();
+            }
+
+            // Restart Solution from Exact Solution!!!!!
+            // Now dt = 0.0001
+
+            var ctrlTransient = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 40);
+            ctrlTransient.GridFunc = null;
+            ctrlTransient.RestartInfo = new Tuple<Guid, TimestepNumber>(steadyStateSession, null); // 2nd arg null -> take last timestep;
+            ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
+            ctrlTransient.NavierStokes = NavierStokes;
+
+            using (var solverTransient = new HelicalMain()) {
+                solverTransient.Init(ctrlTransient);
+                solverTransient.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverTransient.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverTransient.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverTransient.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverTransient.Pressure.CloneAs();
+
+                double nu = Globals.nu;
+                double a = Globals.a;
+                double b = Globals.b;
+                double MaxAmp = solverTransient.Control.maxAmpli;
+
+                Func<double[], double> uxi = (X) => -MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * a * (solverTransient.Control.rMax * solverTransient.Control.rMax - X[0] * X[0])) / (4 * nu);
+                Func<double[], double> ueta = (X) => MaxAmp * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * b * (solverTransient.Control.rMax * solverTransient.Control.rMax - X[0] * X[0])) / (X[0] * 4 * nu);
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => 0;
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                exSol_pressure.ProjectField(pressure);
+
+                double ur_L2 = solverTransient.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverTransient.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverTransient.ueta.L2Error(exSol_ueta);
+                double pressure_L2 = solverTransient.Pressure.L2Error(exSol_pressure);
+
+                double solDist = solverTransient.CurrentSolution.MPI_L2Dist(SteadyStateSolution);
+
+                Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine();
+                Console.WriteLine($"l2 dist to steady sol: {solDist:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2, 1.0e-10, $"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                if (pOrder == 4) {
+                    Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error: {uxi_L2:0.###e-00} (should nonzero)");
+                    Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error: {ueta_L2:0.###e-00} (should nonzero)");
+                    Assert.LessOrEqual(solDist, 1.0e-10, $"l2 dist to steady sol: {solDist: 0.###e-00} (should be close to 0.0)");
+                }
+            }
+
+        }
+        #endregion
+
+        #region Centrifugal Flow
+        /// <summary>
+        /// Tests if the exact solution for the, Stokes Centrifugal flow (aka. Centrifugal flow),
+        /// is also the solution of the instationary solver. Solver should find the exact Solution. 
+        /// For BDF1
+        /// </summary>
+        /// <remarks>
+        /// In the Stokes Case for the centrifugal flow the Pressure is Zero!
+        /// </remarks>
+        /// 
+        [Test]
+        static public void PseudoSteady_CF_Re_10_Stokes_with_R0fix([Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = false) {
+            var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
+            //ilPSP.Environment.NumThreads = 1;
+            var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 10);
+            // Initial Values = 0!
+            ctrlStat.InitialValues.Clear();
+            ctrlStat.InitialValues_Evaluators.Clear();
+            ctrlStat.savetodb = true;
+            ctrlStat.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+
+            Guid steadyStateSession;
+            double[] SteadyStateSolution;
+            using (var solverStat = new HelicalMain()) {
+                solverStat.Init(ctrlStat);
+                solverStat.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverStat.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverStat.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverStat.Pressure.CloneAs();
+
+                double nu = Globals.nu;
+                double a = Globals.a;
+                double b = Globals.b;
+                double MaxAmp = solverStat.Control.maxAmpli;
+
+                // Exact Solution
+                Func<double[], double> ur = (X) => 0;
+                //Func<double[], double> pressure = (X) => MaxAmp * MaxAmp * X[0] * X[0] * 0.5;
+                Func<double[], double> pressure = (X) => 0;
+                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * MaxAmp * X[0];
+                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * MaxAmp;
+
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                exSol_pressure.ProjectField(pressure);
+
+                double ur_L2 = solverStat.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverStat.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverStat.ueta.L2Error(exSol_ueta);
+                double pressure_L2 = solverStat.Pressure.L2Error(exSol_pressure);
+
+                Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
+                if (pOrder == 4) {
+                    Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error out of range: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                    Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error out of range: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                }
+                Assert.LessOrEqual(pressure_L2, 1.0e-10, $"pressure L2 Error out of range: {pressure_L2:0.###e-00} (should be close to 0.0)");
+
+                steadyStateSession = solverStat.CurrentSessionInfo.ID;
+                SteadyStateSolution = solverStat.CurrentSolution.ToArray();
+            }
+
+            // Restart Solution from Exact Solution!!!!!
+            // Now dt = 0.0001
+
+            var ctrlTransient = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 10);
+            ctrlTransient.GridFunc = null;
+            ctrlTransient.RestartInfo = new Tuple<Guid, TimestepNumber>(steadyStateSession, null); // 2nd arg null -> take last timestep;
+            ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
+            ctrlTransient.NavierStokes = NavierStokes;
+
+            using (var solverTransient = new HelicalMain()) {
+                solverTransient.Init(ctrlTransient);
+                solverTransient.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverTransient.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverTransient.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverTransient.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverTransient.Pressure.CloneAs();
+
+                double nu = Globals.nu;
+                double a = Globals.a;
+                double b = Globals.b;
+                double MaxAmp = solverTransient.Control.maxAmpli;
+
+                // Exact Solution
+                Func<double[], double> ur = (X) => 0;
+                //Func<double[], double> pressure = (X) => MaxAmp * MaxAmp * X[0] * X[0] * 0.5;
+                Func<double[], double> pressure = (X) => 0;
+                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * MaxAmp * X[0];
+                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * MaxAmp;
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                exSol_pressure.ProjectField(pressure);
+
+                double ur_L2 = solverTransient.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverTransient.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverTransient.ueta.L2Error(exSol_ueta);
+                double pressure_L2 = solverTransient.Pressure.L2Error(exSol_pressure);
+
+                double solDist = solverTransient.CurrentSolution.MPI_L2Dist(SteadyStateSolution);
+
+                Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine();
+                Console.WriteLine($"l2 dist to steady sol: {solDist:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2, 1.0e-10, $"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                if (pOrder == 4) {
+                    Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error: {uxi_L2:0.###e-00} (should nonzero)");
+                    Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error: {ueta_L2:0.###e-00} (should nonzero)");
+                    Assert.LessOrEqual(solDist, 1.0e-10, $"l2 dist to steady sol: {solDist: 0.###e-00} (should be close to 0.0)");
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// Tests if the exact solution for the, Stokes Centrifugal flow (aka. Centrifugal flow),
+        /// is also the solution of the instationary solver. Solver should find the exact Solution. 
+        /// For BDF1
+        /// </summary>
+        /// <remarks>
+        /// In the Stokes Case for the centrifugal flow the Pressure is Zero!
+        /// </remarks>
+        /// 
+        [Test]
+        static public void PseudoSteady_CF_Re_10_Navier_Stokes_with_R0fix([Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = true) {
+            var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
+            //ilPSP.Environment.NumThreads = 1;
+            var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 10);
+            ctrlStat.AddInitialValue("Pressure", new Formula("(X) =>1"));
+            ctrlStat.AddInitialValue("ur", new Formula("(X) => 1"));
+            ctrlStat.AddInitialValue("ueta", new Formula($"(X) => 1"));
+            ctrlStat.AddInitialValue("uxi", new Formula($"(X) => 1"));
+            ctrlStat.savetodb = true;
+            ctrlStat.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+            ctrlStat.ImmediatePlotPeriod = 1;
+            Guid steadyStateSession;
+            double[] SteadyStateSolution;
+            using (var solverStat = new HelicalMain()) {
+                solverStat.Init(ctrlStat);
+                solverStat.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverStat.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverStat.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverStat.Pressure.CloneAs();
+
+                double nu = Globals.nu;
+                double a = Globals.a;
+                double b = Globals.b;
+                double MaxAmp = solverStat.Control.maxAmpli;
+
+                // Exact Solution
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => MaxAmp * MaxAmp * X[0] * X[0] * 0.5;
+                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * MaxAmp * X[0];
+                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * MaxAmp;
+
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                exSol_pressure.ProjectField(pressure);
+
+                double ur_L2 = solverStat.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverStat.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverStat.ueta.L2Error(exSol_ueta);
+                double pressure_L2 = solverStat.Pressure.L2Error(exSol_pressure);
+
+                Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
+                if (pOrder == 4) {
+                    Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error out of range: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                    Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error out of range: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                }
+                Assert.LessOrEqual(pressure_L2, 1.0e-10, $"pressure L2 Error out of range: {pressure_L2:0.###e-00} (should be close to 0.0)");
+
+                steadyStateSession = solverStat.CurrentSessionInfo.ID;
+                SteadyStateSolution = solverStat.CurrentSolution.ToArray();
+            }
+
+            // Restart Solution from Exact Solution!!!!!
+            // Now dt = 0.0001
+
+            var ctrlTransient = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 10);
+            ctrlTransient.GridFunc = null;
+            ctrlTransient.RestartInfo = new Tuple<Guid, TimestepNumber>(steadyStateSession, null); // 2nd arg null -> take last timestep;
+            ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
+            ctrlTransient.NavierStokes = NavierStokes;
+
+            using (var solverTransient = new HelicalMain()) {
+                solverTransient.Init(ctrlTransient);
+                solverTransient.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverTransient.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverTransient.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverTransient.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverTransient.Pressure.CloneAs();
+
+                double nu = Globals.nu;
+                double a = Globals.a;
+                double b = Globals.b;
+                double MaxAmp = solverTransient.Control.maxAmpli;
+
+                // Exact Solution
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => MaxAmp * MaxAmp * X[0] * X[0] * 0.5;
+                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * MaxAmp * X[0];
+                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * MaxAmp;
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                exSol_pressure.ProjectField(pressure);
+
+                double ur_L2 = solverTransient.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverTransient.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverTransient.ueta.L2Error(exSol_ueta);
+                double pressure_L2 = solverTransient.Pressure.L2Error(exSol_pressure);
+
+                double solDist = solverTransient.CurrentSolution.MPI_L2Dist(SteadyStateSolution);
+
+                Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine();
+                Console.WriteLine($"l2 dist to steady sol: {solDist:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2, 1.0e-10, $"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
+                if (pOrder == 4) {
+                    Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error: {uxi_L2:0.###e-00} (should nonzero)");
+                    Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error: {ueta_L2:0.###e-00} (should nonzero)");
+                    Assert.LessOrEqual(solDist, 1.0e-10, $"l2 dist to steady sol: {solDist: 0.###e-00} (should be close to 0.0)");
+                }
+            }
+
+        }
+        #endregion
+        static public void PseudoSteadyCentrifuge([Values(4)] int pOrder = 4) {
+
+            var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
             var ctrlStat = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1);
 
             double a = Globals.a;
@@ -558,16 +952,15 @@ namespace StokesHelical_Ak.TestTransient
             ctrlStat.savetodb = true;
             ctrlStat.NoOfTimesteps = 1;
             ctrlStat.ImmediatePlotPeriod = 1;
-            // Clear Initial Values
             ctrlStat.InitialValues.Clear();
             ctrlStat.InitialValues_Evaluators.Clear();
-            
+
             // Exact Solution
             ctrlStat.AddInitialValue("Pressure", new Formula($"(X) => {MaxAmp} * {MaxAmp} * X[0] * X[0] *0.5"));
             ctrlStat.AddInitialValue("ur", new Formula($"(X) => 0"));
             ctrlStat.AddInitialValue("ueta", new Formula($"(X) => (X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} )))*{a}*{MaxAmp}* X[0]"));
             ctrlStat.AddInitialValue("uxi", new Formula($"(X) => (X[0]/(Math.Sqrt({a * a} * X[0] * X[0] + {b * b} )))*{b}*{MaxAmp}"));
-            using(var solverStat = new HelicalMain()) {
+            using (var solverStat = new HelicalMain()) {
                 solverStat.Init(ctrlStat);
                 solverStat.RunSolverMode();
 
@@ -578,9 +971,9 @@ namespace StokesHelical_Ak.TestTransient
                 SinglePhaseField pressureError = solverStat.Pressure.CloneAs();
 
                 Func<double[], double> ur = (X) => 0;
-                Func<double[], double> pressure = (X) => MaxAmp * MaxAmp * X[0] * X[0] *0.5;
-                Func<double[], double> ueta = (X) => (X[0]/(Math.Sqrt(a * a * X[0] * X[0] + b * b )))*a*MaxAmp* X[0];
-                Func<double[], double> uxi = (X) => (X[0]/(Math.Sqrt(a * a * X[0] * X[0] + b * b )))*b*MaxAmp;
+                Func<double[], double> pressure = (X) => MaxAmp * MaxAmp * X[0] * X[0] * 0.5;
+                Func<double[], double> ueta = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * a * MaxAmp * X[0];
+                Func<double[], double> uxi = (X) => (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * b * MaxAmp;
 
                 exSol_ur.ProjectField(ur);
                 exSol_ueta.ProjectField(ueta);
