@@ -395,7 +395,7 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__CapillaryWave() {
 
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__ViscousEddies
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__CapillaryWave
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "CapillaryWave",
@@ -406,6 +406,50 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/CapillaryWave/CapillaryWave.ipynb");
 
             Console.WriteLine("CapillaryWave @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Phasefield Rising Bubble Simulations
+        /// Section 6.2
+        /// </summary>
+        [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
+        [Test]
+        static public void Run__PhasefieldRisingBubble() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__PhasefieldRisingBubble
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "PhasefieldRisingBubble",
+                "PhasefieldRisingBubble*",
+                "delete_PhasefieldRisingBubble",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldRisingBubble.ipynb");
+
+            Console.WriteLine("PhasefieldRisingBubble @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Phasefield Rising Bubble Simulations
+        /// Section 6.2
+        /// </summary>
+        [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
+        [Test]
+        static public void Run__PhasefieldContactline() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__PhasefieldContactline
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "PhasefieldContactLine",
+                "PhasefieldContactLine*",
+                "delete_PhasefieldContactLine",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldContactLine.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldContactLine_Postprocessing.ipynb");
+
+
+            Console.WriteLine("PhasefieldContactline @ FDYcluster");
         }
 
         /// <summary>

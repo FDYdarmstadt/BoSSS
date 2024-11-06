@@ -2212,17 +2212,24 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// special purpose method, most likely legacy stuff
         /// </summary>
-        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess) {
+        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess, string[] CustomValues = null) {
 
-            string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-Velocity", "contact-angle" };
+
+            string[] values;
+            if (CustomValues != null) {
+                values = CustomValues;
+            } else {
+                values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-Velocity", "contact-angle" };
+            }
 
             // check number of contact lines
             string path = @sess.Pick(0).Database.Path + "\\sessions\\" + sess.Pick(0).ID + "\\ContactAngle.txt";
             string[] lines = File.ReadAllLines(path);
-            int numCL = 0;
-            for (int i = 1; i <= 4; i++) {       // max number of contact lines should be 4
+            int numCL = 1;
+            int ts0 = (int)Convert.ToDouble(lines[1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
+            for (int i = 2; i <= 4; i++) {       // max number of contact lines should be 4
                 int ts = (int)Convert.ToDouble(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
-                if (ts == 0)
+                if (ts == ts0)
                     numCL++;
             }
 
