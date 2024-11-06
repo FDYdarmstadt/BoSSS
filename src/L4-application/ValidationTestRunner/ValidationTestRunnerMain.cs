@@ -453,6 +453,50 @@ namespace ValidationTestRunner {
         }
 
         /// <summary>
+        /// Poisson Boundary Condition Regularity Simulations
+        /// Section 6.3
+        /// </summary>
+        [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb", "TemperatureConvergence/*.txt")]
+        [Test]
+        static public void Run__TemperatureBoundaryCondition() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureBoundaryCondition
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "TemperatureBoundaryCondition",
+                "TemperatureBoundaryCondition*",
+                "delete_TemperatureBoundaryCondition",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureBoundaryCondition.ipynb");
+
+
+            Console.WriteLine("TemperatureBoundaryCondition @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Temperature Velocity Coupling Simulations
+        /// Section 6.3
+        /// </summary>
+        [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb")]
+        [Test]
+        static public void Run__TemperatureVelocityCoupling() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "TemperatureVelocityCoupling",
+                "TemperatureVelocityCoupling*",
+                "delete_TemperatureVelocityCoupling",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureVelocityCoupling.ipynb");
+
+
+            Console.WriteLine("TemperatureVelocityCoupling @ FDYcluster");
+        }
+
+        /// <summary>
         /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
         /// Section 7.1
         /// </summary>
