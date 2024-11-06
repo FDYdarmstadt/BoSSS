@@ -37,7 +37,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 		/// <param name="callSurfaceAndVolumeAtOnce">if enabled, performs calculation of volume and surface rules at once to reduce computational cost. 
 		/// (it can cause redundancy if both are not required at the same time)</param>
 		public AlgoimFactories(LevelSetTracker.LevelSetData ls, RefElement e, bool negativeLevelSet = false, bool callSurfaceAndVolumeAtOnce = true) {
-            refElement = e;
+			if (!(e is Grid.RefElements.Cube ||
+	              e is Grid.RefElements.Square ||
+	              e is Grid.RefElements.Line ||
+	              e is Grid.RefElements.Point))
+				throw new NotSupportedException("Algoim is only supported for Cube, Square, Line and Point reference elements");
+
+			refElement = e;
             lsData = ls;
             VolumeSign = negativeLevelSet;
             SurfaceAndVolumeAtOnce = callSurfaceAndVolumeAtOnce;
@@ -402,7 +408,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         }
         
-        #region Edge rules
         class AlgoimCellBoundaryFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
             internal AlgoimFactories m_Owner;
 
@@ -437,7 +442,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 if (!(mask is CellMask cellMask))
                     throw new ArgumentException("Expecting a cell mask.");
 
-                if (m_Rules.ContainsKey(RequestedOrder))
+				if (m_Rules.ContainsKey(RequestedOrder))
                     return m_Rules[RequestedOrder];
 
                 if (m_SurfaceAndVolumeAtOnce)
@@ -519,66 +524,31 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
 
                 int numberOfCombinations = (int)Math.Pow(points.Length, ruleDim); //Cartesian pair product for the points
-
                 MultidimensionalArray combinationsOnEdge = MultidimensionalArray.CreateCartesianPairProduct(points, ruleDim);
-                MultidimensionalArray combinations  = MultidimensionalArray.Create(numberOfCombinations, spaceDim);
-    
-                // This operation basically insert a column at 'edgeMap[0]' into matrix combinationsOnEdge with all values equal to 'edgeMap[1]'
-                int dimOffset = 0;
-                for (int d = 0; d < spaceDim; d++) {
-                    if (d == edge2CubeMap[edgeIndex, 0]) {
-                        for (int i = 0; i < numberOfCombinations; i++) {
-                            //Assign the coordinate from mapping (e.g. if left edge: -1)
-                            combinations[i, d] = edge2CubeMap[edgeIndex, 1];
-                        }
-                        dimOffset = 1;
-                    } else {
-                        for (int i = 0; i < numberOfCombinations; i++) {
-                            //Assign from combinationsOnEdge
-                            combinations[i, d] = combinationsOnEdge[i,d-dimOffset];
-                        }
-                    }
-                }
 
-                //combinations.SaveToTextFile($"combsj{jCell}e{edgeIndex}.txt");
+                // Transform edge based coordinates to cell based coordinates (to query level sets)
+                MultidimensionalArray combinations  = MultidimensionalArray.Create(numberOfCombinations, spaceDim);  // to transform edge coordinates to cell, create an array in the original space dim
+				RefElement.TransformFaceCoordinates(edgeIndex, combinationsOnEdge, combinations);
 
-                NodeSet NS = new NodeSet(RefElement, combinations, false);
+				NodeSet NS = new NodeSet(RefElement, combinations, false);
                 var ret = lsData.GetLevSetValues(NS, jCell, 1);
 
-                //if boundary take in value
-                //in out cells for discontinous (take average if not same )
-                //(lsData.LevelSet as LevelSet).EvaluateEdge()
-
-                //Console.WriteLine(ret.ToString());
-                //ret.SaveToTextFile("ret.txt");
-
-                //Console.WriteLine("Ret dim: " + ret.Dimension);
-                //foreach (var l in ret.Lengths)
-                //    Console.WriteLine("Length in:  " + l);
-
-                //Console.WriteLine("Total number of elements: " + ret.Length);
-
+                // create data for Algoim wrapper and query the quad rule
                 double[] y = new double[ret.Length];
-
                 if (VolumeSign) {
-                    for (int i = 0; i < ret.Length; i++)
+					for (int i = 0; i < ret.Length; i++)
                         y[i] = -ret[0, i];
                 } else {
                     for (int i = 0; i < ret.Length; i++)
                         y[i] = ret[0, i];
                 }
 
-                double[] x = Enumerable.Repeat(points, ruleDim).SelectMany(i => i).ToArray();
-
-                //new double[points.Length + points.Length];
-                //Array.Copy(points, 0, x, 0, points.Length);
-                //Array.Copy(points, 0, x, points.Length, points.Length);
-                //int[] sizes = new int[] { 3, 3 };
+				// notice that on Algoim side, this is still an edge rule (e.g., a plane on ruleDim=spaceDim-1 for a cube)
+				double[] x = Enumerable.Repeat(points, ruleDim).SelectMany(i => i).ToArray(); 
                 int[] sizes = Enumerable.Repeat(points.Length, ruleDim).ToArray();
 
+                // calculate the quadrature rule
                 UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(ruleDim, n, RequestedOrder, sizes, x, y);
-                //qs.OutputQuadratureRuleAsVtpXML("bosssj" + jCell + ".vtp");
-                //Console.WriteLine("qs.length = " + qs.length);
 
                 if (qs.length < 1) {
                     CellBoundaryQuadRule quadRuleEmpty = CellBoundaryQuadRule.CreateEmpty(RefElement, 1, spaceDim, RefElement.NoOfFaces);
@@ -586,66 +556,38 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return quadRuleEmpty;
                 }
 
+				QuadRule quadRuleOnEdge = QuadRule.CreateEmpty(RefElement.FaceRefElement, qs.length, qs.dimension);
 
-                CellBoundaryQuadRule quadRuleOnEdge = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
-
-                //int ind = 0;
                 for (int row = 0; row < qs.length; row++) {
                     quadRuleOnEdge.Weights[row] = qs.weights[row];
 
                     for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
                         int ind = row * qs.dimension + d;
                         quadRuleOnEdge.Nodes[row, d] = qs.nodes[ind];
-                        //Console.WriteLine($"quadRule.Nodes[{row}, {d}] = qs.nodes[{ind}] = {qs.nodes[ind]} ");
                     }
                 }
 
-                CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
+				// Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
+				CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
                 quadRule.Weights = quadRuleOnEdge.Weights;
-                dimOffset = 0;
-                for (int d = 0; d < spaceDim; d++) {
-                    if (d == edge2CubeMap[edgeIndex, 0]) {
-                        for (int i = 0; i < qs.length; i++) {
-                            //Assign the coordinate from mapping (e.g. if left edge: -1)
-                            quadRule.Nodes[i, d] = edge2CubeMap[edgeIndex, 1];
-                        }
-                        dimOffset = 1;
-                    } else {
-                        for (int i = 0; i < qs.length; i++) {
-                            //Assign from combinationsOnEdge
-                            quadRule.Nodes[i, d] = quadRuleOnEdge.Nodes[i, d - dimOffset];
-                        }
-                    }
-                }
+                RefElement.TransformFaceCoordinates(edgeIndex, quadRuleOnEdge.Nodes, quadRule.Nodes); // to transform edge rule back to cell coordinates (since we are creating CellBoundaryQuadRule, cell based rule)
+				quadRule.Nodes.LockForever();
 
-
-                //quadRule.OutputQuadratureRuleAsVtpXML("quadRule" + jCell + ".vtp");
-                quadRule.Nodes.LockForever();
-                //var quadRuleGlobal = quadRule.CloneAs();
-                //quadRuleGlobal.TransformLocal2Global(lsData.GridDat.Grid, jCell);
-
-                //var LevelSetNormals = lsData.GetLevelSetReferenceNormals(quadRule.Nodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
-                //LevelSetNormals.SaveToTextFile("lsnormals.txt");
                 if (useMetrics) {
                     var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
-                    //useMetrics.SaveToTextFile("useMetrics.txt");
-
-                    ////quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("beforeWeights");
 
                     for (int k = 0; k < qs.length; k++)
                         quadRule.Weights[k] /= metrics[0, k];
                 }
-                //quadRule.Weights.MatMatMul(useMetrics);
 
-                //quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("afterWeights");
-
-                //quadRuleGlobal.OutputQuadratureRuleAsVtpXML($"bosssj{jCell}e{edgeIndex}.vtp");
                 return quadRule;
             }
 
         }
 
-        class AlgoimEdgeRuleFactoryOnEdge : IQuadRuleFactory<QuadRule> {
+		#region Edge rules on edge (Obsolete)
+		// Obsolete, one needs to arrange how to couple quadrature nodes for an edge, since an edge is shared by two cells and can lead to different nodes and values
+		class AlgoimEdgeRuleFactoryOnEdge : IQuadRuleFactory<QuadRule> {
             internal AlgoimFactories m_Owner;
 
             internal Dictionary<int, ChunkRulePair<QuadRule>[]> m_Rules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
@@ -730,13 +672,72 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             private QuadRule GetNodesAndWeightsOnEdge(int edge, int requestedOrder) {
+                if (edge >= 0)
+                    throw new NotImplementedException();
 
-                QuadRule ret = new QuadRule();
-                ret.OrderOfPrecision = int.MaxValue - 1;
-                ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, ruleDim), false);
-                ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
-                                                                // (rules with zero nodes may cause problems at various places.)
-                return ret;
+				LevelSet levelSet = (LevelSet)lsData.LevelSet;
+
+				//number of nodes in 1d for level set interpolation = degree + 1
+				int n = levelSet.Basis.Degree + 1;
+
+				//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+				double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+
+				int numberOfCombinations = (int)Math.Pow(points.Length, ruleDim);        //Cartesian pair product for the points
+				MultidimensionalArray combinationsOnEdge = MultidimensionalArray.CreateCartesianPairProduct(points, ruleDim);
+
+				NodeSet NS = new NodeSet(RefElement.FaceRefElement, combinationsOnEdge, false);
+
+				//create a new array but the first index is reserved for node index, which would be 0 always in this scope
+				int[] lengthsModified = new int[NS.Lengths.Length+1];
+                lengthsModified[0] = 1; //we have only one node
+				Array.Copy(NS.Lengths, 0, lengthsModified, 1, NS.Lengths.Length);   // copy for the rest excluding the first index   
+
+				MultidimensionalArray LSinValues = MultidimensionalArray.Create(lengthsModified);
+				MultidimensionalArray LSoutValues = MultidimensionalArray.Create(lengthsModified);
+
+				levelSet.EvaluateEdge(edge, 1, NS, LSinValues, LSoutValues); //calculate the level set values on edge, notice that it is designed for multiple nodes
+
+                var ret = LSinValues;
+				double[] y = new double[ret.Length];
+
+				if (VolumeSign) {
+					for (int i = 0; i < ret.Length; i++)
+						y[i] = -ret[0, i];
+				} else {
+					for (int i = 0; i < ret.Length; i++)
+						y[i] = ret[0, i];
+				}
+
+				double[] x = Enumerable.Repeat(points, ruleDim).SelectMany(i => i).ToArray();
+
+				int[] sizes = Enumerable.Repeat(points.Length, ruleDim).ToArray();
+
+				UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(ruleDim, n, requestedOrder, sizes, x, y);
+
+
+
+				QuadRule quadRuleOnEdge = QuadRule.CreateEmpty(RefElement, qs.length, spaceDim);
+
+
+				quadRuleOnEdge.Nodes.LockForever();
+
+				//if (useMetrics) {
+				//	var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRuleOnEdge.Nodes, jCell, 1);
+				//	//useMetrics.SaveToTextFile("useMetrics.txt");
+
+				//	////quadRule.Weights.To1DArray().ToList().SaveToTextFileDebugUnsteady("beforeWeights");
+
+				//	for (int k = 0; k < qs.length; k++)
+				//		quadRuleOnEdge.Weights[k] /= metrics[0, k];
+				//}
+
+
+				//quadRuleGlobal.OutputQuadratureRuleAsVtpXML($"bosssj{jCell}e{edgeIndex}.vtp");
+				return quadRuleOnEdge;
+
+
+
 
                 //var Edg2Cel = this.GridDat.iGeomEdges.CellIndices;
                 //var Edg2Fac = this.GridDat.iGeomEdges.FaceIndices;
@@ -900,20 +901,20 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
         }
-    }
+		#endregion
+	}
 
 
 
 
 
 
-    #endregion
 
 
-    /// <summary>
-    /// Provides a factory configuration for processing double cut cells based on specified parameters.
-    /// </summary>
-    public class AlgoimDoubleCutFactories {
+	/// <summary>
+	/// Provides a factory configuration for processing double cut cells based on specified parameters.
+	/// </summary>
+	public class AlgoimDoubleCutFactories {
 
 
         /// <summary>
