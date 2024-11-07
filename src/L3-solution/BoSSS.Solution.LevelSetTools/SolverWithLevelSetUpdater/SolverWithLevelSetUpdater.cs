@@ -332,7 +332,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 // add velocity parameter:
                 var levelSetVelocity = GetLevelSetVelocity(iLevSet);
-                if(levelSetVelocity != null && Control.Get_Option_LevelSetEvolution(iLevSet) != LevelSetEvolution.None) {
+                if(levelSetVelocity != null) {
                     if(!ArrayTools.ListEquals(levelSetVelocity.ParameterNames,
                         BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)))) {
                         throw new ApplicationException($"Parameter names for the level-set velocity provider for level-set #{iLevSet} ({LevelSetCG}) does not comply with convention.");
