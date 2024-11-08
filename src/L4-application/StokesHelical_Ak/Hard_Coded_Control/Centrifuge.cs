@@ -113,29 +113,6 @@ namespace StokesHelical_Ak {
             // Initial Values
             // ==============
             #region InitialValue
-            double a = Globals.a;
-            double b = Globals.b;
-            double nu = Globals.nu;
-
-            string InitialValue =
-            "static class MyInitialValue {" // class must be static
-            // Warning: static constants are allowed,
-            // but any changes outside of the current text box in BoSSSpad
-            // will not be recorded for the code that is passed to the solver.
-            // A method, which should be used for an initial value,
-            // must be static!
-            + " public static double GenerateRandomValue(double[] X, double t) {"
-            + "    var random = new Random();"
-            + "    double randomValue = random.NextDouble() * 200 - 100;"
-            + "   return randomValue;"
-            + " }"
-            + "}";
-            var fo = new BoSSS.Solution.Control.Formula("MyInitialValue.GenerateRandomValue", true, InitialValue);
-            //Ctrl.AddInitialValue("Pressure", fo);
-            //Ctrl.AddInitialValue("ur", fo);
-            //Ctrl.AddInitialValue("ueta", fo);
-            //Ctrl.AddInitialValue("uxi", fo);
-
             Ctrl.AddInitialValue("Pressure", new Formula("(X) =>0"));
             Ctrl.AddInitialValue("ur", new Formula("(X) => 0"));
             Ctrl.AddInitialValue("ueta", new Formula($"(X) => 0"));
