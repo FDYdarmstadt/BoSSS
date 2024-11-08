@@ -109,7 +109,8 @@ namespace StokesHelical_Ak {
 
 
             #endregion
-
+            double a = Globals.a;
+            double b = Globals.b;
             // Initial Values
             // ==============
             #region InitialValue
