@@ -23,8 +23,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace StokesHelical_Ak.TestTransient
-{
+namespace StokesHelical_Ak.TestTransient {
     [TestFixture]
     static public class TestTransient {
 
@@ -44,10 +43,10 @@ namespace StokesHelical_Ak.TestTransient
             double[] psiErrorL2 = new double[timeSteps.Length];
             double[] timeStepSize = new double[timeSteps.Length];
             HelicalControl[] timeConvergence = new HelicalControl[timeSteps.Length];
-            string[] timeSchemes = new string[] { "BDF1"};
-            for(int ell = 0; ell < timeSchemes.Length; ell++) {
-                for(int i = 0; i < timeSteps.Length; i++) {
-                    timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR:32, noOfCellsXi:32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree:5, rMin:0.1);
+            string[] timeSchemes = new string[] { "BDF1" };
+            for (int ell = 0; ell < timeSchemes.Length; ell++) {
+                for (int i = 0; i < timeSteps.Length; i++) {
+                    timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0.1);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
@@ -62,16 +61,16 @@ namespace StokesHelical_Ak.TestTransient
                 }
                 double order;
 
-                if(timeSchemes[ell] == "BDF3") {
+                if (timeSchemes[ell] == "BDF3") {
                     order = 3;
-                } else if(timeSchemes[ell] == "BDF1") {
+                } else if (timeSchemes[ell] == "BDF1") {
                     order = 1;
                 } else {
                     throw new ArgumentException("Unsupported BDF scheme: " + timeSchemes[ell]);
                 }
 
 
-                using(var gp = new Gnuplot()) {
+                using (var gp = new Gnuplot()) {
                     gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
                     gp.OutputFile = $"TemporalConvergence_without_R0fix-BDF{order}.png";
                     gp.SetTitle($"TemporalConvergence_without_R0fix-BDF{order}");
@@ -107,7 +106,7 @@ namespace StokesHelical_Ak.TestTransient
 
 
             double thresholdPsi = 5e-2;
-            Console.WriteLine("The psiErrorL2 error for {0} timesteps and {1} is = {2}" , timeSteps.First(), timeSchemes.Last(), psiErrorL2.First()) ;
+            Console.WriteLine("The psiErrorL2 error for {0} timesteps and {1} is = {2}", timeSteps.First(), timeSchemes.Last(), psiErrorL2.First());
             Console.WriteLine("If the psiErrorL2 error is {0} < {1} than good :) ", psiErrorL2.First(), thresholdPsi);
             Assert.That(psiErrorL2.First() < thresholdPsi, "Error. psiErrorLx not fullfilled");
 
@@ -141,9 +140,9 @@ namespace StokesHelical_Ak.TestTransient
             double[] psiErrorL2 = new double[timeSteps.Length];
             double[] timeStepSize = new double[timeSteps.Length];
             HelicalControl[] timeConvergence = new HelicalControl[timeSteps.Length];
-            string[] timeSchemes = new string[] {"BDF3"};
-            for(int ell = 0; ell < timeSchemes.Length; ell++) {
-                for(int i = 0; i < timeSteps.Length; i++) {
+            string[] timeSchemes = new string[] { "BDF3" };
+            for (int ell = 0; ell < timeSchemes.Length; ell++) {
+                for (int i = 0; i < timeSteps.Length; i++) {
                     timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0.1);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
@@ -159,15 +158,15 @@ namespace StokesHelical_Ak.TestTransient
                 }
                 double order;
 
-                if(timeSchemes[ell] == "BDF3") {
+                if (timeSchemes[ell] == "BDF3") {
                     order = 3;
-                } else if(timeSchemes[ell] == "BDF1") {
+                } else if (timeSchemes[ell] == "BDF1") {
                     order = 1;
                 } else {
                     throw new ArgumentException("Unsupported BDF scheme: " + timeSchemes[ell]);
                 }
 
-                using(var gp = new Gnuplot()) {
+                using (var gp = new Gnuplot()) {
                     gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
                     gp.OutputFile = $"TemporalConvergence_without_R0fix-BDF{order}.png";
                     gp.SetTitle($"TemporalConvergence_without_R0fix-BDF{order}");
@@ -239,16 +238,16 @@ namespace StokesHelical_Ak.TestTransient
             double[] psiErrorL2 = new double[timeSteps.Length];
             double[] timeStepSize = new double[timeSteps.Length];
             HelicalControl[] timeConvergence = new HelicalControl[timeSteps.Length];
-            string[] timeSchemes = new string[] { "BDF1"};
-            for(int ell = 0; ell < timeSchemes.Length; ell++) {
-                for(int i = 0; i < timeSteps.Length; i++) {
+            string[] timeSchemes = new string[] { "BDF1" };
+            for (int ell = 0; ell < timeSchemes.Length; ell++) {
+                for (int i = 0; i < timeSteps.Length; i++) {
                     timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
                     Assert.That(timeConvergence[i].R0fixOn == true, "R0_fix should be true");
                     Assert.That(Globals.pressureReferencePoint == true, "We have to calculate with PRP");
-                    if(Globals.activeMult == Globals.Multiplier.one && timeConvergence[i].rMin < 10e-6) {
+                    if (Globals.activeMult == Globals.Multiplier.one && timeConvergence[i].rMin < 10e-6) {
                         Console.WriteLine("Friendly Reminder: Mutiplier One and rMin<10e-6");
                     }
                     psiErrorL2[i] = solver.psiErrorL2;
@@ -259,15 +258,15 @@ namespace StokesHelical_Ak.TestTransient
                 }
                 double order;
 
-                if(timeSchemes[ell] == "BDF3") {
+                if (timeSchemes[ell] == "BDF3") {
                     order = 3;
-                } else if(timeSchemes[ell] == "BDF1") {
+                } else if (timeSchemes[ell] == "BDF1") {
                     order = 1;
                 } else {
                     throw new ArgumentException("Unsupported BDF scheme: " + timeSchemes[ell]);
                 }
 
-                using(var gp = new Gnuplot()) {
+                using (var gp = new Gnuplot()) {
                     gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
                     gp.OutputFile = $"TemporalConvergence_with_R0fix-BDF{order}.png";
                     gp.SetTitle($"TemporalConvergence_with_R0fix-BDF{order}");
@@ -306,12 +305,12 @@ namespace StokesHelical_Ak.TestTransient
             Console.WriteLine("If the psiErrorL2 error is {0} < {1} than good :) ", psiErrorL2.First(), thresholdPsi);
             Assert.That(psiErrorL2.First() < thresholdPsi, "Error. psiErrorLx not fullfilled");
 
-            double thresholdUr = 2e-3; 
+            double thresholdUr = 2e-3;
             Console.WriteLine("The urErrorL2 error for {0} timesteps and {1} is = {2}", timeSteps.First(), timeSchemes.Last(), urErrorL2.First());
             Console.WriteLine("If the urErrorL2 error is {0} < {1} than good :) ", urErrorL2.First(), thresholdUr);
             Assert.That(urErrorL2.First() < thresholdUr, "Error. urErrorL2 not fullfilled");
 
-            double thresholdUeta = 2e-3; 
+            double thresholdUeta = 2e-3;
             Console.WriteLine("The uetaErrorL2 error for {0} timesteps and {1} is = {2}", timeSteps.First(), timeSchemes.Last(), uetaErrorL2.First());
             Console.WriteLine("If the uetaErrorL2 error is {0} < {1} than good :) ", uetaErrorL2.First(), thresholdUeta);
             Assert.That(uetaErrorL2.First() < thresholdUeta, "Error. uetaErrorL2 not fullfilled");
@@ -339,15 +338,15 @@ namespace StokesHelical_Ak.TestTransient
             double[] timeStepSize = new double[timeSteps.Length];
             HelicalControl[] timeConvergence = new HelicalControl[timeSteps.Length];
             string[] timeSchemes = new string[] { "BDF3" };
-            for(int ell = 0; ell < timeSchemes.Length; ell++) {
-                for(int i = 0; i < timeSteps.Length; i++) {
+            for (int ell = 0; ell < timeSchemes.Length; ell++) {
+                for (int i = 0; i < timeSteps.Length; i++) {
                     timeConvergence[i] = Man_Sol_DDD.ManSol_DDD_Paper(noOfCellsR: 32, noOfCellsXi: 32, dtRefining: timeSteps[i], bdfOrder: timeSchemes[ell], degree: 5, rMin: 0);
                     var solver = new HelicalMain();
                     solver.Init(timeConvergence[i]);
                     solver.RunSolverMode();
                     Assert.That(timeConvergence[i].R0fixOn == true, "R0_fix should be true");
                     Assert.That(Globals.pressureReferencePoint == true, "We have to calculate without PRP, since R0 is on");
-                    if(Globals.activeMult == Globals.Multiplier.one && timeConvergence[i].rMin < 10e-6) {
+                    if (Globals.activeMult == Globals.Multiplier.one && timeConvergence[i].rMin < 10e-6) {
                         Console.WriteLine("Friendly Reminder: Mutiplier One and rMin<10e-6");
                     }
                     psiErrorL2[i] = solver.psiErrorL2;
@@ -358,15 +357,15 @@ namespace StokesHelical_Ak.TestTransient
                 }
                 double order;
 
-                if(timeSchemes[ell] == "BDF3") {
+                if (timeSchemes[ell] == "BDF3") {
                     order = 3;
-                } else if(timeSchemes[ell] == "BDF1") {
+                } else if (timeSchemes[ell] == "BDF1") {
                     order = 1;
                 } else {
                     throw new ArgumentException("Unsupported BDF scheme: " + timeSchemes[ell]);
                 }
 
-                using(var gp = new Gnuplot()) {
+                using (var gp = new Gnuplot()) {
                     gp.Terminal = string.Format("pngcairo size {0},{1}", 1024, 768);
                     gp.OutputFile = $"TemporalConvergence_with_R0fix-BDF{order}.png";
                     gp.SetTitle($"TemporalConvergence_with_R0fix-BDF{order}");
@@ -431,12 +430,12 @@ namespace StokesHelical_Ak.TestTransient
         /// <remarks>
         /// </remarks>
         [Test]
-        static public void PseudoSteady_HP_Re_10_Stokes_with_R0fix( [Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = false) {
+        static public void PseudoSteady_HP_Re_10_Stokes_with_R0fix([Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = false) {
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
 
 
             //ilPSP.Environment.NumThreads = 1;
-            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath:tempDB.Path, bdfOrder:1, rMin :0, MaxAmp: 40);
+            var ctrlStat = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1, deltaT: 1E50, _DbPath: tempDB.Path, bdfOrder: 1, rMin: 0, MaxAmp: 40);
 
             // Initial Values = 0!
             ctrlStat.InitialValues.Clear();
@@ -446,7 +445,7 @@ namespace StokesHelical_Ak.TestTransient
 
             Guid steadyStateSession;
             double[] SteadyStateSolution;
-            using(var solverStat = new HelicalMain()) {
+            using (var solverStat = new HelicalMain()) {
                 solverStat.Init(ctrlStat);
                 solverStat.RunSolverMode();
 
@@ -483,7 +482,7 @@ namespace StokesHelical_Ak.TestTransient
                 Console.WriteLine($"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
 
                 Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
-                if(pOrder == 4) {
+                if (pOrder == 4) {
                     Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error out of range: {uxi_L2:0.###e-00} (should be close to 0.0)");
                     Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error out of range: {ueta_L2:0.###e-00} (should be close to 0.0)");
                 }
@@ -502,7 +501,7 @@ namespace StokesHelical_Ak.TestTransient
             ctrlTransient.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
             ctrlTransient.NavierStokes = NavierStokes;
 
-            using(var solverTransient = new HelicalMain()) {
+            using (var solverTransient = new HelicalMain()) {
                 solverTransient.Init(ctrlTransient);
                 solverTransient.RunSolverMode();
 
@@ -532,7 +531,7 @@ namespace StokesHelical_Ak.TestTransient
                 double pressure_L2 = solverTransient.Pressure.L2Error(exSol_pressure);
 
                 double solDist = solverTransient.CurrentSolution.MPI_L2Dist(SteadyStateSolution);
-                
+
                 Console.WriteLine($"ur       L2 Error: {ur_L2:0.###e-00} (should be close to 0.0)");
                 Console.WriteLine($"uxi      L2 Error: {uxi_L2:0.###e-00} (should be close to 0.0)");
                 Console.WriteLine($"ueta     L2 Error: {ueta_L2:0.###e-00} (should be close to 0.0)");
@@ -542,7 +541,7 @@ namespace StokesHelical_Ak.TestTransient
 
                 Assert.LessOrEqual(ur_L2, 1.0e-10, $"ur L2 Error out of range: {ur_L2:0.###e-00} (should be close to 0.0)");
                 Assert.LessOrEqual(pressure_L2, 1.0e-10, $"pressure L2 Error: {pressure_L2:0.###e-00} (should be close to 0.0)");
-                if(pOrder == 4) {
+                if (pOrder == 4) {
                     Assert.LessOrEqual(uxi_L2, 1.0e-9, $"uxi L2 Error: {uxi_L2:0.###e-00} (should nonzero)");
                     Assert.LessOrEqual(ueta_L2, 1.0e-9, $"ueta L2 Error: {ueta_L2:0.###e-00} (should nonzero)");
                     Assert.LessOrEqual(solDist, 1.0e-10, $"l2 dist to steady sol: {solDist: 0.###e-00} (should be close to 0.0)");
@@ -559,7 +558,7 @@ namespace StokesHelical_Ak.TestTransient
         /// <remarks>
         /// </remarks>
         [Test]
-        static public void PseudoSteady_HP_Re_10_Navier_Stokes_with_R0fix( [Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = true) {
+        static public void PseudoSteady_HP_Re_10_Navier_Stokes_with_R0fix([Values(2, 3, 4)] int pOrder = 4, bool NavierStokes = true) {
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
 
 
@@ -706,46 +705,36 @@ namespace StokesHelical_Ak.TestTransient
             // Initial Values
             // ==============
             string InitialValue_ur_p =
-            "static class MyInitialValue_ur_p {" // class must be static
-                                                 // Warning: static constants are allowed,
-                                                 // but any changes outside of the current text box in BoSSSpad
-                                                 // will not be recorded for the code that is passed to the solver.
-                                                 // A method, which should be used for an initial value,
-                                                 // must be static!
-            + " public static double GenerateRandomValue(double[] X, double t) {"
-            + "    var random = new Random();"
-            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
-            + "   return randomValue;"
-            + " }"
-            + "}";
+            "static class MyInitialValue_ur_p {" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    var random = new Random();" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "   return randomValue;" +
+            " }" +
+            "}";
+
             string InitialValue_uxi =
-             "static class MyInitialValue_uxi {" // class must be static
-                                                 // Warning: static constants are allowed,
-                                                 // but any changes outside of the current text box in BoSSSpad
-                                                 // will not be recorded for the code that is passed to the solver.
-                                                 // A method, which should be used for an initial value,
-                                                 // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) * (" + a * a + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-             + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
+            "static class MyInitialValue_uxi {" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    var random = new Random();" +
+            "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+            "     * (" + (a * a) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (4 * " + nu + ")" +
+            "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "   return randomValue_and_lami;" +
+            " }" +
+            "}";
 
 
-            string InitialValue_ueta =
-             "static class MyInitialValue_ueta {" // class must be static
-                                                  // Warning: static constants are allowed,
-                                                  // but any changes outside of the current text box in BoSSSpad
-                                                  // will not be recorded for the code that is passed to the solver.
-                                                  // A method, which should be used for an initial value,
-                                                  // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] +" + b * b + "))) * (" + a * b + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (X[0] *4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-             + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
+              string InitialValue_ueta =
+               "static class MyInitialValue_ueta {" +
+               " public static double GenerateRandomValue(double[] X, double t) {" +
+               "    var random = new Random();" +
+               "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+               "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
+               "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+               "   return randomValue_and_lami;" +
+               " }" +
+               "}";
 
 
             var ur0_p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur_p.GenerateRandomValue", true, InitialValue_ur_p);
@@ -813,7 +802,7 @@ namespace StokesHelical_Ak.TestTransient
 
             double maxAmpitude = 10000;
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
-            var ctrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1000, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, MaxAmp: maxAmpitude);
+            var ctrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 10000, deltaT: 0.000005, _DbPath: tempDB.Path, bdfOrder: 1, MaxAmp: maxAmpitude);
 
             double a = Globals.a;
             double b = Globals.b;
@@ -828,46 +817,33 @@ namespace StokesHelical_Ak.TestTransient
             // Initial Values
             // ==============
             string InitialValue_ur_p =
-            "static class MyInitialValue_ur_p {" // class must be static
-                                                 // Warning: static constants are allowed,
-                                                 // but any changes outside of the current text box in BoSSSpad
-                                                 // will not be recorded for the code that is passed to the solver.
-                                                 // A method, which should be used for an initial value,
-                                                 // must be static!
-            + " public static double GenerateRandomValue(double[] X, double t) {"
-            + "    var random = new Random();"
-            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
-            + "   return randomValue;"
-            + " }"
-            + "}";
+            "static class MyInitialValue_ur_p {" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    var random = new Random();" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "   return randomValue;" +
+            " }" +
+            "}";
             string InitialValue_uxi =
-             "static class MyInitialValue_uxi {" // class must be static
-                                                 // Warning: static constants are allowed,
-                                                 // but any changes outside of the current text box in BoSSSpad
-                                                 // will not be recorded for the code that is passed to the solver.
-                                                 // A method, which should be used for an initial value,
-                                                 // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) * (" + a * a + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-             + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
-
-
+            "static class MyInitialValue_uxi {" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    var random = new Random();" +
+            "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+            "     * (" + (a * a) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (4 * " + nu + ")" +
+            "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "   return randomValue_and_lami;" +
+            " }" +
+            "}";
             string InitialValue_ueta =
-             "static class MyInitialValue_ueta {" // class must be static
-                                                  // Warning: static constants are allowed,
-                                                  // but any changes outside of the current text box in BoSSSpad
-                                                  // will not be recorded for the code that is passed to the solver.
-                                                  // A method, which should be used for an initial value,
-                                                  // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] +" + b * b + "))) * (" + a * b + " * (" + ctrl.rMax * ctrl.rMax + " - X[0] * X[0])) / (X[0] *4 * " + nu + ") + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-             + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
+             "static class MyInitialValue_ueta {" +
+             " public static double GenerateRandomValue(double[] X, double t) {" +
+             "    var random = new Random();" +
+             "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+             "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
+             "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+             "   return randomValue_and_lami;" +
+             " }" +
+             "}";
 
 
             var ur0_p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur_p.GenerateRandomValue", true, InitialValue_ur_p);
@@ -1215,57 +1191,43 @@ namespace StokesHelical_Ak.TestTransient
             // Initial Values
             // ==============
             string InitialValue_p =
-            "static class MyInitialValue_p {" // class must be static
-                                              // Warning: static constants are allowed,
-                                              // but any changes outside of the current text box in BoSSSpad
-                                              // will not be recorded for the code that is passed to the solver.
-                                              // A method, which should be used for an initial value,
-                                              // must be static!
-            + " public static double GenerateRandomValue(double[] X, double t) {"
-            + "    var random = new Random();"
-            + "    double randomValue = " + maxAmpitude * maxAmpitude * 0.5 + "* X[0] * X[0] + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-            + "   return randomValue;"
-            + " }"
-            + "}";
+                "static class MyInitialValue_p {" +
+                " public static double GenerateRandomValue(double[] X, double t) {" +
+                "    var random = new Random();" +
+                "    double randomValue = " + (maxAmpitude * maxAmpitude * 0.5) + " * X[0] * X[0] " +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "   return randomValue;" +
+                " }" +
+                "}";
+
             string InitialValue_ur =
-            "static class MyInitialValue_ur {" // class must be static
-                                               // Warning: static constants are allowed,
-                                               // but any changes outside of the current text box in BoSSSpad
-                                               // will not be recorded for the code that is passed to the solver.
-                                               // A method, which should be used for an initial value,
-                                               // must be static!
-            + " public static double GenerateRandomValue(double[] X, double t) {"
-            + "    var random = new Random();"
-            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
-            + "   return randomValue;"
-            + " }"
-            + "}";
+            "static class MyInitialValue_ur {" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    var random = new Random();" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "   return randomValue;" +
+            " }" +
+            "}";
+
             string InitialValue_uxi =
-             "static class MyInitialValue_uxi {" // class must be static
-                                                 // Warning: static constants are allowed,
-                                                 // but any changes outside of the current text box in BoSSSpad
-                                                 // will not be recorded for the code that is passed to the solver.
-                                                 // A method, which should be used for an initial value,
-                                                 // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = " + maxAmpitude * b + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-             + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
+                "static class MyInitialValue_uxi {" +
+                " public static double GenerateRandomValue(double[] X, double t) {" +
+                "    var random = new Random();" +
+                "    double randomValue_and_lami = " + (maxAmpitude * b) + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "   return randomValue_and_lami;" +
+                " }" +
+                "}";
 
             string InitialValue_ueta =
-             "static class MyInitialValue_ueta {" // class must be static
-                                                  // Warning: static constants are allowed,
-                                                  // but any changes outside of the current text box in BoSSSpad
-                                                  // will not be recorded for the code that is passed to the solver.
-                                                  // A method, which should be used for an initial value,
-                                                  // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = " + maxAmpitude * a + " * X[0] * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";" + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
+                "static class MyInitialValue_ueta {" +
+                " public static double GenerateRandomValue(double[] X, double t) {" +
+                "    var random = new Random();" +
+                "    double randomValue_and_lami = " + (maxAmpitude * a) + " * X[0] * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "   return randomValue_and_lami;" +
+                " }" +
+                "}";
 
             var p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_p.GenerateRandomValue", true, InitialValue_p);
             var ur0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur.GenerateRandomValue", true, InitialValue_ur);
@@ -1340,64 +1302,52 @@ namespace StokesHelical_Ak.TestTransient
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 10;
+            ctrl.ImmediatePlotPeriod = 1;
 
 
             var random = 0.1 * maxAmpitude;
             // Initial Values
             // ==============
             string InitialValue_p =
-            "static class MyInitialValue_p {" // class must be static
-                                              // Warning: static constants are allowed,
-                                              // but any changes outside of the current text box in BoSSSpad
-                                              // will not be recorded for the code that is passed to the solver.
-                                              // A method, which should be used for an initial value,
-                                              // must be static!
-            + " public static double GenerateRandomValue(double[] X, double t) {"
-            + "    var random = new Random();"
-            + "    double randomValue = " + maxAmpitude * maxAmpitude * 0.5 + "* X[0] * X[0] + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-            + "   return randomValue;"
-            + " }"
-            + "}";
+                "static class MyInitialValue_p {" +
+                " public static double GenerateRandomValue(double[] X, double t) {" +
+                "    var random = new Random();" +
+                "    double randomValue = " + (maxAmpitude * maxAmpitude * 0.5) + " * X[0] * X[0] " +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "   return randomValue;" +
+                " }" +
+                "}";
+
             string InitialValue_ur =
-            "static class MyInitialValue_ur {" // class must be static
-                                               // Warning: static constants are allowed,
-                                               // but any changes outside of the current text box in BoSSSpad
-                                               // will not be recorded for the code that is passed to the solver.
-                                               // A method, which should be used for an initial value,
-                                               // must be static!
-            + " public static double GenerateRandomValue(double[] X, double t) {"
-            + "    var random = new Random();"
-            + "    double randomValue = random.NextDouble() * " + random + " - " + (random / 2) + ";"
-            + "   return randomValue;"
-            + " }"
-            + "}";
+            "static class MyInitialValue_ur {" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    var random = new Random();" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[0]) * Math.Sin(X[1] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "   return randomValue;" +
+            " }" +
+            "}";
+
             string InitialValue_uxi =
-             "static class MyInitialValue_uxi {" // class must be static
-                                                 // Warning: static constants are allowed,
-                                                 // but any changes outside of the current text box in BoSSSpad
-                                                 // will not be recorded for the code that is passed to the solver.
-                                                 // A method, which should be used for an initial value,
-                                                 // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = " + maxAmpitude * b + " * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";"
-             + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
+                "static class MyInitialValue_uxi {" +
+                " public static double GenerateRandomValue(double[] X, double t) {" +
+                "    var random = new Random();" +
+                "    double randomValue_and_lami = " + (maxAmpitude * b) + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "   return randomValue_and_lami;" +
+                " }" +
+                "}";
 
             string InitialValue_ueta =
-             "static class MyInitialValue_ueta {" // class must be static
-                                                  // Warning: static constants are allowed,
-                                                  // but any changes outside of the current text box in BoSSSpad
-                                                  // will not be recorded for the code that is passed to the solver.
-                                                  // A method, which should be used for an initial value,
-                                                  // must be static!
-             + " public static double GenerateRandomValue(double[] X, double t) {"
-             + "    var random = new Random();"
-             + "    double randomValue_and_lami = " + maxAmpitude * a + " * X[0] * (X[0] / (Math.Sqrt(" + a * a + " * X[0] * X[0] + " + b * b + "))) + random.NextDouble() * " + random + " - " + (random / 2) + ";" + "   return randomValue_and_lami;"
-             + " }"
-             + "}";
+                "static class MyInitialValue_ueta {" +
+                " public static double GenerateRandomValue(double[] X, double t) {" +
+                "    var random = new Random();" +
+                "    double randomValue_and_lami = " + (maxAmpitude * a) + " * X[0] * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "   return randomValue_and_lami;" +
+                " }" +
+                "}";
+
+
 
             var p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_p.GenerateRandomValue", true, InitialValue_p);
             var ur0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur.GenerateRandomValue", true, InitialValue_ur);
