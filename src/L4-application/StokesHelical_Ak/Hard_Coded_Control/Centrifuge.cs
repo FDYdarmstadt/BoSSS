@@ -31,7 +31,7 @@ namespace StokesHelical_Ak {
         /// <summary>
         /// Centrifuge flow (aka. flow in a rotating pipe)
         /// </summary>
-        public static HelicalControl Centrifuge_Flow(string _DbPath = null, int degree = 3, int noOfCellsR = 64, int noOfCellsXi = 64, int bdfOrder = 3, int numOfTimesteps = 1, double deltaT = 1, double rMin = 0, double MaxAmp = 5) {
+        public static HelicalControl Centrifuge_Flow(string _DbPath = null, int degree = 3, int noOfCellsR = 64, int noOfCellsXi = 64, int bdfOrder = 3, int numOfTimesteps = 1, double deltaT = 1, double rMin = 0, double MaxAmp = 5, double rMax = 1) {
 
             HelicalControl Ctrl = new HelicalControl();
 
@@ -46,7 +46,7 @@ namespace StokesHelical_Ak {
             #region Settings
             Ctrl.maxAmpli = MaxAmp;
             Ctrl.rMin = rMin;
-            Ctrl.rMax = 1;
+            Ctrl.rMax = rMax;
             Ctrl.dg_degree = degree;
             Ctrl.SetDGdegree(degree);
             #endregion
