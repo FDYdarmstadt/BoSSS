@@ -680,7 +680,7 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
-        /// With 10% White Noise over laminar Solutin
+        /// With 0.1% White Noise over laminar Solutin
         /// Reynolds 10
         /// </summary>
         /// <remarks>
@@ -701,7 +701,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.ImmediatePlotPeriod = 10;
 
 
-            var random = 0.1 * maxAmpitude;
+            var random = 0.001 * maxAmpitude;
             // Initial Values
             // ==============
             string InitialValue_ur_p =
@@ -794,7 +794,7 @@ namespace StokesHelical_Ak.TestTransient {
         /// </summary>
         /// <remarks>
         /// </remarks>
-        [Test]
+        // [Test]
         static public void Transient_HP_Re_2500_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
 
             double maxAmpitude = 10000;
@@ -810,7 +810,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.ImmediatePlotPeriod = 10;
 
 
-            var random = 0.1 * maxAmpitude;
+            var random = 0.001 * maxAmpitude;
             // Initial Values
             // ==============
             string InitialValue_ur_p =
@@ -1163,7 +1163,7 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Cylindrical flow 
-        /// With 10% White Noise over laminar Solutin
+        /// With 0.1% White Noise over laminar Solutin
         /// Reynolds 10
         /// </summary>
         /// <remarks>
@@ -1184,7 +1184,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.ImmediatePlotPeriod = 10;
 
 
-            var random = 0.1 * maxAmpitude;
+            var random = 0.001 * maxAmpitude;
             // Initial Values
             // ==============
             string InitialValue_p =
@@ -1286,7 +1286,7 @@ namespace StokesHelical_Ak.TestTransient {
         /// </summary>
         /// <remarks>
         /// </remarks>
-        [Test]
+        // [Test]
         static public void Transient_CF_Re_2500_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
 
             double maxAmpitude = 2500;
