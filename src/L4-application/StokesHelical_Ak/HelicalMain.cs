@@ -63,10 +63,6 @@ namespace StokesHelical_Ak {
                 Console.WriteLine(";");
             }
             // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_2500_White_Noise_10_Procent_with_R0fix(3);
-            // StokesHelical_Ak.TestSpartial.TestSpatial.Direct_vs_Iterativ_CF_Re_10_with_R0fix(5);
-            // var fisch = StokesHelical_Ak.Centrifuge.Centrifuge_Flow(degree:2,noOfCellsR:3,noOfCellsXi:3,deltaT:10E20);
-            ////StokesHelical_Ak.TestSpartial.TestSpatial.ConditionNumberScaling_DDD_without_R0fix(2);
-            ////StokesHelical_Ak.TestRestart.TestRestart.Restart_HP_BDF3_with_R0fix();
 
             ////c.ImmediatePlotPeriod = 1;
             ////c.NoOfTimesteps = 5;
@@ -74,11 +70,6 @@ namespace StokesHelical_Ak {
             //solver.Init(fisch);
             //solver.RunSolverMode();
             //Process.Start("mpiexec");
-            //StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
-            ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix
-            //// StokesHelical_Ak.Man_Sol_DDD.TSFP();
-            ////StokesHelical_Ak.TestTransient.TestTransient.PseudoSteadyCentrifuge();
-            ////StokesHelical_Ak.NUnitTestsR0_fix.R0_fix_Test.TestR0_Fix(2);
             //FinalizeMPI();
             //System.Environment.Exit(20072022);
 
