@@ -708,33 +708,30 @@ namespace StokesHelical_Ak.TestTransient {
             "static class MyInitialValue_ur_p {" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
             "    var random = new Random();" +
-            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
             "}";
-
             string InitialValue_uxi =
             "static class MyInitialValue_uxi {" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
             "    var random = new Random();" +
             "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
             "     * (" + (a * a) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (4 * " + nu + ")" +
-            "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue_and_lami;" +
             " }" +
             "}";
-
-
-              string InitialValue_ueta =
-               "static class MyInitialValue_ueta {" +
-               " public static double GenerateRandomValue(double[] X, double t) {" +
-               "    var random = new Random();" +
-               "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
-               "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
-               "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
-               "   return randomValue_and_lami;" +
-               " }" +
-               "}";
+            string InitialValue_ueta =
+             "static class MyInitialValue_ueta {" +
+             " public static double GenerateRandomValue(double[] X, double t) {" +
+             "    var random = new Random();" +
+             "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+             "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
+             "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
+             "   return randomValue_and_lami;" +
+             " }" +
+             "}";
 
 
             var ur0_p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur_p.GenerateRandomValue", true, InitialValue_ur_p);
@@ -820,7 +817,7 @@ namespace StokesHelical_Ak.TestTransient {
             "static class MyInitialValue_ur_p {" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
             "    var random = new Random();" +
-            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
             "}";
@@ -830,7 +827,7 @@ namespace StokesHelical_Ak.TestTransient {
             "    var random = new Random();" +
             "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
             "     * (" + (a * a) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (4 * " + nu + ")" +
-            "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue_and_lami;" +
             " }" +
             "}";
@@ -840,7 +837,7 @@ namespace StokesHelical_Ak.TestTransient {
              "    var random = new Random();" +
              "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
              "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
-             "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+             "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
              "   return randomValue_and_lami;" +
              " }" +
              "}";
@@ -1195,7 +1192,7 @@ namespace StokesHelical_Ak.TestTransient {
                 " public static double GenerateRandomValue(double[] X, double t) {" +
                 "    var random = new Random();" +
                 "    double randomValue = " + (maxAmpitude * maxAmpitude * 0.5) + " * X[0] * X[0] " +
-                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue;" +
                 " }" +
                 "}";
@@ -1204,7 +1201,7 @@ namespace StokesHelical_Ak.TestTransient {
             "static class MyInitialValue_ur {" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
             "    var random = new Random();" +
-            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
             "}";
@@ -1214,7 +1211,7 @@ namespace StokesHelical_Ak.TestTransient {
                 " public static double GenerateRandomValue(double[] X, double t) {" +
                 "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * b) + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
-                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
                 " }" +
                 "}";
@@ -1224,7 +1221,7 @@ namespace StokesHelical_Ak.TestTransient {
                 " public static double GenerateRandomValue(double[] X, double t) {" +
                 "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * a) + " * X[0] * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
-                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
                 " }" +
                 "}";
@@ -1313,7 +1310,7 @@ namespace StokesHelical_Ak.TestTransient {
                 " public static double GenerateRandomValue(double[] X, double t) {" +
                 "    var random = new Random();" +
                 "    double randomValue = " + (maxAmpitude * maxAmpitude * 0.5) + " * X[0] * X[0] " +
-                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue;" +
                 " }" +
                 "}";
@@ -1322,7 +1319,7 @@ namespace StokesHelical_Ak.TestTransient {
             "static class MyInitialValue_ur {" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
             "    var random = new Random();" +
-            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[0]) * Math.Sin(X[1] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
             "}";
@@ -1332,7 +1329,7 @@ namespace StokesHelical_Ak.TestTransient {
                 " public static double GenerateRandomValue(double[] X, double t) {" +
                 "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * b) + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
-                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
                 " }" +
                 "}";
@@ -1342,7 +1339,7 @@ namespace StokesHelical_Ak.TestTransient {
                 " public static double GenerateRandomValue(double[] X, double t) {" +
                 "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * a) + " * X[0] * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
-                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin(X[0] * Math.PI * 0.5 / " + ctrl.rMax + ");" +
+                "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
                 " }" +
                 "}";
