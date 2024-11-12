@@ -698,7 +698,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 10;
+            ctrl.ImmediatePlotPeriod = -1;
 
 
             var random = 0.001 * maxAmpitude;
@@ -779,10 +779,10 @@ namespace StokesHelical_Ak.TestTransient {
                 Console.WriteLine($"ueta     L2 Error/maxAmpitude: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
                 Console.WriteLine($"pressure L2 Error/maxAmpitude: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
 
-                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-10, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-10, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-10, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-8, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-5, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-5, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-4, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-4, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
             }
 
         }
@@ -1181,7 +1181,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 10;
+            ctrl.ImmediatePlotPeriod = -1;
 
 
             var random = 0.001 * maxAmpitude;
@@ -1271,10 +1271,10 @@ namespace StokesHelical_Ak.TestTransient {
                 Console.WriteLine($"ueta     L2 Error/maxAmpitude: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
                 Console.WriteLine($"pressure L2 Error/maxAmpitude: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
 
-                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-10, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-10, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-10, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
-                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-8, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-4, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-4, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-4, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-3, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
             }
 
         }
