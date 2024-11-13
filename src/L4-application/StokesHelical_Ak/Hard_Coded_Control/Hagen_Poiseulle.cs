@@ -27,36 +27,42 @@ using BoSSS.Solution.AdvancedSolvers;
 
 namespace StokesHelical_Ak {
 
-    public static class DNS {
+    public static class Hagen_Poiseulle {
 
-        public static HelicalControl SimpleFlow(string _DbPath = @"", int degree = 5, int noOfCellsR = 512, int noOfCellsXi = 512, int dtRefining = 4, string bdfOrder = "BDF3", double rMin = 0.1) {
+
+        /// <summary>
+        /// Hagen Poiseulle flow (aka. flow in a circular pipe)
+        /// </summary>
+        public static HelicalControl HagenPoiseulle(string _DbPath = null, int degree = 5, int noOfCellsR = 512, int noOfCellsXi = 512, int bdfOrder = 3, int numOfTimesteps = 1, double deltaT = 1, double rMin = 0, double MaxAmp = 1, double rMax = 1) {
 
             HelicalControl Ctrl = new HelicalControl();
+            // Database
+            // ==============
             #region db
-            //Ctrl.DbPath = @"P:\BoSSSpostprocessing\Akbari"; // _DbPath;
-             Ctrl.DbPath = @"\\dc3\userspace\akbari\cluster\Helical_DNS";
-            //Ctrl.DbPath = null;
-
-            double MaxAmp = 0.1;
-            Ctrl.maxAmpli = MaxAmp;
-
-
-            Ctrl.savetodb = Ctrl.DbPath != null;
-            Ctrl.ProjectName = "NStransient";
-            Ctrl.SessionName = "degree= " + degree + " " + "noOfCellsR= " + noOfCellsR + " " + "noOfCellsXi= " + noOfCellsXi;
-            Ctrl.rMin = rMin;
-            Ctrl.rMax = 1;
+            Ctrl.DbPath = _DbPath;
             #endregion
-
-            //Ctrl.savetodb = true;
+            // Settings
+            // ==============
+            #region Settings
+            Ctrl.maxAmpli = MaxAmp;
+            Ctrl.rMin = rMin;
+            Ctrl.rMax = rMax;
+            Ctrl.HagenPoisseulle = true;
+            Ctrl.dg_degree = degree;
+            Ctrl.SetDGdegree(degree);
+            #endregion
+            // Grid
+            // ==============
+            #region Grid
             Ctrl.Resolution_R = noOfCellsR;
             Ctrl.Resolution_Xi = noOfCellsXi;
-
             Ctrl.GridFunc = delegate {
-
                 double[] xnodes = GenericBlas.Linspace(rMin, Ctrl.rMax, noOfCellsR + 1);
                 double[] ynodes = GenericBlas.Linspace(0, 2 * Math.PI, noOfCellsXi + 1);
-                GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear, periodicY: true);
+
+                GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear, 
+                    periodicX: false,
+                    periodicY: true);
 
                 grd.EdgeTagNames.Add(1, "Dirichlet_rmax");
                 grd.EdgeTagNames.Add(2, "Dirichlet_rmin");
@@ -74,48 +80,49 @@ namespace StokesHelical_Ak {
                     else
                         return 3;
                 });
-
                 return grd;
             };
-            double dt = 2 * Math.PI / (dtRefining * 10);
-            //double dt = Math.Pow(10,20)*2 * Math.PI / dtRefining;
+            #endregion
+            // Time Stepping
+            // ==============
+            #region Timestepping
+            if (deltaT >= 10E10) {
+                Ctrl.dtFixed = deltaT;
+                Ctrl.NoOfTimesteps = 1;
+                Ctrl.steady = true;
+            } else {
+                Ctrl.dtFixed = deltaT;
+                Ctrl.NoOfTimesteps = numOfTimesteps;
+                Ctrl.steady = false;
+            }
 
-            Ctrl.dtMax = dt;
-            Ctrl.dtMin = dt;
-            if(bdfOrder == "BDF3") {
+            if (bdfOrder == 3) {
                 Ctrl.TimeSteppingScheme = TimeSteppingScheme.BDF3;
-            } else if(bdfOrder == "BDF1") {
+            } else if (bdfOrder == 1) {
                 Ctrl.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             } else {
                 throw new ArgumentException("Unsupported BDF scheme: " + bdfOrder);
             }
-            Ctrl.NoOfTimesteps = dtRefining * 200*4;
-            Ctrl.steady = false;
-            Ctrl.ExactResidual = false;
-
-            // DG degree
-            // =========
-            Ctrl.dg_degree = degree;
-            Ctrl.SetDGdegree(degree);
-
+            #endregion
             // Initial Values
             // ==============
-            double a = Globals.a;
-            double b = Globals.b;
-
-            Ctrl.AddInitialValue("Pressure", new Formula("(X) => 0"));
-            Ctrl.AddInitialValue("ur", new Formula("(X) => 0"));
-            Ctrl.AddInitialValue("ueta", new Formula("(X) => " + MaxAmp + " "));
-            Ctrl.AddInitialValue("uxi", new Formula("(X) => 0"));
+            #region InitialValues
+            Ctrl.AddInitialValue("Pressure", new Formula($"(X) =>   0"));
+            Ctrl.AddInitialValue("ur", new Formula($"(X) =>         0"));
+            Ctrl.AddInitialValue("ueta", new Formula($"(X) =>       0"));
+            Ctrl.AddInitialValue("uxi", new Formula($"(X) =>        0"));
+            #endregion
             // Boundary Conditions
             // ==============
-            Ctrl.AddBoundaryValue("Dirichlet", "Pressure", new Formula("(X,t) => 0", true));
-            Ctrl.AddBoundaryValue("Dirichlet", "ur", new Formula("(X,t) => 0", true));
-            Ctrl.AddBoundaryValue("Dirichlet", "ueta", new Formula("(X,t) => " + MaxAmp + " ", true));
-            Ctrl.AddBoundaryValue("Dirichlet", "uxi", new Formula("(X,t) =>" + MaxAmp + "*(1-Math.Exp(-t))", true));
-
+            #region BoundaryConditions
+            Ctrl.AddBoundaryValue("Dirichlet", "ur", new Formula("(X,t) =>  0", true));
+            Ctrl.AddBoundaryValue("Dirichlet", "ueta", new Formula("(X,t) =>0", true));
+            Ctrl.AddBoundaryValue("Dirichlet", "uxi", new Formula("(X,t) => 0", true));
+            Ctrl.AddBoundaryValue("Dirichlet", "Pressure", new Formula("(X,t) =>0", true));
+            #endregion
             //Ctrl.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() { ConvergenceCriterion = 1e-13 , TargetBlockSize =1000000};
             return Ctrl;
+
         }
 
     }
