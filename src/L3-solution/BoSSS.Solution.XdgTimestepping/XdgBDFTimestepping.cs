@@ -632,10 +632,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         private string GetName__Stack_u(int i, int iF) {
-            if(!coupledOperator)
-                return this.GetType().FullName + "::Stack_u[" + i + "," + iF + "]";
-            else
-                return this.GetType().FullName + "::CoupledStack_u[" + i + "," + iF + "]";
+            return this.GetType().FullName + "::Stack_u[" + i + "," + iF + "]";
         }
 
 
@@ -1421,7 +1418,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //var oldCCM = this.UpdateCutCellMetrics();
 
                     // evolve the level set
-                    if (Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled && !this.coupledOperator) {
+                    if (Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled) {
                         m_LsTrk.IncreaseHistoryLength(1);
                         m_LsTrk.PushStacks();
                     }
@@ -1432,9 +1429,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     int newPushCount = m_LsTrk.PushCount;
                     int newVersion = m_LsTrk.VersionCnt;
-                    if ((newPushCount - oldPushCount) != 0 && !coupledOperator)
+                    if ((newPushCount - oldPushCount) != 0)
                         throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
-                    if ((newVersion - oldVersion) != 1 && !coupledOperator)
+                    if ((newVersion - oldVersion) != 1)
                         throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
 
                     // in the case of splitting, the fields must be extrapolated 
@@ -1905,13 +1902,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
         
 
-        /// <summary>
-        /// Bad design, should be removed; FK 18feb22
-        /// </summary>
-        public event Action<int, double[], double[], MultigridOperator> CustomIterationCallback;
-
-        
-
         protected override NonlinearSolver GetNonlinSolver() {
             var nonlinSolver = base.GetNonlinSolver();
 
@@ -1921,26 +1911,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     ((FixpointIterator)nonlinSolver).Iteration_Count = this.CoupledIterationCounter;
             }
 
-            nonlinSolver.IterationCallback += this.CustomIterationCallback;
-
             return nonlinSolver;
         }
-
-        protected override ISolverSmootherTemplate GetLinearSolver(MultigridOperator op) {
-            
-
-            var linearSolver = base.GetLinearSolver(op);
-            if(linearSolver is ISolverWithCallback swc) {
-                swc.IterationCallback += this.CustomIterationCallback;
-            }
-            return linearSolver;
-        }
-
-
-        /// <summary>
-        /// Bad, undocumented design! To be removed! Fk, 18feb22
-        /// </summary>
-        private bool coupledOperator = false;
 
 
         /// <summary>
@@ -1994,9 +1966,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             int newPushCount = m_LsTrk.PushCount;
 
 
-            if ((newVersion - oldVersion) != 1 && !coupledOperator)
+            if ((newVersion - oldVersion) != 1)
                 throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
-            if((newVersion - oldVersion) != 0 && coupledOperator)
+            if((newVersion - oldVersion) != 0)
                 throw new ApplicationException("Expecting exactly no call to 'UpdateTracker(...)' in 'UpdateLevelset(...)' for coupled Operators.");
             if ((newPushCount - oldPushCount) != 0)
                 throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");

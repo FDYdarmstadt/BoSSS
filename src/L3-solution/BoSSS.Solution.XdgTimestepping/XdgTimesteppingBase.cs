@@ -448,6 +448,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             nonlinSolver.IterationCallback += this.LogResis;
 
+            if (this.XdgSolverFactory.Config.CustomIterationCallback != null) {
+                nonlinSolver.IterationCallback += this.XdgSolverFactory.Config.CustomIterationCallback;
+            }
+
             return nonlinSolver;
 
           
