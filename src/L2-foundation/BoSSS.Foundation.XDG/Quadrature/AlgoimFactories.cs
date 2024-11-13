@@ -950,7 +950,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// key: quadrature order <br/>
         /// value: quadrature rule
         /// </summary>
-        Dictionary<int, ChunkRulePair<QuadRule>[]> m_SurfaceRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
+        Dictionary<int, ChunkRulePair<QuadRule>[][]> m_SurfaceRules = new Dictionary<int, ChunkRulePair<QuadRule>[][]>();
 
         /// <summary>
         /// key: quadrature order <br/>
@@ -968,35 +968,41 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// key: quadrature order <br/>
         /// value: quadrature rule
         /// </summary>
-        Dictionary<int, ChunkRulePair<QuadRule>[]> m_VolumeRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
+        Dictionary<int, ChunkRulePair<QuadRule>[][]> m_VolumeRules = new Dictionary<int, ChunkRulePair<QuadRule>[][]>();
 
-        public IQuadRuleFactory<QuadRule> GetSurfaceFactory() {
-            var factory = new AlgoimDoubleCutFactory() {
+        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(JumpTypes[] jumps) {
+            var factory = new AlgoimDoubleCutSurfaceFactory() {
                 m_Owner = this,
-                m_Rules = this.m_SurfaceRules
-            };
+                m_Rules = this.m_SurfaceRules,
+				m_Jumps = jumps
+			};
             factory.useMetrics = true;
             factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
             return factory;
         }
 
-        public IQuadRuleFactory<QuadRule> GetVolumeFactory() {
-            var factory = new AlgoimDoubleCutFactory() {
+        public IQuadRuleFactory<QuadRule> GetVolumeFactory(JumpTypes[] jumps) {
+            var factory = new AlgoimDoubleCutVolFactory() {
                 m_Owner = this,
-                m_Rules = this.m_VolumeRules
+                m_Rules = this.m_VolumeRules,
+                m_Jumps = jumps
             };
             factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
             return factory;
         }
 
-        class AlgoimDoubleCutFactory : IQuadRuleFactory<QuadRule> {
+		abstract class AlgoimDoubleCutBaseFactory : IQuadRuleFactory<QuadRule> {
             internal AlgoimDoubleCutFactories m_Owner;
 
-            internal Dictionary<int, ChunkRulePair<QuadRule>[]> m_Rules;
+            internal Dictionary<int, ChunkRulePair<QuadRule>[][]> m_Rules;
 
-            public RefElement RefElement => m_Owner.refElement;
+            internal JumpTypes[] m_Jumps;
 
-            int spaceDim => RefElement.SpatialDimension;
+			public RefElement RefElement => m_Owner.refElement;
+
+            internal ExecutionMask latestMask;
+
+			internal int spaceDim => RefElement.SpatialDimension;
 
             bool[] VolumeSigns => m_Owner.VolumeSigns;
 
@@ -1006,7 +1012,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             // only valid for single quadrature rule calculations (either surface or volume)
             internal GetQuadratureRule m_CalculateQuadRule;
-            internal delegate UnsafeAlgoim.QuadScheme GetQuadratureRule(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+            internal delegate UnsafeAlgoim.QuadScheme[] GetQuadratureRule(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
 
             public LevelSetTracker.LevelSetData[] lsData => m_Owner.lsData;
 
@@ -1025,96 +1031,106 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 if (!(mask is CellMask))
                     throw new ArgumentException("Expecting a cell mask.");
 
+				if (latestMask == null || !mask.Equals(latestMask) || !m_Rules.ContainsKey(RequestedOrder)) {
+                    latestMask = mask;
+                    m_Rules = new Dictionary<int, ChunkRulePair<QuadRule>[][]>(); 
+					CalculateQuadRuleSetSingle(mask, RequestedOrder);
+				}
 
-                if (m_SurfaceAndVolumeAtOnce)
-                    throw new NotImplementedException("Not yet...");
-                else
-                    return CalculateQuadRuleSetSingle(mask, RequestedOrder);
-
+				int speciesIndex = GetSpecies(); //which part of the quadRule
+				return m_Rules[RequestedOrder][speciesIndex];
             }
 
-            private IEnumerable<IChunkRulePair<QuadRule>> CalculateQuadRuleSetSingle(ExecutionMask mask, int RequestedOrder) {
-                List<ChunkRulePair<QuadRule>> ret = new List<ChunkRulePair<QuadRule>>();
+			/// <summary>
+			/// Get array index of the species requested for Algoim data. 
+			/// <see cref="Algoim.GetSurfaceQuadratureRules(int, int, int, int, int[], int[], double[], double[], double[], double[])"/>
+			/// <see cref="Algoim.GetVolumeQuadratureRules(int, int, int, int, int[], int[], double[], double[], double[], double[])"/>
+			/// </summary>
+			/// <returns></returns>
+			abstract internal int GetSpecies();
 
-                foreach (int cell in mask.ItemEnum) {
-                    var quadRule = GetNodesAndWeights(cell, RequestedOrder);
-                    ret.Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRule));
-                }
+			internal (int, int[], double[], double[]) CreatePhiData(LevelSetTracker.LevelSetData lsData, int jCell) {
+				//number of nodes in 1d for level set interpolation = degree + 1
+				int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
 
-                return ret.ToArray();
-            }
+				//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+				double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+
+				//Cartesian pair product for the points
+				int numberOfCombinations = (int)Math.Pow(points.Length, spaceDim);
+				MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(points, spaceDim);
+
+				//Get level set values on combinations
+				NodeSet NS = new NodeSet(RefElement, combinations, false);
+				var ret = lsData.GetLevSetValues(NS, jCell, 1);
+
+				//Convert to 1D Array for the Wrapper
+				double[] y = new double[ret.Length];
+				for (int i = 0; i < ret.Length; i++)
+					y[i] = ret[0, i];
+
+				// create the double array for the coordinates that level set are queried (1D version, for details see AlgoimWrapper)
+				double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
+
+				// create the double array for the number of points in each coordinate
+				int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
+
+				return (n, sizes, x, y);
+			}
+
+			internal void CalculateQuadRuleSetSingle(ExecutionMask mask, int RequestedOrder) {
+				List<ChunkRulePair<QuadRule>>[] ret = new List<ChunkRulePair<QuadRule>>[4];
+
+				foreach (int cell in mask.ItemEnum) {
+                    var quadRules = GetNodesAndWeights(cell, RequestedOrder);
+                    for(int q=0; q<quadRules.Length; q++) { 
+						if (ret[q] == null) 
+							ret[q] = new List<ChunkRulePair<QuadRule>>();
+					    ret[q].Add(new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), quadRules[q]));
+					}
+				}
+                var retArray = ret.Select(list => list.ToArray()).ToArray();
+				m_Rules.Add(RequestedOrder, retArray);
+			}
 
 
-            /// <summary>
-            /// Get the quadrature nodes and weights for a cell. (either surface or volume, declared at the instantiation of the factory)
-            /// </summary>
-            /// <param name="jCell">local index of the cell</param>
-            /// <param name="RequestedOrder">requested order for quadrature</param>
-            /// <returns></returns>
-            private QuadRule GetNodesAndWeights(int jCell, int RequestedOrder) {
-                (int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiData(lsData[0], VolumeSigns[0], jCell);
-                (int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiData(lsData[1], VolumeSigns[1], jCell);
+			/// <summary>
+			/// Get the quadrature nodes and weights for a cell. (either surface or volume, declared at the instantiation of the factory)
+			/// </summary>
+			/// <param name="jCell">local index of the cell</param>
+			/// <param name="RequestedOrder">requested order for quadrature</param>
+			/// <returns></returns>
+			abstract internal QuadRule[] GetNodesAndWeights(int jCell, int RequestedOrder);
+            //{
+            //    (int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiData(lsData[0], jCell);
+            //    (int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiData(lsData[1], jCell);
 
-                // get the quadrature rule from the wrapper
-                UnsafeAlgoim.QuadScheme qs = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
+            //    // get the quadrature rule from the wrapper
+            //    UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
+            //    var qs = qsArray[speciesIndex];
 
-                // If quadrature rule is empty, return.
-                if (qs.length < 1)
-                    return CreateEmptyQuadRule();
+            //    // If quadrature rule is empty, return.
+            //    if (qs.length < 1)
+            //        return CreateEmptyQuadRule();
 
-                // Create quadrature rule and copy from the scheme
-                QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
+            //    // Create quadrature rule and copy from the scheme
+            //    QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
 
-                for (int row = 0; row < qs.length; row++) {
-                    quadRule.Weights[row] = qs.weights[row];
-                    for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
-                        int ind = row * qs.dimension + d;
-                        quadRule.Nodes[row, d] = qs.nodes[ind];
-                    }
-                }
-                quadRule.Nodes.LockForever();
+            //    for (int row = 0; row < qs.length; row++) {
+            //        quadRule.Weights[row] = qs.weights[row];
+            //        for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
+            //            int ind = row * qs.dimension + d;
+            //            quadRule.Nodes[row, d] = qs.nodes[ind];
+            //        }
+            //    }
+            //    quadRule.Nodes.LockForever();
 
-                // In order to calculate surface and volume needs in the same loop, there is a "hack", in which surface nodes multiplied their transformation coefficients but divided by determinants for volume.
-                //if (useMetrics)
-                //ApplyMetrics(quadRule, qs, jCell);
+            //    // In order to calculate surface and volume needs in the same loop, there is a "hack", in which surface nodes multiplied their transformation coefficients but divided by determinants for volume.
+            //    //if (useMetrics)
+            //    //ApplyMetrics(quadRule, qs, jCell);
 
-                return quadRule;
-            }
-
-            private (int, int[], double[], double[]) CreatePhiData(LevelSetTracker.LevelSetData lsData, bool IsNegativeLS, int jCell) {
-                //number of nodes in 1d for level set interpolation = degree + 1
-                int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
-
-                //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
-                double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
-
-                //Cartesian pair product for the points
-                int numberOfCombinations = (int)Math.Pow(points.Length, spaceDim);
-                MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(points, spaceDim);
-
-                //Get level set values on combinations
-                NodeSet NS = new NodeSet(RefElement, combinations, false);
-                var ret = lsData.GetLevSetValues(NS, jCell, 1);
-
-                //Convert to 1D Array for the Wrapper
-                double[] y = new double[ret.Length];
-
-                if (IsNegativeLS) {
-                    for (int i = 0; i < ret.Length; i++)
-                        y[i] = -ret[0, i];
-                } else {
-                    for (int i = 0; i < ret.Length; i++)
-                        y[i] = ret[0, i];
-                }
-
-                // create the double array for the coordinates that level set are queried (1D version, for details see AlgoimWrapper)
-                double[] x = Enumerable.Repeat(points, spaceDim).SelectMany(i => i).ToArray();
-
-                // create the double array for the number of points in each coordinate
-                int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
-
-                return (n, sizes, x, y);
-            }
+            //    return quadRule;
+            //}
 
             private QuadRule CreateEmptyQuadRule() {
                 QuadRule quadRuleEmpty = QuadRule.CreateEmpty(RefElement, 1, spaceDim);
@@ -1124,8 +1140,171 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         }
 
+		class AlgoimDoubleCutSurfaceFactory : AlgoimDoubleCutBaseFactory {
 
-    }
+			override internal int GetSpecies() {
+				if (m_Jumps[0] == JumpTypes.Implicit && m_Jumps[1] == JumpTypes.OneMinusHeaviside)
+					return 0;
+				else if (m_Jumps[0] == JumpTypes.Implicit && m_Jumps[1] == JumpTypes.Heaviside)
+					return 1;
+				else if (m_Jumps[0] == JumpTypes.OneMinusHeaviside && m_Jumps[1] == JumpTypes.Implicit)
+					return 2;
+				else if (m_Jumps[0] == JumpTypes.Heaviside && m_Jumps[1] == JumpTypes.Implicit)
+					return 3;
+				else
+					throw new ArgumentOutOfRangeException();
+			}
+
+			/// <summary>
+			/// Get the quadrature nodes and weights for a cell. (either surface or volume, declared at the instantiation of the factory)
+			/// </summary>
+			/// <param name="jCell">local index of the cell</param>
+			/// <param name="RequestedOrder">requested order for quadrature</param>
+			/// <returns></returns>
+			internal override QuadRule[] GetNodesAndWeights(int jCell, int RequestedOrder) {
+				(int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiData(lsData[0], jCell);
+				(int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiData(lsData[1], jCell);
+
+				// get the quadrature rule from the wrapper
+				UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
+				Debug.Assert(qsArray.Length == 4);
+
+				//Returned rules need to be categorized as ls0=0 ls1<0; ls0=0 ls1>0; ls0<0 ls1=0; ls0>0 ls1=0 
+				QuadRule[] quadRuleArray = new QuadRule[4]; //for all possible combinations of level sets with each other
+				for (int i = 0; i < qsArray.Length; i++) {
+					var qs = qsArray[i];
+					// If quadrature rule is empty, return.
+					if (qs.length < 1) {
+						quadRuleArray[i] = CreateEmptyQuadRule();
+						quadRuleArray[i+1] = CreateEmptyQuadRule();
+						continue;
+					}
+
+					// Create quadrature rule and copy from the scheme
+					QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
+
+					for (int row = 0; row < qs.length; row++) {
+						quadRule.Weights[row] = qs.weights[row];
+						for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
+							int ind = row * qs.dimension + d;
+							quadRule.Nodes[row, d] = qs.nodes[ind];
+						}
+					}
+					quadRule.Nodes.LockForever();
+					var (negativeRule, positiveRule) = DivideQuadRules(lsData[i], jCell, quadRule);
+					quadRuleArray[i] = negativeRule;
+					quadRuleArray[i+1] = positiveRule;
+				}
+				return quadRuleArray;
+			}
+
+            /// <summary>
+            /// Divides the quadrature rule depending on the value of level set into two
+            /// </summary>
+            /// <param name="lsData"></param>
+            /// <param name="jCell"></param>
+            /// <param name="quadRule"></param>
+            /// <returns></returns>
+            private (QuadRule negativeRule, QuadRule positiveRule) DivideQuadRules(LevelSetTracker.LevelSetData lsData, int jCell, QuadRule quadRule) { 
+                //weight and nodes at negative level set values
+				List<double> negativeWeight = new List<double>();
+                List<double[]> negativeNodes= new List<double[]>();
+				//weight and nodes at positive level set values
+				List<double> positiveWeight = new List<double>();
+                List<double[]> positiveNodes = new List<double[]>();
+
+				var ret = lsData.GetLevSetValues(quadRule.Nodes, jCell, 1);
+				for (int i = 0; i < ret.Length; i++) {
+					var ls = ret[0, i];
+                    if (ls < 0) {
+                        negativeWeight.Add(quadRule.Weights[i]);
+						negativeNodes.Add(quadRule.Nodes.GetRow(i));
+					} else if (ls > 0) {
+						positiveWeight.Add(quadRule.Weights[i]);
+						positiveNodes.Add(quadRule.Nodes.GetRow(i));
+					}
+				}
+				QuadRule negRule = QuadRule.CreateEmpty(RefElement, negativeWeight.Count(), spaceDim);
+                for (int n = 0; n < negativeWeight.Count(); n++) {
+                    negRule.Weights[n] = negativeWeight[n];
+                    negRule.Nodes.SetRow(n, negativeNodes[n]);
+				}
+				QuadRule posRule = QuadRule.CreateEmpty(RefElement, negativeWeight.Count(), spaceDim);
+				for (int n = 0; n < negativeWeight.Count(); n++) {
+					posRule.Weights[n] = positiveWeight[n];
+					posRule.Nodes.SetRow(n, positiveNodes[n]);
+				}
+				return (negRule, posRule);
+			}
+
+			private QuadRule CreateEmptyQuadRule() {
+				QuadRule quadRuleEmpty = QuadRule.CreateEmpty(RefElement, 1, spaceDim);
+				quadRuleEmpty.Nodes.LockForever();
+				return quadRuleEmpty;
+			}
+		}
+
+		class AlgoimDoubleCutVolFactory : AlgoimDoubleCutBaseFactory {
+
+            override internal int GetSpecies() {
+                if (m_Jumps[0] == JumpTypes.OneMinusHeaviside && m_Jumps[1] == JumpTypes.OneMinusHeaviside)
+                    return 0;
+                else if (m_Jumps[0] == JumpTypes.OneMinusHeaviside && m_Jumps[1] == JumpTypes.Heaviside)
+					return 1;
+				else if (m_Jumps[0] == JumpTypes.Heaviside && m_Jumps[1] == JumpTypes.OneMinusHeaviside)
+					return 2;
+				else if (m_Jumps[0] == JumpTypes.Heaviside && m_Jumps[1] == JumpTypes.Heaviside)
+                    return 3;
+                else
+                    throw new ArgumentOutOfRangeException();
+            }
+
+			/// <summary>
+			/// Get the quadrature nodes and weights for a cell. (either surface or volume, declared at the instantiation of the factory)
+			/// </summary>
+			/// <param name="jCell">local index of the cell</param>
+			/// <param name="RequestedOrder">requested order for quadrature</param>
+			/// <returns></returns>
+			internal override QuadRule[] GetNodesAndWeights(int jCell, int RequestedOrder) {
+				(int n1, int[] sizes1, double[] x1, double[] y1) = CreatePhiData(lsData[0], jCell);
+				(int n2, int[] sizes2, double[] x2, double[] y2) = CreatePhiData(lsData[1], jCell);
+
+				// get the quadrature rule from the wrapper
+				UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
+				QuadRule[] quadRuleArray = new QuadRule[qsArray.Length];
+                for(int i=0; i < qsArray.Length; i++) {
+                    var qs = qsArray[i];
+                    // If quadrature rule is empty, return.
+                    if (qs.length < 1) {
+						quadRuleArray[i] = CreateEmptyQuadRule();
+                        continue;
+                    }
+
+				// Create quadrature rule and copy from the scheme
+				QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
+
+				for (int row = 0; row < qs.length; row++) {
+					quadRule.Weights[row] = qs.weights[row];
+					for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
+						int ind = row * qs.dimension + d;
+						quadRule.Nodes[row, d] = qs.nodes[ind];
+					}
+				}
+				quadRule.Nodes.LockForever();
+                    quadRuleArray[i] = quadRule;
+				}
+				return quadRuleArray;
+			}
+
+			private QuadRule CreateEmptyQuadRule() {
+				QuadRule quadRuleEmpty = QuadRule.CreateEmpty(RefElement, 1, spaceDim);
+				quadRuleEmpty.Nodes.LockForever();
+				return quadRuleEmpty;
+			}
+
+		}
+
+	}
 
 
 

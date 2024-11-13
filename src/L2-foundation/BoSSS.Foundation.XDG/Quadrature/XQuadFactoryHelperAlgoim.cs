@@ -61,9 +61,14 @@ namespace BoSSS.Foundation.XDG {
             return r;
         }
 
-        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
-        }
+		public MultiLevelSetBeckFactoryCreator zwoLSSayeFactories { get; private set; }
+
+		public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+			if (zwoLSSayeFactories == null) {
+				zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+			}
+			return zwoLSSayeFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+		}
 
         public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             throw new NotImplementedException();
@@ -93,8 +98,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            throw new NotImplementedException();
-        }
+			CheckKref(levSetIndex0, KrefVol);
+			JumpTypes[] jumps = new JumpTypes[] { jmp1,  jmp1 };
+            jumps[levSetIndex0] = JumpTypes.Implicit;
+			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol);
+			return algoimFactory.GetSurfaceFactory(jumps);
+		}
 
         public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref) {
             CheckKref(levSetIndex, Kref);
@@ -105,9 +114,9 @@ namespace BoSSS.Foundation.XDG {
 
         public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement Kref, IQuadRuleFactory<QuadRule> backupFactory) {
 			CheckKref(levSetIndex0, Kref);
-			bool[] negativeLevelSets = new bool[] { CheckJmp(jmp0), CheckJmp(jmp1)};
-			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, Kref, negativeLevelSets);
-			return algoimFactory.GetVolumeFactory();
+			JumpTypes[] jumps = new JumpTypes[] { jmp0, jmp1};
+			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, Kref);
+			return algoimFactory.GetVolumeFactory(jumps);
         }
 
         /// <summary>
