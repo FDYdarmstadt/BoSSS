@@ -550,7 +550,6 @@ namespace StokesHelical_Ak.TestTransient {
 
         }
 
-
         /// <summary>
         /// Tests if a steady-state, Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
         /// is also the solution of the instationary solver.
@@ -680,13 +679,13 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
-        /// With 0.1% White Noise over laminar Solutin
+        /// With 0,1% White Noise over laminar Solutin
         /// Reynolds 10
         /// </summary>
         /// <remarks>
         /// </remarks>
         [Test]
-        static public void Transient_HP_Re_10_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
+        static public void Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix([Values(3)] int pOrder = 3) {
 
             double maxAmpitude = 40;
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
@@ -706,16 +705,16 @@ namespace StokesHelical_Ak.TestTransient {
             // ==============
             string InitialValue_ur_p =
             "static class MyInitialValue_ur_p {" +
+            "static Random random = new Random(0);" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
-            "    var random = new Random();" +
             "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
             "}";
             string InitialValue_uxi =
             "static class MyInitialValue_uxi {" +
+            "static Random random = new Random(0);" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
-            "    var random = new Random();" +
             "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
             "     * (" + (a * a) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (4 * " + nu + ")" +
             "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
@@ -724,8 +723,8 @@ namespace StokesHelical_Ak.TestTransient {
             "}";
             string InitialValue_ueta =
              "static class MyInitialValue_ueta {" +
+             "static Random random = new Random(0);" +
              " public static double GenerateRandomValue(double[] X, double t) {" +
-             "    var random = new Random();" +
              "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
              "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
              "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
@@ -789,13 +788,13 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
-        /// With 10% White Noise over laminar Solutin
-        /// Reynolds 10000
+        /// With 0,1% White Noise over laminar Solutin
+        /// Reynolds 25000
         /// </summary>
         /// <remarks>
         /// </remarks>
         // [Test]
-        static public void Transient_HP_Re_2500_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
+        static public void Transient_HP_Re_2500_White_Noise_1_ProMil_with_R0fix([Values(3)] int pOrder = 3) {
 
             double maxAmpitude = 10000;
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
@@ -807,7 +806,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 10;
+            ctrl.ImmediatePlotPeriod = -1;
 
 
             var random = 0.001 * maxAmpitude;
@@ -815,16 +814,16 @@ namespace StokesHelical_Ak.TestTransient {
             // ==============
             string InitialValue_ur_p =
             "static class MyInitialValue_ur_p {" +
+            "static Random random = new Random(0);" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
-            "    var random = new Random();" +
             "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
             "}";
             string InitialValue_uxi =
             "static class MyInitialValue_uxi {" +
+            "static Random random = new Random(0);" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
-            "    var random = new Random();" +
             "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
             "     * (" + (a * a) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (4 * " + nu + ")" +
             "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
@@ -833,8 +832,8 @@ namespace StokesHelical_Ak.TestTransient {
             "}";
             string InitialValue_ueta =
              "static class MyInitialValue_ueta {" +
+             "static Random random = new Random(0);" +
              " public static double GenerateRandomValue(double[] X, double t) {" +
-             "    var random = new Random();" +
              "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
              "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
              "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
@@ -1163,13 +1162,13 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Cylindrical flow 
-        /// With 0.1% White Noise over laminar Solutin
+        /// With 0.1% White Noise over laminar Solution
         /// Reynolds 10
         /// </summary>
         /// <remarks>
         /// </remarks>
         [Test]
-        static public void Transient_CF_Re_10_White_Noise_10_Procent_with_R0fix([Values(3)] int pOrder = 3) {
+        static public void Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix([Values(3)] int pOrder = 3) {
 
             double maxAmpitude = 10;
             var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
@@ -1189,8 +1188,8 @@ namespace StokesHelical_Ak.TestTransient {
             // ==============
             string InitialValue_p =
                 "static class MyInitialValue_p {" +
+                "static Random random = new Random(0);" +
                 " public static double GenerateRandomValue(double[] X, double t) {" +
-                "    var random = new Random();" +
                 "    double randomValue = " + (maxAmpitude * maxAmpitude * 0.5) + " * X[0] * X[0] " +
                 "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue;" +
@@ -1199,8 +1198,8 @@ namespace StokesHelical_Ak.TestTransient {
 
             string InitialValue_ur =
             "static class MyInitialValue_ur {" +
+            "static Random random = new Random(0);" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
-            "    var random = new Random();" +
             "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
@@ -1208,8 +1207,8 @@ namespace StokesHelical_Ak.TestTransient {
 
             string InitialValue_uxi =
                 "static class MyInitialValue_uxi {" +
+                "static Random random = new Random(0);" +
                 " public static double GenerateRandomValue(double[] X, double t) {" +
-                "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * b) + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
                 "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
@@ -1218,8 +1217,8 @@ namespace StokesHelical_Ak.TestTransient {
 
             string InitialValue_ueta =
                 "static class MyInitialValue_ueta {" +
+                "static Random random = new Random(0);" +
                 " public static double GenerateRandomValue(double[] X, double t) {" +
-                "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * a) + " * X[0] * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
                 "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
@@ -1281,7 +1280,7 @@ namespace StokesHelical_Ak.TestTransient {
 
         /// <summary>
         /// Full Navier Stokes Cylindrical flow 
-        /// With 10% White Noise over laminar Solutin
+        /// With 0,1% White Noise over laminar Solutin
         /// Reynolds 2500
         /// </summary>
         /// <remarks>
@@ -1299,16 +1298,16 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 1;
+            ctrl.ImmediatePlotPeriod = -1;
 
 
-            var random = 0.1 * maxAmpitude;
+            var random = 0.001 * maxAmpitude;
             // Initial Values
             // ==============
             string InitialValue_p =
                 "static class MyInitialValue_p {" +
+                "static Random random = new Random(0);" +
                 " public static double GenerateRandomValue(double[] X, double t) {" +
-                "    var random = new Random();" +
                 "    double randomValue = " + (maxAmpitude * maxAmpitude * 0.5) + " * X[0] * X[0] " +
                 "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue;" +
@@ -1317,8 +1316,8 @@ namespace StokesHelical_Ak.TestTransient {
 
             string InitialValue_ur =
             "static class MyInitialValue_ur {" +
+            "static Random random = new Random(0);" +
             " public static double GenerateRandomValue(double[] X, double t) {" +
-            "    var random = new Random();" +
             "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
             "   return randomValue;" +
             " }" +
@@ -1326,8 +1325,8 @@ namespace StokesHelical_Ak.TestTransient {
 
             string InitialValue_uxi =
                 "static class MyInitialValue_uxi {" +
+                "static Random random = new Random(0);" +
                 " public static double GenerateRandomValue(double[] X, double t) {" +
-                "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * b) + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
                 "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
@@ -1336,8 +1335,8 @@ namespace StokesHelical_Ak.TestTransient {
 
             string InitialValue_ueta =
                 "static class MyInitialValue_ueta {" +
+                "static Random random = new Random(0);" +
                 " public static double GenerateRandomValue(double[] X, double t) {" +
-                "    var random = new Random();" +
                 "    double randomValue_and_lami = " + (maxAmpitude * a) + " * X[0] * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
                 "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0] - " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
                 "   return randomValue_and_lami;" +
