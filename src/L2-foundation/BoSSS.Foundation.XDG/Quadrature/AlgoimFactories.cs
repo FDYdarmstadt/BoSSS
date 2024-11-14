@@ -977,7 +977,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 				m_Jumps = jumps
 			};
             factory.useMetrics = true;
-            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
+            factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules;
             return factory;
         }
 
@@ -1040,6 +1040,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 				int speciesIndex = GetSpecies(); //which part of the quadRule
 				return m_Rules[RequestedOrder][speciesIndex];
             }
+
+			internal void ApplyMetrics(QuadRule quadRule, int jCell) {
+				var metrics = lsData[0].GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
+				for (int k = 0; k < quadRule.Weights.Length; k++) {
+					quadRule.Weights[k] /= metrics[0, k];
+				}
+			}
 
 			/// <summary>
 			/// Get array index of the species requested for Algoim data. 
@@ -1167,7 +1174,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 				// get the quadrature rule from the wrapper
 				UnsafeAlgoim.QuadScheme[] qsArray = m_CalculateQuadRule(spaceDim, n1, n2, RequestedOrder, sizes1, sizes2, x1, x2, y1, y2);
-				Debug.Assert(qsArray.Length == 4);
+				Debug.Assert(qsArray.Length == 2);
 
 				//Returned rules need to be categorized as ls0=0 ls1<0; ls0=0 ls1>0; ls0<0 ls1=0; ls0>0 ls1=0 
 				QuadRule[] quadRuleArray = new QuadRule[4]; //for all possible combinations of level sets with each other
@@ -1175,8 +1182,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 					var qs = qsArray[i];
 					// If quadrature rule is empty, return.
 					if (qs.length < 1) {
-						quadRuleArray[i] = CreateEmptyQuadRule();
-						quadRuleArray[i+1] = CreateEmptyQuadRule();
+						quadRuleArray[2*i] = CreateEmptyQuadRule();
+						quadRuleArray[2*i+1] = CreateEmptyQuadRule();
 						continue;
 					}
 
@@ -1190,10 +1197,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 							quadRule.Nodes[row, d] = qs.nodes[ind];
 						}
 					}
+                    quadRule.Nodes.LockForever();
+
+					ApplyMetrics(quadRule, jCell);
 					quadRule.Nodes.LockForever();
-					var (negativeRule, positiveRule) = DivideQuadRules(lsData[i], jCell, quadRule);
-					quadRuleArray[i] = negativeRule;
-					quadRuleArray[i+1] = positiveRule;
+					
+                    var (negativeRule, positiveRule) = DivideQuadRules(lsData[1-i], jCell, quadRule); //1-i: the other level set since we have two level sets
+					quadRuleArray[2*i] = negativeRule;
+					quadRuleArray[2*i + 1] = positiveRule;
 				}
 				return quadRuleArray;
 			}
@@ -1229,11 +1240,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     negRule.Weights[n] = negativeWeight[n];
                     negRule.Nodes.SetRow(n, negativeNodes[n]);
 				}
-				QuadRule posRule = QuadRule.CreateEmpty(RefElement, negativeWeight.Count(), spaceDim);
-				for (int n = 0; n < negativeWeight.Count(); n++) {
+                negRule.Nodes.LockForever();
+				QuadRule posRule = QuadRule.CreateEmpty(RefElement, positiveWeight.Count(), spaceDim);
+				for (int n = 0; n < positiveWeight.Count(); n++) {
 					posRule.Weights[n] = positiveWeight[n];
 					posRule.Nodes.SetRow(n, positiveNodes[n]);
 				}
+				posRule.Nodes.LockForever();
+                Debug.Assert(positiveWeight.Count() + negativeWeight.Count() == ret.Length);
 				return (negRule, posRule);
 			}
 
@@ -1280,18 +1294,18 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                         continue;
                     }
 
-				// Create quadrature rule and copy from the scheme
-				QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
+					// Create quadrature rule and copy from the scheme
+					QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
 
-				for (int row = 0; row < qs.length; row++) {
-					quadRule.Weights[row] = qs.weights[row];
-					for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
-						int ind = row * qs.dimension + d;
-						quadRule.Nodes[row, d] = qs.nodes[ind];
+					for (int row = 0; row < qs.length; row++) {
+						quadRule.Weights[row] = qs.weights[row];
+						for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
+							int ind = row * qs.dimension + d;
+							quadRule.Nodes[row, d] = qs.nodes[ind];
+						}
 					}
-				}
-				quadRule.Nodes.LockForever();
-                    quadRuleArray[i] = quadRule;
+					quadRule.Nodes.LockForever();
+					quadRuleArray[i] = quadRule;
 				}
 				return quadRuleArray;
 			}
