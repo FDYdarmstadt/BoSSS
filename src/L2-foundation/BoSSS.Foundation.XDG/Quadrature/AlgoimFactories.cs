@@ -1200,7 +1200,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     quadRule.Nodes.LockForever();
 
 					ApplyMetrics(quadRule, jCell);
-					quadRule.Nodes.LockForever();
 					
                     var (negativeRule, positiveRule) = DivideQuadRules(lsData[1-i], jCell, quadRule); //1-i: the other level set since we have two level sets
 					quadRuleArray[2*i] = negativeRule;
