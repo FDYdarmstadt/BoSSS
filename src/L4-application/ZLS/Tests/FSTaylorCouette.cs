@@ -216,11 +216,11 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 return 0;
             }
 
-            //public double vC(double r) {
-            //    //return _C1B * r + _C2B / r;
-            //    return 0.135217492469620 * r - 0.033804373117405 / r;
-            //    //return 0;
-            //}
+            public double vC(double r) {
+                //return _C1B * r + _C2B / r;
+                //return 0.135217492469620 * r - 0.033804373117405 / r;
+                return 0;
+            }
 
             /// <summary>
             /// pressure, phase A, radial coordinates
@@ -238,10 +238,10 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 return 0;
             }
 
-            //public double pC(double r) {
-            //    //return 0.5 * rhoB * _C1B.Pow2() * r.Pow2() - 0.5 * rhoB * _C2B.Pow2() / (r.Pow2()) + 2 * rhoB * _C1B * _C2B * Math.Log(r) + _C3B;
-            //    return 0;
-            //}
+            public double pC(double r) {
+                //return 0.5 * rhoB * _C1B.Pow2() * r.Pow2() - 0.5 * rhoB * _C2B.Pow2() / (r.Pow2()) + 2 * rhoB * _C1B * _C2B * Math.Log(r) + _C3B;
+                return 0;
+            }
 
 
             public double UA1(double[] X, double t) { 
@@ -260,13 +260,13 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 return (+X[0] / X.L2Norm()) * vB(X.L2Norm()); 
             }
 
-            //public double UC1(double[] X, double t) {
-            //    return (-X[1] / X.L2Norm()) * vC(X.L2Norm());
-            //}
+            public double UC1(double[] X, double t) {
+                return (-X[1] / X.L2Norm()) * vC(X.L2Norm());
+            }
 
-            //public double UC2(double[] X, double t) {
-            //    return (+X[0] / X.L2Norm()) * vC(X.L2Norm());
-            //}
+            public double UC2(double[] X, double t) {
+                return (+X[0] / X.L2Norm()) * vC(X.L2Norm());
+            }
 
             public double PA(double[] X, double t) { 
                 double p = pA(X.L2Norm());
@@ -282,12 +282,12 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 return p;
             }
 
-            //public double PC(double[] X, double t) {
-            //    double p = pC(X.L2Norm());
-            //    if(p.IsNaNorInf())
-            //        throw new ArithmeticException();
-            //    return p;
-            //}
+            public double PC(double[] X, double t) {
+                double p = pC(X.L2Norm());
+                if(p.IsNaNorInf())
+                    throw new ArithmeticException();
+                return p;
+            }
 
         }
 
@@ -385,7 +385,7 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
             switch(species) {
                 case "A": return exS.PA;
                 case "B": return exS.PB;
-                //case "C": return exS.PC;
+                case "C": return exS.PC;
                 default: throw new ArgumentOutOfRangeException();
             }
         }
@@ -397,7 +397,7 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 switch(species) {
                     case "A": return exS.UA1;
                     case "B": return exS.UB1;
-                    //case "C": return exS.UC1;
+                    case "C": return exS.UC1;
                     default: throw new ArgumentOutOfRangeException();
                 }
 
@@ -405,7 +405,7 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 switch(species) {
                     case "A": return exS.UA2;
                     case "B": return exS.UB2;
-                    //case "C": return exS.UC2;
+                    case "C": return exS.UC2;
                     default: throw new ArgumentOutOfRangeException();
                 }
 

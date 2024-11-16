@@ -393,8 +393,7 @@ namespace ZwoLevelSetSolver.Tests {
 
             int D = tst.SpatialDimension;
 
-            //foreach(var spc in new[] { "A", "B", "C" }) {
-            foreach(var spc in new[] { "A", "B" }) {
+            foreach(var spc in new[] { "A", "B", "C" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
             }
