@@ -1,5 +1,7 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.PrintingNip;
+using BoSSS.Application.XNSE_Solver.Tests;
+using BoSSS.Application.ZwoLevelSetSolver.Tests;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -16,7 +18,7 @@ using System.Collections.Generic;
 using ZwoLevelSetSolver.SolidPhase;
 using static BoSSS.Solution.Control.AppControl;
 
-namespace ZwoLevelSetSolver.ControlFiles {
+namespace ZwoLevelSetSolver.Tests {
     public static class FSTC {
 
         public static ZLS_Control Circle(int p = 2, int h = 3, int AMRlvl = 0, double BeamDensity = 0.1) {
@@ -239,7 +241,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control SmallCircle(int p = 2, int h = 3, int AMRlvl = 0, double BeamDensity = 0.1) {
+        public static ZLS_Control SmallCircle(IZLSTest tst, int p = 2, int h = 3, int AMRlvl = 0, double BeamDensity = 0.1) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
@@ -385,6 +387,18 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AddBoundaryValue("wall_right", "VelocityY", X => InletVelocityY(X, A1, B1));
             C.AddBoundaryValue("wall_inside", "DisplacementX", X => InletVelocityX(X, A2, B2));
             C.AddBoundaryValue("wall_inside", "DisplacementY", X => InletVelocityY(X, A2, B2));
+
+            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
+            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+
+            int D = tst.SpatialDimension;
+
+            //foreach(var spc in new[] { "A", "B", "C" }) {
+            foreach(var spc in new[] { "A", "B" }) {
+                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
+                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
+            }
+
             #endregion
 
             // misc. solver options
