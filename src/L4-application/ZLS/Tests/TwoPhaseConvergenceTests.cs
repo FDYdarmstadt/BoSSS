@@ -1,6 +1,6 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSE_Solver.Tests;
-using BoSSS.Application.ZwoLevelSetSolver.Tests;
+using ZwoLevelSetSolver.Tests;
 using BoSSS.Solution.Control;
 using BoSSS.Solution;
 using BoSSS.Solution.Statistic;
@@ -89,8 +89,8 @@ namespace ZwoLevelSetSolver.Tests {
             //}
 
             SolverConvergenceTest_Exact(Tst, cs, true, new[] {
-                //("DisplacementX", 3.0, 0.740, 0.1),
-                //("DisplacementY", 3.0, 0.740, 0.1),
+                ("DisplacementX", 3.0, -1.568, 0.1),
+                ("DisplacementY", 3.0, -1.568, 0.1),
                 ("VelocityX", 3.0, -1.04, 0.1), 
                 ("VelocityY", 3.0, -1.04, 0.1), 
                 ("Pressure", 2.0, -0.507, 0.1)}
@@ -104,8 +104,8 @@ namespace ZwoLevelSetSolver.Tests {
             //var CS = __CS.ToArray();
             int NoOfMeshes = CS.Length;
 
-            if(RegResults.Length != D + 1)
-                throw new ArgumentException("Expecting slopes for velocity and pressure.");
+            //if(RegResults.Length != D + 1)
+            //    throw new ArgumentException("Expecting slopes for velocity and pressure.");
 
             var Ret = new List<(string Name, double slope, double Intercept)>();
 

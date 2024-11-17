@@ -20,9 +20,8 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 using ZwoLevelSetSolver;
 
-namespace BoSSS.Application.ZwoLevelSetSolver.Tests
+namespace ZwoLevelSetSolver.Tests
 {
-
     /// <summary>
     /// base class for error evaluation within tests
     /// </summary>
@@ -51,7 +50,7 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests
         /// characteristic grid/mesh length scale
         /// </summary>
         public double GetGrid_h() {
-            return ((Foundation.Grid.Classic.GridData)(solver.GridData)).Cells.h_minGlobal;
+            return ((BoSSS.Foundation.Grid.Classic.GridData)(solver.GridData)).Cells.h_minGlobal;
         }
     }
 
@@ -63,7 +62,7 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests
     /// Seems redundant with <see cref="L2ErrorLogger"/>
     /// </remarks>
     public class ZLSErrorEvaluator<T> : ZLSErrorEvaluator where T: ZLS_Control, new() {
-
+        
         public ZLSErrorEvaluator(IApplication solver) : base(solver){
 
         }
@@ -130,7 +129,9 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests
         public double ComputePressureError(IDictionary<string, Func<double[], double, double>> exactPressure, double time)
         {
             int D = solver.GridData.SpatialDimension;
-            var FluidSpecies = exactPressure.Keys.ToArray();
+            //var FluidSpecies = exactPressure.Keys.ToArray();
+            var FluidSpecies = new[] { "A", "B" };
+            Console.WriteLine(string.Join(", ", FluidSpecies));
 
             string pressureName = BoSSS.Solution.NSECommon.VariableNames.Pressure;
             XDGField pressure = (XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == pressureName);
@@ -171,17 +172,65 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests
                 SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
                 var rule = scheme.Compile(solver.GridData, order);
-
                 double IdV = pressure.GetSpeciesShadowField(spc).LxError(exactPressure[spc].Vectorize(time), (X, a, b) => (a - b - PressureDiffMean).Pow2(), rule);
                 L2Error += IdV;
                 L2Error_Species.Add(spc, IdV.Sqrt());
-
                 solver.QueryHandler.ValueQuery("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc, L2Error_Species[spc], true);
+                Console.WriteLine("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc + IdV);
+            
             }
 
 
             L2Error = L2Error.Sqrt();
             solver.QueryHandler.ValueQuery("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure, L2Error, true);
+            return L2Error;
+        }
+
+        public double[] ComputeDisplacementError(IDictionary<string, Func<double[], double, double>[]> exactDisplacement, double time) {
+            int D = solver.GridData.SpatialDimension;
+            var FluidSpecies = exactDisplacement.Keys.ToArray();
+            //var FluidSpecies = new[] { "C" };
+            double[] Ret = new double[D];
+
+            int order = 0;
+            if(solver.LsTrk.GetCachedOrders().Count > 0) {
+                order = solver.LsTrk.GetCachedOrders().Max();
+            } else {
+                order = 1;
+            }
+
+            var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
+            Dictionary<string, double[]> L2Error_Species = new Dictionary<string, double[]>();
+            double[] L2Error = new double[D];
+
+            foreach(var spc in FluidSpecies) {
+                L2Error_Species.Add(spc, new double[D]);
+
+                SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
+                var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
+
+
+                for(int d = 0; d < D; d++) {
+                    string displacement = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d];
+                    //string displacement = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
+                    ConventionalDGField Dis_d = ((XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == displacement)).GetSpeciesShadowField(spc);
+
+                    double LxError = Dis_d.LxError(exactDisplacement[spc][d].Vectorize(time), null, scheme.SaveCompile(Dis_d.GridDat, order));
+                    LxError = (LxError > -1e-12 && LxError < 0) ? 0.0 : LxError; // Avoid nans if solution is too close to the analytic one
+                    L2Error_Species[spc][d] = LxError.Sqrt();
+
+                    L2Error[d] += L2Error_Species[spc][d].Pow2();
+
+                    solver.QueryHandler.ValueQuery("L2err_" + ZwoLevelSetSolver.VariableNames.DisplacementComponent(d) + "#" + spc, L2Error_Species[spc][d], true);
+                }
+            }
+            L2Error = L2Error.Select(x => x.Sqrt()).ToArray();
+
+            for(int d = 0; d < D; d++) {
+                solver.QueryHandler.ValueQuery("L2err_" + ZwoLevelSetSolver.VariableNames.DisplacementComponent(d), L2Error[d], true);
+                Ret[d] = L2Error[d];
+            }
             return L2Error;
         }
 
@@ -192,7 +241,8 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests
         /// </summary>
         public override double[] ComputeL2Error(double time, ZLS_Control control) {
             int D = solver.GridData.SpatialDimension;
-            double[] Ret = new double[D + 1];
+            //double[] Ret = new double[D + 1];
+            double[] Ret = new double[D + 1 + 2];
 
             if(control.ExactSolutionVelocity != null) {
                 double[] error = ComputeVelocityError(control.ExactSolutionVelocity, time);
@@ -201,6 +251,10 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests
             if(control.ExactSolutionPressure != null) {
                 double error = ComputePressureError(control.ExactSolutionPressure, time);
                 Ret[D] = error;
+            }
+            if(control.ExactSolutionDisplacement != null) {
+                double[] error = ComputeDisplacementError(control.ExactSolutionDisplacement, time);
+                error.CopyTo(Ret, D + 1);
             }
             return Ret;
         }

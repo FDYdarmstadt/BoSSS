@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
+namespace ZwoLevelSetSolver.Tests {
 
 
     /// <summary>
@@ -243,6 +243,29 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 return 0;
             }
 
+            /// <summary>
+            /// tangential velocity, phase A, radial coordinates
+            /// </summary>
+            public double uA(double r) {
+                //return _C1A * r + _C2A / r;
+                //return 0.922554663967561 * r - 1.690218655870246 / r;
+                return 0;
+            }
+
+            /// <summary>
+            /// velocity, phase B, radial coordinates
+            /// </summary>
+            public double uB(double r) {
+                //return _C1B * r + _C2B / r;
+                return 0;
+            }
+
+            public double uC(double r) {
+                //return _C1B * r + _C2B / r;
+                return 0.135217492469620 * r - 0.033804373117405 / r;
+                //return 0;
+            }
+
 
             public double UA1(double[] X, double t) { 
                 return (-X[1] / X.L2Norm()) * vA(X.L2Norm()); 
@@ -289,14 +312,38 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                 return p;
             }
 
+            public double DisA1(double[] X, double t) {
+                return (-X[1] / X.L2Norm()) * uA(X.L2Norm());
+            }
+
+            public double DisA2(double[] X, double t) {
+                return (+X[0] / X.L2Norm()) * uA(X.L2Norm());
+            }
+
+            public double DisB1(double[] X, double t) {
+                return (-X[1] / X.L2Norm()) * uB(X.L2Norm());
+            }
+
+            public double DisB2(double[] X, double t) {
+                return (+X[0] / X.L2Norm()) * uB(X.L2Norm());
+            }
+
+            public double DisC1(double[] X, double t) {
+                return (-X[1] / X.L2Norm()) * uC(X.L2Norm());
+            }
+
+            public double DisC2(double[] X, double t) {
+                return (+X[0] / X.L2Norm()) * uC(X.L2Norm());
+            }
+
         }
 
 
 
 
-        public double[] AcceptableL2Error => new double[] { 1, 1, 1 };
+        public double[] AcceptableL2Error => new double[] { 1, 1, 1, 1, 1 };
 
-        public double[] AcceptableResidual => new double[] { 1, 1, 1 };
+        public double[] AcceptableResidual => new double[] { 1, 1, 1, 1, 1 };
 
         string innerWallTag = IncompressibleBcType.Velocity_Inlet.ToString() + "_inner";
         
@@ -311,7 +358,7 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
             var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, CutOuts: cutOut);
 
             grd.DefineEdgeTags(delegate (double[] X) {
-                byte et = 0;
+                //byte et = 0;
                 if(Math.Abs(X[0] - (-0.5)) <= 1.0e-8 || Math.Abs(X[0] - (+0.5)) <= 1.0e-8
                     || Math.Abs(X[1] - (-0.5)) <= 1.0e-8 || Math.Abs(X[1] - (+0.5)) <= 1.0e-8)
                     return innerWallTag;
@@ -330,19 +377,19 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
 
             
             config.Add(innerWallTag, new AppControl.BoundaryValueCollection());
-            config[innerWallTag].Evaluators.Add(VariableNames.Velocity_d(0) + "#A", exS.UA1);
-            config[innerWallTag].Evaluators.Add(VariableNames.Velocity_d(1) + "#A", exS.UA2);
+            config[innerWallTag].Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(0) + "#A", exS.UA1);
+            config[innerWallTag].Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(1) + "#A", exS.UA2);
             
 
             config.Add(outerWallTag, new AppControl.BoundaryValueCollection());
             if(TestImmersedBoundary) {
                 // IBM - outer boundary is still species A
-                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(0) + "#A", exS.UA1);
-                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(1) + "#A", exS.UA2);
+                config[outerWallTag].Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(0) + "#A", exS.UA1);
+                config[outerWallTag].Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(1) + "#A", exS.UA2);
             } else {
                 // 2-Phase-Interface within - outer boundary is species B
-                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(0) + "#B", exS.UB1);
-                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(1) + "#B", exS.UB2);
+                config[outerWallTag].Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(0) + "#B", exS.UB1);
+                config[outerWallTag].Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(1) + "#B", exS.UB2);
             }
 
             return config;
@@ -406,6 +453,29 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
                     case "A": return exS.UA2;
                     case "B": return exS.UB2;
                     case "C": return exS.UC2;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public Func<double[], double, double> GetDis(string species, int d) {
+
+            switch(d) {
+                case 0:
+                switch(species) {
+                    case "A": return exS.DisA1;
+                    case "B": return exS.DisB1;
+                    case "C": return exS.DisC1;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+
+                case 1:
+                switch(species) {
+                    case "A": return exS.DisA2;
+                    case "B": return exS.DisB2;
+                    case "C": return exS.DisC2;
                     default: throw new ArgumentOutOfRangeException();
                 }
 

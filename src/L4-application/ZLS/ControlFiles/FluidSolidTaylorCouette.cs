@@ -1,7 +1,7 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.PrintingNip;
 using BoSSS.Application.XNSE_Solver.Tests;
-using BoSSS.Application.ZwoLevelSetSolver.Tests;
+using ZwoLevelSetSolver.Tests;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -33,7 +33,7 @@ namespace ZwoLevelSetSolver.Tests {
             // basic database options
             // ======================
             #region db
-            string DbPath = @"C:\Databases\ZLS_GummiLippe";
+            //string DbPath = @"C:\Databases\ZLS_GummiLippe";
             C.savetodb = false;
             //C.DbPath = DbPath;
             C.ProjectName = "Fluid-Solid-Taylor-Couette";
@@ -251,7 +251,7 @@ namespace ZwoLevelSetSolver.Tests {
             // basic database options
             // ======================
             #region db
-            string DbPath = @"C:\Databases\ZLS_GummiLippe";
+            //string DbPath = @"C:\Databases\ZLS_GummiLippe";
             C.savetodb = false;
             //C.DbPath = DbPath;
             C.ProjectName = "Fluid-Solid-Taylor-Couette";
@@ -390,12 +390,15 @@ namespace ZwoLevelSetSolver.Tests {
 
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            C.ExactSolutionDisplacement = new Dictionary<string, Func<double[], double, double>[]>();
+
 
             int D = tst.SpatialDimension;
 
             foreach(var spc in new[] { "A", "B", "C" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
+                C.ExactSolutionDisplacement.Add(spc, D.ForLoop(d => tst.GetDis(spc, d)));
             }
 
             #endregion
@@ -461,7 +464,7 @@ namespace ZwoLevelSetSolver.Tests {
             // basic database options
             // ======================
             #region db
-            string DbPath = @"C:\Databases\ZLS_GummiLippe";
+            //string DbPath = @"C:\Databases\ZLS_GummiLippe";
             C.savetodb = false;
             //C.DbPath = DbPath;
             C.ProjectName = "Fluid-Solid-Taylor-Couette";

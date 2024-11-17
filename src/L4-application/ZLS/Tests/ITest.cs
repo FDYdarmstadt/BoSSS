@@ -19,7 +19,7 @@ using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
 
-namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
+namespace ZwoLevelSetSolver.Tests {
 
     /// <summary>
     /// Interface for tests (historical stuff).
@@ -115,6 +115,11 @@ namespace BoSSS.Application.ZwoLevelSetSolver.Tests {
         /// Exact solution/Initial value for pressure, for species <paramref name="species"/>.
         /// </summary>
         Func<double[], double, double> GetPress(string species);
+
+        /// <summary>
+        /// Exact solution/Initial value for Displacement, for species <paramref name="species"/>, vector component <paramref name="d"/>.
+        /// </summary>
+        Func<double[], double, double> GetDis(string species, int d);
 
         /// <summary> dynamic viscosity fluid A </summary>
         double mu_A { get; }
