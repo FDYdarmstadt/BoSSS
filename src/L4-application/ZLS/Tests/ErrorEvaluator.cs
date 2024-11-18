@@ -130,8 +130,8 @@ namespace ZwoLevelSetSolver.Tests
         public double ComputePressureError(IDictionary<string, Func<double[], double, double>> exactPressure, double time)
         {
             int D = solver.GridData.SpatialDimension;
-            //var FluidSpecies = exactPressure.Keys.ToArray();
-            var FluidSpecies = new[] { "A", "B" };
+            var FluidSpecies = exactPressure.Keys.ToArray();
+            //var FluidSpecies = new[] { "A", "B" };
             Console.WriteLine(string.Join(", ", FluidSpecies));
 
             string pressureName = BoSSS.Solution.NSECommon.VariableNames.Pressure;

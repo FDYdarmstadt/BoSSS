@@ -11,6 +11,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.Utils;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -365,10 +366,10 @@ namespace ZwoLevelSetSolver.Tests {
                 return (A * Math.Sqrt(X[0] * X[0] + X[1] * X[1]) + B / Math.Sqrt(X[0] * X[0] + X[1] * X[1])) * X[0] / Math.Sqrt(X[0] * X[0] + X[1] * X[1]);
             }
 
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => InletVelocityX(X, A1, B1));
-            C.InitialValues_Evaluators.Add("VelocityY#A", X => InletVelocityY(X, A1, B1));
-            C.InitialValues_Evaluators.Add("DisplacementX#C", X => InletVelocityX(X, A2, B2));
-            C.InitialValues_Evaluators.Add("DisplacementY#C", X => InletVelocityY(X, A2, B2));
+            //C.InitialValues_Evaluators.Add("VelocityX#A", X => InletVelocityX(X, A1, B1));
+            //C.InitialValues_Evaluators.Add("VelocityY#A", X => InletVelocityY(X, A1, B1));
+            //C.InitialValues_Evaluators.Add("DisplacementX#C", X => InletVelocityX(X, A2, B2));
+            //C.InitialValues_Evaluators.Add("DisplacementY#C", X => InletVelocityY(X, A2, B2));
             //C.InitialValues_Evaluators.Add("Pressure#C", X => 0);
 
 
@@ -388,6 +389,9 @@ namespace ZwoLevelSetSolver.Tests {
             C.AddBoundaryValue("wall_inside", "DisplacementX", X => InletVelocityX(X, A2, B2));
             C.AddBoundaryValue("wall_inside", "DisplacementY", X => InletVelocityY(X, A2, B2));
 
+            // initial values and exact solution
+            // =================================
+
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
             C.ExactSolutionDisplacement = new Dictionary<string, Func<double[], double, double>[]>();
@@ -399,6 +403,15 @@ namespace ZwoLevelSetSolver.Tests {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
                 C.ExactSolutionDisplacement.Add(spc, D.ForLoop(d => tst.GetDis(spc, d)));
+
+                for(int d = 0; d < D; d++) {
+                    C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
+                    C.InitialValues_Evaluators.Add(VariableNames.DisplacementComponent(d) + "#" + spc, tst.GetDis(spc, d).Convert_Xt2X(0.0));
+                    //var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
+                    //C.SetGravity(spc, d, Gravity_d);
+                }
+
+                C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
             }
 
             #endregion
