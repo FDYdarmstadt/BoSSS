@@ -243,8 +243,8 @@ namespace ZwoLevelSetSolver.Tests {
 
         public static ZLS_Control SmallCircle(IZLSTest tst, int p = 2, int h = 3, int AMRlvl = 0, double BeamDensity = 0.1) {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.2;
             C.NoOfMultigridLevels = 1;
 

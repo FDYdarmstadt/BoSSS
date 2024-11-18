@@ -19,6 +19,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 using ZwoLevelSetSolver;
+using BoSSS.Solution.Tecplot;
 
 namespace ZwoLevelSetSolver.Tests
 {
@@ -177,7 +178,8 @@ namespace ZwoLevelSetSolver.Tests
                 L2Error_Species.Add(spc, IdV.Sqrt());
                 solver.QueryHandler.ValueQuery("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc, L2Error_Species[spc], true);
                 Console.WriteLine("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc + IdV);
-            
+                //Tecplot.PlotFields(pressure(spId),"Pre",20,3);
+
             }
 
 

@@ -22,8 +22,31 @@ namespace ZwoLevelSetSolver.Tests {
 
 
         [Test]
-        public static void Experimental([Values(2, 3)] int p = 2
-            ) {
+        public static void FluidSolidTaylorCouette_Experimental_P1() {
+            Experimental(1);
+        }
+        [Test]
+        public static void FluidSolidTaylorCouette_Experimental_P2() {
+            Experimental(2);
+        }
+        [Test]
+        public static void FluidSolidTaylorCouette_Exact_P1() {
+            Exact(1);
+        }
+        [Test]
+        public static void FluidSolidTaylorCouette_Exact_P2() {
+            Exact(2);
+        }
+        [Test]
+        public static void FluidSolidTaylorCouette_Exact_P3() {
+            Exact(3);
+        }
+        [Test]
+        public static void FluidSolidTaylorCouette_Exact_P4() {
+            Exact(4);
+        }
+
+        public static void Experimental(int p = 2) {
             //double dt = 1.0e200;
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest
 
@@ -59,8 +82,7 @@ namespace ZwoLevelSetSolver.Tests {
 
         }
 
-        public static void Exact([Values(2, 3)] int p = 2
-    ) {
+        public static void Exact(int p = 2) {
             //double dt = 1.0e200;
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest
 
@@ -89,15 +111,14 @@ namespace ZwoLevelSetSolver.Tests {
             //}
 
             SolverConvergenceTest_Exact(Tst, cs, true, new[] {
-                ("DisplacementX", 3.0, -1.568, 0.1),
-                ("DisplacementY", 3.0, -1.568, 0.1),
-                ("VelocityX", 3.0, -1.04, 0.1), 
-                ("VelocityY", 3.0, -1.04, 0.1), 
-                ("Pressure", 2.0, -0.507, 0.1)}
+                ("DisplacementX", p + 1 - 0.6, -1.568, 3.0),
+                ("DisplacementY", p + 1 - 0.6, -1.568, 3.0),
+                ("VelocityX", p + 1 - 0.5, -1.04, 3.0), 
+                ("VelocityY", p + 1 - 0.5, -1.04, 3.0), 
+                ("Pressure", p - 0.5, -0.507, 3.0)}
                 );
 
         }
-
 
         private static (string Name, double slope, double Intercept)[] SolverConvergenceTest_Exact(IZLSTest Tst, ZLS_Control[] CS, bool useExactSolution, (string Name, double Slope, double intercept, double interceptTol)[] RegResults) {
             int D = Tst.SpatialDimension;
