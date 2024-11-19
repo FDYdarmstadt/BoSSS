@@ -75,12 +75,12 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            ilPSP.Environment.NumThreads = 1;
+            //ilPSP.Environment.NumThreads = 1;
 
-            InitMPI();
-            DeleteOldPlotFiles();
+            //InitMPI();
+            //DeleteOldPlotFiles();
 
-            BoSSS.Application.XNSE_Solver.Tests.RestartTest.RollingSaveTest(true, TimeSteppingScheme.BDF2, 5);
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.RollingSaveTest(true, TimeSteppingScheme.BDF2, 5);
 
             //using (var solver = new XNSE()) {
             //    //solver.Init(PhysicalBasedTestcases.RisingBubble.RB_BenchmarkTest());
@@ -103,8 +103,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //System.Environment.Exit(111);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
 
-            NUnit.Framework.Assert.IsTrue(false, "remove me");
-            System.Environment.Exit(111);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+            //System.Environment.Exit(111);
 
             /*
             var plots = new List<Plot2Ddata>();
