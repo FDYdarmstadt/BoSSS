@@ -1968,8 +1968,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if ((newVersion - oldVersion) != 1)
                 throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
-            if((newVersion - oldVersion) != 0)
-                throw new ApplicationException("Expecting exactly no call to 'UpdateTracker(...)' in 'UpdateLevelset(...)' for coupled Operators.");
             if ((newPushCount - oldPushCount) != 0)
                 throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
 

@@ -637,7 +637,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Option: Matrix-Free GMRES
                     // ++++++++++++++++++++++++++
 
-
+                    
                     using (var mtxFreeSlv = new MatrixFreeGMRES() { owner = this, HomotopyValue = HomotopyValue }) {
                         double thresh = norm_CurRes * 1e-5;
                         mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
@@ -749,7 +749,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 //var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
-                //var DgStep = CurrentLin.ProlongateSolToDg(step, "Step_");
+                //plotPerssonSensorFields(DgOldSol, "DgOldSol_" + itc);
+                //var DgStep = CurrentLin.ProlongateSolToDg(step, "DgStep_");
+                //plotPerssonSensorFields(DgStep, "DgStep_" + itc);
                 //DGField pressure = SolutionVec.Mapping.Fields[2];
                 //Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
 
@@ -830,7 +832,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 //// plotting during Newton iterations:  
-                //var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "Sol_");
+                //var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "DgSol_");
+                //plotPerssonSensorFields(DgSolution, "DgSol_" + itc);
                 //Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
 
                 // residual evaluation & callback
@@ -844,6 +847,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
             }
         }
+
+
+
         /// <summary>
         /// Newton Globalization via parabolic line search
         /// </summary>
@@ -1718,5 +1724,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return lambdap;
         }
+
+
+        static void plotPerssonSensorFields(DGField[] FieldsToTest, string nameSuffix) {
+            List<DGField> SensorFields = new List<DGField>();
+
+            foreach (DGField testField in FieldsToTest) {
+                Utils.getPerssonSensorXDGField(out XDGField sensorField, (XDGField)testField);
+                SensorFields.Add(sensorField.CloneAs());
+            }
+            Tecplot.Tecplot.PlotFields(SensorFields.ToArray().Cat(FieldsToTest), "PerssonSensorFields-" + nameSuffix, 0.0, 0);
+        }
+
     }
 }

@@ -191,6 +191,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 ctrl.Rigidbody.ArrangeAll(ctrl);
         }
 
+
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
         /// - 2x the velocity degree in the Stokes case
