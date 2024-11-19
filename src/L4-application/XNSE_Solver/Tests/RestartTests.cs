@@ -504,7 +504,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
                 var si = TestDb2.Sessions.Single();
-                int[] tsiNumbers = si.Timesteps.Skip(amr ? 2 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
+                int[] tsiNumbers = si.Timesteps.Skip(amr ? 1 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
                 Assert.IsTrue(ExpectedTs1stRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
 
                 //var tend = si.Timesteps.Last();

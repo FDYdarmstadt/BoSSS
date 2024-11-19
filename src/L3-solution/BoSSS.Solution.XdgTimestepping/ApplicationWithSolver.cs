@@ -467,8 +467,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 if (RollingSave) {
 
-                    int rsIndex = 1;
+                    //int rsIndex = 1;
                     for (int ts = 1; ts < S; ts++) {
+                        int rsIndex = ts - 1;
+                        if (rsIndex < 0)
+                            break;
                         var ari_ts = adaptedRestartInfo.Where(rsi => rsi.Item1 == timeStepInt - ts);
                         if (ari_ts.Count() == 0) {
                             // delete rolling save (if not in burst range), get restartInfo from timestepper and save adapted timestep
@@ -499,9 +502,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                             //Console.WriteLine($"timestep: {ari_ts.Single()} added to rollingSaves[{rsIndex}] (deleteTs = {ari_ts.Single().Item3})");
 
                         } else
-                            throw new ArgumentException($"There are more than one rolling saves for timestepnumber = {timeStepInt - ts}");
+                            throw new ArgumentException($"There are more than one burst saves for timestepnumber = {timeStepInt - ts}");
 
-                        rsIndex -= 1;
+                        //rsIndex -= 1;
                     }
                 }
 

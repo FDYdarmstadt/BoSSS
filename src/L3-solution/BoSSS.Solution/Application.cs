@@ -2458,7 +2458,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="pT"></param>
         /// <param name="TSnum"></param>
-        /// <param name="rollingSavesSammeldingens"></param>
+        /// <param name="rollingSaves"></param>
         private void PlotAndSave(double pT, TimestepNumber TSnum, List<Tuple<int, ITimestepInfo, bool>> rollingSavesSammeldingens = null) {
             if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                 PlotCurrentState(pT, TSnum, this.Control.SuperSampling);
