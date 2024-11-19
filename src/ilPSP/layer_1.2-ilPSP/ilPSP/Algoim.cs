@@ -709,7 +709,7 @@ namespace ilPSP.Utils {
             return ret;
         }
 
-		public static QuadScheme[] GetSurfaceQuadratureRulesTwoLSTest() {
+		public static QuadScheme[] GetSurfaceQuadratureRulesTwoLSTest(int quadOrder = 5) {
 
 			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
 			Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
@@ -745,7 +745,7 @@ namespace ilPSP.Utils {
 			
             QuadScheme[] retArray = new QuadScheme[2];
 			unsafe { 
-			QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(2, 3, 3, 5, sA, sB, xA, xB, yA, yB);
+			QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(spaceDim, n, n, quadOrder, sA, sB, xA, xB, yA, yB);
 
 				for (int k = 0; k < 2; ++k) {
 					var scheme = retC[k];
@@ -785,7 +785,7 @@ namespace ilPSP.Utils {
 			}
 
 
-			double[] xA = new double[pointsA.Length * 2]; //same for xB
+			double[] xA = new double[pointsA.Length * spaceDim]; //same for xB
 			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
 			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
 			double[] xB = xA;
@@ -795,7 +795,7 @@ namespace ilPSP.Utils {
 
 			QuadScheme[] retArray = new QuadScheme[4];
 			unsafe {
-                QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(2, 3, 3, 5, sA, sB, xA, xB, yA, yB);
+                QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(spaceDim, n, n, 5, sA, sB, xA, xB, yA, yB);
 
                 for (int k = 0; k < 4; ++k) {
                     var scheme = retC[k];
@@ -812,6 +812,177 @@ namespace ilPSP.Utils {
 				area += w;
 
 			Console.WriteLine($"Calculated area {area}, theoretical 3/2");
+			return retArray;
+		}
+
+		public static QuadScheme[] GetVolumeQuadratureRulesTwoLSTest3D(int quadOrder = 5) {
+
+			Func<double, double, double, double> LS1 = (x1, x2, x3) => (-x2); // a linear plane at y=0, positive under it: R^3 -> R, i.e., (x1,x2) -> y
+			Func<double, double, double, double> LS2 = (x1, x2, x3) => (x1 - x2); // a linear plane at x=y
+
+			int n = 2; // number of points in one axis (degree + 1) 
+			int spaceDim = 3;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * spaceDim]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, 2*pointsA.Length, pointsA.Length);
+
+			double[] xB = xA;
+
+			int[] sA = { n, n, n };
+			int[] sB = sA;   //same for sB
+			QuadSchemeUnmanaged retCsingle = m_Algoim.getUnmanagedVolumeScheme(spaceDim, n, quadOrder, sA, xA, yA);
+
+			QuadScheme[] retArray = new QuadScheme[4];
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(spaceDim, n, n, quadOrder, sA, sB, xA, xB, yA, yB);
+
+				for (int k = 0; k < 4; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+					ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTest3D" + k + ".vtp");
+				}
+			}
+
+			double area = 0;
+
+			foreach (var w in retArray[3].weights)
+				area += w;
+
+			Console.WriteLine($"Calculated volume {area}, theoretical 3");
+			return retArray;
+		}
+
+		public static QuadScheme[] GetSurfaceQuadratureRulesTwoLSpConvergenceTest(int degree) {
+			//Func<double, double, double> LS1 = (x1, x2) => (x2 + 0.3 * Math.Cos(x1 * 0.5 * Math.PI) - 0.4);
+			//Func<double, double, double> LS2 = (x1, x2) => (x1 - 0.3 * Math.Cos(x2 * 0.5 * Math.PI) + 0.4);
+
+			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+            Func<double, double, double> LS2 = (x1, x2) => (x2 - Math.Cos(x1 * 0.5 * Math.PI)); //(x2 - Math.Cos(x1 * 0.5 * Math.PI)); 
+
+			// a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+
+			//Func<double, double, double> LS1 = (x1, x2) => (x2 - 0.5);
+			//Func<double, double, double> LS2 = (x1, x2) => (x2 - Math.Cos(x1 * 0.5 * Math.PI));
+
+			int n = 5; // number of points in one axis (degree + 1) 
+			int spaceDim = 2;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * 2]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+			double[] xB = xA;
+
+			int[] sA = { n, n };
+			int[] sB = sA;   //same for sB
+
+			QuadScheme[] retArray = new QuadScheme[2];
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(2, n, n, degree, sA, sB, xA, xB, yA, yB);
+
+				for (int k = 0; k < 2; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+					ret.OutputQuadratureRuleAsVtpXML("AlgoimSurfTwoLSTestP" + degree + "_" + k + ".vtp");
+				}
+			}
+
+			return retArray;
+		}
+
+		public static QuadScheme[] GetVolumeQuadratureRulesTwoLSpConvergenceTest(int degree) {
+			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive above it: R^2 -> R, i.e., (x1,x2) -> -y
+			Func<double, double, double> LS2 = (x1, x2) => (x2 - Math.Cos(x1 * 0.5 * Math.PI)); 
+
+			int n = 5; // number of points in one axis (degree + 1) 
+			int spaceDim = 2;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * 2]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+			double[] xB = xA;
+
+			int[] sA = { n, n };
+			int[] sB = sA;   //same for sB
+
+			QuadScheme[] retArray = new QuadScheme[4];
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(2, n, n, degree, sA, sB, xA, xB, yA, yB);
+
+				for (int k = 0; k < 4; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+					ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTestP" + degree + "_"+ k + ".vtp");
+				}
+			}
+
+			double area = 0;
+
+			foreach (var w in retArray[0].weights)
+				area += w;
+
+			Console.WriteLine($"P={degree} - calculated area={area}, theoretical area={4 / Math.PI}, abs. error={area - 4 / Math.PI}");
 			return retArray;
 		}
 
