@@ -469,7 +469,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     //int rsIndex = 1;
                     for (int ts = 1; ts < S; ts++) {
-                        int rsIndex = ts - 1;
+                        int rsIndex = S - ts - 1; // iterate backward through list, skipping the most recent timestep
                         if (rsIndex < 0)
                             break;
                         var ari_ts = adaptedRestartInfo.Where(rsi => rsi.Item1 == timeStepInt - ts);
@@ -526,7 +526,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             else
                 throw new ArgumentNullException();
 
-            if (restartFields == null)
+            if (restartFields == null || restartFields.Length == 0)
                 return null;
 
             var tsn = new TimestepNumber(new int[] { timeStepInt - historyIndex, 1 });

@@ -262,9 +262,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (m_PopulatedStackDepth < 1)
                 return null;
 
-            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth];
+            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth-1];
 
-            for(int i = 0; i < m_PopulatedStackDepth; i++) {
+            for(int i = 0; i < m_PopulatedStackDepth - 1; i++) {
                 restartInfo[i] = new List<DGField>();
 
                 if(m_Stack_u[i + 1].Fields.Where(stf => stf is XDGField).Any()) {
