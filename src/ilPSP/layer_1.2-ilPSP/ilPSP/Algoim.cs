@@ -816,7 +816,6 @@ namespace ilPSP.Utils {
 		}
 
 		public static QuadScheme[] GetVolumeQuadratureRulesTwoLSTest3D(int quadOrder = 5) {
-
 			Func<double, double, double, double> LS1 = (x1, x2, x3) => (-x2); // a linear plane at y=0, positive under it: R^3 -> R, i.e., (x1,x2) -> y
 			Func<double, double, double, double> LS2 = (x1, x2, x3) => (x1 - x2); // a linear plane at x=y
 
@@ -850,7 +849,6 @@ namespace ilPSP.Utils {
 
 			int[] sA = { n, n, n };
 			int[] sB = sA;   //same for sB
-			QuadSchemeUnmanaged retCsingle = m_Algoim.getUnmanagedVolumeScheme(spaceDim, n, quadOrder, sA, xA, yA);
 
 			QuadScheme[] retArray = new QuadScheme[4];
 			unsafe {
@@ -875,16 +873,8 @@ namespace ilPSP.Utils {
 		}
 
 		public static QuadScheme[] GetSurfaceQuadratureRulesTwoLSpConvergenceTest(int degree) {
-			//Func<double, double, double> LS1 = (x1, x2) => (x2 + 0.3 * Math.Cos(x1 * 0.5 * Math.PI) - 0.4);
-			//Func<double, double, double> LS2 = (x1, x2) => (x1 - 0.3 * Math.Cos(x2 * 0.5 * Math.PI) + 0.4);
-
 			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
             Func<double, double, double> LS2 = (x1, x2) => (x2 - Math.Cos(x1 * 0.5 * Math.PI)); //(x2 - Math.Cos(x1 * 0.5 * Math.PI)); 
-
-			// a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
-
-			//Func<double, double, double> LS1 = (x1, x2) => (x2 - 0.5);
-			//Func<double, double, double> LS2 = (x1, x2) => (x2 - Math.Cos(x1 * 0.5 * Math.PI));
 
 			int n = 5; // number of points in one axis (degree + 1) 
 			int spaceDim = 2;
