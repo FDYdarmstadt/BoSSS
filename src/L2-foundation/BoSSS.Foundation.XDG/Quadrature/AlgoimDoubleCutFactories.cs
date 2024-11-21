@@ -25,9 +25,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// </summary>
         /// <param name="lvlsets">level set data</param>
         /// <param name="e">reference element</param>
-        /// <param name="negativeLevelSets">are the negative level sets considered (default positive, i.e., ls > 0), bool array holding for all level set </param>
-        /// <param name="callSurfaceAndVolumeAtOnce">if enabled, performs calculation of volume and surface rules at once to reduce computational cost. 
-        /// (it can cause redundancy if both are not required at the same time)</param>
         public AlgoimDoubleCutFactories(LevelSetTracker.LevelSetData[] lvlsets, RefElement e) {
             refElement = e;
             lsData = lvlsets;
@@ -253,6 +250,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 			/// </summary>
 			/// <param name="lsData"></param>
 			/// <param name="jCell"></param>
+			/// <param name="edgeIndex"></param>
 			/// <returns></returns>
 			internal (int, int[], double[], double[]) CreatePhiDataForEdge(LevelSetTracker.LevelSetData lsData, int jCell, int edgeIndex) {
 				//number of nodes in 1d for level set interpolation = degree + 1

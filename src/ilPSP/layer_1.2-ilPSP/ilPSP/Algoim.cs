@@ -549,7 +549,6 @@ namespace ilPSP.Utils {
 					QuadScheme ret = new QuadScheme(scheme);
 					scheme.FreeMemory();
 					retArray[k] = ret;
-					ret.OutputQuadratureRuleAsVtpXML("AlgoimSurfTwoLSTest" + k + ".vtp");
 				}
 			}
 			return retArray;
