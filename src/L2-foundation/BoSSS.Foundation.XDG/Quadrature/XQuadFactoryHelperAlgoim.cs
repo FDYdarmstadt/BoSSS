@@ -40,6 +40,7 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class XQuadFactoryHelperAlgoim : XQuadFactoryHelperBase {
 
+        Dictionary<RefElement, AlgoimDoubleCutFactories> DoubleCutFactories = new Dictionary<RefElement, AlgoimDoubleCutFactories>();
 
         public XQuadFactoryHelperAlgoim(LevelSetTracker.LevelSetData[] lsDatas) : base(lsDatas) {
 
@@ -64,7 +65,11 @@ namespace BoSSS.Foundation.XDG {
 		public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
 			CheckKref(levSetIndex0, KrefVol);
 			JumpTypes[] jumps = new JumpTypes[] { jmp0, jmp1 };
-			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol);
+
+            if (!DoubleCutFactories.ContainsKey(KrefVol))
+                DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
+
+			var algoimFactory = DoubleCutFactories[KrefVol];
 			var cellBoundaryFac = algoimFactory.GetCellBoundaryVolumeFactory(jumps);
 
 			var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0);
@@ -102,7 +107,11 @@ namespace BoSSS.Foundation.XDG {
 			CheckKref(levSetIndex0, KrefVol);
 			JumpTypes[] jumps = new JumpTypes[] { jmp1, jmp1 };
 			jumps[levSetIndex0] = JumpTypes.Implicit;
-			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol);
+
+			if (!DoubleCutFactories.ContainsKey(KrefVol))
+				DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
+
+			var algoimFactory = DoubleCutFactories[KrefVol];
 			var cellBoundaryFac = algoimFactory.GetCellBoundarySurfaceFactory(jumps);
 
 			var cutDom1 = m_LevelSetDatas[levSetIndex0].Region.GetCutCellMask4LevSet(levSetIndex0);
@@ -129,8 +138,12 @@ namespace BoSSS.Foundation.XDG {
             CheckKref(levSetIndex0, KrefVol);
             JumpTypes[] jumps = new JumpTypes[] { jmp1, jmp1 };
             jumps[levSetIndex0] = JumpTypes.Implicit;
-            var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol);
-            return algoimFactory.GetSurfaceFactory(jumps);
+
+			if (!DoubleCutFactories.ContainsKey(KrefVol))
+				DoubleCutFactories.Add(KrefVol, new AlgoimDoubleCutFactories(m_LevelSetDatas, KrefVol));
+
+			var algoimFactory = DoubleCutFactories[KrefVol];
+			return algoimFactory.GetSurfaceFactory(jumps);
         }
 
         public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref) {
@@ -143,7 +156,11 @@ namespace BoSSS.Foundation.XDG {
         public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement Kref, IQuadRuleFactory<QuadRule> backupFactory) {
 			CheckKref(levSetIndex0, Kref);
 			JumpTypes[] jumps = new JumpTypes[] { jmp0, jmp1};
-			var algoimFactory = new AlgoimDoubleCutFactories(m_LevelSetDatas, Kref);
+
+			if (!DoubleCutFactories.ContainsKey(Kref))
+				DoubleCutFactories.Add(Kref, new AlgoimDoubleCutFactories(m_LevelSetDatas, Kref));
+
+			var algoimFactory = DoubleCutFactories[Kref];
 			return algoimFactory.GetVolumeFactory(jumps);
         }
 

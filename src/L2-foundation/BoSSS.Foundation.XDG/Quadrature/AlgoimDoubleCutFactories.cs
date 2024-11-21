@@ -14,6 +14,8 @@ using System.Linq;
 namespace BoSSS.Foundation.XDG.Quadrature {
 	/// <summary>
 	/// Provides a factory configuration for processing double cut cells based on specified parameters.
+	/// There are two types of integration: surface and volume
+	/// There are two types of frames: cell inner domain and cell boundary (will be then transformed into edge rules)
 	/// </summary>
 	public class AlgoimDoubleCutFactories {
 
@@ -26,26 +28,26 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// <param name="negativeLevelSets">are the negative level sets considered (default positive, i.e., ls > 0), bool array holding for all level set </param>
         /// <param name="callSurfaceAndVolumeAtOnce">if enabled, performs calculation of volume and surface rules at once to reduce computational cost. 
         /// (it can cause redundancy if both are not required at the same time)</param>
-        public AlgoimDoubleCutFactories(LevelSetTracker.LevelSetData[] lvlsets, RefElement e, bool[] negativeLevelSets = null, bool callSurfaceAndVolumeAtOnce = true) {
+        public AlgoimDoubleCutFactories(LevelSetTracker.LevelSetData[] lvlsets, RefElement e) {
             refElement = e;
             lsData = lvlsets;
-            VolumeSigns = negativeLevelSets ?? new bool[] { false, false }; //default, look for region where both level sets are positive, i.e., ls0 > 0 and ls1 > 0
-            SurfaceAndVolumeAtOnce = callSurfaceAndVolumeAtOnce;
-        }
+			if (lsData.Length != 2)
+				throw new ArgumentOutOfRangeException("Double cut cells need 2 level sets, not more not less!");
 
-        LevelSetTracker.LevelSetData[] lsData;
+			// Get the double cut cells (the calculation is done for all double cut cells and species at once and cached)
+			// The later queries are done returned from cache
+			var cutDom1 = lsData[0].Region.GetCutCellMask4LevSet(0);
+			var cutDom2 = lsData[1].Region.GetCutCellMask4LevSet(1);
+			var cutDom = cutDom1.Intersect(cutDom2).ToGeometicalMask();
+			var _cutDom = cutDom.Intersect(lsData[0].GridDat.Cells.GetCells4Refelement(e));
+			allDoubleCutCells = _cutDom;
+		}
+
+		ExecutionMask allDoubleCutCells;
+
+		LevelSetTracker.LevelSetData[] lsData;
 
         RefElement refElement;
-
-        /// <summary>
-        /// Enables combined surface and volume quadrature rule calls with caching to avoid repeated polynomial interpolations. This speeds up computations when both rules are needed but may cause unnecessary calculations if only one rule is required.
-        /// </summary>
-        bool SurfaceAndVolumeAtOnce;
-
-        /// <summary>
-        /// A boolean to change the sign of level set. true: negative level set, false: positive level set (ls > 0).
-        /// </summary>
-        bool[] VolumeSigns;
 
         /// <summary>
         /// key: quadrature order <br/>
@@ -57,13 +59,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// key: quadrature order <br/>
         /// value: quadrature rule
         /// </summary>
-        Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]> m_CellBoundarySurfaceRules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]>();
-
-		/// <summary>
-		/// key: quadrature order <br/>
-		/// value: quadrature rule
-		/// </summary>
-		Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]> m_CellBoundaryVolumeRules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]>();
+        Dictionary<int, ChunkRulePair<QuadRule>[][]> m_VolumeRules = new Dictionary<int, ChunkRulePair<QuadRule>[][]>();
 
 		/// <summary>
 		/// key: quadrature order <br/>
@@ -71,13 +67,19 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 		/// </summary>
 		Dictionary<int, ChunkRulePair<QuadRule>[]> m_EdgeRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
 
-        /// <summary>
-        /// key: quadrature order <br/>
-        /// value: quadrature rule
-        /// </summary>
-        Dictionary<int, ChunkRulePair<QuadRule>[][]> m_VolumeRules = new Dictionary<int, ChunkRulePair<QuadRule>[][]>();
+		/// <summary>
+		/// key: quadrature order <br/>
+		/// value: quadrature rule
+		/// </summary>
+		Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]> m_CellBoundarySurfaceRules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]>();
 
-        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(JumpTypes[] jumps) {
+		/// <summary>
+		/// key: quadrature order <br/>
+		/// value: quadrature rule
+		/// </summary>
+		Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]> m_CellBoundaryVolumeRules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[][]>();
+
+		public IQuadRuleFactory<QuadRule> GetSurfaceFactory(JumpTypes[] jumps) {
             var factory = new AlgoimDoubleCutSurfaceFactory() {
                 m_Owner = this,
                 m_Rules = this.m_SurfaceRules,
@@ -98,6 +100,17 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return factory;
         }
 
+		public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundarySurfaceFactory(JumpTypes[] jumps) {
+			var factory = new AlgoimDoubleCutCellBoundarySurfFactory() {
+				m_Owner = this,
+				m_Rules = this.m_CellBoundarySurfaceRules,
+				m_Jumps = jumps
+			};
+			factory.useMetrics = true;
+			factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules;
+			return factory;
+		}
+
 		public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundaryVolumeFactory(JumpTypes[] jumps) {
 			var factory = new AlgoimDoubleCutCellBoundaryVolFactory() {
 				m_Owner = this,
@@ -105,16 +118,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 				m_Jumps = jumps
 			};
 			factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
-			return factory;
-		}
-
-		public IQuadRuleFactory<CellBoundaryQuadRule> GetCellBoundarySurfaceFactory(JumpTypes[] jumps) {
-			var factory = new AlgoimDoubleCutCellBoundarySurfFactory() {
-				m_Owner = this,
-				m_Rules = this.m_CellBoundarySurfaceRules,
-				m_Jumps = jumps
-			};
-			factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules;
 			return factory;
 		}
 
@@ -127,7 +130,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 			public RefElement RefElement => m_Owner.refElement;
 
-            internal ExecutionMask latestMask;
+            internal ExecutionMask allDoubleCutCells => m_Owner.allDoubleCutCells;
 
 			internal int spaceDim => RefElement.SpatialDimension;
 
@@ -136,9 +139,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 			internal int noOfSpeciesPermutations = 4;   //volume rules: number of species (all possible)
                                                         //surface rules: number of combinations for level sets (e.g., ls0=0; ls1>1)
 
-            bool[] VolumeSigns => m_Owner.VolumeSigns;
-
-            bool m_SurfaceAndVolumeAtOnce => spaceDim > 1 ? m_Owner.SurfaceAndVolumeAtOnce : false;
 
             public bool useMetrics = false;
 
@@ -163,17 +163,47 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 if (!(mask is CellMask))
                     throw new ArgumentException("Expecting a cell mask.");
 
-                latestMask = null;
-				if (latestMask == null || !mask.Equals(latestMask) || !m_Rules.ContainsKey(RequestedOrder)) {
-                    latestMask = mask;
-                    m_Rules = new Dictionary<int, ChunkRulePair<TQuadRule>[][]>(); 
-					CalculateQuadRuleSetSingle(mask, RequestedOrder);
+				if (!m_Rules.ContainsKey(RequestedOrder)) {
+						CalculateQuadRuleSetSingle(RequestedOrder);
 				}
 
-				int speciesIndex = GetSpecies(); //which part of the quadRule
-				return m_Rules[RequestedOrder][speciesIndex];
+				//which part of the quadRule (a quadRule for a cell is returned for all species/permutation. This is to indicate which one we need)
+				int speciesIndex = GetSpecies(); 
+
+				// check if all the mask or a submask is requested
+				if (mask.NoOfItemsLocally == allDoubleCutCells.NoOfItemsLocally) {
+					return m_Rules[RequestedOrder][speciesIndex];
+				} else {
+					var Rule = m_Rules[RequestedOrder][speciesIndex];
+					int localLength = mask.NoOfItemsLocally, totalLength = Rule.Length;
+					var Ret = new ChunkRulePair<TQuadRule>[localLength];
+					int t = 0;
+					int jsub = 0;
+					foreach (int jCell in mask.ItemEnum) {
+						Debug.Assert(Rule[t].Chunk.Len == 1);
+						while (jCell > Rule[t].Chunk.i0) {
+							t++;
+						}
+
+						Debug.Assert(jCell == Rule[t].Chunk.i0);
+						Ret[jsub] = Rule[t];
+#if DEBUG
+						Ret[jsub].Rule.Weights.CheckForNanOrInf();
+						Ret[jsub].Rule.Nodes.CheckForNanOrInf();
+#endif
+						jsub++;
+					}
+					Debug.Assert(jsub == localLength);
+
+					return Ret;
+				}
             }
 
+			/// <summary>
+			/// Metrics for surface rules (since surface and volume rules are handled in the same loop we need to scale surface rules)
+			/// </summary>
+			/// <param name="quadRule"></param>
+			/// <param name="jCell"></param>
 			internal void ApplyMetrics(TQuadRule quadRule, int jCell) {
 				var metrics = lsData[0].GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
 				for (int k = 0; k < quadRule.Weights.Length; k++) {
@@ -255,10 +285,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 				return (n, sizes, x, y);
 			}
 
-			internal void CalculateQuadRuleSetSingle(ExecutionMask mask, int RequestedOrder) {
+			internal void CalculateQuadRuleSetSingle(int RequestedOrder) {
 				List<ChunkRulePair<TQuadRule>>[] ret = new List<ChunkRulePair<TQuadRule>>[4];
 
-				foreach (int cell in mask.ItemEnum) {
+				foreach (int cell in allDoubleCutCells.ItemEnum) {
                     var quadRules = GetNodesAndWeights(cell, RequestedOrder);
                     for(int q=0; q<quadRules.Length; q++) { 
 						if (ret[q] == null) 
@@ -670,7 +700,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 				return quadRuleArray;
 			}
-
 
 			CellBoundaryQuadRule CreateEmptyQuadRule() {
 				CellBoundaryQuadRule quadRuleEmpty = CellBoundaryQuadRule.CreateEmpty(RefElement, 1, spaceDim, RefElement.NoOfFaces);
