@@ -262,14 +262,18 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (m_PopulatedStackDepth < 1)
                 return null;
 
-            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth-1];
+            ICollection<DGField>[] restartInfo = new List<DGField>[Math.Min(m_PopulatedStackDepth, m_TSCchain[0].S - 1)];
 
-            for(int i = 0; i < m_PopulatedStackDepth - 1; i++) {
+            for(int i = 0; i < Math.Min(m_PopulatedStackDepth, m_TSCchain[0].S - 1); i++) {
                 restartInfo[i] = new List<DGField>();
 
                 if(m_Stack_u[i + 1].Fields.Where(stf => stf is XDGField).Any()) {
-
-                    DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][-i];
+                    DGField phiField;
+                    if (this.Config_LevelSetHandling == LevelSetHandling.None) { // in this case the history stack for the level set is always of length 1!
+                        phiField = (DGField)m_LsTrk.LevelSetHistories[0][0];
+                    } else {
+                        phiField = (DGField)m_LsTrk.LevelSetHistories[0][-i];
+                    }
                     restartInfo[i].Add(phiField);
                 }
 

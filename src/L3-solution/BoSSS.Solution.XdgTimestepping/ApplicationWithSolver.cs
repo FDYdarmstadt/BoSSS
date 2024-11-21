@@ -468,8 +468,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (RollingSave) {
 
                     //int rsIndex = 1;
-                    for (int ts = 1; ts < S; ts++) {
-                        int rsIndex = S - ts - 1; // iterate backward through list, skipping the most recent timestep
+                    int N = Math.Min(rollingSavesTsi.Count, S);
+                    for (int ts = 1; ts < N; ts++) {
+                        int rsIndex = N - ts - 1; // iterate backward through list, skipping the most recent timestep
                         if (rsIndex < 0)
                             break;
                         var ari_ts = adaptedRestartInfo.Where(rsi => rsi.Item1 == timeStepInt - ts);

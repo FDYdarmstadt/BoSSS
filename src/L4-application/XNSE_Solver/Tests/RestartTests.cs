@@ -423,32 +423,35 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.rollingSaves = true;
             ctrl.DynamicLoadBalancing_RedistributeAtStartup = false;
 
+            ctrl.AddInitialValue("VelocityX", "X => Math.Sin(X[0])*Math.Cos(X[1])", false);
+            ctrl.AddInitialValue("VelocityY", "X => -Math.Cos(X[0])*Math.Cos(X[1])", false);
+
             ExpectedTimeSteps = new int[] { }; // { 0, 3, 4, 3, 5, 8, 9, 10 };
 
             switch (timeStepScheme) {
                 case TimeSteppingScheme.ImplicitEuler:
-                    if (savePeriod == 3)
-                        ExpectedTimeSteps = new int[] { 0, 3, 6, 9, 10 };
-                    if (savePeriod == 4)
-                        ExpectedTimeSteps = new int[] { 0, 4, 8, 10 };
                     if (savePeriod == 5)
                         ExpectedTimeSteps = new int[] { 0, 5, 10 };
+                    else
+                        throw new NotImplementedException();
                     break;
                 case TimeSteppingScheme.BDF2:
-                    if (savePeriod == 3)
-                        ExpectedTimeSteps = new int[] { 0, 2, 3, 5, 6, 8, 9, 10 };
-                    if (savePeriod == 4)
-                        ExpectedTimeSteps = new int[] { 0, 3, 4, 7, 8, 9, 10 };
                     if (savePeriod == 5)
                         ExpectedTimeSteps = new int[] { 0, 4, 5, 9, 10 };
+                    else
+                        throw new NotImplementedException();
                     break;
                 case TimeSteppingScheme.BDF3:
-                    if (savePeriod == 3)
-                        ExpectedTimeSteps = new int[] { 0, 1, 2, 3, 4, 5, 6, 8, 9, 10 };
-                    if (savePeriod == 4)
-                        ExpectedTimeSteps = new int[] { 0, 2, 3, 4, 6, 7, 8, 9, 10 };
                     if (savePeriod == 5)
                         ExpectedTimeSteps = new int[] { 0, 3, 4, 5, 8, 9, 10 };
+                    else
+                        throw new NotImplementedException();
+                    break;
+                case TimeSteppingScheme.BDF4:
+                    if (savePeriod == 5)
+                        ExpectedTimeSteps = new int[] { 0, 2, 3, 2, 4, 5, 7, 8, 9, 10 };
+                    else
+                        throw new NotImplementedException();
                     break;
                 default:
                     throw new ArgumentException("Chosen timestepping scheme not supported for current test setting");
@@ -463,7 +466,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void RollingSaveTest(
             [Values(true)] bool amr,
-            [Values(TimeSteppingScheme.BDF2)] TimeSteppingScheme timeStepScheme,
+            [Values(TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)] TimeSteppingScheme timeStepScheme,
             [Values(5)] int savePeriod) {
             string TestDbDir = "testdb_" + DateTime.Now.ToString("MMMdd_HHmm");
             string TestDbFullPath = Path.Combine(Directory.GetCurrentDirectory(), TestDbDir);
@@ -486,7 +489,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var ctrl1 = RollingSaveTest_Control(TestDbFullPath, timeStepScheme, savePeriod, out var ExpectedTs1stRun);
             if (amr) {
                 ctrl1.AdaptiveMeshRefinement = true;
-                ctrl1.activeAMRlevelIndicators.Add(new AMReveryWhere() { maxRefinementLevel = 1 });
+                ctrl1.activeAMRlevelIndicators.Add(new AMReveryWhere() { maxRefinementLevel = 3 });
                 ctrl1.AMR_startUpSweeps = 0;
             }
             using (var FirstRun = new XNSE()) {
@@ -499,7 +502,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             Guid RestartSession;
             {
                 var TestDb2 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
-                Assert.IsTrue(TestDb2.Grids.Count() == (amr ? 2 : 1), "Number of grids seems to be wrong.");
+                Assert.IsTrue(TestDb2.Grids.Count() == (amr ? 4 : 1), "Number of grids seems to be wrong.");
                 Assert.IsTrue(TestDb2.Sessions.Count() == 1, "Number of sessions seems to be wrong.");
 
 
