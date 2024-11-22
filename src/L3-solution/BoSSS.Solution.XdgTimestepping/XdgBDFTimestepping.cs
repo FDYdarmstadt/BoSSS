@@ -259,25 +259,27 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <returns></returns>
         public ICollection<DGField>[] GetRestartInfos() {
 
-            if(m_PopulatedStackDepth < m_TSCchain[0].S)
+            if (m_PopulatedStackDepth < 1)
                 return null;
 
-            Debug.Assert(m_PopulatedStackDepth == m_TSCchain[0].S);
+            ICollection<DGField>[] restartInfo = new List<DGField>[Math.Min(m_PopulatedStackDepth, m_TSCchain[0].S - 1)];
 
-            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth - 1];
+            for(int i = 0; i < Math.Min(m_PopulatedStackDepth, m_TSCchain[0].S - 1); i++) {
+                restartInfo[i] = new List<DGField>();
 
-            for(int i = 1; i < m_TSCchain[0].S; i++) {
-                restartInfo[i - 1] = new List<DGField>();
-
-                if(m_Stack_u[i].Fields.Where(stf => stf is XDGField).Any()) {
-
-                    DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
-                    restartInfo[i - 1].Add(phiField);
+                if(m_Stack_u[i + 1].Fields.Where(stf => stf is XDGField).Any()) {
+                    DGField phiField;
+                    if (this.Config_LevelSetHandling == LevelSetHandling.None) { // in this case the history stack for the level set is always of length 1!
+                        phiField = (DGField)m_LsTrk.LevelSetHistories[0][0];
+                    } else {
+                        phiField = (DGField)m_LsTrk.LevelSetHistories[0][-i];
+                    }
+                    restartInfo[i].Add(phiField);
                 }
 
-                DGField[] solFields = m_Stack_u[i].Mapping.Fields.ToArray();
+                DGField[] solFields = m_Stack_u[i + 1].Mapping.Fields.ToArray();
                 foreach(DGField f in solFields) {
-                    restartInfo[i - 1].Add(f);
+                    restartInfo[i].Add(f);
                 }
 
             }

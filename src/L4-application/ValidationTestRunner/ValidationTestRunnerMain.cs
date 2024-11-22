@@ -260,63 +260,9 @@ namespace ValidationTestRunner {
             Console.WriteLine("Helical_Centrifugal @ FDYcluster");
         }
 
-        #region rckmnn Worksheets
         // Worksheets to the simulations displayed in the dissertation of rieckmann. It is coarsely indicated which section they belong to.
-
-        /// <summary>
-        /// Contact Line at heated wall,
-        /// Maintainer: Matthias Rieckmann
-        /// Section 7.3
-        /// </summary>
-        [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb", "XNSFE_Solver/HeatedWall_Validation/*.json")]
-        [Test]
-        static public void Run__HeatedWallSimple() {
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallSimple
-            string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLSIMPLE");
-            if (really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__HeatedWallSimple ");
-                return;
-            } else {
-                Console.WriteLine("RUN_HEATEDWALLSIMPLE = " + really);
-            }
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "HeatedWallSimple_VerificationFastMarching",
-                "HeatedWall_Simple*",
-                "delete_HeatedWallSimple",
-                new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb");
-            Console.WriteLine("HeatedWallSimple @ FDYcluster");
-        }
-
-        /// <summary>
-        /// Contact Line at heated wall,
-        /// Maintainer: Matthias Rieckmann
-        /// Section 7.3
-        /// </summary>
-        [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_*.ipynb", "XNSFE_Solver/HeatedWall_Validation/HeatedWall_Validation.zip")]
-        [Test]
-        static public void Run__HeatedWallConvergence() {
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallConvergence
-
-            string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLCONVERGENCE");
-            if (really.IsEmptyOrWhite()) {
-                Console.WriteLine("skipping Run__HeatedWallConvergence ");
-                return;
-            } else {
-                Console.WriteLine("RUN_HEATEDWALLCONVERGENCE = " + really);
-            }
-            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "HeatedWallSimple_VerificationFastMarching",
-                "HeatedWall_Simple*",
-                "delete_HeatedWallConvergence",
-                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
-
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Controls.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Postprocessing.ipynb");
-            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Comparison.ipynb");
-            Console.WriteLine("HeatedWallConvergence @ FDYcluster");
-        }
+        // see https://doi.org/10.26083/tuprints-00028626
+        #region rckmnn Worksheets           
 
         /// <summary>
         /// Printing Nip Stokes Simulations
@@ -364,6 +310,136 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/Part5_PrintingNip_Validation.ipynb");
 
             Console.WriteLine("PrintingNip @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Viscous Eddies (PrintingNip Stokes) Simulations
+        /// Section 5.2
+        /// </summary>
+        [NUnitFileToCopyHack("PrintingNip/*.ipynb")]
+        [Test]
+        static public void Run__ViscousEddies() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__ViscousEddies
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "ViscousEddies",
+                "ViscousEddies*",
+                "delete_ViscousEddies",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("PrintingNip/ViscousEddies_Run.ipynb");
+
+            Console.WriteLine("ViscousEddies @ FDYcluster");
+        }
+
+        /// <summary>
+        /// CapillaryWave Simulations
+        /// Section 6.1
+        /// </summary>
+        [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/*.ipynb")]
+        [Test]
+        static public void Run__CapillaryWave() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__CapillaryWave
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "CapillaryWave",
+                "CapillaryWave*",
+                "delete_CapillaryWave",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/CapillaryWave/CapillaryWave.ipynb");
+
+            Console.WriteLine("CapillaryWave @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Phasefield Rising Bubble Simulations
+        /// Section 6.2
+        /// </summary>
+        [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
+        [Test]
+        static public void Run__PhasefieldRisingBubble() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__PhasefieldRisingBubble
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "PhasefieldRisingBubble",
+                "PhasefieldRisingBubble*",
+                "delete_PhasefieldRisingBubble",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldRisingBubble.ipynb");
+
+            Console.WriteLine("PhasefieldRisingBubble @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Phasefield Rising Bubble Simulations
+        /// Section 6.2
+        /// </summary>
+        [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
+        [Test]
+        static public void Run__PhasefieldContactline() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__PhasefieldContactline
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "PhasefieldContactLine",
+                "PhasefieldContactLine*",
+                "delete_PhasefieldContactLine",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldContactLine.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldContactLine_Postprocessing.ipynb");
+
+
+            Console.WriteLine("PhasefieldContactline @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Poisson Boundary Condition Regularity Simulations
+        /// Section 6.3
+        /// </summary>
+        [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb", "TemperatureConvergence/*.txt")]
+        [Test]
+        static public void Run__TemperatureBoundaryCondition() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureBoundaryCondition
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "TemperatureBoundaryCondition",
+                "TemperatureBoundaryCondition*",
+                "delete_TemperatureBoundaryCondition",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureBoundaryCondition.ipynb");
+
+
+            Console.WriteLine("TemperatureBoundaryCondition @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Temperature Velocity Coupling Simulations
+        /// Section 6.3
+        /// </summary>
+        [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb")]
+        [Test]
+        static public void Run__TemperatureVelocityCoupling() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "TemperatureVelocityCoupling",
+                "TemperatureVelocityCoupling*",
+                "delete_TemperatureVelocityCoupling",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureVelocityCoupling.ipynb");
+
+
+            Console.WriteLine("TemperatureVelocityCoupling @ FDYcluster");
         }
 
         /// <summary>
@@ -430,6 +506,48 @@ namespace ValidationTestRunner {
         }
 
         /// <summary>
+        /// Resolution of contact line singularities through interfacial slip
+        /// Section 7.2
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/SlipConvergence/*.ipynb", "XNSFE_Solver/SlipConvergence/*.txt")]
+        [Test]
+        static public void Run__SlipConvergence() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlipConvergence
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "SlipConvergence_Droplet",
+                "SlipConvergence_Droplet*",
+                "delete_SlipConvergence_Droplet",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Postprocessing.ipynb");
+
+            Console.WriteLine("SlipConvergence_Droplet @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Resolution of contact line singularities through interfacial slip - zoomed version at contactline
+        /// Section 7.2
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/SlipConvergence/*.ipynb", "XNSFE_Solver/SlipConvergence/*.txt")]
+        [Test]
+        static public void Run__SlipConvergence_Zoom() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__SlipConvergence
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "SlipConvergence_Droplet_Zoom",
+                "SlipConvergence_Droplet_Zoom*",
+                "delete_SlipConvergence_Droplet_Zoom",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom_Postprocessing.ipynb");
+
+            Console.WriteLine("SlipConvergence_Droplet_Zoom @ FDYcluster");
+        }
+
+        /// <summary>
         /// Demo Simulation of 3 phases with evaporation and contactline
         /// Section 7.3
         /// </summary>
@@ -448,6 +566,61 @@ namespace ValidationTestRunner {
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Simple/HeatedWall90DegSimple_3PhaseDemo.ipynb");
 
             Console.WriteLine("3Phase Demo @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Contact Line at heated wall,
+        /// Maintainer: Matthias Rieckmann
+        /// Section 7.3
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb", "XNSFE_Solver/HeatedWall_Validation/*.json")]
+        [Test]
+        static public void Run__HeatedWallSimple() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallSimple
+            string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLSIMPLE");
+            if (really.IsEmptyOrWhite()) {
+                Console.WriteLine("skipping Run__HeatedWallSimple ");
+                return;
+            } else {
+                Console.WriteLine("RUN_HEATEDWALLSIMPLE = " + really);
+            }
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "HeatedWallSimple_VerificationFastMarching",
+                "HeatedWall_Simple*",
+                "delete_HeatedWallSimple",
+                new TimeSpan(days: 10, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb");
+            Console.WriteLine("HeatedWallSimple @ FDYcluster");
+        }
+
+        /// <summary>
+        /// Contact Line at heated wall,
+        /// Maintainer: Matthias Rieckmann
+        /// Section 7.3
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_*.ipynb", "XNSFE_Solver/HeatedWall_Validation/HeatedWall_Validation.zip")]
+        [Test]
+        static public void Run__HeatedWallConvergence() {
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__HeatedWallConvergence
+
+            string really = System.Environment.GetEnvironmentVariable("RUN_HEATEDWALLCONVERGENCE");
+            if (really.IsEmptyOrWhite()) {
+                Console.WriteLine("skipping Run__HeatedWallConvergence ");
+                return;
+            } else {
+                Console.WriteLine("RUN_HEATEDWALLCONVERGENCE = " + really);
+            }
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "HeatedWallSimple_VerificationFastMarching",
+                "HeatedWall_Simple*",
+                "delete_HeatedWallConvergence",
+                new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Controls.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Postprocessing.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_Comparison.ipynb");
+            Console.WriteLine("HeatedWallConvergence @ FDYcluster");
         }
 
         #endregion

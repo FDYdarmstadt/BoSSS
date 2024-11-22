@@ -135,7 +135,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using(var tr = new FuncTrace()) {
-
                 int D = levelSet.Tracker.GridDat.SpatialDimension;
 
                 SinglePhaseField[] meanVelocity = D.ForLoop(

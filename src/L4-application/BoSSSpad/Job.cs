@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.DotNet.Interactive.Formatting;
 using System;
 using System.Collections.Generic;
@@ -1447,13 +1448,21 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        private BatchProcessorClient _AssignedBatchProc;
         /// <summary>
         /// After calling <see cref="BatchProcessorClient.Submit"/>, this job
         /// is assigned to the respective batch processor, which is recorded in this member.
         /// </summary>
         public BatchProcessorClient AssignedBatchProc {
-            get;
-            private set;
+            get {
+                return _AssignedBatchProc;
+            }
+            set {
+                if(_AssignedBatchProc == null)
+                    _AssignedBatchProc = value;
+                else
+                    throw new NotSupportedException("Batchprocessor can be set only once!");
+            }
         }
 
         JobStatus? statusCache;

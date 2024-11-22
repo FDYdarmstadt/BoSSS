@@ -49,6 +49,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             HeatSourceIBM = control.HeatSourceIBM != null;
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
+            FixedInterfaceTemperature = control.ThermalParameters.hVap == double.NegativeInfinity;
             RecoilPressure = Evaporation & control.IncludeRecoilPressure;
             MaterialAtContactLine = control.MaterialAtContactLine;
             Buoyancy = control.ThermalParameters.alpha_A != 0.0 || control.ThermalParameters.alpha_B != 0.0;
@@ -124,6 +125,13 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// include evaporation
         /// </summary>
         public bool Evaporation;
+
+        /// <summary>
+        /// only relevant when evaporation is off:
+        /// treat interface as fixed temperature anyway (but without coupling through massfluxes)
+        /// somewhat hidden option, only active if <see cref="ThermalParameters.hVap"/> == -\infty
+        /// </summary>
+        public bool FixedInterfaceTemperature;
 
         /// <summary>
         /// include recoil pressure

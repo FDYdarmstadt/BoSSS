@@ -286,9 +286,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             break;
                         }
                     case LevelSetEvolution.Phasefield: {
-                            var PhasefieldEvolver = new PhasefieldEvolver(LevelSetCG, QuadOrder(), D,
-                                GetBcMap(), this.Control,
-                                this.Control.AgglomerationThreshold, this.GridData);
+                        if (this.Control.PhasefieldControl == null)
+                            throw new NullReferenceException("PhasefieldSettings have to be provided!");
+
+                        var PhasefieldEvolver = new PhasefieldEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(), this.Control,
+                            this.Control.AgglomerationThreshold, this.GridData);
 
                             lsUpdater.AddEvolver(LevelSetCG, PhasefieldEvolver);
                             break;
@@ -329,7 +332,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 // add velocity parameter:
                 var levelSetVelocity = GetLevelSetVelocity(iLevSet);
-                if(levelSetVelocity != null && Control.Get_Option_LevelSetEvolution(iLevSet) != LevelSetEvolution.None) {
+                if(levelSetVelocity != null) {
                     if(!ArrayTools.ListEquals(levelSetVelocity.ParameterNames,
                         BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)))) {
                         throw new ApplicationException($"Parameter names for the level-set velocity provider for level-set #{iLevSet} ({LevelSetCG}) does not comply with convention.");

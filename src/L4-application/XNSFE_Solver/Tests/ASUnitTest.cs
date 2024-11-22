@@ -451,12 +451,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.PhysicalParameters.slipI = Tst.slipI;
             C.NonLinearSolver.MaxSolverIterations = 10;
 
-            // clear initial values, such that not only consistency is checked
-            C.InitialValues.Clear();
-            C.InitialValues_Evaluators.Clear();
-
-            C.Phi = Tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+            ClearInitialValues(Tst, C);
 
             C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
@@ -497,12 +492,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.PhysicalParameters.slipI = Tst.slipI;
             C.NonLinearSolver.MaxSolverIterations = 20;
 
-            // clear initial values, such that not only consistency is checked
-            C.InitialValues.Clear();
-            C.InitialValues_Evaluators.Clear();
-
-            C.Phi = Tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+            ClearInitialValues(Tst, C);
 
             C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
@@ -575,6 +565,15 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             config.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_bndyCut] = (XAxisDesignation.Grid_1Dres, 0.5, -1.0);
 
             ConditionNumberScalingTest.Perform(LaLa, config);
+        }
+
+        private static void ClearInitialValues(IXNSFETest Tst, XNSFE_Control C) {
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
         }
 
         private static void XHeatSolverTest(IXHeatTest Tst, XNSFE_Control C) {
