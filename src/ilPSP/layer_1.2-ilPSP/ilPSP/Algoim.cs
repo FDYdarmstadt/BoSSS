@@ -434,7 +434,7 @@ namespace ilPSP.Utils {
         _GetComboScheme GetComboScheme;
         _GetVolumeSchemeTwoLS GetVolumeSchemeTwoLS;
         _GetSurfaceSchemeTwoLS GetSurfaceSchemeTwoLS;
-        _GetComboSchemeTwoLS GetComboSchemeTwoLS;
+		_GetComboSchemeTwoLS GetComboSchemeTwoLS;
 #pragma warning restore 649
 
         // Defines a delegate that can point to the method matching its signature.
@@ -446,11 +446,11 @@ namespace ilPSP.Utils {
 
         public unsafe delegate QuadSchemeComboUnmanaged _GetComboScheme(int dim, int p, int q, int[] sizes, double[] coordinates, double[] LSvalues);
 
-        public unsafe delegate QuadSchemeUnmanaged _GetVolumeSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+        public unsafe delegate QuadSchemeUnmanaged* _GetVolumeSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
 
-        public unsafe delegate QuadSchemeUnmanaged _GetSurfaceSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+        public unsafe delegate QuadSchemeUnmanaged* _GetSurfaceSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
 
-        public unsafe delegate QuadSchemeComboUnmanaged _GetComboSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
+		public unsafe delegate QuadSchemeComboUnmanaged _GetComboSchemeTwoLS(int dim, int p1, int p2, int q, int[] sizes1, int[] sizes2, double[] coordinates1, double[] coordinates2, double[] LSvalues1, double[] LSvalues2);
 
 
         public unsafe _GetVolumeScheme getUnmanagedVolumeScheme {
@@ -473,7 +473,7 @@ namespace ilPSP.Utils {
             get { return GetSurfaceSchemeTwoLS; }
         }
 
-        public unsafe _GetComboSchemeTwoLS getUnmanagedComboSchemeTwoLS {
+		public unsafe _GetComboSchemeTwoLS getUnmanagedComboSchemeTwoLS {
             get { return GetComboSchemeTwoLS; }
         }
 
@@ -525,7 +525,8 @@ namespace ilPSP.Utils {
         }
 
 		/// <summary>
-		/// Returns the volume quadrature rules for the given parameters
+		/// Returns the surface quadrature rules for two level sets
+		/// First element is surface rules for level set 1 set and the second element is for level set 2
 		/// </summary>
 		/// <param name="dim">dimension of space</param>
 		/// <param name="p1">degree of level set 1 (will be used for Berstein pol. interpolation)</param>
@@ -538,12 +539,19 @@ namespace ilPSP.Utils {
 		/// <param name="y1">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 1</param>
 		/// <param name="y2">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 2</param>
 		/// <returns>Quadrature scheme with nodes and weights (size determined by Algoim)</returns>
-		public static QuadScheme GetSurfaceQuadratureRules(int dim, int p1, int p2, int q, int[] lengths1, int[] lengths2, double[] x1, double[] x2, double[] y1, double[] y2) {
+		public static QuadScheme[] GetSurfaceQuadratureRules(int dim, int p1, int p2, int q, int[] lengths1, int[] lengths2, double[] x1, double[] x2, double[] y1, double[] y2) {
+			QuadScheme[] retArray = new QuadScheme[2]; //first one for level set1 and the second one for level set 2
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(dim, p1, p2, q, lengths1, lengths2, x1, x2, y1, y2);
 
-			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(dim, p1, p2, q, lengths1, lengths2, x1, x2, y1, y2);
-			QuadScheme ret = new QuadScheme(retC);
-			retC.FreeMemory();
-			return ret;
+				for (int k = 0; k < 2; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+				}
+			}
+			return retArray;
 		}
 
 		/// <summary>
@@ -566,7 +574,12 @@ namespace ilPSP.Utils {
 
 		/// <summary>
 		/// Returns the volume quadrature rules for the given parameters
+		/// First element is for level set 1 < 0 and level set 2 < 0
+		/// Second element is for level set 1 < 0 and level set 2 > 0
+		/// Third element is for level set 1 > 0 and level set 2 < 0
+        /// Fourth element is for level set 1 > 0 and level set 2 > 0
 		/// </summary>
+		/// <param name="dim">dimension of space</param>
 		/// <param name="dim">dimension of space</param>
 		/// <param name="p1">degree of level set 1 (will be used for Berstein pol. interpolation)</param>
 		/// <param name="p2">degree of level set 2 (will be used for Berstein pol. interpolation)</param>
@@ -578,12 +591,18 @@ namespace ilPSP.Utils {
 		/// <param name="y1">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 1</param>
 		/// <param name="y2">concatenated array for the level set values at nodes (its length = multiplication of lengths), for level set 2</param>
 		/// <returns>Quadrature scheme with nodes and weights (size determined by Algoim)</returns>
-		public static QuadScheme GetVolumeQuadratureRules(int dim, int p1, int p2, int q, int[] lengths1, int[] lengths2, double[] x1, double[] x2, double[] y1, double[] y2) {
-
-			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(dim, p1, p2, q, lengths1, lengths2, x1, x2, y1, y2);
-			QuadScheme ret = new QuadScheme(retC);
-			retC.FreeMemory();
-			return ret;
+		public static QuadScheme[] GetVolumeQuadratureRules(int dim, int p1, int p2, int q, int[] lengths1, int[] lengths2, double[] x1, double[] x2, double[] y1, double[] y2) {
+			QuadScheme[] retArray = new QuadScheme[4];
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(dim, p1, p2, q, lengths1, lengths2, x1, x2, y1, y2);
+				for (int k = 0; k < 4; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+				}
+			}
+			return retArray;
 		}
 
 		/// <summary>
@@ -689,7 +708,7 @@ namespace ilPSP.Utils {
             return ret;
         }
 
-		public static QuadScheme GetSurfaceQuadratureRulesTwoLSTest() {
+		public static QuadScheme[] GetSurfaceQuadratureRulesTwoLSTest(int quadOrder = 5) {
 
 			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
 			Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
@@ -722,20 +741,141 @@ namespace ilPSP.Utils {
 
 			int[] sA = { n, n };
 			int[] sB = sA;   //same for sB
+			
+            QuadScheme[] retArray = new QuadScheme[2];
+			unsafe { 
+			QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(spaceDim, n, n, quadOrder, sA, sB, xA, xB, yA, yB);
 
-			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(2, 3, 3, 5, sA, sB, xA, xB, yA, yB);
-			QuadScheme ret = new QuadScheme(retC);
-			retC.FreeMemory();
-			ret.OutputQuadratureRuleAsVtpXML("AlgoimSurfTwoLSTest.vtp");
-            return ret;
+				for (int k = 0; k < 2; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+                    retArray[k] = ret;
+					ret.OutputQuadratureRuleAsVtpXML("AlgoimSurfTwoLSTest" + k + ".vtp");
+				}
+			}
+
+            return retArray;
 		}
 
-		public static QuadScheme GetVolumeQuadratureRulesTwoLSTest() {
+		public static QuadScheme[] GetVolumeQuadratureRulesTwoLSTest() {
 
 			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
 			Func<double, double, double> LS2 = (x1, x2) => (x1 - x2); // a linear line at x=y, positive under it: R^2 -> R, i.e., (x1,x2) -> y
 
 			int n = 2; // number of points in one axis (degree + 1) 
+			int spaceDim = 2;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * spaceDim]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+			double[] xB = xA;
+
+			int[] sA = { n, n };
+			int[] sB = sA;   //same for sB
+
+			QuadScheme[] retArray = new QuadScheme[4];
+			unsafe {
+                QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(spaceDim, n, n, 5, sA, sB, xA, xB, yA, yB);
+
+                for (int k = 0; k < 4; ++k) {
+                    var scheme = retC[k];
+                    QuadScheme ret = new QuadScheme(scheme);
+                    scheme.FreeMemory();
+                    retArray[k] = ret;
+                    ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTest" + k + ".vtp");
+                }
+            }
+
+			double area = 0;
+
+			foreach (var w in retArray[3].weights)
+				area += w;
+
+			Console.WriteLine($"Calculated area {area}, theoretical 3/2");
+			return retArray;
+		}
+
+		public static QuadScheme[] GetVolumeQuadratureRulesTwoLSTest3D(int quadOrder = 5) {
+			Func<double, double, double, double> LS1 = (x1, x2, x3) => (-x2); // a linear plane at y=0, positive under it: R^3 -> R, i.e., (x1,x2) -> y
+			Func<double, double, double, double> LS2 = (x1, x2, x3) => (x1 - x2); // a linear plane at x=y
+
+			int n = 2; // number of points in one axis (degree + 1) 
+			int spaceDim = 3;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1], combinations[i, 2]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * spaceDim]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, 2*pointsA.Length, pointsA.Length);
+
+			double[] xB = xA;
+
+			int[] sA = { n, n, n };
+			int[] sB = sA;   //same for sB
+
+			QuadScheme[] retArray = new QuadScheme[4];
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(spaceDim, n, n, quadOrder, sA, sB, xA, xB, yA, yB);
+
+				for (int k = 0; k < 4; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+					ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTest3D" + k + ".vtp");
+				}
+			}
+
+			double area = 0;
+
+			foreach (var w in retArray[3].weights)
+				area += w;
+
+			Console.WriteLine($"Calculated volume {area}, theoretical 3");
+			return retArray;
+		}
+
+		public static QuadScheme[] GetSurfaceQuadratureRulesTwoLSpConvergenceTest(int degree) {
+			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive under it: R^2 -> R, i.e., (x1,x2) -> y
+            Func<double, double, double> LS2 = (x1, x2) => (x2 - Math.Cos(x1 * 0.5 * Math.PI)); //(x2 - Math.Cos(x1 * 0.5 * Math.PI)); 
+
+			int n = 5; // number of points in one axis (degree + 1) 
 			int spaceDim = 2;
 
 			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
@@ -764,17 +904,75 @@ namespace ilPSP.Utils {
 			int[] sA = { n, n };
 			int[] sB = sA;   //same for sB
 
-			QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(2, 3, 3, 5, sA, sB, xA, xB, yA, yB);
-			QuadScheme ret = new QuadScheme(retC);
-			retC.FreeMemory();
-			ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTest.vtp");
+			QuadScheme[] retArray = new QuadScheme[2];
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedSurfaceSchemeTwoLS(2, n, n, degree, sA, sB, xA, xB, yA, yB);
+
+				for (int k = 0; k < 2; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+					ret.OutputQuadratureRuleAsVtpXML("AlgoimSurfTwoLSTestP" + degree + "_" + k + ".vtp");
+				}
+			}
+
+			return retArray;
+		}
+
+		public static QuadScheme[] GetVolumeQuadratureRulesTwoLSpConvergenceTest(int degree) {
+			Func<double, double, double> LS1 = (x1, x2) => (-x2); // a linear line at y=0, positive above it: R^2 -> R, i.e., (x1,x2) -> -y
+			Func<double, double, double> LS2 = (x1, x2) => (x2 - Math.Cos(x1 * 0.5 * Math.PI)); 
+
+			int n = 5; // number of points in one axis (degree + 1) 
+			int spaceDim = 2;
+
+			//create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
+			double[] pointsA = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
+			double[] pointsB = pointsA; //same for B
+
+			//Cartesian pair product for the points
+			int numberOfCombinations = (int)Math.Pow(pointsA.Length, spaceDim);
+			MultidimensionalArray combinations = MultidimensionalArray.CreateCartesianPairProduct(pointsA, spaceDim);
+
+			// initiate arrays and assign values
+			double[] yA = new double[numberOfCombinations];
+			double[] yB = new double[numberOfCombinations];
+
+			for (int i = 0; i < numberOfCombinations; i++) {
+				yA[i] = LS1(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+				yB[i] = LS2(combinations[i, 0], combinations[i, 1]); // calculate the level set function y=LS(x) where x coordinate vector x=(x1, x2)
+			}
+
+
+			double[] xA = new double[pointsA.Length * 2]; //same for xB
+			Array.Copy(pointsA, 0, xA, 0, pointsA.Length);
+			Array.Copy(pointsA, 0, xA, pointsA.Length, pointsA.Length);
+			double[] xB = xA;
+
+			int[] sA = { n, n };
+			int[] sB = sA;   //same for sB
+
+			QuadScheme[] retArray = new QuadScheme[4];
+			unsafe {
+				QuadSchemeUnmanaged* retC = m_Algoim.getUnmanagedVolumeSchemeTwoLS(2, n, n, degree, sA, sB, xA, xB, yA, yB);
+
+				for (int k = 0; k < 4; ++k) {
+					var scheme = retC[k];
+					QuadScheme ret = new QuadScheme(scheme);
+					scheme.FreeMemory();
+					retArray[k] = ret;
+					ret.OutputQuadratureRuleAsVtpXML("AlgoimVolTwoLSTestP" + degree + "_"+ k + ".vtp");
+				}
+			}
+
 			double area = 0;
 
-			foreach (var w in ret.weights)
+			foreach (var w in retArray[0].weights)
 				area += w;
 
-			Console.WriteLine($"Calculated area {area}, theoretical 3/2");
-			return ret;
+			Console.WriteLine($"P={degree} - calculated area={area}, theoretical area={4 / Math.PI}, abs. error={area - 4 / Math.PI}");
+			return retArray;
 		}
 
 		internal static void ActivateSEQ() {

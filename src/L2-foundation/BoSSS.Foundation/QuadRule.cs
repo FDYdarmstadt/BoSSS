@@ -146,8 +146,10 @@ namespace BoSSS.Foundation.Quadrature {
 		/// <param name="grdData">grid data</param>
 		/// <param name="jCell">local cell index</param>
 		public void TransformLocal2Global(IGridData grdData, int jCell) {
-			MultidimensionalArray globalVertices = MultidimensionalArray.Create(1, NoOfNodes, SpatialDim);
+            if (NoOfNodes == 0)
+                return;
 
+            MultidimensionalArray globalVertices = MultidimensionalArray.Create(1, NoOfNodes, SpatialDim);
 			grdData.TransformLocal2Global(Nodes, jCell, 1, globalVertices, 0);
 			Nodes.Set(globalVertices.ExtractSubArrayShallow(0, -1, -1));
 		}

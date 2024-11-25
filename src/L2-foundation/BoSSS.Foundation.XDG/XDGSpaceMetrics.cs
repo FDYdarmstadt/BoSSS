@@ -197,12 +197,12 @@ namespace BoSSS.Foundation.XDG {
 		/// <summary>
 		/// Write all the quadrature rules (edge, volume and surface) as nodes + weights into vtp files
 		/// </summary>
-		public void WriteAllQuadratureRulesToVtp(IEnumerable<SpeciesId> Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+		public void WriteAllQuadratureRulesToVtp() {
 			var cutCellMetrics = CutCellMetrics;
 			cutCellMetrics.WriteSurfaceRulesToVtp();
 			cutCellMetrics.WriteEdgeRulesToVtp();
 			cutCellMetrics.WriteVolumeRulesToVtp();
 		}
 
-    }
+	}
 }

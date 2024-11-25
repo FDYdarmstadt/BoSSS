@@ -946,10 +946,10 @@ namespace BoSSS.Foundation.XDG {
                     int[] AggTargets = AgglomerationPairs.Select(p => p.jCellTarget).Distinct().ToArray();
 
                     if (NoFailedCells > 0)
-                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString(Tracker)}");
 
                         if (PlotAgglomeration)
-                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString(Tracker)}");
 
                 }
 
@@ -1682,11 +1682,11 @@ namespace BoSSS.Foundation.XDG {
                     int[] AggTargets = AgglomerationPairs.Select(p => p.jCellTarget).Distinct().ToArray();
 
                     if (NoFailedCells > 0)
-                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString(Tracker)}");
 
 
                     if (PlotAgglomeration)
-                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString(Tracker)}");
 
                 }
                 #endregion
@@ -1802,11 +1802,11 @@ namespace BoSSS.Foundation.XDG {
                     int[] AggTargets = AgglomerationPairs.Select(p => p.jCellTarget).Distinct().ToArray();
 
                     if (NoFailedCells > 0)
-                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString(Tracker)}");
 
 
                     if (PlotAgglomeration)
-                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString()}");
+                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString(Tracker)}");
 
                 }
                 #endregion
@@ -2065,7 +2065,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             if (ChainAgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
-                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady(marker  + "ChainAgglomerationPairs" + Tag + spId.ToString(), ".txt");
+                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady(marker  + "ChainAgglomerationPairs" + Tag + spId.ToString(Tracker), ".txt");
 
         }
 
@@ -2232,7 +2232,7 @@ namespace BoSSS.Foundation.XDG {
                 #endregion
 
                 if (AgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
-                    AgglomerationPairs.SaveToTextFileDebugUnsteady("DirectAgglomerationPairs" + Tag +  spId.ToString(), ".txt");
+                    AgglomerationPairs.SaveToTextFileDebugUnsteady("DirectAgglomerationPairs" + Tag +  spId.ToString(Tracker), ".txt");
 
             }
         }
@@ -2358,7 +2358,7 @@ namespace BoSSS.Foundation.XDG {
             // Debugging info
             if (m_aggGroups.Any() && PlotAgglomeration)
             {
-                m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(), ".txt");
+                m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(Tracker), ".txt");
 
             }
             AgglomerationPairs.RemoveAll(p => p.jCellSource == p.jCellTarget);   //remove self mapped elements due to the agglomeration groups

@@ -172,6 +172,7 @@ namespace BoSSS.Foundation.Quadrature {
 					var cellNodes = loopEdgeRule.Nodes.GetVolumeNodeSet(gd, iTrafo, false);
 					var cellRule = QuadRule.CreateEmpty(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
 					cellRule.Nodes = cellNodes;
+					cellRule.Weights = loopEdgeRule.Weights;
 
 					// Transform cell-based local coordinates to global coordinates
 					cellRule.TransformLocal2Global(gd, jCell);
