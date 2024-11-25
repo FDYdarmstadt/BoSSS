@@ -172,10 +172,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         private int ReInit_TimestepIndex = 0;
         private int ReInit_Period = 0;
 
-        public void InitializeReInit(EllipticReInitAlgoControl RI_ctrl, int RI_tsI, int RI_p) {
+        public void InitializeReInit(EllipticReInitAlgoControl RI_ctrl, int RI_period, int RI_tsI) {
             ReInit_Control = RI_ctrl;
+            ReInit_Period = RI_period;
             ReInit_TimestepIndex = RI_tsI;
-            ReInit_Period = RI_p;
         }
 
         /// <summary>
