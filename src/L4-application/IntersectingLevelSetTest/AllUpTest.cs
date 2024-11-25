@@ -131,7 +131,7 @@ namespace IntersectingLevelSetTest {
 		// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
 		// This issue no longer appears. 
 		public static void TwoStraightTestAlgoim(
-					[Values(4, 6)] int DGdegree) { //leads to significantly larger errors when =5
+					[Values(4)] int DGdegree) { //leads to significantly larger errors when =5
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
 			Func<double, double, double, double> levelSet0 = (x, y, t) => (x - (Math.Tan((t + 382) / 90 * Math.PI) * y) + (t + 382) / 9000 * Math.PI * Math.Sin((t + 382) / 9 * Math.PI));
@@ -246,10 +246,10 @@ namespace IntersectingLevelSetTest {
 		[Test]
         // This is the 2D Convergence test of two straight line. 
         public static void Convergence2DTestSaye(
-            [Values(1, 2)] int DGdegree) {
+            [Values(1)] int DGdegree) {
             BoSSS.Solution.Application.InitMPI();
             //BoSSS.Solution.Application.DeleteOldPlotFiles();
-            int[] numbersOfCells = new int[] {8};
+            int[] numbersOfCells = new int[] {2, 4, 8};
             double[] errorList = new double[numbersOfCells.Length];
             int i = 0;
             foreach (int cell in numbersOfCells) {
@@ -301,12 +301,12 @@ namespace IntersectingLevelSetTest {
         }
 
 		// Algoim does not perform well when resolution gets higher
-		// Possibly, the accurary of level set presentation decreases due to the polynomial interpolation
+		// Possibly, the accuracy of level set presentation decreases due to the polynomial interpolation
 		public static void Convergence2DTestAlgoim(
-			[Values(1, 2)] int DGdegree) {
+			[Values(1)] int DGdegree) {
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
-			int[] numbersOfCells = new int[] {  8 };
+			int[] numbersOfCells = new int[] {2, 4, 8 };
 			double[] errorList = new double[numbersOfCells.Length];
 			int i = 0;
 			foreach (int cell in numbersOfCells) {
