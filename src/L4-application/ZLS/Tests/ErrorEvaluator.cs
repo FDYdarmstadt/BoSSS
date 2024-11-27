@@ -56,7 +56,7 @@ namespace ZwoLevelSetSolver.Tests
     }
 
     /// <summary>
-    /// error evaluator for XNSE-based tests 
+    /// error evaluator for ZLS-based tests 
     /// computes error for: velocity, pressure 
     /// </summary>
     /// <remarks>
@@ -131,8 +131,6 @@ namespace ZwoLevelSetSolver.Tests
         {
             int D = solver.GridData.SpatialDimension;
             var FluidSpecies = exactPressure.Keys.ToArray();
-            //var FluidSpecies = new[] { "A", "B" };
-            Console.WriteLine(string.Join(", ", FluidSpecies));
 
             string pressureName = BoSSS.Solution.NSECommon.VariableNames.Pressure;
             XDGField pressure = (XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == pressureName);
@@ -177,8 +175,6 @@ namespace ZwoLevelSetSolver.Tests
                 L2Error += IdV;
                 L2Error_Species.Add(spc, IdV.Sqrt());
                 solver.QueryHandler.ValueQuery("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc, L2Error_Species[spc], true);
-                Console.WriteLine("L2err_" + BoSSS.Solution.NSECommon.VariableNames.Pressure + "#" + spc + IdV);
-                //Tecplot.PlotFields(pressure(spId),"Pre",20,3);
 
             }
 

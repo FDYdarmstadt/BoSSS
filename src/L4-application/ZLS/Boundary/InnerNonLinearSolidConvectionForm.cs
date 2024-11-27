@@ -108,7 +108,7 @@ namespace ZwoLevelSetSolver.Boundary {
             m_FluidSpc = FluidSpc;
             this.rhoSolid = rhoSolid;
             this.rhoFluid = rhoFluid;
-            this.variableNames = velocityNames.Cat(variableNames[d]);
+            this.variableNames = velocityNames.Cat(variableNames[d]);//something wrong here. 
             this.d = d;
         }
 

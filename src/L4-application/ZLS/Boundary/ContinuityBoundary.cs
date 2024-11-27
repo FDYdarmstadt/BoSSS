@@ -21,6 +21,7 @@ namespace ZwoLevelSetSolver.Boundary {
 
             for(int i = 0; i < D; ++i) {
                 string velocity = ZwoLevelSetSolver.VariableNames.DisplacementComponent(i);
+                //string velocity = BoSSS.Solution.NSECommon.VariableNames.Velocity_d(i);
                 AddVariableNames(velocity);
                 AddComponent(new BoundaryDivergenceForm(i, 1, fluidSpecies, solidSpecies, 1));
             }

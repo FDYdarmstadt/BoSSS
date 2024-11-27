@@ -29,7 +29,7 @@ namespace ZwoLevelSetSolver.Boundary {
             //Stress equality
             //AddComponent(new NeoHookeanNeumannForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
             //AddComponent(new NonLinearNeoHookeanNeumannForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
-            AddComponent(new NeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
+            AddComponent(new NeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Viscosity, material.Lame2));
 
             //Transport therms 
             AddComponent(new NonLinearSolidConvectionForm(

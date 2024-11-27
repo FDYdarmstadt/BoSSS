@@ -227,8 +227,8 @@ namespace ZwoLevelSetSolver.Tests {
             /// </summary>
             public double pA(double r) {
                 //return 0.5 * rhoA * _C1A.Pow2() * r.Pow2() - 0.5 * rhoA * _C2A.Pow2() / (r.Pow2()) + 2 * rhoA * _C1A * _C2A * Math.Log(r) + _C3A;
-                //return 0.553219620205395 * r.Pow2() - 1.856945418023684 / (r.Pow2()) - 4.054229670655003 * Math.Log(r) + 0.957225264074712;
-                return 0.553219620205395 * r.Pow2() - 1.856945418023684 / (r.Pow2()) - 4.054229670655003 * Math.Log(r) + 1.227350228287268;
+                //return 0.553219620205395 * r.Pow2() - 1.856945418023684 / (r.Pow2()) - 4.054229670655003 * Math.Log(r) + 0.957225264074712; 
+                return 0.553219620205395 * r.Pow2() - 1.856945418023684 / (r.Pow2()) - 4.054229670655003 * Math.Log(r) + 1.227350228287268; //Didn't consider the pressure jump between fluid and solid. 
             }
 
             /// <summary>

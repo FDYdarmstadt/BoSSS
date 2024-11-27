@@ -71,13 +71,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     acc1 += PenaltySafety * pnlty * (_uIN[d] - dirichlet[d]) * _vIN * viscosity;
                     break;
                     case IncompressibleBcType.FreeSlip:
-                    //for(int i = 0; i < D; i++) {
-                    //    for(int j = 0; j < D; ++j) {
-                    //        acc1 -= viscosity * inp.Normal[i] * _Grad_uIN[i, j] * inp.Normal[j] * _vIN * inp.Normal[d];  // consistency term  
-                    //        acc1 -= viscosity * inp.Normal[d] * _Grad_vIN[j] * inp.Normal[j] * (_uIN[i] - dirichlet[i]) * inp.Normal[i];  // symmetry term
-                    //    }
-                    //    acc1 += viscosity * PenaltySafety * pnlty * (_uIN[i] - dirichlet[i]) * inp.Normal[i] * _vIN * inp.Normal[d];
-                    //}
+                    for(int i = 0; i < D; i++) {
+                        for(int j = 0; j < D; ++j) {
+                            acc1 -= viscosity * inp.Normal[i] * _Grad_uIN[j, i] * inp.Normal[j] * _vIN * inp.Normal[d];  // consistency term  
+                            acc1 -= viscosity * inp.Normal[d] * _Grad_vIN[i] * inp.Normal[i] * (_uIN[j] - dirichlet[j]) * inp.Normal[j];  // symmetry term
+                        }
+                        acc1 += viscosity * PenaltySafety * pnlty * (_uIN[i] - dirichlet[i]) * inp.Normal[i] * _vIN * inp.Normal[d];
+                    }
                     break;
                     case IncompressibleBcType.Outflow:
                     case IncompressibleBcType.Pressure_Outlet:
