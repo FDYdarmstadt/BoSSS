@@ -28,10 +28,26 @@ using BoSSS.Foundation;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.NSECommon;
 
-namespace BoSSS.Solution.AdvancedSolvers
-{
-    /*
-    public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback
+namespace BoSSS.Solution.AdvancedSolvers {
+
+	[Serializable]
+	public class SchurPrecondConfig : IterativeSolverConfig {
+		public override string Name => "Schur complement with Uzawa algorithm";
+
+		public override string Shortname => "Uzawa";
+
+		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+
+			var templinearSolve = new SchurPrecond();
+
+
+			templinearSolve.Init(level);
+			return templinearSolve;
+		}
+	}
+
+
+	public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback
     {
         public int IterationsInNested {
             get {
@@ -69,8 +85,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         MsrMatrix P;
         MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix;
         long[] Uidx, Pidx;
+		int[] UidxInt, PidxInt;
+        double[] RHSvel;
 
-        public enum SchurOptions { exact = 1, decoupledApprox = 2, SIMPLE = 3 }
+		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3 }
 
         public bool ApproxScaling = false;
 
@@ -87,18 +105,20 @@ namespace BoSSS.Solution.AdvancedSolvers
             var MgMap = op.Mapping;
             this.m_mgop = op;
 
-            
+            MgMap.GetSubvectorIndices();
 
-            if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+
+			if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
             if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
 
-            Uidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
-            Pidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D);
+            Uidx = MgMap.GetSubvectorIndices( D.ForLoop(i => i));
+            Pidx = MgMap.GetSubvectorIndices( D);
+            UidxInt = Array.ConvertAll(Uidx, item => (int)item);
+			PidxInt = Array.ConvertAll(Pidx, item => (int)item);
 
-
-            int Upart = Uidx.Length;
+			int Upart = Uidx.Length;
             int Ppart = Pidx.Length;
             ConvDiff = new MsrMatrix(Upart, Upart, 1, 1);
             pGrad = new MsrMatrix(Upart, Ppart, 1, 1);
@@ -243,8 +263,12 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         return;
                     }
+				case SchurOptions.Uzawa: {
 
-                default:
+                        Console.WriteLine("Uzawa is set");
+						return;
+					}
+				default:
                     throw new NotImplementedException("SchurOption");
             }
 
@@ -302,7 +326,20 @@ namespace BoSSS.Solution.AdvancedSolvers
                         return;
                     }
 
-            }
+				case SchurOptions.Uzawa: {
+                        var RHSvel = Uidx.Select(ind => B[(int)ind]);
+                        
+                        // first solve pressure with PCG
+
+						// Directly invert Preconditioning Matrix
+						using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+							solver.DefineMatrix(P);
+							solver.Solve(X, B);
+						}
+						return;
+					}
+
+			}
 
         }
 
@@ -328,13 +365,13 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
-            Bu = B.GetSubVector(Uidx, default(int[]));
+            Bu = B.GetSubVector(UidxInt);
             var Bp = new double[Pidx.Length];
             var Xp = Bp.CloneAs();
-            Bp = B.GetSubVector(Pidx, default(int[]));
+            Bp = B.GetSubVector(PidxInt);
 
-            Xu = X.GetSubVector(Uidx, default(int[]));
-            Xp = X.GetSubVector(Pidx, default(int[]));
+            Xu = X.GetSubVector(UidxInt);
+            Xp = X.GetSubVector(PidxInt);
 
             ApproxAndSolveSchur(Xp, Bp);
 
@@ -430,13 +467,13 @@ namespace BoSSS.Solution.AdvancedSolvers
             //for (int i = 0; i < Pidx.Length; i++)
             //    Pidx[i] -= idxP;
 
-            Bu = B.GetSubVector(Uidx, default(int[]));
+            Bu = B.GetSubVector(UidxInt);
             var Bp = new double[Pidx.Length];
             var Xp = Bp.CloneAs();
-            Bp = B.GetSubVector(Pidx, default(int[]));
+            Bp = B.GetSubVector(PidxInt);
 
-            Xu = X.GetSubVector(Uidx, default(int[]));
-            Xp = X.GetSubVector(Pidx, default(int[]));
+            Xu = X.GetSubVector(UidxInt);
+            Xp = X.GetSubVector(PidxInt);
 
             // Solve SIMPLE Schur
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
@@ -471,6 +508,28 @@ namespace BoSSS.Solution.AdvancedSolvers
         public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
-    }
-    */
+
+		public long UsedMemory() {
+			throw new NotImplementedException();
+		}
+
+		public void Dispose() {
+            Console.WriteLine("Returned");
+
+			// Clear all the matrices
+			P?.Clear();
+			ConvDiff?.Clear();
+			pGrad?.Clear();
+			divVel?.Clear();
+			SchurMtx?.Clear();
+			PoissonMtx_T?.Clear();
+			PoissonMtx_H?.Clear();
+			SchurConvMtx?.Clear();
+			invVelMassMatrix?.Clear();
+			invVelMassMatrixSqrt?.Clear();
+			simpleSchur?.Clear();
+			velMassMatrix?.Clear();
+		}
+	}
+    
 }
