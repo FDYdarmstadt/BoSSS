@@ -27,6 +27,7 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.NSECommon;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -81,30 +82,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultigridOperator m_mgop;
 
         BlockMsrMatrix Mtx;
+		//BlockMsrMatrix operatorM;
 
         MsrMatrix P;
-        MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix;
+        MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, SchurRHSMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix, pMassMatrix;
         long[] Uidx, Pidx;
 		int[] UidxInt, PidxInt;
-        double[] RHSvel;
+        //double[] RHSvel;
 
 		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3 }
 
         public bool ApproxScaling = false;
-
-        public SchurOptions SchurOpt = SchurOptions.exact;
+        
+        public SchurOptions SchurOpt = SchurOptions.Uzawa;
 
         public void Init(MultigridOperator op)
         {
             int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
 
-
-            //M.SaveToTextFileSparse("OpMatrix2");
-
-            var MgMap = op.Mapping;
+			var MgMap = op.Mapping;
             this.m_mgop = op;
-
+            
             MgMap.GetSubvectorIndices();
 
 
@@ -131,7 +130,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             M.AccSubMatrixTo(1.0, divVel, Pidx, default(long[]), Uidx, default(long[]));//, default(int[]), default(int[]));
             M.AccSubMatrixTo(1.0, PxP, Pidx, default(long[]), Pidx, default(long[]));//, default(int[]), default(int[]));
 
-            Mtx = M;
+			Mtx = M;
 
             int L = M.RowPartitioning.LocalLength;
 
@@ -140,15 +139,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             P = new MsrMatrix(Mtx);
             P.Clear();
 
-            // Debugging output
-            //pGrad.SaveToTextFileSparse("pGrad");
-            //PxP.SaveToTextFileSparse("PxP");
-
-
             velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
             op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
+			pMassMatrix = new MsrMatrix(Ppart, Ppart, 1, 1);
 
-            switch (SchurOpt)
+			op.MassMatrix.AccSubMatrixTo(1.0, pMassMatrix, Pidx, default(long[]), Pidx, default(long[]), default(long[]), default(long[]));
+
+			//ConvDiff.SaveToTextFile("ConvDiff");
+			ConvDiff.SaveToTextFileSparse("ConvDiff");
+			pGrad.SaveToTextFileSparse("pGrad");
+			divVel.SaveToTextFileSparse("divVel");
+			PxP.SaveToTextFileSparse("PxP");
+			velMassMatrix.SaveToTextFileSparse("velMassMatrix");
+			pMassMatrix.SaveToTextFileSparse("pMassMatrix");
+
+			switch (SchurOpt)
             {
                 case SchurOptions.exact:
                     {
@@ -264,8 +269,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         return;
                     }
 				case SchurOptions.Uzawa: {
+						// Building complete Schur and Approximate Schur
+						MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+						MultidimensionalArray SchurRHS = MultidimensionalArray.Create(Pidx.Length, Uidx.Length);
 
-                        Console.WriteLine("Uzawa is set");
+						using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+							bmc.PutSparseMatrix(ConvDiff, "A");
+							bmc.PutSparseMatrix(pGrad, "B");
+							bmc.PutSparseMatrix(divVel, "C");
+							bmc.Cmd("invA = inv(full(A));");
+							bmc.Cmd("Schur = -C *full(A \\ B);");
+							bmc.Cmd("SchurRHS = C*invA;"); 
+							bmc.GetMatrix(Schur, "Schur");
+							bmc.GetMatrix(SchurRHS, "SchurRHS");
+
+							bmc.Execute(false);
+						}
+
+
+
+						SchurMtx = Schur.ToMsrMatrix();
+						SchurMtx.Acc(PxP, 1);
+
+						SchurMtx.SaveToTextFileSparse("returnedSchur");
+
+						SchurRHSMtx = SchurRHS.ToMsrMatrix();
+						SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
+
+
+
+                        //var configs = Enumerable.Repeat(op.Config, op.NoOfLevels).ToArray();
+
+                        //                  op.B
+
+                        //MultigridOperator mgOp = new MultigridOperator(MgBasis, this.CurrentSolution.Mapping,
+                        //                   Mtx, null, configs, null);
+
+
+
+						Console.WriteLine("Uzawa is set");
 						return;
 					}
 				default:
@@ -327,15 +369,131 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 				case SchurOptions.Uzawa: {
-                        var RHSvel = Uidx.Select(ind => B[(int)ind]);
-                        
-                        // first solve pressure with PCG
+                        Console.WriteLine("starting uzawa");
 
-						// Directly invert Preconditioning Matrix
-						using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
-							solver.DefineMatrix(P);
-							solver.Solve(X, B);
+                        var b1 = Uidx.Select(ind => B[(int)ind]);
+						var b2 = Pidx.Select(ind => B[(int)ind]);
+                        var vecb1 = b1.ToArray();
+						var vecb2 = b2.ToArray();
+
+						b1.SaveToTextFile("b1");
+						b2.SaveToTextFile("b2");
+
+						SchurRHSMtx.SpMV(-1.0, vecb1, 1.0, vecb2);
+                        var P = new double[Pidx.Length];
+						var Usol = new double[Uidx.Length];
+
+						vecb2.SaveToTextFile("schurb2");
+
+                        var Setled = (CoordinateMapping)m_mgop.BaseGridProblemMapping;
+
+                        int D = m_mgop.Mapping.GridData.SpatialDimension;
+                        var op = m_mgop;
+
+                        var presureField = Setled.Fields[D];
+
+                        var dummy = new DifferentialOperator(
+                                       new string[] { "pressure" },
+                                       new string[] { "div" },
+                                       QuadOrderFunc.Linear());
+                        dummy.Commit();
+
+                        List<AggregationGridBasis[]> leveledBases = new List<AggregationGridBasis[]>();
+                        List<MultigridOperator.ChangeOfBasisConfig[]> leveledConfigs = new List<MultigridOperator.ChangeOfBasisConfig[]>();
+
+
+
+						for (var mo = op; mo != null; mo = mo.CoarserLevel) {
+							Debug.Assert(mo.Mapping.AggBasis.Length == D + 1);
+
+							AggregationGridBasis[] bases = new AggregationGridBasis[1] { mo.Mapping.AggBasis[D] };
+							leveledBases.Add(bases);
+
+							var conf = mo.Config[D];
+							conf.VarIndex = new int[] { 0 };
+
+							MultigridOperator.ChangeOfBasisConfig[] configs = new MultigridOperator.ChangeOfBasisConfig[1] { conf };
+							leveledConfigs.Add(configs);
 						}
+
+						var co = presureField.Mapping;
+                        var pressureMGmapping = new MultigridMapping(co, new[] { op.Mapping.AggBasis[D] }, new[] { op.Mapping.DgDegree[D] });
+
+
+
+						List<AggregationGridBasis[]> aggBasisSeq = new List<AggregationGridBasis[]>();
+						for (var mo = op; mo != null; mo = mo.CoarserLevel) {
+							aggBasisSeq.Add(mo.Mapping.AggBasis);
+						}
+
+						int[] Degrees = op.BaseGridProblemMapping.BasisS.Select(b => b.Degree).ToArray();
+
+						MultigridOperator.ChangeOfBasisConfig[][] config = new MultigridOperator.ChangeOfBasisConfig[1][];
+						config[0] = new MultigridOperator.ChangeOfBasisConfig[op.BaseGridProblemMapping.BasisS.Count];
+						for (int iVar = 0; iVar < config[0].Length; iVar++) {
+							config[0][iVar] = new MultigridOperator.ChangeOfBasisConfig() {
+								DegreeS = new int[] { Degrees[iVar] },
+								mode = MultigridOperator.Mode.IdMass,
+								VarIndex = new int[] { iVar }
+							};
+						}
+
+
+                        var MsrOp =new MsrMatrix(Pidx.Length*2, Pidx.Length * 2, 1, 1);
+
+						var rawOp = new BlockMsrMatrix(presureField.Mapping, presureField.Mapping);
+						rawOp.Clear();
+						var rawMaMa = new BlockMsrMatrix(presureField.Mapping, presureField.Mapping);
+						rawMaMa.AccEyeSp(1);
+
+
+
+						var MultigridOp = new MultigridOperator(leveledBases, presureField.Mapping,
+						rawOp, rawMaMa, leveledConfigs,
+                        dummy);
+
+                        MultigridOp.m_RawOperatorMatrix = SchurMtx.ToBlockMsrMatrix(pressureMGmapping, pressureMGmapping);
+
+                        var OrthoMgConfig = new OrthoMGSchwarzConfig() {
+                            TargetBlockSize = 100,
+                            CoarseKickIn = 200
+                            
+                        };
+                        OrthoMgConfig.ConvergenceCriterion = 10 ^ -3;
+
+                        var solver = OrthoMgConfig.CreateInstance(MultigridOp);
+						solver.Solve(P, vecb2);
+
+
+						pGrad.SpMV(-1.0, P, 1.0, vecb1);
+
+						using (var Usolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
+							Usolver.DefineMatrix(ConvDiff);
+							Usolver.Solve(Usol, vecb1);
+						}
+						
+						//var MultigridOp = UniSolver.GetMultigridOperator(dummy, presureField.Mapping, leveledConfigs.ToArray());
+
+						//                  var itP = SchurMtx.Solve_CG(P, vecb2);
+
+						//pGrad.SpMV(-1.0, P, 1.0, vecb1);
+
+						//                  var itU = ConvDiff.Solve_CG(Usol, vecb1);
+
+						//                  Console.WriteLine($"Pressure it: {itP} Velocity it: {itU}");
+
+
+						for (int i = 0; i < Uidx.Length; i++)
+                            X[(int)Uidx[i]] = Usol[i];
+
+
+                        for (int i = 0; i < Pidx.Length; i++)
+                            X[(int)Pidx[i]] = P[i];
+
+						//Usol.SaveToTextFile("CalculatedU");
+						//P.SaveToTextFile("CalculatedP");
+						//X.SaveToTextFile("CalculatedX");
+                        this.m_Converged = solver.Converged;
 						return;
 					}
 
