@@ -31,6 +31,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using System.Diagnostics;
+using System.IO;
 
 namespace BoSSS.Foundation {
        
@@ -1603,7 +1604,7 @@ namespace BoSSS.Foundation {
 #endif
 
                     if(m_NonlinearVolume != null && DoVolume) {
-                        using(new BlockTrace("Volume_Integration_NonLin", tr)) {
+                        using(var bt = new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
                             m_NonlinearVolume.m_Output = output;
                             m_NonlinearVolume.m_alpha = alpha;
@@ -1612,7 +1613,7 @@ namespace BoSSS.Foundation {
                             m_NonlinearVolume.m_Output = null;
                             m_NonlinearVolume.m_alpha = 1.0;
 
-
+                            bt.IntermediateReportOfChildCalls = true;
                         }
 
                     }
@@ -1630,7 +1631,7 @@ namespace BoSSS.Foundation {
 
                     void CallEdge(Quadrature.NonLin.NECQuadratureEdge ne, string name) {
                         if(ne != null && DoEdge) {
-                            using(new BlockTrace(name, tr)) {
+                            using(var bt = new BlockTrace(name, tr)) {
 
                                 ne.m_Output = output;
                                 ne.m_alpha = alpha;
@@ -1646,6 +1647,8 @@ namespace BoSSS.Foundation {
                                 ne.m_outputBndEdge = null;
                                 ne.m_alpha = 1.0;
                                 ne.SubGridCellsMarker = null;
+
+                                bt.IntermediateReportOfChildCalls = true;
                             }
                         }
                     }
@@ -1811,12 +1814,13 @@ namespace BoSSS.Foundation {
                     DifferentialOperator _Owner = (DifferentialOperator)this.Owner;
                     
                     if(volRule.Any() && DoVolume) {
-                        using(new BlockTrace("Volume_Integration_(new)", tr)) {
+                        using(var bt = new BlockTrace("Volume_Integration_(new)", tr)) {
+                            
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
 
-                            //volRule.ToTextFileVolume(this.GridData as BoSSS.Foundation.Grid.Classic.GridData, "Volume.csv");
+                            bt.IntermediateReportOfChildCalls = true;
                         }
 
                     } else {
@@ -1828,12 +1832,16 @@ namespace BoSSS.Foundation {
                     // ----------------
                     
                     if(!edgeRule.IsNullOrEmpty() && DoEdge) {
-                        using(new BlockTrace("Edge_Integration_(new)", tr)) {
+                        using(var bt = new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+
+                            bt.IntermediateReportOfChildCalls = true;
                         }
                     }
+
+                    
                 }
             }
         }
@@ -2933,6 +2941,8 @@ namespace BoSSS.Foundation {
             if (this.TemporalOperator != null)
                 JacobianOp.TemporalOperator = new TemporalOperatorContainer(JacobianOp, this.TemporalOperator);
 
+            JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
+
             foreach (string CodNmn in this.CodomainVar) {
                 foreach(var eq in this.EquationComponents[CodNmn]) {
 
@@ -2974,6 +2984,7 @@ namespace BoSSS.Foundation {
             JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
             JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
+            JacobianOp.FluxesAreNOTMultithreadSafe = this.FluxesAreNOTMultithreadSafe;
             JacobianOp.Commit(false);
             return JacobianOp;
         }
@@ -3079,8 +3090,29 @@ namespace BoSSS.Foundation {
             }
         }
 
+        bool m_FluxesAreNOTMultithreadSafe = true;
+
 
         /// <summary>
+        /// Set to true, if **all** fluxes must be synchronized in multi-threaded execution.
+        /// **This will come at a performance degeneration.**
+        /// This is some lazy option: the default value is false,
+        /// i.e., fluxes are not synchronized.
+        /// <seealso cref="IMultitreadSafety"/>
+        /// </summary>
+        public bool FluxesAreNOTMultithreadSafe {
+            get {
+                return m_FluxesAreNOTMultithreadSafe;
+            }
+            set {
+                if (IsCommitted)
+                    throw new NotSupportedException("illegal to call after commit");
+                m_FluxesAreNOTMultithreadSafe = value;
+            }
+        }
+
+        /// <summary>
+        /// Dictionary which prevents changing after <see cref="Commit"/> has been called;
         /// I hate shit like this class - so many dumb lines of code.
         /// </summary>
         class MyDict : IDictionary<string, bool> {

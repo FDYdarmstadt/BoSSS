@@ -37,6 +37,9 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.XDG;
 using BoSSS.Application.XNSE_Solver.Loadbalancing;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using MathNet.Numerics.LinearAlgebra.Factorization;
+using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -1834,7 +1837,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
@@ -3155,7 +3158,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
             C.LSunderrelax = 0.7;
 
@@ -3420,7 +3423,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 4;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -4053,7 +4056,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -4354,7 +4357,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
@@ -4578,7 +4581,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
@@ -4801,7 +4804,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //C.dt_increment = 20;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
@@ -5913,7 +5916,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = compMode;
@@ -6096,7 +6099,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region time
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.TimesteppingMode = compMode;
@@ -6124,6 +6127,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public static XNSE_Control RotCubeMemoryError() {
             var C = Rotating_Something_Unsteady(4, 20, 3, true);
+            return C;
+        }
+
+        public static XNSE_Control RotCubePicardConvergenceError() {
+            //this error does happen when number of processsors =2 but not with np=4
+            var C = Rotating_Something_Unsteady(4, 20, 2, false);
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.ConvergenceCriterion = 0.000001; //it can also happen with 0.001 depending on parameters
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.NoOfTimesteps = 300;
             return C;
         }
 
@@ -6159,6 +6173,624 @@ namespace BoSSS.Application.XNSE_Solver {
             C.TracingNamespaces = "BoSSS";
 
             return C;
+        }
+
+        public enum TestCase {
+            Bubble,
+            Droplet
+        }
+
+        public static XNSE_Control MergingDroplet3DLevelSetError() {
+            var C = MergingBubble(1, 20, 3, TestCase.Droplet,g: 0);
+
+            // Update relevant parameters"
+            // ==============
+            string LargeDrop, SmallDrop;
+            double[] center_l, center_s;
+            double radius_l = 0.25;
+            double radius_s = 0.2;
+
+
+            // Lvl Set 3D
+            center_l = new double[] { 0.5, 1.0008, 0.5 };
+            center_s = new double[] { 0.5, 0.5402, 0.5 };
+
+            LargeDrop = $"(Math.Sqrt((X[0] - {center_l[0]}).Pow2() + (X[1] - {center_l[1]}).Pow2() + (X[2] - {center_l[2]}).Pow2()) - {radius_l}) ";
+            SmallDrop = $"(Math.Sqrt((X[0] - {center_s[0]}).Pow2() + (X[1] - {center_s[1]}).Pow2() + (X[2] - {center_s[2]}).Pow2()) - {radius_s} )";
+
+
+            string code = $"(X) => 0";
+            code = $"(X) => -Math.Min(" + LargeDrop + " , " + SmallDrop + " ) ";
+                
+            C.InitialValues.Add("VelocityY#B", new Formula( $"X =>  X[1] > {center_l[1]-radius_l}  ?  0.1 : 1.5")  );
+            C.SessionName = "Droplet_" + C.SessionName;
+
+            var my_formula = new Formula(code);
+
+            C.InitialValues.Remove("Phi");
+            //Phi
+            C.InitialValues.Add("Phi",
+                        new Formula(code)
+                        );
+            C.NoOfTimesteps = 100;
+            return C;
+        }
+
+        //test if source-to-source  agglomeration groups can be formed (test case does not have a physical meaning)
+        public static XNSE_Control TwoTorusesAggTestCase(int k = 1, int Res = 20, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true) {
+            XNSE_Control C = new XNSE_Control();
+            int SpaceDim = 2;
+            //C.DbPath = @"C:\debug_db";
+            C.ProjectName = "XNSE-Torus";
+            C.ProjectDescription = "agglomeration test";
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+            C.savetodb = false;
+
+            // Simulation settings
+            // ==============
+            int NoOfTimeSteps = 10;
+            bool Steady = false;
+            double bigR = 0.26;
+            double smallR = 0.22;
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 0;
+            C.DynamicLoadBalancing_On = true;
+            C.DynamicLoadBalancing_Period = 1; //Make it challenging by changing the decomposition every timestep
+
+            //bool IncludeConvection = true;
+            var LeftCenter = new double[] { -0.5, 0 };
+            var RightCenter = new double[] { 0.5, 0.0 };
+
+            C.SessionName = $"2DTorus_k{k}_Res{Res}_AMR{AMR}_LS{LSMethod}";
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, false, IncompressibleBcType.Pressure_Outlet);
+            C.GridPartType = GridPartType.METIS;
+
+            // Physical Parameters
+            // =================== 
+            // Bo = 250?, Re = 35?
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 100;
+            C.PhysicalParameters.mu_A = 0.01;
+            C.PhysicalParameters.mu_B = 0.1;
+            C.PhysicalParameters.Sigma = 0.097;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+
+            // DG degrees
+            // ==========
+            C.SetFieldOptions(k, Math.Max(k, 2));
+
+            //level-set for two toruses
+            string LeftTorus = $"-Math.Sqrt( (Math.Sqrt((X[0] -({LeftCenter[0]}))*(X[0] -({LeftCenter[0]})) + (X[1]- ({LeftCenter[1]}))*(X[1]- ({LeftCenter[1]}))  ) - {bigR}) * (Math.Sqrt((X[0] -({LeftCenter[0]}))*(X[0] -({LeftCenter[0]})) + (X[1]- ({LeftCenter[1]}))*(X[1]- ({LeftCenter[1]}))  ) - {bigR}) ) + {smallR}";
+            string RightTorus = $"-Math.Sqrt( (Math.Sqrt((X[0] -({RightCenter[0]}))*(X[0] -({RightCenter[0]})) + (X[1]- ({RightCenter[1]}))*(X[1]- ({RightCenter[1]}))  ) - {bigR}) * (Math.Sqrt((X[0] -({RightCenter[0]}))*(X[0] -({RightCenter[0]})) + (X[1]- ({RightCenter[1]}))*(X[1]- ({RightCenter[1]}))  ) - {bigR}) ) + {smallR}";
+
+            string code = $"(X) => Math.Max(" + LeftTorus + " , " + RightTorus + "  ) ";
+
+            var my_formula = new Formula(code);
+
+            //Phi
+            //.UseImmersedBoundary = true;
+            C.AddInitialValue("Phi", new Formula(code)); //
+
+
+            C.UseImmersedBoundary = false;
+            C.PlotAgglomeration = true;
+            C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            C.AddBoundaryValue("Pressure_Outlet");
+
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = 0.95;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
+
+
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.AdaptiveMeshRefinement = AMR;
+            if (AMR) {
+                C.SetMaximalRefinementLevel(1);
+                C.AMR_startUpSweeps = 1;
+            }
+
+            // Timestepping
+            // ============
+            double dt = -1;
+            if (Steady) {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                dt = 1000;
+                C.NoOfTimesteps = 1;
+            } else {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+                dt = 1;
+                C.NoOfTimesteps = NoOfTimeSteps;
+            }
+            C.TimeSteppingScheme = TimeSteppingScheme.ExplicitEuler; //BD4
+            C.dtFixed = dt;
+            C.SkipSolveAndEvaluateResidual = true;
+            //C.SessionName = "SolverOn_" + C.SessionName;
+            return C;
+        }
+
+
+        public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g = -9.81) {
+            XNSE_Control C = new XNSE_Control();
+            //C.DbPath = @"C:\debug_db";
+            C.ProjectName = "XNSE-Bubble";
+            C.ProjectDescription = "merging bubble";
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+            C.savetodb = false;
+
+            C.SessionName = $"{myTestCase}Merger_k{k}_Res{Res}_AMR{AMR}_LS{LSMethod}";
+            C.GridFunc = LongGridFuncFactory(SpaceDim, Res);
+            C.GridPartType = GridPartType.Hilbert;
+            C.DynamicLoadBalancing_On = false;
+
+            // Physical Parameters
+            // =================== 
+            // Bo = 250?, Re = 35?
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 100;
+            C.PhysicalParameters.mu_A = 0.01;
+            C.PhysicalParameters.mu_B = 0.1;
+            C.PhysicalParameters.Sigma = 0.097;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            // boundary conditions
+            // ===================
+            C.AddBoundaryValue("Wall");
+            C.AddBoundaryValue("FreeSlip");
+
+            // DG degrees
+            // ==========
+            C.SetFieldOptions(k, Math.Max(k, 2));
+
+            // Initial Values
+            // ==============
+            string LargeDrop, SmallDrop;
+            double[] center_l, center_s;
+            double radius_l = 0.25;
+            double radius_s = 0.2;
+
+            if (SpaceDim == 3) {
+                // Lvl Set 3D
+                center_l = new double[] { 0.5, 1.0002, 0.5 };
+                center_s = new double[] { 0.5, 0.5409, 0.5 };
+
+                LargeDrop = $"(Math.Sqrt((X[0] - {center_l[0]}).Pow2() + (X[1] - {center_l[1]}).Pow2() + (X[2] - {center_l[2]}).Pow2()) - {radius_l}) ";
+                SmallDrop = $"(Math.Sqrt((X[0] - {center_s[0]}).Pow2() + (X[1] - {center_s[1]}).Pow2() + (X[2] - {center_s[2]}).Pow2()) - {radius_s} )";
+                C.SessionName += "_3D";
+
+            } else {
+                // Lvl Set 2D
+                center_l = new double[] { 0.5, 1.0002 };
+                center_s = new double[] { 0.5, 0.5409 };
+
+                LargeDrop = $"(Math.Sqrt((X[0] - {center_l[0]}).Pow2() + (X[1] - {center_l[1]}).Pow2()) - {radius_l}) ";
+                SmallDrop = $"(Math.Sqrt((X[0] - {center_s[0]}).Pow2() + (X[1] - {center_s[1]}).Pow2()) - {radius_s} )";
+            }
+
+            string code = $"(X) => 0";
+            if (myTestCase == TestCase.Droplet) {
+                code = $"(X) => -Math.Min(" + LargeDrop + " , " + SmallDrop + " ) ";
+                //C.InitialValues.Add("VelocityY#B", new Formula( $"X =>  X[1] > {center_l[1]-radius_l}  ?  -0.1 : -1.5")  );
+                C.SessionName = "Droplet_" + C.SessionName;
+            } else if (myTestCase == TestCase.Bubble) {
+                code = $"(X) => Math.Min(" + LargeDrop + " , " + SmallDrop + " ) ";
+                //C.InitialValues.Add("VelocityY#A", new Formula( $"X =>  X[1] > {center_l[1]-radius_l}  ?  -0.1 : -1.5")  );
+                C.SessionName = "Bubble_" + C.SessionName;
+            }
+            var my_formula = new Formula(code);
+
+
+            //Phi
+            C.InitialValues.Add("Phi",
+                        new Formula(code)
+                        );
+
+
+            C.UseImmersedBoundary = false;
+
+
+            double G = g;
+
+            C.InitialValues.Add("GravityY#A",
+                        new Formula($"X => {G}")
+                        );
+            C.InitialValues.Add("GravityY#B",
+                    new Formula($"X => {G}")
+                    );
+
+            C.SessionName += $"_g{Math.Abs(G):f3}";
+
+            // misc. solver options
+            // ====================
+
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
+
+            //C.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            //C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+            //C.SessionName += "_ConstDG";
+
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.SessionName += "_Picard";
+
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
+
+
+            // Timestepping
+            // ============
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            //C.Timestepper_BDFinit = XdgTimestepping.TimeStepperInit.SingleInit;
+
+            string LSname = "";
+            switch (LSMethod) {
+                case LevelSetHandling.Coupled_Once:
+                    LSname = "Moving";
+                    break;
+                case LevelSetHandling.LieSplitting:
+                    LSname = "Lie";
+                    break;
+                case LevelSetHandling.Coupled_Iterative:
+                    LSname = "Iterative";
+                    break;
+            }
+
+            C.SessionName += "_" + LSname;
+            C.Timestepper_LevelSetHandling = LSMethod;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            double dt = 2e-4;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.NoOfTimesteps = 500;
+            C.saveperiod = 10;
+
+            C.AdaptiveMeshRefinement = AMR;
+            if (AMR) {
+                int AMRlvl = 1;
+                C.SetMaximalRefinementLevel(AMRlvl);
+                C.AMR_startUpSweeps = AMRlvl;
+            }
+
+
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye; //default
+
+            return C;
+        }
+
+        public static XNSE_Control RotatingTilted3DTorusAgg0() {
+            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
+            var C = RotatingTiltedXRigid(2, 16, 3, true, AMRLevel: 1, TiltAngle: Math.PI / 4, SolverOn: false);
+            C.AgglomerationThreshold = 0.0;
+            C.NoOfTimesteps = 1;
+            return C;
+        }
+
+        public static XNSE_Control RotatingTilted3DTorus() {
+            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
+            var C = RotatingTiltedXRigid(1, 20, 3, true, AMRLevel: 2, TiltAngle: Math.PI/6, SolverOn: true);
+            C.NoOfTimesteps = 100;
+            return C;
+        }
+
+        public static XNSE_Control VanishingRotatingCircle() {
+            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
+            var C = RotatingTiltedXRigid(1, 20, 2, false, shape: Shape.Sphere,  RotAxis: "z", SolverOn: true, rateOfRadius: -4);
+            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 100;
+            return C;
+        }
+
+        public static XNSE_Control RotatingPopcorn() {
+            var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 10;
+            var config = new OperatorAnalysisConfig();
+            config.CalculateMassMatrix = true;
+            C.PostprocessingModules.Add(new Logging.CondLogger(config));
+            return C;
+        }
+
+        public static XNSE_Control SteadyRotatingSphereNSE(double aggThreshold = 0.2) {
+            //Major parameters
+            int k = 1;
+            int NoOfTimeSteps = 320; //for calculation of angular velocity
+            bool Steady = true;
+            int SpaceDim = 2;
+            double partRad = 0.6;
+            Shape Gshape = Shape.Sphere;
+            double viscosity = 0.01;
+            bool IncludeConvection = true;
+            bool AMR = false;
+            string rotAxis = "z";
+
+            //Get the default control file for mesh and minor details
+            var C = RotatingTiltedXRigid(k, 15, SpaceDim, false, shape: Gshape, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: partRad);
+
+            // Physical Parameters
+            // =================== 
+            const double rhoA = 1;
+            const double Re = 500;
+            double muA = viscosity;
+            double partDia = 2 * partRad;
+            double VelocityMax = Re * muA / rhoA / partDia;
+            double anglev = VelocityMax / partRad;
+            double period = 2 * Math.PI / anglev;
+            double ts = period / NoOfTimeSteps;
+            double[] pos = new double[SpaceDim];
+
+            C.PhysicalParameters.IncludeConvection = IncludeConvection;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            // DG degrees and configuration
+            // ==========
+            C.FieldOptions.Clear();
+            //Console.WriteLine("Field options" + C.FieldOptions.Count);
+            C.SetFieldOptions(k, Math.Max(k, 8)); // (velocity degree,level set) (pressure degree = k-1)
+            C.saveperiod = 10;
+            C.DynamicLoadBalancing_On = false;
+            C.DynamicLoadBalancing_RedistributeAtStartup = false;
+            C.DynamicLoadBalancing_Period = 10;
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+
+            // rigid body and boundary conditions
+            // ===================
+            double rateOfRadius = Steady ? 0 : -1 / (double)NoOfTimeSteps / ts;
+            C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim, rateOfRadius: rateOfRadius, staticShape: Steady);
+            C.SessionName += $"dRdt{rateOfRadius:f2}";
+            C.Rigidbody.SpecifyShape(Gshape);
+            C.Rigidbody.SetRotationAxis(rotAxis);
+            C.UseImmersedBoundary = true;
+
+            //// Set initial and boundary conditions
+            //// ============
+            //C.AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
+            //C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            //C.AddBoundaryValue("Pressure_Outlet");
+
+            // Solver options
+            // ===================
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = aggThreshold;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None; // idle level set (used for evolving LS)
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //exp_Kcycle_schwarz.GetConfig();
+            C.SessionName += "_MUMPS";
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 0;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.verbose = true;
+            C.AdaptiveMeshRefinement = AMR;
+
+            // Timestepping
+            // ============
+            double dt = -1;
+            if (Steady)
+            {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                dt = 1000;
+                C.NoOfTimesteps = 1;
+                C.SessionName += "_Steady";
+            } else
+            {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+                dt = ts;
+                C.NoOfTimesteps = NoOfTimeSteps;
+            }
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.dtFixed = dt;
+            C.SkipSolveAndEvaluateResidual = false; //to save computational time for condition study
+            C.SessionName = "Solver" + !C.SkipSolveAndEvaluateResidual + "_" + C.SessionName;
+            C.PlotAgglomeration = false;
+
+            return C;
+        }
+
+
+        public static XNSE_Control InfiniteConditionNumberTorus() {
+            // this test case was resulting in infinite condition numbers
+            var C = RotatingTiltedXRigid(2, 128, 2, false, shape: Shape.Torus, RotAxis: "z", SolverOn: false, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 10;
+            C.AgglomerationThreshold = 0;
+            //C.CalculateConditionNumber = AppControl._ConditionStudy.OperatorandMass;
+
+            return C;
+        }
+
+        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true, double rateOfRadius = 0.0, double partRad = 0.39) {
+            XNSE_Control C = new XNSE_Control();
+
+            // Simulation Settings
+            // ===================
+            bool IncludeConvection = true;
+            int NoOfTimeSteps = 200;
+
+            C.SessionName = "Solver" + SolverOn + "_" + C.SessionName;
+            C.savetodb = false;
+            //C.DbPath = @"D:\trash_db";
+            C.ProjectName = "XNSE/IBM_test";
+            C.ProjectDescription = "rotating" + shape.ToString();
+            C.Tags.Add("rotating");
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+
+            switch (OuterBcType) {
+                case IncompressibleBcType.Wall:
+                case IncompressibleBcType.Pressure_Outlet:
+                    // ok;
+                    break;
+
+                default:
+                    throw new ArgumentException("not recommended to use boundary condition: " + OuterBcType);
+
+            }
+
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, false, OuterBcType);
+
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double Re = 1000;
+            double muA = 0.01;
+
+            //double partRad = 0.39;
+            double d_hyd = 2 * partRad;
+            double VelocityMax = Re * muA / rhoA / d_hyd;
+            double anglev = VelocityMax / partRad;
+
+            // The longest arm from the center of rotation is larger than the given parameter partRad for the popcorn case.
+            if (shape == Shape.Popcorn)
+                anglev = anglev / 1.39;
+
+            double[] pos = new double[SpaceDim];
+            double ts = 2 * Math.PI / anglev / NoOfTimeSteps; //   1 revolution around its rot. axis
+            Console.WriteLine("VelocityMax: {0} Angular Velocity: {1}", VelocityMax, anglev);
+
+            C.PhysicalParameters.IncludeConvection = IncludeConvection;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            string rotAxis;
+            if (RotAxis == null)
+                rotAxis = "y";
+            else
+                rotAxis = RotAxis;
+
+            C.SessionName = string.Format("k{0}_Re{1}_t{2}_ti{3:f3}at{4}_r{5}_AMR{6}_LoadBalance{7}", k, Re, NoOfTimeSteps, TiltAngle, rotAxis.ToUpper(), partRad, AMR, LoadBalance);
+            if (IncludeConvection) {
+                C.SessionName += "_NSE";
+                C.Tags.Add("NSE");
+            } else {
+                C.SessionName += "_Stokes";
+                C.Tags.Add("Stokes");
+            }
+            C.Tags.Add(SpaceDim + "D");
+            C.Tags.Add("transient");
+
+            // DG degrees
+            // ==========
+            C.SetFieldOptions(k, Math.Max(k, 2));
+            C.saveperiod = 5;
+
+            C.GridPartType = GridPartType.Hilbert;
+            //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            C.DynamicLoadBalancing_On = LoadBalance;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 10;
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+
+            C.ImmediatePlotPeriod = 10;
+            C.SuperSampling = 0;
+
+            //Set xRigid 
+            double ringRad = partRad / 2;
+            C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim, ringRad, rateOfRadius);
+            C.Rigidbody.SpecifyShape(shape);
+            C.Rigidbody.SetRotationAxis(rotAxis);
+
+            var tiltAxis = new Vector(1, 0, 0);
+            C.SessionName += $"_W{anglev:f2}";
+            C.Rigidbody.SetTilt(tiltAxis, TiltAngle);
+            C.AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
+            C.UseImmersedBoundary = true;
+
+            C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            C.AddBoundaryValue(OuterBcType.ToString());
+
+            //double inletdelay = 5*ts;
+            //C.AddBoundaryValue("Velocity_inlet","VelocityX",new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)",true));
+            //C.AddBoundaryValue("Velocity_inlet","VelocityX",new Formula($"(X) => {VelocityIn}"));
+            //C.AddInitialValue("VelocityX", new Formula($"(X) => {VelocityIn}"));
+
+
+            // discretization settings
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = 0.2;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
+            //C.LinearSolver.NoOfMultigridLevels = 5;
+            //C.LinearSolver.ConvergenceCriterion = 1E-6;
+            //C.LinearSolver.MaxSolverIterations = 200;
+            //C.LinearSolver.MaxKrylovDim = 50;
+            //C.LinearSolver.TargetBlockSize = 10000;
+            //C.LinearSolver.verbose = true;
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.AdaptiveMeshRefinement = AMR;
+            if (AMR) {
+                C.SetMaximalRefinementLevel(AMRLevel);
+                C.AMR_startUpSweeps = AMRLevel;
+            }
+
+
+            // Timestepping
+            // ============
+            C.NoOfTimesteps = 1; //NoOfTimeSteps
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler; //BD4
+            C.dtFixed = ts;
+            C.SkipSolveAndEvaluateResidual = !SolverOn;
+            Console.WriteLine(C.SessionName); 
+
+            return C;
+
         }
 
 
@@ -6339,6 +6971,78 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
             };
         }
+
+        public static Func<IGrid> LongGridFuncFactory(int SpaceDim, int Res) {
+            double xMax = 1, yMax = 2, zMax = 1;
+            double xMin = 0, yMin = 0, zMin = 0;
+
+            if (SpaceDim == 2) {
+                return delegate {
+                    var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
+                    var _yNodes = GenericBlas.Linspace(yMin, yMax, Res * 2 + 1);
+
+                    GridCommons grd;
+                    grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
+
+
+                    grd.EdgeTagNames.Add(1, "Wall");
+                    //grd.EdgeTagNames.Add(2, "wall_upper");
+                    grd.EdgeTagNames.Add(3, "FreeSlip");
+                    //grd.EdgeTagNames.Add(4, "freeslip_right");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (X[1] <= yMin)
+                            et = 1;
+                        if (X[1] >= yMax)
+                            et = 1;
+                        if (X[0] <= xMin)
+                            et = 3;
+                        if (X[0] >= xMax)
+                            et = 3;
+
+                        return et;
+                    });
+                    return grd;
+                };
+            } else if (SpaceDim == 3) {
+                return delegate {
+
+                    var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
+                    var _yNodes = GenericBlas.Linspace(yMin, yMax, Res * 2 + 1);
+                    var _zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
+                    GridCommons grd;
+                    grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes);
+                    grd.EdgeTagNames.Add(1, "Wall");
+                    //grd.EdgeTagNames.Add(2, "wall_upper");
+                    grd.EdgeTagNames.Add(3, "FreeSlip");
+                    //grd.EdgeTagNames.Add(4, "freeslip_right");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (X[1] <= yMin)
+                            et = 1;
+                        if (X[1] >= yMax)
+                            et = 1;
+                        if (X[0] <= xMin)
+                            et = 3;
+                        if (X[0] >= xMax)
+                            et = 3;
+                        if (X[2] <= zMin)
+                            et = 3;
+                        if (X[2] >= zMax)
+                            et = 3;
+                        return et;
+                    });
+                    return grd;
+                };
+
+            } else {
+                throw new NotImplementedException();
+            }
+
+        }
+
 
         public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning, IncompressibleBcType OuterBcType) {
             double xMin = -1, yMin = -1, zMin = -1;

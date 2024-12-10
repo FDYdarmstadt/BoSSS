@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-
+        /*
         /// <summary>
         /// used by <see cref="EvaluateMultiphase"/>
         /// </summary>
@@ -81,7 +81,7 @@ namespace BoSSS.Foundation.XDG {
         /// used by <see cref="EvaluateMultiphase"/>
         /// </summary>
         double[] _levSetSign = new double[4];
-
+        */
         /// <summary>
         /// evaluation of field in cut- or near - cells;
         /// </summary>
@@ -95,6 +95,9 @@ namespace BoSSS.Foundation.XDG {
 
             {
                 //var resultAcc = result.ExtractSubArrayShallow(new int[] { ResultCellindexOffset + j, 0 }, new int[] { ResultCellindexOffset + j, M - 1 });
+
+                MultidimensionalArray[] _levSetVals = new MultidimensionalArray[4];
+                double[] _levSetSign = new double[4];
 
                 ushort RegionCode = trk.Regions.m_LevSetRegions[jCell];
 
@@ -168,7 +171,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        MultidimensionalArray m_CoordinateBuffer;
 
         private void Evaluate_ithSpecies(int j0, NodeSet NodeSet, MultidimensionalArray result, int ResultCellindexOffset, double ResultPreScale, int iSpecies, EvaluateInternalSignature EvalFunc) {
             int M = this.Basis.NonX_Basis.Length;
@@ -176,6 +178,7 @@ namespace BoSSS.Foundation.XDG {
             int K = NodeSet.NoOfNodes;        // number of nodes
             Debug.Assert(result.GetLength(1) == K, "rank 1 is assumed to correlate with node set");
 
+            MultidimensionalArray m_CoordinateBuffer = null;
             if (m_CoordinateBuffer == null)
                 m_CoordinateBuffer = MultidimensionalArray.Create(1, M);
 

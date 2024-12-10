@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
@@ -65,10 +66,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Determines maximal DG order within coarse system of a p-Multigrid. 
+        /// Determines maximal DG order within coarse system of a p-Multigrid;
+        /// a negative number triggers an automatic, dynamic selection;
         /// </summary>
         [DataMember]
-        public int pMaxOfCoarseSolver = 1;
+        public int pMaxOfCoarseSolver = -11;
+
+        int Get_pMaxOfCoarseSolver(int maxDeg) {
+            if (pMaxOfCoarseSolver >= 0)
+                return pMaxOfCoarseSolver;
+            else
+                return (int)Math.Ceiling(maxDeg*0.5);
+        }
+
 
         /// <summary>
         /// Sets the **maximum** number of Multigrid levels to be used.
@@ -97,11 +107,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int CoarseKickIn = 90000;
 
         /// <summary>
-        /// - if true, a p-two-grid method (<see cref="PTGconfig"/>) is used for the coarse solver
-        /// - if false, a direct solver (<see cref="DirectSolver"/>) is used at the coarsest solver
+        /// - if true, a p-two-grid method (<see cref="PTGconfig"/>) is used for the coarsest level
+        /// - if false, a direct solver (<see cref="DirectSolver"/>) is used at the coarsest level
         /// </summary>
         [DataMember]
-        public bool CoarseUsepTG = true;
+        public bool CoarseUsepTG = false;
 
 
         /// <summary>
@@ -114,6 +124,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public override string Shortname => "OrthoMG w Add Swz";
 
+        /// <summary> skip the pre-smoother </summary>
+        [DataMember]
+        public bool SkipPreSmoother = false;
+
+        /// <summary> Pre-smoother and coarse grid correction do not work sequential (i.e., residual from presmoother is not supplied to coarse grid solver) </summary>
+        [DataMember]
+        public bool NonSerialPreSmoother = false;
+
         /// <summary>
         /// 
         /// </summary>
@@ -125,67 +143,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             instance.Init(level);
             return instance;
         }
-
-        /*
-        int GetLocalDOF(MultigridOperator op, int pOfLowOrderSystem) {
-            if(pOfLowOrderSystem <= -1) {
-                return op.Mapping.LocalLength;
-            } else {
-
-                
-                var map = op.Mapping;
-                int D = map.AggGrid.SpatialDimension;
-                int acc = 0;
-                int NoOfVars = map.NoOfVariables;
-                int J = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                var bS = map.AggBasis;
-                for(int j = 0; j < J; j++) {
-                    for(int iVar = 0; iVar < NoOfVars; iVar++) {
-                        int p = (iVar == D ? pOfLowOrderSystem - 1 : pOfLowOrderSystem);
-                        acc += bS[iVar].GetLength(j, p);
-                    }
-                }
-                return acc;
-            }
-        }
-
-        /// <summary>
-        /// Number of Blocks at this level. Minimum 1 per core
-        /// </summary>
-        private int NoOfBlocksAtLevel(MultigridOperator op, int MGLevel = 0, int pCoarsest = -1, Func<int, int> targetblocksize = null) {
-            if(targetblocksize == null)
-                targetblocksize = (int iLevel) => TargetBlockSize;
-            int SchwarzblockSize = targetblocksize(MGLevel);
-            int LocalDOF4directSolver = GetLocalDOF(op, pCoarsest);
-            double SizeFraction = (double)LocalDOF4directSolver / (double)SchwarzblockSize;
-            //SizeFraction = SizeFraction.MPIMax(); [Toprak] the bug cannot be reproduced, therefore, it is reverted to the previous version.
-            //when the number of blocks are not the same on the processors, it causes deadlock in MPI processes
-            //Hard solution would be checking all MPI processes written in SubBlocks and modify them to allow different numbered block partitioning 
-
-            //if(SizeFraction < 1) {
-            //    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver}) < Schwarz-Block size ({SchwarzblockSize});");
-            //    Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
-            //}
-            int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Floor(SizeFraction));
-            return LocalNoOfSchwarzBlocks;
-        }
-
-
-        /// <summary>
-        /// No Of Local Schwarz Blocks (process local) for all MG levels
-        /// </summary>
-        private int[] NoOfSchwarzBlocks(MultigridOperator op, int pCoarsest = -1, Func<int, int> targetblocksize = null) {
-            int MSLength = op.NoOfLevels;
-            var NoOfBlocks = MSLength.ForLoop(level => -1);
-            for(int iLevel = 0; iLevel < MSLength; iLevel++) {
-                int LocalNoOfSchwarzBlocks = NoOfBlocksAtLevel(op.GetLevel(iLevel), iLevel, pCoarsest, targetblocksize);
-                NoOfBlocks[iLevel] = LocalNoOfSchwarzBlocks;
-            }
-            return NoOfBlocks;
-        }
-        */
-
-
+        
         double ComputeInbalance(MultigridOperator level) {
             long LocalLength = level.Mapping.LocalLength;
             long MaxLocalLength = LocalLength.MPIMax();
@@ -199,11 +157,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         int[] GetLoOrderDegrees(MultigridOperator level) {
             int[] Degrees = level.Degrees;
-            int DegDecrease = Math.Max(Degrees.Max() - this.pMaxOfCoarseSolver, 0);
+            int DegDecrease = Math.Max(Degrees.Max() - this.Get_pMaxOfCoarseSolver(level.Degrees.Max()), 0);
             int[] loDegrees = Degrees.Select(deg => Math.Max(deg - DegDecrease, 0)).ToArray();
             return loDegrees;
         }
 
+        /// <summary>
+        /// Number of DG basis polynomials for different spatial dimensions
+        /// </summary>
         static int Np(int D, int p) {
             switch (D) {
                 case 1: return p + 1;
@@ -247,7 +208,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 {
                     if (this.UsepTG) {
                         var lowDOF = this.GetLowOrderLength(level);
-                        tr.Info($"low-order (pMaxOfCoarseSolver = {this.pMaxOfCoarseSolver}) DOF: {lowDOF}");
+                        tr.Info($"low-order (pMaxOfCoarseSolver = {this.Get_pMaxOfCoarseSolver(level.Degrees.Max())}) DOF: {lowDOF}");
                         LocalNoOfBlocks = lowDOF/TargetBlockSize;
                     } else {
                         LocalNoOfBlocks = level.Mapping.LocalLength/TargetBlockSize;
@@ -351,7 +312,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-
+        /// <summary>
+        /// Configures the multigrid operator with a chain of solvers and smoothers.
+        /// </summary>
+        /// <param name="op"></param>
+        /// <param name="SchwarzblockSize"></param>
+        /// <returns></returns>
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int, int> SchwarzblockSize) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
@@ -364,6 +330,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int FinerLevelGlobalBlocks = int.MaxValue;
                 int FinerLevelLocalBlocks = FinerLevelGlobalBlocks / mpiSz;
 
+                tr.Info($"Setting multigrid configuration ...");
+
+                if (SkipPreSmoother)
+                    tr.Info("Skipping pre-smoother is enabled.");
+                else if (NonSerialPreSmoother) {
+                    tr.Info("NonSerialPreSmoother is enabled, so coarse grid and pre-smoother are independent.");
+                }
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
                     int iLevel = op_lv.LevelIndex;
@@ -382,7 +355,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         long CoarseLength = ((long)this.GetLowOrderLength(op_lv)).MPISum();
 
                         if (CoarseLength <= this.CoarseKickIn) {
-                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, using p-two-grid (pTG), low-order DOF {CoarseLength} <= kick-in-value ({this.CoarseKickIn}). ");
+                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, using p-two-grid (pTG), low-degree is {this.Get_pMaxOfCoarseSolver(op_lv.Degrees.Max())}, low-order DOF {CoarseLength} <= kick-in-value ({this.CoarseKickIn}). ");
                             TerminateMultigrid = true;
                         }
 
@@ -411,7 +384,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                             var coarseConfig = new PTGconfig() {
-                                pMaxOfCoarseSolver = this.pMaxOfCoarseSolver,
+                                pMaxOfCoarseSolver = this.Get_pMaxOfCoarseSolver(op_lv.Degrees.Max()),
                             };
 
                             var _levelSolver2 = coarseConfig.CreateInstance(op_lv);
@@ -478,9 +451,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         };
                         _levelSolver4.config.m_omega = 1; // v-cycle
                         //_levelSolver4.config.m_omega = 2; // w-cycle
+                        _levelSolver4.config.SkipPreSmoother = this.SkipPreSmoother;
+                        _levelSolver4.config.NonSerialPreSmoother = this.NonSerialPreSmoother;
 
-
-                        if(altSmooth3 != null) {
+                        if (altSmooth3 != null) {
                             _levelSolver4.AdditionalPostSmoothers = new[] { altSmooth3 }; 
                         }
 
@@ -540,10 +514,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             rest.CoarserLevelSolver = levelSolver;
                     }
 
-                    if (TerminateMultigrid)
+                    if (TerminateMultigrid) {
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, terminating multigrid recursion.");
                         break;
+                    }
+
+                    if(op_lv.CoarserLevel == null) {
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, terminating multigrid recursion, no further level available.");
+
+                    }
                 }
 
+                tr.Info($"KcycleMultiSchwarz: depth of multigrid configuration: {SolverChain.Count}.");
                 return SolverChain[0];
             }
         }

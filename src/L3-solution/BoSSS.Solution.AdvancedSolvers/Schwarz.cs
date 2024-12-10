@@ -777,16 +777,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ==============
 
                 // multiple watchdogs to detect out-of-sync                
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
-                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 780);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 781);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 782);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 783);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 784);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 785);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 786);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 787);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 788);
+                MPICollectiveWatchDog.Watch(op.Mapping.MPI_Comm, token: 789);
 
                 // solution scaling in overlapping regions
                 // =======================================
@@ -1399,6 +1399,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //    this.CoarseSolver.Dispose();
             //    //this.CoarseSolver = null; // don't delete - we need this again for the next init
             //}
+            m_MgOp = null;
         }
 
         /// <summary>

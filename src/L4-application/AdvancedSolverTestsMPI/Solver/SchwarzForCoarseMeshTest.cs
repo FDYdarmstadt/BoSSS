@@ -18,11 +18,20 @@ namespace AdvancedSolverTestsMPI.Solver {
         // --test=AdvancedSolverTestsMPI.Solver.SchwarzForCoarseMeshTest.TestInit
         [Test]
         public static void TestInit(
-            [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+#if DEBUG
+            [Values(XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
             [Values(4)] int Res,
+            [Values(-1, 1)] int BlockVariation,
+            [Values(1)] int SwzOverlap
+#else
+            [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(4, 8)] int Res,
             [Values(-2, -1, 0, 1, 2)] int BlockVariation,
             [Values(0, 1, 2)] int SwzOverlap
+
+#endif
             ) { //
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
             if (MPISize <= 1) {

@@ -48,14 +48,16 @@ namespace BoSSS.Application.ZwoLsTest {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            //InitMPI();
+            InitMPI();
+            BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, true);
             //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, true);
-            //Assert.IsTrue(false, "Remove me");
-            
+            Assert.IsTrue(false, "Remove me");
+                        
             BoSSS.Solution.Application._Main(
                 args,
                 true,
                 () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye, DYNAMIC_BALANCE = true });
+            
         }
 
         protected override IGrid CreateOrLoadGrid() {
@@ -225,6 +227,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             //Op.EquationComponents["c1"].Add(new DxBroken());
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 
@@ -601,7 +604,9 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
             // operator-matrix assemblieren
-            MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
+            BlockMsrMatrix OperatorMatrixPar = new BlockMsrMatrix(u.Mapping, u.Mapping);
+            BlockMsrMatrix OperatorMatrix = new BlockMsrMatrix(u.Mapping, u.Mapping);
+            double[] AffinePar = new double[OperatorMatrixPar.RowPartitioning.LocalLength];
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // Agglomerator setup
@@ -622,7 +627,23 @@ namespace BoSSS.Application.ZwoLsTest {
             // operator matrix assembly
             XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
             mtxBuilder.time = 0.0;
+            //ilPSP.Environment.NumThreads = 1;
+            mtxBuilder.ComputeMatrix(OperatorMatrixPar, AffinePar);
+            int oldNumThreads = ilPSP.Environment.NumThreads;
+            ilPSP.Environment.NumThreads = 1;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
+            ilPSP.Environment.NumThreads = oldNumThreads;
+
+            var diff = OperatorMatrixPar.CloneAs();
+            diff.Acc(-1.0, OperatorMatrix);
+            double MatrixDiffNorm = diff.InfNorm();
+            double AffineDiffNorm = AffinePar.MPI_L2Dist(Affine);
+            Console.WriteLine($"MatrixDiffNorm: {MatrixDiffNorm:-0.####e-00}, AffineDiffNorm: {AffineDiffNorm:-0.####e-00}");
+
+            Assert.Less(MatrixDiffNorm, 1.0e-10, "Difference in multi-thread and single-thread matrix computation.");
+            Assert.Less(AffineDiffNorm, 1.0e-10, "Difference in multi-thread and single-thread affine computation.");
+
+
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 
             // mass matrix factory
@@ -647,7 +668,7 @@ namespace BoSSS.Application.ZwoLsTest {
             // operator auswerten:
             double[] x = new double[Affine.Length];
             BLAS.daxpy(x.Length, 1.0, Affine, 1, x, 1);
-            OperatorMatrix.SpMVpara(1.0, u.CoordinateVector, 1.0, x);
+            OperatorMatrix.SpMV(1.0, u.CoordinateVector, 1.0, x);
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
             Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).Extrapolate(du_dx.Mapping);
 

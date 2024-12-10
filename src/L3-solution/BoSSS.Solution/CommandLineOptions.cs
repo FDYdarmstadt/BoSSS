@@ -22,6 +22,13 @@ namespace BoSSS.Solution {
         public int PstudyCase { get; set; }
 
         /// <summary>
+        /// number of threads per MPI process
+        /// </summary>
+        [Option('T', "num_threads", Default = null, HelpText = "number of threads (OpenMP and C# Task Parallel Library) for each MPI process")]
+        public int? NumThreads { get; set; }
+
+
+        /// <summary>
         /// path to control file
         /// </summary>
         [Option('c', "control", HelpText = "path to control file - or  - when starting with the prefix 'cs:', a single line of C#-code which results in a control object")]
@@ -78,7 +85,8 @@ namespace BoSSS.Solution {
         public bool delPlt { get; set; }
 
         /// <summary>
-        /// Override for the project name in the control file (<see cref="Control.AppControl.ProjectName"/>), resp. the 
+        /// Override for the project name in the control file (<see cref="Control.AppControl.ProjectName"/>), 
+        /// resp. the 
         /// session information (<see cref="BoSSS.Foundation.IO.ISessionInfo.ProjectName"/>).
         /// </summary>
         [Option('P', "prjnmn", HelpText = "overrides the project name.")]

@@ -182,6 +182,7 @@ namespace IntersectingLevelSetTest {
             Op.EquationComponents["c1"].Add(new LevSetJump_CA()); // flux am lev-set 1
             Op.EquationComponents["c1"].Add(new LevSetJump_CB()); // flux am lev-set 1
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 
@@ -190,9 +191,10 @@ namespace IntersectingLevelSetTest {
 
             //phystime = 1.8;
             LsUpdate(phystime);
+			PlotCurrentState(phystime, TimestepNo);
 
-            // operator-matrix assemblieren
-            MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
+			// operator-matrix assemblieren
+			MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
@@ -203,7 +205,9 @@ namespace IntersectingLevelSetTest {
 
             // mass matrix factory
             SpeciesId[] species = new SpeciesId[] { LsTrk.GetSpeciesId("A") , LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("C") };
-            var Mfact = LsTrk.GetXDGSpaceMetrics(species, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
+			LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("C") }, QuadOrder, 1).WriteAllQuadratureRulesToVtp();// write quadrature nodes
+
+			var Mfact = LsTrk.GetXDGSpaceMetrics(species, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
 
 
             // Mass matrix/Inverse Mass matrix

@@ -75,13 +75,38 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            /*
-            InitMPI();
-            DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+            //ilPSP.Environment.NumThreads = 1;
 
+            //InitMPI();
+            //DeleteOldPlotFiles();
+
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.RollingSaveTest(true, TimeSteppingScheme.BDF2, 5);
+
+            //using (var solver = new XNSE()) {
+            //    //solver.Init(PhysicalBasedTestcases.RisingBubble.RB_BenchmarkTest());
+            //    solver.Init(PhysicalBasedTestcases.BasicControls.BoxStaticDropletWall(theta: Math.PI / 4 + 2 * Math.PI/12, amrlevel: 2));
+            //    solver.Control.ImmediatePlotPeriod = 1;
+            //    solver.Control.SuperSampling = 3;
+            //    solver.RunSolverMode();
+            //}
+
+            //FinalizeMPI();
+            //System.Environment.Exit(-111);
+
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_reverse(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.CapillaryRiseTest();
+            //BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194;
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2); 
+            //System.Environment.Exit(111);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
+
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+            //System.Environment.Exit(111);
+
+            /*
             var plots = new List<Plot2Ddata>();
             for(int i = 0; i < 4; i++) {
                 var p = new Plot2Ddata();
@@ -145,7 +170,7 @@ namespace BoSSS.Application.XNSE_Solver {
             NUnit.Framework.Assert.IsTrue(false, "remove me"); 
             */
 
-            
+
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
@@ -193,10 +218,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Algoim
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye}, {XQuadFactoryHelper.MomentFittingVariants.Algoim} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -423,6 +448,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             FinalOperatorSettings(XOP, D);
+            XOP.FluxesAreNOTMultithreadSafe = false; // enable multi-threaded evaluation of fluxes
             XOP.Commit();
 
             return XOP;
@@ -598,13 +624,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+            } else {
+                if (this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton)
+                    throw new ApplicationException("illegal configuration");
                 opFactory.AddEquation(new NavierStokes_Newton("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes_Newton("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else {
-                throw new NotSupportedException();
-            }
+            } 
+
             opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, config));
         }
 
@@ -695,7 +722,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
                 double AvgCells = NoOfCellsTot / (double)this.MPISize;
                 double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
-                double RelCutCellsInbalance = (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
+                double RelCutCellsInbalance = NoOfCutCells_Max == 0 ? 0 : (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
 
                 Console.WriteLine($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
                 Console.WriteLine($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");
@@ -707,13 +734,19 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
-                if(Control.FailOnSolverFail && !success)
+                if (Control.FailOnSolverFail && !success) {
+                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling);
+                    SaveToDatabase(TimestepNo, phystime);
                     throw new ArithmeticException("Solver did not converge.");
+                }
 
                 return dt;
             }
         }
+
+
         protected virtual List<DGField> GetInterfaceVelocity(){
+            MPICollectiveWatchDog.Watch();
             int D = this.GridData.SpatialDimension;
             var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             var PhysParam = this.Control.PhysicalParameters;
@@ -794,6 +827,14 @@ namespace BoSSS.Application.XNSE_Solver {
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
             double s = 0.5; // safety factor
+            int D = this.GridData.SpatialDimension;
+
+            List<DGField> LevelSetVelocity;
+            IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+            if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification)))
+                LevelSetVelocity = GetInterfaceVelocity();
+            else
+                LevelSetVelocity = null;
 
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
@@ -827,14 +868,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // level set cfl
-                {
-                    int D = this.GridData.SpatialDimension;
-                    IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
-                    if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
+                {   
+                    if (LevelSetVelocity != null) {
                         // At this point the level set velocity is not updated to the correct value
                         //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
-
-                        var LevelSetVelocity = GetInterfaceVelocity();
 
                         double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
                         dt_cfl *= s / Math.Pow(p, 2);
@@ -881,6 +918,42 @@ namespace BoSSS.Application.XNSE_Solver {
 
             }
         }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from an analytic solution
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="Time"></param>
+        /// <param name="St"></param>
+        protected override void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
+            using (new FuncTrace()) {
+                Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
+
+                // level-set
+                // ---------
+                this.LsUpdater.LevelSets["Phi"].DGLevelSet.ProjectField(X => this.Control.Phi(X, Time));
+                //this.LsUpdater.LevelSets[0].CGLevelSet..ProjectField(X => this.Control.Phi(X, Time));
+
+                //this.LsTrk.UpdateTracker(Time, incremental: true);
+
+                // solution
+                // --------
+                int D = this.LsTrk.GridDat.SpatialDimension;
+
+                for (int d = 0; d < D; d++) {
+                    XDGField _u = (XDGField)St[d];
+                    _u.Clear();
+                    _u.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionVelocity["A"][d](X, Time));
+                    _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionVelocity["B"][d](X, Time)));
+                }
+                XDGField _p = (XDGField)St[D];
+                _p.Clear();
+                _p.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionPressure["A"](X, Time));
+                _p.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionPressure["B"](X, Time)));
+            }
+        }
+
 
 
     }

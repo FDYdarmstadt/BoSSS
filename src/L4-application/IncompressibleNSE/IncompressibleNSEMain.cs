@@ -7,6 +7,8 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +20,14 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// </summary>
     public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<IncompressibleControl> {
 
+
+
+
+
         static void Main(string[] args) {
+
+
+
             _Main(args, false, delegate () {
                 var p = new IncompressibleNSEMain();
                 return p;

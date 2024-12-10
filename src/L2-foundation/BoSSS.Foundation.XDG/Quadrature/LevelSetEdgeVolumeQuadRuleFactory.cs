@@ -732,6 +732,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 noOfItemsLocally = mask.NoOfItemsLocally;
             }
 
+            public override Quadrature<CellEdgeBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); // 
+            }
+
             /// <summary>
             /// Computes the integrals while overwriting <see cref="Results"/>
             /// </summary>
@@ -887,6 +891,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 noOfItemsLocally = mask.NoOfItemsLocally;
             }
 
+            public override Quadrature<CellBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); // 
+            }
 
 
             /// <summary>
@@ -929,10 +936,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     var Kref = gridData.iGeomCells.GetRefElement(jCell);
                     int NoOfFaces = Kref.NoOfFaces;
 
-                    if(jCell == 1410) {
-                        Console.WriteLine();
-                    }
-
                     for (int e = 0; e < NoOfFaces; e++) { // loop over faces...
                         MultidimensionalArray levelSetNormals =
                             LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, jCell, CurrentRule, e);
@@ -971,6 +974,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
             }
+
         }
     }
 }

@@ -38,12 +38,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         /// <summary>
         /// Constructor for 
         /// </summary>
-        /// <param name="spcName"></param>
-        /// <param name="SpatDim"></param>
-        /// <param name="_bcmap"></param>
-        /// <param name="_component"></param>
-        /// <param name="EoS"></param>
-        /// <param name="NumberOfComponents"></param>
         public LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(string spcName, int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, MaterialLaw EoS, int NumberOfComponents = -1) : base(SpatDim, _bcmap, _component, EoS, NumberOfComponents) {
             ValidSpecies = spcName;
         }
@@ -51,12 +45,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         /// <summary>
         /// Constructor for incompressible flow. Just for testing
         /// </summary>
-        /// <param name="spcName"></param>
-        /// <param name="SpatDim"></param>
-        /// <param name="_bcmap"></param>
-        /// <param name="_component"></param>
-        /// <param name="EoS"></param>
-        /// <param name="NumberOfComponents"></param>
         public LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(string spcName, int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component) : base(SpatDim, _bcmap, _component) {
             ValidSpecies = spcName;
         }
@@ -72,12 +60,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         /// <summary>
         /// Constructor for 
         /// </summary>
-        /// <param name="spcName"></param>
-        /// <param name="SpatDim"></param>
-        /// <param name="_bcmap"></param>
-        /// <param name="_component"></param>
-        /// <param name="EoS"></param>
-        /// <param name="NumberOfComponents"></param>
         public LowMachCombustionConvectionInSpeciesBulk_LLF(string spcName, int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, MaterialLaw EoS, int NumberOfComponents = -1) : base(SpatDim, _bcmap, _component, EoS, NumberOfComponents) {
             ValidSpecies = spcName;
         }
@@ -85,12 +67,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         /// <summary>
         /// Constructor for incompressible flow. Just for testing
         /// </summary>
-        /// <param name="spcName"></param>
-        /// <param name="SpatDim"></param>
-        /// <param name="_bcmap"></param>
-        /// <param name="_component"></param>
-        /// <param name="EoS"></param>
-        /// <param name="NumberOfComponents"></param>
         public LowMachCombustionConvectionInSpeciesBulk_LLF(string spcName, int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component) : base(SpatDim, _bcmap, _component) {
             ValidSpecies = spcName;
         }

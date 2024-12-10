@@ -143,12 +143,14 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if (Config_LevelSetHandling == LevelSetHandling.None) {
                 m_LsTrk.IncreaseHistoryLength(0);
-            } else if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                  || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                  || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
-                m_LsTrk.IncreaseHistoryLength(1);
-            } else {
-                m_LsTrk.IncreaseHistoryLength(S + 1);
+            } 
+            //else if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
+            //      || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+            //      || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
+            //    m_LsTrk.IncreaseHistoryLength(1);
+            //} 
+            else {
+                m_LsTrk.IncreaseHistoryLength(S);
             }
 
             // mass-matrix stack
@@ -204,8 +206,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             // other stuff
             // -----------
 
-            //if (!DelayInit)
-            InitTimestepping(true);
+            if (!DelayInit)
+                InitTimestepping(true);
         }
 
         BDFSchemeCoeffs[] m_TSCchain;
@@ -257,26 +259,27 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <returns></returns>
         public ICollection<DGField>[] GetRestartInfos() {
 
-            if(m_PopulatedStackDepth < m_TSCchain[0].S)
+            if (m_PopulatedStackDepth < 1)
                 return null;
 
-            Debug.Assert(m_PopulatedStackDepth == m_TSCchain[0].S);
+            ICollection<DGField>[] restartInfo = new List<DGField>[Math.Min(m_PopulatedStackDepth, m_TSCchain[0].S - 1)];
 
-            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth - 1];
+            for(int i = 0; i < Math.Min(m_PopulatedStackDepth, m_TSCchain[0].S - 1); i++) {
+                restartInfo[i] = new List<DGField>();
 
-            for(int i = 1; i < m_TSCchain[0].S; i++) {
-                restartInfo[i - 1] = new List<DGField>();
-
-                if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-
-                    DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
-                    restartInfo[i - 1].Add(phiField);
+                if(m_Stack_u[i + 1].Fields.Where(stf => stf is XDGField).Any()) {
+                    DGField phiField;
+                    if (this.Config_LevelSetHandling == LevelSetHandling.None) { // in this case the history stack for the level set is always of length 1!
+                        phiField = (DGField)m_LsTrk.LevelSetHistories[0][0];
+                    } else {
+                        phiField = (DGField)m_LsTrk.LevelSetHistories[0][-i];
+                    }
+                    restartInfo[i].Add(phiField);
                 }
 
-                DGField[] solFields = m_Stack_u[i].Mapping.Fields.ToArray();
+                DGField[] solFields = m_Stack_u[i + 1].Mapping.Fields.ToArray();
                 foreach(DGField f in solFields) {
-                    restartInfo[i - 1].Add(f);
+                    restartInfo[i].Add(f);
                 }
 
             }
@@ -472,8 +475,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                         int newVersion = m_LsTrk.VersionCnt;
 
                         if ((newVersion - oldVersion) != 1)
-                            throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
+                            throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");    
                     }
+
+                    // reset the internal state of the LevelSetTracker
+                    m_LsTrk.ResetCurrentTimeLevel(time);
 
                     // re-sort mass matrices
                     {
@@ -536,7 +542,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ----------------------
             if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
                 m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, Config_AgglomerationThreshold,
-                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
+                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true, Tag: "InitTimestepping");
 
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
@@ -806,7 +812,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         __AgglomerationTreshold: base.Config_AgglomerationThreshold,
                         AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
                         ExceptionOnFailedAgglomeration: true,
-                        oldTs__AgglomerationTreshold: oldAggTrsh);
+                        oldTs__AgglomerationTreshold: oldAggTrsh, Tag: "DataRestoreAfterBalancing");
 
                 }
 
@@ -934,8 +940,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                             throw new ApplicationException();
                         updateAgglom = true;
                     } else {
-                        if (m_CurrentAgglomeration == null)
-                            throw new ApplicationException();
+                        if (m_CurrentAgglomeration == null) { 
+                            Console.WriteLine("Current agglomeration cannot be found: please check the details");
+                            Console.WriteLine("(If you are estimating condition number via operator analysis routine, you can ignore this.)");
+                        }
+                        //throw new ApplicationException(); //this error looks like not compatible with the operator analysis routine (it will call agglomeration in the below anyway)
                     }
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
@@ -952,7 +961,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         Debug.Assert(m_IterationCounter == 0);
                         m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold,
-                            AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
+                            AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true, Tag: "AssembleMatrixCallback");
 
                     } else {
                         // Agglomeration update in the case of a moving interface - consider previous time-steps
@@ -971,7 +980,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                             __AgglomerationTreshold: base.Config_AgglomerationThreshold,
                             AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
                             ExceptionOnFailedAgglomeration: true,
-                            oldTs__AgglomerationTreshold: oldAggTrsh);
+                            oldTs__AgglomerationTreshold: oldAggTrsh,
+                            Tag: "AssembleMatrixCallback");
                     }
 
 
@@ -1042,47 +1052,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 else
                     OpMatrix = null;
 
-                /*
-                void FillMatrixWithRandomShit(BlockMsrMatrix OpMtx) {
-                    Random rnd = new Random();
-                    double[] buf = 10000.ForLoop(i => rnd.NextDouble());
-
-                    int c = 0;
-                    int J = this.m_LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-                    var bs = CurrentStateMapping.BasisS;
-                    for(int row_j = 0; row_j < J; row_j++) {
-                        this.m_LsTrk.GridDat.GetCellNeighbours(row_j, GetCellNeighbours_Mode.ViaEdges, out int[] Neighs, out _);
-                        row_j.AddToArray(ref Neighs);
-
-                        foreach(int col_j in Neighs) {
-                            for(int rowVar = 0; rowVar < bs.Count; rowVar++) {
-                                for(int colVar = 0; colVar < bs.Count; colVar++) {
-                                    int N = bs[rowVar].GetLength(row_j);
-                                    int M = bs[colVar].GetLength(col_j);
-
-                                    for(int n = 0; n < N; n++) {
-                                        for(int m = 0; m < M; m++) {
-                                            long iRow = CurrentStateMapping.GlobalUniqueCoordinateIndex(rowVar, row_j, n);
-                                            long iCol = CurrentStateMapping.GlobalUniqueCoordinateIndex(colVar, col_j, m);
-
-                                            OpMtx[iRow, iCol] = buf[c];
-                                            c++;
-                                            if(c >= buf.Length)
-                                                c = 0;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                    }
-                }
-
-                if(OpMatrix != null) {
-                    FillMatrixWithRandomShit(OpMatrix);
-                }
-                //*/
-
+                
                 // clear affine part
                 double[] OpAffine = new double[CurrentStateMapping.LocalLength];
 
@@ -1153,7 +1123,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int s = 1; s <= Tsc.S; s++) { // loop over BDF stages
                         if (CurrentAffine != null) {
                             if (CurrentMassMatrix != null) {
+                                //RHS.SaveToTextFile("RHS_Before_Initial_Values.txt");
                                 CurrentMassMatrix.SpMV(Tsc.beta[s - 1] / dt, this.m_Stack_u[s], 1.0, RHS); //   (1/dt)*M0*u0 
+                                //RHS.SaveToTextFile("RHS_After_Initial_Values.txt");
+                                //OpAffine.SaveToTextFile($"RHS_After_R0_fix_{phystime.ToString()}.txt
+                                //OpMatrixMod.SaveToTextFileSparse("matrixAfterR0Fix.txt");
                             } else {
                                 Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                                 RHS.AccV(Tsc.beta[s - 1] / dt, this.m_Stack_u[s]);
@@ -1184,6 +1158,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // left-hand-side
                 if(Linearization) {
                     System = CurrentOpMatrix.CloneAs();
+                    //System.SaveToTextFile("Stokes_Anteil_Left_Hand_Side.txt");
                     if(Tsc.theta1 != 1.0)
                         System.Scale(Tsc.theta1);
                 } else {
@@ -1191,7 +1166,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 if (CurrentMassMatrix != null) {
                     if(Linearization) {
-                        System.Acc(1.0 / dt, CurrentMassMatrix);
+                        System.Acc(1.0 / dt, CurrentMassMatrix);  
+                        //System.SaveToTextFile("Stokes_Anteil_and_Mass_Left_Hand_Side.txt");
                     } else {
                         CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
                     }
@@ -1209,7 +1185,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ---------------------
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, Affine, CurrentStateMapping, CurrentStateMapping);
-                
+
                 if(Linearization) {
                     m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
                     m_LsTrk.CheckMatrixZeroInEmptyCutCells(System, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
@@ -1477,7 +1453,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(m_LsTrk.HistoryLength >= 1);
                     var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                         __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
-                        oldTs__AgglomerationTreshold: new double[] { 0.0 });
+                        oldTs__AgglomerationTreshold: new double[] { 0.0 }, Tag: "SolveIncrement");
                     for (int i = 0; i < this.m_Stack_u.Length; i++)
                         SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
 
@@ -1563,6 +1539,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
                         RHS.ScaleV(-1);
 
+
                         // update the multigrid operator
                         csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                         MultigridOperator mgOperator;
@@ -1571,7 +1548,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 System, MaMa,
                                 this.Config_MultigridOperator,
                                 dummy);
-                            OrthonormalizationMultigrid.AgglomMassMatrix = MaMa;
                         }
 
                         //string path = Directory.GetCurrentDirectory();
@@ -1681,6 +1657,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.NextIteration(true);
                 }
 
+                //bool calculateCondNumbers = false;
+                
+                //if (calculateCondNumbers) {
+                //    var table = base.OperatorAnalysis(plotStencilCondNumViz: false, calculateStencils: false, calculateMassMatrix: true);
+                //    table.SaveToTextFileDebugUnsteady("CondEst", ".txt",true);
+                //}
+
                 int newLsTrkPushCount = m_LsTrk.PushCount;
                 if (newLsTrkPushCount != oldLsTrkPushCount)
                     throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
@@ -1719,7 +1702,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(m_LsTrk.HistoryLength >= 1);
                     var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                         __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
-                        oldTs__AgglomerationTreshold: new double[] { 0.0 });
+                        oldTs__AgglomerationTreshold: new double[] { 0.0 }, Tag: "SolveIncrement");
                     for (int i = 0; i < this.m_Stack_u.Length; i++)
                         SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
 

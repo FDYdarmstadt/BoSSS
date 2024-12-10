@@ -117,6 +117,13 @@ namespace ilPSP {
         private int m_Offset;
 
         /// <summary>
+        /// Matrix structure, general, diagonal, lower triangular etc.
+        /// Relevant for matrix operations stored as MultidimensionalArray
+        /// </summary>
+        [DataMember]
+        private MatrixStructure m_matrixStructure = MatrixStructure.General;
+
+        /// <summary>
         /// Retrieves the value of the cycle (see
         /// <see cref="StorageLayout.m_Cycle0"/>,
         /// <see cref="StorageLayout.m_Cycle1"/>, ...) indexed by
@@ -235,7 +242,7 @@ namespace ilPSP {
         /// true if all entries of the array lie in a continuous index region of the 
         /// memory <see cref="Storage"/>.
         /// </summary>
-        public bool IsContinious {
+        public bool IsContinuous {
             get {
                 int Dim = this.Dimension;
                 int Cyc_d_cont = 1;
@@ -250,6 +257,12 @@ namespace ilPSP {
                 return true;
             }
         }
+
+        public MatrixStructure StructureType {
+            get { return m_matrixStructure; }
+            set { m_matrixStructure = value; }
+        }
+
 
         /// <summary>
         /// set/get one element; 2D - version;
@@ -596,7 +609,7 @@ namespace ilPSP {
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MultidimensionalArray ResizeShallow(params int[] NewLengths) {
-            if (this.IsContinious == false)
+            if (this.IsContinuous == false)
                 throw new NotSupportedException("currently, resizing is only available for continuous arrays.");
 
             // check
@@ -840,7 +853,7 @@ namespace ilPSP {
                 throw new ApplicationException("illegal call - object is locked.");
 
             //int[] ind = new int[this.Dimension];
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 int L = this.Length;
                 if (L > 0)
                     Array.Clear(m_Storage, this.m_Offset, L);
@@ -853,8 +866,7 @@ namespace ilPSP {
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        public int CheckForNanOrInf(bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true) {
-
+        public int CheckForNanOrInf(bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null) {
             int Problems = 0;
 
             this.ApplyAll(delegate(int[] index, double a) {
@@ -872,7 +884,13 @@ namespace ilPSP {
                                 stw.Write(index.Last());
                                 stw.Write("]");
 
-                                throw new ArithmeticException("NaN found at " + stw.ToString() + "-th entry.");
+                                if (messageprefix == null)
+                                    messageprefix = "";
+                                else
+                                    messageprefix = messageprefix + ": ";
+
+
+                                throw new ArithmeticException($"{messageprefix}NaN found at " + stw.ToString() + "-th entry.");
                             }
                         } else {
                             Problems++;
@@ -892,8 +910,12 @@ namespace ilPSP {
                                 stw.Write(index.Last());
                                 stw.Write("]");
 
+                                if (messageprefix == null)
+                                    messageprefix = "";
+                                else
+                                    messageprefix = messageprefix + ": ";
 
-                                throw new ArithmeticException("Inf found at " + stw.ToString() + "-th entry.");
+                                throw new ArithmeticException($"{messageprefix}Inf found at " + stw.ToString() + "-th entry.");
                             }
                         } else {
                             Problems++;
@@ -1213,6 +1235,32 @@ namespace ilPSP {
 
 
         /// <summary>
+        /// Creates a matrix with all the possible combinations of elements in set x in n-dimension.
+        /// Row index: point index, column index: dimension.
+        /// </summary>
+        /// <remarks>increments with the order from the lowest to the highest dim </remarks>
+        public static MultidimensionalArray CreateCartesianPairProduct(double[] x, int n) {
+            if (n < 0)
+                throw new ArgumentOutOfRangeException();
+
+            int numberOfCombinations = (int)Math.Pow(x.Length,n); 
+            var r = Create(numberOfCombinations, n);
+
+            for (int i = 0; i < numberOfCombinations; i++) {
+                // Write i in base-(x.Length) notation and and assign the element of x w.r.t. each digit (last digit to first dimension).
+                // e.g. x.Length=3, d=2, i=0: base-2 notation= 0 0 => r[i,0]=x[0],  r[i,1]=x[0]
+                // e.g. x.Length=3, d=2, i=1: base-2 notation= 0 1 => r[i,0]=x[1],  r[i,1]=x[0]
+                int temp = i;
+                for (int j = 0; j < n; j++) {
+                    r[i, j] = x[temp % x.Length]; //assign the remainder-th element into i in component j
+                    temp /= x.Length;             //pass the division for the next dimension
+                }
+            }
+
+            return r;
+        }
+
+        /// <summary>
         /// Creates a wrapper for the given one-dimensional array. That is,
         /// the result will be a shallow 'copy' of
         /// <paramref name="wrappedArray"/>.
@@ -1378,14 +1426,14 @@ namespace ilPSP {
                 // concatenate rows
                 // ++++++++++++++++
 
-                if (IsContinious && typeof(T).Equals(typeof(double[]))) {
+                if (IsContinuous && typeof(T).Equals(typeof(double[]))) {
                     // optimized version
 
                     double[] _array = array as double[];
                     Array.Copy(this.m_Storage, this.Index(0, 0), _array, arrayoffset, this.Length);
                 } else {
 
-                    if (IsContinious) {
+                    if (IsContinuous) {
                         // still somewhat optimized
 
                         int srcInd = this.Index(0, 0);
@@ -1440,7 +1488,7 @@ namespace ilPSP {
         /// </summary>
         public MultidimensionalArray CloneAs() {
             MultidimensionalArray ret = MultidimensionalArray.Create(this.Lengths);
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 int iSrc0 = this.m_Offset;
                 int Len = this.Length;
                 Array.Copy(this.m_Storage, iSrc0, ret.m_Storage, 0, Len);
@@ -1622,7 +1670,7 @@ namespace ilPSP {
             }
 
 
-            if (this.IsContinious && x.IsContinious) {
+            if (this.IsContinuous && x.IsContinuous) {
                 Array.Copy(x.m_Storage, x.m_Offset, this.Storage, this.m_Offset, this.Length);
             } else {
                 int[] insert = new int[this.Dimension];
@@ -1729,7 +1777,7 @@ namespace ilPSP {
                 }
             }
 
-            if (this.IsContinious && other.IsContinious) {
+            if (this.IsContinuous && other.IsContinuous) {
                 // accelerated version
                 unsafe {
                     fixed (double* pThis = &this.m_Storage[0], pOthr = &other.m_Storage[0]) {

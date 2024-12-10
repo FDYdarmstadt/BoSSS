@@ -146,6 +146,9 @@ namespace BoSSS.Application.XNSFE_Solver {
                 //  ... and when the convective terms are turned off we still need the contribution below
                 if (config.isRecoilPressure) {
                     AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                    if (physParams.slipI != 0) {
+                        AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling_Tangential(d, D, config.physParams, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                    }
                 }
             }           
 
@@ -198,12 +201,18 @@ namespace BoSSS.Application.XNSFE_Solver {
                 // therefore we only need these terms when using splitting...
                 if (config.isRecoilPressure) {
                     AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                    if (physParams.slipI != 0) {
+                        AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling_Tangential(d, D, config.physParams, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                    }
                 }
-                AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+                AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getPhysParams, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
                 AddComponent(new ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(d, D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
             } else {
                 if (config.isRecoilPressure) {
                     AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                    if(physParams.slipI != 0) {
+                        AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling_Tangential(d, D, config.physParams, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                    }
                 }
             }
         }

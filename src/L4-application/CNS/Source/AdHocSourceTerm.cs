@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Utils;
 using System;
@@ -25,7 +26,19 @@ namespace CNS.Source {
     /// Implementation of a generic source term given by a user-defined formula
     /// that may involve nonlinear terms
     /// </summary>
-    public class AdHocSourceTerm : NonlinearSource {
+    public class AdHocSourceTerm : NonlinearSource, IMultitreadSafety {
+
+        public IEquationComponent CloneForThread() {
+            return null;
+        }
+
+        public object GetPadlock() {
+            return formula;
+        }
+
+        public bool IsMultithreadSafe => false;
+
+
 
         /// <summary>
         /// See constructor

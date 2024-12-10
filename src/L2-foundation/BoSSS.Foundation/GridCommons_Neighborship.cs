@@ -591,7 +591,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                                         } else {
-                                            Console.WriteLine("some duplicate found");
+                                            //Console.WriteLine("some duplicate found"); artifact from debugging
                                         }
                                     }
                                 }

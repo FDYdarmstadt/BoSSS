@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using NUnit.Framework;
 
 namespace BoSSS.Application.XNSERO_Solver {
     /// <summary>
@@ -40,13 +41,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            InitMPI();
-            TestProgram.TestStickyTrap();
-            //TestProgram.TestParticleParameter();
+            //InitMPI();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow_Phoretic();
             //Assert.IsFalse(true, "remove me");
-            void KatastrophenPlot(DGField[] dGFields) {
+            
+            void KatastrophenPlot(DGField[] dGFields,string Tag) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
             AgglomerationAlgorithm.Katastrophenplot = KatastrophenPlot;
@@ -54,6 +54,13 @@ namespace BoSSS.Application.XNSERO_Solver {
                 var p = new XNSERO();
                 return p;
             });
+        }
+
+        protected override void Bye() {
+            base.Bye();
+            LogParticleData?.Flush();
+            LogParticleData?.Close();
+            LogParticleData?.Dispose();
         }
 
         /// <summary>
@@ -193,6 +200,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
             }
         }
+
+       
 
         /// <summary>
         /// Override this method to customize the assembly of the continuity equation
@@ -496,12 +505,15 @@ namespace BoSSS.Application.XNSERO_Solver {
                         }
                     }
 
-                    double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPISize];
-                    unsafe {
-                        fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
-                            csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                        }
-                    }
+                    //double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPISize];
+                    //unsafe {
+                    //    fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
+                    //        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                    //    }
+                    //}
+                    double[] CheckReceive = CheckSend.MPIAllGather();
+
+
 
                     for (int iP = 0; iP < NoOfParticles; iP++) {
                         for (int iVar = 0; iVar < NoOfVars; iVar++) {

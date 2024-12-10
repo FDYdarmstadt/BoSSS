@@ -75,5 +75,9 @@ namespace BoSSS.Foundation.XDG {
         public static bool operator !=(SpeciesId a, SpeciesId b) {
             return (a.cntnt != b.cntnt);
         }
-    }
+
+		public string ToString(LevelSetTracker lsTrk) {
+			return lsTrk.GetSpeciesName(this);
+		}
+	}
 }

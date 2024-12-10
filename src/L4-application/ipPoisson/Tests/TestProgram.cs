@@ -19,10 +19,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Gnuplot;
+using BoSSS.Solution.Statistic;
 using ilPSP;
 using MPI.Wrappers;
 using NUnit.Framework;
@@ -37,7 +39,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
     /// NUnit tests
     /// </summary>
     [TestFixture]
-    static class TestProgram {
+    public static class TestProgram {
 
 
 
@@ -255,7 +257,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             }
 
-            ConditionNumberScalingTest.Perform(Controls, true, "CondnumberSlopes");
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "CondnumberSlopes" });
         }
 
 #if !DEBUG
@@ -307,13 +309,13 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 }
             }
 
-            ConditionNumberScalingTest.Perform(Controls);
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = "SIP-TestOperatorScaling3D-p" + dgDeg });
 
         }
 
 #if !DEBUG
         /// <summary>
-        /// operator condition number scaling
+        /// Convergence against exact solution in 3D
         /// </summary>
         [Test()]
         public static void TestOperatorConvergence3D([Values(1,2,3)] int dgDeg) {
@@ -345,9 +347,37 @@ namespace BoSSS.Application.SipPoisson.Tests {
 #endif
 
 
+        /// <summary>
+        /// Convergence against exact solution on a 2D half circular OGrid.
+        /// </summary>
+        [Test()]
+        public static double[] TestOperatorConvergenceCustom([Values(2, 3)] int dgDeg, int setup = 6) {
+
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = new int[] { 2, 3, 5, 9, 17 };
+               
+                foreach (int res in ResS) {
+                    var C = SipHardcodedControl.HalfCircle(res, dgDeg, setup);
+                    //C.TracingNamespaces = "*";
+                    //C.ImmediatePlotPeriod = 1;
+                    //C.SuperSampling = 1;
+                    C.savetodb = false;
+                    //if (C.savetodb) {
+                    //    var db = DatabaseInfo.CreateOrOpen(@"Q:\cluster\databases\TemperatureBoundaryCondition");
+                    //    C.SetDatabase(db);
+                    //    C.ProjectName = "TemperatureBoundaryCondition";
+                    //    C.SessionName = "P" + dgDeg + "_Res" + res + "_Case" + setup;
+                    //}
+                    Controls.Add(C);
+                }
+            }
+
+            return SipSolverConvergenceTest(Controls, false, new double[] { dgDeg + 0.5 });
+        }
 
         /// <summary>
-        /// operator condition number scaling
+        /// Convergence against exact solution on a 2D square.
         /// </summary>
         [Test()]
         public static void TestOperatorConvergence2D([Values(2,3)] int dgDeg) {
@@ -375,13 +405,14 @@ namespace BoSSS.Application.SipPoisson.Tests {
             SipSolverConvergenceTest(Controls, true, new double[] { dgDeg + 0.5 });
         }
 
-
-        private static void SipSolverConvergenceTest(IEnumerable<SipControl> _CS, bool useExactSolution, double[] ExpectedSlopes) {
+        public static bool FailAssertion = true;
+        private static double[] SipSolverConvergenceTest(IEnumerable<SipControl> _CS, bool useExactSolution, double[] ExpectedSlopes) {
             var CS = _CS.ToArray();
             int NoOfMeshes = CS.Length;
 
-            double[] hS = new double[NoOfMeshes];
-            MultidimensionalArray errorS = MultidimensionalArray.Create(NoOfMeshes, 1);
+            int NoOfDataPoints = useExactSolution ? NoOfMeshes : NoOfMeshes - 1;
+            double[] hS = new double[NoOfDataPoints];
+            MultidimensionalArray errorS = MultidimensionalArray.Create(NoOfDataPoints, 1);
             string[] Names = new[] { "u" };
 
             SipPoissonMain[] solvers = new SipPoissonMain[NoOfMeshes];
@@ -414,29 +445,58 @@ namespace BoSSS.Application.SipPoisson.Tests {
             } else {
                 if (NoOfMeshes < 3)
                     throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
-                throw new NotImplementedException("todo");
+
+
+                Console.WriteLine("Running ipPoisson Convergence Tests");
+                List<IEnumerable<DGField>> solutionOnDifferentResolutions = new List<IEnumerable<DGField>>();
+                for (int k = 0; k < CS.Length; k++) {
+                    var C = CS[k];
+                    var solver = new SipPoissonMain();
+                    solvers[k] = solver;
+                    {
+                        solver.Init(C);
+                        solver.RunSolverMode();
+                        solutionOnDifferentResolutions.Add(new DGField[] { solver.T });
+                    }
+                }
+
+                Dictionary<string, double[]> errorSS;
+                double[] hSS;
+                try {
+                    DGFieldComparison.ComputeErrors(solutionOnDifferentResolutions, out hSS, out var DOFs, out errorSS, NormType.L2_embedded);
+                } catch (Exception e) {
+                    if (e is NotImplementedException || e is ArgumentException) {
+                        Console.WriteLine("Grids not embedded, trying L2_approximate");
+                        DGFieldComparison.ComputeErrors(solutionOnDifferentResolutions, out hSS, out var DOFs, out errorSS, NormType.L2_approximate);
+                    } else {
+                        throw;
+                    }
+                }
+
+                errorS.ExtractSubArrayShallow(-1,0).SetVector(errorSS["T"]);
+                hS = hSS;
             }
 
+            //hS = hS.Take(hS.Length - 1).ToArray();    
 
-            //hS = hS.Take(hS.Length - 1).ToArray();
-
-            
-
-
+            double[] slopes = new double[errorS.GetLength(1)];
             for (int i = 0; i < errorS.GetLength(1); i++) {
                 var slope = hS.LogLogRegressionSlope( errorS.GetColumn(i));
-
+                slopes[i] = slope;
                 Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
             }
 
-            for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegressionSlope( errorS.GetColumn(i));
-                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            if (FailAssertion) {
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    var slope = hS.LogLogRegressionSlope(errorS.GetColumn(i));
+                    Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+                }
             }
 
             foreach (var s in solvers) {
                 s.Dispose();
             }
+            return slopes;
         }
     }
 }

@@ -33,17 +33,27 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>> m_QuadFactoryHelpersHistory = null;
-        
+        HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
+
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.
         /// </summary>
         /// <remarks>
         /// The centralized approach should avoid multiple creation of the same quadrature rule.
         /// </remarks>
-        XQuadFactoryHelper GetXQuadFactoryHelper(XQuadFactoryHelper.MomentFittingVariants variant, int HistoryIndex = 1) {
+        XQuadFactoryHelperBase GetXQuadFactoryHelper(XQuadFactoryHelperBase.MomentFittingVariants variant, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
-            
+
+            if (variant == XQuadFactoryHelperBase.MomentFittingVariants.Algoim) {
+                if (!dict.ContainsKey(variant)) {
+                    dict[variant] = new XQuadFactoryHelperAlgoim(
+                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray());
+                }
+
+                return dict[variant];
+
+            }
+
             if (!dict.ContainsKey(variant)) {
                 dict[variant] = new XQuadFactoryHelper(
                     this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
@@ -52,8 +62,8 @@ namespace BoSSS.Foundation.XDG {
 
             return dict[variant];
         }
-        
-      
+
+
         HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
         
         Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
@@ -153,18 +163,22 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="NewbornAndDecasedThreshold">
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
-        /// </param>        
+        /// </param>       
+        /// <param name="Tag">
+        /// A string value to pass tags for debugs (e.g. LevelSetAgg)
+        /// </param>     
         /// <returns></returns>
         public MultiphaseCellAgglomerator GetAgglomerator(
             SpeciesId[] Spc, int CutCellsQuadOrder,
             double __AgglomerationTreshold, 
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true, 
             double[] oldTs__AgglomerationTreshold = null,
-            double NewbornAndDecasedThreshold = 1.0e-6
+            double NewbornAndDecasedThreshold = 1.0e-6,
+            string Tag = null
             ) {
-            
+            MPICollectiveWatchDog.Watch(token: 169);
             return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
-                __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold);
+                __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold, Tag);
         }
 
 

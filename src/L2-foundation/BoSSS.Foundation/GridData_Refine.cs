@@ -51,7 +51,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     if(!mustbeTrue)
                         throw new ApplicationException("Internal error in mesh adaptation: " + msg);
                 }
-                
+
 
 
                 // Check for refinement/coarsening on all processes.
@@ -559,6 +559,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     Debug.Assert(c2 == old2NewGlobalId.Count);
                 }
+
                 return newGrid;
             }
         }
@@ -1098,13 +1099,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             Debug.Assert(adaptedBCells1 != null);
             int iBFace = Edge2Face[iEdge, 0];
             foreach (Cell cl in adaptedBCells1) {
-                if (cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0 && this.Edges.EdgeTags[iEdge] > 0) {
-                    ArrayTools.AddToArray(new CellFaceTag() {
-                        EdgeTag = Edges.EdgeTags[iEdge],
-                        ConformalNeighborship = false,
-                        NeighCell_GlobalID = long.MinValue,
-                        FaceIndex = iBFace
-                    }, ref cl.CellFaceTags);
+                if (!cl.CellFaceTags.IsNullOrEmpty()) {
+                    if (cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0 && this.Edges.EdgeTags[iEdge] > 0) {
+                        ArrayTools.AddToArray(new CellFaceTag() {
+                            EdgeTag = Edges.EdgeTags[iEdge],
+                            ConformalNeighborship = false,
+                            NeighCell_GlobalID = long.MinValue,
+                            FaceIndex = iBFace
+                        }, ref cl.CellFaceTags);
+                    }
                 }
             }
         }

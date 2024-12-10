@@ -27,6 +27,9 @@ using System.Threading;
 using ilPSP;
 using System.IO.Pipes;
 using System.Threading.Tasks;
+using static ilPSP.Connectors.Matlab.BatchmodeConnector;
+using System.Diagnostics.Metrics;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -112,33 +115,15 @@ namespace BoSSS.Application.BoSSSpad {
             
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 
-            //new SessionMemtrace(new DirectoryInfo(path));
+           /*
+            string path = @"\\fdygitrunner\ValidationTests\databases\bkup-2023Oct31_165410.LinslvPerfSer\sessions\dce38035-09a6-4f62-a82f-b7c089d27822\"; 
+            var json = File.ReadAllText(Path.Combine(path, "profiling_bin.0.txt"));
 
-            /*
-            void w(ValueTuple<string,string> tt) {
-                Console.BackgroundColor = ConsoleColor.Blue;
-                Console.WriteLine(tt.Item1);
-                Console.ResetColor();
-            }
+            var p = OnlineProfiling.Deserialize(json);
 
-            SingleSessionSshClinet ssh = new SingleSessionSshClinet("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
-
-            var rr = ssh.RunCommand("ls"); w(rr);
-            rr = ssh.RunCommand("cd mono"); w(rr);
-            rr = ssh.RunCommand("ls"); w(rr);
-
-            Console.WriteLine("Now Waiting.");
-            Thread.Sleep(20 * 1000);
-            rr = ssh.RunCommand("cd /"); w(rr);
-            rr = ssh.RunCommand("cd home"); w(rr);
-            rr = ssh.RunCommand("ls"); w(rr);
-
-
-            bool gracefull = ssh.Disconnect(false);
-            Console.WriteLine("gracefull exit? " + gracefull);
-            return 0;
-            */
+            Console.Write(p.ToString());
+            
+            //*/
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             
@@ -185,7 +170,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // launch the app
             // ==============
-            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
+            bool IinitializedMPI = BoSSS.Solution.Application.InitMPI(args);
 
             try {
                 switch (mode) {
@@ -282,7 +267,22 @@ namespace BoSSS.Application.BoSSSpad {
         /// Therefore, this mutex is used, in combination with a named pipe named <see cref="BoSSSpadInitDone_PipeName"/> to prevent BoSSSpad from 
         /// starting another Jupyter instance before the port is acquired.
         /// </summary>
-        static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
+        static Mutex JupyterMutex;
+
+        static BoSSSpadMain() {
+            
+
+            try {
+                JupyterMutex = new Mutex(false, "JupyterMutex");
+            } catch (Exception ee) {
+                Console.Error.WriteLine("BoSSSpadMain, Exception in static ctor during obtaining Jupyter Mutex:" + ee);
+                Console.Error.WriteLine("Terminating application.");
+                System.Environment.Exit(-987);
+           
+            }
+
+           
+        }
 
         /// <summary>
         /// Name used for a synchronization pipe
@@ -395,10 +395,43 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-                void GetMutex() {
+                void GetMutex(int RecDepth) {
                     if (MutexReleased) {
                         Console.WriteLine("Waiting for Jupyter mutex, " + DateTime.Now +" (can only start one Jupyter notebook at time) ...");
-                        JupyterMutex.WaitOne();
+                        try {
+                            JupyterMutex.WaitOne();
+                        } catch (AbandonedMutexException ae) {
+                            Console.WriteLine($"AbandonedMutexException caught during WaitOne() : ({ae}: {ae.Message})");
+                            if (RecDepth > 10) {
+                                Console.WriteLine("Stopping trying - unrecoverable");
+                                Console.Error.WriteLine("Terminating application.");
+                                System.Environment.Exit(-989);
+                            } else {
+                                Random rnd = new Random();
+                                int msWait = rnd.Next(10000);
+                                Console.WriteLine($"Retry No. {RecDepth} in {msWait} milliseconds.");
+                                Thread.Sleep(msWait);
+
+
+                                try {
+                                    if (JupyterMutex != null) {
+                                        JupyterMutex.ReleaseMutex();
+                                        JupyterMutex.Dispose();
+                                    }
+                                    JupyterMutex = new Mutex(false, "JupyterMutex");
+                                } catch (Exception eee) {
+                                    Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Unrecoverable Exception during creation of JupyterMutex : " + eee);
+                                    Console.Error.WriteLine("Terminating application.");
+                                    System.Environment.Exit(-988);
+                                }
+                                GetMutex(RecDepth + 1);
+                            }
+
+                        } catch (Exception eee) {
+                            Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Exception during WaitOne() :" + eee);
+                            Console.Error.WriteLine("Terminating application.");
+                            System.Environment.Exit(-988);
+                        }
                         Console.WriteLine("Mutex obtained at " + DateTime.Now + ".");
                         MutexReleased = false;
                     }
@@ -407,8 +440,16 @@ namespace BoSSS.Application.BoSSSpad {
                 void ReleaseMutex() {
                     //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
                     Console.WriteLine("Releasing Jupyter mutex @ " + DateTime.Now + " ...");
-                    if (!MutexReleased)
-                        JupyterMutex.ReleaseMutex();
+                    if (!MutexReleased) {
+                        try {
+                            JupyterMutex.ReleaseMutex();
+                        } catch (Exception eee) {
+                            Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Exception (1) during ReleaseMutex():" + eee);
+                            Console.Error.WriteLine("Terminating application.");
+                            System.Environment.Exit(-989);
+                        }
+
+                    }
                     Console.WriteLine("Mutex released at " + DateTime.Now + ".");
                     MutexReleased = true;
                 }
@@ -464,7 +505,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     int RunAnacondaShell(string command, bool useMutex, bool startupMutex) {
                         if (useMutex)
-                            GetMutex();
+                            GetMutex(0);
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -517,7 +558,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     int RunExt(string executable, string arguments, bool useMutex, bool startupMutex) {
                         if(startupMutex)
-                            GetMutex();
+                            GetMutex(0);
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -574,8 +615,15 @@ namespace BoSSS.Application.BoSSSpad {
 
                 return papermill_exit;
             } finally {
-                if (!MutexReleased)
-                    JupyterMutex.ReleaseMutex();
+                if (!MutexReleased) {
+                    try {
+                        JupyterMutex.ReleaseMutex();
+                    } catch (Exception eee) {
+                        Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Exception (2) during ReleaseMutex():" + eee);
+                        Console.Error.WriteLine("Terminating application.");
+                        System.Environment.Exit(-990);
+                    }
+                }
             }
         }
 

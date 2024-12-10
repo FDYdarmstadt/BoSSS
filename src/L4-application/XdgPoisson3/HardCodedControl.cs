@@ -39,6 +39,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// A 45-degree interface in the 2D domain \f$ (-2,2)^2 \f$.
         /// </summary>
         public static XdgPoisson3Control Schraeg() {
+            // --control 'cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Schraeg()'
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Schräg";
@@ -86,7 +87,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             return R;
         }
-
+        
         /// <summary>
         /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
         /// </summary>
