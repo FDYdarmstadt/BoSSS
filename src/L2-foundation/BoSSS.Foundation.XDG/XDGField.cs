@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.XDG {
 
 
     /// <summary>
-    /// a DG field for a cut-cell -basis (<see cref="XDGBasis"/>);
+    /// a DG field for a cut-cell-basis (<see cref="XDGBasis"/>);
     /// </summary>
     public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 

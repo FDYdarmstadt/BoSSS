@@ -145,7 +145,7 @@ namespace BoSSS.Solution {
 
             #endregion
 
-            #region CreareLevelSetTracker
+            #region CreateLevelSetTracker
             // create level set tracker
             // ========================
 
