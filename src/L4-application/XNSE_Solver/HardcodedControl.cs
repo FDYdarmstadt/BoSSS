@@ -2068,14 +2068,115 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
+            C.LinearSolver = new SchurPrecondConfig();
 
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             return C;
         }
 
+        /// <summary>
+        /// Replica of the linear solver worksheet
+        /// </summary>
+        /// <param name="Res"></param>
+        /// <param name="p"></param>
+        /// <returns></returns>
+		public static XNSE_Control BottiDiPietro3D(int Res = 20, int p = 2) {
+			// --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+			var C = new XNSE_Control();
 
-        public static XNSE_Control TranspiratingChannel(string _DbPath = null, int p = 2) {
+			C.GridFunc = delegate () {
+				GridCommons g;
+				double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+				double[] yNodes = xNodes;
+				double[] zNodes = xNodes;
+
+				g = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+
+				g.DefineEdgeTags(delegate (double[] X) {
+					double x = X[0];
+					if (Math.Abs(x - (-1)) < 1e-8)
+						return "pressure_outlet";
+					return "wall";
+				});
+
+				return g;
+			};
+
+
+			C.SetDGdegree(p);
+
+
+			C.PhysicalParameters.rho_A = 1; // not relevant, since density is not present in steady-state Stokes.
+			C.PhysicalParameters.rho_B = 1; // not relevant, since density is not present in steady-state Stokes.
+			C.PhysicalParameters.mu_A = 1; // dimensionless
+			C.PhysicalParameters.mu_B = 1; // dimensionless
+			C.PhysicalParameters.Sigma = 0; // not relevant, since single phase
+			C.PhysicalParameters.IncludeConvection = false;
+			C.PhysicalParameters.Material = true;
+
+			double VelocityXex(double[] X) {
+				return -2.0 * Math.Sin(Math.PI * X[0]);
+			}
+
+			double VelocityYex(double[] X) {
+				return Math.PI * X[1] * Math.Cos(Math.PI * X[0]);
+			}
+
+			double VelocityZex(double[] X) {
+				return -Math.PI * X[2] * Math.Cos(Math.PI * X[0]);
+			}
+
+			double Pressure(double[] X) {
+				return Math.Sin(Math.PI * X[1]) * Math.Cos(Math.PI * X[1]) * Math.Sin(Math.PI * X[2]);
+			}
+
+			//double RhsX(double[] X) {
+			//             return -(2 * Math.PI.Pow2() * Math.Sin(Math.PI * X[0]) + Math.PI * Math.Cos(Math.PI * X[0]) * Math.Cos(Math.PI * X[1]) * Math.Sin(Math.PI * X[2]));
+			//         }
+
+			//double RhsY(double[] X) {
+			//	return -(-Math.PI * (Math.Cos(Math.PI * X[0]) * Math.PI.Pow2() * X[1] + Math.Sin(Math.PI * X[0]) * Math.Sin(Math.PI * X[1]) * Math.Sin(Math.PI * X[2])));
+			//}
+
+			//double RhsZ(double[] X) {
+			//	return -(-Math.PI * (Math.Cos(Math.PI * X[0]) * Math.PI.Pow2() * X[2] - Math.Cos(Math.PI * X[1]) * Math.Cos(Math.PI * X[2]) * Math.Sin(Math.PI * X[0])));
+			//}
+
+			var RhsX = new Formula("(X) => -(2*Math.PI.Pow2()*Math.Sin(Math.PI*X[0]) + Math.PI*Math.Cos(Math.PI*X[0])*Math.Cos(Math.PI*X[1])*Math.Sin(Math.PI*X[2]))");
+			var RhsY = new Formula("(X) => -(-Math.PI*(Math.Cos(Math.PI*X[0])*Math.PI.Pow2()*X[1] + Math.Sin(Math.PI*X[0])*Math.Sin(Math.PI*X[1])*Math.Sin(Math.PI*X[2])))");
+			var RhsZ = new Formula("(X) => -(-Math.PI*(Math.Cos(Math.PI*X[0])*Math.PI.Pow2()*X[2] - Math.Cos(Math.PI*X[1])*Math.Cos(Math.PI*X[2])*Math.Sin(Math.PI*X[0])))");
+
+			C.AddBoundaryValue("wall", "VelocityX", VelocityXex);
+			C.AddBoundaryValue("wall", "VelocityY", VelocityYex);
+			C.AddBoundaryValue("wall", "VelocityZ", VelocityZex);
+
+            C.AddInitialValue("VolumeForceX", RhsX);
+            C.AddInitialValue("VolumeForceY", RhsY);
+            C.AddInitialValue("VolumeForceZ", RhsZ);
+
+            //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            //C.LinearSolver = new PmgConfig() {
+            //    ConvergenceCriterion = 1e-9
+            //};
+            //C.LinearSolver = new OrthoMGSchwarzConfig() {
+            //    ConvergenceCriterion = 1e-9
+            //};
+
+
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+			C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
+
+			C.LinearSolver = new SchurPrecondConfig();
+
+			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+			return C;
+		}
+
+
+		public static XNSE_Control TranspiratingChannel(string _DbPath = null, int p = 2) {
 
             XNSE_Control C = new XNSE_Control();
 

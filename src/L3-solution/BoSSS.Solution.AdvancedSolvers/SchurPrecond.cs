@@ -52,14 +52,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
     {
         public int IterationsInNested {
             get {
-                return 0;
+                return m_IterationsInNested;
                 //throw new NotImplementedException();
             }
         }
 
         public int ThisLevelIterations {
             get {
-                return 0;
+                return m_ThisLevelIterations;
                 //throw new NotImplementedException();
             }
         }
@@ -273,27 +273,51 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
 						MultidimensionalArray SchurRHS = MultidimensionalArray.Create(Pidx.Length, Uidx.Length);
 
-						using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-							bmc.PutSparseMatrix(ConvDiff, "A");
-							bmc.PutSparseMatrix(pGrad, "B");
-							bmc.PutSparseMatrix(divVel, "C");
-							bmc.Cmd("invA = inv(full(A));");
-							bmc.Cmd("Schur = -C *full(A \\ B);");
-							bmc.Cmd("SchurRHS = C*invA;"); 
-							bmc.GetMatrix(Schur, "Schur");
-							bmc.GetMatrix(SchurRHS, "SchurRHS");
+                        // USING MATLAB
+						//using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+						//	bmc.PutSparseMatrix(ConvDiff, "A");
+						//	bmc.PutSparseMatrix(pGrad, "B");
+						//	bmc.PutSparseMatrix(divVel, "C");
+						//	bmc.Cmd("invA = inv(full(A));");
+						//	bmc.Cmd("Schur = -C *full(A \\ B);");
+						//	bmc.Cmd("SchurRHS = C*invA;"); 
+						//	bmc.GetMatrix(Schur, "Schur");
+						//	bmc.GetMatrix(SchurRHS, "SchurRHS");
 
-							bmc.Execute(false);
-						}
+						//	bmc.Execute(false);
+						//}
+						//SchurMtx = Schur.ToMsrMatrix();
+						//SchurMtx.Acc(PxP, 1);
+
+						//SchurMtx.SaveToTextFileSparse("returnedSchur");
+
+						//SchurRHSMtx = SchurRHS.ToMsrMatrix();
+						//SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
 
 
+						var A = ConvDiff.ToFullMatrixOnProc0();
+                        var B = pGrad.ToFullMatrixOnProc0();
+						var C = divVel.ToFullMatrixOnProc0();
 
-						SchurMtx = Schur.ToMsrMatrix();
-						SchurMtx.Acc(PxP, 1);
+						A.InvertInPlace();
+
+                        var SchurSelf = A.MatMatMul(B);
+						var SchurSelf2 = C.MatMatMul(SchurSelf);
+						SchurSelf2.Scale(-1.0);
+						var SchurSelfMtx = SchurSelf2.ToMsrMatrix();
+						SchurSelfMtx.Acc(PxP, 1);
+						//SchurSelfMtx.SaveToTextFileSparse("SchurSelfMtx");
+
+						var SchurRHSself = C.MatMatMul(A);
+                        var SchurRHSselfMtx = SchurRHSself.ToMsrMatrix();
+						//SchurRHSselfMtx.SaveToTextFileSparse("SchurRHSselfMtx");
+
+
+						SchurMtx = SchurSelfMtx;
 
 						SchurMtx.SaveToTextFileSparse("returnedSchur");
 
-						SchurRHSMtx = SchurRHS.ToMsrMatrix();
+						SchurRHSMtx = SchurRHSselfMtx;
 						SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
 
 
@@ -330,8 +354,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool m_Converged = false;
         int m_ThisLevelIterations = 0;
+		int m_IterationsInNested = 0;
 
-        public void Solve<U, V>(U X, V B)
+		public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double>
         {
@@ -456,10 +481,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var OrthoMgConfig = new OrthoMGSchwarzConfig() {
                             TargetBlockSize = 100,
-                            CoarseKickIn = 200
-                            
-                        };
-                        OrthoMgConfig.ConvergenceCriterion = 10 ^ -3;
+                            CoarseKickIn = 200,
+                            MinSolverIterations =0,
+						};
+
+                        OrthoMgConfig.ConvergenceCriterion = 1e-10;
 
                         var solver = OrthoMgConfig.CreateInstance(MultigridOp);
 						solver.Solve(P, vecb2);
@@ -493,7 +519,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						//Usol.SaveToTextFile("CalculatedU");
 						//P.SaveToTextFile("CalculatedP");
 						//X.SaveToTextFile("CalculatedX");
-                        this.m_Converged = solver.Converged;
+                        this.m_ThisLevelIterations = solver.ThisLevelIterations;
+						this.m_IterationsInNested = solver.IterationsInNested;
+						this.m_Converged = solver.Converged;
 						return;
 					}
 
