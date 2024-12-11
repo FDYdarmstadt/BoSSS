@@ -88,7 +88,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, SchurRHSMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix, pMassMatrix;
         long[] Uidx, Pidx;
 		int[] UidxInt, PidxInt;
-        //double[] RHSvel;
+        int m {
+            get { return Uidx.Length; }
+        }
+
+		int n {
+			get { return Pidx.Length; }
+		}
+
+		//double[] RHSvel;
 
 		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3 }
 
@@ -270,54 +278,74 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 				case SchurOptions.Uzawa: {
 						// Building complete Schur and Approximate Schur
-						MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-						MultidimensionalArray SchurRHS = MultidimensionalArray.Create(Pidx.Length, Uidx.Length);
 
                         // USING MATLAB
-						//using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-						//	bmc.PutSparseMatrix(ConvDiff, "A");
-						//	bmc.PutSparseMatrix(pGrad, "B");
-						//	bmc.PutSparseMatrix(divVel, "C");
-						//	bmc.Cmd("invA = inv(full(A));");
-						//	bmc.Cmd("Schur = -C *full(A \\ B);");
-						//	bmc.Cmd("SchurRHS = C*invA;"); 
-						//	bmc.GetMatrix(Schur, "Schur");
-						//	bmc.GetMatrix(SchurRHS, "SchurRHS");
+                        //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                        //	bmc.PutSparseMatrix(ConvDiff, "A");
+                        //	bmc.PutSparseMatrix(pGrad, "B");
+                        //	bmc.PutSparseMatrix(divVel, "C");
+                        //	bmc.Cmd("invA = inv(full(A));");
+                        //	bmc.Cmd("Schur = -C *full(A \\ B);");
+                        //	bmc.Cmd("SchurRHS = C*invA;"); 
+                        //	bmc.GetMatrix(Schur, "Schur");
+                        //	bmc.GetMatrix(SchurRHS, "SchurRHS");
 
-						//	bmc.Execute(false);
-						//}
-						//SchurMtx = Schur.ToMsrMatrix();
-						//SchurMtx.Acc(PxP, 1);
+                        //	bmc.Execute(false);
+                        //}
+                        //SchurMtx = Schur.ToMsrMatrix();
+                        //SchurMtx.Acc(PxP, 1);
 
-						//SchurMtx.SaveToTextFileSparse("returnedSchur");
+                        //SchurMtx.SaveToTextFileSparse("returnedSchur");
 
-						//SchurRHSMtx = SchurRHS.ToMsrMatrix();
-						//SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
+                        //SchurRHSMtx = SchurRHS.ToMsrMatrix();
+                        //SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
+
+                        //Using direct solver
+                        var Ainv = new MsrMatrix(ConvDiff.RowPartitioning, ConvDiff.ColPartition);
+
+                        for (int i = 0; i < Uidx.Length; i++) {
+                            var b = new double[m];
+							b[i] = 1;
+                            var x = ConvDiff.Solve_Direct(b);
+                            Ainv.SetValues(i, Enumerable.Range(0, m).Select(r=> (long)r).ToArray(), x);
+                        }
+						Ainv = Ainv.Transpose();
+
+						var SchurSelfMSR = MsrMatrix.Multiply(Ainv, pGrad);
+						SchurSelfMSR = MsrMatrix.Multiply(divVel, SchurSelfMSR);
+						SchurSelfMSR.Scale(-1.0);
+						SchurSelfMSR.Acc(PxP, 1);
+						//SchurSelfMSR.SaveToTextFileSparse("SchurSelfMSR");
+
+						var SchurRHSselfMSR = MsrMatrix.Multiply(divVel, Ainv);
+						//SchurRHSselfMSR.SaveToTextFileSparse("SchurRHSselfMSR");
 
 
-						var A = ConvDiff.ToFullMatrixOnProc0();
-                        var B = pGrad.ToFullMatrixOnProc0();
-						var C = divVel.ToFullMatrixOnProc0();
+						// Using multidimensional array
+						//MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+						//MultidimensionalArray SchurRHS = MultidimensionalArray.Create(Pidx.Length, Uidx.Length);
+						//var A = ConvDiff.ToFullMatrixOnProc0();
+						//                  var B = pGrad.ToFullMatrixOnProc0();
+						//                  var C = divVel.ToFullMatrixOnProc0();
 
-						A.InvertInPlace();
+						//                  A.InvertInPlace();
 
-                        var SchurSelf = A.MatMatMul(B);
-						var SchurSelf2 = C.MatMatMul(SchurSelf);
-						SchurSelf2.Scale(-1.0);
-						var SchurSelfMtx = SchurSelf2.ToMsrMatrix();
-						SchurSelfMtx.Acc(PxP, 1);
+						//var SchurSelf = A.MatMatMul(B);
+						//var SchurSelf2 = C.MatMatMul(SchurSelf);
+						//SchurSelf2.Scale(-1.0);
+						//var SchurSelfMtx = SchurSelf2.ToMsrMatrix();
+						//SchurSelfMtx.Acc(PxP, 1);
 						//SchurSelfMtx.SaveToTextFileSparse("SchurSelfMtx");
 
-						var SchurRHSself = C.MatMatMul(A);
-                        var SchurRHSselfMtx = SchurRHSself.ToMsrMatrix();
+
+						//var SchurRHSself = C.MatMatMul(A);
+						//                  var SchurRHSselfMtx = SchurRHSself.ToMsrMatrix();
 						//SchurRHSselfMtx.SaveToTextFileSparse("SchurRHSselfMtx");
 
+						SchurMtx = SchurSelfMSR;
+                        SchurMtx.SaveToTextFileSparse("returnedSchur");
 
-						SchurMtx = SchurSelfMtx;
-
-						SchurMtx.SaveToTextFileSparse("returnedSchur");
-
-						SchurRHSMtx = SchurRHSselfMtx;
+						SchurRHSMtx = SchurRHSselfMSR;
 						SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
 
 
