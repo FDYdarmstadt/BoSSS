@@ -862,10 +862,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     iPostSmooter = allSmooters.Length - 1;
                 }
 
+				Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}");
 
-                int iIter;
+				int iIter;
                 for (iIter = 1; bIterate; iIter++) {
-                    var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+					Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level {iLevel}, iteration: {iIter} and res norm: {resNorm}");
+
+					var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState.bNotTerminate) {
                         Converged = termState.bSuccess;
                         break;
@@ -873,7 +876,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     }
                                         
-                    //Console.WriteLine($"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}, current level {iLevel}, iteration: {iIter} and res norm: {resNorm}");
                     
                     // pre-smoother
                     // ------------
@@ -893,8 +895,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // orthonormalization and residual minimization
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel);
 
-                            //SpecAnalysisSample(iIter, X, "ortho1");
-                            var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                            Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level {iLevel} pre-smoother applied, iteration: {iIter} and res norm: {resNorm}");
+
+							//SpecAnalysisSample(iIter, X, "ortho1");
+							var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                             if (!termState2.bNotTerminate) {
                                 Converged = termState2.bSuccess;
                                 break;
@@ -909,10 +913,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Array.Copy(Res, ResAfterPreSmoother, L);
                         Array.Copy(ResBeforePreSmoother, Res, L);
                     }
-                    
-                    // coarse grid correction
-                    // ----------------------
-                    CrseLevelTime.Start();
+
+
+					// coarse grid correction
+					// ----------------------
+					CrseLevelTime.Start();
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
                     VerivyCurrentResidual(X, B, Res, iIter);
 
@@ -969,7 +974,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     } // end of coarse-solver loop
 
-                    var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+					Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level {iLevel} coarse-solver applied, iteration: {iIter} and res norm: {resNorm}");
+
+
+					var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState3.bNotTerminate) {
                         Converged = termState3.bSuccess;
                         break;
@@ -1033,11 +1041,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
 
                             } else {
-                                resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" +  iLevel + "-sw" + g);
+								resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" +  iLevel + "-sw" + g);
+								Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level {iLevel} post-smoother applied, iteration: {iIter} and res norm: {resNorm}");
 
 
 
-                                var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+								var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                                 if (!termState4.bNotTerminate) {
                                     Converged = termState4.bSuccess;
                                     termPost = true;
@@ -1075,11 +1084,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } // end of solver iterations
 
                 IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
+				Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG current level {iLevel}, total iteration number {iIter} with final res norm: {resNorm}");
 
 
-                // solution copy
-                // =============
-                if (!ReferenceEquals(_xl, X)) {
+				// solution copy
+				// =============
+				if (!ReferenceEquals(_xl, X)) {
                     _xl.SetV(X);
                 }
                 ThisLevelTime.Stop();
