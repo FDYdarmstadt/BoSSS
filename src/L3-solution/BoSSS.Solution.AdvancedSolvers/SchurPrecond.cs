@@ -28,6 +28,7 @@ using BoSSS.Foundation;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.NSECommon;
 using System.Diagnostics;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -106,7 +107,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Init(MultigridOperator op)
         {
-            int D = op.Mapping.GridData.SpatialDimension;
+			Debugger.Launch();
+
+			int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
 
 			var MgMap = op.Mapping;
@@ -277,7 +280,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         return;
                     }
 				case SchurOptions.Uzawa: {
-						// Building complete Schur and Approximate Schur
+                        // Building complete Schur and Approximate Schur
 
                         // USING MATLAB
                         //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
@@ -302,19 +305,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //Using direct solver
                         var Ainv = new MsrMatrix(ConvDiff.RowPartitioning, ConvDiff.ColPartition);
+                        int rank;
+						csMPI.Raw.Comm_Rank(Ainv.MPI_Comm, out rank);
 
-                        for (int i = 0; i < Uidx.Length; i++) {
-                            var b = new double[m];
-							b[i] = 1;
-                            var x = ConvDiff.Solve_Direct(b);
-                            Ainv.SetValues(i, Enumerable.Range(0, m).Select(r=> (long)r).ToArray(), x);
-                        }
-						Ainv = Ainv.Transpose();
+						ilPSP.Environment.StdoutOnlyOnRank0 = false;
+						Console.WriteLine($"proc-{rank} - {Ainv.RowPartitioning.i0} {Ainv.RowPartitioning.iE}");
+
+						Debugger.Launch();
+
+
+						using (var tr = new FuncTrace()) { 
+                            for (int i = (int)Ainv.RowPartitioning.i0; i < (int)Ainv.RowPartitioning.iE; i++) {
+                                var b = new double[m];
+                                b[i] = 1;
+                                var x = ConvDiff.Solve_Direct(b);
+                                Ainv.SetValues(i, Enumerable.Range(0, m).Select(r => (long)r).ToArray(), x);
+ 
+							}
+						}
+
+						//Ainv = Ainv.Transpose(); (for stokes we do not need this at this point)
 
 						var SchurSelfMSR = MsrMatrix.Multiply(Ainv, pGrad);
 						SchurSelfMSR = MsrMatrix.Multiply(divVel, SchurSelfMSR);
 						SchurSelfMSR.Scale(-1.0);
-						SchurSelfMSR.Acc(PxP, 1);
+
+						//SchurSelfMSR.Acc(PxP, 1); //this is already zero
 						//SchurSelfMSR.SaveToTextFileSparse("SchurSelfMSR");
 
 						var SchurRHSselfMSR = MsrMatrix.Multiply(divVel, Ainv);
@@ -371,7 +387,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             //// x= inv(P)*b !!!!! To be done with approximate Inverse
-            // P.SpMV(1, B, 0, X);
+            // P.SpMVpara(1, B, 0, X);
         }
 
         public void ResetStat()
@@ -432,7 +448,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						b1.SaveToTextFile("b1");
 						b2.SaveToTextFile("b2");
 
-						SchurRHSMtx.SpMV(-1.0, vecb1, 1.0, vecb2);
+						SchurRHSMtx.SpMVpara(-1.0, vecb1, 1.0, vecb2);
                         var P = new double[Pidx.Length];
 						var Usol = new double[Uidx.Length];
 
@@ -519,7 +535,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						solver.Solve(P, vecb2);
 
 
-						pGrad.SpMV(-1.0, P, 1.0, vecb1);
+						pGrad.SpMVpara(-1.0, P, 1.0, vecb1);
 
 						using (var Usolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
 							Usolver.DefineMatrix(ConvDiff);
@@ -530,7 +546,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 						//                  var itP = SchurMtx.Solve_CG(P, vecb2);
 
-						//pGrad.SpMV(-1.0, P, 1.0, vecb1);
+						//pGrad.SpMVpara(-1.0, P, 1.0, vecb1);
 
 						//                  var itU = ConvDiff.Solve_CG(Usol, vecb1);
 
