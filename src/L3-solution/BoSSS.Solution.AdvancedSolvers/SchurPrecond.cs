@@ -29,6 +29,7 @@ using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.NSECommon;
 using System.Diagnostics;
 using ilPSP.Tracing;
+using ilPSP.LinSolvers.PARDISO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -107,7 +108,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Init(MultigridOperator op)
         {
-			Debugger.Launch();
+			//Debugger.Launch();
 
 			int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
@@ -310,20 +311,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 						ilPSP.Environment.StdoutOnlyOnRank0 = false;
 						Console.WriteLine($"proc-{rank} - {Ainv.RowPartitioning.i0} {Ainv.RowPartitioning.iE}");
-
-						Debugger.Launch();
-
-
+                        double inc = 0.0;
+                        var solvPar = new PARDISOSolver();
+						solvPar.DefineMatrix(ConvDiff);
 						using (var tr = new FuncTrace()) { 
                             for (int i = (int)Ainv.RowPartitioning.i0; i < (int)Ainv.RowPartitioning.iE; i++) {
                                 var b = new double[m];
-                                b[i] = 1;
-                                var x = ConvDiff.Solve_Direct(b);
+								var x = new double[m];
+								b[i - (int)Ainv.RowPartitioning.i0] = 1;
+								solvPar.Solve(x, b);
                                 Ainv.SetValues(i, Enumerable.Range(0, m).Select(r => (long)r).ToArray(), x);
- 
+                                if (i >= i0 + inc * Ainv.RowPartitioning.LocalLength) {
+                                    Console.WriteLine($"{inc *100}%");
+                                    inc += 0.1;
+                                }
 							}
 						}
-
+						csMPI.Raw.Barrier(Ainv.MPI_Comm);
 						//Ainv = Ainv.Transpose(); (for stokes we do not need this at this point)
 
 						var SchurSelfMSR = MsrMatrix.Multiply(Ainv, pGrad);
