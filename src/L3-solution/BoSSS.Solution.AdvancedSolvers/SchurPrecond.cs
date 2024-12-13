@@ -90,11 +90,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long[] Uidx, Pidx;
 		int[] UidxInt, PidxInt;
         int m {
-            get { return Uidx.Length; }
+            get { return (int)ConvDiff.RowPartitioning.TotalLength; }
         }
 
 		int n {
-			get { return Pidx.Length; }
+			get { return (int)pGrad.RowPartitioning.TotalLength; }
 		}
 
 		//double[] RHSvel;
@@ -127,6 +127,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Pidx = MgMap.GetSubvectorIndices( D);
             UidxInt = Array.ConvertAll(Uidx, item => (int)item);
 			PidxInt = Array.ConvertAll(Pidx, item => (int)item);
+
+            var settledMapOnBaseGrid = (CoordinateMapping)op.BaseGridProblemMapping;
+
+            DGField[] Ufields = settledMapOnBaseGrid.Fields.Take(D).ToArray();
+			var Pfield = settledMapOnBaseGrid.Fields.Last();
+
+            var Umapping = new CoordinateMapping(Ufields);
+			var Pmapping = new CoordinateMapping(Pfield);
 
 			int Upart = Uidx.Length;
             int Ppart = Pidx.Length;
@@ -280,60 +288,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         return;
                     }
 				case SchurOptions.Uzawa: {
-                        // Building complete Schur and Approximate Schur
+						// Building complete Schur and Approximate Schur
 
-                        // USING MATLAB
-                        //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                        //	bmc.PutSparseMatrix(ConvDiff, "A");
-                        //	bmc.PutSparseMatrix(pGrad, "B");
-                        //	bmc.PutSparseMatrix(divVel, "C");
-                        //	bmc.Cmd("invA = inv(full(A));");
-                        //	bmc.Cmd("Schur = -C *full(A \\ B);");
-                        //	bmc.Cmd("SchurRHS = C*invA;"); 
-                        //	bmc.GetMatrix(Schur, "Schur");
-                        //	bmc.GetMatrix(SchurRHS, "SchurRHS");
+						// USING MATLAB
+						//using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+						//	bmc.PutSparseMatrix(ConvDiff, "A");
+						//	bmc.PutSparseMatrix(pGrad, "B");
+						//	bmc.PutSparseMatrix(divVel, "C");
+						//	bmc.Cmd("invA = inv(full(A));");
+						//	bmc.Cmd("Schur = -C *full(A \\ B);");
+						//	bmc.Cmd("SchurRHS = C*invA;"); 
+						//	bmc.GetMatrix(Schur, "Schur");
+						//	bmc.GetMatrix(SchurRHS, "SchurRHS");
 
-                        //	bmc.Execute(false);
-                        //}
-                        //SchurMtx = Schur.ToMsrMatrix();
-                        //SchurMtx.Acc(PxP, 1);
+						//	bmc.Execute(false);
+						//}
+						//SchurMtx = Schur.ToMsrMatrix();
+						//SchurMtx.Acc(PxP, 1);
 
-                        //SchurMtx.SaveToTextFileSparse("returnedSchur");
+						//SchurMtx.SaveToTextFileSparse("returnedSchur");
 
-                        //SchurRHSMtx = SchurRHS.ToMsrMatrix();
-                        //SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
+						//SchurRHSMtx = SchurRHS.ToMsrMatrix();
+						//SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
 
-                        //Using direct solver
-                        var Ainv = new MsrMatrix(ConvDiff.RowPartitioning, ConvDiff.ColPartition);
-                        int rank;
-						csMPI.Raw.Comm_Rank(Ainv.MPI_Comm, out rank);
+						//Using direct solver
+						//var Ainv = new MsrMatrix(ConvDiff.RowPartitioning, ConvDiff.ColPartition);
 
-						ilPSP.Environment.StdoutOnlyOnRank0 = false;
-						Console.WriteLine($"proc-{rank} - {Ainv.RowPartitioning.i0} {Ainv.RowPartitioning.iE}");
+						var velocityMGmapping = new MultigridMapping(Umapping,  op.Mapping.AggBasis.Take(D).ToArray(), op.Mapping.DgDegree.Take(D).ToArray() );
 
-						Debugger.Launch();
+						var pressureMGmapping = new MultigridMapping(Pmapping, new[] { op.Mapping.AggBasis[D] }, new[] { op.Mapping.DgDegree[D] });
 
+						var Ainv = ConvDiff.ToBlockMsrMatrix(velocityMGmapping, velocityMGmapping);
+						Ainv = Ainv.InvertBlocks();
 
-						using (var tr = new FuncTrace()) { 
-                            for (int i = (int)Ainv.RowPartitioning.i0; i < (int)Ainv.RowPartitioning.iE; i++) {
-                                var b = new double[m];
-                                b[i] = 1;
-                                var x = ConvDiff.Solve_Direct(b);
-                                Ainv.SetValues(i, Enumerable.Range(0, m).Select(r => (long)r).ToArray(), x);
- 
-							}
-						}
+                        var BlockpGrad = pGrad.ToBlockMsrMatrix(velocityMGmapping, pressureMGmapping);
+						var BlockdivVel = divVel.ToBlockMsrMatrix(pressureMGmapping, velocityMGmapping);
 
 						//Ainv = Ainv.Transpose(); (for stokes we do not need this at this point)
 
-						var SchurSelfMSR = MsrMatrix.Multiply(Ainv, pGrad);
-						SchurSelfMSR = MsrMatrix.Multiply(divVel, SchurSelfMSR);
+						var SchurSelfMSR = BlockMsrMatrix.Multiply(Ainv, BlockpGrad);
+						SchurSelfMSR = BlockMsrMatrix.Multiply(BlockdivVel, SchurSelfMSR);
 						SchurSelfMSR.Scale(-1.0);
 
 						//SchurSelfMSR.Acc(PxP, 1); //this is already zero
 						//SchurSelfMSR.SaveToTextFileSparse("SchurSelfMSR");
 
-						var SchurRHSselfMSR = MsrMatrix.Multiply(divVel, Ainv);
+						var SchurRHSselfMSR = BlockMsrMatrix.Multiply(BlockdivVel, Ainv);
 						//SchurRHSselfMSR.SaveToTextFileSparse("SchurRHSselfMSR");
 
 
@@ -358,10 +358,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						//                  var SchurRHSselfMtx = SchurRHSself.ToMsrMatrix();
 						//SchurRHSselfMtx.SaveToTextFileSparse("SchurRHSselfMtx");
 
-						SchurMtx = SchurSelfMSR;
+						SchurMtx = SchurSelfMSR.ToMsrMatrix();
                         SchurMtx.SaveToTextFileSparse("returnedSchur");
 
-						SchurRHSMtx = SchurRHSselfMSR;
+						SchurRHSMtx = SchurRHSselfMSR.ToMsrMatrix();
 						SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
 
 
