@@ -601,16 +601,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						var Psol = new double[n];
 						var Usol = new double[m];
 
-                        Func<double[], double[]> multipWithPgrad = input => {
-                            var output = new double[pGrad.RowPartitioning.LocalLength];
+                        Action<double[], double[]> multipWithPgrad = (input,output) => {
                             pGrad.SpMVpara(1.0,input,0.0, output);
-                            return output;
                         };
 
-						Func<double[], double[]> multipWithDivVel = input => {
-							var output = new double[divVel.RowPartitioning.LocalLength];
+						Action<double[], double[]> multipWithDivVel = (input, output) => {
 							divVel.SpMVpara(-1.0, input, 0.0, output); //attention to minus sign
-							return output;
 						};
 
 						

@@ -27,6 +27,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
@@ -34,7 +35,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class SoftPCG : ISolverSmootherTemplate, ISolverWithCallback {
 
-        /*
+		/*
         static public ISolverSmootherTemplate InitMultigridChain(MultigridOperator MgOp,
             Action<int, SoftPCG> ParamsSeter,
             Func<ISolverSmootherTemplate> CoarsestSolverFactory) {
@@ -53,15 +54,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
         */
-        
-        //public double m_Tolerance = 1.0e-10;
-        //public int m_MaxIterations = 10000;
-        //public int m_MinIterations = 5;
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
+		//public double m_Tolerance = 1.0e-10;
+		//public int m_MaxIterations = 10000;
+		//public int m_MinIterations = 5;
+
+		[DataMember]
+		public double ConvergenceCriterion = 1e-10;
+
+		/// <summary>
+		/// ~
+		/// </summary>
+		public Func<int, double, double, bool> TerminationCriterion {
             get;
             set;
         }
@@ -71,8 +75,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public SoftPCG(bool calculateWithMatrix = true) {
             this.CalculateWithMatrix = calculateWithMatrix;
-            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
-        }
+            TerminationCriterion = (int iter, double R0_l2, double R_l2) => R_l2 < R0_l2 * ConvergenceCriterion + ConvergenceCriterion;
+		}
 
 
         /// <summary>
@@ -83,8 +87,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-		public Func<double[], double[]> InnerIterBefore;
-		public Func<double[], double[]> InnerIterAfter;
+		public Action<double[], double[]> InnerIterBefore;
+		public Action<double[], double[]> InnerIterAfter;
 
 
 		/// <summary>
@@ -205,9 +209,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				m_Matrix.SpMV(1.0, P, 0, V);
 			} else {
                 double[] Sol = new double[InnerCycle.GetMatrix().NoOfCols];
-				double[] Y = InnerIterBefore(P);
+                double[] Y = new double[InnerCycle.GetMatrix().RowPartitioning.LocalLength];
+				InnerIterBefore(P,Y);
                 InnerCycle.Solve(Sol, Y);
-				V = InnerIterAfter(Sol);
+				InnerIterAfter(Sol,V);
 			}
 
 			double VxP = V.InnerProd(P).MPISum();
