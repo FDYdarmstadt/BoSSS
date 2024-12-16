@@ -83,6 +83,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
+		public Func<double[], double[]> InnerIterBefore;
+		public Func<double[], double[]> InnerIterAfter;
+
+
 		/// <summary>
 		/// ~
 		/// </summary>
@@ -136,7 +140,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 GenericBlas.dswap(L, x, 1, P, 1);
                 
                 //Initial res
-                m_Matrix.SpMV(-1.0, P, 1.0, Res);
+                if (CalculateWithMatrix)
+                    m_Matrix.SpMV(-1.0, P, 1.0, Res);
 
                 IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), Res.CloneAs(), this.m_MgOp as MultigridOperator);
 
@@ -151,12 +156,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 ResNorm = Math.Sqrt(alpha);
                 double ResNorm0 = ResNorm;
-                if (TerminationCriterion(0, ResNorm0, ResNorm)) {
-                    this.m_Converged = true;
-                    return;
-                }
+                //if (TerminationCriterion(1, ResNorm0, ResNorm)) {
+                //    this.m_Converged = true;
+                //    return;
+                //}
 
-                bool ShouldContinue = CheckIteration(0, ResNorm0, ResNorm,alpha); // one iteration has already been performed (P0, R0)
+                bool ShouldContinue = CheckIteration(2, ResNorm0, ResNorm,alpha); // one iteration has already been performed (P0, R0)
 
 				// iterate
 				// =======
@@ -198,12 +203,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		double CalculateVxP(double[] V, double[] P) {
 			if (m_Matrix != null) {
 				m_Matrix.SpMV(1.0, P, 0, V);
-				double VxP = V.InnerProd(P).MPISum();
-                CheckIfAcceptable(VxP);
-				return VxP;
 			} else {
-				throw new NotImplementedException();
+                double[] Sol = new double[InnerCycle.GetMatrix().NoOfCols];
+				double[] Y = InnerIterBefore(P);
+                InnerCycle.Solve(Sol, Y);
+				V = InnerIterAfter(Sol);
 			}
+
+			double VxP = V.InnerProd(P).MPISum();
+			CheckIfAcceptable(VxP);
+			return VxP;
 		}
 
         bool CheckIteration(int n, double ResNorm0, double ResNorm, double alpha) {

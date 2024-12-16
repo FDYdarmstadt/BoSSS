@@ -30,6 +30,7 @@ using BoSSS.Solution.NSECommon;
 using System.Diagnostics;
 using ilPSP.Tracing;
 using ilPSP.LinSolvers.PARDISO;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -588,73 +589,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						b1.SaveToTextFile("b1");
 						b2.SaveToTextFile("b2");
 
-						SchurRHSMtx.SpMVpara(-1.0, vecb1, 1.0, vecb2);
-						var P = new double[Pidx.Length];
-						var Usol = new double[Uidx.Length];
-
+						//vecb2 = schur rhs2 = b2-C*A^-1*b1
+						var Ainvb1 = new double[m];
+                        SolveWithMatrix(ConvDiff, Ainvb1, vecb1);
+                        divVel.SpMVpara(-1.0, Ainvb1, 1.0, vecb2);
 						vecb2.SaveToTextFile("schurb2");
 
-						var Setled = (CoordinateMapping)m_mgop.BaseGridProblemMapping;
+                        //schur res2 = schur rhs2 if the initial guess is zero vector (i.e., )
+                        var res2 = vecb2.CloneAs();
 
-						int D = m_mgop.Mapping.GridData.SpatialDimension;
-						var op = m_mgop;
+						var Psol = new double[n];
+						var Usol = new double[m];
 
-						var presureField = Setled.Fields[D];
+                        Func<double[], double[]> multipWithPgrad = input => {
+                            var output = new double[pGrad.RowPartitioning.LocalLength];
+                            pGrad.SpMVpara(1.0,input,0.0, output);
+                            return output;
+                        };
 
-
-                        //Create MultiGridoperator
-						var dummy = new DifferentialOperator(
-									   new string[] { "pressure" },
-									   new string[] { "div" },
-									   QuadOrderFunc.Linear());
-						dummy.Commit();
-
-						List<AggregationGridBasis[]> leveledBases = new List<AggregationGridBasis[]>();
-						List<MultigridOperator.ChangeOfBasisConfig[]> leveledConfigs = new List<MultigridOperator.ChangeOfBasisConfig[]>();
-
-						for (var mo = op; mo != null; mo = mo.CoarserLevel) {
-							Debug.Assert(mo.Mapping.AggBasis.Length == D + 1);
-
-							AggregationGridBasis[] bases = new AggregationGridBasis[1] { mo.Mapping.AggBasis[D] };
-							leveledBases.Add(bases);
-
-							var conf = mo.Config[D];
-							conf.VarIndex = new int[] { 0 };
-
-							MultigridOperator.ChangeOfBasisConfig[] configs = new MultigridOperator.ChangeOfBasisConfig[1] { conf };
-							leveledConfigs.Add(configs);
-						}
-
-						var co = presureField.Mapping;
-						var pressureMGmapping = new MultigridMapping(co, new[] { op.Mapping.AggBasis[D] }, new[] { op.Mapping.DgDegree[D] });
-
-						var MsrOp = new MsrMatrix(Pidx.Length * 2, Pidx.Length * 2, 1, 1);
-						var rawOp = new BlockMsrMatrix(presureField.Mapping, presureField.Mapping);
-						rawOp.Clear();
-						var rawMaMa = new BlockMsrMatrix(presureField.Mapping, presureField.Mapping);
-						rawMaMa.AccEyeSp(1);
-
-						var MultigridOp = new MultigridOperator(leveledBases, presureField.Mapping,
-						rawOp, rawMaMa, leveledConfigs,
-						dummy);
-
-						MultigridOp.m_RawOperatorMatrix = SchurMtx.ToBlockMsrMatrix(pressureMGmapping, pressureMGmapping);
-
-
-                        // Solve Schur
-						var OrthoMgConfig = new OrthoMGSchwarzConfig() {
-							TargetBlockSize = 100,
-							CoarseKickIn = 200,
-							MinSolverIterations = 0,
+						Func<double[], double[]> multipWithDivVel = input => {
+							var output = new double[divVel.RowPartitioning.LocalLength];
+							divVel.SpMVpara(-1.0, input, 0.0, output); //attention to minus sign
+							return output;
 						};
 
-						OrthoMgConfig.ConvergenceCriterion = 1e-10;
+						
+						var InnerSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                        InnerSolver.DefineMatrix(ConvDiff);
 
-						var solver = OrthoMgConfig.CreateInstance(MultigridOp);
-						solver.Solve(P, vecb2);
+						using (var Psolver = new BoSSS.Solution.AdvancedSolvers.SoftPCG(false)) {
+                            Psolver.InnerIterBefore = multipWithPgrad;
+							Psolver.InnerIterAfter = multipWithDivVel;
 
+							Psolver.InnerCycle = InnerSolver;
+							Psolver.Solve(Psol, res2);
 
-						pGrad.SpMVpara(-1.0, P, 1.0, vecb1);
+							this.m_ThisLevelIterations = Psolver.ThisLevelIterations;
+							this.m_IterationsInNested = Psolver.IterationsInNested;
+							this.m_Converged = Psolver.Converged;
+						}
+
+                        //Update the rhs1
+						pGrad.SpMVpara(-1.0, Psol, 1.0, vecb1);
 
                         //Solver velocity
 						using (var Usolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
@@ -668,15 +644,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 						for (int i = 0; i < Pidx.Length; i++)
-							X[(int)Pidx[i]] = P[i];
+							X[(int)Pidx[i]] = Psol[i];
 
-						//Usol.SaveToTextFile("CalculatedU");
-						//P.SaveToTextFile("CalculatedP");
-						//X.SaveToTextFile("CalculatedX");
-						this.m_ThisLevelIterations = solver.ThisLevelIterations;
-						this.m_IterationsInNested = solver.IterationsInNested;
-						this.m_Converged = solver.Converged;
-						return;
+                        Usol.SaveToTextFile("CalculatedU");
+                        Psol.SaveToTextFile("CalculatedP");
+                        X.SaveToTextFile("CalculatedX");
+                        return;
 					}
 
 			}
