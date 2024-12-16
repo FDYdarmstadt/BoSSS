@@ -45,9 +45,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var MgTop = new SoftPCG();
                 ParamsSeter(MgOp.LevelIndex, MgTop);
 
-                var R = new GenericRestriction();
-                MgTop.Precond = R;
-                R.CoarserLevelSolver = InitMultigridChain(MgOp.CoarserLevel, ParamsSeter, CoarsestSolverFactory);
+                var Res = new GenericRestriction();
+                MgTop.Precond = Res;
+                Res.CoarserLevelSolver = InitMultigridChain(MgOp.CoarserLevel, ParamsSeter, CoarsestSolverFactory);
                                 
                 return MgTop;
             }
@@ -90,7 +90,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        public int NoOfIterations = 0;
+		/// <summary>
+		/// When the matrix is not explicilty available, an inner iteration can be defined to calculate Matrix * Search Direction (m_matrix x P)
+		/// </summary>
+		public ISolverSmootherTemplate InnerCycle {
+			get;
+			set;
+		}
+
+		public int NoOfIterations = 0;
 
         /// <summary>
         /// implementation of the CG algorithm
@@ -100,23 +108,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where Vec2 : IList<double> //
         {
             using (new FuncTrace()) {
-                double[] x, R;
+                double[] x, Res;
                 if (_x is double[]) {
                     x = _x as double[];
                 } else {
                     x = _x.ToArray();
                 }
                 if (_R is double[]) {
-                    R = _R as double[];
+                    Res = _R as double[];
                 } else {
-                    R = _R.ToArray();
+                    Res = _R.ToArray();
                 }
 
                 int L = x.Length;
 
+                // Search direction
                 double[] P = new double[L];
 
-                //double[] R = rhs; // rhs is only needed once, so we can use it to store residuals
+                //double[] Res = rhs; // rhs is only needed once, so we can use it to store residuals
                 double[] V = new double[L];
                 double[] Z = new double[L];
 
@@ -124,18 +133,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // compute P0, R0
                 // ==============
                 GenericBlas.dswap(L, x, 1, P, 1);
-                m_Matrix.SpMV(-1.0, P, 1.0, R);
-                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
+
+                m_Matrix.SpMV(-1.0, P, 1.0, Res);
+
+                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), Res.CloneAs(), this.m_MgOp as MultigridOperator);
 
                 GenericBlas.dswap(L, x, 1, P, 1);
                 if (Precond != null) {
-                    Precond.Solve(Z, R);
+                    Precond.Solve(Z, Res);
                     P.SetV(Z);
                 } else {
-                    P.SetV(R);
+                    P.SetV(Res);
                 }
 
-                double alpha = R.InnerProd(P).MPISum();
+                double alpha = Res.InnerProd(P).MPISum();
                 double alpha_0 = alpha;
                 double ResNorm;
 
@@ -175,23 +186,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     x.AccV(lambda, P);
 
-                    R.AccV(-lambda, V);
+                    Res.AccV(-lambda, V);
 
                     if (IterationCallback != null) {
-                        IterationCallback(NoOfIterations, x.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
+                        IterationCallback(NoOfIterations, x.CloneAs(), Res.CloneAs(), this.m_MgOp as MultigridOperator);
                     }
 
                     if (Precond != null) {
                         Z.Clear();
-                        Precond.Solve(Z, R);
+                        Precond.Solve(Z, Res);
                     } else {
-                        Z.SetV(R);
+                        Z.SetV(Res);
                     }
 
-                    double alpha_neu = R.InnerProd(Z).MPISum();
+                    double alpha_neu = Res.InnerProd(Z).MPISum();
 
                     // compute residual norm
-                    ResNorm = R.L2NormPow2().MPISum().Sqrt();
+                    ResNorm = Res.L2NormPow2().MPISum().Sqrt();
 
                     P.ScaleV(alpha_neu / alpha);
                     P.AccV(1.0, Z);
@@ -201,8 +212,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (!object.ReferenceEquals(_x, x))
                     _x.SetV(x);
-                if (!object.ReferenceEquals(_R, R))
-                    _R.SetV(R);
+                if (!object.ReferenceEquals(_R, Res))
+                    _R.SetV(Res);
 
 
                 return;
