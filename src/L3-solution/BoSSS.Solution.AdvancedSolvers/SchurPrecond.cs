@@ -51,8 +51,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	}
 
 
-	public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback
-    {
+    public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {
                 return m_IterationsInNested;
@@ -77,14 +76,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //throw new NotImplementedException();
             }
             set {
-             
+
                 //throw new NotImplementedException();
             }
         }
 
         MultigridOperator m_mgop;
+        MultigridMapping MgMap {
+            get {
+                return m_mgop.Mapping;	}
+            }
+            
 
-        BlockMsrMatrix Mtx;
+		BlockMsrMatrix Mtx;
 		//BlockMsrMatrix operatorM;
 
         MsrMatrix P;
@@ -99,8 +103,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			get { return Pidx.Length; }
 		}
 
-		//double[] RHSvel;
-
 		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3, exact_matlab = 4, }
 
         public bool ApproxScaling = false;
@@ -110,16 +112,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Init(MultigridOperator op)
         {
 			//Debugger.Launch();
-
+			this.m_mgop = op;
 			int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
 
-			var MgMap = op.Mapping;
-            this.m_mgop = op;
+
             
-            MgMap.GetSubvectorIndices();
-
-
 			if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
             if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
@@ -580,9 +578,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				case SchurOptions.Uzawa: {
 						Console.WriteLine("starting uzawa");
-
-						var b1 = Uidx.Select(ind => B[(int)ind]);
-						var b2 = Pidx.Select(ind => B[(int)ind]);
+                        Debugger.Launch();
+						var b1 = Uidx.Select(ind => B[MgMap.Global2Local(ind)]);
+						var b2 = Pidx.Select(ind => B[MgMap.Global2Local(ind)]);
 						var vecb1 = b1.ToArray();
 						var vecb2 = b2.ToArray();
 
@@ -636,11 +634,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //Re-assign variables
 						for (int i = 0; i < Uidx.Length; i++)
-							X[(int)Uidx[i]] = Usol[i];
+							X[MgMap.Global2Local(Uidx[i])] = Usol[i];
 
 
 						for (int i = 0; i < Pidx.Length; i++)
-							X[(int)Pidx[i]] = Psol[i];
+							X[MgMap.Global2Local(Pidx[i])] = Psol[i];
 
                         Usol.SaveToTextFile("CalculatedU");
                         Psol.SaveToTextFile("CalculatedP");

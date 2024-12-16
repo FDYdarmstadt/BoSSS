@@ -208,7 +208,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (m_Matrix != null) {
 				m_Matrix.SpMV(1.0, P, 0, V);
 			} else {
-                double[] Sol = new double[InnerCycle.GetMatrix().NoOfCols];
+                double[] Sol = new double[InnerCycle.GetMatrix().RowPartitioning.LocalLength];
                 double[] Y = new double[InnerCycle.GetMatrix().RowPartitioning.LocalLength];
 				InnerIterBefore(P,Y);
                 InnerCycle.Solve(Sol, Y);
