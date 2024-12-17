@@ -165,7 +165,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //    return;
                 //}
 
-                bool ShouldContinue = CheckIteration(2, ResNorm0, ResNorm,alpha); // one iteration has already been performed (P0, R0)
+                bool ShouldContinue = CheckIteration(0, ResNorm0, ResNorm,alpha); // one iteration has already been performed (P0, R0)
 
 				// iterate
 				// =======
@@ -191,7 +191,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     P.AccV(1.0, PrecondRes);
 
                     alpha = alpha_neu;
-					ShouldContinue = CheckIteration(0, ResNorm0, ResNorm, alpha);
+					ShouldContinue = CheckIteration(n, ResNorm0, ResNorm, alpha);
 				}
 
 				if (!object.ReferenceEquals(_x, x))
