@@ -111,13 +111,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Init(MultigridOperator op)
         {
-			//Debugger.Launch();
 			this.m_mgop = op;
 			int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
 
-
-            
+           
 			if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
             if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
@@ -156,13 +154,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			op.MassMatrix.AccSubMatrixTo(1.0, pMassMatrix, Pidx, default(long[]), Pidx, default(long[]), default(long[]), default(long[]));
 
-			//ConvDiff.SaveToTextFile("ConvDiff");
-			ConvDiff.SaveToTextFileSparse("ConvDiff");
-			pGrad.SaveToTextFileSparse("pGrad");
-			divVel.SaveToTextFileSparse("divVel");
-			PxP.SaveToTextFileSparse("PxP");
-			velMassMatrix.SaveToTextFileSparse("velMassMatrix");
-			pMassMatrix.SaveToTextFileSparse("pMassMatrix");
+			//ConvDiff.SaveToTextFileSparse("ConvDiff");
+			//pGrad.SaveToTextFileSparse("pGrad");
+			//divVel.SaveToTextFileSparse("divVel");
+			//PxP.SaveToTextFileSparse("PxP");
+			//velMassMatrix.SaveToTextFileSparse("velMassMatrix");
+			//pMassMatrix.SaveToTextFileSparse("pMassMatrix");
 
 			switch (SchurOpt)
             {
@@ -366,10 +363,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						//SchurRHSselfMtx.SaveToTextFileSparse("SchurRHSselfMtx");
 
 						SchurMtx = SchurSelfMSR;
-                        SchurMtx.SaveToTextFileSparse("returnedSchur");
+                        //SchurMtx.SaveToTextFileSparse("returnedSchur");
 
 						SchurRHSMtx = SchurRHSselfMSR;
-						SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
+						//SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
 
 
 
@@ -452,14 +449,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var vecb1 = b1.ToArray();
 						var vecb2 = b2.ToArray();
 
-						b1.SaveToTextFile("b1");
-						b2.SaveToTextFile("b2");
+						//b1.SaveToTextFile("b1");
+						//b2.SaveToTextFile("b2");
 
 						SchurRHSMtx.SpMVpara(-1.0, vecb1, 1.0, vecb2);
                         var P = new double[Pidx.Length];
 						var Usol = new double[Uidx.Length];
 
-						vecb2.SaveToTextFile("schurb2");
+						//vecb2.SaveToTextFile("schurb2");
 
                         var Setled = (CoordinateMapping)m_mgop.BaseGridProblemMapping;
 
@@ -578,20 +575,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				case SchurOptions.Uzawa: {
 						Console.WriteLine("starting uzawa");
-                        Debugger.Launch();
 						var b1 = Uidx.Select(ind => B[MgMap.Global2Local(ind)]);
 						var b2 = Pidx.Select(ind => B[MgMap.Global2Local(ind)]);
 						var vecb1 = b1.ToArray();
 						var vecb2 = b2.ToArray();
 
-						b1.SaveToTextFile("b1");
-						b2.SaveToTextFile("b2");
+						//b1.SaveToTextFile("b1");
+						//b2.SaveToTextFile("b2");
 
 						//vecb2 = schur rhs2 = b2-C*A^-1*b1
 						var Ainvb1 = new double[m];
                         SolveWithMatrix(ConvDiff, Ainvb1, vecb1);
                         divVel.SpMVpara(-1.0, Ainvb1, 1.0, vecb2);
-						vecb2.SaveToTextFile("schurb2");
+						//vecb2.SaveToTextFile("schurb2");
 
                         //schur res2 = schur rhs2 if the initial guess is zero vector (i.e., )
                         var res2 = vecb2.CloneAs();
@@ -640,9 +636,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						for (int i = 0; i < Pidx.Length; i++)
 							X[MgMap.Global2Local(Pidx[i])] = Psol[i];
 
-                        Usol.SaveToTextFile("CalculatedU");
-                        Psol.SaveToTextFile("CalculatedP");
-                        X.SaveToTextFile("CalculatedX");
+                        //Usol.SaveToTextFile("CalculatedU");
+                        //Psol.SaveToTextFile("CalculatedP");
+                        //X.SaveToTextFile("CalculatedX");
+                        Console.WriteLine($"total iteration number: {this.m_ThisLevelIterations}");
                         return;
 					}
 
