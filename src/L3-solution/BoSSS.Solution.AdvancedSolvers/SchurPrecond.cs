@@ -42,7 +42,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
 
-			var templinearSolve = new SchurPrecond();
+			var templinearSolve = new SchurPrecond(this);
 
 
 			templinearSolve.Init(level);
@@ -52,7 +52,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback {
-        public int IterationsInNested {
+        
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public SchurPrecond(SchurPrecondConfig config) {
+            m_config = config;
+        }
+
+		readonly SchurPrecondConfig m_config;
+
+		public int IterationsInNested {
             get {
                 return m_IterationsInNested;
                 //throw new NotImplementedException();
@@ -533,7 +543,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             MinSolverIterations =0,
 						};
 
-                        OrthoMgConfig.ConvergenceCriterion = 1e-10;
+                        OrthoMgConfig.ConvergenceCriterion = m_config.ConvergenceCriterion;
 
                         var solver = OrthoMgConfig.CreateInstance(MultigridOp);
 						solver.Solve(P, vecb2);
@@ -608,7 +618,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         InnerSolver.DefineMatrix(ConvDiff);
 
 						using (var Psolver = new BoSSS.Solution.AdvancedSolvers.SoftPCG(false)) {
-                            Psolver.InnerIterBefore = multipWithPgrad;
+                            Psolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
+							Psolver.MaxIterations = m_config.MaxSolverIterations;
+
+							Psolver.InnerIterBefore = multipWithPgrad;
 							Psolver.InnerIterAfter = multipWithDivVel;
 
 							Psolver.InnerCycle = InnerSolver;

@@ -56,7 +56,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         */
 
 		//public double m_Tolerance = 1.0e-10;
-		//public int m_MaxIterations = 10000;
+		[DataMember]
+		public int MaxIterations = 10000;
 		//public int m_MinIterations = 5;
 
 		[DataMember]
@@ -70,19 +71,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public SoftPCG(bool calculateWithMatrix = true) {
-            this.CalculateWithMatrix = calculateWithMatrix;
-            TerminationCriterion = (int iter, double R0_l2, double R_l2) => R_l2 < R0_l2 * ConvergenceCriterion + ConvergenceCriterion;
+		/// <summary>
+		/// ctor
+		/// </summary>
+		public SoftPCG(bool calculateWithMatrix = true) {
+			this.CalculateWithMatrix = calculateWithMatrix;
+			TerminationCriterion = (int iter, double R0_l2, double R_l2) => {
+
+				bool IsMaximumItReached = iter <= MaxIterations;
+				bool Success = R_l2 < R0_l2 * ConvergenceCriterion + ConvergenceCriterion;
+
+				bool ShouldContinue = !IsMaximumItReached && !Success;
+				return ShouldContinue;
+			};
 		}
 
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+		/// <summary>
+		/// ~
+		/// </summary>
+		public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
@@ -160,10 +168,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 ResNorm = Math.Sqrt(alpha);
                 double ResNorm0 = ResNorm;
-                //if (TerminationCriterion(1, ResNorm0, ResNorm)) {
-                //    this.m_Converged = true;
-                //    return;
-                //}
 
                 bool ShouldContinue = CheckIteration(0, ResNorm0, ResNorm,alpha); // one iteration has already been performed (P0, R0)
 
@@ -171,12 +175,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// =======
 				for (int n = 1; ShouldContinue; n++) {
                     double VxP = CalculateVxP(V, P);
-					//Console.WriteLine("VxP: {0}", VxP);
 					double lambda = alpha / VxP;
                     CheckIfAcceptable(lambda);
-
 					x.AccV(lambda, P);
-
                     Res.AccV(-lambda, V);
 
 					IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), Res.CloneAs(), this.m_MgOp as MultigridOperator);
@@ -193,7 +194,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     alpha = alpha_neu;
 					ShouldContinue = CheckIteration(n, ResNorm0, ResNorm, alpha);
 				}
-
+                Console.WriteLine("ResNorm " + ResNorm);
 				if (!object.ReferenceEquals(_x, x))
                     _x.SetV(x);
                 if (!object.ReferenceEquals(_R, Res))
