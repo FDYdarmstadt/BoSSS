@@ -400,7 +400,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     for (int d = 0; d < D; d++) {
                         var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
                             DegreeS = new int[] { pVel },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            mode = MultigridOperator.Mode.Eye,
                             VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
                         };
                         configsLevel.Add(configVel_d);
@@ -409,7 +409,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     var configPres = new MultigridOperator.ChangeOfBasisConfig() {
                         DegreeS = new int[] { pPrs },
                         //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
-                        mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                        mode = MultigridOperator.Mode.Eye,
                         VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
                     };
                     configsLevel.Add(configPres);
