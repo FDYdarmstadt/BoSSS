@@ -71,20 +71,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-		/// <summary>
-		/// ctor
-		/// </summary>
-		public SoftPCG(bool calculateWithMatrix = true) {
-			this.CalculateWithMatrix = calculateWithMatrix;
-			TerminationCriterion = (int iter, double R0_l2, double R_l2) => {
-
-				bool IsMaximumItReached = iter <= MaxIterations;
-				bool Success = R_l2 < R0_l2 * ConvergenceCriterion + ConvergenceCriterion;
-
-				bool ShouldContinue = !IsMaximumItReached && !Success;
-				return ShouldContinue;
-			};
-		}
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public SoftPCG(bool calculateWithMatrix = true) {
+            this.CalculateWithMatrix = calculateWithMatrix;
+            TerminationCriterion = (int iter, double R0_l2, double R_l2) => R_l2 < R0_l2 * ConvergenceCriterion + ConvergenceCriterion;
+        }
 
 
 		/// <summary>
@@ -222,12 +215,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
         bool CheckIteration(int n, double ResNorm0, double ResNorm, double alpha) {
-            bool ret = true;
+			NoOfIterations++;
+			bool ret = true;
+
 			if (TerminationCriterion(n, ResNorm0, ResNorm)) {
 				this.m_Converged = true;
                 ret = false;
 			}
-			NoOfIterations++;
+
+            if (n >= MaxIterations) { 
+                ret = false;
+			}
 
 			if (Math.Abs(alpha) <= double.Epsilon) {
 				// numerical breakdown
