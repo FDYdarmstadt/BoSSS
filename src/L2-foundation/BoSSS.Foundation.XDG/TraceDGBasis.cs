@@ -6,10 +6,16 @@ using System.Runtime.Serialization;
 using System.Text;
 
 namespace BoSSS.Foundation.XDG {
-    
+
     /// <summary>
     /// Basis for trace-fields, i.e., fields on the level-set surface 
     /// </summary>
+    /// <remarks>
+    /// The <see cref="TraceDGBasis"/> class determines the number of degrees-of-freedom 
+    /// which are associated with each cell.
+    /// - in the FAR-field, trace fields have 0 DOFs
+    /// - in the NEAR- and CUT-cells, trace fields have a single set of DOFs, determined by the DG polynomial degree
+    /// </remarks>
     public partial class TraceDGBasis : Basis {
 
         /// <summary>
@@ -25,13 +31,14 @@ namespace BoSSS.Foundation.XDG {
 
             // minimal Length
             // ==============
-            this.m_MinimalLength = 0;
+            this.m_MinimalLength = 0; // in the FAR-field, we have 0 DOFs
             if (base.MaximalLength != base.MinimalLength)
                 throw new NotSupportedException();
 
             // maximal Length
             // ==============
-            this.m_MaximalLength = base.MinimalLength;
+            this.m_MaximalLength = base.MinimalLength; // base length is determined by DG degree
+            //                                            so, we assume that there is at max. 1 set of DOFs in the cut cells
         }
 
 
