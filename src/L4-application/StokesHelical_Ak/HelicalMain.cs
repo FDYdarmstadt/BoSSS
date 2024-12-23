@@ -62,7 +62,7 @@ namespace StokesHelical_Ak {
                 }
                 Console.WriteLine(";");
             }
-            //StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
+            StokesHelical_Ak.TestSpartial.TestSpatial.Steady_SpatialConv_HP_Re_100000_Stokes_with_R0fix(4);
 
             ////c.ImmediatePlotPeriod = 1;
             ////c.NoOfTimesteps = 5;
