@@ -28,6 +28,7 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
 using System.Runtime.Serialization;
+using ilPSP.LinSolvers.PARDISO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
@@ -95,7 +96,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// ~
 		/// </summary>
-		public ISolverSmootherTemplate Precond {
+		public PARDISOSolver Precond {
             get;
             set;
         }
@@ -283,15 +284,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ArgumentException("Column partitioning mismatch.");
 
                     
-                    if(Precond != null)
-                        Precond.Init(op);
+                    //if(Precond != null)
+                    //    Precond.Init(op);
                 }
             }
         }
         public int IterationsInNested {
             get {
-                if(this.Precond != null)
-                    return this.Precond.IterationsInNested + this.Precond.ThisLevelIterations;
+                if (this.Precond != null)
+                    return 0;// this.Precond.IterationsInNested + this.Precond.ThisLevelIterations;
                 else
                     return 0;
             }
@@ -314,7 +315,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void ResetStat() {
             this.m_Converged = false;
             this.NoOfIterations = 0;
-            this?.Precond.ResetStat();
+            //this?.Precond.ResetStat();
         }
 
         /// <summary>
