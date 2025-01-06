@@ -105,6 +105,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, SchurRHSMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix, pMassMatrix;
         long[] Uidx, Pidx;
 		int[] UidxInt, PidxInt;
+
+        int D;
+
         int m {
             get { return Uidx.Length; }
         }
@@ -122,7 +125,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Init(MultigridOperator op)
         {
 			this.m_mgop = op;
-			int D = op.Mapping.GridData.SpatialDimension;
+			D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
 
            
@@ -617,9 +620,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						var InnerSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                         InnerSolver.DefineMatrix(ConvDiff);
 
+						//preconditioner matrix
+						var PrecondM = new MsrMatrix(n, n, 1, 1);
+
+                        for (int i = 0; i < n; i++) {
+                            var row = pGrad.GetRowShallow((long)i);
+                            double rowDotColumn = 0;
+
+                            foreach (var e in row) 
+                                rowDotColumn +=  e.Value * e.Value;
+
+							rowDotColumn = rowDotColumn != 0 ? rowDotColumn : 1;
+
+							PrecondM.SetDiagonalElement(i, rowDotColumn);
+
+
+						}
+
 						using (var Psolver = new BoSSS.Solution.AdvancedSolvers.SoftPCG(false)) {
                             Psolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
 							Psolver.MaxIterations = m_config.MaxSolverIterations;
+
+                            var PardisoConfig = new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+
+
+							Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+							Psolver.Precond.DefineMatrix(PrecondM);
 
 							Psolver.InnerIterBefore = multipWithPgrad;
 							Psolver.InnerIterAfter = multipWithDivVel;
