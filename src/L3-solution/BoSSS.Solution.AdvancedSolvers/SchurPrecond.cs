@@ -683,10 +683,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					}
 
 			}
-
         }
 
-        public void SolveWithMatrix<U, V>(IMutableMatrixEx M, U X, V B)
+
+
+        BlockMsrMatrix GetPreconditioningMatrix() {
+            var invDiagConvDiff = new MsrMatrix(m, m, 1, 1);
+			var P = new MsrMatrix(n, n, 1, 1);
+
+			for (int i = 0; i < m; i++)
+                invDiagConvDiff.SetDiagonalElement(i, ConvDiff[i, i]);
+
+
+			var Setled = (CoordinateMapping)m_mgop.BaseGridProblemMapping;
+            var VelocityFields = Setled.Fields.Take(D).ToArray();
+			var PressureField = Setled.Fields.Last();
+
+			var coP = PressureField.Mapping;
+			var pressureMGmapping = new MultigridMapping(coP, new[] { MgMap.AggBasis[D] }, new[] { MgMap.DgDegree[D] });
+
+			var coU = new CoordinateMapping(VelocityFields);
+			var velocityMGmapping = new MultigridMapping(coU,  MgMap.AggBasis.Take(D).ToArray() , MgMap.DgDegree.Take(D).ToArray());
+
+            var invDiagConvDiffBlock = invDiagConvDiff.ToBlockMsrMatrix(velocityMGmapping, velocityMGmapping);
+			var pGradBlock = pGrad.ToBlockMsrMatrix(velocityMGmapping, pressureMGmapping);
+			var intermediate = pGrad.ToBlockMsrMatrix(velocityMGmapping, pressureMGmapping);
+			var divVelBlock = divVel.ToBlockMsrMatrix(pressureMGmapping, velocityMGmapping);
+            var PBlock = P.ToBlockMsrMatrix(pressureMGmapping, pressureMGmapping);
+
+
+            BlockMsrMatrix.Multiply(intermediate, invDiagConvDiffBlock, pGradBlock);
+			BlockMsrMatrix.Multiply(PBlock, divVelBlock, intermediate);
+            return PBlock;
+		}
+
+		public void SolveWithMatrix<U, V>(IMutableMatrixEx M, U X, V B)
 	        where U : IList<double>
 	        where V : IList<double> {
 
