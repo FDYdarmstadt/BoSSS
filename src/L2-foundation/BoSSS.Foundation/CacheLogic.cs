@@ -760,7 +760,7 @@ namespace BoSSS.Foundation.Caching {
         protected abstract MultidimensionalArray Allocate(int i0, int Len, NodeSet NS);
                 
         /// <summary>
-        /// returns the values for nodeset <paramref name="NS"/>,
+        /// returns the values for node-set <paramref name="NS"/>,
         /// in the cells (with local index) <paramref name="j0"/> (including)
         /// to <paramref name="j0"/>+<paramref name="Len"/> (excluding).
         /// </summary>
@@ -794,7 +794,25 @@ namespace BoSSS.Foundation.Caching {
             return this.m_impl.GetValue_Cell(NS, j0, Len, 0);
         }
 
-
+        /// <summary>
+        /// returns the values for node-set <paramref name="NS"/>,
+        /// in the cell (with local index) <paramref name="j0"/>.
+        /// </summary>
+        /// <param name="NS">the node set.</param>
+        /// <param name="j0">local cell index of the first cell to evaluate</param>
+        /// <returns></returns>
+        /// <remarks>
+        /// This method returns, if available, cached values  or it re-computes them by
+        /// calling <see cref="ComputeValues"/>.
+        /// </remarks>
+        public MultidimensionalArray GetValue_Cell(NodeSet NS, int j0) {
+            var R0 = GetValue_Cell(NS, j0, 1);
+            int[] Sub = new int[R0.Dimension];
+            Sub.SetAll(-1);
+            Sub[0] = 0;
+            return R0.ExtractSubArrayShallow(Sub);
+        }
+        
         /// <summary>
         /// Single-value evaluation at edges,
         /// used for properties which are unique at edges (e.g. edge normals or global coordinates).
