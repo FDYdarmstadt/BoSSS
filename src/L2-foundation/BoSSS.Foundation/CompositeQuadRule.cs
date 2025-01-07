@@ -22,23 +22,23 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.Quadrature {
 
-
-
-    /// <summary>
-    /// Instances of this class describe which quadrature rule should be used
-    /// at which quadrature item (cell or edge).
-    /// </summary>
-    /// <remarks>
-    /// The main motivation behind this class is the re-use of quadrature nodes
-    /// and/or weights.
-    /// </remarks>
-    public sealed class CompositeQuadRule<TQuadRule> : ICompositeQuadRule<TQuadRule>
+   
+	/// <summary>
+	/// Instances of this class describe which quadrature rule should be used
+	/// at which quadrature item (cell or edge).
+	/// </summary>
+	/// <remarks>
+	/// The main motivation behind this class is the re-use of quadrature nodes
+	/// and/or weights.
+	/// </remarks>
+	public sealed class CompositeQuadRule<TQuadRule> : ICompositeQuadRule<TQuadRule>
         where TQuadRule : QuadRule {
 
         /// <summary>

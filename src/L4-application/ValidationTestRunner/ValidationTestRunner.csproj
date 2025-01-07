@@ -13,6 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\FreeXNSE\FreeXNSE.csproj" />
     <ProjectReference Include="..\PublicTestRunner\PublicTestRunner.csproj" />
   </ItemGroup>
 </Project>

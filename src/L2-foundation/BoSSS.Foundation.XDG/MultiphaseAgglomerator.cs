@@ -264,7 +264,7 @@ namespace BoSSS.Foundation.XDG {
             if (PlotAgglomeration) {
                 string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
                 for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
-                    AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
+                    AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString(Tracker)}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
                 }
                 Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
                 AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt",true);

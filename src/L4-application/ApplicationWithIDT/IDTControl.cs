@@ -317,7 +317,9 @@ namespace ApplicationWithIDT {
         ZickZackSearch
     }
 
-
+    /// <summary>
+    /// enum controling the termination strategy
+    /// </summary>
     public enum TerminationStrategy {
         Skyline =0,
         SkylineWithDifferntTermNs,
@@ -347,6 +349,8 @@ namespace ApplicationWithIDT {
     /// FromOldSimulation: LevelSet is loaded from DB from an old simulation
     /// FromParams: User specifies basis Functions in the ControlFile
     /// FromFunction: User specifies a Func<double[],double> object witch is projected onto an ONB
+    /// FromReconstructionFromPoints: Reconstructs the level set from a set of points specified in a txt file.
+    /// DirectyFromTimestep: Uses an old timestep of a XDG shock tracking simulation
     /// </summary>
     public enum GetLevelSet {
         FromReconstruction,
@@ -389,12 +393,8 @@ namespace ApplicationWithIDT {
         Unsteady
     }
     /// <summary>
-    /// For the staggered solver, controls when the Basis degree is changed
+    /// Type of objective function/optimization problem chosen (f_err in f=f_err+f_phi)
     /// </summary>
-    //public enum StaggerdRunConfig {
-    //    ConstantTimesteps,
-    //    StagnatingLineSearch
-    //}
     public enum OptProblemType {
         FullEnRes,
         EnResOnlyCutCells,
@@ -402,7 +402,9 @@ namespace ApplicationWithIDT {
         RankineHugoniotFull,
         RankineHugoniotOnlyInterface
     }
-
+    /// <summary>
+    /// Variant of f_phi chosen (s.t. f=f_err+f_phi)
+    /// </summary>
     public enum FphiType {
         None,
         CurvatureAll,
@@ -410,7 +412,9 @@ namespace ApplicationWithIDT {
         PerssonSensorAll,
         PerssonSensorCut
     }
-
+    /// <summary>
+    /// Variant of reinitialization mode. The use can chose if the same tolerance is set for all p degrees or if a custom tolerance for each degree is specified.
+    /// </summary>
     public enum ReInitMode {
         OneTolForAllP,
         OneTolForEachP,

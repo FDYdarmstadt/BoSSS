@@ -140,8 +140,6 @@ namespace BoSSS.Solution.Statistic {
                 coarse = A;
             }
 
-
-
             var trackerB = coarse.Basis.Tracker;
             int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
             int quadOrder = maxDeg * 3 + 3;
@@ -155,8 +153,6 @@ namespace BoSSS.Solution.Statistic {
 
                 if (IgnoreMeanValue == true)
                     throw new NotImplementedException();
-
-
                 var A_spc = fine.GetSpeciesShadowField(spc);
                 var B_spc = coarse.GetSpeciesShadowField(spc);
 
@@ -167,9 +163,6 @@ namespace BoSSS.Solution.Statistic {
             return totNorm;
 
         }
-
-
-
 
         /// <summary>
         /// Approximate L2 distance between two DG fields; this also supports DG fields on different meshes, 
@@ -239,7 +232,6 @@ namespace BoSSS.Solution.Statistic {
                         fine = B;
                         coarse = A;
                     }
-
 
                     var CompQuadRule = scheme.SaveCompile(coarse.GridDat, quadOrder); // use over-integration
                     var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));

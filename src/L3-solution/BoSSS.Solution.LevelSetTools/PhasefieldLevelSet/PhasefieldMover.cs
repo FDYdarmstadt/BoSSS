@@ -90,13 +90,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // algebraic correction
                 switch (this.Control.CorrectionType)
                 {
-                    case PhasefieldControl.Correction.Concentration:
+                    case Correction.Concentration:
                         ConservativityCorrection();
                         break;
-                    case PhasefieldControl.Correction.Mass:
+                    case Correction.Mass:
                         MassCorrection();
                         break;
-                    case PhasefieldControl.Correction.None:
+                    case Correction.None:
                     default:
                         break;
                 }

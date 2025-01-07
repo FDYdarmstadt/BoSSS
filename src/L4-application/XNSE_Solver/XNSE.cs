@@ -75,12 +75,14 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            //ilPSP.Environment.NumThreads = 1;
 
-            //ilPSP.Environment.NumThreads = 8;
-            InitMPI();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye);
-            NUnit.Framework.Assert.IsTrue(false, "remove me");
-                        
+
+            ////ilPSP.Environment.NumThreads = 8;
+            //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+              
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
@@ -128,10 +130,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Algoim
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye}, {XQuadFactoryHelper.MomentFittingVariants.Algoim} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -653,6 +655,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 return dt;
             }
         }
+
+
         protected virtual List<DGField> GetInterfaceVelocity(){
             MPICollectiveWatchDog.Watch();
             int D = this.GridData.SpatialDimension;

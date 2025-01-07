@@ -55,12 +55,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.PrintingNip {
             }
         }
 
-        static public Formula Get_VelX(double Radius, double _delta, double RotVel) {
-            return new Formula("BoundaryValues.VelX", AdditionalPrefixCode: GetPrefixCode(Radius, _delta, RotVel));
+        static public Formula Get_VelX(double _delta, double RotVel, double Radius) {
+            return new Formula("BoundaryValues.VelX", AdditionalPrefixCode: GetPrefixCode(_delta, RotVel, Radius));
         }
 
-        static public Formula Get_VelY(double Radius, double _delta, double RotVel) {
-            return new Formula("BoundaryValues.VelY", AdditionalPrefixCode: GetPrefixCode(Radius, _delta, RotVel));
+        static public Formula Get_VelY(double _delta, double RotVel, double Radius) {
+            return new Formula("BoundaryValues.VelY", AdditionalPrefixCode: GetPrefixCode(_delta, RotVel, Radius));
         }
     }
     #endregion
@@ -120,6 +120,41 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.PrintingNip {
                 myDb.Controller.DBDriver.SaveGridIfUnique(ref grid, out _, myDb);// this takes forever
             }
             GridCache[id] = grd;
+            return grd;
+        }
+
+        static Dictionary<Tuple<int, double, double, double>, Grid2D> GridCache2 = new Dictionary<Tuple<int, double, double, double>, Grid2D>();
+
+        public static Grid2D GenerateGrid4Eddies(int Res, double _delta, double R = 0.1, double range = 1.0) {
+            var id = Tuple.Create(Res, _delta, R, range);
+            if (GridCache2.ContainsKey(id))
+                return GridCache2[id];
+
+            var Trf = new GridTrafo(_delta, R);
+
+            double c = Trf.c;
+            //  var xNodes = GenericBlas.Linspace(-Trf.R, Trf.R, 20*Res + 1);
+            var xNodes = GenericBlas.Linspace(-1, 1, 20 * Res + 1);
+            xNodes = xNodes.Select(x => Math.Sign(x) * x * x * Trf.R * range).ToArray();
+            var xiNodes = xNodes.Select(x => Math.Atan(x / Trf.c) - Math.Atan(x / -Trf.c) + Math.PI).ToArray();
+            var etaNodes = GenericBlas.Linspace(Trf.eta0, Trf.eta1, Res + 1);
+
+            var grd = Grid2D.Cartesian2DGrid(xiNodes, etaNodes, periodicX: false, NonlinearGridTrafo: Trf.T, type: cellType);
+
+            grd.DefineEdgeTags(delegate (Vector X) {
+                if (Math.Abs(Math.Sqrt(X[0] * X[0] + Math.Pow(-Trf.epsilon - Trf.R - X[1], 2)) - Trf.R) < 1e-12)
+                    return "wall_substrat";
+                else if (Math.Abs(Math.Sqrt(X[0] * X[0] + Math.Pow(+Trf.epsilon + Trf.R - X[1], 2)) - Trf.R) < 1e-12)
+                    return "wall_walze";
+                else
+                    return "velocity_inlet";
+            });
+
+            if (myDb != null) {
+                IGrid grid = grd;
+                myDb.Controller.DBDriver.SaveGridIfUnique(ref grid, out _, myDb);// this takes forever
+            }
+            GridCache2[id] = grd;
             return grd;
         }
 

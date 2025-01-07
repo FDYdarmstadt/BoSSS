@@ -794,6 +794,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 if(JacobiParameterVars == null)
                                     JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
 
+                                // set JacobiParameterVars to corresponding this.Parameters
+                                foreach (var paramName in op.ParameterVar) {
+                                    int idxJacOp = op.ParameterVar.IndexOf(paramName);
+                                    int idxOp = this.XdgOperator.ParameterVar.IndexOf(paramName);
+                                    if (!(idxOp == -1)) {
+                                        JacobiParameterVars[idxJacOp] = this.Parameters[idxOp];
+                                    }
+                                }
+
                                 op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
 
                                 var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);

@@ -152,11 +152,7 @@ namespace XESF {
 
 
                 grid.DefineEdgeTags(delegate (double[] X) {
-                    if(Math.Abs(X[0] - xMax) < 1e-14) {    // Right boundary
-                                                           ////if((-X[0] + 0.5 + (X[1] / Math.Tan(wedge_angle)))>=0){ 
-                                                           //if(X[1] >= Math.Tan(39.3139318 * Math.PI / 180.0)) { //-0.01 doesn't work
-                                                           //    return 2;
-                                                           //} else { // (part of void area)
+                    if(Math.Abs(X[0] - xMax) < 1e-14) {
                         return 2;
                         //return 3; // Wedge Part of Outlet
 
@@ -164,19 +160,9 @@ namespace XESF {
                         return 1;
                     } else if(Math.Abs(X[1] - yMax) < 1e-14) { // top boundary
                         return 2;
-                        //if(X[0] < 0.5) {
-                        //    return 1;
-                        //} else {
-                        //    return 2;
-                        //}
 
                     } else { //if(Math.Abs(X[1] - yMin) < 1e-14) { //bottom boundary
                         return 3;
-                        //if(X[0] <= 1) {
-                        //    return 2;
-                        //} else {
-                        //    return 2;
-                        //}
                     }
                 });
                 return grid;
@@ -392,12 +378,6 @@ namespace XESF {
                 c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#R", X => velocityX_Right);
                 c.InitialValues_Evaluators.Add(XESFVariables.Velocity.yComponent + "#R", X => velocityY_Right);
                 c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#R", X => pressure_Right);
-
-                //// Initial conditions in Conservative variables -- Post Shock
-                //c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#R", X => density_Right);
-                //c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent + "#R", X => density_Right * velocityX_Right);
-                //c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.yComponent + "#R", X => density_Right * velocityY_Right);
-                //c.InitialValues_Evaluators.Add(CompressibleVariables.Energy + "#R", X => totalEnergy_Right);
             } else {
                 //// Initial conditions in PRIMITIVE variables -- Pre Shock
                 c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => exact_sol(X, 0));
@@ -543,37 +523,22 @@ namespace XESF {
                 grid.EdgeTagNames.Add(1, "SupersonicInlet");
                 grid.EdgeTagNames.Add(2, "SupersonicOutlet");
                 grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
-                //grid.EdgeTagNames.Add(4, "SubsonicOutlet");
 
                 grid = grid.Transform(rotation); //rotate the grid by the prescribed angle
                 grid.DefineEdgeTags(delegate (double[] X) {
                     double[] rotX = rotation.Matrix.GetInverse().MatVecMul(1.0, X); //accounts for the rotation
                     //double[] rotX = X;
-                    if(Math.Abs(rotX[0] - xMax) < 1e-14) {    // Right boundary
-                                                              ////if((-X[0] + 0.5 + (X[1] / Math.Tan(wedge_angle)))>=0){ 
-                                                              //if(X[1] >= Math.Tan(39.3139318 * Math.PI / 180.0)) { //-0.01 doesn't work
-                                                              //    return 2;
-                                                              //} else { // (part of void area)
+                    if(Math.Abs(rotX[0] - xMax) < 1e-14) {  
                         return 2;
-                        //return 3; // Wedge Part of Outlet
 
                     } else if(Math.Abs(rotX[0] - xMin) < 1e-14) { // Left boundary
                         return 1;
                     } else if(Math.Abs(rotX[1] - yMax) < 1e-14) { // top boundary
                         return 1;
-                        //if(X[0] < 0.5) {
-                        //    return 1;
-                        //} else {
-                        //    return 2;
-                        //}
 
-                    } else { //if(Math.Abs(rotX[1] - yMin) < 1e-14) { //bottom boundary
+
+                    } else { 
                         return 3;
-                        //if(X[0] <= 1) {
-                        //    return 2;
-                        //} else {
-                        //    return 2;
-                        //}
                     }
                 });
                 return grid;
@@ -600,7 +565,6 @@ namespace XESF {
 
 
             //// Shock level set
-            //c.LevelSetOneInitialValue = delegate (double[] X) { return X[0] - 0.5 - (X[1] / LevelSet2Prime); };
             c.GetLevelSet = shocksetup;
             switch(shocksetup) {
                 case GetLevelSet.FromParams:
@@ -629,7 +593,6 @@ namespace XESF {
                 case GetLevelSet.FromFunction:
                 switch(optiLevelSetType) {
                     case OptiLevelSetType.SplineLevelSet:
-                    //c.LevelSetTwoInitialValue = X => 0.0 - (X[1] / LevelSet2Prime);
                     throw new NotImplementedException("Spline Level Set is not supported with rotated Coordinate System");
                     break;
                     default:
@@ -1299,16 +1262,10 @@ namespace XESF {
             var c = XDGBowShock_TwoLs_LSFromDB(agg: agg,
                 numOfCellsX: numX, numOfCellsY: numY,
                 dgDegreeStart: DegS, dgDegreeEnd: DegE,
-                //MArkus AV Run *************
-                ///Uni PC
-                //shockLevelSet_Db: @"C:\experimental\internal\src\private-mag\XDGShock\Tests\bosss_db_levelSets.zip",
-                //shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
-                //pointPath: @"C:\experimental\internal\src\private-mag\XDGShock\Tests\BowShockPoints.txt",
                 initialValue: GetInitialValue.FromDBSinglePhase,
-                                ///Home PC
                 shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
                 pointPath: @".\..\..\..\BowShockPoints.txt",
-                shockLevelSet_Db: @".\..\..\..\bosss_db_levelSets.zip",//initialValue: GetInitialValue.FromDBSinglePhase,PlotInterval: plotInterval,
+                shockLevelSet_Db: @".\..\..\..\bosss_db_levelSets.zip",
                 interfaceFluxLS2: IFluxes[iflux],
                 bulkFlux: CFluxes[cflux],
                 terStrat: ITerStrats[terStrat],
@@ -1420,7 +1377,7 @@ namespace XESF {
             //Termination
             c.terStrat = terStrat;
             c.TerminationMinNs = TermNs != null ? TermNs:new int[] { 8, 8, 8, 8, 8, 8 }; ;
-            c.tALNRs = tALNRs != null ? tALNRs:new double[] { 1.005, 1.005, 1.001, 1.01, 1.01, 1.01 };
+            c.tALNRs = tALNRs != null ? tALNRs:new double[] { 1.001, 1.001, 1.001, 1.01, 1.01, 1.01 };
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;

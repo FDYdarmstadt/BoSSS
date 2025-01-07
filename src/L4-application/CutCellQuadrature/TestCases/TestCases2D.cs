@@ -90,6 +90,9 @@ namespace CutCellQuadrature.TestCases {
                 case GridTypes.Structured:
                     int noOfCellsPerDirection;
                     switch (GridSize) {
+                        case GridSizes.Single:
+                            noOfCellsPerDirection = 1;
+                            break;
                         case GridSizes.Tiny:
                             noOfCellsPerDirection = 5;
                             break;
@@ -110,8 +113,20 @@ namespace CutCellQuadrature.TestCases {
                             noOfCellsPerDirection = 80;
                             break;
 
+                        case GridSizes.Ultra:
+                            noOfCellsPerDirection = 128;
+                            break;
+
+                        case GridSizes.Mega:
+                            noOfCellsPerDirection = 256;
+                            break;
+
+                        case GridSizes.Giga:
+                            noOfCellsPerDirection = 512;
+                            break;
+
                         default:
-                            throw new Exception();
+                            throw new NotImplementedException();
                     }
                     double[] nodes = GenericBlas.Linspace(-2.0, 2.0, noOfCellsPerDirection + 1);
                     grid = Grid2D.Cartesian2DGrid(nodes, nodes);
@@ -119,6 +134,9 @@ namespace CutCellQuadrature.TestCases {
 
                 case GridTypes.PseudoStructured:
                     switch (GridSize) {
+                        case GridSizes.Single:
+                            noOfCellsPerDirection = 1;
+                            break;
                         case GridSizes.Tiny:
                             noOfCellsPerDirection = 5;
                             break;
@@ -139,8 +157,20 @@ namespace CutCellQuadrature.TestCases {
                             noOfCellsPerDirection = 80;
                             break;
 
+                        case GridSizes.Ultra:
+                            noOfCellsPerDirection = 128;
+                            break;
+
+                        case GridSizes.Mega:
+                            noOfCellsPerDirection = 256;
+                            break;
+
+                        case GridSizes.Giga:
+                            noOfCellsPerDirection = 512;
+                            break;
+
                         default:
-                            throw new Exception();
+                            throw new NotImplementedException();
                     }
                     nodes = GenericBlas.Linspace(-2.0, 2.0, noOfCellsPerDirection + 1);
                     grid = Grid2D.UnstructuredTriangleGrid(nodes, nodes);
@@ -184,7 +214,7 @@ namespace CutCellQuadrature.TestCases {
                             break;
 
                         default:
-                            throw new Exception();
+                            throw new NotImplementedException();
                     }
                     break;
 
