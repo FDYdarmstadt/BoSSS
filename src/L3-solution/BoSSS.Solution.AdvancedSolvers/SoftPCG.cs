@@ -156,11 +156,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ApplyPreconditioner(PrecondRes, Res);
                 P.SetV(PrecondRes);
 
-                double alpha = Res.InnerProd(P).MPISum();
+                double alpha = Res.InnerProd(PrecondRes).MPISum();
                 double alpha_0 = alpha;
-                double ResNorm;
-
-                ResNorm = Math.Sqrt(alpha);
+                double ResNorm = Res.L2NormPow2().MPISum().Sqrt();
                 double ResNorm0 = ResNorm;
 
                 bool ShouldContinue = CheckIteration(0, ResNorm0, ResNorm,alpha); // one iteration has already been performed (P0, R0)
@@ -179,13 +177,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					ApplyPreconditioner(PrecondRes, Res);
                     double alpha_neu = Res.InnerProd(PrecondRes).MPISum();
 
-                    // compute residual norm
-                    ResNorm = Res.L2NormPow2().MPISum().Sqrt();
-
                     P.ScaleV(alpha_neu / alpha);
                     P.AccV(1.0, PrecondRes);
 
-                    alpha = alpha_neu;
+                    // compute residual norm
+                    ResNorm = Res.L2NormPow2().MPISum().Sqrt();
+					alpha = alpha_neu;
+
 					ShouldContinue = CheckIteration(n, ResNorm0, ResNorm, alpha);
 				}
                 Console.WriteLine("ResNorm " + ResNorm);
