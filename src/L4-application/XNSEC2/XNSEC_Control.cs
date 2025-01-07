@@ -79,7 +79,7 @@ namespace BoSSS.Application.XNSEC {
             //base.NoOfMultigridLevels = 1;
             base.SuperSampling = 2;
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            base.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
         }
 
         public XNSEC_Control(int dgDeg, double _pRef, double _uRef, double _TRef, bool useAdimensional, double _LRef = 0.0, double[] FuelYs = null, double[] OxidizerYs = null, double epsilon = 5, bool analyticalSolutionOK = false) {
@@ -93,7 +93,7 @@ namespace BoSSS.Application.XNSEC {
             this.NumberOfChemicalSpecies = 4;
             SetDGdegree(dgDeg);
             this.physicsMode = PhysicsMode.Combustion;
-            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            base.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             this.GravityDirection = new double[] { 0.0, 0.0, 0.0 }; //No gravity.
             base.NoOfMultigridLevels = 1;

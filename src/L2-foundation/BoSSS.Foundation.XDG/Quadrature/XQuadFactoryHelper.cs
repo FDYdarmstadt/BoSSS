@@ -45,7 +45,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, MomentFittingVariants momentFittingVariant) 
+        internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, CutCellQuadratureMethod momentFittingVariant) 
             : base(lsDatas) {
 
             this.CutCellQuadratureType = momentFittingVariant;
@@ -84,7 +84,7 @@ namespace BoSSS.Foundation.XDG {
                     LineAndPoint_in2D[levSetIndex] = new LineAndPointQuadratureFactory(
                         KrefVol,
                         this.m_LevelSetDatas[levSetIndex],
-                        CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes);
+                        CutCellQuadratureType == CutCellQuadratureMethod.OneStepGaussAndStokes);
                 }
 
                 return LineAndPoint_in2D[levSetIndex].GetPointFactory();
@@ -98,7 +98,7 @@ namespace BoSSS.Foundation.XDG {
                     var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
 
                     switch (CutCellQuadratureType) {
-                        case MomentFittingVariants.Saye:
+                        case CutCellQuadratureMethod.Saye:
                         CellFaceSurface_in3D[levSetIndex] = SayeFactories.SayeGaussRule_EdgeSurface3D(
                             this.m_LevelSetDatas[levSetIndex],
                             rootFindingAlgorithm);
@@ -198,7 +198,7 @@ namespace BoSSS.Foundation.XDG {
                 if(CellFaceVolume_in3D[levSetIndex] == null) {
                     var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
                     switch (CutCellQuadratureType) {
-                        case MomentFittingVariants.Saye:
+                        case CutCellQuadratureMethod.Saye:
                         if (CellFaceVolume_in3D == null)
                             CellFaceVolume_in3D = new SayeGaussEdgeRuleFactory[this.m_LevelSetDatas.Length];
                         CellFaceVolume_in3D[levSetIndex] = SayeFactories.SayeGaussRule_EdgeVolume3D(
@@ -279,7 +279,7 @@ namespace BoSSS.Foundation.XDG {
         {
             switch (CutCellQuadratureType)
             {
-                case MomentFittingVariants.Saye:
+                case CutCellQuadratureMethod.Saye:
                     if (zwoLSSayeFactories == null)
                     {
                         zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
@@ -315,7 +315,7 @@ namespace BoSSS.Foundation.XDG {
                 {
                     switch (CutCellQuadratureType)
                     {
-                        case MomentFittingVariants.Classic:
+                        case CutCellQuadratureMethod.Classic:
                             m_VolumeFactory[levSetIndex] = new LevelSetVolumeQuadRuleFactory(
                                 this.m_LevelSetDatas[levSetIndex],
                                 GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
@@ -323,10 +323,10 @@ namespace BoSSS.Foundation.XDG {
                                 jumpType: jmp);
                             break;
 
-                        case MomentFittingVariants.OneStepGauss:
-                        case MomentFittingVariants.OneStepGaussAndStokes:
+                        case CutCellQuadratureMethod.OneStepGauss:
+                        case CutCellQuadratureMethod.OneStepGaussAndStokes:
                             {
-                                bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
+                                bool bStokes = CutCellQuadratureType == CutCellQuadratureMethod.OneStepGaussAndStokes;
                                 LevelSetComboRuleFactory2 ComboRuleFactroy = new LevelSetComboRuleFactory2(
                                         this.m_LevelSetDatas[levSetIndex],
                                         this.GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
@@ -339,8 +339,8 @@ namespace BoSSS.Foundation.XDG {
                                 break;
                             }
 
-                        case MomentFittingVariants.TwoStepStokesAndGauss:
-                        case MomentFittingVariants.ExactCircle:
+                        case CutCellQuadratureMethod.TwoStepStokesAndGauss:
+                        case CutCellQuadratureMethod.ExactCircle:
                             {
                                 m_VolumeFactory[levSetIndex] = (new LevelSetVolumeQuadRuleFactory2b(Kref,
                                         this.m_LevelSetDatas[levSetIndex],
@@ -349,14 +349,14 @@ namespace BoSSS.Foundation.XDG {
                                         jmp));
                                 break;
                             }
-                        case MomentFittingVariants.Saye:
+                        case CutCellQuadratureMethod.Saye:
                             var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                             m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                             m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                             break;
-                        case MomentFittingVariants.Algoim:
+                        case CutCellQuadratureMethod.Algoim:
                             var algoimComboFactory = new Quadrature.AlgoimFactories(
                                     this.m_LevelSetDatas[levSetIndex],
                                     Kref);
@@ -377,11 +377,11 @@ namespace BoSSS.Foundation.XDG {
                 IQuadRuleFactory<QuadRule> ret;
                 switch (CutCellQuadratureType)
                 {
-                    case MomentFittingVariants.Saye:
+                    case CutCellQuadratureMethod.Saye:
                         ret = Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         break;
-                    case MomentFittingVariants.Algoim:
+                    case CutCellQuadratureMethod.Algoim:
                         var algoimComboFactory = new Quadrature.AlgoimFactories(
                                 this.m_LevelSetDatas[levSetIndex],
                                 Kref,
@@ -409,7 +409,7 @@ namespace BoSSS.Foundation.XDG {
         {
             switch (CutCellQuadratureType)
             {
-                case MomentFittingVariants.Saye:
+                case CutCellQuadratureMethod.Saye:
                     if (zwoLSSayeFactories == null)
                     {
                         zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
@@ -480,17 +480,17 @@ namespace BoSSS.Foundation.XDG {
 
             if (m_SurfaceFactory[levSetIndex] == null) {
                 switch (CutCellQuadratureType) {
-                    case MomentFittingVariants.Classic:
+                    case CutCellQuadratureMethod.Classic:
 
                     m_SurfaceFactory[levSetIndex] = new LevelSetSurfaceQuadRuleFactory(
                          m_LevelSetDatas[levSetIndex],
                          GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside));
                     break;
 
-                    case MomentFittingVariants.OneStepGauss:
-                    case MomentFittingVariants.OneStepGaussAndStokes:
+                    case CutCellQuadratureMethod.OneStepGauss:
+                    case CutCellQuadratureMethod.OneStepGaussAndStokes:
                     {
-                        bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
+                        bool bStokes = CutCellQuadratureType == CutCellQuadratureMethod.OneStepGaussAndStokes;
                         var ComboRuleFactroy = new LevelSetComboRuleFactory2(
                                 m_LevelSetDatas[levSetIndex],
                                 this.GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
@@ -504,7 +504,7 @@ namespace BoSSS.Foundation.XDG {
                         break;
                     }
                                         
-                    case MomentFittingVariants.TwoStepStokesAndGauss:
+                    case CutCellQuadratureMethod.TwoStepStokesAndGauss:
                         m_SurfaceFactory[levSetIndex] = (new SurfaceStokes_2D(
                             m_LevelSetDatas[levSetIndex],
                             this.GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
@@ -513,16 +513,16 @@ namespace BoSSS.Foundation.XDG {
                             _DoCheck: CheckQuadRules)).GetSurfaceFactory();
                         break;
 
-                    case MomentFittingVariants.ExactCircle:
+                    case CutCellQuadratureMethod.ExactCircle:
                         return new ExactCircleLevelSetIntegration(levSetIndex, this.m_LevelSetDatas[levSetIndex].GridDat, Kref);
-                    case MomentFittingVariants.Saye:
+                    case CutCellQuadratureMethod.Saye:
                         var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                         m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                         break;
-                    case MomentFittingVariants.Algoim:
+                    case CutCellQuadratureMethod.Algoim:
                         var algoimComboFactory = new Quadrature.AlgoimFactories(
                                 this.m_LevelSetDatas[levSetIndex],
                                 Kref);
@@ -546,7 +546,7 @@ namespace BoSSS.Foundation.XDG {
         {
             switch (CutCellQuadratureType)
             {
-                case MomentFittingVariants.Saye:
+                case CutCellQuadratureMethod.Saye:
                     if (zwoLSSayeFactories == null)
                     {
                         zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);

@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
             int D = 3;
             C.ImmediatePlotPeriod = 1;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";

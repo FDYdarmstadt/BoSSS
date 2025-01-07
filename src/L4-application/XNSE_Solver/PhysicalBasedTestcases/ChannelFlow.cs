@@ -55,7 +55,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             string _DbPath = null; // @"D:\local\local_test_db";
 
             int D = 3;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             //if (D == 3)
             //    C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;

@@ -1048,7 +1048,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SuperSampling = 3;
 
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -3127,7 +3127,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             int D = 2;
 
             if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 

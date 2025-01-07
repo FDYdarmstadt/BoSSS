@@ -130,10 +130,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Algoim
-               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            if(Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye}, {XQuadFactoryHelper.MomentFittingVariants.Algoim} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye}, {CutCellQuadratureMethod.Algoim} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -141,7 +141,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //QuadOrder
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;

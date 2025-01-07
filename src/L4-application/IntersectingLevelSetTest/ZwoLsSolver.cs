@@ -37,7 +37,7 @@ namespace IntersectingLevelSetTest {
     /// if more than one level-set is involved.
     /// </summary>
     internal class ZwoLsSolver<T> : BoSSS.Solution.Application<T> where T : BoSSS.Solution.Control.AppControl, new() {
-        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal CutCellQuadratureMethod MomentFittingVariant = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
         int resolution;
         int dimension;
@@ -296,7 +296,7 @@ namespace IntersectingLevelSetTest {
             // check error
             //double ErrorThreshold = 1.0e-1;
             double ErrorThreshold = errorThreshold;
-            if (this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
+            if (this.MomentFittingVariant == CutCellQuadratureMethod.OneStepGaussAndStokes)
                 ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
             bool IsPassed = (L2Err <= ErrorThreshold || xL2Err <= ErrorThreshold);

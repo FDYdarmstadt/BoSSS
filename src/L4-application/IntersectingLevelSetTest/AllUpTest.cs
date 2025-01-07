@@ -57,7 +57,7 @@ namespace IntersectingLevelSetTest {
 
             var p = new ZwoLsSolver<TestControl>();
             p.DEGREE = DGdegree;
-            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
             //C.SuperSampling = 5;
             p.Init(C);
             p.RunSolverMode();
@@ -86,7 +86,7 @@ namespace IntersectingLevelSetTest {
 
 			var p = new ZwoLsSolver<TestControl>();
 			p.DEGREE = DGdegree;
-			p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Algoim;
+			p.MomentFittingVariant = CutCellQuadratureMethod.Algoim;
 			//C.SuperSampling = 5;
 			p.Init(C);
 			p.RunSolverMode();
@@ -115,7 +115,7 @@ namespace IntersectingLevelSetTest {
             C.ErrorThreshold = 5e-3;
             var p = new ZwoLsSolver<TestControl>();
             p.DEGREE = DGdegree;
-            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
             p.Init(C);
             p.RunSolverMode();
         }
@@ -143,7 +143,7 @@ namespace IntersectingLevelSetTest {
 			C.ErrorThreshold = 5e-3;
 			var p = new ZwoLsSolver<TestControl>();
 			p.DEGREE = DGdegree;
-			p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Algoim;
+			p.MomentFittingVariant = CutCellQuadratureMethod.Algoim;
 			p.Init(C);
 			p.RunSolverMode();
 		}
@@ -171,7 +171,7 @@ namespace IntersectingLevelSetTest {
             C.ErrorThreshold = 5e-3;
             var p = new ZwoLsSolver<TestControl>();
             p.DEGREE = DGdegree;
-            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
             p.Init(C);
             p.RunSolverMode();
         }
@@ -199,7 +199,7 @@ namespace IntersectingLevelSetTest {
 			C.ErrorThreshold = 5e-3;
 			var p = new ZwoLsSolver<TestControl>();
 			p.DEGREE = DGdegree;
-			p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Algoim;
+			p.MomentFittingVariant = CutCellQuadratureMethod.Algoim;
 			p.Init(C);
 			p.RunSolverMode();
 		}
@@ -262,7 +262,7 @@ namespace IntersectingLevelSetTest {
                 C.ErrorThreshold = 1e-0;
                 var p = new ZwoLsSolver<TestControl>();
                 p.DEGREE = DGdegree;
-                p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+                p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
                 p.Init(C);
                 p.RunSolverMode();
                 errorList[i] = p.errorBack; //get the error from solver
@@ -319,7 +319,7 @@ namespace IntersectingLevelSetTest {
 				C.ErrorThreshold = 1e-0;
 				var p = new ZwoLsSolver<TestControl>();
 				p.DEGREE = DGdegree;
-				p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Algoim;
+				p.MomentFittingVariant = CutCellQuadratureMethod.Algoim;
 				p.Init(C);
 				p.RunSolverMode();
 				errorList[i] = p.errorBack; //get the error from solver
@@ -377,7 +377,7 @@ namespace IntersectingLevelSetTest {
             C.ErrorThreshold = 1e-10;
             var p = new ZwoLsSolver<TestControl>();
             p.DEGREE = DGdegree;
-            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
             p.Init(C);
             p.RunSolverMode();
         }
@@ -406,7 +406,7 @@ namespace IntersectingLevelSetTest {
 			C.ErrorThreshold = 1e-3;
 			var p = new ZwoLsSolver<TestControl>();
 			p.DEGREE = DGdegree;
-			p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Algoim;
+			p.MomentFittingVariant = CutCellQuadratureMethod.Algoim;
 			p.Init(C);
 			p.RunSolverMode();
 		}
@@ -433,7 +433,7 @@ namespace IntersectingLevelSetTest {
             C.ErrorThreshold = 1e-10;
             var p = new ZwoLsSolver<TestControl>();
             p.DEGREE = DGdegree;
-            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
             p.Init(C);
             p.RunSolverMode();
         }
@@ -458,7 +458,7 @@ namespace IntersectingLevelSetTest {
 			C.ErrorThreshold = 1e-4;
 			var p = new ZwoLsSolver<TestControl>();
 			p.DEGREE = DGdegree;
-			p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Algoim;
+			p.MomentFittingVariant = CutCellQuadratureMethod.Algoim;
 			p.Init(C);
 			p.RunSolverMode();
 		}

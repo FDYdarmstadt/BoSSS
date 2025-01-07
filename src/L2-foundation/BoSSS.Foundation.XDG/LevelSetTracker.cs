@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[] _SpeciesTable, ILevelSet levSet1) {
+        public LevelSetTracker(GridData BackgroundGrid, CutCellQuadratureMethod cutCellquadType, int __NearRegionWidth, string[] _SpeciesTable, ILevelSet levSet1) {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1);
         }
 
@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2) {
+        public LevelSetTracker(GridData BackgroundGrid, CutCellQuadratureMethod cutCellquadType, int __NearRegionWidth, string[,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2) {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1, levSet2);
         }
 
@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3) {
+        public LevelSetTracker(GridData BackgroundGrid, CutCellQuadratureMethod cutCellquadType, int __NearRegionWidth, string[,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3) {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, SpeciesTable, levSet1, levSet2, levSet3);
         }
 
@@ -128,7 +128,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[,,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3, ILevelSet levSet4) {
+        public LevelSetTracker(GridData BackgroundGrid, CutCellQuadratureMethod cutCellquadType, int __NearRegionWidth, string[,,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3, ILevelSet levSet4) {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1, levSet2, levSet3, levSet4);
         }
 
@@ -143,12 +143,12 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>       
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
+        public LevelSetTracker(GridData BackgroundGrid, CutCellQuadratureMethod cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
             ConstructorCommon(BackgroundGrid, __NearRegionWidth, SpeciesTable, cutCellquadType, levSets);
         }
 
         
-        private void ConstructorCommon(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
+        private void ConstructorCommon(GridData BackgroundGrid, CutCellQuadratureMethod cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
             ConstructorCommon(BackgroundGrid, __NearRegionWidth, SpeciesTable, cutCellquadType, levSets);
         }
         
@@ -247,7 +247,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Implementation of the constructor;
         /// </summary>
-        private void ConstructorCommon(GridData griData, int __NearRegionWidth, Array SpeciesTable, XQuadFactoryHelper.MomentFittingVariants cutCellQuadratureType, params ILevelSet[] levSets) {
+        private void ConstructorCommon(GridData griData, int __NearRegionWidth, Array SpeciesTable, CutCellQuadratureMethod cutCellQuadratureType, params ILevelSet[] levSets) {
             // check args, init members
             // ========================
             m_gDat = griData;
@@ -274,9 +274,9 @@ namespace BoSSS.Foundation.XDG {
             m_DataHistories = _DataHistories.ToList().AsReadOnly();
             m_LevelSetHistories = _LevelSetHistories.ToList().AsReadOnly();
             m_RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
-            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<XQuadFactoryHelperBase.MomentFittingVariants, XQuadFactoryHelperBase>>(
-                new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>());
-            m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
+            m_QuadFactoryHelpersHistory = new HistoryStack<Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>>(
+                new Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>());
+            m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
 
             this.IncreaseHistoryLength(1); // at least one previous time-step is required to support update of XDG fields
 
@@ -300,7 +300,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The type of integration used in cut cells.
         /// </summary>
-        public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType {
+        public CutCellQuadratureMethod CutCellQuadratureType {
             get;
             private set;
         }
@@ -866,7 +866,7 @@ namespace BoSSS.Foundation.XDG {
 
             m_RegionsHistory.Push((r1) => r1.CloneAs(), (r1, r0) => r1);
 
-            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>(), (r1, r0) => r1);
+            m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>(), (r1, r0) => r1);
 
             m_XDGSpaceMetricsHistory.Push((r1) => NewXDGSpaceMetricsCache(), (r1,r0) => r1);
 

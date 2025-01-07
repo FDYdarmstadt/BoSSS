@@ -581,8 +581,8 @@ namespace ilPSP.Utils {
 		/// </summary>
 		/// <param name="dim">dimension of space</param>
 		/// <param name="dim">dimension of space</param>
-		/// <param name="p1">degree of level set 1 (will be used for Berstein pol. interpolation)</param>
-		/// <param name="p2">degree of level set 2 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="p1">degree of level set 1 (will be used for Bernstein pol. interpolation)</param>
+		/// <param name="p2">degree of level set 2 (will be used for Bernstein pol. interpolation)</param>
 		/// <param name="q">quadrature order</param>
 		/// <param name="lengths1">array for the lengths in each axis for level set 1</param>
 		/// <param name="lengths2">array for the lengths in each axis for level set 2</param>

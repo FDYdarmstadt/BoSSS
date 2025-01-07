@@ -45,7 +45,7 @@ namespace BoSSS.Foundation.XDG {
         public XQuadFactoryHelperAlgoim(LevelSetTracker.LevelSetData[] lsDatas) : base(lsDatas) {
 
             //there are some methods explilictly rely on this propery
-            this.CutCellQuadratureType = MomentFittingVariants.Algoim;
+            this.CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
         }
 
         public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {

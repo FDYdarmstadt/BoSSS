@@ -230,7 +230,7 @@ namespace CutCellQuadrature {
         protected override void CreateFields() {
             levelSet = testCase.GetLevelSet((BoSSS.Foundation.Grid.Classic.GridData)GridData);
             levelSetTracker = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)GridData, 
-                XQuadFactoryHelper.MomentFittingVariants.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
+                CutCellQuadratureMethod.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
                 1, new string[] { "A", "B" }, levelSet);
 
             XDGField = new XDGField(

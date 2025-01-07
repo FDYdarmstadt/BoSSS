@@ -145,10 +145,10 @@ namespace BoSSS.Application.XNSEC {
         /// $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.
         /// </remarks>
         public override int QuadOrder() {
-            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            if (Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -157,7 +157,7 @@ namespace BoSSS.Application.XNSEC {
 
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 2);
-            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;

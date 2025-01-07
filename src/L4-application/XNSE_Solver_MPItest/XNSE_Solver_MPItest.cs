@@ -1056,7 +1056,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1202,7 +1202,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;

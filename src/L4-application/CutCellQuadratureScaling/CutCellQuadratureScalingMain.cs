@@ -22,7 +22,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.TwoStepStokesAndGauss;
+        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
@@ -36,7 +36,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.RunSolverMode();
 
                     Test.CompareSurfaceTo(Ref);
-                    Test.CompareVolumerTo(Ref);
+                    Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
                     Test.CompareCutLineTo(Ref);
                 }
@@ -49,10 +49,18 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     }
 
 
-
+    /// <summary>
+    /// Tests if the 
+    /// <see cref="BoSSS.Foundation.Quadrature.ICompositeQuadRule{TQuadRule}.IntegrationMetric"/>
+    /// works correctly.
+    /// 
+    /// Therefore, a reference-integral-evaluation has to be created with a scaling (<see cref="MeshScaling"/>) of 1.
+    /// Then, it needs to be compared to a different integral-evaluation has to be created with a non-unit scaling.
+    /// 
+    /// </summary>
     abstract class TestSetupBase : BoSSS.Solution.Application {
 
-        public TestSetupBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye) {
+        public TestSetupBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye) {
             this.MeshScaling = meshScaling;
             this.CutCellQuadratureOrder = cutCellQuadratureOrder;
             this.QuadratureType = quadratureType;
@@ -61,7 +69,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         public readonly double MeshScaling = 1.0;
         public readonly int CutCellQuadratureOrder = 2;
-        public readonly XQuadFactoryHelper.MomentFittingVariants QuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        public readonly CutCellQuadratureMethod QuadratureType = CutCellQuadratureMethod.Saye;
 
         
         protected CutCellMetrics latestCCM;
@@ -93,9 +101,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
         /// <summary>
-        /// verifies quadratic/kubic scaling of volume integrals in 2D/3D
+        /// verifies quadratic/kubic (<see cref="MeshScaling"/> to the power of the spatial dimension) scaling of volume integrals in 2D/3D;
         /// </summary>
-        public void CompareVolumerTo(TestSetupBase othr) {
+        public void CompareVolumeTo(TestSetupBase othr) {
             double D = this.Grid.SpatialDimension;
             
             foreach (string Species in this.LsTrk.SpeciesNames) {
@@ -104,12 +112,13 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
 
-                var Area_this = this.latestCCM.CutCellVolumes[SpcId_this];
-                var Area_othr = othr.latestCCM.CutCellVolumes[SpcId_othr];
-                var Area_err = Area_othr*(this.MeshScaling.Pow(D)) - Area_this*(othr.MeshScaling.Pow(D));
+                var Vol_this = this.latestCCM.CutCellVolumes[SpcId_this];
+                var Vol_othr = othr.latestCCM.CutCellVolumes[SpcId_othr];
+                // Areas should scale with MeshScaling^SpatialDimension
+                var Area_err = Vol_othr*(this.MeshScaling.Pow(D)) - Vol_this*(othr.MeshScaling.Pow(D));
 
                 double absErr = Area_err.L2Norm();
-                double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
+                double relErr = absErr / (Vol_this.L2Norm() + Vol_othr.L2Norm());
 
                 Console.WriteLine($"Cut Cell Volume, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Cut Cell Volume, species {Species} relative error : {relErr:g7}");
@@ -119,6 +128,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
 
+        /// <summary>
+        /// verifies quadratic/linear (<see cref="MeshScaling"/> to the power of the spatial dimension - 1) scaling of cell edge area integrals in 2D/3D;
+        /// </summary>
         public void CompareEdgeAreaTo(TestSetupBase othr) {
             double D = this.Grid.SpatialDimension;
             
@@ -167,7 +179,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     abstract class TestSetupSingleLevSetBase : TestSetupBase {
 
-        public TestSetupSingleLevSetBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye)
+        public TestSetupSingleLevSetBase(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
             : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
 
 
@@ -190,7 +202,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             Phi1.ProjectField(Phi1_ana);
             //Phi2.ProjectField(((x, y) => y));
 
-            LsTrk = new LevelSetTracker(this.GridData as GridData, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new[] { "A", "B" }, Phi1);
+            LsTrk = new LevelSetTracker(this.GridData as GridData, CutCellQuadratureMethod.Saye, 1, new[] { "A", "B" }, Phi1);
             LsTrk.UpdateTracker(0.0);
         }
 
@@ -206,7 +218,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     class TestSetupSingleLevset2D : TestSetupSingleLevSetBase {
 
-        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye)
+        public TestSetupSingleLevset2D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
             : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
 
 
@@ -228,7 +240,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     class TestSetupSingleLevset3D : TestSetupSingleLevSetBase {
 
-        public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, XQuadFactoryHelper.MomentFittingVariants quadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye)
+        public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
             : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
 
 

@@ -15,7 +15,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         [Test]
         public static void OneLevelSet_2D(
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
             ) {
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D
 
@@ -29,7 +29,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.RunSolverMode();
 
                     Test.CompareSurfaceTo(Ref);
-                    Test.CompareVolumerTo(Ref);
+                    Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
                 }
 
@@ -40,7 +40,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         [Test]
         public static void OneLevelSet_3D(
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
             ) {
 
 

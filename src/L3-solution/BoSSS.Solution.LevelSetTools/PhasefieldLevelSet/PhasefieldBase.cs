@@ -278,7 +278,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
 
             // Actual Level Set used for correction operations
             CorrectionLevSet = new LevelSet(phi.Basis, "Levset");
-            this.CorrectionLsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "A", "B" }, CorrectionLevSet);
+            this.CorrectionLsTrk = new LevelSetTracker((GridData)(this.GridData), CutCellQuadratureMethod.Saye, 2, new string[] { "A", "B" }, CorrectionLevSet);
             CorrectionLevSet.Clear();
             CorrectionLevSet.Acc(1.0, phi);
             this.CorrectionLsTrk.UpdateTracker(0.0);

@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm
             ) {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
@@ -66,7 +66,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_MixtureFraction tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-                 XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+                 CutCellQuadratureMethod CutCellQuadratureType,
                  SurfaceStressTensor_IsotropicMode SurfTensionMode,
                  bool constantDensity,
                  int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {

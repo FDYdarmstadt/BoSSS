@@ -126,7 +126,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var levSet0 = new LevelSet(b, "LevelSetField0");
             levSet0.ProjectField(inLevelSet);
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
         }
 
@@ -142,7 +142,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var levSet0 = new LevelSet(b, "LevelSetField0");
             levSet0.ProjectField(inLevelSet);
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
         }
 
@@ -223,7 +223,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             }
 
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
             Console.WriteLine("Successful projection of level set");
         }
@@ -239,7 +239,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var levSet0 = new LevelSet(b, "LevelSetField0");
             levSet0.ProjectField(inLevelSet);
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
         }
 

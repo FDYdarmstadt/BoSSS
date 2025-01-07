@@ -80,7 +80,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The kind of HMF which is be used for computing cell volumes.
         /// </summary>
-        public XQuadFactoryHelper.MomentFittingVariants HMFvariant {
+        public CutCellQuadratureMethod HMFvariant {
             get {
                 return NonAgglomeratedMetrics.HMFvariant;
             }

@@ -68,7 +68,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(1, 2, 3, 4)] int deg,
             [Values(0.0, 0.1)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode
 #endif
             ) {
@@ -88,7 +88,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void ScalingViscosityJumpTest_p2(
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType) {
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType) {
             ScalingViscosityJumpTest(2, vmode, CutCellQuadratureType);
         }
 
@@ -98,7 +98,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void ScalingViscosityJumpTest_p3(
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
             ) {
             ScalingViscosityJumpTest(3, vmode, CutCellQuadratureType);
         }
@@ -122,7 +122,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
         /// </summary>
-        public static void ScalingViscosityJumpTest(int deg, ViscosityMode vmode, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType) {
+        public static void ScalingViscosityJumpTest(int deg, ViscosityMode vmode, CutCellQuadratureMethod CutCellQuadratureType) {
 
             double AgglomerationTreshold = 0.1;
             int spatialDimension = 2;
@@ -151,7 +151,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -163,7 +163,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -175,7 +175,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -187,7 +187,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -199,7 +199,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -211,7 +211,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -223,7 +223,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -235,7 +235,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
@@ -249,7 +249,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void ScalingStaticDropletTest(
             [Values(1, 2, 3)] int deg,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
             ) {
 
             double AgglomerationTreshold = 0.1;
@@ -283,7 +283,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void ScalingSinglePhaseChannelTest(
             [Values(1, 2, 3)] int deg,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
             ) //
 
@@ -310,7 +310,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(2, 3)] int spatialDimension,
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.Curvature_Projected, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(true, false)] bool performsolve
             ) {
@@ -367,7 +367,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
 
         }
@@ -387,7 +387,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         }
 
@@ -406,7 +406,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
 
         }
@@ -426,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         }
 
@@ -445,7 +445,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
 
         }
@@ -465,7 +465,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         }
 
@@ -485,7 +485,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 2;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
 
         }
@@ -505,7 +505,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             int deg = 3;
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         }
 #endif
@@ -522,7 +522,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ViscosityMode vmode,
             bool bSteady,
             bool includeConvection,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType) //
+            CutCellQuadratureMethod CutCellQuadratureType) //
        {
 
             if (deg == 3 && AgglomerationTreshold <= 0.01)
@@ -553,7 +553,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             int FlowSolverDegree = 2;
             double AgglomerationTreshold = 0.3;
             ViscosityMode vmode = ViscosityMode.Standard;
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             int GridResolution = 1;
 
@@ -750,7 +750,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             double AgglomerationTreshold = 0.3;
 
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
             ViscosityMode vmode;
             switch (modus) {
@@ -823,7 +823,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, FlowSolverDegree,
                 AgglomerationTreshold: 0.1,
                 vmode: ViscosityMode.Standard,
-                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+                CutCellQuadratureType: CutCellQuadratureMethod.OneStepGaussAndStokes,
                 SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
                 GridResolution: 1,
                 nonlinsolver: nonlinsolver);
@@ -848,7 +848,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             double AgglomerationTreshold = 0.3;
 
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
 
             int GridResolution = 1;
@@ -872,7 +872,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ) {
             double AgglomerationTreshold = 0.3;
 
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
 
             int GridResolution = 3;
@@ -910,7 +910,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ) {
             double AgglomerationTreshold = 0.3;
 
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
 
             int GridResolution = 3;
@@ -942,7 +942,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
         ) {
             ChannelTest(2,
                 AgglomerationTreshold,
@@ -956,7 +956,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
              [Values(0.0)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
-             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
          ) {
             ChannelTest(2,
                 AgglomerationTreshold,
@@ -969,7 +969,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
         ) {
             ChannelTest(2,
                 AgglomerationTreshold,
@@ -983,7 +983,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
              [Values(0.0)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
-             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
          ) {
             ChannelTest(2,
                 AgglomerationTreshold,
@@ -997,7 +997,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
         ) {
             ChannelTest(3,
                 AgglomerationTreshold,
@@ -1011,7 +1011,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
              [Values(0.0)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
-             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
          ) {
             ChannelTest(3,
                 AgglomerationTreshold,
@@ -1024,7 +1024,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
         ) {
             ChannelTest(3,
                 AgglomerationTreshold,
@@ -1038,7 +1038,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
              [Values(0.0)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
-             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
          ) {
             ChannelTest(3,
                 AgglomerationTreshold,
@@ -1051,7 +1051,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
         ) {
             ChannelTest(4,
                 AgglomerationTreshold,
@@ -1065,7 +1065,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
              [Values(0.0)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
-             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
          ) {
             ChannelTest(4,
                 AgglomerationTreshold,
@@ -1078,7 +1078,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
         ) {
             ChannelTest(4,
                 AgglomerationTreshold,
@@ -1092,7 +1092,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
              [Values(0.0)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
-             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
          ) {
             ChannelTest(4,
                 AgglomerationTreshold,
@@ -1123,7 +1123,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection, 
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
 #endif
             ) {
@@ -1149,7 +1149,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0, 0.1)] double U2,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(true, false)] bool periodicity,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
             ) {
 
@@ -1173,7 +1173,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(false)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
             ) {
@@ -1205,7 +1205,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             Tst.IsRotationalSymmetric = RotationalSymmetric;
             var C = TstObj2CtrlObj(Tst, 2, 0.1,
                 ViscosityMode.FullySymmetric, 
-                XQuadFactoryHelper.MomentFittingVariants.Saye, 
+                CutCellQuadratureMethod.Saye, 
                 SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
             var pp = new Logging.SphericalHarmonicsLogging() { MaxL = MaxLength, RotSymmetric = RotationalSymmetric};
@@ -1266,7 +1266,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
 
-            if (Tst.SpatialDimension == 3 && C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (Tst.SpatialDimension == 3 && C.CutCellQuadratureType != CutCellQuadratureMethod.Saye) {
                 Console.WriteLine($"Reminder: only starting 3D tests with Saye's quadrature. All other 3D Tests are skipped automatically!");
                 return;
             }
@@ -1516,7 +1516,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
             [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
             [Values(1.0, 0.143, 13.0)] double viscosityratio
@@ -1562,7 +1562,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #if !DEBUG
         [Test]
         public static void RotatingCubeTest(
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants MFV,
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod MFV,
             [Values(Newton.GlobalizationOption.None, Newton.GlobalizationOption.LineSearch, Newton.GlobalizationOption.Dogleg)] Newton.GlobalizationOption globalizationOption,
             [Values(IncompressibleBcType.Pressure_Outlet)] IncompressibleBcType __OuterBcType 
             ) {
@@ -1607,7 +1607,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 #endif
 
-        private static void ASScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard) {
+        private static void ASScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, CutCellQuadratureMethod CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard) {
 #if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
 
@@ -1628,7 +1628,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         internal static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            CutCellQuadratureMethod CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1,
             NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard,

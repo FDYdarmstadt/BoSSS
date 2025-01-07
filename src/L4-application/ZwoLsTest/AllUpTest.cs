@@ -35,7 +35,7 @@ namespace BoSSS.Application.ZwoLsTest {
 #else
             [Values(1, 2, 3)] int DGdegree,
             //[Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants quadVariant,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants quadVariant,
+            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod quadVariant,
             [Values(false, true)] bool DynamicBalance)            
 #endif
          {
@@ -62,7 +62,7 @@ namespace BoSSS.Application.ZwoLsTest {
         /// </summary>
         [Test]
         static public void SerialVersusParallelRun(
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants quadVariant)
+            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod quadVariant)
          {
 
             double AggTresh = 0.3;

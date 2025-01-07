@@ -60,7 +60,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// </summary>
         public XdgTimesteppingTestControl() {
             NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
         }
 
 

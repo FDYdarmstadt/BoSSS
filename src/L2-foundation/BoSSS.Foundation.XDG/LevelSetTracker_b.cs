@@ -33,7 +33,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
+        HistoryStack<Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
 
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.
@@ -41,10 +41,10 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// The centralized approach should avoid multiple creation of the same quadrature rule.
         /// </remarks>
-        XQuadFactoryHelperBase GetXQuadFactoryHelper(XQuadFactoryHelperBase.MomentFittingVariants variant, int HistoryIndex = 1) {
+        XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
 
-            if (variant == XQuadFactoryHelperBase.MomentFittingVariants.Algoim) {
+            if (variant == CutCellQuadratureMethod.Algoim) {
                 if (!dict.ContainsKey(variant)) {
                     dict[variant] = new XQuadFactoryHelperAlgoim(
                         this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray());
@@ -64,12 +64,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
+        HistoryStack<Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
         
-        Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
-            return new Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>(
-                new FuncEqualityComparer<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>>(
-                    delegate(Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int> A, Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int> B) {
+        Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
+            return new Dictionary<Tuple<SpeciesId[], CutCellQuadratureMethod, int>, XDGSpaceMetrics>(
+                new FuncEqualityComparer<Tuple<SpeciesId[], CutCellQuadratureMethod, int>>(
+                    delegate(Tuple<SpeciesId[], CutCellQuadratureMethod, int> A, Tuple<SpeciesId[], CutCellQuadratureMethod, int> B) {
                         //if(.)
                         if(!ArrayTools.ListEquals(A.Item1, B.Item1, (a, b) => a.cntnt == b.cntnt))
                             return false;
