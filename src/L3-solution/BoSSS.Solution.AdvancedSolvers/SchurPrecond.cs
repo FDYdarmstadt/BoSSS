@@ -164,7 +164,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
             op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(long[]), Uidx, default(long[]), default(long[]), default(long[]));
 			pMassMatrix = new MsrMatrix(Ppart, Ppart, 1, 1);
-
 			op.MassMatrix.AccSubMatrixTo(1.0, pMassMatrix, Pidx, default(long[]), Pidx, default(long[]), default(long[]), default(long[]));
 
 			//ConvDiff.SaveToTextFileSparse("ConvDiff");
@@ -627,8 +626,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             var row = pGrad.GetRowShallow((long)i);
                             double rowDotColumn = 0;
 
-                            foreach (var e in row) 
-                                rowDotColumn +=  e.Value * e.Value;
+                            foreach (var e in row)
+                                rowDotColumn += e.Value * e.Value;
 
 							rowDotColumn = rowDotColumn != 0 ? rowDotColumn : 1;
 
@@ -643,9 +642,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             var PardisoConfig = new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
 
-
-							Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-							Psolver.Precond.DefineMatrix(PrecondM);
+                            if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) { 
+                                Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                                Psolver.Precond.DefineMatrix(pMassMatrix);
+							}
 
 							Psolver.InnerIterBefore = multipWithPgrad;
 							Psolver.InnerIterAfter = multipWithDivVel;
@@ -692,8 +692,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var P = new MsrMatrix(n, n, 1, 1);
 
 			for (int i = 0; i < m; i++)
-                invDiagConvDiff.SetDiagonalElement(i, ConvDiff[i, i]);
-
+                invDiagConvDiff.SetDiagonalElement(i, 1/ConvDiff[i, i]);
 
 			var Setled = (CoordinateMapping)m_mgop.BaseGridProblemMapping;
             var VelocityFields = Setled.Fields.Take(D).ToArray();
@@ -705,7 +704,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var coU = new CoordinateMapping(VelocityFields);
 			var velocityMGmapping = new MultigridMapping(coU,  MgMap.AggBasis.Take(D).ToArray() , MgMap.DgDegree.Take(D).ToArray());
 
-            var invDiagConvDiffBlock = invDiagConvDiff.ToBlockMsrMatrix(velocityMGmapping, velocityMGmapping);
+            var invDiagConvDiffBlock = ConvDiff.ToBlockMsrMatrix(velocityMGmapping, velocityMGmapping);
+			//invDiagConvDiffBlock.InvertBlocks();
 			var pGradBlock = pGrad.ToBlockMsrMatrix(velocityMGmapping, pressureMGmapping);
 			var intermediate = pGrad.ToBlockMsrMatrix(velocityMGmapping, pressureMGmapping);
 			var divVelBlock = divVel.ToBlockMsrMatrix(pressureMGmapping, velocityMGmapping);
