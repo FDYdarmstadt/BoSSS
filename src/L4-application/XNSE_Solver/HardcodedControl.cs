@@ -2176,6 +2176,94 @@ namespace BoSSS.Application.XNSE_Solver {
 		}
 
 
+		/// <summary>
+		/// 2D manufactured solution from:
+		/// 
+		/// p‑Multilevel Preconditioners for HHO Discretizations of the Stokes Equations with Static Condensation,
+		/// Lorenzo Botti, Daniele A. Di Pietro; https://doi.org/10.1007/s42967-021-00142-5
+		/// </summary>
+		public static XNSE_Control XDGStokes2D(int Res = 20, int p = 2) {
+			// --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+			var C = new XNSE_Control();
+
+			C.GridFunc = delegate () {
+				GridCommons g;
+				double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+				double[] yNodes = xNodes;
+				g = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+				g.DefineEdgeTags(delegate (double[] X) {
+					double x = X[0];
+					if (Math.Abs(x - (-1)) < 1e-8)
+						return "pressure_outlet";
+					return "wall";
+				});
+
+				return g;
+			};
+
+
+			C.SetDGdegree(p);
+
+
+			// Phys. Parameters
+			// ================
+
+			// Species A: Water; Species B: Air
+			C.PhysicalParameters.rho_A = 1.0; //1e-3; //     kg / cm³
+			C.PhysicalParameters.rho_B = 1.0; //1.2e-6; //   kg / cm³
+			C.PhysicalParameters.mu_A = 1.0; //1e-5; //      kg / cm / sec
+			C.PhysicalParameters.mu_B = 1.0; //17.1e-8; //   kg / cm / sec
+			C.PhysicalParameters.Sigma = 72.75e-3; // kg / sec²   
+			C.PhysicalParameters.IncludeConvection = false;
+			C.PhysicalParameters.Material = true;
+
+			// Dont know
+			// ============
+
+			double r = 0.5;
+			double nonsp = 0.5;
+
+			//double PhiFormula(double[] X) {
+			//	return (X[0] / r* nonsp).Pow2() + (X[1] / r).Pow2() + (X[2] / r).Pow2() - 1;
+			//}
+			var PhiFormula = new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2()  - 1", false); // +(X[2] /{ r}).Pow2()
+
+			C.AddInitialValue("Phi", PhiFormula);
+
+			C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.None;
+			//C.CutCellQuadratureType   = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+			C.ComputeEnergyProperties = false;
+
+
+			// Solver Stuff
+			// ============
+			C.LinearSolver = new SchurPrecondConfig(); 
+
+			if (C.LinearSolver is IterativeSolverConfig isc) {
+				isc.ConvergenceCriterion = 1e-8;
+				isc.MaxSolverIterations = 10000;
+			}
+
+
+			C.NoOfMultigridLevels = 100;
+			C.TracingNamespaces = "BoSSS.Solution";
+			C.LevelSet_ConvergenceCriterion = 1e-6;
+
+			//C.Option_LevelSetEvolution                          = LevelSetEvolution.FastMarching;
+			C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+			//C.AdvancedDiscretizationOptions.ViscosityMode       = ViscosityMode.Standard;
+			C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
+            // Timestepping / Instationary
+            // ===========================
+
+            C.ImmediatePlotPeriod = 1;
+
+			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+			return C;
+		}
+
 		public static XNSE_Control TranspiratingChannel(string _DbPath = null, int p = 2) {
 
             XNSE_Control C = new XNSE_Control();
