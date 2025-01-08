@@ -102,7 +102,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		//BlockMsrMatrix operatorM;
 
         MsrMatrix P;
-        MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, SchurRHSMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix, pMassMatrix;
+        MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, SchurRHSMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix, pMassMatrix, LeastSqaureCommutorMtx;
         long[] Uidx, Pidx;
 		int[] UidxInt, PidxInt;
 
@@ -289,6 +289,112 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         return;
                     }
 				case SchurOptions.Uzawa: {
+                        // Building complete Schur and Approximate Schur
+                        MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+                        MultidimensionalArray SchurRHS = MultidimensionalArray.Create(Pidx.Length, Uidx.Length);
+						MultidimensionalArray LeastSqaureCommutor = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+
+						// USING MATLAB
+						using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                            bmc.PutSparseMatrix(ConvDiff, "A");
+                            bmc.PutSparseMatrix(pGrad, "B");
+                            bmc.PutSparseMatrix(divVel, "C");
+                            bmc.Cmd("LSC = -(C*B) *(C*full(A)*B) \\ (C*B);");
+							bmc.Cmd("invA = inv(full(A));");
+                            bmc.Cmd("Schur = -C *full(A \\ B);");
+                            //bmc.Cmd("SchurRHS = C*invA;");
+                            bmc.GetMatrix(Schur, "Schur");
+                            //bmc.GetMatrix(SchurRHS, "SchurRHS");
+							bmc.GetMatrix(LeastSqaureCommutor, "LSC");
+
+
+							bmc.Execute(false);
+                        }
+                        SchurMtx = Schur.ToMsrMatrix();
+                        SchurMtx.Acc(PxP, 1);
+
+                        SchurMtx.SaveToTextFileSparse("returnedSchur");
+
+                        //SchurRHSMtx = SchurRHS.ToMsrMatrix();
+                        //SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
+
+						LeastSqaureCommutorMtx = LeastSqaureCommutor.ToMsrMatrix();
+						LeastSqaureCommutorMtx.SaveToTextFileSparse("LeastSqaureCommutorMtx");
+
+						//Using direct solver
+						//var Ainv = new MsrMatrix(ConvDiff.RowPartitioning, ConvDiff.ColPartition);
+						//int rank;
+						//csMPI.Raw.Comm_Rank(Ainv.MPI_Comm, out rank);
+
+						//ilPSP.Environment.StdoutOnlyOnRank0 = false;
+						//Console.WriteLine($"proc-{rank} - {Ainv.RowPartitioning.i0} {Ainv.RowPartitioning.iE}");
+						//double inc = 0.0;
+						//var solvPar = new PARDISOSolver();
+						//solvPar.DefineMatrix(ConvDiff);
+						//using (var tr = new FuncTrace()) {
+						//	for (int i = (int)Ainv.RowPartitioning.i0; i < (int)Ainv.RowPartitioning.iE; i++) {
+						//		var b = new double[m];
+						//		var x = new double[m];
+						//		b[i - (int)Ainv.RowPartitioning.i0] = 1;
+						//		solvPar.Solve(x, b);
+						//		Ainv.SetValues(i, Enumerable.Range(0, m).Select(r => (long)r).ToArray(), x);
+						//		if (i >= i0 + inc * Ainv.RowPartitioning.LocalLength) {
+						//			Console.WriteLine($"{inc * 100}%");
+						//			inc += 0.1;
+						//		}
+						//	}
+						//}
+						//csMPI.Raw.Barrier(Ainv.MPI_Comm);
+						////Ainv = Ainv.Transpose(); (for stokes we do not need this at this point)
+
+						//var SchurSelfMSR = MsrMatrix.Multiply(Ainv, pGrad);
+						//SchurSelfMSR = MsrMatrix.Multiply(divVel, SchurSelfMSR);
+						//SchurSelfMSR.Scale(-1.0);
+
+						////SchurSelfMSR.Acc(PxP, 1); //this is already zero
+						////SchurSelfMSR.SaveToTextFileSparse("SchurSelfMSR");
+
+						//var SchurRHSselfMSR = MsrMatrix.Multiply(divVel, Ainv);
+						////SchurRHSselfMSR.SaveToTextFileSparse("SchurRHSselfMSR");
+
+
+						// Using multidimensional array
+						//MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+						//MultidimensionalArray SchurRHS = MultidimensionalArray.Create(Pidx.Length, Uidx.Length);
+						//var A = ConvDiff.ToFullMatrixOnProc0();
+						//                  var B = pGrad.ToFullMatrixOnProc0();
+						//                  var C = divVel.ToFullMatrixOnProc0();
+
+						//                  A.InvertInPlace();
+
+						//var SchurSelf = A.MatMatMul(B);
+						//var SchurSelf2 = C.MatMatMul(SchurSelf);
+						//SchurSelf2.Scale(-1.0);
+						//var SchurSelfMtx = SchurSelf2.ToMsrMatrix();
+						//SchurSelfMtx.Acc(PxP, 1);
+						//SchurSelfMtx.SaveToTextFileSparse("SchurSelfMtx");
+
+
+						//var SchurRHSself = C.MatMatMul(A);
+						//                  var SchurRHSselfMtx = SchurRHSself.ToMsrMatrix();
+						//SchurRHSselfMtx.SaveToTextFileSparse("SchurRHSselfMtx");
+
+						//SchurMtx = SchurSelfMSR;
+						//SchurMtx.SaveToTextFileSparse("returnedSchur");
+
+						//SchurRHSMtx = SchurRHSselfMSR;
+						//SchurRHSMtx.SaveToTextFileSparse("SchurRHSMtx");
+
+
+
+						//var configs = Enumerable.Repeat(op.Config, op.NoOfLevels).ToArray();
+
+						//                  op.B
+
+						//MultigridOperator mgOp = new MultigridOperator(MgBasis, this.CurrentSolution.Mapping,
+						//                   Mtx, null, configs, null);
+
+
 						Console.WriteLine("Uzawa is set");
 						return;
 					}
@@ -642,9 +748,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             var PardisoConfig = new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
 
-                            if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) { 
+                            if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) {
                                 Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                                 Psolver.Precond.DefineMatrix(pMassMatrix);
+                            } else {
+								//Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+								//Psolver.Precond.DefineMatrix(LeastSqaureCommutorMtx);
 							}
 
 							Psolver.InnerIterBefore = multipWithPgrad;
