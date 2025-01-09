@@ -24,7 +24,7 @@ namespace FreeXNSE {
         /// </summary>
         public FreeXNSE_Control(bool equal) {
 
-            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             //shift of Solver Information
             base.NoOfMultigridLevels = 1;
             base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver

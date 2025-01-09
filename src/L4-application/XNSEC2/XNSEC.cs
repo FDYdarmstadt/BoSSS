@@ -36,7 +36,7 @@ namespace BoSSS.Application.XNSEC {
 
             //InitMPI();
             //BoSSS.Application.XNSEC.NUnitTest.ManufacturedSolutionLowMachCombustionTest();
-            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
 
 
             //DeleteOldPlotFiles();

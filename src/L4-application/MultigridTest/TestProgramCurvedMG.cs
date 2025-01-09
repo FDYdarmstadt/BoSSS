@@ -346,7 +346,7 @@ namespace BoSSS.Application.MultigridTest
             MultigridOperator.Mode mode)
         {
 
-            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            CutCellQuadratureMethod variant = CutCellQuadratureMethod.OneStepGaussAndStokes;
             var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant
                 //, ((Func<double[], double>)(X => X[0] + 0.75)).Vectorize()
                 );
@@ -414,7 +414,7 @@ namespace BoSSS.Application.MultigridTest
             [Values(0, 1)] int TrackerWidth)
         {
 
-            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGauss;
+            CutCellQuadratureMethod variant = CutCellQuadratureMethod.OneStepGauss;
 
             var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant);
 

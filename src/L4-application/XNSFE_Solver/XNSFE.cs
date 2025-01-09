@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             //System.Environment.Exit(-111);
 
             //ilPSP.Environment.InitThreading(true, 8);
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
 
             /*
@@ -97,7 +97,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             //Tests.ParameterizedLevelSetTest_Elemental.Test();
             //Tests.ParameterizedLevelSet_Translation.Test();
             //Tests.ASUnitTest.ParameterizedLevelSetTest_Translation();
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.TransientEvaporationTest(0.0, 3, 0.1, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected, NonLinearSolverCode.Newton, Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.TransientEvaporationTest(0.0, 3, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected, NonLinearSolverCode.Newton, Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2);
             //System.Environment.Exit(111);
 

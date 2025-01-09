@@ -58,7 +58,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             //if (D == 3)
-            //    C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //    C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================

@@ -200,7 +200,7 @@ namespace BoSSS.Application.CahnHilliard {
 
             /*
             DummyLevset = new LevelSet(c.Basis, "Levset");
-            this.LsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, DummyLevset);
+            this.LsTrk = new LevelSetTracker((GridData)(this.GridData), CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, DummyLevset);
             DummyLevset.Clear();
             DummyLevset.AccConstant(-1.0);
             this.LsTrk.UpdateTracker(0.0);

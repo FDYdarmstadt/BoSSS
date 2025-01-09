@@ -262,7 +262,7 @@ namespace BoSSS.Solution.LoadBalancing {
         class CcmData {
             public string[] SpeciesNamesList;
             public int HMForder;
-            public XQuadFactoryHelper.MomentFittingVariants HMFvariant;
+            public CutCellQuadratureMethod HMFvariant;
         }
         */
 

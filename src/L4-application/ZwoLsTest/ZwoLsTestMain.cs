@@ -50,7 +50,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             InitMPI();
             BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, CutCellQuadratureMethod.OneStepGaussAndStokes, true);
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, true);
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, CutCellQuadratureMethod.OneStepGauss, true);
             Assert.IsTrue(false, "Remove me");
                         
             BoSSS.Solution.Application._Main(

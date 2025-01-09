@@ -20,11 +20,11 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D
 
 
-            using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder)) {
+            using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
 
-                using(var Test = new TestSetupSingleLevset2D(0.5, quadOrder)) {
+                using(var Test = new TestSetupSingleLevset2D(0.5, quadOrder, cutCellQuadType)) {
                     Test.Init();
                     Test.RunSolverMode();
 

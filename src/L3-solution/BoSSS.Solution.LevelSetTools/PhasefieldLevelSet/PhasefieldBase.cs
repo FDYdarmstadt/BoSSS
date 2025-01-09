@@ -273,7 +273,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             //// Dummy Level Set
             //DummyLevSet = new LevelSet(new Basis(this.GridData, 1), "Levset");
             //DummyLevSet.AccConstant(-1);
-            //this.DummyLsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, DummyLevSet);
+            //this.DummyLsTrk = new LevelSetTracker((GridData)(this.GridData), CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, DummyLevSet);
             //this.DummyLsTrk.UpdateTracker(0.0);
 
             // Actual Level Set used for correction operations

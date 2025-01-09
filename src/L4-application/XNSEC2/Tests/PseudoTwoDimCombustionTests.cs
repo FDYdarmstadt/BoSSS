@@ -20,7 +20,7 @@ namespace BoSSS.Application.XNSEC {
         //    string _DbPath = null;
 
         //    int D = 2;
-        //    C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+        //    C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
         //    C.ImmediatePlotPeriod = 1;
         //    // basic database options
         //    // ======================
@@ -169,7 +169,7 @@ namespace BoSSS.Application.XNSEC {
         //    string _DbPath = null;
 
         //    int D = 2;
-        //    C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+        //    C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
         //    C.ImmediatePlotPeriod = 1;
         //    // basic database options
         //    // ======================

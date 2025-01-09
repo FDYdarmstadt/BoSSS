@@ -774,7 +774,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             bool Water = true;
             bool FC72 = false;
@@ -1255,7 +1255,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             bool Water = true;
             bool FC72 = false;
@@ -1650,7 +1650,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             bool steady = true;
             bool separated = false;
@@ -1950,7 +1950,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             bool superheatedVapor = (setUp == 1) ? true : false;
             bool subcooledLiquid = (setUp == 2) ? true : false;
@@ -2970,7 +2970,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -3207,7 +3207,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             bool computeQuarter = true;
 
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             //_DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
@@ -3526,7 +3526,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             bool OnWall = true;
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -4048,7 +4048,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 

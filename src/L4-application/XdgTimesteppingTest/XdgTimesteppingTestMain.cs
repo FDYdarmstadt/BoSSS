@@ -267,7 +267,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         //                    this.Phi.ProjectField(X => this.Control.Phi(X, Time));
 
         //                    // HMF hacks
-        //                    if((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+        //                    if((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.ExactCircle))
         //                        throw new ApplicationException("Illegal HMF configuration.");
         //                    if(this.Control.CircleRadius != null) {
         //                        ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };

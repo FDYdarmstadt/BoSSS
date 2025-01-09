@@ -6168,7 +6168,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.UseSchurBlockPrec = true;
             
             C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
                         
             C.TracingNamespaces = "BoSSS";
 

@@ -80,7 +80,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             ////ilPSP.Environment.NumThreads = 8;
             //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
               
             {

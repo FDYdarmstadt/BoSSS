@@ -1047,7 +1047,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ImmediatePlotPeriod = 1;
             //C.SuperSampling = 3;
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
             C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;

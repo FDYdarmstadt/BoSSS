@@ -32,7 +32,7 @@ namespace BoSSS.Application.XNSEC {
 
             XNSEC_Control C = new XNSEC_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             bool steady = true;
             bool separated = false;

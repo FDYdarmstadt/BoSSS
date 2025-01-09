@@ -64,7 +64,7 @@ namespace CNS.Tests.IBMTests {
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
-            //c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //c.MomentFittingVariant = CutCellQuadratureMethod.Classic;
             //c.SurfaceHMF_ProjectNodesToLevelSet = false;
             //c.SurfaceHMF_RestrictNodes = true;
             //c.SurfaceHMF_UseGaussNodes = false;

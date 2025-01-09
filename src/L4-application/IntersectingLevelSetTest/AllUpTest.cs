@@ -218,7 +218,7 @@ namespace IntersectingLevelSetTest {
 		//    C.ErrorThreshold = 1e-6;
 		//    var p = new ZwoLsSolver<TestControl>();
 		//    p.DEGREE = DGdegree;
-		//    p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+		//    p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
 		//    p.Init(C);
 		//    p.RunSolverMode();
 		//}
@@ -238,7 +238,7 @@ namespace IntersectingLevelSetTest {
 		//    C.ErrorThreshold = 1e-6;
 		//    var p = new ZwoLsSolver<TestControl>();
 		//    p.DEGREE = DGdegree;
-		//    p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+		//    p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
 		//    p.Init(C);
 		//    p.RunSolverMode();
 		//}
@@ -482,7 +482,7 @@ namespace IntersectingLevelSetTest {
 		//    C.ErrorThreshold = 1e-6;
 		//    var p = new ZwoLsSolver<TestControl>();
 		//    p.DEGREE = DGdegree;
-		//    p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+		//    p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
 		//    p.Init(C);
 		//    p.RunSolverMode();
 		//}
@@ -508,7 +508,7 @@ namespace IntersectingLevelSetTest {
 		//        var p = new ZwoLsSolver<TestControl>();
 		//        p.DEGREE = DGdegree;
 		//        //p.MPISize = 2;
-		//        p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+		//        p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
 		//        p.Init(C);
 		//        p.RunSolverMode();
 		//    }
@@ -517,7 +517,7 @@ namespace IntersectingLevelSetTest {
 		//[Test]
 		//static public void AllUp(
 		//    [Values(1, 2, 3)] int DGdegree,
-		//    [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants quadVariant) {
+		//    [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod quadVariant) {
 		//    var C = new PlotControl();
 		//    ZwoLsSolver<BoSSS.Solution.Application.EmptyAppControl> p = null;
 		//    BoSSS.Solution.Application._Main(
@@ -533,7 +533,7 @@ namespace IntersectingLevelSetTest {
 
 		//static public void LocalTestWithPlotting(
 		//    [Values(1, 2, 3)] int DGdegree,
-		//    [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants quadVariant) {
+		//    [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod quadVariant) {
 		//    BoSSS.Solution.Application.InitMPI();
 		//    BoSSS.Solution.Application.DeleteOldPlotFiles();
 		//    var C = new PlotControl();
@@ -557,7 +557,7 @@ namespace IntersectingLevelSetTest {
 		//        delegate () {
 		//            p = new ZwoLsSolver<BoSSS.Solution.Application.EmptyAppControl>();
 		//            p.DEGREE = 0;
-		//            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+		//            p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
 		//            return p;
 		//        });
 		//}

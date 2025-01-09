@@ -56,7 +56,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public XNSE_Control() {
 
-            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations

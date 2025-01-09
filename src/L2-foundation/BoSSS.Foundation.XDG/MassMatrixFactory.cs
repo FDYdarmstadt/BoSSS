@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.XDG {
 
    
 
-        //public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+        //public CutCellQuadratureMethod MomentFittingVariant {
         //    get;
         //    private set;
         //}
