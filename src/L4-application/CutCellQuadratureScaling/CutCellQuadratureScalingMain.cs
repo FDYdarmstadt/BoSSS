@@ -22,7 +22,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye;
+        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Algoim;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
@@ -56,7 +56,11 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// 
     /// Therefore, a reference-integral-evaluation has to be created with a scaling (<see cref="MeshScaling"/>) of 1.
     /// Then, it needs to be compared to a different integral-evaluation has to be created with a non-unit scaling.
-    /// 
+    /// This should be done using the methods
+    /// - <see cref="TestSetupBase.CompareVolumeTo"/>
+    /// - <see cref="TestSetupBase.CompareEdgeAreaTo"/>
+    /// - <see cref="TestSetupBase.CompareSurfaceTo"/>
+    /// - <see cref="TestSetupBase.CompareCutLineTo"/>
     /// </summary>
     abstract class TestSetupBase : BoSSS.Solution.Application {
 
@@ -81,7 +85,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
 
-        public void CompareSurfaceTo(TestSetupSingleLevset2D othr) {
+        public void CompareSurfaceTo(TestSetupBase othr) {
             foreach (string Species in this.LsTrk.SpeciesNames) {
                 var SpcId_this = this.LsTrk.GetSpeciesId(Species);
                 var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
@@ -194,15 +198,17 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
             double R = 4.0 * this.MeshScaling;
-            double Phi1_ana(double x, double y) {
+            double Phi1_ana(double[] X) {
+                double x = X[0], y = X[1];
                 return 1.0 - (x / R).Pow2() - (y / R).Pow2();
             }
-            Debug.Assert(Phi1_ana(R, 0).Abs() <= 1.0e-8);
+            var X0 = new double[this.Grid.SpatialDimension]; X0[0] = R;
+            Debug.Assert(Phi1_ana(X0).Abs() <= 1.0e-8);
 
             Phi1.ProjectField(Phi1_ana);
             //Phi2.ProjectField(((x, y) => y));
 
-            LsTrk = new LevelSetTracker(this.GridData as GridData, CutCellQuadratureMethod.Saye, 1, new[] { "A", "B" }, Phi1);
+            LsTrk = new LevelSetTracker(this.GridData as GridData, this.QuadratureType, 1, new[] { "A", "B" }, Phi1);
             LsTrk.UpdateTracker(0.0);
         }
 
@@ -213,8 +219,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
     }
-
-
 
     class TestSetupSingleLevset2D : TestSetupSingleLevSetBase {
 
@@ -235,8 +239,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
     }
-
-
 
     class TestSetupSingleLevset3D : TestSetupSingleLevSetBase {
 
