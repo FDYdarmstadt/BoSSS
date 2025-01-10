@@ -27,13 +27,18 @@ using System.Diagnostics;
 using MPI.Wrappers;
 using ilPSP.Tracing;
 using ilPSP.LinSolvers.monkey;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
 	[Serializable]
 	public class FGMRESConfig : IterativeSolverConfig {
+		/// <inheritdoc/>
+		[DataMember]
 		public override string Name => "Flexible generalized minimum residual method";
 
+		/// <inheritdoc/>
+		[DataMember]
 		public override string Shortname => "FGMRES";
 
 		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
@@ -51,7 +56,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return templinearSolve;
 		}
 
-        public List<ISolverFactory> Preconditioners = new List<ISolverFactory>();
+		/// List of preconditioner solver configurations
+		[DataMember]
+		public List<ISolverFactory> Preconditioners = new List<ISolverFactory>();
 	}
 
 	/// <summary>
@@ -78,7 +85,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		public FlexGMRES(FGMRESConfig config) {
 			m_config = config;
-			TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= MaxKrylovDim, R_l2 < R0_l2 * m_config.ConvergenceCriterion + m_config.ConvergenceCriterion);
+			TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= MaxKrylovDim, R_l2 < R0_l2 * m_config.ConvergenceCriterion + m_config.ConvergenceCriterion);              
 		}
 
 		MultigridOperator m_MgOp;
@@ -89,7 +96,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// Number of solution vectors in the internal Krylov-Space
 		/// </summary>
-		public int MaxKrylovDim = 50;
+		public int MaxKrylovDim = 1;
 
 		public void Init(MultigridOperator op) {
             using(var tr = new FuncTrace()) {
@@ -118,19 +125,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public ISolverSmootherTemplate[] PrecondS;
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
+		/// <inheritdoc/>
+		public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
-         
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public void Solve<U, V>(U X, V B)
+
+		/// <inheritdoc/>
+		public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
         {
@@ -155,29 +158,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double iter0_l2Residual = 0;
             double iter_l2Residual = 0;
             while(true) {
-
                 // init for Arnoldi
                 // -----------------
-
-                R0.SetV(B);
+                R0.SetV(B);  
                 this.m_MgOp.OperatorMatrix.SpMV(-1.0, X0, 1.0, R0);
-                iter0_l2Residual = R0.MPI_L2Norm();
+                iter_l2Residual = R0.MPI_L2Norm();
                 if (iIter == 0) {
-                    iter_l2Residual = iter0_l2Residual;
+                    iter0_l2Residual = iter_l2Residual;
                 }
 
                 // callback
                 this.IterationCallback?.Invoke(iIter, X0.CloneAs(), R0.CloneAs(), this.m_MgOp);
 
-				// termination condition
-				(bool bNotTerminate, bool bSuccess) term = TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual);
-                if (!term.bNotTerminate) {
-                    this.m_Converged = term.bSuccess;
+                if (ShouldTerminate(iIter, iter0_l2Residual, iter_l2Residual))
                     break;
-                }
-                                    
-                
-                double beta = R0.L2NormPow2().MPISum().Sqrt();
+
+
+				double beta = R0.L2NormPow2().MPISum().Sqrt();
                 Vau.Add(R0.CloneAs());
                 Vau[0].ScaleV(1.0 / beta);
 
@@ -271,6 +268,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			Console.WriteLine($"total iteration number: {this.m_ThisLevelIterations}");
 		}
 
+        /// <summary>
+        /// helper function to understand and control the termination behavior
+        /// </summary>
+        /// <param name="iter">iteration number</param>
+        /// <param name="ResNorm0"></param>
+        /// <param name="ResNorm"></param>
+        /// <returns></returns>
+        bool ShouldTerminate(int iIter, double ResNorm0, double ResNorm) {
+			var (shouldNotTerminate, hasConverged) = TerminationCriterion(iIter, ResNorm0, ResNorm);
+
+			//if termination is requested, e.g. iter > maxIter  or if already converged
+			if (!shouldNotTerminate || hasConverged) { 
+                this.m_Converged = hasConverged;
+				m_ThisLevelIterations = iIter;
+				return true;
+			}
+
+			return false;
+		}
+
+
+		/// <inheritdoc/>
 		public int IterationsInNested {
             get {
                 if(this.PrecondS != null)
@@ -280,25 +299,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public int ThisLevelIterations {
+		/// <inheritdoc/>
+		public int ThisLevelIterations {
             get { return this.m_ThisLevelIterations; }
         }
 
-        public bool Converged {
+		/// <inheritdoc/>
+		public bool Converged {
             get { return this.m_Converged; }
         }
 
-        public void ResetStat() {
+		/// <inheritdoc/>
+		public void ResetStat() {
             m_Converged = false;
             m_ThisLevelIterations = 0;
         }
 
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+		/// <inheritdoc/>
+		public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
 
-        public object Clone() {
+		/// <inheritdoc/>
+		public object Clone() {
             var clone = new FlexGMRES(m_config);
             clone.TerminationCriterion = this.TerminationCriterion;
             clone.MaxKrylovDim = this.MaxKrylovDim;
@@ -310,11 +334,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return clone;
         }
 
+		/// <inheritdoc/>
 		public void Dispose() {
-			PrecondS?.ForEach(p => p.Dispose());
+			//PrecondS?.ForEach(p => p.Dispose());
 			m_MgOp = null;  // setting this to null ensures that Init(...) will actually initialize the solvers
 		}
 
+		/// <inheritdoc/>
 		public long UsedMemory() {
             throw new NotImplementedException();
         }
