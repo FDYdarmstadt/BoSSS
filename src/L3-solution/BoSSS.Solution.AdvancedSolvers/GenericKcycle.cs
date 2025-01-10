@@ -59,7 +59,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 // initiate krylov method
                 // ======================
-                ThisLevelKrylovMethod = new FlexGMRES() {
+                ThisLevelKrylovMethod = new FlexGMRES(new FGMRESConfig()) {
                     PrecondS = new ISolverSmootherTemplate[] { this.CoarserLevelSolver },
                     MaxKrylovDim = 1, // =2 corresponds to W-cycle
                     TerminationCriterion = (int iter, double r0, double r) => (iter <= 1, true),
