@@ -113,7 +113,7 @@ namespace BoSSS.Solution.Utils {
             
         Dictionary<string, Func<double[], double, double>[]> m_bndFunction = new Dictionary<string, Func<double[], double, double>[]>();
 
-        IGridData m_grdDat;
+        protected IGridData m_grdDat;
 
         /// <summary>
         /// ctor

@@ -6,6 +6,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 
@@ -254,7 +255,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// <summary>
             /// 
             /// </summary>
-            internal void EnforceContinuity() {
+            internal void EnforceContinuity(bool enforceOnNearband = false) {
                 LevelSetTracker Tracker = phaseInterface.Tracker;
                 CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
@@ -274,11 +275,52 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
                 CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
                 PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
-
-
-
-                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
                 preTracker.Dispose();
+
+                bool FalseContactline = false;
+
+                if (!enforceOnNearband) {
+                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
+
+                    EdgeMask CCplusBnd = CCplus.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(CCplus.GetAllInnerEdgesMask()));
+                    foreach (int iEdge in CCplusBnd.ItemEnum) {
+                        Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+                        if (phiIn.Max() * phiIn.Min() < 0 || phiOut.Max() * phiOut.Min() < 0) {
+                            FalseContactline = true;
+                        }
+                    }
+
+                    FalseContactline = FalseContactline.MPIOr();
+
+                    if (FalseContactline) {
+                        Console.WriteLine("Error in continuity projection, extending computation to nearband!");
+                        EnforceContinuity(true);
+                    }
+                } else {
+                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+
+                    EdgeMask NearBnd = Near1.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(Near1.GetAllInnerEdgesMask()));
+                    foreach (int iEdge in NearBnd.ItemEnum) {
+                        Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+                        if (phiIn.Max() * phiIn.Min() < 0) {
+                            FalseContactline = true;
+                        }   
+                    }
+
+                    FalseContactline = FalseContactline.MPIOr();
+
+                    if (FalseContactline) {
+                        throw new ApplicationException("Continuity projection failed, cannot recover!");
+                    }
+                }                
             }
 
             public void UpdateParameters(

@@ -33,6 +33,8 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -292,7 +294,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
             //C.LogPeriod = 1;
             C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
-
             #endregion
 
 
@@ -456,6 +457,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+            C.PhasefieldControl = new PhasefieldSettings() {
+                cahn = cahn,
+                diff = 1e-3,
+                TimeSteppingScheme = TimeSteppingScheme.ESDIRK_32
+            };
+
 
             // misc. solver options
             // ====================
@@ -486,12 +493,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
+            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.FailOnSolverFail = false;
+
             //C.LS_TrackerWidth = 2;
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 2;
-            C.BaseRefinementLevel = 2;
-            C.LS_TrackerWidth = 2;            
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 2;
+            //C.BaseRefinementLevel = 2;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 2;
+            C.LS_TrackerWidth = 3;            
 
             #endregion
 
@@ -500,9 +512,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
-            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler; //TimeSteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting; //LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 

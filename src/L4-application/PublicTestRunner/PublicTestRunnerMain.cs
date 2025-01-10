@@ -21,7 +21,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 namespace PublicTestRunner {
 
     /// <summary>
@@ -162,7 +161,8 @@ namespace PublicTestRunner {
                         typeof(IntersectingLevelSetTest.AllUpTest),
                         typeof(BUIDT.Tests.BUIDTTestProgram),
                         typeof(SAIDT.Tests.SAIDTTestProgram),
-                        typeof(XESF.Tests.XESFTestProgram)
+                        typeof(XESF.Tests.XESFTestProgram),
+                        typeof(StokesHelical_Ak.HelicalMain)
                 };
             }
         }

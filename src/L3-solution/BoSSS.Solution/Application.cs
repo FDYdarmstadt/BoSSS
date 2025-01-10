@@ -1430,6 +1430,9 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.ComputeNodeNames.Clear();
                 CurrentSessionInfo.ComputeNodeNames.AddRange(ilPSP.Environment.MPIEnv.HostnameForRank);
 
+                //set number of threads per mpi rank
+                CurrentSessionInfo.ThreadPerMPIRank = ilPSP.Environment.NumThreads;
+
                 // save
                 this.CurrentSessionInfo.Save();
             }
@@ -2455,14 +2458,14 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="pT"></param>
         /// <param name="TSnum"></param>
-        /// <param name="rollingSavesSammeldingens"></param>
-        private void PlotAndSave(double pT, TimestepNumber TSnum, List<Tuple<int, ITimestepInfo, bool>> rollingSavesSammeldingens = null) {
+        /// <param name="rollingSaves"></param>
+        private void PlotAndSave(double pT, TimestepNumber TSnum, List<Tuple<int, ITimestepInfo, bool>> rollingSaves = null) {
             if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                 PlotCurrentState(pT, TSnum, this.Control.SuperSampling);
 
             var tsi = SaveToDatabase(TSnum, pT);
-            if (rollingSavesSammeldingens != null && this.RollingSave)
-                rollingSavesSammeldingens.Add(Tuple.Create(TSnum.MajorNumber, tsi, false));
+            if (rollingSaves != null && this.RollingSave)
+                rollingSaves.Add(Tuple.Create(TSnum.MajorNumber, tsi, false));
         }
 
 
