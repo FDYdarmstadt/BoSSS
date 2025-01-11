@@ -317,7 +317,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     }
                     else
                     {
-                        specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                        specialRule = QuadRule.CreateZero(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -335,7 +335,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         bool coinciding = specialFace == iFace;
                         if (coinciding)
                         {
-                            specialRule = QuadRule.CreateEmpty(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
+                            specialRule = QuadRule.CreateZero(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                         break;
@@ -350,7 +350,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         }
                         else
                         {
-                            specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                            specialRule = QuadRule.CreateZero(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                     }
@@ -378,7 +378,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                             }
                             else
                             {
-                                specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                                specialRule = QuadRule.CreateZero(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                                 specialRule.Nodes.LockForever();
                             }
                         }
@@ -388,7 +388,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         }
                         else if (!ThisConform & OtherConform)
                         {
-                            specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                            specialRule = QuadRule.CreateZero(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                         else
@@ -405,7 +405,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     }
                     else
                     {
-                        specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                        specialRule = QuadRule.CreateZero(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -428,7 +428,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             singleMask = new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
             if (FurtherEdges != null)
             {
-                specialRule = QuadRule.CreateEmpty(scheme.GetRefElement(), 1, scheme.GetRefElement().SpatialDimension);
+                specialRule = QuadRule.CreateZero(scheme.GetRefElement(), 1, scheme.GetRefElement().SpatialDimension);
                 specialRule.Nodes.LockForever();
 
                 foreach (var edg in FurtherEdges)
@@ -569,7 +569,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
 
             // Creates a QuadRule Object <- The One BoSSS uses
-            QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, cell.Dimension, true);
+            QuadRule rule = QuadRule.CreateZero(GetRefElement(), ruleQ.Count, cell.Dimension, true);
             rule.OrderOfPrecision = order;
 
             //transfer from Beck into BoSSS structure

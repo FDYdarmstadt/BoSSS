@@ -93,7 +93,7 @@ namespace CutEdgeQuadrature {
                     // Create cell-based quadrature rule
                     RefElement KrefCell = grid.GridData.iGeomCells.GetRefElement(jCell);
                     var cellNodes = edgeRule.Nodes.GetVolumeNodeSet(grid.GridData, iTrafo, false);
-                    var cellRule = QuadRule.CreateEmpty(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
+                    var cellRule = QuadRule.CreateZero(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
                     cellRule.Nodes = cellNodes;
 
                     // Transform cell-based local coordinates to global coordinates

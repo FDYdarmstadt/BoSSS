@@ -286,7 +286,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return CreateEmptyQuadRule();
                 
                 // Create quadrature rule and copy from the scheme
-                QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
+                QuadRule quadRule = QuadRule.CreateZero(RefElement, qs.length, qs.dimension);
 
                 for (int row = 0; row < qs.length; row++) {
                     quadRule.Weights[row] = qs.weights[row];
@@ -355,19 +355,19 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 }
 
                 // Create surface quadrature rule and copy from the scheme
-                QuadRule quadRuleSurf = QuadRule.CreateEmpty(RefElement, qs.lengthSurf, qs.dimension);
-                for (int row = 0; row < qs.lengthSurf; row++) {
+                QuadRule quadRuleSurf = QuadRule.CreateZero(RefElement, qs.lengthSurf, qs.dimension);
+                for(int row = 0; row < qs.lengthSurf; row++) {
                     quadRuleSurf.Weights[row] = qs.weights[row];
-                    for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
+                    for(int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
                         int ind = row * qs.dimension + d;
                         quadRuleSurf.Nodes[row, d] = qs.nodes[ind];
                     }
                 }
                 quadRuleSurf.Nodes.LockForever();
                 quadRules[0] = quadRuleSurf;
-
+                
                 // Create volume quadrature rule and copy from the scheme
-                QuadRule quadRuleVol = QuadRule.CreateEmpty(RefElement, qs.lengthVol, qs.dimension);
+                QuadRule quadRuleVol = QuadRule.CreateZero(RefElement, qs.lengthVol, qs.dimension);
                 for (int row = qs.lengthSurf, rowVol=0; rowVol < qs.lengthVol; rowVol++,row++) { //lengthSurf+lengthVol = total length
                     quadRuleVol.Weights[rowVol] = qs.weights[row];
                     for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
@@ -400,7 +400,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             private QuadRule CreateEmptyQuadRule() {
-                QuadRule quadRuleEmpty = QuadRule.CreateEmpty(RefElement, 1, spaceDim);
+                QuadRule quadRuleEmpty = QuadRule.CreateZero(RefElement, 1, spaceDim);
                 quadRuleEmpty.Nodes.LockForever();
                 return quadRuleEmpty;
             }
@@ -555,7 +555,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return quadRuleEmpty;
                 }
 
-				QuadRule quadRuleOnEdge = QuadRule.CreateEmpty(RefElement.FaceRefElement, qs.length, qs.dimension);
+				QuadRule quadRuleOnEdge = QuadRule.CreateZero(RefElement.FaceRefElement, qs.length, qs.dimension);
 
                 for (int row = 0; row < qs.length; row++) {
                     quadRuleOnEdge.Weights[row] = qs.weights[row];
@@ -714,7 +714,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 
 
-				QuadRule quadRuleOnEdge = QuadRule.CreateEmpty(RefElement, qs.length, spaceDim);
+				QuadRule quadRuleOnEdge = QuadRule.CreateZero(RefElement, qs.length, spaceDim);
 
 
 				quadRuleOnEdge.Nodes.LockForever();

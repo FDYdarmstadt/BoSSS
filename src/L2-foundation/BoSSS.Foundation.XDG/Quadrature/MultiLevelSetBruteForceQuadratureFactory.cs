@@ -379,7 +379,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     if (activeChunk) {
                         // do nothing, already built
                     } else {
-                        specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                        specialRule = QuadRule.CreateZero(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -396,7 +396,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         int iFace = ((GridData)singleMask.GridData).Edges.FaceIndices[i, 0];
                         bool coinciding = specialFace == iFace;
                         if (coinciding) {
-                            specialRule = QuadRule.CreateEmpty(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
+                            specialRule = QuadRule.CreateZero(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                         break;
@@ -407,7 +407,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         if (activeChunk) {
                             specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
                         } else {
-                            specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                            specialRule = QuadRule.CreateZero(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                     } else {
@@ -429,13 +429,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
                             if(ThisCellGlob < OtherCellGlob) {
                                 // do nothing, already built
                             } else {
-                                specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                                specialRule = QuadRule.CreateZero(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                                 specialRule.Nodes.LockForever();
                             }
                         } else if (ThisConform & !OtherConform) {
                             // do nothing, already built
                         } else if (!ThisConform & OtherConform) {
-                            specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                            specialRule = QuadRule.CreateZero(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         } else {
                             throw new NotSupportedException(String.Format("Error in cell {0}, {1}: Only one cell should have the hanging node.", i, OtherCell));
@@ -447,7 +447,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     if (activeChunk) {
                         specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
                     } else {
-                        specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                        specialRule = QuadRule.CreateZero(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -468,7 +468,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             // select all edges, relevant in cells with hanging nodes
             singleMask = new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
             if (FurtherEdges != null) {
-                specialRule = QuadRule.CreateEmpty(scheme.ReferenceElement, 1, scheme.ReferenceElement.SpatialDimension);
+                specialRule = QuadRule.CreateZero(scheme.ReferenceElement, 1, scheme.ReferenceElement.SpatialDimension);
                 specialRule.Nodes.LockForever();
 
                 foreach (var edg in FurtherEdges) {

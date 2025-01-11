@@ -31,8 +31,6 @@ namespace BoSSS.Foundation.XDG {
 
     partial class LevelSetTracker {
 
-
-
         HistoryStack<Dictionary<CutCellQuadratureMethod, XQuadFactoryHelperBase>> m_QuadFactoryHelpersHistory = null;
 
         /// <summary>
@@ -44,23 +42,24 @@ namespace BoSSS.Foundation.XDG {
         XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
 
-            if (variant == CutCellQuadratureMethod.Algoim) {
-                if (!dict.ContainsKey(variant)) {
+            if(variant == CutCellQuadratureMethod.Algoim) {
+                if(!dict.ContainsKey(variant)) {
                     dict[variant] = new XQuadFactoryHelperAlgoim(
                         this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray());
                 }
 
                 return dict[variant];
 
-            }
+            } else {
 
-            if (!dict.ContainsKey(variant)) {
-                dict[variant] = new XQuadFactoryHelper(
-                    this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
-                    variant);
-            }
+                if(!dict.ContainsKey(variant)) {
+                    dict[variant] = new XQuadFactoryHelper(
+                        this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
+                        variant);
+                }
 
-            return dict[variant];
+                return dict[variant];
+            }
         }
 
 

@@ -269,7 +269,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override QuadRule CreateZeroQuadrule()
         {
-            QuadRule zeroRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+            QuadRule zeroRule = QuadRule.CreateZero(RefElement, 1, RefElement.SpatialDimension);
             zeroRule.Nodes.LockForever();
             return zeroRule;
         }

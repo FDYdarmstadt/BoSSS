@@ -58,6 +58,9 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
+        /// <summary>
+        /// <see cref="ICompositeQuadRule{TQuadRule}.IntegrationMetric"/>
+        /// </summary>
         public IIntegrationMetric IntegrationMetric {
             get;
             set;

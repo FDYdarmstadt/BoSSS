@@ -388,7 +388,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 CellMask emptyCells = new CellMask(LevelSetData.GridDat, voidCellsArray, MaskType.Geometrical);
                 foreach (int cell in emptyCells.ItemEnum) {
-                    QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                    QuadRule emptyRule = QuadRule.CreateZero(RefElement, 1, RefElement.SpatialDimension);
                     emptyRule.Nodes.LockForever();
                     result.Add(new ChunkRulePair<QuadRule>(
                         Chunk.GetSingleElementChunk(cell), emptyRule));

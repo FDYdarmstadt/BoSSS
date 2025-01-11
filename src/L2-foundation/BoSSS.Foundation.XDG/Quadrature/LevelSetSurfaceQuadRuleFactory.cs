@@ -553,7 +553,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             if (rhsL2Norm < 1e-14) {
                                 // All integrals are zero => cell not really cut
                                 // (happens e.g. if level set is tangent)
-                                QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                                QuadRule emptyRule = QuadRule.CreateZero(RefElement, 1, RefElement.SpatialDimension);
                                 emptyRule.Nodes.LockForever();
                                 optimizedRules[i] = emptyRule;
                                 continue;
@@ -654,7 +654,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (rhs.L2NormPow2() < 1e-14) {
                     // All integrals are zero => cell not really cut
                     // (happens e.g. if level set is tangent)
-                    QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                    QuadRule emptyRule = QuadRule.CreateZero(RefElement, 1, RefElement.SpatialDimension);
                     emptyRule.Nodes.LockForever();
                     return emptyRule;
                 }
@@ -794,7 +794,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     AffineTrafo trafo = trafosToBoundingBox[localCellIndex2SubgridIndex[jCell]];
 
                     if (trafo == null) {
-                        QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, 2);
+                        QuadRule emptyRule = QuadRule.CreateZero(RefElement, 1, 2);
                         emptyRule.Nodes.LockForever();
                         result.Add(new ChunkRulePair<QuadRule>(
                             singleElementMask.Single(), emptyRule));
@@ -823,7 +823,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     reducedNodes.LockForever();
 
                     if (nodesToBeCopied.Count == 0) {
-                        QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, 2);
+                        QuadRule emptyRule = QuadRule.CreateZero(RefElement, 1, 2);
                         emptyRule.Nodes.LockForever();
                         result.Add(new ChunkRulePair<QuadRule>(
                             singleElementMask.Single(), emptyRule));

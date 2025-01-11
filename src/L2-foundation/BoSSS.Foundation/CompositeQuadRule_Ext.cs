@@ -137,7 +137,7 @@ namespace BoSSS.Foundation {
                     // Create cell-based quadrature rule (to express them in cell coordinates)
                     RefElement KrefCell = gd.iGeomCells.GetRefElement(jCell);
                     var cellNodes = loopEdgeRule.Nodes.GetVolumeNodeSet(gd, iTrafo, false);
-                    var cellRule = QuadRule.CreateEmpty(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
+                    var cellRule = QuadRule.CreateZero(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
                     cellRule.Nodes = cellNodes;
                     cellRule.Weights = loopEdgeRule.Weights;
 

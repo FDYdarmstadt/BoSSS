@@ -928,7 +928,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             // return values memalloc
             // ----------------------
-            Quadrature.QuadRule ret = QuadRule.CreateEmpty(
+            Quadrature.QuadRule ret = QuadRule.CreateZero(
                 this, BaseRule.Weights.Length * leaves.Length, D, true);
             ret.OrderOfPrecision = BaseRule.OrderOfPrecision;
 

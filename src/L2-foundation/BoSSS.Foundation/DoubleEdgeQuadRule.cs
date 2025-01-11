@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// Creates an empty rule.
         /// </summary>
-        new public static DoubleEdgeQuadRule CreateEmpty(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
+        new public static DoubleEdgeQuadRule CreateZero(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
             DoubleEdgeQuadRule rule = new DoubleEdgeQuadRule();
             rule.Nodes = new NodeSet(Kref, noOfNodes, D, useNodeSetCaching);
             rule.Weights = MultidimensionalArray.Create(noOfNodes);

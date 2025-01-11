@@ -250,7 +250,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="IQuadratureScheme{S, T}.Compile"/>
         /// </summary>
         public ICompositeQuadRule<TQuadRule> Compile(IGridData gridData, int order) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 tr.Info("order = " + order);
                 // set domain
                 TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
@@ -267,7 +267,7 @@ namespace BoSSS.Foundation.Quadrature {
                 // define standard factories, if necessary
                 // =======================================
                 IEnumerable<IFactoryDomainPair<TQuadRule, TDomain>> factoryDomainPairs;
-                if (m_UseDefaultFactories) {
+                if(m_UseDefaultFactories) {
                     var defaultFactories = RefElements.Select(
                             RefElm => (new FactoryDomainPair(
                                 GetDefaultRuleFactory(gridData, RefElm),
@@ -287,12 +287,12 @@ namespace BoSSS.Foundation.Quadrature {
                 // ---------------
                 CompositeQuadRule<TQuadRule> fullRule = new CompositeQuadRule<TQuadRule>();
                 int i = -1;
-                foreach (var factoryDomainPair in factoryDomainPairs) {
+                foreach(var factoryDomainPair in factoryDomainPairs) {
                     i++;
                     TDomain currentDomain = baseDomain;
                     var RefElm = factoryDomainPair.RuleFactory.RefElement;
 
-                    if (factoryDomainPair.Domain == null) {
+                    if(factoryDomainPair.Domain == null) {
                         currentDomain = GetDomainForRefElement(RefElm, gridData).Intersect(baseDomain);
                     } else {
                         currentDomain = baseDomain.Intersect(factoryDomainPair.Domain);
@@ -300,11 +300,11 @@ namespace BoSSS.Foundation.Quadrature {
                     }
 
                     // check the type of factory
-                    if (!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
+                    if(!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
                         string simplexNames = "";
-                        for (int _i = 0; _i < RefElements.Length; _i++) {
+                        for(int _i = 0; _i < RefElements.Length; _i++) {
                             simplexNames += RefElements[_i].GetType().Name;
-                            if (_i < RefElements.Length - 1)
+                            if(_i < RefElements.Length - 1)
                                 simplexNames += ",";
                         }
 
@@ -316,13 +316,13 @@ namespace BoSSS.Foundation.Quadrature {
 
                     // Causes parallel issues for classic HMF
                     // -> deactivated by Björn until classic HMF is fixed
-                    if (gridData.MpiSize > 1) {
+                    if(gridData.MpiSize > 1) {
                         var FactoryName = factoryDomainPair.RuleFactory.GetType().FullName;
-                        if (FactoryName.Contains("LevelSetSurfaceQuadRuleFactory"))
+                        if(FactoryName.Contains("LevelSetSurfaceQuadRuleFactory"))
                             throw new NotSupportedException("there is still an MPI BUG in the classic HMF");
                     }
 
-                    if (currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
+                    if(currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
                         continue;
                     }
 
@@ -330,9 +330,9 @@ namespace BoSSS.Foundation.Quadrature {
                             factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain, IntegrationMetric);
 
                     int prevIE = -1;
-                    foreach (var CRP in currentRule) {
-                        if (prevIE >= 0) {
-                            if (CRP.Chunk.i0 < prevIE) {
+                    foreach(var CRP in currentRule) {
+                        if(prevIE >= 0) {
+                            if(CRP.Chunk.i0 < prevIE) {
                                 throw new ApplicationException("Quadrature rule factory " + factoryDomainPair.RuleFactory.GetType().Name + " produced an un-sorted quadrature rule!");
                             }
                         }
@@ -341,38 +341,38 @@ namespace BoSSS.Foundation.Quadrature {
 
 
 #if DEBUG
-                //// Check removed since there are situations where it is valid _not_
-                //// to return quadrature rule for a given cell/edge
-                Debug.Assert(currentRule.NumberOfItems == currentDomain.NoOfItemsLocally);
+                    //// Check removed since there are situations where it is valid _not_
+                    //// to return quadrature rule for a given cell/edge
+                    Debug.Assert(currentRule.NumberOfItems == currentDomain.NoOfItemsLocally);
 
-                Debug.Assert(
-                     currentRule.Where(w => (w.Rule.Nodes.IsLocked == false)).Count() <= 0,
-                     "error in quadrature rule creation: factory delivered some rule non-locked node set.");
+                    Debug.Assert(
+                         currentRule.Where(w => (w.Rule.Nodes.IsLocked == false)).Count() <= 0,
+                         "error in quadrature rule creation: factory delivered some rule non-locked node set.");
 
-                Debug.Assert(
-                    currentRule.Where(w => (w.Rule.NoOfNodes <= 0)).Count() <= 0,
-                    "error in quadrature rule creation: factory delivered some rule with zero nodes.");
+                    //Debug.Assert(
+                    //    currentRule.Where(w => (w.Rule.NoOfNodes <= 0)).Count() <= 0,
+                    //    "error in quadrature rule creation: factory delivered some rule with zero nodes.");
 
-                foreach(IChunkRulePair<TQuadRule> cr in currentRule ) {
-                    cr.Rule.Weights.CheckForNanOrInf();
-                    cr.Rule.Nodes.CheckForNanOrInf();
-                }
+                    foreach(IChunkRulePair<TQuadRule> cr in currentRule) {
+                        cr.Rule.Weights.CheckForNanOrInf();
+                        cr.Rule.Nodes.CheckForNanOrInf();
+                    }
 
 #endif
 
-                    if (i == 0) {
+                    if(i == 0) {
                         fullRule = currentRule;
                     } else {
                         fullRule = CompositeQuadRule<TQuadRule>.Merge(fullRule, currentRule);
                     }
 
-                    if (fullRule != null && fullRule.Count() > 0) {
+                    if(fullRule != null && fullRule.Count() > 0) {
                         int J = fullRule.Max(crp => crp.Chunk.JE);
                         System.Collections.BitArray ChunkTest = new System.Collections.BitArray(J);
-                        foreach (var chunk in fullRule) {
+                        foreach(var chunk in fullRule) {
                             int IE = chunk.Chunk.JE;
-                            for (int ii = chunk.Chunk.i0; ii < IE; ii++) {
-                                if (ChunkTest[ii])
+                            for(int ii = chunk.Chunk.i0; ii < IE; ii++) {
+                                if(ChunkTest[ii])
                                     throw new ArgumentException("More than one quadrature rule defined for integration item " + ii + ".");
                                 ChunkTest[ii] = true;
 

@@ -48,6 +48,9 @@ namespace BoSSS.Foundation.XDG {
         internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, CutCellQuadratureMethod momentFittingVariant) 
             : base(lsDatas) {
 
+            if(momentFittingVariant == CutCellQuadratureMethod.Algoim)
+                throw new ArgumentException("for Algoim, a dedicated factory (XQuadFactoryHelperAlgoim) must be used");
+
             this.CutCellQuadratureType = momentFittingVariant;
         }
 

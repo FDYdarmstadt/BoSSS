@@ -360,7 +360,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     }
 
                     // Create quadrature rule and copy from the scheme
-                    QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
+                    QuadRule quadRule = QuadRule.CreateZero(RefElement, qs.length, qs.dimension);
 
                     for (int row = 0; row < qs.length; row++) {
                         quadRule.Weights[row] = qs.weights[row];
@@ -406,13 +406,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                         positiveNodes.Add(quadRule.Nodes.GetRow(i));
                     }
                 }
-                QuadRule negRule = QuadRule.CreateEmpty(RefElement, negativeWeight.Count(), spaceDim);
+                QuadRule negRule = QuadRule.CreateZero(RefElement, negativeWeight.Count(), spaceDim);
                 for (int n = 0; n < negativeWeight.Count(); n++) {
                     negRule.Weights[n] = negativeWeight[n];
                     negRule.Nodes.SetRow(n, negativeNodes[n]);
                 }
                 negRule.Nodes.LockForever();
-                QuadRule posRule = QuadRule.CreateEmpty(RefElement, positiveWeight.Count(), spaceDim);
+                QuadRule posRule = QuadRule.CreateZero(RefElement, positiveWeight.Count(), spaceDim);
                 for (int n = 0; n < positiveWeight.Count(); n++) {
                     posRule.Weights[n] = positiveWeight[n];
                     posRule.Nodes.SetRow(n, positiveNodes[n]);
@@ -423,7 +423,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             private QuadRule CreateEmptyQuadRule() {
-                QuadRule quadRuleEmpty = QuadRule.CreateEmpty(RefElement, 1, spaceDim);
+                QuadRule quadRuleEmpty = QuadRule.CreateZero(RefElement, 1, spaceDim);
                 quadRuleEmpty.Nodes.LockForever();
                 return quadRuleEmpty;
             }
@@ -466,7 +466,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     }
 
 					// Create quadrature rule and copy from the scheme
-					QuadRule quadRule = QuadRule.CreateEmpty(RefElement, qs.length, qs.dimension);
+					QuadRule quadRule = QuadRule.CreateZero(RefElement, qs.length, qs.dimension);
                     SetNodesAndWeight(qs, quadRule);
 					quadRuleArray[i] = quadRule;
 				}
@@ -474,7 +474,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 			}
 
 			private QuadRule CreateEmptyQuadRule() {
-				QuadRule quadRuleEmpty = QuadRule.CreateEmpty(RefElement, 1, spaceDim);
+				QuadRule quadRuleEmpty = QuadRule.CreateZero(RefElement, 1, spaceDim);
 				quadRuleEmpty.Nodes.LockForever();
 				return quadRuleEmpty;
 			}
@@ -567,7 +567,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 					}
 
                     // Create rule (edge based)
-					QuadRule quadRuleOnEdge = QuadRule.CreateEmpty(RefElement.FaceRefElement, qs.length, qs.dimension);
+					QuadRule quadRuleOnEdge = QuadRule.CreateZero(RefElement.FaceRefElement, qs.length, qs.dimension);
                     SetNodesAndWeight(qs, quadRuleOnEdge);
 
 					// Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
@@ -678,7 +678,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 					}
 
 					// Create rule (edge based)
-					QuadRule quadRuleOnEdge = QuadRule.CreateEmpty(RefElement.FaceRefElement, qs.length, qs.dimension);
+					QuadRule quadRuleOnEdge = QuadRule.CreateZero(RefElement.FaceRefElement, qs.length, qs.dimension);
 					SetNodesAndWeight(qs, quadRuleOnEdge);
 
 					// Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
