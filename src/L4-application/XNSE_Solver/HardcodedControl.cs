@@ -2065,31 +2065,24 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
-
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-			C.LinearSolver = new DirectSolver.Config() {
+            var config = new FGMRESConfig();
+			config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-3,
+                CoarseKickIn = 1000
+            });
+
+            config.Preconditioners.Add(new DirectSolver.Config() {
                 WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
-            };
+                });
 
+            C.LinearSolver = config;
+            //	new DirectSolver.Config() {
+            //	WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
+            //}; //new SchurPrecondConfig();
 
-
-            //    new FGMRESConfig();
-            //config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
-            //    ConvergenceCriterion = 1e-3,
-            //    CoarseKickIn = 1000
-            //});
-            //config.Preconditioners.Add(new DirectSolver.Config() {
-            //    WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
-            //}
-            //    );
-
-
-			//	new DirectSolver.Config() {
-			//	WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
-			//}; //new SchurPrecondConfig();
-
-			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             return C;
         }

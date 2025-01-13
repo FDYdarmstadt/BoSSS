@@ -721,26 +721,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							divVel.SpMVpara(-1.0, input, 0.0, output); //attention to minus sign
 						};
 
-						
+						// add inner solver
 						var InnerSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                         InnerSolver.DefineMatrix(ConvDiff);
 
-						//preconditioner matrix
-						var PrecondM = new MsrMatrix(n, n, 1, 1);
-
-                        for (int i = 0; i < n; i++) {
-                            var row = pGrad.GetRowShallow((long)i);
-                            double rowDotColumn = 0;
-
-                            foreach (var e in row)
-                                rowDotColumn += e.Value * e.Value;
-
-							rowDotColumn = rowDotColumn != 0 ? rowDotColumn : 1;
-
-							PrecondM.SetDiagonalElement(i, rowDotColumn);
-
-
-						}
 
 						using (var Psolver = new BoSSS.Solution.AdvancedSolvers.SoftPCG(false)) {
                             Psolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
@@ -751,21 +735,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) {
                                 Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                                 Psolver.Precond.DefineMatrix(pMassMatrix);
-                            } else {
-								//Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-								//Psolver.Precond.DefineMatrix(LeastSqaureCommutorMtx);
-							}
+                            }
+                            // else {
+                                //    Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                                //    Psolver.Precond.DefineMatrix(LeastSqaureCommutorMtx);
+                                //}
 
-							Psolver.InnerIterBefore = multipWithPgrad;
-							Psolver.InnerIterAfter = multipWithDivVel;
+                                Psolver.InnerIterBefore = multipWithPgrad;
+                                Psolver.InnerIterAfter = multipWithDivVel;
 
-							Psolver.InnerCycle = InnerSolver;
-							Psolver.Solve(Psol, res2);
+                                Psolver.InnerCycle = InnerSolver;
+                                Psolver.Solve(Psol, res2);
 
-							this.m_ThisLevelIterations = Psolver.ThisLevelIterations;
-							this.m_IterationsInNested = Psolver.IterationsInNested;
-							this.m_Converged = Psolver.Converged;
-						}
+                                this.m_ThisLevelIterations = Psolver.ThisLevelIterations;
+                                this.m_IterationsInNested = Psolver.IterationsInNested;
+                                this.m_Converged = Psolver.Converged;
+                            }
 
                         //Update the rhs1
 						pGrad.SpMVpara(-1.0, Psol, 1.0, vecb1);

@@ -46,12 +46,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var templinearSolve = new FlexGMRES(this);
 
             List<ISolverSmootherTemplate> preconditioners = new List<ISolverSmootherTemplate>();
-
             foreach (var pre in Preconditioners) {
 				preconditioners.Add(pre.CreateInstance(level));
             }
-			templinearSolve.PrecondS = preconditioners.ToArray();
 
+			templinearSolve.PrecondS = preconditioners.ToArray();
 			templinearSolve.Init(level);
 			return templinearSolve;
 		}
@@ -110,7 +109,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MgOp = op;
 
                 if(!M.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration M may not be initialized
-                    throw new ArgumentException("Row partitioning mismatch.");
+					throw new ArgumentException("Row partitioning mismatch.");
                 if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
@@ -268,14 +267,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			Console.WriteLine($"total iteration number: {this.m_ThisLevelIterations}");
 		}
 
-        /// <summary>
-        /// helper function to understand and control the termination behavior
-        /// </summary>
-        /// <param name="iter">iteration number</param>
-        /// <param name="ResNorm0"></param>
-        /// <param name="ResNorm"></param>
-        /// <returns></returns>
-        bool ShouldTerminate(int iIter, double ResNorm0, double ResNorm) {
+		/// <summary>
+		/// helper function to understand and control the termination behavior
+		/// </summary>
+		/// <param name="iIter">iteration number</param>
+		/// <param name="ResNorm0"></param>
+		/// <param name="ResNorm"></param>
+		/// <returns></returns>
+		bool ShouldTerminate(int iIter, double ResNorm0, double ResNorm) {
 			var (shouldNotTerminate, hasConverged) = TerminationCriterion(iIter, ResNorm0, ResNorm);
 
 			//if termination is requested, e.g. iter > maxIter  or if already converged
@@ -336,7 +335,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		/// <inheritdoc/>
 		public void Dispose() {
-			//PrecondS?.ForEach(p => p.Dispose());
+			PrecondS?.ForEach(p => p.Dispose());
 			m_MgOp = null;  // setting this to null ensures that Init(...) will actually initialize the solvers
 		}
 
