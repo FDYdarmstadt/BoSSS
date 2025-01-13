@@ -2059,28 +2059,103 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.LinearSolver = new PmgConfig() {
             //    ConvergenceCriterion = 1e-9
             //};
-            C.LinearSolver = new OrthoMGSchwarzConfig() {
-                ConvergenceCriterion = 1e-9
-            };
+            //C.LinearSolver = new OrthoMGSchwarzConfig() {
+            //    ConvergenceCriterion = 1e-9
+            //};
 
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-            C.LinearSolver = new SchurPrecondConfig();
+			C.LinearSolver = new DirectSolver.Config() {
+                WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
+            };
+
+
+
+            //    new FGMRESConfig();
+            //config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
+            //    ConvergenceCriterion = 1e-3,
+            //    CoarseKickIn = 1000
+            //});
+            //config.Preconditioners.Add(new DirectSolver.Config() {
+            //    WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
+            //}
+            //    );
+
+
+			//	new DirectSolver.Config() {
+			//	WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
+			//}; //new SchurPrecondConfig();
 
 			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             return C;
         }
 
-        /// <summary>
-        /// Replica of the linear solver worksheet
-        /// </summary>
-        /// <param name="Res"></param>
-        /// <param name="p"></param>
-        /// <returns></returns>
+		/// <summary>
+		/// A test case which leads to occasional failure with debug configuration along with <c>BottiDiPietro2D</c>.
+		/// </summary>
+		public static XNSE_Control DebugConfigOperatorError(int Res = 16, int p = 3) {
+			// --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+			var C = new XNSE_Control();
+
+			C.GridFunc = delegate () {
+				GridCommons g;
+				double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+				double[] yNodes = xNodes;
+				g = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+				g.DefineEdgeTags(delegate (double[] X) {
+					double x = X[0];
+					if (Math.Abs(x - (-1)) < 1e-8)
+						return "pressure_outlet";
+					return "wall";
+				});
+
+				return g;
+			};
+
+
+			C.SetDGdegree(p);
+
+
+			C.PhysicalParameters.rho_A = 1; // not relevant, since density is not present in steady-state Stokes.
+			C.PhysicalParameters.rho_B = 1; // not relevant, since density is not present in steady-state Stokes.
+			C.PhysicalParameters.mu_A = 1; // dimensionless
+			C.PhysicalParameters.mu_B = 1; // dimensionless
+			C.PhysicalParameters.Sigma = 0; // not relevant, since single phase
+			C.PhysicalParameters.IncludeConvection = false;
+			C.PhysicalParameters.Material = true;
+
+			double VelocityXex(double[] X) {
+				return -Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+			}
+
+			double VelocityYex(double[] X) {
+				return Math.Exp(X[0]) * X[1] * Math.Sin(X[1]);
+			}
+
+
+			C.AddBoundaryValue("wall", "VelocityX", VelocityXex);
+			C.AddBoundaryValue("wall", "VelocityY", VelocityYex);
+
+			C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+			C.LevelSet_ConvergenceCriterion = 1e-6;
+
+			C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
+			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+			return C;
+		}
+
+		/// <summary>
+		/// Replica of the linear solver worksheet
+		/// </summary>
+		/// <param name="Res"></param>
+		/// <param name="p"></param>
+		/// <returns></returns>
 		public static XNSE_Control BottiDiPietro3D(int Res = 20, int p = 2) {
 			// --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
 			var C = new XNSE_Control();
