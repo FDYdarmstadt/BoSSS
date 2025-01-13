@@ -109,7 +109,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var MgMap = op.DgMapping;
                 this.m_MgOp = op;
 
-                if(!M.RowPartitioning.EqualsPartition(MgMap))
+                if(!M.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration M may not be initialized
                     throw new ArgumentException("Row partitioning mismatch.");
                 if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
