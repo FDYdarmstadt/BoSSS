@@ -490,7 +490,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// - false: <see cref="OrthonormalizationMultigrid.CoarserLevelSolver"/> is initialized on the same level, but it may perform tis own restriction
             /// </summary>
             [DataMember]
-            public bool CoarseOnLovwerLevel = true;
+            public bool CoarseOnLowerLevel = true;
 
             /// <summary>
             /// - if set to 1, a this performs a V-cycle
@@ -668,14 +668,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("OrthonormalizationMultigrid: running without coarse solver.");
                 } else {
                     if (op is MultigridOperator mgOp) {
-                        if (myConfig.CoarseOnLovwerLevel && mgOp.CoarserLevel != null) {
+                        if (myConfig.CoarseOnLowerLevel && mgOp.CoarserLevel != null) {
                             this.CoarserLevelSolver.Init(mgOp.CoarserLevel);
                         } else {
                             tr.Info("OrthonormalizationMultigrid: running coarse solver on same level.");
                             this.CoarserLevelSolver.Init(mgOp);
                         }
                     } else {
-                        if (myConfig.CoarseOnLovwerLevel == false && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
+                        if (myConfig.CoarseOnLowerLevel == false && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
                             ssCoarse.Init(op);
                         } else {
                             throw new NotSupportedException($"Unable to initialize coarse-level-solver if operator is not a {typeof(MultigridOperator)}");
@@ -811,7 +811,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[] ResCoarse;
                 int Lc;
-                if (this.CoarserLevelSolver != null && myConfig.CoarseOnLovwerLevel) {
+                if (this.CoarserLevelSolver != null && myConfig.CoarseOnLowerLevel) {
                     Lc = ((MultigridOperator)m_OpMapPair).CoarserLevel.Mapping.LocalLength;
                     ResCoarse = new double[Lc];
                 } else {
@@ -926,7 +926,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if (this.CoarserLevelSolver != null) {
 
                             double[] vl = new double[L];
-                            if (myConfig.CoarseOnLovwerLevel) {
+                            if (myConfig.CoarseOnLowerLevel) {
 
                                 var _MgOperator = m_OpMapPair as MultigridOperator;
 
@@ -961,7 +961,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 CoarseArithmeticExceptionCount++;
                                 Console.WriteLine("Coarse solver failed " + CoarseArithmeticExceptionCount);
                                 if(CoarseArithmeticExceptionCount == 1) {
-                                    BlockMsrMatrix coarseMtx = myConfig.CoarseOnLovwerLevel ? (m_OpMapPair as MultigridOperator).CoarserLevel.OperatorMatrix : m_OpMapPair.OperatorMatrix;
+                                    BlockMsrMatrix coarseMtx = myConfig.CoarseOnLowerLevel ? (m_OpMapPair as MultigridOperator).CoarserLevel.OperatorMatrix : m_OpMapPair.OperatorMatrix;
                                     coarseMtx.SaveToTextFileSparse("FailedCoarseMatrix.txt");
                                 }
                                 vl = null;
