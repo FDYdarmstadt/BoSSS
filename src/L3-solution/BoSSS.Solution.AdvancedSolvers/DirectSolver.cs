@@ -460,7 +460,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(m_Solver != null)
                 m_Solver.Dispose();
             m_Solver = null;
-            this.m_Mtx = null;
+			this.MatrixNMapping = null;
+			this.m_Mtx = null;
         }
 
         public long UsedMemory() {
