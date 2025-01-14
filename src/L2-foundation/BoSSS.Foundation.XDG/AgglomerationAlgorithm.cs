@@ -1983,8 +1983,12 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 
-                    // discard already connected cells
-                    foreach (int DirectConnected in ImmediateConnectionCells) {
+					// if any target available in case a target needed? (if no target needed, we should also not have edges. Otherwise: a possible cycle)
+					Debug.Assert(CellsNeedChainAgglomeration.Any() == (weightedEdges.Any() || ImmediateConnectionCells.Any()), "Cell agglomeration failed." +
+							" There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
+
+					// discard already connected cells
+					foreach (int DirectConnected in ImmediateConnectionCells) {
                         CellsNeedChainAgglomeration.Remove(DirectConnected);
                         anyUpdate = true;
                     }
@@ -2006,9 +2010,6 @@ namespace BoSSS.Foundation.XDG {
                     //}
                     //weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges", ".txt");
 
-                    // if any target available in case a target needed?
-                    Debug.Assert((weightedEdges.Any() || ImmediateConnectionCells.Any()) && !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
-                            " There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
 
                     // choose the first edge and add the corresponding agg. pair
                     if (weightedEdges.Any() && CellsNeedChainAgglomeration.Any())
