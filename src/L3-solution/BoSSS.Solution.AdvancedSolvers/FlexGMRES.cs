@@ -48,7 +48,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             List<ISolverSmootherTemplate> preconditioners = new List<ISolverSmootherTemplate>();
             foreach (var pre in Preconditioners) {
 				preconditioners.Add(pre.CreateInstance(level));
-            }
+				templinearSolve.IsPreconditionerInitiated = true;
+			}
 
 			templinearSolve.PrecondS = preconditioners.ToArray();
 			templinearSolve.Init(level);
@@ -90,12 +91,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		MultigridOperator m_MgOp;
 		bool m_Converged = false;
 		int m_ThisLevelIterations = 0;
-		private FGMRESConfig m_config;
+		FGMRESConfig m_config;
+		public bool IsPreconditionerInitiated = false;
 
 		/// <summary>
 		/// Number of solution vectors in the internal Krylov-Space
 		/// </summary>
-		public int MaxKrylovDim = 1;
+		public int MaxKrylovDim = 2;
 
 		public void Init(MultigridOperator op) {
             using(var tr = new FuncTrace()) {
@@ -113,9 +115,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                foreach(var pc in PrecondS) {
-                    pc.Init(m_MgOp);
-                }
+                if (!IsPreconditionerInitiated)
+                    foreach(var pc in PrecondS) {
+                        pc.Init(m_MgOp);
+                        IsPreconditionerInitiated = true;
+				    }
             }
         }
 
@@ -167,7 +171,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 // callback
-                this.IterationCallback?.Invoke(iIter, X0.CloneAs(), R0.CloneAs(), this.m_MgOp);
+                this.IterationCallback?.Invoke(iIter-1, X0.CloneAs(), R0.CloneAs(), this.m_MgOp);
 
                 if (ShouldTerminate(iIter, iter0_l2Residual, iter_l2Residual))
                     break;
@@ -335,8 +339,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		/// <inheritdoc/>
 		public void Dispose() {
-			PrecondS?.ForEach(p => p.Dispose());
 			m_MgOp = null;  // setting this to null ensures that Init(...) will actually initialize the solvers
+
+            if (IsPreconditionerInitiated) {
+				PrecondS?.ForEach(p => p.Dispose());
+				IsPreconditionerInitiated = false;
+			}
 		}
 
 		/// <inheritdoc/>
