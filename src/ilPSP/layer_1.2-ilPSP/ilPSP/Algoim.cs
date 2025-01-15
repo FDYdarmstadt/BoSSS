@@ -517,8 +517,13 @@ namespace ilPSP.Utils {
         /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
         /// <returns></returns>
         public static QuadScheme GetSurfaceQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+            QuadSchemeUnmanaged retC;
+            if(dim > 1)
+                retC = m_Algoim.getUnmanagedSurfaceScheme(dim, p, q, lengths, x, y);
+            else 
+                retC = m_Algoim.getUnmanagedVolumeScheme(dim, p, q, lengths, x, y);
 
-            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceScheme(dim, p, q, lengths, x, y);
+
             QuadScheme ret = new QuadScheme(retC);
             retC.FreeMemory();
             return ret;
