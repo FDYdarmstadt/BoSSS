@@ -2070,12 +2070,13 @@ namespace BoSSS.Application.XNSE_Solver {
             var config = new FGMRESConfig();
 			config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
                 ConvergenceCriterion = 1e-3,
-                CoarseKickIn = 1000
+                CoarseKickIn = 5000,
+                TargetBlockSize = 1000
             });
 
-            config.Preconditioners.Add(new DirectSolver.Config() {
-                WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
-                });
+            //config.Preconditioners.Add(new DirectSolver.Config() {
+            //    WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
+            //    });
 
             C.LinearSolver = config;
             //	new DirectSolver.Config() {
