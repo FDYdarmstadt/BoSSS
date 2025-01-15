@@ -41,10 +41,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		[DataMember]
 		public override string Shortname => "FGMRES";
 
+		/// <inheritdoc/>
 		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-
 			var templinearSolve = new FlexGMRES(this);
+            templinearSolve.TerminationCriterion = this.DefaultTermination;
 
+            // This would initiate a preconditioner using the same MGoperator
             List<ISolverSmootherTemplate> preconditioners = new List<ISolverSmootherTemplate>();
             foreach (var pre in Preconditioners) {
 				preconditioners.Add(pre.CreateInstance(level));
@@ -56,9 +58,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return templinearSolve;
 		}
 
+		/// <summary>
 		/// List of preconditioner solver configurations
+		/// </summary>
 		[DataMember]
 		public List<ISolverFactory> Preconditioners = new List<ISolverFactory>();
+
+		/// <summary>
+		/// Number of solution vectors in the internal Krylov-Space
+		/// </summary>
+		[DataMember]
+        public int MaxKrylovDim = 1;
+
 	}
 
 	/// <summary>
@@ -85,19 +96,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		public FlexGMRES(FGMRESConfig config) {
 			m_config = config;
-			TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= MaxKrylovDim, R_l2 < R0_l2 * m_config.ConvergenceCriterion + m_config.ConvergenceCriterion);              
 		}
 
+		FGMRESConfig m_config;
 		MultigridOperator m_MgOp;
 		bool m_Converged = false;
 		int m_ThisLevelIterations = 0;
-		FGMRESConfig m_config;
 		public bool IsPreconditionerInitiated = false;
-
-		/// <summary>
-		/// Number of solution vectors in the internal Krylov-Space
-		/// </summary>
-		public int MaxKrylovDim = 2;
+		public int MaxKrylovDim => m_config.MaxKrylovDim;
 
 		public void Init(MultigridOperator op) {
             using(var tr = new FuncTrace()) {
@@ -133,7 +139,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
             set;
         }
-
 
 		/// <inheritdoc/>
 		public void Solve<U, V>(U X, V B)
@@ -291,7 +296,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return false;
 		}
 
-
 		/// <inheritdoc/>
 		public int IterationsInNested {
             get {
@@ -328,7 +332,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public object Clone() {
             var clone = new FlexGMRES(m_config);
             clone.TerminationCriterion = this.TerminationCriterion;
-            clone.MaxKrylovDim = this.MaxKrylovDim;
             var tmp = new List<ISolverSmootherTemplate>();
             foreach (ISolverSmootherTemplate precond in this.PrecondS) {
                 tmp.Add(precond.CloneAs());
