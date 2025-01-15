@@ -78,12 +78,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             //ilPSP.Environment.NumThreads = 8;
-            InitMPI();
-            ilPSP.Environment.NumThreads = 1;
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(deg: 2, vmode: ViscosityMode.Standard, CutCellQuadratureType: CutCellQuadratureMethod.Algoim);
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(3, 2, 0.0d, ViscosityMode.Standard, CutCellQuadratureMethod.Algoim, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //InitMPI();
+            //ilPSP.Environment.NumThreads = 1;
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(deg: 2, vmode: ViscosityMode.Standard, CutCellQuadratureType: CutCellQuadratureMethod.Algoim);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(3, 2, 0.0d, ViscosityMode.Standard, CutCellQuadratureMethod.Algoim, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
-            NUnit.Framework.Assert.IsTrue(false, "remove me");
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
             {
                 XNSE._Main(args, false, delegate () {
