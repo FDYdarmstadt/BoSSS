@@ -31,20 +31,27 @@ using System.Diagnostics;
 using ilPSP.Tracing;
 using ilPSP.LinSolvers.PARDISO;
 using BoSSS.Solution.Control;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
 	[Serializable]
 	public class SchurPrecondConfig : IterativeSolverConfig {
+		/// <inheritdoc/>
+		[DataMember]
 		public override string Name => "Schur complement with Uzawa algorithm";
-
+		/// <inheritdoc/>
+		[DataMember]
 		public override string Shortname => "Uzawa";
 
+        /// <inheritdoc/>
+        [DataMember]
+        SchurPrecond.SchurOptions option = SchurPrecond.SchurOptions.Uzawa;
+
+		/// <inheritdoc/>
 		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-
 			var templinearSolve = new SchurPrecond(this);
-
-
+            templinearSolve.SchurOpt = option;
 			templinearSolve.Init(level);
 			return templinearSolve;
 		}
@@ -96,8 +103,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get {
                 return m_mgop.Mapping;	}
             }
-            
-
+           
 		BlockMsrMatrix Mtx;
 		//BlockMsrMatrix operatorM;
 
@@ -116,7 +122,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			get { return Pidx.Length; }
 		}
 
-		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3, exact_matlab = 4, }
+		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3, exact_matlab = 4, least_square_commutor }
 
         public bool ApproxScaling = false;
         
@@ -175,7 +181,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			switch (SchurOpt)
             {
-                case SchurOptions.exact_matlab:
+				case SchurOptions.Uzawa: {
+                        Console.WriteLine("Uzawa with pCG is set");
+                        return;
+                    }
+				case SchurOptions.exact_matlab:
                     {
                         // Building complete Schur and Approximate Schur
                         MultidimensionalArray Poisson = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
@@ -288,7 +298,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         return;
                     }
-				case SchurOptions.Uzawa: {
+				case SchurOptions.least_square_commutor: {
                         // Building complete Schur and Approximate Schur
                         MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
                         MultidimensionalArray SchurRHS = MultidimensionalArray.Create(Pidx.Length, Uidx.Length);
@@ -497,7 +507,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-						Console.WriteLine("Uzawa is set");
+						Console.WriteLine("Least square commutor is set");
 						return;
 					}
 				default:
@@ -526,11 +536,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double>
         {
-
-            //using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
-            //    solver.DefineMatrix(P);
-            //    solver.Solve(X, B);
-            //}
 
             m_ThisLevelIterations++;
 
@@ -736,21 +741,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                                 Psolver.Precond.DefineMatrix(pMassMatrix);
                             }
-                            // else {
-                                //    Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                                //    Psolver.Precond.DefineMatrix(LeastSqaureCommutorMtx);
-                                //}
+							// else {
+							//    Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+							//    Psolver.Precond.DefineMatrix(LeastSqaureCommutorMtx);
+							//}
 
-                                Psolver.InnerIterBefore = multipWithPgrad;
-                                Psolver.InnerIterAfter = multipWithDivVel;
+							Psolver.InnerIterBefore = multipWithPgrad;
+							Psolver.InnerIterAfter = multipWithDivVel;
 
-                                Psolver.InnerCycle = InnerSolver;
-                                Psolver.Solve(Psol, res2);
+							Psolver.InnerCycle = InnerSolver;
+							Psolver.Solve(Psol, res2);
 
-                                this.m_ThisLevelIterations = Psolver.ThisLevelIterations;
-                                this.m_IterationsInNested = Psolver.IterationsInNested;
-                                this.m_Converged = Psolver.Converged;
-                            }
+							this.m_ThisLevelIterations = Psolver.ThisLevelIterations;
+							this.m_IterationsInNested = Psolver.IterationsInNested;
+							this.m_Converged = Psolver.Converged;
+						}
 
                         //Update the rhs1
 						pGrad.SpMVpara(-1.0, Psol, 1.0, vecb1);
@@ -778,8 +783,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			}
         }
-
-
 
         BlockMsrMatrix GetPreconditioningMatrix() {
             var invDiagConvDiff = new MsrMatrix(m, m, 1, 1);

@@ -714,17 +714,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /// <summary>
-        /// coarse-level correction; can be defined either
-        /// - on this level (then the coarse solver may perform its of prolongation/restriction), or
-        /// - on coarser level, then prolongation/restriction is handled by this solver.
-        /// </summary>
+		/// <summary>
+		/// coarse-level correction; can be defined either
+		/// - on this level (then the coarse solver may perform its of prolongation/restriction), or
+		/// - on coarser level, then prolongation/restriction is handled by this solver.
+		/// </summary>
         public ISolverSmootherTemplate CoarserLevelSolver;
 
-        /// <summary>
-        /// high frequency solver before coarse grid correction
-        /// </summary>
-        public ISolverSmootherTemplate PreSmoother;
+		/// <summary>
+		/// high frequency solver before coarse grid correction
+		/// </summary>
+		public ISolverSmootherTemplate PreSmoother;
 
         /// <summary>
         /// high frequency solver after coarse grid correction
@@ -895,7 +895,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // orthonormalization and residual minimization
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel);
 
-                            Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level {iLevel} pre-smoother applied, iteration: {iIter} and res norm: {resNorm}");
+							Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level={iLevel}, iteration={iIter} - pre-smoother applied,  and res norm: {resNorm}");
 
 							//SpecAnalysisSample(iIter, X, "ortho1");
 							var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
@@ -973,9 +973,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         }
                     } // end of coarse-solver loop
-
-					Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level {iLevel} coarse-solver applied, iteration: {iIter} and res norm: {resNorm}");
-
+					Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level={iLevel}, iteration={iIter} - coarse-solver applied,  and res norm: {resNorm}");
 
 					var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState3.bNotTerminate) {
@@ -1042,7 +1040,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             } else {
 								resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" +  iLevel + "-sw" + g);
-								Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level {iLevel} post-smoother applied, iteration: {iIter} and res norm: {resNorm}");
+								Console.WriteLine($"{Enumerable.Repeat("-", iLevel).ToConcatString(" ", "", " ")}OrthoMG, current level={iLevel}, iteration={iIter} - post-smoother applied,  and res norm: {resNorm}");
 
 
 
@@ -1171,10 +1169,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             private set;
         }
 
-        /// <summary>
-        /// %
-        /// </summary>
-        public void ResetStat() {
+		/// <summary>
+		/// %
+		/// </summary>
+		public void ResetStat() {
             this.Converged = false;
             this.ThisLevelIterations = 0;
             if (this.PreSmoother != null)
