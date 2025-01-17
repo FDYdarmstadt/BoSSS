@@ -26,10 +26,5 @@ namespace BoSSS.Foundation.Quadrature {
         IIntegrationMetric IntegrationMetric {
             get;
         }
-
-
-
     }
-
-  
 }

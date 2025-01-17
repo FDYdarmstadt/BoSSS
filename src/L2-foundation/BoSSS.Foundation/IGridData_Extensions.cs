@@ -1067,6 +1067,131 @@ namespace BoSSS.Foundation.Grid {
             throw new ApplicationException($"Unable to find edge for cell {jCell}, face {iFace}.");
         }
 
+        /// <summary>
+        /// transforms vertices from the local coordinate system of cells <paramref name="jCell"/>
+        /// to global coordinates;
+        /// </summary>
+        /// <param name="LocalVerticesIn">
+        /// Input; vertices in the local coordinate system of a cell;
+        /// - 1st index: vertex index
+        /// - 2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
+        /// </param>
+        /// <param name="GlobalVerticesOut">
+        /// Output; the vertices form <paramref name="LocalVerticesIn"/>, transformed to global
+        /// coordinates;
+        /// - 1st index: vertex index, corresponds with the 1st index of <paramref name="LocalVerticesIn"/>;
+        /// - 2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
+        /// </param>
+        /// <param name="jCell">local cell index of the cell to transform</param>
+        /// <param name="g"></param>
+        static public void TransformLocal2Global(this IGridData g, MultidimensionalArray LocalVerticesIn, MultidimensionalArray GlobalVerticesOut, int jCell) {
+            int N = LocalVerticesIn.GetLength(0);
+            int D = g.SpatialDimension;
+            if(GlobalVerticesOut.Dimension != 2)
+                throw new ArgumentException("wrong dimension/array rank");
+            if(LocalVerticesIn.Dimension != 2)
+                throw new ArgumentException("wrong dimension/array rank");
+            if(GlobalVerticesOut.GetLength(1) != D)
+                throw new ArgumentException("wrong spatial dimension of GlobalVerticesOut");
+            if(LocalVerticesIn.GetLength(1) != D)
+                throw new ArgumentException("wrong spatial dimension of LocalVerticesIn");
+            if(LocalVerticesIn.GetLength(0) != GlobalVerticesOut.GetLength(0))
+                throw new ArgumentException("mismatch in number of vertices per cell.");
+
+
+            var _GlobalVerticesOut = MultidimensionalArray.Create(1, N, D);
+            g.TransformLocal2Global(LocalVerticesIn, jCell, 1, _GlobalVerticesOut, 0);
+            GlobalVerticesOut.Set(_GlobalVerticesOut.ExtractSubArrayShallow(0, -1, -1));
+        }
+
+
+        /// <summary>
+        /// Easy-to-use routine (version with memory allocation):
+        /// transform nodes in local coordinates to global coordinates for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="localNodes">
+        /// 2D-array:
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// 2D-array, <paramref name="localNodes"/> transformed to global coordinates
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </returns>
+        static public MultidimensionalArray TransformLocal2Global(this IGridData g, MultidimensionalArray localNodes, int jCell) {
+            if(localNodes.Dimension != 2) {
+                throw new ArgumentException("expecting a 2D-array as input");
+            }
+            var ret = MultidimensionalArray.Create(1, localNodes.GetLength(0), localNodes.GetLength(1));
+            g.TransformLocal2Global(localNodes, jCell, 1, ret);
+            return ret.ExtractSubArrayShallow(0, -1, -1);
+        }
+
+        /// <summary>
+        /// <see cref="TransformLocal2Global(IGridData, MultidimensionalArray, int)"/>
+        /// </summary>
+        static public MultidimensionalArray TransformLocal2Global(this MultidimensionalArray localNodes, IGridData g, int jCell) {
+            return g.TransformLocal2Global(localNodes, jCell);
+        }
+
+
+        /// <summary>
+        /// transform nodes from local edge or cell coordinates (depending on <see cref="NodeSet.GetNodeCoordinateSystem"/>) to global coordinates
+        /// </summary>
+        /// <param name="iItem">
+        /// a geometrical edge or cell index
+        /// </param>
+        /// <param name="localNodes"></param>
+        /// <param name="g"></param>
+        static public MultidimensionalArray TransformLocal2Global(this NodeSet localNodes, IGridData g, int iItem) {
+            switch(localNodes.GetNodeCoordinateSystem(g)) {
+                case NodeCoordinateSystem.CellCoord:
+                return g.TransformLocal2Global(localNodes, iItem);
+                case NodeCoordinateSystem.EdgeCoord:
+                return g.GlobalNodes.GetValue_EdgeSV(localNodes, iItem);
+                default: throw new NotImplementedException();
+            }
+        }
+
+
+        /// <summary>
+        /// Easy-to-use routine (version with memory allocation):
+        /// in local coordinates to global coordinates, 
+        /// for a range of cells, starting at <paramref name="jCell0"/> to <paramref name="jCell0"/>+<paramref name="Len"/>-1.
+        /// to coordinated to global coordinates
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="localNodes">
+        /// 2D-array:
+        /// - 1st dimension: node index
+        /// - 2nd dimension: spatial direction
+        /// </param>
+        /// <param name="jCell0">
+        /// geometrical cell index
+        /// </param>
+        /// <param name="Len">
+        /// Number of cells to transform consecutive to cell <paramref name="jCell0"/>
+        /// </param>
+        /// <returns>
+        /// 3D-array, <paramref name="localNodes"/> transformed to global coordinates
+        /// - 1st dimension: cell index
+        /// - 2nd dimension: node index
+        /// - 3rd dimension: spatial direction
+        /// </returns>
+        static public MultidimensionalArray TransformLocal2Global(this IGridData g, MultidimensionalArray localNodes, int jCell0, int Len) {
+            if(localNodes.Dimension != 2) {
+                throw new ArgumentException("expecting a 2D-array as input");
+            }
+            var ret = MultidimensionalArray.Create(Len, localNodes.GetLength(0), localNodes.GetLength(1));
+            return ret.ExtractSubArrayShallow(0, -1, -1);
+        }
+
+
     }
 
     /// <summary>

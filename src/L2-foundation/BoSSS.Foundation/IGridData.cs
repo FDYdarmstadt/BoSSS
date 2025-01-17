@@ -149,31 +149,7 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
-        /// <summary>
-        /// transforms vertices from the local coordinate system of cells <paramref name="jCell"/>
-        /// to global coordinates;
-        /// </summary>
-        /// <param name="LocalVerticesIn">
-        /// Input; vertices in the local coordinate system of a cell;
-        /// <list type="bullet">
-        ///   <item>1st index: vertex index;</item>
-        ///   <item>2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;</item>
-        /// </list>
-        /// </param>
-        /// <param name="GlobalVerticesOut">
-        /// Output; the vertices form <paramref name="LocalVerticesIn"/>, transformed to global
-        /// coordinates;
-        /// <list type="bullet">
-        ///   <item>
-        ///     1st index: vertex index, corresponds with the 1st index of <paramref name="LocalVerticesIn"/>;
-        ///   </item>
-        ///   <item>
-        ///     2nd index: spatial coordinate index 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
-        ///   </item>
-        /// </list>
-        /// </param>
-        /// <param name="jCell">local cell index of the cell to transform</param>
-        void TransformLocal2Global(MultidimensionalArray LocalVerticesIn, MultidimensionalArray GlobalVerticesOut, int jCell);
+       
 
 
         /// <summary>

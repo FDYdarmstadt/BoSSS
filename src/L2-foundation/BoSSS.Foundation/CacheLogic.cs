@@ -586,7 +586,7 @@ namespace BoSSS.Foundation.Caching {
         /// Double-value (i.e. values for IN- and OUT-cell) evaluation at edges,
         /// used for properties which ar discontinuous at edges.
         /// </summary>
-        public Tuple<MultidimensionalArray, MultidimensionalArray> GetValue_EdgeDV(NodeSet NS, int e0, int Len, int Degree) {
+        public (MultidimensionalArray INval, MultidimensionalArray OUTvl) GetValue_EdgeDV(NodeSet NS, int e0, int Len, int Degree) {
             if(e0 < 0) throw new ArgumentOutOfRangeException("e0", "must be greater or equal than zero.");
             if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
             if((e0 + Len) > this.GridData.iGeomEdges.Count)
@@ -675,7 +675,7 @@ namespace BoSSS.Foundation.Caching {
                         lastEdge_CashRefOt = Cache.CacheItem(Rot, Rot.Length * sizeof(double));
                 }
 
-                return new Tuple<MultidimensionalArray, MultidimensionalArray>(Rin, Rot);
+                return (Rin, Rot);
             }
         }
 
@@ -838,10 +838,24 @@ namespace BoSSS.Foundation.Caching {
         }
 
         /// <summary>
+        /// Single-value evaluation at edges,
+        /// used for properties which are unique at edges (e.g. edge normals or global coordinates).
+        /// </summary>
+        public MultidimensionalArray GetValue_EdgeSV(NodeSet NS, int e0) {
+            var ret = GetValue_EdgeSV(NS, e0, 1);
+            int[] iret = new int[ret.Dimension];
+            iret.SetAll(-1);
+            iret[0] = 0;
+            return ret.ExtractSubArrayShallow(iret);
+        }
+
+
+
+        /// <summary>
         /// Double-value (i.e. values for IN- and OUT-cell) evaluation at edges,
         /// used for properties which are discontinuous at edges (e.g. DG-fields).
         /// </summary>
-        public Tuple<MultidimensionalArray, MultidimensionalArray> GetValue_EdgeDV(NodeSet NS, int e0, int Len) {
+        public (MultidimensionalArray INval, MultidimensionalArray OUTvl) GetValue_EdgeDV(NodeSet NS, int e0, int Len) {
             if(e0 < 0) throw new ArgumentOutOfRangeException("e0", "must be greater or equal than zero.");
             if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
             if((e0 + Len) > this.GridData.iLogicalEdges.Count)
@@ -859,6 +873,18 @@ namespace BoSSS.Foundation.Caching {
 #endif
 
             return m_impl.GetValue_EdgeDV(NS, e0, Len, 0);
+        }
+
+        /// <summary>
+        /// Single-value evaluation at edges,
+        /// used for properties which are unique at edges (e.g. edge normals or global coordinates).
+        /// </summary>
+        public (MultidimensionalArray INval, MultidimensionalArray OUTvl) GetValue_EdgeDV(NodeSet NS, int e0) {
+            var ret = GetValue_EdgeDV(NS, e0, 1);
+            int[] iret = new int[ret.INval.Dimension];
+            iret.SetAll(-1);
+            iret[0] = 0;
+            return (ret.INval.ExtractSubArrayShallow(iret), ret.OUTvl.ExtractSubArrayShallow(iret));
         }
 
         /// <summary>

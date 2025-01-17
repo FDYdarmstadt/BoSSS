@@ -77,15 +77,21 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
 
-            //ilPSP.Environment.NumThreads = 8;
-            //InitMPI();
-            //ilPSP.Environment.NumThreads = 1;
+            ilPSP.Environment.NumThreads = 8;
+            InitMPI();
+            ilPSP.Environment.NumThreads = 1;
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p2_Newton_FullySymmetric(0.0d, 0.0, true, CutCellQuadratureMethod.Saye);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2,
+               0.0d,
+               ViscosityMode.FullySymmetric,
+               0.0, false, CutCellQuadratureMethod.Algoim,
+               NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest_p2_Standard_Algoim();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(3, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Algoim, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(deg: 2, vmode: ViscosityMode.Standard, CutCellQuadratureType: CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(3, 2, 0.0d, ViscosityMode.Standard, CutCellQuadratureMethod.Algoim, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+            NUnit.Framework.Assert.IsTrue(false, "remove me");
 
             {
                 XNSE._Main(args, false, delegate () {
@@ -145,7 +151,9 @@ namespace BoSSS.Application.XNSE_Solver {
             //QuadOrder
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
+            if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye 
+                //|| Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
+                ) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -647,6 +655,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();

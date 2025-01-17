@@ -134,6 +134,8 @@ namespace BoSSS.Foundation.Quadrature {
             }
         }
 
+
+        /*
         /// <summary>
         /// Transforms the nodes from jCell local coordinates to global
         /// </summary>
@@ -156,99 +158,9 @@ namespace BoSSS.Foundation.Quadrature {
 			grdData.TransformLocal2Global(Nodes, jCell, 1, globalVertices, 0);
 			Nodes.Set(globalVertices.ExtractSubArrayShallow(0, -1, -1));
 		}
+        */
 
-		/// <summary>
-		/// Writes a xml file for visualization (Use .vtp extension for Paraview)
-		/// </summary>
-		/// <param name="filePath"></param>
-		public void OutputQuadratureRuleAsVtpXML(string filePath) {
-            if (SpatialDim != 2 && SpatialDim != 3) {
-                Console.Error.WriteLine("XML output is supported only for 2D and 3D schemes.");
-            }
-
-            try {
-                using (XmlWriter writer = XmlWriter.Create(filePath, new XmlWriterSettings { Indent = true })) {
-                    writer.WriteStartDocument();
-                    writer.WriteStartElement("VTKFile");
-                    writer.WriteAttributeString("type", "PolyData");
-                    writer.WriteAttributeString("version", "0.1");
-                    writer.WriteAttributeString("byte_order", "LittleEndian");
-
-                    writer.WriteStartElement("PolyData");
-                    writer.WriteStartElement("Piece");
-                    writer.WriteAttributeString("NumberOfPoints", Weights.Length.ToString());
-                    writer.WriteAttributeString("NumberOfVerts", Weights.Length.ToString());
-                    writer.WriteAttributeString("NumberOfLines", "0");
-                    writer.WriteAttributeString("NumberOfStrips", "0");
-                    writer.WriteAttributeString("NumberOfPolys", "0");
-
-                    // Points
-                    writer.WriteStartElement("Points");
-                    writer.WriteStartElement("DataArray");
-                    writer.WriteAttributeString("type", "Float32");
-                    writer.WriteAttributeString("Name", "Points");
-                    writer.WriteAttributeString("NumberOfComponents", "3");
-                    writer.WriteAttributeString("format", "ascii");
-
-                    for (int i = 0; i < Weights.Length; i++) {
-                        writer.WriteString($"{Nodes[i, 0]} {Nodes[i, 1]} {(SpatialDim == 3 ? Nodes[i, 2] : 0.0)}\n");
-                    }
-
-                    writer.WriteEndElement(); // DataArray
-                    writer.WriteEndElement(); // Points
-
-                    // Verts
-                    writer.WriteStartElement("Verts");
-                    writer.WriteStartElement("DataArray");
-                    writer.WriteAttributeString("type", "Int32");
-                    writer.WriteAttributeString("Name", "connectivity");
-                    writer.WriteAttributeString("format", "ascii");
-
-                    for (int i = 0; i < Weights.Length; i++) {
-                        writer.WriteString($"{i}\n");
-                    }
-
-                    writer.WriteEndElement(); // DataArray
-
-                    writer.WriteStartElement("DataArray");
-                    writer.WriteAttributeString("type", "Int32");
-                    writer.WriteAttributeString("Name", "offsets");
-                    writer.WriteAttributeString("format", "ascii");
-
-                    for (int i = 1; i <= Weights.Length; i++) {
-                        writer.WriteString($"{i}\n");
-                    }
-
-                    writer.WriteEndElement(); // DataArray
-                    writer.WriteEndElement(); // Verts
-
-                    // PointData
-                    writer.WriteStartElement("PointData");
-                    writer.WriteAttributeString("Scalars", "w");
-
-                    writer.WriteStartElement("DataArray");
-                    writer.WriteAttributeString("type", "Float32");
-                    writer.WriteAttributeString("Name", "w");
-                    writer.WriteAttributeString("NumberOfComponents", "1");
-                    writer.WriteAttributeString("format", "ascii");
-
-                    for (int i = 0; i < Weights.Length; i++) {
-                        writer.WriteString($"{Weights[i]}\n");
-                    }
-
-                    writer.WriteEndElement(); // DataArray
-                    writer.WriteEndElement(); // PointData
-
-                    writer.WriteEndElement(); // Piece
-                    writer.WriteEndElement(); // PolyData
-                    writer.WriteEndElement(); // VTKFile
-
-                    writer.WriteEndDocument();
-                }
-            } catch (Exception ex) {
-                Console.WriteLine("Error opening file: " + ex.Message);
-            }
-        }
+		
 
 
         /// <summary>

@@ -991,6 +991,7 @@ namespace BoSSS.Foundation.XDG {
                 ToTxtFile(cellBndRule + ".csv", FaceWeightSum, DomainOfInterest.VolumeMask);
             }*/
         }
+        /*
 
         /// <summary>
         /// writes the center coordinates of all cells in mask <paramref name="cm"/> to some text file
@@ -1023,7 +1024,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
         }
-
+        */
         
     }
 }

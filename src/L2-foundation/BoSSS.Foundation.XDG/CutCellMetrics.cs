@@ -119,7 +119,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Volume of non-agglomerated cut cells.
+        /// Area of the interface, resp. level-set-surface of non-agglomerated cut cells.
         /// - key: species
         /// - index: cell index
         /// </summary>

@@ -99,14 +99,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // center of mass/geometric center (for incompressible fluid)
             int D = SolverMainOverride.Grid.SpatialDimension;
             MultidimensionalArray center = MultidimensionalArray.Create(1, D);
-            CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
+            CellQuadrature.GetQuadrature(new int[] { D }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, order),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                    NodeSet nodes_global = QR.Nodes.CloneAs();
-                    for (int i = i0; i < i0 + Length; i++) {
-                        LsTrk.GridDat.TransformLocal2Global(QR.Nodes, nodes_global, i);
-                        EvalResult.AccSubArray(1.0, nodes_global, new int[] { i - i0, -1, -1 });
-                    }
+                    var nodes_global = LsTrk.GridDat.GlobalNodes.GetValue_Cell(QR.Nodes, i0, Length);
+                    EvalResult.Acc(1.0, nodes_global);
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                     for (int i = 0; i < Length; i++) {

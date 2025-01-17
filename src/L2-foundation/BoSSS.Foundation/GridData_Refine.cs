@@ -828,7 +828,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         private void GetNewNodesOfRefinedCells(int j, NodeSet RefNodes, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv, Cell newCell) {
             MultidimensionalArray RefNodesRoot = Leaves[iSubDiv].Trafo2Root.Transform(RefNodes);
             newCell.TransformationParams = MultidimensionalArray.Create(RefNodes.Lengths);
-            TransformLocal2Global(RefNodesRoot, newCell.TransformationParams, j);
+            this.TransformLocal2Global(RefNodesRoot, newCell.TransformationParams, j);
         }
 
         /// <summary>

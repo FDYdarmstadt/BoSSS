@@ -8,6 +8,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 namespace BoSSS.Foundation {
 
@@ -60,7 +61,7 @@ namespace BoSSS.Foundation {
         /// Saves the location and weight associated with each node in
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
-        public static void ToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
+        public static void SaveToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
             int D = gridData.SpatialDimension;
             string[] dimensions = new string[] { "x", "y", "z" };
 
@@ -130,20 +131,15 @@ namespace BoSSS.Foundation {
             foreach(var chunkRulePair in chunRulePairList) {
                 foreach(int edge in chunkRulePair.Chunk.Elements) {
                     var loopEdgeRule = chunkRulePair.Rule;
-                    int iTrafo = gd.iGeomEdges.Edge2CellTrafoIndex[edge, 0];
-                    int localEdge = gd.iGeomEdges.FaceIndices[edge, 0];
+                    //int iTrafo = gd.iGeomEdges.Edge2CellTrafoIndex[edge, 0];
+                    //int localEdge = gd.iGeomEdges.FaceIndices[edge, 0];
                     int jCell = gd.iGeomEdges.CellIndices[edge, 0];
 
-                    // Create cell-based quadrature rule (to express them in cell coordinates)
-                    RefElement KrefCell = gd.iGeomCells.GetRefElement(jCell);
-                    var cellNodes = loopEdgeRule.Nodes.GetVolumeNodeSet(gd, iTrafo, false);
-                    var cellRule = QuadRule.CreateZero(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
-                    cellRule.Nodes = cellNodes;
-                    cellRule.Weights = loopEdgeRule.Weights;
-
+                    
                     // Transform cell-based local coordinates to global coordinates
-                    cellRule.TransformLocal2Global(gd, jCell);
-                    cellRule.OutputQuadratureRuleAsVtpXML(filename + "For" + "j" + jCell + "e" + edge + ".vtp");
+                    var globNodes = loopEdgeRule.Nodes.TransformLocal2Global(gd, edge);
+                    
+                    globNodes.OutputQuadratureRuleAsVtpXML(loopEdgeRule.Weights, filename + "For" + "j" + jCell + "e" + edge + ".vtp");
                 }
             }
         }
@@ -160,9 +156,116 @@ namespace BoSSS.Foundation {
                     var loopCellRule = chunkRulePair.Rule;
 
                     // Transform cell-based local coordinates to global coordinates
-                    loopCellRule.TransformLocal2Global(gd, jCell);
-                    loopCellRule.OutputQuadratureRuleAsVtpXML(filename + "For" + "j" + jCell + ".vtp");
+                    var globNodes = loopCellRule.Nodes.TransformLocal2Global(gd, jCell);
+                    OutputQuadratureRuleAsVtpXML(globNodes, loopCellRule.Weights, filename + "For" + "j" + jCell + ".vtp");
                 }
+            }
+        }
+
+        /// <summary>
+		/// Writes a xml file for visualization (Use .vtp extension for Paraview)
+		/// </summary>
+		static public void OutputQuadratureRuleAsVtpXML(this QuadRule qr, string filePath) {
+            OutputQuadratureRuleAsVtpXML(qr.Nodes, qr.Weights, filePath);
+        }
+
+        /// <summary>
+        /// Writes a xml file for visualization (Use .vtp extension for Paraview)
+        /// </summary>
+        static public void OutputQuadratureRuleAsVtpXML(this MultidimensionalArray nodes, MultidimensionalArray Weights, string filePath) {
+            if(nodes.Dimension != 2)
+                throw new ArgumentException("nodes is expected to be a 2D array (node index, coordinate index)");
+            int SptialDim = nodes.GetLength(1);
+            if(SptialDim != 2 && SptialDim != 3) {
+                Console.Error.WriteLine("XML output is supported only for 2D and 3D schemes.");
+            }
+            if(Weights.Dimension != 1)
+                throw new ArgumentException("Weights is expected to be a 1D array");
+            if(Weights.GetLength(0) != nodes.GetLength(0))
+                throw new ArgumentException("mismatch between number of Weights and number of nodes");
+
+
+            try {
+                using(XmlWriter writer = XmlWriter.Create(filePath, new XmlWriterSettings { Indent = true })) {
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("VTKFile");
+                    writer.WriteAttributeString("type", "PolyData");
+                    writer.WriteAttributeString("version", "0.1");
+                    writer.WriteAttributeString("byte_order", "LittleEndian");
+
+                    writer.WriteStartElement("PolyData");
+                    writer.WriteStartElement("Piece");
+                    writer.WriteAttributeString("NumberOfPoints", Weights.Length.ToString());
+                    writer.WriteAttributeString("NumberOfVerts", Weights.Length.ToString());
+                    writer.WriteAttributeString("NumberOfLines", "0");
+                    writer.WriteAttributeString("NumberOfStrips", "0");
+                    writer.WriteAttributeString("NumberOfPolys", "0");
+
+                    // Points
+                    writer.WriteStartElement("Points");
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Float32");
+                    writer.WriteAttributeString("Name", "Points");
+                    writer.WriteAttributeString("NumberOfComponents", "3");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for(int i = 0; i < Weights.Length; i++) {
+                        writer.WriteString($"{nodes[i, 0]} {nodes[i, 1]} {(SptialDim == 3 ? nodes[i, 2] : 0.0)}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // Points
+
+                    // Verts
+                    writer.WriteStartElement("Verts");
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Int32");
+                    writer.WriteAttributeString("Name", "connectivity");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for(int i = 0; i < Weights.Length; i++) {
+                        writer.WriteString($"{i}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Int32");
+                    writer.WriteAttributeString("Name", "offsets");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for(int i = 1; i <= Weights.Length; i++) {
+                        writer.WriteString($"{i}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // Verts
+
+                    // PointData
+                    writer.WriteStartElement("PointData");
+                    writer.WriteAttributeString("Scalars", "w");
+
+                    writer.WriteStartElement("DataArray");
+                    writer.WriteAttributeString("type", "Float32");
+                    writer.WriteAttributeString("Name", "w");
+                    writer.WriteAttributeString("NumberOfComponents", "1");
+                    writer.WriteAttributeString("format", "ascii");
+
+                    for(int i = 0; i < Weights.Length; i++) {
+                        writer.WriteString($"{Weights[i]}\n");
+                    }
+
+                    writer.WriteEndElement(); // DataArray
+                    writer.WriteEndElement(); // PointData
+
+                    writer.WriteEndElement(); // Piece
+                    writer.WriteEndElement(); // PolyData
+                    writer.WriteEndElement(); // VTKFile
+
+                    writer.WriteEndDocument();
+                }
+            } catch(Exception ex) {
+                Console.WriteLine("Error opening file: " + ex.Message);
             }
         }
     }

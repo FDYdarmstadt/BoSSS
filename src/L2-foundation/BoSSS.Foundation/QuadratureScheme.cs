@@ -502,17 +502,17 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// Save Quadrule nodes in cell as .txt file
         /// </summary>
-        public static void ToTextFileCell<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
+        public static void SaveToTextFileCell<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
             where TQuadRule : QuadRule
             where TDomain : ExecutionMask {
             var rule = scheme.Compile(grid, quadOrder);
-            rule.ToTextFileCell(grid, name);
+            rule.SaveToTextFileCell(grid, name);
         }
 
         /// <summary>
         /// Save Quadrule nodes on edge as .txt file
         /// </summary>
-        public static void ToTextFileEdge<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
+        public static void SaveToTextFileEdge<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
             where TQuadRule : QuadRule
             where TDomain : ExecutionMask {
             var rule = scheme.Compile(grid, quadOrder);

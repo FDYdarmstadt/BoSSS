@@ -197,7 +197,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         protected double Penalty(int jCellIn, int jCellOut) {
 
             double penaltySizeFactor_A = NegLengthScaleS[jCellIn].IsNaN() ? 0.0 : 1.0 / NegLengthScaleS[jCellIn];
-            double penaltySizeFactor_B = NegLengthScaleS[jCellIn].IsNaN() ? 0.0 : 1.0 / PosLengthScaleS[jCellOut];
+            double penaltySizeFactor_B = PosLengthScaleS[jCellIn].IsNaN() ? 0.0 : 1.0 / PosLengthScaleS[jCellOut];
 
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 

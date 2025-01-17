@@ -86,19 +86,13 @@ namespace CutEdgeQuadrature {
                 foreach (int edge in chunkRulePair.Chunk.Elements) {
                     // To visualize the nodes, we need the transformation from edge-based coordinates to cell-based coordinates
                     var edgeRule = chunkRulePair.Rule;
-                    int iTrafo = grid.GridData.iGeomEdges.Edge2CellTrafoIndex[edge, 0];
-                    int localEdge = grid.GridData.iGeomEdges.FaceIndices[edge, 0];
                     int jCell = grid.GridData.iGeomEdges.CellIndices[edge, 0];
 
-                    // Create cell-based quadrature rule
-                    RefElement KrefCell = grid.GridData.iGeomCells.GetRefElement(jCell);
-                    var cellNodes = edgeRule.Nodes.GetVolumeNodeSet(grid.GridData, iTrafo, false);
-                    var cellRule = QuadRule.CreateZero(KrefCell, cellNodes.NoOfNodes, KrefCell.SpatialDimension);
-                    cellRule.Nodes = cellNodes;
+                    
 
                     // Transform cell-based local coordinates to global coordinates
-                    cellRule.TransformLocal2Global(grid, jCell);
-                    cellRule.OutputQuadratureRuleAsVtpXML("nodesFor" + metrics.CutCellQuadratureType + "j" + jCell + "e" + edge + ".vtp");
+                    var globNodes = edgeRule.Nodes.TransformLocal2Global(grid.GridData, jCell);
+                    globNodes.OutputQuadratureRuleAsVtpXML(edgeRule.Weights, "nodesFor" + metrics.CutCellQuadratureType + "j" + jCell + "e" + edge + ".vtp");
 
                 }
             }

@@ -1647,6 +1647,9 @@ namespace ilPSP {
         /// </summary>
         /// <param name="x">new values</param>
         public void Set2DArray(double[,] x) {
+            if(this.IsLocked) {
+                throw new NotSupportedException("Array is locked -- no changes allows.");
+            }
             this.Clear();
             this.Acc2DArray(1.0, x);
         }
@@ -1672,6 +1675,9 @@ namespace ilPSP {
             for (int i = this.m_Dimension - 1; i >= 0; i--) {
                 if (x.GetLength(i) != this.GetLength(i))
                     throw new ArgumentException("Mismatch in dimension " + i);
+            }
+            if(this.IsLocked) {
+                throw new NotSupportedException("Array is locked -- no changes allows.");
             }
 
 

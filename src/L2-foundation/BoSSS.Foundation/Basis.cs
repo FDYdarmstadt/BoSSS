@@ -389,7 +389,7 @@ namespace BoSSS.Foundation {
         /// - 2nd index: node index
         /// - 3rd index: polynomial index
         /// </returns>
-        public virtual Tuple<MultidimensionalArray, MultidimensionalArray> EdgeEval(NodeSet nodes, int e0, int Len) {
+        public virtual (MultidimensionalArray INval, MultidimensionalArray OUTvl) EdgeEval(NodeSet nodes, int e0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisValues.GetValue_EdgeDV(nodes, e0, Len, this.Degree);
             Debug.Assert(Len == ret.Item1.GetLength(0));
             Debug.Assert(nodes.NoOfNodes == ret.Item1.GetLength(1));
@@ -401,7 +401,7 @@ namespace BoSSS.Foundation {
                 int N = ret.Item1.GetLength(2);
 
 
-                ret = new Tuple<MultidimensionalArray, MultidimensionalArray>(
+                ret = (
                     ret.Item1.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 }),
                     ret.Item2.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 }));
             }
@@ -447,14 +447,14 @@ namespace BoSSS.Foundation {
         /// - 3rd index: polynomial index
         /// - 4th index: spatial dimension
         /// </returns>
-        public virtual Tuple<MultidimensionalArray, MultidimensionalArray> EdgeEvalGradient(NodeSet NS, int j0, int Len) {
+        public virtual (MultidimensionalArray INval, MultidimensionalArray OUTvl) EdgeEvalGradient(NodeSet NS, int j0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisGradientValues.GetValue_EdgeDV(NS, j0, Len, this.Degree);
             if (ret.Item1.GetLength(0) != Len) {
                 int M = ret.Item1.GetLength(1);
                 int N = ret.Item1.GetLength(2);
                 int D = ret.Item1.GetLength(3);
 
-                ret = new Tuple<MultidimensionalArray, MultidimensionalArray>(
+                ret = (
                     ret.Item1.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 }),
                     ret.Item2.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1, D - 1 }));
             }

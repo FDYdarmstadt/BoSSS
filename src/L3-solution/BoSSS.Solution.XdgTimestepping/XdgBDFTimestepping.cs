@@ -1123,11 +1123,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int s = 1; s <= Tsc.S; s++) { // loop over BDF stages
                         if (CurrentAffine != null) {
                             if (CurrentMassMatrix != null) {
-                                //RHS.SaveToTextFile("RHS_Before_Initial_Values.txt");
                                 CurrentMassMatrix.SpMV(Tsc.beta[s - 1] / dt, this.m_Stack_u[s], 1.0, RHS); //   (1/dt)*M0*u0 
-                                //RHS.SaveToTextFile("RHS_After_Initial_Values.txt");
-                                //OpAffine.SaveToTextFile($"RHS_After_R0_fix_{phystime.ToString()}.txt
-                                //OpMatrixMod.SaveToTextFileSparse("matrixAfterR0Fix.txt");
                             } else {
                                 Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                                 RHS.AccV(Tsc.beta[s - 1] / dt, this.m_Stack_u[s]);
@@ -1158,7 +1154,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // left-hand-side
                 if(Linearization) {
                     System = CurrentOpMatrix.CloneAs();
-                    //System.SaveToTextFile("Stokes_Anteil_Left_Hand_Side.txt");
                     if(Tsc.theta1 != 1.0)
                         System.Scale(Tsc.theta1);
                 } else {
@@ -1167,7 +1162,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (CurrentMassMatrix != null) {
                     if(Linearization) {
                         System.Acc(1.0 / dt, CurrentMassMatrix);  
-                        //System.SaveToTextFile("Stokes_Anteil_and_Mass_Left_Hand_Side.txt");
                     } else {
                         CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
                     }
@@ -1245,18 +1239,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-
         double m_CurrentPhystime;
         double m_CurrentDt = -1;
 
-
-        //static double MatrixDist(MsrMatrix _A, MsrMatrix B) {
-        //    MsrMatrix A = _A.CloneAs();
-        //    A.Acc(-1.0, B);
-        //    double w = A.InfNorm();
-        //    return w;
-        //}
-        
 
         /// <summary>
         /// Perform temporal integration/implicit timestepping
@@ -1475,27 +1460,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                     if (Jtot[0] == Jtot[1])
                         throw new ArithmeticException("All cells are cut cells - check your settings!");
+
+                    //foreach(var kv in this.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutCellVolumes) {
+                    //    kv.Value.To1DArray().SaveToTextFile("vol-" + m_LsTrk.GetSpeciesName(kv.Key) + "-" + m_LsTrk.CutCellQuadratureType.ToString() + ".txt");
+                    //}
+                    //foreach(var kv in this.m_CurrentAgglomeration.NonAgglomeratedMetrics.InterfaceArea) {
+                    //    kv.Value.To1DArray().SaveToTextFile("int-" + m_LsTrk.GetSpeciesName(kv.Key) + "-" + m_LsTrk.CutCellQuadratureType.ToString() + ".txt");
+                    //}
+                    //foreach(var kv in this.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
+                    //    kv.Value.To1DArray().SaveToTextFile("edge-" + m_LsTrk.GetSpeciesName(kv.Key) + "-" + m_LsTrk.CutCellQuadratureType.ToString() + ".txt");
+                    //}
                 }
-
-                //{
-                //    var rnd = new Random(1);
-                //    var vec = new CoordinateVector(CurrentStateMapping);
-                //    int L = CurrentStateMapping.LocalLength;
-                //    for(int i = 0; i < L; i++)
-                //        vec[i] = rnd.NextDouble();
-
-
-                //    double[] Affine;
-                //    BoSSS.Foundation.Quadrature.NonLin.Arsch.ShutTheFuckUp = true;
-                //    this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
-                //    Debug.Assert(System == null);
-
-                //    base.Residuals.Clear();
-                //    base.Residuals.SetV(Affine, -1.0);
-
-
-                //}
-
 
 
 
