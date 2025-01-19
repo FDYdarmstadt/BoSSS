@@ -28,8 +28,33 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using System.IO;
 using ilPSP.Tracing;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+
+
+	[Serializable]
+	public class SoftGMRESConfig : IterativeSolverConfig {
+		/// <inheritdoc/>
+		[DataMember]
+		public override string Name => "Standard preconditioned generalized minimum residual method";
+
+		/// <inheritdoc/>
+		[DataMember]
+		public override string Shortname => "SoftGMRES";
+
+		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+
+			var templinearSolve = new SoftGMRES();
+			templinearSolve.Init(level);
+			return templinearSolve;
+		}
+
+		/// List of preconditioner solver configurations
+		[DataMember]
+		public List<ISolverFactory> Preconditioners = new List<ISolverFactory>();
+	}
+
     /// <summary>
     /// Standard preconditioned GMRES.
     /// </summary>
