@@ -34,7 +34,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Pre-conditioned (<see cref="Precond"/>) conjugate gradient algorithm.
     /// </summary>
-    public class SoftPCG : ISolverSmootherTemplate, ISolverWithCallback {
+    public class SoftPCG : ISolverSmootherTemplate, ISolverWithCallback, ISolverWithInnerCycle {
 
 		/*
         static public ISolverSmootherTemplate InitMultigridChain(MultigridOperator MgOp,
@@ -89,10 +89,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-		public Action<double[], double[]> InnerIterBefore;
-		public Action<double[], double[]> InnerIterAfter;
-
-
 		/// <summary>
 		/// ~
 		/// </summary>
@@ -104,7 +100,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// When the matrix is not explicilty available, an inner iteration can be defined to calculate Matrix * Search Direction (m_matrix x P)
 		/// </summary>
-		public ISparseSolverExt InnerCycle {
+		public Action<double[], double[]> InnerCycle {
 			get;
 			set;
 		}
@@ -137,8 +133,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] P = new double[L];
 
                 //double[] Res = rhs; // rhs is only needed once, so we can use it to store residuals
-                double[] V = new double[L];
-                double[] PrecondRes = new double[L]; //Preconditioned Res
+                double[] V = new double[L]; // m_Matrix times Search Direction P
+				double[] PrecondRes = new double[L]; //Preconditioned Res
 
 
                 // compute P0, R0
@@ -197,15 +193,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+		/// <summary>
+		/// Calculate V x P (inner product)
+		/// </summary>
+		/// <param name="V">the variable holding m_Matrix times P</param>
+		/// <param name="P">search direction</param>
+		/// <returns></returns>
 		double CalculateVxP(double[] V, double[] P) {
 			if (m_Matrix != null) {
 				m_Matrix.SpMV(1.0, P, 0, V);
 			} else {
-                double[] Sol = new double[InnerCycle.GetMatrix().RowPartitioning.LocalLength];
-                double[] Y = new double[InnerCycle.GetMatrix().RowPartitioning.LocalLength];
-				InnerIterBefore(P,Y);
-                InnerCycle.Solve(Sol, Y);
-				InnerIterAfter(Sol,V);
+                InnerCycle(P, V);
 			}
 
 			double VxP = V.InnerProd(P).MPISum();
