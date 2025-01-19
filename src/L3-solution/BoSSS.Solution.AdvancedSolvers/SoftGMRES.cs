@@ -228,22 +228,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int Nloc = RowPart.LocalLength;
                 long Ntot = RowPart.TotalLength;
 
-                double[] r = new double[Nloc];
-                double[] z = new double[Nloc];
+                double[] r = new double[Nloc]; //residual variable (if preconditioned, preconditioned residual)
+                double[] z = new double[Nloc]; //intermediate variable for residual
 
                 //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
                 Matrix.SpMV(-1.0, X, 1.0, z);
                 IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
-                if(this.Precond != null) {
-                    r.Clear();
-                    StopwatchPrecond.Start();
-                    this.Precond.Solve(r, z);
-                    StopwatchPrecond.Stop();
-                } else {
-                    r.SetV(z);
-                }
+				ApplyPreconditioner(z, r);
 
                 // Inserted for real residual
                 double error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
@@ -287,17 +280,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
 
-                    if(this.Precond != null) {
-                        r.Clear();
-                        StopwatchPrecond.Start();
-                        this.Precond.Solve(r, z);
-                        StopwatchPrecond.Stop();
-                    } else {
-                        r.SetV(z);
-                    }
-
-                    // V(:,1) = r / norm( r );
-                    double norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
+                    ApplyPreconditioner(z, r);                    
+                    double norm_r = r.MPI_L2Norm(Matrix.MPI_Comm); // V(:,1) = r / norm( r );
                     V[0].SetV(r, alpha: (1.0 / norm_r));
 
                     //s = norm( r )*e1;
@@ -315,17 +299,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //w = M \ (A*V(:,i));                         
                         Matrix.SpMV(1.0, V[i -1], 0.0, z);
-                        if(this.Precond != null) {
-                            w.Clear();
-                            StopwatchPrecond.Start();
-                            this.Precond.Solve(w, z);
-                            StopwatchPrecond.Stop();
-                        } else {
-                            w.SetV(z);
-                        }
+						ApplyPreconditioner(z, w);
 
 
-                        
                         for(int k = 0; k < i; k++) {
                             //MPItime.Start();
                             H[k, i - 1] = GenericBlas.InnerProd(w, V[k]).MPISum(Matrix.MPI_Comm); // quite costly MPI communication 
@@ -421,16 +397,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
                     IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
-
-                    if(this.Precond != null) {
-                        r.Clear();
-                        StopwatchPrecond.Start();
-                        this.Precond.Solve(r, z);
-                        StopwatchPrecond.Stop();
-                    } else {
-                        r.SetV(z);
-                    }
-
+                    ApplyPreconditioner(z, r);
                     norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
@@ -457,6 +424,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ThisLevelTime.Stop();
             }
         }
+
+        /// <summary>
+        /// Apply preconditioner to residual
+        /// </summary>
+        /// <param name="z">Intermediate variable (or raw residual)</param>
+        /// <param name="r">Preconditioned residual </param>
+		void ApplyPreconditioner(double[] z, double[] r) {
+			if (Precond != null) {
+				r.Clear();
+                StopwatchPrecond.Start();
+                this.Precond.Solve(r, z);
+                StopwatchPrecond.Stop();
+			} else {
+				z.SetV(r);
+			}
+		}
 
         /// <summary>
         /// ~
