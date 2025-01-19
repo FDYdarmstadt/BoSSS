@@ -437,7 +437,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.Precond.Solve(r, z);
                 StopwatchPrecond.Stop();
 			} else {
-				z.SetV(r);
+				r.SetV(z);
 			}
 		}
 
