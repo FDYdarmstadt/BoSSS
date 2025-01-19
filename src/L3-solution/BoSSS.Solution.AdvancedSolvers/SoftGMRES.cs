@@ -74,6 +74,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+		bool CalculateWithMatrix;
+
+		BlockMsrMatrix Matrix {
+			get {
+				return CalculateWithMatrix ? m_mgop.OperatorMatrix : null;
+			}
+		}
+
+		public IPartitioning m_RowPart;
+
+		IPartitioning RowPart => CalculateWithMatrix ? Matrix.RowPartitioning : m_RowPart;
+
+		public string m_SessionPath;
+
+		private int NoOfIterations = 0;
+
+		IOperatorMappingPair m_mgop;
+
+		public ISolverSmootherTemplate Precond;
+
 		/// <summary>
 		/// MPI_world responsible for this solver
 		/// </summary>
@@ -82,7 +102,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ctor
         /// </summary>
-        public SoftGMRES() {
+		public SoftGMRES(bool calculateWithMatrix = true) {
+			this.CalculateWithMatrix = calculateWithMatrix;
             m_TerminationCriterion = (iIter, r0, ri) => {
                 return (iIter <= 500 && ri > 1e-7, ri <= 1e-7);
             };
@@ -238,7 +259,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
-                Matrix.SpMV(-1.0, X, 1.0, z);
+                CalculateSpMV(-1.0, X, 1.0, z);
                 IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
 				ApplyPreconditioner(z, r);
@@ -281,10 +302,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(iter = 1; true; iter++) { // GMRES iterations
                                               // r = M \ ( b-A*x );
                     z.SetV(B);
-                    Matrix.SpMV(-1.0, X, 1.0, z);
+					CalculateSpMV(-1.0, X, 1.0, z);
                     error2 = CheckAndGetNorm(z);
-
-                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
 
                     ApplyPreconditioner(z, r);                    
                     double norm_r = CheckAndGetNorm(r); // V(:,1) = r / norm( r );
@@ -304,7 +323,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         #region Arnoldi procdure
 
                         //w = M \ (A*V(:,i));                         
-                        Matrix.SpMV(1.0, V[i -1], 0.0, z);
+						CalculateSpMV(1.0, V[i-1], 0.0, z);
 						ApplyPreconditioner(z, w);
 
 
@@ -399,7 +418,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // compute residual: r = M \ ( b-A*x )     
                     z.SetV(B);
-                    Matrix.SpMV(-1.0, X, 1.0, z);
+					CalculateSpMV(-1.0, X, 1.0, z);
                     error2 = CheckAndGetNorm(z);
                     IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
@@ -413,7 +432,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(IterationCallback != null) {
                     z.SetV(B);
-                    Matrix.SpMV(-1.0, X, 1.0, z);
+					CalculateSpMV(-1.0, X, 1.0, z);
                     IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
                 }
 
@@ -455,6 +474,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return norm;
 		}
+
+		/// <summary>
+		/// The inner cycle to calculate Matrix.SpMV(-1.0, x, 1.0, z) in case the matrix is not explicitly available i.e., matrix-free gmres
+		/// </summary>
+		public Action<double[], double[]> InnerCycle { get; set; }
+
+		/// <summary>
+		///  Calculates Matrix.SpMV(alpha,  _a, beta, acc) if matrix available explicitly <c>. 
+		///  If not, calculates the equivalent of it by given InnerCircle action 
+		/// </summary>
+		/// <param name="alpha">scale of  _a</param>
+		/// <param name="_a">input vector to be multiplied</param>
+		/// <param name="beta">scale of acc</param>
+		/// <param name="acc">accumulation vector</param>
+		///  /// <seealso cref="BlockMsrMatrix.SpMV{VectorType1, VectorType2}(double, VectorType1, double, VectorType2)"/>
+		void CalculateSpMV(double alpha, double[] _a, double beta, double[] acc) {
+			if (Matrix != null) {
+				Matrix.SpMV(1.0, _a, 1.0, acc);
+			} else {
+				double[] vectorAfterMultiplication = new double[acc.Length]; //intermediate variable to hold Matrix x Vector
+				InnerCycle(_a, vectorAfterMultiplication);                   // perform the equivalent of Matrix x Vector = this * _a
+				vectorAfterMultiplication.ScaleV(alpha);                     // this*_a*alpha
+				acc.ScaleV(beta);                                            // acc*beta
+				acc.AccV(1.0, vectorAfterMultiplication);                    // acc = acc*beta + this*_a*alpha
+			}
+			return;
+		}
+
+		public bool m_Converged = false;
 
         /// <summary>
         /// ~
