@@ -74,6 +74,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+		/// <summary>
+		/// MPI_world responsible for this solver
+		/// </summary>
+		MPI_Comm m_MPI_Comm => Matrix != null ? Matrix.MPI_Comm : csMPI.Raw._COMM.WORLD; //currently not much need to define separate worlds as they are not used
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -219,7 +224,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                double bnrm2 = B.MPI_L2Norm(Matrix.MPI_Comm);
+                double bnrm2 = B.MPI_L2Norm(m_MPI_Comm);
                 if(bnrm2 == 0.0) {
                     bnrm2 = 1.0;
                 }
@@ -239,10 +244,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				ApplyPreconditioner(z, r);
 
                 // Inserted for real residual
-                double error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
+				double error2 = z.MPI_L2Norm(m_MPI_Comm);
                 double iter0_error2 = error2;
 
-                double error = (r.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt()) / bnrm2;
+                double error = (r.L2NormPow2().MPISum(m_MPI_Comm).Sqrt()) / bnrm2;
                 var term0 = TerminationCriterion(0, error2, error2);
                 if(!term0.bNotTerminate) {
 
@@ -277,11 +282,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                               // r = M \ ( b-A*x );
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
+                    error2 = CheckAndGetNorm(z);
 
                     error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
 
                     ApplyPreconditioner(z, r);                    
-                    double norm_r = r.MPI_L2Norm(Matrix.MPI_Comm); // V(:,1) = r / norm( r );
+                    double norm_r = CheckAndGetNorm(r); // V(:,1) = r / norm( r );
                     V[0].SetV(r, alpha: (1.0 / norm_r));
 
                     //s = norm( r )*e1;
@@ -304,13 +310,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         for(int k = 0; k < i; k++) {
                             //MPItime.Start();
-                            H[k, i - 1] = GenericBlas.InnerProd(w, V[k]).MPISum(Matrix.MPI_Comm); // quite costly MPI communication 
+                            H[k, i - 1] = GenericBlas.InnerProd(w, V[k]).MPISum(m_MPI_Comm); // quite costly MPI communication 
                             //MPItime.Stop();
                             //w = w - H(k,i)*V(:,k);
                             w.AccV(-H[k, i - 1], V[k]);
                         }
 
-                        double norm_w = w.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
+                        double norm_w = w.L2NormPow2().MPISum(m_MPI_Comm).Sqrt();
                         H[i + 1 - 1, i - 1] = norm_w; // the +1-1 actually makes me sure I haven't forgotten to subtract -1 when porting the code
                                                       //V(:,i+1) = w / H(i+1,i);
                         V[i + 1 - 1].SetV(w, alpha: (1.0 / norm_w));
@@ -394,11 +400,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // compute residual: r = M \ ( b-A*x )     
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
+                    error2 = CheckAndGetNorm(z);
                     IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
                     ApplyPreconditioner(z, r);
-                    norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
+                    norm_r = CheckAndGetNorm(r);
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
                                                          //  if (error2 <= m_Tolerance) Check for error not error2
@@ -439,6 +445,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			} else {
 				r.SetV(z);
 			}
+		}
+
+		double CheckAndGetNorm(double[] X) {
+            double norm = X.MPI_L2Norm(m_MPI_Comm);
+
+			if (double.IsNaN(norm) || double.IsInfinity(norm))
+				throw new ArithmeticException();
+
+            return norm;
 		}
 
         /// <summary>
