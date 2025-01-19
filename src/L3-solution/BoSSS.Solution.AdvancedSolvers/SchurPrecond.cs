@@ -172,14 +172,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			pMassMatrix = new MsrMatrix(Ppart, Ppart, 1, 1);
 			op.MassMatrix.AccSubMatrixTo(1.0, pMassMatrix, Pidx, default(long[]), Pidx, default(long[]), default(long[]), default(long[]));
 
-			//ConvDiff.SaveToTextFileSparse("ConvDiff");
-			//pGrad.SaveToTextFileSparse("pGrad");
-			//divVel.SaveToTextFileSparse("divVel");
-			//PxP.SaveToTextFileSparse("PxP");
-			//velMassMatrix.SaveToTextFileSparse("velMassMatrix");
-			//pMassMatrix.SaveToTextFileSparse("pMassMatrix");
+            //ConvDiff.SaveToTextFileSparse("ConvDiff");
+            //pGrad.SaveToTextFileSparse("pGrad");
+            //divVel.SaveToTextFileSparse("divVel");
+            //PxP.SaveToTextFileSparse("PxP");
+            //velMassMatrix.SaveToTextFileSparse("velMassMatrix");
+            //pMassMatrix.SaveToTextFileSparse("pMassMatrix");
 
-			switch (SchurOpt)
+            switch (SchurOpt)
             {
 				case SchurOptions.Uzawa: {
                         Console.WriteLine("Uzawa with pCG is set");
@@ -703,11 +703,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						var vecb1 = b1.ToArray();
 						var vecb2 = b2.ToArray();
 
-						//b1.SaveToTextFile("b1");
-						//b2.SaveToTextFile("b2");
+                        //b1.SaveToTextFile("b1");
+                        //b2.SaveToTextFile("b2");
 
-						//vecb2 = schur rhs2 = b2-C*A^-1*b1
-						var Ainvb1 = new double[m];
+                        //vecb2 = schur rhs2 = b2-C*A^-1*b1
+                        var Ainvb1 = new double[m];
                         SolveWithMatrix(ConvDiff, Ainvb1, vecb1);
                         divVel.SpMVpara(-1.0, Ainvb1, 1.0, vecb2);
 						//vecb2.SaveToTextFile("schurb2");
@@ -718,38 +718,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						var Psol = new double[n];
 						var Usol = new double[m];
 
-                        Action<double[], double[]> multipWithPgrad = (input,output) => {
-                            pGrad.SpMVpara(1.0,input,0.0, output);
-                        };
+						// This method basically calculates output = Schur * input, whereas Schur = -divVel * ConvDiff^-1 * pGrad 
+						Action<double[], double[]> InnerCycle = (input, output) => {
+							double[] intermediateVariable = new double[ConvDiff.RowPartitioning.LocalLength];
+							double[] intermediateVariable2 = new double[ConvDiff.RowPartitioning.LocalLength];
 
-						Action<double[], double[]> multipWithDivVel = (input, output) => {
-							divVel.SpMVpara(-1.0, input, 0.0, output); //attention to minus sign
+							pGrad.SpMVpara(1.0, input, 0.0, intermediateVariable); //intermediateVariable = pGrad * input
+
+							var InnerSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+							InnerSolver.DefineMatrix(ConvDiff);
+							InnerSolver.Solve(intermediateVariable2, intermediateVariable); // intermediateVariable2 = ConvDiff^-1 * intermediateVariable
+							
+                            divVel.SpMVpara(-1.0, intermediateVariable2, 0.0, output); // output = -divVel * intermediateVariable2 = -divVel *  ConvDiff^-1 * pGrad * input (attention to minus sign)
 						};
 
-						// add inner solver
-						var InnerSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                        InnerSolver.DefineMatrix(ConvDiff);
+						var Setled = (CoordinateMapping)m_mgop.BaseGridProblemMapping;
+						int D = m_mgop.Mapping.GridData.SpatialDimension;
+						var op = m_mgop;
+						var presureField = Setled.Fields[D];
+						var co = presureField.Mapping;
+						var pressureMGmapping = new MultigridMapping(co, new[] { op.Mapping.AggBasis[D] }, new[] { op.Mapping.DgDegree[D] });
 
+						using (ISolverWithInnerCycle Psolver = new BoSSS.Solution.AdvancedSolvers.SoftGMRES(false)) {
+                            //Psolver.m_RowPart = pressureMGmapping;
+                            if (Psolver is SoftGMRES SGMRES)
+								SGMRES.ConvergenceCriterion = 1e-10;
 
-						using (var Psolver = new BoSSS.Solution.AdvancedSolvers.SoftPCG(false)) {
-                            Psolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
-							Psolver.MaxIterations = m_config.MaxSolverIterations;
+							if (Psolver is SoftGMRES SPCG)
+								SPCG.ConvergenceCriterion = 1e-10;
+							//Psolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
+							//Psolver.MaxIterations = m_config.MaxSolverIterations;
 
-                            var PardisoConfig = new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+							var PardisoConfig = new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
 
-                            if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) {
-                                Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                                Psolver.Precond.DefineMatrix(pMassMatrix);
-                            }
-							// else {
-							//    Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-							//    Psolver.Precond.DefineMatrix(LeastSqaureCommutorMtx);
-							//}
+                            //if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) {
+                            //    Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                            //    Psolver.Precond.DefineMatrix(pMassMatrix);
+                            //}
 
-							Psolver.InnerIterBefore = multipWithPgrad;
-							Psolver.InnerIterAfter = multipWithDivVel;
-
-							Psolver.InnerCycle = InnerSolver;
+                            Psolver.InnerCycle = InnerCycle;
 							Psolver.Solve(Psol, res2);
 
 							this.m_ThisLevelIterations = Psolver.ThisLevelIterations;
