@@ -572,10 +572,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var vecb1 = b1.ToArray();
 						var vecb2 = b2.ToArray();
 
-						//b1.SaveToTextFile("b1");
-						//b2.SaveToTextFile("b2");
+                        //b1.SaveToTextFile("b1");
+                        //b2.SaveToTextFile("b2");
 
-						SchurRHSMtx.SpMVpara(-1.0, vecb1, 1.0, vecb2);
+                        SchurRHSMtx.SpMVpara(-1.0, vecb1, 1.0, vecb2);
                         var P = new double[Pidx.Length];
 						var Usol = new double[Uidx.Length];
 
@@ -702,7 +702,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						var b2 = Pidx.Select(ind => B[MgMap.Global2Local(ind)]);
 						var vecb1 = b1.ToArray();
 						var vecb2 = b2.ToArray();
-
                         //b1.SaveToTextFile("b1");
                         //b2.SaveToTextFile("b2");
 
@@ -725,38 +724,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 							pGrad.SpMVpara(1.0, input, 0.0, intermediateVariable); //intermediateVariable = pGrad * input
 
-							var InnerSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-							InnerSolver.DefineMatrix(ConvDiff);
-							InnerSolver.Solve(intermediateVariable2, intermediateVariable); // intermediateVariable2 = ConvDiff^-1 * intermediateVariable
+                            //var InnerSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                            //InnerSolver.DefineMatrix(ConvDiff);
+                            var InnerSolver = new BoSSS.Solution.AdvancedSolvers.SoftGMRES(false);
+                            InnerSolver.ConvergenceCriterion = 1e-5;
+                            InnerSolver.MaxIterations = 100;
+                            InnerSolver.InnerCycle = (inp, outp) => ConvDiff.SpMV(1.0, inp, 0.0, outp);
+
+                            InnerSolver.Solve(intermediateVariable2, intermediateVariable); // intermediateVariable2 = ConvDiff^-1 * intermediateVariable
 							
                             divVel.SpMVpara(-1.0, intermediateVariable2, 0.0, output); // output = -divVel * intermediateVariable2 = -divVel *  ConvDiff^-1 * pGrad * input (attention to minus sign)
 						};
 
-						var Setled = (CoordinateMapping)m_mgop.BaseGridProblemMapping;
-						int D = m_mgop.Mapping.GridData.SpatialDimension;
-						var op = m_mgop;
-						var presureField = Setled.Fields[D];
-						var co = presureField.Mapping;
-						var pressureMGmapping = new MultigridMapping(co, new[] { op.Mapping.AggBasis[D] }, new[] { op.Mapping.DgDegree[D] });
-
 						using (ISolverWithInnerCycle Psolver = new BoSSS.Solution.AdvancedSolvers.SoftGMRES(false)) {
-                            //Psolver.m_RowPart = pressureMGmapping;
-                            if (Psolver is SoftGMRES SGMRES)
-								SGMRES.ConvergenceCriterion = 1e-10;
+                            if (Psolver is SoftGMRES || Psolver is SoftPCG) {
+								dynamic solver = Psolver; 
+								solver.ConvergenceCriterion = m_config.ConvergenceCriterion;
+								solver.MaxIterations = m_config.MaxSolverIterations;
+							}
 
-							if (Psolver is SoftGMRES SPCG)
-								SPCG.ConvergenceCriterion = 1e-10;
-							//Psolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
-							//Psolver.MaxIterations = m_config.MaxSolverIterations;
+							//var PardisoConfig = new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+							//if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) {
+							//    Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+							//    Psolver.Precond.DefineMatrix(pMassMatrix);
+							//}
 
-							var PardisoConfig = new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
-
-                            //if (!m_mgop.MassMatrix.CheckIfUnitMatrix()) {
-                            //    Psolver.Precond = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                            //    Psolver.Precond.DefineMatrix(pMassMatrix);
-                            //}
-
-                            Psolver.InnerCycle = InnerCycle;
+							Psolver.InnerCycle = InnerCycle;
 							Psolver.Solve(Psol, res2);
 
 							this.m_ThisLevelIterations = Psolver.ThisLevelIterations;
@@ -767,14 +760,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //Update the rhs1
 						pGrad.SpMVpara(-1.0, Psol, 1.0, vecb1);
 
-                        //Solver velocity
-						using (var Usolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
-							Usolver.DefineMatrix(ConvDiff);
-							Usolver.Solve(Usol, vecb1);
-						}
+                        //Solver velocity (Pardiso)
+                        //using (var Usolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
+                        //	Usolver.DefineMatrix(ConvDiff);
+                        //	Usolver.Solve(Usol, vecb1);
+                        //}
+
+                        //Solver velocity (GMRES)
+                        SolveWithMatrix(ConvDiff, Usol, vecb1);
 
                         //Re-assign variables
-						for (int i = 0; i < Uidx.Length; i++)
+                        for (int i = 0; i < Uidx.Length; i++)
 							X[MgMap.Global2Local(Uidx[i])] = Usol[i];
 
 
@@ -783,13 +779,51 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //Usol.SaveToTextFile("CalculatedU");
                         //Psol.SaveToTextFile("CalculatedP");
-                        //X.SaveToTextFile("CalculatedX");
+                        //X.SaveToTextFile("CalculatedX"); //notice that mapping is different i.e., X neq [Usol; Psol] but contains the same elements
+
                         Console.WriteLine($"total iteration number: {this.m_ThisLevelIterations}");
                         return;
 					}
 
 			}
         }
+
+        MultigridOperator CreateSubMGOp(DGField field, int index) {
+			List<AggregationGridBasis[]> leveledBases = new List<AggregationGridBasis[]>();
+			List<MultigridOperator.ChangeOfBasisConfig[]> leveledConfigs = new List<MultigridOperator.ChangeOfBasisConfig[]>();
+
+			for (var mo = m_mgop; mo != null; mo = mo.CoarserLevel) {
+				Debug.Assert(mo.Mapping.AggBasis.Length == D + 1);
+
+				AggregationGridBasis[] bases = new AggregationGridBasis[1] { mo.Mapping.AggBasis[index] };
+				leveledBases.Add(bases);
+
+				var conf = mo.Config[index];
+				conf.VarIndex = new int[] { 0 };
+
+				MultigridOperator.ChangeOfBasisConfig[] configs = new MultigridOperator.ChangeOfBasisConfig[1] { conf };
+				leveledConfigs.Add(configs);
+			}
+
+			var co = field.Mapping;
+			var MGmapping = new MultigridMapping(co, new[] { m_mgop.Mapping.AggBasis[index] }, new[] { m_mgop.Mapping.DgDegree[index] }); //finest level
+
+			var dummy = new DifferentialOperator(
+			   new string[] { "pressure" },
+			   new string[] { "div" },
+			   QuadOrderFunc.Linear());
+			dummy.Commit();
+
+			var rawOp = SchurMtx.ToBlockMsrMatrix(MGmapping, MGmapping);
+			var rawMaMa = new BlockMsrMatrix(field.Mapping, field.Mapping);
+			rawMaMa.AccEyeSp(1);
+
+			var MultigridOp = new MultigridOperator(leveledBases, field.Mapping,
+	                                                rawOp, rawMaMa, leveledConfigs,
+	                                                dummy);
+
+			return MultigridOp;
+		}
 
         BlockMsrMatrix GetPreconditioningMatrix() {
             var invDiagConvDiff = new MsrMatrix(m, m, 1, 1);
@@ -825,11 +859,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	        where U : IList<double>
 	        where V : IList<double> {
 
-			using (var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
-				solver.DefineMatrix(M);
-				solver.Solve(X, B);
-			}
-		}
+            //using (var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
+            //    solver.DefineMatrix(M);
+            //    solver.Solve(X, B);
+            //}
+
+            // Check if the matrix is symmetric
+            bool assumeSymmetric = (M is MsrMatrix msrMatrix && msrMatrix.AssumeSymmetric) ||
+                                   (M is BlockMsrMatrix blockMsrMatrix && blockMsrMatrix.AssumeSymmetric);
+
+
+            if (assumeSymmetric) {
+                using (var Usolver = new BoSSS.Solution.AdvancedSolvers.SoftPCG(false)) {
+                    Usolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
+                    Usolver.InnerCycle = (inp, outp) => M.SpMV(1.0, inp, 0.0, outp); //currently the only way to call it without creating an MG operator
+                    Usolver.Solve(X, B);
+                }
+            } else {
+                using (var Usolver = new BoSSS.Solution.AdvancedSolvers.SoftGMRES(false)) {
+                    Usolver.ConvergenceCriterion = m_config.ConvergenceCriterion;
+                    Usolver.InnerCycle = (inp, outp) => M.SpMV(1.0, inp, 0.0, outp); //currently the only way to call it without creating an MG operator
+                    Usolver.Solve(X, B);
+                }
+            }
+        }
 
 		/// <summary>
 		/// Solve Preconditioning Matrix in Subsystems with ConvDiff, pGrad and Schur
