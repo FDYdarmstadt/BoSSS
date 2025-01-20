@@ -481,7 +481,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public Action<double[], double[]> InnerCycle { get; set; }
 
 		/// <summary>
-		///  Calculates Matrix.SpMV(alpha,  _a, beta, acc) if matrix available explicitly <c>. 
+		///  Calculates Matrix.SpMV(alpha,  _a, beta, acc) if matrix available explicitly 
 		///  If not, calculates the equivalent of it by given InnerCircle action 
 		/// </summary>
 		/// <param name="alpha">scale of  _a</param>
