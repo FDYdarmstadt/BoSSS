@@ -516,7 +516,7 @@ namespace BoSSS.Foundation.Quadrature {
             where TQuadRule : QuadRule
             where TDomain : ExecutionMask {
             var rule = scheme.Compile(grid, quadOrder);
-            rule.ToTextFileEdge(grid, name);
+            rule.SaveToTextFileEdge(grid, name);
         }
 
         /// <summary>

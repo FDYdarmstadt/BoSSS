@@ -93,7 +93,7 @@ namespace BoSSS.Foundation {
         /// Saves the location and weight associated with each node in
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
-        public static void ToTextFileEdge(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
+        public static void SaveToTextFileEdge(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
             int D = gridData.SpatialDimension;
             string[] dimensions = new string[] { "x", "y", "z" };
 

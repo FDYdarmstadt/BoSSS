@@ -20,13 +20,13 @@ using System.Diagnostics;
 using System.Linq;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.XDG.Quadrature;
-using IntersectingQuadrature;
+using BoSSS.Foundation.XDG.Quadrature.HMF;
+using BoSSS.Foundation.XDG.Quadrature.Saye;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -353,14 +353,14 @@ namespace BoSSS.Foundation.XDG {
                                 break;
                             }
                         case CutCellQuadratureMethod.Saye:
-                            var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
+                            var comboFactory = Quadrature.Saye.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                             m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                             m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                             break;
                         case CutCellQuadratureMethod.Algoim:
-                            var algoimComboFactory = new Quadrature.AlgoimFactories(
+                            var algoimComboFactory = new Quadrature.Algoim.AlgoimFactories(
                                     this.m_LevelSetDatas[levSetIndex],
                                     Kref);
                             m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();
@@ -381,11 +381,11 @@ namespace BoSSS.Foundation.XDG {
                 switch (CutCellQuadratureType)
                 {
                     case CutCellQuadratureMethod.Saye:
-                        ret = Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
+                        ret = Quadrature.Saye.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         break;
                     case CutCellQuadratureMethod.Algoim:
-                        var algoimComboFactory = new Quadrature.AlgoimFactories(
+                        var algoimComboFactory = new Quadrature.Algoim.AlgoimFactories(
                                 this.m_LevelSetDatas[levSetIndex],
                                 Kref,
                                 true);
@@ -519,14 +519,14 @@ namespace BoSSS.Foundation.XDG {
                     case CutCellQuadratureMethod.ExactCircle:
                         return new ExactCircleLevelSetIntegration(levSetIndex, this.m_LevelSetDatas[levSetIndex].GridDat, Kref);
                     case CutCellQuadratureMethod.Saye:
-                        var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
+                        var comboFactory = Quadrature.Saye.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                         m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                         break;
                     case CutCellQuadratureMethod.Algoim:
-                        var algoimComboFactory = new Quadrature.AlgoimFactories(
+                        var algoimComboFactory = new Quadrature.Algoim.AlgoimFactories(
                                 this.m_LevelSetDatas[levSetIndex],
                                 Kref);
                         m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();

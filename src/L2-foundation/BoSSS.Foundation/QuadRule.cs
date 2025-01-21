@@ -34,8 +34,7 @@ namespace BoSSS.Foundation.Quadrature {
 
 
         /// <summary>
-        /// creates a empty (i.e. all entries set to 0.0) <see cref="QuadRule"/> object 
-        /// with <paramref name="noOfNodes"/> quadrature nodes.
+        /// Creates a empty (i.e. all entries set to 0.0) quadrature rule for filling by the user.
         /// </summary>
         /// <param name="noOfNodes"></param>
         /// <param name="D">spatial dimension</param>
@@ -45,7 +44,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// an empty (i.e. all weights are 0.0) quadrature rule.
         /// Note: before this rule can be used, the nodes (<see cref="Nodes"/>) must be locked (<see cref="MultidimensionalArray.LockForever"/>).
         /// </returns>
-        public static QuadRule CreateZero(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
+        public static QuadRule CreateBlank(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
             QuadRule ret = new QuadRule();
             ret.Nodes = new NodeSet(Kref, noOfNodes, D, useNodeSetCaching);
             ret.Weights = MultidimensionalArray.Create(noOfNodes);

@@ -11,7 +11,7 @@ using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
 using ilPSP;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     class SayeGaussRule_EdgeCube : SayeGaussRule_Cube, ISayeGaussEdgeRule {
 
         QuadratureMode mode;

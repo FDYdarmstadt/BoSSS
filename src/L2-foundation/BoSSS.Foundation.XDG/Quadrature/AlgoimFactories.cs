@@ -14,13 +14,9 @@ using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static BoSSS.Foundation.XDG.Quadrature.HMF.LineAndPointQuadratureFactory;
-using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
-using static BoSSS.Foundation.XDG.Quadrature.SayeSquare;
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+
+namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 
 	/// <summary>
 	/// Provides a factory configuration for processing based on specified parameters.
@@ -66,26 +62,26 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         bool VolumeSign;
 
         /// <summary>
-        /// key: quadrature order <br/>
-        /// value: quadrature rule
+        /// - key: quadrature order 
+        /// - value: quadrature rule
         /// </summary>
         Dictionary<int, ChunkRulePair<QuadRule>[]> m_SurfaceRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
 
         /// <summary>
-        /// key: quadrature order <br/>
-        /// value: quadrature rule
+        /// - key: quadrature order 
+        /// - value: quadrature rule
         /// </summary>
         Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]> m_CellBoundaryRules = new Dictionary<int, ChunkRulePair<CellBoundaryQuadRule>[]>();
 
         /// <summary>
-        /// key: quadrature order <br/>
-        /// value: quadrature rule
+        /// - key: quadrature order 
+        /// - value: quadrature rule
         /// </summary>
         Dictionary<int, ChunkRulePair<QuadRule>[]> m_EdgeRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
 
         /// <summary>
-        /// key: quadrature order <br/>
-        /// value: quadrature rule
+        /// - key: quadrature order 
+        /// - value: quadrature rule
         /// </summary>
         Dictionary<int, ChunkRulePair<QuadRule>[]> m_VolumeRules = new Dictionary<int, ChunkRulePair<QuadRule>[]>();
 
@@ -95,7 +91,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Rules = this.m_SurfaceRules
             };
             factory.useMetrics = true;
-            factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules; 
+            factory.m_CalculateQuadRule = ilPSP.Utils.Algoim.GetSurfaceQuadratureRules; 
             return factory;
         }
 
@@ -104,7 +100,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Owner = this,
                 m_Rules = this.m_VolumeRules
             };
-            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules; 
+            factory.m_CalculateQuadRule = ilPSP.Utils.Algoim.GetVolumeQuadratureRules; 
             return factory;
         }
 
@@ -113,8 +109,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Owner = this,
                 m_Rules = this.m_CellBoundaryRules
             };
-            factory.useMetrics = true;
-            factory.m_CalculateQuadRule = Algoim.GetSurfaceQuadratureRules; 
+            //factory.useMetrics = true;
+            factory.m_CalculateQuadRule = ilPSP.Utils.Algoim.GetSurfaceQuadratureRules; 
             return factory;
         }
 
@@ -123,7 +119,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Owner = this,
                 m_Rules = this.m_CellBoundaryRules
             };
-            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
+            factory.m_CalculateQuadRule = ilPSP.Utils.Algoim.GetVolumeQuadratureRules;
             return factory;
         }
 
@@ -132,7 +128,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 m_Owner = this,
                 m_Rules = this.m_EdgeRules
             };
-            factory.m_CalculateQuadRule = Algoim.GetVolumeQuadratureRules;
+            factory.m_CalculateQuadRule = ilPSP.Utils.Algoim.GetVolumeQuadratureRules;
             return factory;
         }
 
@@ -286,7 +282,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return CreateEmptyQuadRule();
                 
                 // Create quadrature rule and copy from the scheme
-                QuadRule quadRule = QuadRule.CreateZero(RefElement, qs.length, qs.dimension);
+                QuadRule quadRule = QuadRule.CreateBlank(RefElement, qs.length, qs.dimension);
 
                 for (int row = 0; row < qs.length; row++) {
                     quadRule.Weights[row] = qs.weights[row];
@@ -343,7 +339,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 int[] sizes = Enumerable.Repeat(points.Length, spaceDim).ToArray();
 
                 // get the quadrature rule from the wrapper
-                UnsafeAlgoim.QuadSchemeCombo qs = Algoim.GetComboQuadratureRules(spaceDim, n, RequestedOrder, sizes, x, y);
+                UnsafeAlgoim.QuadSchemeCombo qs = ilPSP.Utils.Algoim.GetComboQuadratureRules(spaceDim, n, RequestedOrder, sizes, x, y);
                 
                 QuadRule[] quadRules = new QuadRule[2];
 
@@ -355,7 +351,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 }
 
                 // Create surface quadrature rule and copy from the scheme
-                QuadRule quadRuleSurf = QuadRule.CreateZero(RefElement, qs.lengthSurf, qs.dimension);
+                QuadRule quadRuleSurf = QuadRule.CreateBlank(RefElement, qs.lengthSurf, qs.dimension);
                 for(int row = 0; row < qs.lengthSurf; row++) {
                     quadRuleSurf.Weights[row] = qs.weights[row];
                     for(int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
@@ -367,7 +363,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 quadRules[0] = quadRuleSurf;
                 
                 // Create volume quadrature rule and copy from the scheme
-                QuadRule quadRuleVol = QuadRule.CreateZero(RefElement, qs.lengthVol, qs.dimension);
+                QuadRule quadRuleVol = QuadRule.CreateBlank(RefElement, qs.lengthVol, qs.dimension);
                 for (int row = qs.lengthSurf, rowVol=0; rowVol < qs.lengthVol; rowVol++,row++) { //lengthSurf+lengthVol = total length
                     quadRuleVol.Weights[rowVol] = qs.weights[row];
                     for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
@@ -400,7 +396,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             private QuadRule CreateEmptyQuadRule() {
-                QuadRule quadRuleEmpty = QuadRule.CreateZero(RefElement, 1, spaceDim);
+                QuadRule quadRuleEmpty = QuadRule.CreateBlank(RefElement, 1, spaceDim);
                 quadRuleEmpty.Nodes.LockForever();
                 return quadRuleEmpty;
             }
@@ -423,7 +419,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             bool VolumeSign => m_Owner.VolumeSign;
 
-            public bool useMetrics = false;
+            //public bool useMetrics = false;
 
             internal GetQuadratureRule m_CalculateQuadRule;
 
@@ -522,7 +518,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 //create Chebyshev nodes (must be identical with Algoim, otherwise leads to interpolation errors for high orders)
                 double[] points = GenericBlas.ChebyshevNodesSecondKind(-1.0, 1.0, n);
 
-                int numberOfCombinations = (int)Math.Pow(points.Length, ruleDim); //Cartesian pair product for the points
+                int numberOfCombinations = points.Length.Pow(ruleDim); //Cartesian pair product for the points
                 MultidimensionalArray combinationsOnEdge = MultidimensionalArray.CreateCartesianPairProduct(points, ruleDim);
 
                 // Transform edge based coordinates to cell based coordinates (to query level sets)
@@ -555,7 +551,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     return quadRuleEmpty;
                 }
 
-				QuadRule quadRuleOnEdge = QuadRule.CreateZero(RefElement.FaceRefElement, qs.length, qs.dimension);
+				QuadRule quadRuleOnEdge = QuadRule.CreateBlank(RefElement.FaceRefElement, qs.length, qs.dimension);
 
                 for (int row = 0; row < qs.length; row++) {
                     quadRuleOnEdge.Weights[row] = qs.weights[row];
@@ -572,12 +568,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 RefElement.TransformFaceCoordinates(edgeIndex, quadRuleOnEdge.Nodes, quadRule.Nodes); // to transform edge rule back to cell coordinates (since we are creating CellBoundaryQuadRule, cell based rule)
 				quadRule.Nodes.LockForever();
 
-                if (useMetrics) {
-                    var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
-
-                    for (int k = 0; k < qs.length; k++)
-                        quadRule.Weights[k] /= metrics[0, k];
-                }
+                //if(useMetrics) {
+                //    var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
+                //    for(int k = 0; k < qs.length; k++)
+                //        quadRule.Weights[k] /= metrics[0, k];
+                //}
 
                 return quadRule;
             }
@@ -714,7 +709,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 
 
-				QuadRule quadRuleOnEdge = QuadRule.CreateZero(RefElement, qs.length, spaceDim);
+				QuadRule quadRuleOnEdge = QuadRule.CreateBlank(RefElement, qs.length, spaceDim);
 
 
 				quadRuleOnEdge.Nodes.LockForever();

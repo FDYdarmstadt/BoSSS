@@ -398,7 +398,7 @@ namespace BoSSS.Foundation.XDG {
                     // bulk
                     // ---------------------
                     using (new BlockTrace("bulk_integration", tr)) {
-
+                        
                         // create the frame matrices & vectors...
                         // this is an MPI-collective operation, so it must be executed before the program may take different branches...
                         SpeciesFrameVector<Tout>[] vec_spc = new SpeciesFrameVector<Tout>[ReqSpecies.Length];
@@ -412,8 +412,15 @@ namespace BoSSS.Foundation.XDG {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
                             var vec = vec_spc[iSpecies];
 
+
+
                             var SpeciesBuilders = DoEdge ? new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval } : new[] { SpeciesBulkEval };
+
+
+                            int cnt = -1;
                             foreach (var SpeciesEval in SpeciesBuilders) {
+                                cnt++;
+                                Console.WriteLine($"Species integration {m_lsTrk.GetSpeciesName(SpeciesId)}, evlauatro # {cnt}");
 
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
@@ -432,12 +439,12 @@ namespace BoSSS.Foundation.XDG {
 
                             }
                         }
-
+                        
                     }
 
                     //  coupling
                     ///////////////////
-
+                    
                     using (new BlockTrace("surface_integration", tr)) {
                         if (DoEdge) {
                             // TODO: are the quadrature rules non-empty?
@@ -501,7 +508,7 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-
+                    
                     // allow all processes to catch up
                     // -------------------------------
                     if (trx != null) {
@@ -741,7 +748,7 @@ namespace BoSSS.Foundation.XDG {
                                 var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
                                 var volRule = cellScheme.Compile(this.GridData, quadOrder);
                                 
-                                edgeRule.ToTextFileEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+                                edgeRule.SaveToTextFileEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
 								edgeRule.ToVtpFilesEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
                                 edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"WgtSumEdge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
 
@@ -770,11 +777,15 @@ namespace BoSSS.Foundation.XDG {
                                 EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 if (ruleDiagnosis) {
-                                    SurfaceElement_volume.SaveToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
-                                    SurfaceElement_Edge.SaveToTextFileEdge(GridData, quadOrder,   $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
-									
-                                    SurfaceElement_volume.Compile(GridData,quadOrder).ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
-									SurfaceElement_Edge.Compile(GridData, quadOrder).ToVtpFilesEdge(GridData,  $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
+                                    var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
+                                    var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
+
+
+                                    coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+                                    coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+
+                                    coVolRole.ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
+                                    coEdgRule.ToVtpFilesEdge(GridData,  $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
 
                                     SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"wgtSumSurfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
                                 }

@@ -1576,11 +1576,64 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                     double[] Affine;
+                    BoSSS.Foundation.Quadrature.NonLin.SignalTemp.b = true;
                     this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
                     Debug.Assert(System == null);
 
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
+
+                    if(m_LsTrk.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
+                        base.Residuals.SaveToTextFile("resisuals.txt");
+
+                        foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
+                            var name = $"CutEdge-{m_LsTrk.GetSpeciesName(kv.Key)}.txt";
+                            var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
+                            vals.SaveToTextFile(name);
+                        }
+
+
+                    } else {
+                        var r = VectorIO.LoadFromTextFile("resisuals.txt");
+                        Console.WriteLine(" --------------  resi dist: " + r.L2Distance(base.Residuals));
+
+                        var Err = base.Residuals.CloneAs();
+                        Err.Acc(-1.0, r);
+                        var ErrVec = Err.ToArray();
+
+                        foreach(var f in Err.Fields) {
+                            var b = f.Basis;
+                            int P = b.Degree;
+                            var fA = ((XDGField)f).GetSpeciesShadowField("A");
+
+                            for(int p = 0; p <= P; p++) {
+                                double acc = 0.0;
+                                foreach(int jCell in m_LsTrk.Regions.GetSpeciesMask("A").ItemEnum) {
+                                    var modes = b.GetPolynomialIndicesForDegree(jCell, p);
+                                    foreach(int n in modes) {
+                                        acc += fA.Coordinates[jCell, n].Pow2();
+                                    }
+                                }
+                                acc = acc.Sqrt();
+                                Console.WriteLine($"   ++++++++++++++  {fA.Identification}, p = {p} : {acc}  ");
+                            }
+                            
+
+
+                        }
+
+
+
+                        foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
+                            var name = $"CutEdge-{m_LsTrk.GetSpeciesName(kv.Key)}.txt";
+                            var refv = VectorIO.LoadFromTextFile(name);
+                            var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
+                            Console.WriteLine($"--------------  edg{m_LsTrk.GetSpeciesName(kv.Key)} dist: " + refv.L2Distance(vals));
+                        }
+
+
+
+                    }
 
                     success = true;
 

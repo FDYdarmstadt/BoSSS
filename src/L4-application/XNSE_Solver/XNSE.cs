@@ -75,6 +75,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            args = new string[] { "1" };
+            bool bAlgoim = false;
+            if(args.Length > 0)
+                bAlgoim = int.Parse(args[0]) == 1;
 
 
             ilPSP.Environment.NumThreads = 8;
@@ -84,7 +88,8 @@ namespace BoSSS.Application.XNSE_Solver {
             BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2,
                0.0d,
                ViscosityMode.FullySymmetric,
-               0.0, false, CutCellQuadratureMethod.Algoim,
+               0.0, false, 
+               bAlgoim ? CutCellQuadratureMethod.Algoim : CutCellQuadratureMethod.Saye,
                NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest_p2_Standard_Algoim();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(3, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Algoim, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
@@ -151,13 +156,21 @@ namespace BoSSS.Application.XNSE_Solver {
             //QuadOrder
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            
             if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye 
-                //|| Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
+                || Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
                 ) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
-            } 
+            }
+
+            if( Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
+                ) {
+                //See remarks
+                quadOrder = 5;
+            }
+
 
             return quadOrder;
         }

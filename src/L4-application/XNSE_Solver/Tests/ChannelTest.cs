@@ -231,7 +231,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             //var _yNodes = GenericBlas.Linspace(-1, 1, 6);
 
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3*Resolution + 1), _yNodes, periodicX: periodic);
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 5*Resolution + 1), _yNodes, periodicX: periodic);
             if (periodic) {
                 grd.EdgeTagNames.Add(1, "wall_top");
                 grd.EdgeTagNames.Add(2, "wall_bottom");

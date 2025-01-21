@@ -278,7 +278,7 @@ namespace BoSSS.Foundation.XDG {
                     var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
                     
 
-						BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
+				    BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
                         edgeRule,
                         _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //

@@ -15,7 +15,7 @@ using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
 
 
 
-namespace BoSSS.Foundation.XDG.Quadrature
+namespace BoSSS.Foundation.XDG.Quadrature.Saye
 {
     public interface ISayeGaussRule
     {

@@ -34,9 +34,9 @@ namespace BoSSS.Foundation.Quadrature {
 
 
         /// <summary>
-        /// Creates an empty rule.
+        /// Creates a empty (i.e. all entries set to 0.0) quadrature rule for filling by the user.
         /// </summary>
-        new public static DoubleEdgeQuadRule CreateZero(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
+        new public static DoubleEdgeQuadRule CreateBlank(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
             DoubleEdgeQuadRule rule = new DoubleEdgeQuadRule();
             rule.Nodes = new NodeSet(Kref, noOfNodes, D, useNodeSetCaching);
             rule.Weights = MultidimensionalArray.Create(noOfNodes);

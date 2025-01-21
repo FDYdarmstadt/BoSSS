@@ -39,6 +39,8 @@ using System.Runtime.InteropServices;
 using ilPSP.Utils;
 using static ilPSP.Utils.UnsafeAlgoim;
 using System.Xml;
+using BoSSS.Foundation.XDG.Quadrature.Saye;
+using BoSSS.Foundation.XDG.Quadrature.Algoim;
 
 namespace CutCellQuadrature {
 

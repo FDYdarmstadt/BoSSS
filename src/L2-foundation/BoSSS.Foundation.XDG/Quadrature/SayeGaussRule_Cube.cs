@@ -11,8 +11,7 @@ using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
 using ilPSP;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.XDG.Quadrature
-{
+namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     class SayeGaussRule_Cube :
         SayeComboIntegrand<LinearPSI<Cube>, LinearSayeSpace<Cube>>,
         ISayeGaussRule,
@@ -336,7 +335,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override QuadRule CreateZeroQuadrule()
         {
-            QuadRule zeroRule = QuadRule.CreateZero(RefElement, 1, RefElement.SpatialDimension);
+            QuadRule zeroRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
             zeroRule.Nodes.LockForever();
             return zeroRule;
         }

@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             {
                 var qrTemp = QuadRuleResource.DecodeFromBase64(Resource.TriangleQuadRules_bin);
                 foreach(var q in qrTemp) {
-                    var realQr = QuadRule.CreateZero(this, q.Item2.GetLength(0), this.SpatialDimension, true);
+                    var realQr = QuadRule.CreateBlank(this, q.Item2.GetLength(0), this.SpatialDimension, true);
                     realQr.Nodes.Set2DArray(q.Item2);
                     realQr.Weights.SetVector(q.Item3);
                     realQr.OrderOfPrecision = q.Item1;
