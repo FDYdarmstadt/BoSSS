@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Platform;
+using ilPSP;
 using Microsoft.DotNet.Interactive.Documents;
 using Microsoft.DotNet.Interactive.Documents.Jupyter;
 using System;
@@ -22,26 +23,25 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Threading;
-using ilPSP;
-using System.IO.Pipes;
 using System.Threading.Tasks;
-using static ilPSP.Connectors.Matlab.BatchmodeConnector;
-using System.Diagnostics.Metrics;
-using BoSSS.Solution;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Application.BoSSSpad
+{
 
     /// <summary>
     /// entry point of the `BoSSSpad` application.
     /// </summary>
-    public static class BoSSSpadMain {
+    public static class BoSSSpadMain
+    {
 
         /// <summary>
         /// Modes of operation of BoSSSpad
         /// </summary>
-        private enum Modes {
+        private enum Modes
+        {
             /// <summary>
             /// Batch execution of .bws files
             /// </summary>
@@ -110,23 +110,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// application entry point
         /// </summary>
         //[STAThread]
-        public static int Main(string[] args) {
+        public static int Main(string[] args)
+        {
             int errCount = 0;
-            
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-           /*
-            string path = @"\\fdygitrunner\ValidationTests\databases\bkup-2023Oct31_165410.LinslvPerfSer\sessions\dce38035-09a6-4f62-a82f-b7c089d27822\"; 
-            var json = File.ReadAllText(Path.Combine(path, "profiling_bin.0.txt"));
+            /*
+             string path = @"\\fdygitrunner\ValidationTests\databases\bkup-2023Oct31_165410.LinslvPerfSer\sessions\dce38035-09a6-4f62-a82f-b7c089d27822\"; 
+             var json = File.ReadAllText(Path.Combine(path, "profiling_bin.0.txt"));
 
-            var p = OnlineProfiling.Deserialize(json);
+             var p = OnlineProfiling.Deserialize(json);
 
-            Console.Write(p.ToString());
-            
-            //*/
+             Console.Write(p.ToString());
+
+             //*/
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            
+
             // interpretation of command line options
             // ======================================
             Modes mode;
@@ -146,18 +146,23 @@ namespace BoSSS.Application.BoSSSpad {
                 //        fileToOpen = args[0];
                 //    }
                 //} else 
-                if (args.Length <= 0) {
+                if (args.Length <= 0)
+                {
                     PrintUsage();
                     return int.MinValue;
-                } else {
-                    if (!args[0].StartsWith("--")) {
+                }
+                else
+                {
+                    if (!args[0].StartsWith("--"))
+                    {
                         PrintUsage();
                         return int.MinValue;
                     }
 
                     parseModeSuccesfully = Enum<Modes>.TryParse(args[0].Substring(2), out mode);
 
-                    if (!parseModeSuccesfully) {
+                    if (!parseModeSuccesfully)
+                    {
                         PrintUsage();
                         return int.MinValue;
                     }
@@ -172,77 +177,90 @@ namespace BoSSS.Application.BoSSSpad {
             // ==============
             bool IinitializedMPI = BoSSS.Solution.Application.InitMPI(args);
 
-            try {
-                switch (mode) {
+            try
+            {
+                switch (mode)
+                {
 
                     case Modes.Check:
-                    if (args.Length != 1) {
-                        PrintUsage();
-                        return int.MinValue;
-                    }
-                    InstallationChecker.CheckSetup();
-                    break;
-
-                    case Modes.OldFileUpgrade: {
-                        string fileToOpen;
-                        if (args.Length != 2) {
+                        if (args.Length != 1)
+                        {
                             PrintUsage();
                             return int.MinValue;
                         }
-                        fileToOpen = args[1];
-                        OldFileToJupyter(fileToOpen);
+                        InstallationChecker.CheckSetup();
                         break;
-                    }
 
-
-
-                    case Modes.JupyterBatch: {
-                        string fileToOpen;
-                        if (args.Length != 2) { 
-                            Console.Error.WriteLine($"Expecting exactly two arguments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
-                            PrintUsage();
-                            return int.MinValue;
+                    case Modes.OldFileUpgrade:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                PrintUsage();
+                                return int.MinValue;
+                            }
+                            fileToOpen = args[1];
+                            OldFileToJupyter(fileToOpen);
+                            break;
                         }
-                        fileToOpen = args[1];
 
-                        errCount = RunJupyter(fileToOpen);
-                        break;
-                    }
+
+
+                    case Modes.JupyterBatch:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                Console.Error.WriteLine($"Expecting exactly two arguments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
+                                PrintUsage();
+                                return int.MinValue;
+                            }
+                            fileToOpen = args[1];
+
+                            errCount = RunJupyter(fileToOpen);
+                            break;
+                        }
 
                     case Modes.Batch:
-                    case Modes.TexBatch: {
-                        string fileToOpen;
-                        if (args.Length != 2) {
-                            PrintUsage();
-                            return int.MinValue;
+                    case Modes.TexBatch:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                PrintUsage();
+                                return int.MinValue;
+                            }
+                            fileToOpen = args[1];
+                            string ConvFile = OldFileToJupyter(fileToOpen);
+                            errCount = RunJupyter(ConvFile);
+
+
+                            break;
                         }
-                        fileToOpen = args[1];
-                        string ConvFile = OldFileToJupyter(fileToOpen);
-                        errCount = RunJupyter(ConvFile);
 
-
-                        break;
-                    }
-
-                    case Modes.Jupyterfile: {
-                        string fileToOpen;
-                        if (args.Length != 2) {
-                            PrintUsage();
-                            return int.MinValue;
+                    case Modes.Jupyterfile:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                PrintUsage();
+                                return int.MinValue;
+                            }
+                            fileToOpen = args[1];
+                            Jupyterfile(fileToOpen);
+                            break;
                         }
-                        fileToOpen = args[1];
-                        Jupyterfile(fileToOpen);
-                        break;
-                    }
 
                     case Modes.RunBatch:
-                    errCount = SubprogramRunbatch.RunBatch(args.Skip(1).ToArray());
-                    break;
+                        errCount = SubprogramRunbatch.RunBatch(args.Skip(1).ToArray());
+                        break;
 
                     default:
-                    throw new NotImplementedException();
+                        throw new NotImplementedException();
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 Console.Error.WriteLine(e.GetType().Name + ": " + e.Message);
                 errCount = -666;
                 //throw new AggregateException(e);
@@ -269,19 +287,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         static Mutex JupyterMutex;
 
-        static BoSSSpadMain() {
-            
+        static BoSSSpadMain()
+        {
 
-            try {
+
+            try
+            {
                 JupyterMutex = new Mutex(false, "JupyterMutex");
-            } catch (Exception ee) {
+            }
+            catch (Exception ee)
+            {
                 Console.Error.WriteLine("BoSSSpadMain, Exception in static ctor during obtaining Jupyter Mutex:" + ee);
                 Console.Error.WriteLine("Terminating application.");
                 System.Environment.Exit(-987);
-           
+
             }
 
-           
+
         }
 
         /// <summary>
@@ -290,10 +312,11 @@ namespace BoSSS.Application.BoSSSpad {
         internal static string BoSSSpadInitDone_PipeName => "BoSSSpadInitDone" + System.Environment.UserName;
 
 
-        private static int RunJupyter(string fileToOpen) {
+        private static int RunJupyter(string fileToOpen)
+        {
             return RunPapermillAndNbconvert(fileToOpen);
-            
-            
+
+
             //int RetVal = RunJupyter(fileToOpen, false); // first try, don't allow errors
             /*if(RetVal == 0)
                 return 0;
@@ -367,8 +390,9 @@ namespace BoSSS.Application.BoSSSpad {
         */
 
 
-        static bool UseAnacondaPython() {
-            if(System.Environment.MachineName.Contains("hpccluster", StringComparison.InvariantCultureIgnoreCase))
+        static bool UseAnacondaPython()
+        {
+            if (System.Environment.MachineName.Contains("hpccluster", StringComparison.InvariantCultureIgnoreCase))
                 return false;
             if (System.Environment.MachineName.Contains("SHUBNIGGURATH", StringComparison.InvariantCultureIgnoreCase))
                 return false;
@@ -379,9 +403,10 @@ namespace BoSSS.Application.BoSSSpad {
         const bool UseMutexOnPapermill = true;
         const bool UseMutexOnNbconvert = true;
 
-       
-        private static int RunPapermillAndNbconvert(string fileToOpen) {
-       
+
+        private static int RunPapermillAndNbconvert(string fileToOpen)
+        {
+
             string fileToOpen_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.ipynb");
 
             string htmlResult = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + ".html");
@@ -391,35 +416,48 @@ namespace BoSSS.Application.BoSSSpad {
             bool MutexReleased = true;
             Random rnd = new Random();
             //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-            try {
+            try
+            {
 
 
 
-                void GetMutex(int RecDepth) {
-                    if (MutexReleased) {
-                        Console.WriteLine("Waiting for Jupyter mutex, " + DateTime.Now +" (can only start one Jupyter notebook at time) ...");
-                        try {
+                void GetMutex(int RecDepth)
+                {
+                    if (MutexReleased)
+                    {
+                        Console.WriteLine("Waiting for Jupyter mutex, " + DateTime.Now + " (can only start one Jupyter notebook at time) ...");
+                        try
+                        {
                             JupyterMutex.WaitOne();
-                        } catch (AbandonedMutexException ae) {
+                        }
+                        catch (AbandonedMutexException ae)
+                        {
                             Console.WriteLine($"AbandonedMutexException caught during WaitOne() : ({ae}: {ae.Message})");
-                            if (RecDepth > 10) {
+                            if (RecDepth > 10)
+                            {
                                 Console.WriteLine("Stopping trying - unrecoverable");
                                 Console.Error.WriteLine("Terminating application.");
                                 System.Environment.Exit(-989);
-                            } else {
+                            }
+                            else
+                            {
                                 Random rnd = new Random();
                                 int msWait = rnd.Next(10000);
                                 Console.WriteLine($"Retry No. {RecDepth} in {msWait} milliseconds.");
                                 Thread.Sleep(msWait);
 
 
-                                try {
-                                    if (JupyterMutex != null) {
+                                try
+                                {
+                                    if (JupyterMutex != null)
+                                    {
                                         JupyterMutex.ReleaseMutex();
                                         JupyterMutex.Dispose();
                                     }
                                     JupyterMutex = new Mutex(false, "JupyterMutex");
-                                } catch (Exception eee) {
+                                }
+                                catch (Exception eee)
+                                {
                                     Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Unrecoverable Exception during creation of JupyterMutex : " + eee);
                                     Console.Error.WriteLine("Terminating application.");
                                     System.Environment.Exit(-988);
@@ -427,7 +465,9 @@ namespace BoSSS.Application.BoSSSpad {
                                 GetMutex(RecDepth + 1);
                             }
 
-                        } catch (Exception eee) {
+                        }
+                        catch (Exception eee)
+                        {
                             Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Exception during WaitOne() :" + eee);
                             Console.Error.WriteLine("Terminating application.");
                             System.Environment.Exit(-988);
@@ -437,13 +477,18 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                void ReleaseMutex() {
+                void ReleaseMutex()
+                {
                     //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
                     Console.WriteLine("Releasing Jupyter mutex @ " + DateTime.Now + " ...");
-                    if (!MutexReleased) {
-                        try {
+                    if (!MutexReleased)
+                    {
+                        try
+                        {
                             JupyterMutex.ReleaseMutex();
-                        } catch (Exception eee) {
+                        }
+                        catch (Exception eee)
+                        {
                             Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Exception (1) during ReleaseMutex():" + eee);
                             Console.Error.WriteLine("Terminating application.");
                             System.Environment.Exit(-989);
@@ -455,23 +500,29 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
 
-                void WaitForPipeConnection(string tempguid) {
-                    try {
+                void WaitForPipeConnection(string tempguid)
+                {
+                    try
+                    {
 
 
                         // Miss-used pipe for inter-process synchronization.
                         // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
                         //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
-                        using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut)) {
+                        using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut))
+                        {
                             Console.WriteLine("Waiting for BoSSSpad to start up at " + DateTime.Now + ". Current directory is " + Directory.GetCurrentDirectory());
                             BoSSSpadInitDone.Connect(3 * 60 * 1000);
                             Console.WriteLine("BoSSSpad connected at " + DateTime.Now + "; now waiting for signal...");
 
-                            using (var cts = new CancellationTokenSource()) {
-                                Task t = new Task(delegate () {
+                            using (var cts = new CancellationTokenSource())
+                            {
+                                Task t = new Task(delegate ()
+                                {
                                     Console.WriteLine($" waiting for signal {DateTime.Now} ...");
                                     int str = BoSSSpadInitDone.ReadByte();
-                                    while (str != 1) {
+                                    while (str != 1)
+                                    {
                                         Console.WriteLine($" received signal {DateTime.Now}, got {str}");
                                         str = BoSSSpadInitDone.ReadByte();
                                     }
@@ -480,30 +531,38 @@ namespace BoSSS.Application.BoSSSpad {
 
                                 t.Start();
 
-                                try {
+                                try
+                                {
                                     //{ 
-                                    if (t.Wait(60 * 1000) == false) {
+                                    if (t.Wait(60 * 1000) == false)
+                                    {
                                         cts.Cancel();
                                         Console.Error.WriteLine("Timeout waiting for Cancellation token pipe. " + DateTime.Now);
                                     }
-                                } catch (Exception e) {
+                                }
+                                catch (Exception e)
+                                {
                                     Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for Cancellation token pipe: " + e);
 
                                 }
                             }
                         }
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e)
+                    {
                         Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for pipe connection: " + e);
                         throw new AggregateException(e);
                     }
                 }
 
                 int papermill_exit, nbconvert_exit;
-                if (UseAnacondaPython()) {
-                    
+                if (UseAnacondaPython())
+                {
 
 
-                    int RunAnacondaShell(string command, bool useMutex, bool startupMutex) {
+
+                    int RunAnacondaShell(string command, bool useMutex, bool startupMutex)
+                    {
                         if (useMutex)
                             GetMutex(0);
 
@@ -519,13 +578,14 @@ namespace BoSSS.Application.BoSSSpad {
                         // wait here a bit to avoid a port conflict...
                         // when two notebooks are started simultaneously, we might run into the following:
                         //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.
-                       
+
                         Process p = Process.Start(psi);
                         p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
                         p.StandardInput.WriteLine(command);// "jupyter.exe nbconvert \"" + fileToOpen + "\" --to html ");
                         p.StandardInput.Flush();
 
-                        if (startupMutex == true) {
+                        if (startupMutex == true)
+                        {
                             // wait here a bit more...
                             //{ 
                             WaitForPipeConnection(tempguid);
@@ -533,13 +593,14 @@ namespace BoSSS.Application.BoSSSpad {
                             // received a signal from worksheet that it is up and running, 
                             // so we can release the mutex **before** the external process exits
                             if (useMutex)
-                                ReleaseMutex(); 
+                                ReleaseMutex();
                         }
 
                         p.StandardInput.WriteLine("exit");
                         p.WaitForExit();
 
-                        if(startupMutex == false) {
+                        if (startupMutex == false)
+                        {
                             // the mutex should block the entire call to the external process.
                             if (useMutex)
                                 ReleaseMutex();
@@ -550,14 +611,17 @@ namespace BoSSS.Application.BoSSSpad {
 
                     papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}", UseMutexOnPapermill, true);
                     nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ", UseMutexOnNbconvert, false);
-                    
+
                     //nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html --execute");
                     //papermill_exit = nbconvert_exit;
-                } else {
+                }
+                else
+                {
 
 
-                    int RunExt(string executable, string arguments, bool useMutex, bool startupMutex) {
-                        if(startupMutex)
+                    int RunExt(string executable, string arguments, bool useMutex, bool startupMutex)
+                    {
+                        if (startupMutex)
                             GetMutex(0);
 
                         ProcessStartInfo psi = new ProcessStartInfo();
@@ -574,7 +638,8 @@ namespace BoSSS.Application.BoSSSpad {
                         Process p = Process.Start(psi);
 
                         // wait here a bit more...
-                        if (startupMutex == true) {
+                        if (startupMutex == true)
+                        {
                             // wait here a bit more...
                             //{ 
                             WaitForPipeConnection(tempguid);
@@ -587,7 +652,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                         p.WaitForExit();
 
-                        if (startupMutex == false) {
+                        if (startupMutex == false)
+                        {
                             // the mutex should block the entire call to the external process.
                             if (useMutex)
                                 ReleaseMutex();
@@ -607,18 +673,25 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("papermill code " + papermill_exit);
                 Console.WriteLine("nbconvert code " + nbconvert_exit);
 
-                if(File.Exists(htmlResult_out)) {
+                if (File.Exists(htmlResult_out))
+                {
                     // try to restore the html result with the original name
                     File.Move(htmlResult_out, htmlResult, true);
                 }
 
 
                 return papermill_exit;
-            } finally {
-                if (!MutexReleased) {
-                    try {
+            }
+            finally
+            {
+                if (!MutexReleased)
+                {
+                    try
+                    {
                         JupyterMutex.ReleaseMutex();
-                    } catch (Exception eee) {
+                    }
+                    catch (Exception eee)
+                    {
                         Console.Error.WriteLine("BoSSSpadMain.RunPapermillAndNbconvert(...): Exception (2) during ReleaseMutex():" + eee);
                         Console.Error.WriteLine("Terminating application.");
                         System.Environment.Exit(-990);
@@ -628,8 +701,10 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        static string GetStartupCode() {
-            using(var stw = new StringWriter()) {
+        static string GetStartupCode()
+        {
+            using (var stw = new StringWriter())
+            {
                 string path = typeof(BoSSSpadMain).Assembly.Location;
                 stw.WriteLine("#r \"" + path + "\"");
                 stw.WriteLine("using System;");
@@ -663,7 +738,8 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        private static void Jupyterfile(string fileToCreate) {
+        private static void Jupyterfile(string fileToCreate)
+        {
 
             //var cells = new List<NotebookCell>();
             var cells = new List<InteractiveDocumentElement>();
@@ -674,18 +750,23 @@ namespace BoSSS.Application.BoSSSpad {
             var docNew = new InteractiveDocument(cells.ToArray());
 
             //var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
-            using(var stw = new StreamWriter(fileToCreate)) {
+            using (var stw = new StreamWriter(fileToCreate))
+            {
                 Notebook.Write(docNew, System.Environment.NewLine, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }
         }
 
-        private static string OldFileToJupyter(string fileToOpen) {
+        private static string OldFileToJupyter(string fileToOpen)
+        {
             Document doc;
-            if(fileToOpen.ToLowerInvariant().EndsWith(".tex")) {
+            if (fileToOpen.ToLowerInvariant().EndsWith(".tex"))
+            {
                 LatexIO.SplitTexFile(fileToOpen, out _, out doc);
-            } else {
+            }
+            else
+            {
                 doc = Document.Deserialize(fileToOpen);
             }
 
@@ -693,11 +774,12 @@ namespace BoSSS.Application.BoSSSpad {
             string DestFile = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen)) + ".ipynb";
 
             var cells = new List<InteractiveDocumentElement>();
-            foreach(var entry in doc.CommandAndResult) {
+            foreach (var entry in doc.CommandAndResult)
+            {
                 string cmd = entry.Command;
-                if(cmd.StartsWith("restart;"))
+                if (cmd.StartsWith("restart;"))
                     cmd = cmd.Replace("restart;", GetStartupCode());
-                if(cmd.StartsWith("restart"))
+                if (cmd.StartsWith("restart"))
                     cmd = cmd.Replace("restart", GetStartupCode());
 
                 //cells.Add(new NotebookCell("C#", cmd));
@@ -709,7 +791,8 @@ namespace BoSSS.Application.BoSSSpad {
 
             //var data = NotebookFileFormatHandler.Serialize(DestFile, docNew, System.Environment.NewLine);
             //System.IO.File.WriteAllBytes(DestFile, data);
-            using(var stw = new StreamWriter(DestFile)) {
+            using (var stw = new StreamWriter(DestFile))
+            {
                 Notebook.Write(docNew, System.Environment.NewLine, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
@@ -763,13 +846,14 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("Option 5: Installation check:");
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --check               Check the BoSSS installation.");
-            
+
         }
 
         /// <summary>
         /// Dummy function which ensures that certain referenced assemblies 
         /// </summary>
-        public static void LinkEnforcer() {
+        public static void LinkEnforcer()
+        {
             // If you remove these lines, this may break some worksheets and tutorials.
             Console.WriteLine(typeof(CNS.CNSProgram).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
@@ -780,7 +864,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        
+
 
     }
 }
