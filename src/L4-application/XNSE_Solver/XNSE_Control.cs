@@ -575,6 +575,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
+        /*
         /// <summary>
         /// Exact solution, temperature, for each species (either A or B).
         /// </summary>
@@ -587,6 +588,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
+        */
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).

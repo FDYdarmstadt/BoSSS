@@ -26,7 +26,7 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         /// <param name="DGp">Degree for velocity; pressure  will be one order lower.</param>
         public override void SetDGdegree(int DGp) {
-            if (DGp < 1)
+            if(DGp < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
             base.FieldOptions.Clear();
@@ -163,7 +163,7 @@ namespace BoSSS.Application.XNSEC {
             double Ta_adim = Ta / (TRef);
             this.ReactionRateConstants = new double[] { this.Damk, Ta_adim, 1.0, 1.0 };
 
-            if (!useAdimensional) { // Set up for a run with dimensional variables
+            if(!useAdimensional) { // Set up for a run with dimensional variables
                 this.pRef = _pRef; // reference pressure
                 this.TRef = 1;// reference temperature
                 this.MWRef = MLC.getAvgMW(MWs, OxidizerYs);
@@ -216,7 +216,7 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         /// <param name="DGp">Degree for velocity; pressure  will be one order lower.</param>
         public override void SetDGdegree(int DGp) {
-            if (DGp < 1)
+            if(DGp < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
             base.FieldOptions.Clear();
@@ -225,8 +225,8 @@ namespace BoSSS.Application.XNSEC {
             FieldOptions.Add(VariableNames.ThermodynamicPressure, new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             var bla = this.EnableTemperature ? DGp : 0;
             FieldOptions[VariableNames.Temperature] = new FieldOpts() { Degree = this.EnableTemperature ? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE };
-            for (int i = 0; i < this.NumberOfChemicalSpecies; i++) {
-                FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableMassFractions? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            for(int i = 0; i < this.NumberOfChemicalSpecies; i++) {
+                FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableMassFractions ? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             }
 
 
@@ -242,7 +242,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
-            if (dataBasePath != null) {
+            if(dataBasePath != null) {
                 savetodb = true;
                 DbPath = dataBasePath;
                 saveperiod = savePeriod;
@@ -251,7 +251,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public void SetTimeSteppingOptions(double dt, double endtime) {
-            if (dt <= 0) {
+            if(dt <= 0) {
                 this.TimesteppingMode = _TimesteppingMode.Steady;
             } else {
                 this.TimesteppingMode = _TimesteppingMode.Transient;
@@ -263,7 +263,7 @@ namespace BoSSS.Application.XNSEC {
 
         public void SetAdaptiveMeshRefinement(int amrLevel, int pseudoTimeStepsNo, int _AMR_startUpSweeps = -1) {
             NoOfTimesteps = pseudoTimeStepsNo;
-            if (amrLevel == 0) {
+            if(amrLevel == 0) {
                 return;
             }
             AdaptiveMeshRefinement = amrLevel > 1 ? true : false;
@@ -295,17 +295,14 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double PenaltyHeatConduction = 1.0;
 
-        ///// <summary>
-        ///// Number of subdivisions of the homotopy algorithm
-        ///// </summary>
-        //[DataMember]
-        //public int NumberOfHomotopyArraySubdivisions = 10;
+        
+        /// <summary>
+        /// Exact solution, Mixture fraction, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
 
-        ///// <summary>
-        ///// Terms activated in the SIP-Viscosity terms
-        ///// </summary>
-        //[DataMember]
-        //public ViscosityTermsSwitch myviscosityTerms = (ViscosityTermsSwitch.grad_u | ViscosityTermsSwitch.grad_uT | ViscosityTermsSwitch.divU);
 
         ///<summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
@@ -635,7 +632,7 @@ namespace BoSSS.Application.XNSEC {
         public double[] SelfDefinedHomotopyArray;
 
 
- 
+
 
         public double[] HomotopyArray {
             get {
@@ -684,11 +681,11 @@ namespace BoSSS.Application.XNSEC {
                 return m_HomotopyVariable;
             }
             set {
-                if (value == HomotopyVariableEnum.Reynolds)
+                if(value == HomotopyVariableEnum.Reynolds)
                     homotopieVariableName = HomotopieVariableNames.Reynolds;
-                else if (value == HomotopyVariableEnum.VelocityInletMultiplier)
+                else if(value == HomotopyVariableEnum.VelocityInletMultiplier)
                     homotopieVariableName = HomotopieVariableNames.VelocityMultiplier;
-                else if (value == HomotopyVariableEnum.HeatOfCombustion)
+                else if(value == HomotopyVariableEnum.HeatOfCombustion)
                     homotopieVariableName = HomotopieVariableNames.HeatOfReaction;
                 else
                     throw new Exception("Wrong homotopyvariable");
@@ -1136,7 +1133,7 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double HeatRelease {
             get {
-                if (m_HeatRelease == -1 && physicsMode == PhysicsMode.Combustion) {
+                if(m_HeatRelease == -1 && physicsMode == PhysicsMode.Combustion) {
                     Console.WriteLine("Warning!! Heat release should be set by the user for combustion applications. Setting it automatically to zero");
                     m_HeatRelease = 0.0;
                 }
