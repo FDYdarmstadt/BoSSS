@@ -31,6 +31,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
+                    Test.CompareCutLineTo(Ref);
                 }
 
             }
@@ -54,6 +55,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
+                    Test.CompareCutLineTo(Ref);
                 }
 
             }
@@ -65,10 +67,26 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// Therefore, e.g., the 2D level-set-area in the 3D test could be obtained by multiplying the 1D level-set-length from the 2D test with the mesh with in z-direction.
         /// </summary>
         [Test]
-        public static void OneLevelSet_2Dvs3D() {
+        public static void OneLevelSet_2Dvs3D(
+            [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
+            ) {
+                using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
+                    Ref.Init();
+                    Ref.RunSolverMode();
 
+                    using(var Test = new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType)) {
+                        Test.Init();
+                        Test.RunSolverMode();
 
-        }
+                        
+
+                        Test.CompareSurfaceTo2D(Ref);
+                    }
+
+                }
+
+            }
 
 
 

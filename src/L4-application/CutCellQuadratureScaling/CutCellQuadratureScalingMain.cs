@@ -13,6 +13,7 @@ using ilPSP;
 using BoSSS.Solution.Tecplot;
 using System.Diagnostics;
 using NUnit.Framework;
+using MathNet.Numerics;
 
 
 namespace BoSSS.Application.CutCellQuadratureScaling {
@@ -22,27 +23,13 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
+        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye;
         static int order = 8;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
-            using(var Ref = new TestSetupSingleLevset2D(1, order, quadratureType)) {
-                Ref.Init();
-                Ref.RunSolverMode();
-
-                using (var Test = new TestSetupSingleLevset2D(0.5, order, quadratureType)) {
-                    Test.Init();
-                    Test.RunSolverMode();
-
-                    Test.CompareCutLineTo(Ref);
-                    Test.CompareVolumeTo(Ref);
-                    Test.CompareEdgeAreaTo(Ref);
-                    Test.CompareSurfaceTo(Ref);
-                }
-
-            }
+            AllTests.OneLevelSet_2Dvs3D(order, quadratureType);
 
 
             BoSSS.Solution.Application.FinalizeMPI();
@@ -77,7 +64,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public readonly CutCellQuadratureMethod QuadratureType = CutCellQuadratureMethod.Saye;
 
         
-        protected CutCellMetrics latestCCM;
+        internal CutCellMetrics latestCCM;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             latestCCM = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS, CutCellQuadratureOrder).CutCellMetrics;
@@ -245,6 +232,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     }
 
+
     /// <summary>
     /// The 3D testcase is an extrusion of the 2D testcase, i.e., the circle from the 2D testcase is extruded into a cylinder.
     /// In this fashion, it can be compared to 2D results, by just multiplying the 2D-results with the domain width in z-direction.
@@ -253,13 +241,17 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     class TestSetupSingleLevset3D : TestSetupSingleLevSetBase {
 
         public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
-            : base(meshScaling, cutCellQuadratureOrder, quadratureType) { }
+            : base(meshScaling, cutCellQuadratureOrder, quadratureType) {
+            
+        }
 
+
+        const double zWidht = 6;
 
         protected override IGrid CreateOrLoadGrid() {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            double[] zNodes = GenericBlas.Linspace(-3, +3, 4);
+            double[] zNodes = GenericBlas.Linspace(-3, -2 + zWidht, 4);
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
             zNodes.ScaleV(MeshScaling);
@@ -267,6 +259,35 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             GridCommons grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
             return grd;
         }
+
+        public void CompareSurfaceTo2D(TestSetupSingleLevset2D othr) {
+            PlotCurrentState(0.0, new TimestepNumber(0), 4);
+
+
+            double D = othr.Grid.SpatialDimension;
+            if(D != 2)
+                throw new ApplicationException();
+
+            foreach(string Species in this.LsTrk.SpeciesNames) {
+                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
+                var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
+
+                var totArea_this = this.latestCCM.InterfaceArea[SpcId_this].Sum() / (zWidht * MeshScaling);
+                var totArea_othr = othr.latestCCM.InterfaceArea[SpcId_othr].Sum();
+
+                double absErr = (totArea_othr * (this.MeshScaling.Pow(D - 1)) - totArea_this * (othr.MeshScaling.Pow(D - 1))).Abs();
+                double relErr = absErr / (totArea_this.Abs() + totArea_othr.Abs());
+
+                Console.WriteLine($"Level Set Surface, species {Species} absolute error : {absErr:g7}");
+                Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
+
+                Assert.Less(relErr, 1.0e-10, $"relative surface error above threshold for species {Species}");
+            }
+
+
+        }
+
+
 
     }
 
