@@ -589,9 +589,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
         /// <summary>
         /// Normal vectors on all faces;<br/>
-        /// 1st index: face index, in the range of 0 to <see cref="NoOfFaces"/>;<br/>
-        /// 2nd index: spatial dimension, in the range of 0 (including) to
-        /// <see cref="SpatialDimension"/> (excluding)
+        /// - 1st index: face index, in the range of 0 to <see cref="NoOfFaces"/>;
+        /// - 2nd index: spatial dimension, in the range of 0 (including) to <see cref="SpatialDimension"/> (excluding)
         /// </summary>
         public MultidimensionalArray FaceNormals {
             get {

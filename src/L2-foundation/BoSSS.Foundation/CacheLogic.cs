@@ -643,7 +643,7 @@ namespace BoSSS.Foundation.Caching {
                     }
                     iE[1] = NS.NoOfNodes - 1;
 
-                    int[,] E2C = this.GridData.iLogicalEdges.CellIndices;
+                    int[,] E2C = this.GridData.iGeomEdges.CellIndices;
                     int[,] TrIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
 
                     for (int e = 0; e < Len; e++) {

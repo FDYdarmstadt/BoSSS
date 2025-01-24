@@ -40,9 +40,23 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         [Test]
         public static void OneLevelSet_3D(
+            [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
             [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
             ) {
+            using(var Ref = new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType)) {
+                Ref.Init();
+                Ref.RunSolverMode();
 
+                using(var Test = new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType)) {
+                    Test.Init();
+                    Test.RunSolverMode();
+
+                    Test.CompareSurfaceTo(Ref);
+                    Test.CompareVolumeTo(Ref);
+                    Test.CompareEdgeAreaTo(Ref);
+                }
+
+            }
 
         }
 

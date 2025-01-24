@@ -22,23 +22,24 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Algoim;
+        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
+        static int order = 8;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
-            using(var Ref = new TestSetupSingleLevset2D(1.0, 8, quadratureType)) {
+            using(var Ref = new TestSetupSingleLevset2D(1, order, quadratureType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
 
-                using (var Test = new TestSetupSingleLevset2D(0.5, 8, quadratureType)) {
+                using (var Test = new TestSetupSingleLevset2D(0.5, order, quadratureType)) {
                     Test.Init();
                     Test.RunSolverMode();
 
-                    Test.CompareSurfaceTo(Ref);
+                    Test.CompareCutLineTo(Ref);
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
-                    Test.CompareCutLineTo(Ref);
+                    Test.CompareSurfaceTo(Ref);
                 }
 
             }
@@ -85,14 +86,19 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
 
+        /// <summary>
+        /// verifies linear/quadratic (<see cref="MeshScaling"/> to the power of the spatial dimension) scaling of level-set surface integrals in 2D/3D;
+        /// </summary>
         public void CompareSurfaceTo(TestSetupBase othr) {
-            foreach (string Species in this.LsTrk.SpeciesNames) {
+            double D = this.Grid.SpatialDimension;
+
+            foreach(string Species in this.LsTrk.SpeciesNames) {
                 var SpcId_this = this.LsTrk.GetSpeciesId(Species);
                 var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
 
                 var Area_this = this.latestCCM.InterfaceArea[SpcId_this];
                 var Area_othr = othr.latestCCM.InterfaceArea[SpcId_othr];
-                var Area_err = Area_othr*this.MeshScaling - Area_this*othr.MeshScaling;
+                var Area_err = Area_othr*(this.MeshScaling.Pow(D - 1)) - Area_this* (othr.MeshScaling.Pow(D - 1));
 
                 double absErr = Area_err.L2Norm();
                 double relErr = absErr / (Area_this.L2Norm() + Area_othr.L2Norm());
@@ -115,13 +121,12 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
 
 
-
                 var Vol_this = this.latestCCM.CutCellVolumes[SpcId_this];
                 var Vol_othr = othr.latestCCM.CutCellVolumes[SpcId_othr];
                 // Areas should scale with MeshScaling^SpatialDimension
-                var Area_err = Vol_othr*(this.MeshScaling.Pow(D)) - Vol_this*(othr.MeshScaling.Pow(D));
+                var Vol_err = Vol_othr*(this.MeshScaling.Pow(D)) - Vol_this*(othr.MeshScaling.Pow(D));
 
-                double absErr = Area_err.L2Norm();
+                double absErr = Vol_err.L2Norm();
                 double relErr = absErr / (Vol_this.L2Norm() + Vol_othr.L2Norm());
 
                 Console.WriteLine($"Cut Cell Volume, species {Species} absolute error : {absErr:g7}");
@@ -240,6 +245,11 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
     }
 
+    /// <summary>
+    /// The 3D testcase is an extrusion of the 2D testcase, i.e., the circle from the 2D testcase is extruded into a cylinder.
+    /// In this fashion, it can be compared to 2D results, by just multiplying the 2D-results with the domain width in z-direction.
+    /// Therefore it 
+    /// </summary>
     class TestSetupSingleLevset3D : TestSetupSingleLevSetBase {
 
         public TestSetupSingleLevset3D(double meshScaling = 1.0, int cutCellQuadratureOrder = 2, CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye)
@@ -251,8 +261,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] zNodes = GenericBlas.Linspace(-3, +3, 4);
             xNodes.ScaleV(MeshScaling);
-            xNodes.ScaleV(MeshScaling);
-            xNodes.ScaleV(MeshScaling);
+            yNodes.ScaleV(MeshScaling);
+            zNodes.ScaleV(MeshScaling);
 
             GridCommons grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
             return grd;
