@@ -915,7 +915,7 @@ namespace BoSSS.Foundation.Quadrature {
                                 double* pWeights = _pWeights + currentRuleWeights.Index(0);
 
 
-                                if (Linear) {
+                                if (Linear && !IntegrationMetric.AlwaysUsePerNodeScaling) {
                                     // codepath for integration of linear elements
                                     // +++++++++++++++++++++++++++++++++++++++++++
 

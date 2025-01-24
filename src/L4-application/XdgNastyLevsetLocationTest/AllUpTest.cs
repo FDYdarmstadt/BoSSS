@@ -31,11 +31,11 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
     [TestFixture]
     public class AllUpTest { 
         /// <summary>
-        /// Level-Set is parallel resp. close-to-parallel ot a cell edge
+        /// Level-Set is parallel resp. close-to-parallel to a cell edge
         /// </summary>
         [Test]
         public static void ParalleTest_2D(
-            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)]
+            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)]
             CutCellQuadratureMethod variant) {
 
             TestTemplate(variant, new Parallel(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()));
@@ -46,7 +46,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         /// </summary>
         [Test]
         public static void CornerTest_2D(
-            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)]
+            [Values(CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)]
             CutCellQuadratureMethod variant) {
 
             TestTemplate(variant, new Schraeg(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()));

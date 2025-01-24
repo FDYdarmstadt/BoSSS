@@ -293,9 +293,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                 }
                 quadRule.Nodes.LockForever();
 
-                // In order to calculate surface and volume needs in the same loop, there is a "hack", in which surface nodes multiplied their transformation coefficients but divided by determinants for volume.
-                if (useMetrics)
-                    ApplyMetrics(quadRule, qs, jCell);
+                //// In order to calculate surface and volume needs in the same loop, there is a "hack", in which surface nodes multiplied their transformation coefficients but divided by determinants for volume.
+                //if (useMetrics)
+                //    ApplyMetrics(quadRule, qs, jCell);
 
                 return quadRule;
             }
@@ -374,26 +374,27 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                 quadRuleVol.Nodes.LockForever();
                 quadRules[1] = quadRuleVol;
 
-                // Apply metrics if required (applied only to surface rule)
-                ApplyMetrics(quadRuleSurf, qs, jCell);
+                //// Apply metrics if required (applied only to surface rule)
+                //ApplyMetrics(quadRuleSurf, qs, jCell);
 
                 return quadRules;
             }
 
-            // In order to calculate surface and volume needs in the same loop, there is a "hack", in which surface nodes multiplied their transformation coefficients but divided by determinants for volume.
-            private void ApplyMetrics(QuadRule quadRule, UnsafeAlgoim.QuadScheme qs, int jCell) {
-                var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
-                for (int k = 0; k < qs.length; k++) {
-                    quadRule.Weights[k] /= metrics[0, k];
-                }
-            }
+            
+            //// In order to calculate surface and volume needs in the same loop, there is a "hack", in which surface nodes multiplied their transformation coefficients but divided by determinants for volume.
+            //private void ApplyMetrics(QuadRule quadRule, UnsafeAlgoim.QuadScheme qs, int jCell) {
+            //    var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
+            //    for (int k = 0; k < qs.length; k++) {
+            //        quadRule.Weights[k] /= metrics[0, k];
+            //    }
+            //}
 
-            private void ApplyMetrics(QuadRule quadRule, UnsafeAlgoim.QuadSchemeCombo qs, int jCell) {
-                var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
-                for (int k = 0; k < qs.lengthSurf; k++) {
-                    quadRule.Weights[k] /= metrics[0, k];
-                }
-            }
+            //private void ApplyMetrics(QuadRule quadRule, UnsafeAlgoim.QuadSchemeCombo qs, int jCell) {
+            //    var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);
+            //    for (int k = 0; k < qs.lengthSurf; k++) {
+            //        quadRule.Weights[k] /= metrics[0, k];
+            //    }
+            //}
 
             private QuadRule CreateEmptyQuadRule() {
                 QuadRule quadRuleEmpty = QuadRule.CreateBlank(RefElement, 1, spaceDim);
@@ -479,11 +480,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 
                 List<ChunkRulePair<CellBoundaryQuadRule>> ret = new List<ChunkRulePair<CellBoundaryQuadRule>>();
 
-                int noOfEdges = RefElement.NoOfFaces;
+                int noOfFaces = RefElement.NoOfFaces;
 
                 foreach (int cell in mask.ItemEnum) {
-                    QuadRule[] edgeRules = new QuadRule[noOfEdges];
-                    for (int e = 0; e < noOfEdges; e++) {
+                    QuadRule[] edgeRules = new QuadRule[noOfFaces];
+                    for (int e = 0; e < noOfFaces; e++) { 
                         edgeRules[e] = GetNodesAndWeights(cell, RequestedOrder, e);
                     }
 
@@ -511,7 +512,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
             { 2, 1 },
             { 2, -1 }};
 
-            private CellBoundaryQuadRule GetNodesAndWeights(int jCell, int RequestedOrder, int edgeIndex) {
+            private CellBoundaryQuadRule GetNodesAndWeights(int jCell, int RequestedOrder, int faceIndex) {
+
+                //var scalings =  this.GridDat.Edges.SqrtGramian;
+                //int iEdge = this.GridDat.GetEdgesForFace(jCell, faceIndex, out _, out var furtherEdges);
+                //if(furtherEdges != null && furtherEdges.Length > 0)
+                //    throw new NotImplementedException(); 
+
+
+                //int[] Cells2Edge = .Cells.Cells2Edges[jCell];
+                //int iEdge = this.GridDat.GetEdgesForFace(int jCell, int iFace, out int InOrOut, out int[] MoreEdges)
+
                 //number of nodes in 1d for level set interpolation = degree + 1
                 int n = (lsData.LevelSet as LevelSet).Basis.Degree + 1;
 
@@ -523,7 +534,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 
                 // Transform edge based coordinates to cell based coordinates (to query level sets)
                 MultidimensionalArray combinations  = MultidimensionalArray.Create(numberOfCombinations, spaceDim);  // to transform edge coordinates to cell, create an array in the original space dim
-				RefElement.TransformFaceCoordinates(edgeIndex, combinationsOnEdge, combinations);
+				RefElement.TransformFaceCoordinates(faceIndex, combinationsOnEdge, combinations);
 
 				NodeSet NS = new NodeSet(RefElement, combinations, false);
                 var ret = lsData.GetLevSetValues(NS, jCell, 1);
@@ -554,7 +565,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 				QuadRule quadRuleOnEdge = QuadRule.CreateBlank(RefElement.FaceRefElement, qs.length, qs.dimension);
 
                 for (int row = 0; row < qs.length; row++) {
-                    quadRuleOnEdge.Weights[row] = qs.weights[row];
+                    quadRuleOnEdge.Weights[row] = qs.weights[row]; // * (1.0 / scalings[])
 
                     for (int d = 0; d < qs.dimension; d++) { // map 1d array back to 2d
                         int ind = row * qs.dimension + d;
@@ -565,7 +576,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 				// Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
 				CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
                 quadRule.Weights = quadRuleOnEdge.Weights;
-                RefElement.TransformFaceCoordinates(edgeIndex, quadRuleOnEdge.Nodes, quadRule.Nodes); // to transform edge rule back to cell coordinates (since we are creating CellBoundaryQuadRule, cell based rule)
+                RefElement.TransformFaceCoordinates(faceIndex, quadRuleOnEdge.Nodes, quadRule.Nodes); // to transform edge rule back to cell coordinates (since we are creating CellBoundaryQuadRule, cell based rule)
 				quadRule.Nodes.LockForever();
 
                 //if(useMetrics) {

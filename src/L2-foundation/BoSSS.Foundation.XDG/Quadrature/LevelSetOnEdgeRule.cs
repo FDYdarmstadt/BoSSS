@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             // determine whether this cell is 
             // inside or outside 
             // w.r.t. the edge that corresponds with face 
-            int iEdge = grddat.Cells.GetEdgesForFace(jCell, SpecialFace, out int InOrOut, out int[] FurtherEdges);
+            int iEdge = grddat.GetEdgesForFace(jCell, SpecialFace, out int InOrOut, out int[] FurtherEdges);
             if (FurtherEdges != null && FurtherEdges.Length > 0) {
                 // throw new NotSupportedException("Hanging node on a edge which coincides with the level set - this should be avoided.");
                 // Console.WriteLine("Hanging node on a edge which coincides with the level set - this should be avoided.");
@@ -126,7 +126,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 VolumeNodes.LockForever();
 
                 double gTrF = refElement.FaceTrafoGramianSqrt[SpecialFace];
-                var metrics = this.levelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(VolumeNodes, jCell, 1);
+                //var metrics = this.levelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(VolumeNodes, jCell, 1);
 
                 QuadRule qr_l = new QuadRule() {
                     OrderOfPrecision = intOrder,
@@ -135,7 +135,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 };
 
                 for (int k = 0; k < K; k++) {
-                    qr_l.Weights[k] = FaceRule.Weights[k] * gTrF / metrics[0, k];
+                    qr_l.Weights[k] = FaceRule.Weights[k] * gTrF;// / metrics[0, k];
                 }
 
                 surfaceRule = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);

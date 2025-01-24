@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Data, e.g. level set gradients, 
         /// constant during object lifetime. 
-        /// - index: lecel set index
+        /// - index: level set index
         /// </summary>
         public IList<LevelSetTracker.LevelSetData> LevelSetData {
             get {

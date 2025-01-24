@@ -13,7 +13,13 @@ namespace BoSSS.Foundation.Quadrature {
     /// integration metric for area integrals on cell boundaries
     /// </summary>
     public class CellBoundaryIntegrationMetric : IIntegrationMetric {
-        
+
+        /// <summary>
+        /// For cell boundaries, the scaling is constant for each face of the cell for linear elements, therefore always false;
+        /// c.f. <see cref="IIntegrationMetric.AlwaysUsePerNodeScaling"/>;
+        /// </summary>
+        public bool AlwaysUsePerNodeScaling => false;
+
 
         /// <summary>
         /// integration metrics for linear mapped cells

@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections;
@@ -1191,9 +1192,72 @@ namespace BoSSS.Foundation.Grid {
             return ret.ExtractSubArrayShallow(0, -1, -1);
         }
 
+        
+
+        /// <summary>
+        /// Finds all edges for a specific face of a cell
+        /// </summary>
+        /// <param name="jCellGeom">geometrical cell index</param>
+        /// <param name="iFace">face index (<see cref="BoSSS.Foundation.Grid.RefElements.RefElement.NoOfFaces"/>)</param>
+        /// <param name="InOrOut">
+        /// - 0 if <paramref name="jCellGeom"/> is the IN-cell w.r.t. the found edge
+        /// - 1 if <paramref name="jCellGeom"/> is the OUT-cell w.r.t. the found edge
+        /// </param>
+        /// <param name="MoreEdges">
+        /// Only used for hanging nodes:
+        /// If there is more than one edge on the face, the indices of all edges in addition to the return value
+        /// </param>
+        /// <param name="m_owner"></param>
+        /// <returns>
+        /// the first found edge on the face; if there are no hanging node, this is typically the only edge.
+        /// </returns>
+        public static int GetEdgesForFace(this IGridData m_owner, int jCellGeom, int iFace, out int InOrOut, out int[] MoreEdges) {
+
+            
+            int jCell = m_owner.iGeomCells?.GeomCell2LogicalCell?[jCellGeom] ?? jCellGeom;
+            int[] CellToEdges = m_owner.iLogicalCells.Cells2Edges[jCell];
+            var iEdgeLog2iEdgeGeom = m_owner.iLogicalEdges.EdgeToParts;
+
+            
+            int[,] E2C = m_owner.iGeomEdges.CellIndices;
+            byte[,] E2F = m_owner.iGeomEdges.FaceIndices; // edge -> face1, face2
+
+            if(iFace < 0 || iFace >= m_owner.iGeomCells.GetRefElement(jCellGeom).NoOfFaces)
+                throw new ArgumentException("Face index out ouf range.");
+
+            int Ret = -1;
+            int[] _MoreEdges = null;
+            int L = CellToEdges.Length;
+            InOrOut = -1;
+            for(int l = 0; l < L; l++) { // loop over potential edges
+                int iEdgeLog = Math.Abs(CellToEdges[l]) - 1;
+
+                foreach(int iEdge in iEdgeLog2iEdgeGeom?[iEdgeLog] ?? new int[] { iEdgeLog }) {
+
+
+                    int __InOut = CellToEdges[l] > 0 ? 0 : 1;
+
+                    if(E2F[iEdge, __InOut] == iFace) {
+                        Debug.Assert(m_owner.iGeomEdges.CellIndices[iEdge, __InOut] == jCellGeom);
+
+                        if(Ret < 0) {
+                            Ret = iEdge;
+                            InOrOut = __InOut;
+                        } else {
+                            iEdge.AddToArray(ref _MoreEdges);
+                        }
+                    }
+                }
+            }
+
+            MoreEdges = _MoreEdges;
+            return Ret;
+        }
+
 
     }
-
+        
+        
     /// <summary>
     /// used by <see cref="IGridData_Extensions.GetCellNeighbours(IGridData, int, GetCellNeighbours_Mode, out int[], out int[])"/>.
     /// </summary>

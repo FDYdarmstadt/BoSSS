@@ -903,6 +903,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 internal set;
             }
 
+            /*
+
             /// <summary>
             /// Finds all edges for a specific face of a cell
             /// </summary>
@@ -951,7 +953,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 return Ret;
             }
 
-
+            */
 
             /// <summary>
             /// Since each cell is already elementary (i.e. it maps to one reference element)

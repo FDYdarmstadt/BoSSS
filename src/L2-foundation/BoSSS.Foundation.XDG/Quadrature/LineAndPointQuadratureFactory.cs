@@ -426,7 +426,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     double[][] subdivisions = new double[referenceLineSegments.Length][]; // collect the endpoint of edges for additional subdivisions of the subsegment in a different array, to not mess up the point measures
                     for (int e = 0; e < referenceLineSegments.Length; e++) {
                         // check if line segment (i.e. face) contains hanging nodes
-                        int edg = grdDat.Cells.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
+                        int edg = grdDat.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
                         var rootList = _roots[e].ToList();
                         if (!FurtherEdges.IsNullOrEmpty()) {
                             // if so add an additional (artificial) roots at the hanging nodes
@@ -1211,16 +1211,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (!EdgeData.IsEdgeConformal(iEdge, _inOut)) {
                     // compute new scaling for non-conforming edges
 
-                    double scaling = EdgeData.GetSqrtGramianForNonConformEdge(iEdge, _inOut);
+                    //double scaling = EdgeData.GetSqrtGramianForNonConformEdge(iEdge, _inOut);
 
                     for (int l = 0; l < roots.Length; l++) {
-                        PtMeas_weights.Add(1.0 / scaling);
+                        PtMeas_weights.Add(1.0);// / scaling);
                     }
 
                 } else {
                     // use standard scaling of the edges
                     for (int l = 0; l < roots.Length; l++) {
-                        PtMeas_weights.Add(1.0 / scalings[iEdge]);
+                        PtMeas_weights.Add(1.0);// / scalings[iEdge]);
                     }
                 }
             }

@@ -563,18 +563,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // EvalResult[i,k,n,m,d] = BasisValues[i,k,n]*BasisValues[i,k,m]*Normals[i,k,d]
                             EvalResult.Multiply(NormalSign, BasisValues, BasisValues, Normals, 0.0, "iknmd", "kn", "km", "ikd");
 
-                            var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(QR.Nodes, i0, Length);
-                            for (int i = 0; i < Length; i++) {
-                                for (int k = 0; k < NoOfNodes; k++) {
+                            //var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(QR.Nodes, i0, Length);
+                            //for (int i = 0; i < Length; i++) {
+                            //    for (int k = 0; k < NoOfNodes; k++) {
 
-                                    double magic_number = metrics[i, k];
+                            //        double magic_number = metrics[i, k];
 
 
-                                    var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1, -1);
-                                    EV_ik.Scale(magic_number);
-                                }
+                            //        var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1, -1);
+                            //        EV_ik.Scale(magic_number);
+                            //    }
 
-                            }
+                            //}
                         } else
                             throw new NotImplementedException();
 
@@ -901,18 +901,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
 
-                            var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(NS, i0, Length);
-                            for (int i = 0; i < Length; i++) {
-                                for (int k = 0; k < NoOfNodes; k++) {
+                            //var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(NS, i0, Length);
+                            //for (int i = 0; i < Length; i++) {
+                            //    for (int k = 0; k < NoOfNodes; k++) {
 
-                                    double magic_number = metrics[i, k];
+                            //        double magic_number = metrics[i, k];
 
 
-                                    var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1);
-                                    EV_ik.Scale(magic_number);
-                                }
+                            //        var EV_ik = EvalResult.ExtractSubArrayShallow(i, k, -1, -1);
+                            //        EV_ik.Scale(magic_number);
+                            //    }
 
-                            }
+                            //}
 
                         } else
                             throw new NotImplementedException();

@@ -108,13 +108,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
             weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
 
-            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
-            //Scale weight
-            if (IsScalingMatrix(jacobian)) {
-                weight /= jacobian[heightDirection, heightDirection];
-            } else {
-                throw new NotImplementedException("To do");
-            }
+            //MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
+            ////Scale weight
+            //if (IsScalingMatrix(jacobian)) {
+            //    //weight /= jacobian[heightDirection, heightDirection];
+            //} else {
+            //    throw new NotImplementedException("To do");
+            //}
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);

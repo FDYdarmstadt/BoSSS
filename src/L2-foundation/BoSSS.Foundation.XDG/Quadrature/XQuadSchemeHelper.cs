@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG.Quadrature;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using ilPSP;
 using System;
@@ -210,7 +211,9 @@ namespace BoSSS.Foundation.XDG {
             //if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
             //    allRelevantEdges = allRelevantEdges.Except(AggEdges);
 
-            var edgeQrIns = new EdgeQuadratureScheme(false, allRelevantEdges);
+            var edgeQrIns = new EdgeQuadratureScheme(
+                scaling: new SurfaceElementEdgeIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),
+                UseDefaultFactories:false, domain: allRelevantEdges);
 
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 //for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
@@ -258,7 +261,9 @@ namespace BoSSS.Foundation.XDG {
             var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
             var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).Intersect(spdom);
 
-            var LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
+            var LevSetQrIns = new CellQuadratureScheme(
+                scaling: new LevelSetIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),
+                UseDefaultFactories:false, domain:IntegrationDom);
 
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 //for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
@@ -809,7 +814,9 @@ namespace BoSSS.Foundation.XDG {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
 
-            CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
+            CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(
+                scaling: new LevelSetIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),
+                UseDefaultFactories: false, domain: IntegrationDom);
 
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
@@ -823,7 +830,10 @@ namespace BoSSS.Foundation.XDG {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
 
-            CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
+            CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(
+                scaling: new LevelSetIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),
+                UseDefaultFactories: false, domain: IntegrationDom);
+            
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
 

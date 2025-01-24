@@ -13,6 +13,11 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public class CellIntegrationMetric : IIntegrationMetric {
 
+        /// <summary>
+        /// For cell volumes, the scaling is constant within the cell for linear elements, therefore always false;
+        /// c.f. <see cref="IIntegrationMetric.AlwaysUsePerNodeScaling"/>;
+        /// </summary>
+        public bool AlwaysUsePerNodeScaling => false;
 
 
         /// <summary>

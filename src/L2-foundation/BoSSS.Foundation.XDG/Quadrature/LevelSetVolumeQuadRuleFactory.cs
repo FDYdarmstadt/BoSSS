@@ -973,8 +973,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 int NoOfNodes = QuadNodes.NoOfNodes;
                 
                 MultidimensionalArray levelSetNormals = owner.LevelSetData.GetLevelSetReferenceNormals(QuadNodes, i0, Length);
-                MultidimensionalArray metrics = owner.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(
-                    QuadNodes, i0, Length);
+                //MultidimensionalArray metrics = owner.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(
+                //    QuadNodes, i0, Length);
 
                 for (int i = 0; i < Length; i++) {
                     MultidimensionalArray lambdaValues = owner.EvaluateLambdas(i0 + i, QuadNodes);
@@ -985,7 +985,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 EvalResult[i, j, k] += lambdaValues[j, k, d] * levelSetNormals[i, j, d];
                             }
 
-                            EvalResult[i, j, k] *= metrics[i, j];
+                            //EvalResult[i, j, k] *= metrics[i, j];
                         }
                     }
                 }

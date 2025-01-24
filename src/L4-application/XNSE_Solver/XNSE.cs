@@ -75,7 +75,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            args = new string[] { "1" };
+            //args = new string[] { "1" };
             bool bAlgoim = false;
             if(args.Length > 0)
                 bAlgoim = int.Parse(args[0]) == 1;
@@ -89,7 +89,7 @@ namespace BoSSS.Application.XNSE_Solver {
                0.0d,
                ViscosityMode.FullySymmetric,
                0.0, false, 
-               bAlgoim ? CutCellQuadratureMethod.Algoim : CutCellQuadratureMethod.Saye,
+               bAlgoim ? CutCellQuadratureMethod.Algoim : CutCellQuadratureMethod.Algoim,
                NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest_p2_Standard_Algoim();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(3, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Algoim, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
@@ -146,7 +146,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </remarks>
         override public int QuadOrder() {
             if(Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim
-               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes) {
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes
+
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.Classic
+               ) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
                     $"{CutCellQuadratureMethod.Saye}, {CutCellQuadratureMethod.Algoim} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
@@ -158,18 +161,18 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             
             if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye 
-                || Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
+                //|| Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
                 ) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
             }
 
-            if( Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
-                ) {
-                //See remarks
-                quadOrder = 5;
-            }
+            //if( Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
+            //    ) {
+            //    //See remarks
+            //    quadOrder = 5;
+            //}
 
 
             return quadOrder;

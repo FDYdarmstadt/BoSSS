@@ -13,8 +13,14 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public class EdgeIntegrationMetric : IIntegrationMetric {
 
+        /// <summary>
+        /// For edges, the scaling is constant within the edge for linear elements, therefore always false;
+        /// c.f. <see cref="IIntegrationMetric.AlwaysUsePerNodeScaling"/>;
+        /// </summary>
+        public bool AlwaysUsePerNodeScaling => false;
 
-      /// <summary>
+
+        /// <summary>
         /// the square root of the Gramian determinant
         /// </summary>
         public MultidimensionalArray GetScalingsForLinearElements(IGridData gridData, QuadRule qr, int i0, int L) {

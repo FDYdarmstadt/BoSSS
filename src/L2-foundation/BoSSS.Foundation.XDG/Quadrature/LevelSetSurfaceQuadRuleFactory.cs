@@ -501,18 +501,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 MultidimensionalArray phis = EvaluatePhis(i0, length, nodes);
                 MultidimensionalArray normals =
                     LevelSetData.GetLevelSetReferenceNormals(nodes, i0, length);
-                MultidimensionalArray metrics =
-                    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, i0, length);
+                //MultidimensionalArray metrics =
+                //    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, i0, length);
 
-                if (!phis.IsContinuous || !quadResults.IsContinuous || !normals.IsContinuous || !metrics.IsContinuous) {
+                if (!phis.IsContinuous || !quadResults.IsContinuous || !normals.IsContinuous) {
                     throw new NotImplementedException(
                         String.Format(
                             "This method assumes that all input arrays have a continuous memory layout, but we have"
-                                + " phis.IsContinuous={0}, quadResults.IsContinuous={1}, normals.IsContinuous={2}, metrics.IsContinuous={3}",
+                                + " phis.IsContinuous={0}, quadResults.IsContinuous={1}, normals.IsContinuous={2}",
                             phis.IsContinuous,
                             quadResults.IsContinuous,
-                            normals.IsContinuous,
-                            metrics.IsContinuous));
+                            normals.IsContinuous));
                 }
 
                 // Additional space required by Fortran routine
@@ -530,8 +529,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         pMatrix = &matrix[0],
                         pQuad = &quadResults.Storage[0],
                         pPhis = &phis.Storage[0],
-                        pNormals = &normals.Storage[0],
-                        pMetrics = &metrics.Storage[0]) {
+                        pNormals = &normals.Storage[0]//, pMetrics = &metrics.Storage[0]
+                        ) {
 
                         for (int i = 0; i < length; i++) {
                             int cell = i0 + i;
@@ -582,9 +581,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             double maxWeight = 0.0;
                             pRhsCur = pRhs;
-                            double* pMetricsCur = pMetrics + metrics.Index(i, 0);
+                            //double* pMetricsCur = pMetrics + metrics.Index(i, 0);
                             for (int j = 0; j < noOfNodes; j++) {
-                                optimizedRule.Weights[j] = *(pRhsCur++) / *(pMetricsCur++);
+                                optimizedRule.Weights[j] = *(pRhsCur++);// / *(pMetricsCur++);
                                 maxWeight = Math.Max(optimizedRule.Weights[j].Abs(), maxWeight);
                             }
 
@@ -628,8 +627,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 MultidimensionalArray phis = EvaluatePhis(jCell, nodes);
                 MultidimensionalArray normals =
                     LevelSetData.GetLevelSetReferenceNormals(nodes, jCell, 1);
-                MultidimensionalArray metrics =
-                    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, jCell, 1);
+                //MultidimensionalArray metrics =
+                //    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, jCell, 1);
 
                 // Additional space required by Fortran routine
                 double[] rhs = new double[Math.Max(noOfNodes, noOfPhis)];
@@ -679,7 +678,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 };
 
                 for (int j = 0; j < noOfNodes; j++) {
-                    optimizedRule.Weights[j] = rhs[j] / metrics[0, j];
+                    optimizedRule.Weights[j] = rhs[j];// / metrics[0, j];
                 }
 
                 double max = optimizedRule.Weights.Max(d => d.Abs());

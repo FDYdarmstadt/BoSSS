@@ -552,7 +552,7 @@ namespace ilPSP.Utils {
                     ret = new QuadScheme {
                             dimension = dim - 1,
                             length = 1,
-                            weights = new[] { 2.0 }, //all should be same except the pseudo axis
+                            weights = new[] { 1.0 }, //all should be same except the pseudo axis
                             nodes = new[] { retPseudo.nodes[0] } //use the first as all should be same except the pseudo axis
                         };
                 } else {

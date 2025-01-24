@@ -47,12 +47,6 @@ using System.ComponentModel;
 
 namespace BoSSS.Application.SipPoisson {
 
-
-    static class  BoSSSmkl {
-        
-    }
-
-
     /// <summary>
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
     /// </summary>

@@ -357,7 +357,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     else
                     {
                         int iFace = detector.GetSpecialFace(i);
-                        int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+                        int iEdge = singleMask.GridData.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
 
                         int J = ((GridData)singleMask.GridData).Cells.NoOfLocalUpdatedCells;
                         int OtherCell = ((GridData)singleMask.GridData).Edges.CellIndices[iEdge, InOrOut == 0 ? 1 : 0];
@@ -423,7 +423,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             // determine face
             int iFace = detector.GetSpecialFace(i);
-            int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+            int iEdge = singleMask.GridData.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
             // select all edges, relevant in cells with hanging nodes
             singleMask = new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
             if (FurtherEdges != null)

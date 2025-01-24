@@ -369,7 +369,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             __RHS.Multiply(-1.0, __Mtx, X, 1.0, "j", "jk", "k");
                             double L2_ERR = __RHS.L2Norm();
                             if (L2_ERR > 1.0e-7) {
-                                Console.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
+                                Console.Error.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
                                 //throw new ApplicationException("Quadrature rule in cell " + jCell + " seems to be not very precise: L2_ERR = " + L2_ERR);
                             }
                         }
@@ -940,7 +940,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             __RHS.Multiply(-1.0, __Mtx, X, 1.0, "j", "jk", "k");
                             double L2_ERR = __RHS.L2Norm();
                             if (L2_ERR > 1.0e-7) {
-                                Console.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
+                                Console.Error.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
                                 //throw new ApplicationException("Quadrature rule in cell " + jCell + " seems to be not very precise: L2_ERR = " + L2_ERR);
                             }
                         }

@@ -34,6 +34,14 @@ namespace BoSSS.Foundation.Quadrature {
         /// </returns>        
         MultidimensionalArray GetScalingsForLinearElements(IGridData gridData, QuadRule qr, int i0, int L);
 
+
+        /// <summary>
+        /// If true, the integration metric is non-constant within a cell, therefore always the <see cref="GetScalingsForNonlinElements"/> method will be used.
+        /// This is the case e.g. for integrating over the level-set in XDG.
+        /// </summary>
+        bool AlwaysUsePerNodeScaling { get; }
+
+
         /// <summary>
         /// Provides integration metric factors for edges or cells, 
         /// where the transformation from the reference to the physical domain is nonlinear (and also not affine-linear).

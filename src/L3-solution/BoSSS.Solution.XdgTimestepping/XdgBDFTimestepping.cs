@@ -1583,14 +1583,30 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
 
+                    foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.InterfaceArea) {
+                        var name = $"InterfaceArea-{m_LsTrk.GetSpeciesName(kv.Key)}-{m_LsTrk.CutCellQuadratureType}.txt";
+                        var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
+                        vals.SaveToTextFile(name);
+                    }
+
+                    foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
+                        var name = $"CutEdge-{m_LsTrk.GetSpeciesName(kv.Key)}-{m_LsTrk.CutCellQuadratureType}.txt";
+                        var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
+                        vals.SaveToTextFile(name);
+
+                    }
+
+                    foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutCellVolumes) {
+                        var name = $"CutCellVolumes-{m_LsTrk.GetSpeciesName(kv.Key)}-{m_LsTrk.CutCellQuadratureType}.txt";
+                        var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
+                        vals.SaveToTextFile(name);
+
+                    }
+
                     if(m_LsTrk.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                         base.Residuals.SaveToTextFile("resisuals.txt");
 
-                        foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
-                            var name = $"CutEdge-{m_LsTrk.GetSpeciesName(kv.Key)}.txt";
-                            var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
-                            vals.SaveToTextFile(name);
-                        }
+                        
 
 
                     } else {
@@ -1624,12 +1640,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
 
-                        foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
-                            var name = $"CutEdge-{m_LsTrk.GetSpeciesName(kv.Key)}.txt";
-                            var refv = VectorIO.LoadFromTextFile(name);
-                            var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
-                            Console.WriteLine($"--------------  edg{m_LsTrk.GetSpeciesName(kv.Key)} dist: " + refv.L2Distance(vals));
-                        }
+                     
 
 
 
