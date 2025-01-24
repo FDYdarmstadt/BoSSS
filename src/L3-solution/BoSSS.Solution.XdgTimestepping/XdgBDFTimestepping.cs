@@ -1583,6 +1583,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
 
+                    /* 
                     foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.InterfaceArea) {
                         var name = $"InterfaceArea-{m_LsTrk.GetSpeciesName(kv.Key)}-{m_LsTrk.CutCellQuadratureType}.txt";
                         var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
@@ -1638,13 +1639,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         }
 
-
-
-                     
-
-
-
                     }
+                    */
 
                     success = true;
 

@@ -1777,13 +1777,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
         void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
-            if(SignalTemp.b && i0 <= 16 && 16 < i0 + Length) {
-                Console.Write($"Edge integration {i0}-{i0+Length}: Nodes: " + qr.Nodes.ExtractSubArrayShallow(-1, 0).To1DArray().ToConcatString("[", ", ", "]"));
-                Console.WriteLine($" " + qr.Weights.To1DArray().ToConcatString("[", ", ", "]"));
-            }
-
-
-
             m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
         }
 
