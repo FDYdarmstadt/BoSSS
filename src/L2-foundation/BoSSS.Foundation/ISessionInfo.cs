@@ -85,6 +85,14 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Number of thread per MPI rank in MPI_COMM_WORLD communicator;
+        /// </summary>
+        int ThreadPerMPIRank
+        {
+            get;
+        }
+
+        /// <summary>
         /// If true, the session was successful terminated; if not it is either running, or the simulation may has crashed.
         /// </summary>
         bool SuccessfulTermination {

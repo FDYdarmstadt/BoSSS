@@ -24,6 +24,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -76,6 +77,61 @@ namespace BoSSS.Solution {
                 if (!base.Equals(obj))
                     return false;
                 if (!m_EdgeTags.SetEquals((obj as AMRonBoundary)?.m_EdgeTags))
+                    return false;
+                return true;
+            }
+
+            public override int GetHashCode() {
+                return base.GetHashCode();
+            }
+        }
+
+        /// <summary>
+        /// refinement on cells which are on the specified boundary
+        /// </summary>
+        [Serializable]
+        public class AMRonSingleBoundary : AMRLevelIndicator {
+
+            [DataMember]
+            public byte EdgeTag;
+
+            public AMRonSingleBoundary(byte EdgeTag) {
+                this.EdgeTag = EdgeTag;
+            }
+
+            public override int[] DesiredCellChanges() {
+
+                int J = GridData.CellPartitioning.LocalLength;
+                int[] levels = new int[J];
+                int cellsToRefine = 0;
+                int cellsToCoarse = 0;
+                Cell[] cells = GridData.Grid.Cells;
+                for (int j = 0; j < J; j++) {
+                    int[] edges = GridData.Cells.Cells2Edges[j];
+                    int currentLevel = cells[j].RefinementLevel;
+
+                    bool refine = false;
+                    foreach (int edge in edges) {
+                        if (EdgeTag == GridData.Edges.EdgeTags[Math.Abs(edge) - 1])
+                            refine = true;
+                    }
+
+                    if (refine && currentLevel < maxRefinementLevel) {
+                        levels[j] = 1;
+                        cellsToRefine++;
+                    } else if (!refine && currentLevel > 0) {
+                        levels[j] = -1;
+                        cellsToCoarse++;
+                    }
+                }
+
+                return levels;
+            }
+
+            public override bool Equals(object obj) {
+                if (!base.Equals(obj))
+                    return false;
+                if (!EdgeTag.Equals((obj as AMRonSingleBoundary)?.EdgeTag))
                     return false;
                 return true;
             }

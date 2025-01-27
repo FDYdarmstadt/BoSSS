@@ -529,7 +529,7 @@ namespace BoSSS.Application.BoSSSpad {
             return ret;
         }
 
-
+       
         /// <summary>
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
@@ -561,7 +561,7 @@ namespace BoSSS.Application.BoSSSpad {
                     for (int i = 0; i < parts.Length; i++) {
                         if (parts[i].Equals("id:", StringComparison.InvariantCultureIgnoreCase))
                             id = int.Parse(parts[i + 1]);
-
+                            
                     }
                     //Console.WriteLine(ret);
                 }
@@ -819,6 +819,16 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 return m_AdditionalEnvironmentVars;
             }
+        }
+
+
+        /// <summary>
+        /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
+        /// </summary>
+        /// <param name="xmlFilePath"></param>
+        /// <returns></returns>
+        public (int exitcode, string stdOut, string stdErr) SubmitProcess(string xmlFilePath) {
+            return this.ExecuteProcess("job.exe", $"submit /jobfile:\"{xmlFilePath}\" {this.GetLoginArg()}", 60000);
         }
 
 

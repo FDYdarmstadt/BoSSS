@@ -133,6 +133,9 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         }
 
         double R => 0.9;
+
+        public double theta_e => throw new NotImplementedException();
+
         public Func<double[], double, double> GetPhi() {
             return (X, t) => -X[1];
         }

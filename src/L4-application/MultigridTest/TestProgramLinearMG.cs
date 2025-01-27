@@ -161,7 +161,7 @@ namespace BoSSS.Application.MultigridTest {
                 Err += JumpNorm(Test, CompCellSubGrid.InnerEdgesMask).Pow2();
             }
 
-            //Console.WriteLine("Jump norm of random prolongation: {0}", Err);
+            Console.WriteLine("Jump norm of random prolongation: {0}", Err);
             //Debug.Assert(Err < 1.0e-10);
             Assert.Less(Err, 1.0e-10);
 
