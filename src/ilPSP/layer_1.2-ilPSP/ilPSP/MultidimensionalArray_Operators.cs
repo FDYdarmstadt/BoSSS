@@ -54,5 +54,23 @@ namespace ilPSP {
             return R;
         }
 
+        /// <summary>
+        /// multiplication with a scalar of two arrays
+        /// </summary>
+        static public MultidimensionalArray operator *(double alpha, MultidimensionalArray B) {
+            var R = B.CloneAs();
+            R.Scale(alpha);
+            return R;
+        }
+
+        /// <summary>
+        /// multiplication with a scalar of two arrays
+        /// </summary>
+        static public MultidimensionalArray operator *(MultidimensionalArray B, double alpha) {
+            var R = B.CloneAs();
+            R.Scale(alpha);
+            return R;
+        }
+
     }
 }
