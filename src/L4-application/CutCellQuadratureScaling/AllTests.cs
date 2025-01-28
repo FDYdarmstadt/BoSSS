@@ -105,7 +105,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.Init();
                     Test.RunSolverMode();
 
+                    Test.CompareCutLineTo2D(Ref);
                     Test.CompareSurfaceTo2D(Ref);
+                    Test.CompareVolumeTo2D(Ref);
                 }
 
             }

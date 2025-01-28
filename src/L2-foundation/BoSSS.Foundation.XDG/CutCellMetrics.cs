@@ -522,7 +522,7 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }).Execute();
 
-                    {
+                    /*{
 
                         // visualization of edge surface
 
@@ -543,7 +543,7 @@ namespace BoSSS.Foundation.XDG {
                             );
 
 
-                    }
+                    }*/
 
 
                     // sum up edges for surface

@@ -24,14 +24,16 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye;
-        static int order = 7;
+        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Classic;
+        static int order = 3;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
-            
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(order, quadratureType);
+
+
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -494,7 +496,21 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
-                
+
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
+                    if(this.CutCellQuadratureOrder <= 3) {
+                        return 1e-1;
+                    } else if(this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 8e-5;
+                    } else if(this.CutCellQuadratureOrder <= 9) {
+                        return 3e-6;
+                    } else {
+                        return 4e-7;
+                    }
+                }
+
 
                 return base.threshold_totSurface;
             }
@@ -527,7 +543,19 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
-                
+
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
+                    if(this.CutCellQuadratureOrder <= 4) {
+                        return 4e-2;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 3e-5;
+                    } else if(this.CutCellQuadratureOrder <= 9) {
+                        return 4e-6;
+                    } else {
+                        return 3e-8;
+                    }
+                }
+
 
 
                 return base.threshold_totVolume;
@@ -568,8 +596,16 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
         public void CompareSurfaceTo2D(TestSetupSingleLevset2D othr) {
-            
+            CompareTo2D("Level Set Surface", othr, test => test.latestCCM.InterfaceArea, -1);
+        }
+        public void CompareCutLineTo2D(TestSetupSingleLevset2D othr) {
+            CompareTo2D("Cut Line Length", othr, test => test.latestCCM.CutLineLength, -2);
+        }
+        public void CompareVolumeTo2D(TestSetupSingleLevset2D othr) {
+            CompareTo2D("Level Set Volume", othr, test => test.latestCCM.CutCellVolumes, 0);
+        }
 
+        private void CompareTo2D(string name, TestSetupSingleLevset2D othr, Func<TestSetupBase, IDictionary<SpeciesId, MultidimensionalArray>> propertySelector, int ScalingExponent) {
             double D = othr.Grid.SpatialDimension;
             if(D != 2)
                 throw new ApplicationException();
@@ -578,16 +614,16 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 var SpcId_this = this.LsTrk.GetSpeciesId(Species);
                 var SpcId_othr = othr.LsTrk.GetSpeciesId(Species);
 
-                var totArea_this = this.latestCCM.InterfaceArea[SpcId_this].Sum() / (zWidht * MeshScaling);
-                var totArea_othr = othr.latestCCM.InterfaceArea[SpcId_othr].Sum();
+                var totArea_this = propertySelector(this)[SpcId_this].Sum() / (zWidht * MeshScaling);
+                var totArea_othr = propertySelector(othr)[SpcId_othr].Sum();
 
-                double absErr = (totArea_othr * (this.MeshScaling.Pow(D - 1)) - totArea_this * (othr.MeshScaling.Pow(D - 1))).Abs();
+                double absErr = (totArea_othr * (this.MeshScaling.Pow(D - ScalingExponent)) - totArea_this * (othr.MeshScaling.Pow(D - ScalingExponent))).Abs();
                 double relErr = absErr / (totArea_this.Abs() + totArea_othr.Abs());
 
-                Console.WriteLine($"Level Set Surface, species {Species} absolute error : {absErr:g7}");
-                Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
+                Console.WriteLine($"{name}, species {Species} absolute error : {absErr:g7}");
+                Console.WriteLine($"{name}, species {Species} relative error : {relErr:g7}");
 
-                Assert.Less(relErr, threshold_2dvs3d, $"relative surface error above threshold for species {Species}");
+                Assert.Less(relErr, threshold_2dvs3d, $"relative {name} error above threshold for species {Species}");
             }
         }
     }
