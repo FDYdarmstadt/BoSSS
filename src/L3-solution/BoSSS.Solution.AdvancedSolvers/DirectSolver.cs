@@ -172,8 +172,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var MgMap = op.DgMapping;
                 MatrixNMapping = op;
 
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
-                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration Mtx may not be initialized
+					throw new ArgumentException("Row partitioning mismatch.");
                 if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
@@ -460,7 +460,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(m_Solver != null)
                 m_Solver.Dispose();
             m_Solver = null;
-            this.m_Mtx = null;
+			this.MatrixNMapping = null;
+			this.m_Mtx = null;
         }
 
         public long UsedMemory() {

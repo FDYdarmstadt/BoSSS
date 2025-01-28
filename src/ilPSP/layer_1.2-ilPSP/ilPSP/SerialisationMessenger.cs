@@ -538,7 +538,7 @@ namespace ilPSP.Utils {
             m_ReceiveObjectSizesPin = GCHandle.Alloc(m_ReceiveObjectSizes,GCHandleType.Pinned);
 
             for( int p = 0; p < m_Size; p++) {
-                if (m_AllCommPaths[p, m_Rank] != 0) {
+                if (m_AllCommPaths[p, m_Rank] != 0) { //[Toprak]: information of the size about the message can be obtained via envelop of the actual message instead of transfer below info
                     csMPI.Raw.Irecv(Marshal.UnsafeAddrOfPinnedArrayElement(m_ReceiveObjectSizes,p),
                                  sizeof(int), csMPI.Raw._DATATYPE.BYTE,
                                  p, TagBufferSize + m_MyTagOffset,
