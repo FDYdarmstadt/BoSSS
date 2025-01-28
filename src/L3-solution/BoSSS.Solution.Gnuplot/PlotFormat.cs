@@ -285,7 +285,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// Cloning and setting <see cref="LineWidth"/>.
         /// </summary>
         public PlotFormat WithLineWidth(double lineWidth) {
-            return new PlotFormat(baseLineFormat: this, lineWidth: LineWidth);
+            return new PlotFormat(baseLineFormat: this, lineWidth: lineWidth);
         }
 
         /// <summary>
