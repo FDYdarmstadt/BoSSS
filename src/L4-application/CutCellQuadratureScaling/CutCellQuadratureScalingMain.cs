@@ -341,6 +341,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 if (QuadratureType == XQuadFactoryHelperBase.MomentFittingVariants.OneStepGauss) {
                     if (this.CutCellQuadratureOrder <= 4) {
                         return 3e-3;
+                    } else if (this.CutCellQuadratureOrder <= 6) {
+                        return 4e-5;
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
                     } else {
