@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using ilPSP.Utils;
 using BoSSS.Foundation;
@@ -13,7 +15,6 @@ using ilPSP;
 using BoSSS.Solution.Tecplot;
 using System.Diagnostics;
 using NUnit.Framework;
-using MathNet.Numerics;
 
 
 namespace BoSSS.Application.CutCellQuadratureScaling {
@@ -29,8 +30,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
-            AllTests.OneLevelSet_2Dvs3D(order, quadratureType);
-
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -61,8 +61,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         public readonly double MeshScaling = 1.0;
         public readonly int CutCellQuadratureOrder = 2;
-        public readonly CutCellQuadratureMethod QuadratureType = CutCellQuadratureMethod.Saye;
 
+        public readonly CutCellQuadratureMethod QuadratureType = CutCellQuadratureMethod.Saye;
         
         internal CutCellMetrics latestCCM;
 
@@ -72,6 +72,72 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             return -1;
         }
 
+        virtual protected double threshold_scaling {
+            get {
+                return 1.0e-10;
+            }
+        }
+
+
+        /// <summary>
+        /// Total volume for each species, for <see cref="MeshScaling"/> equal to 1
+        /// - key: species index
+        /// - value: value of the integral over all cells
+        /// </summary>
+        protected Dictionary<string, double> TotalIntegral_Volume4Species  = new Dictionary<string, double>();
+
+        virtual protected double threshold_totVolume {
+            get {
+                return 1.0e-10;
+            }
+        }
+
+
+        /// <summary>
+        /// Total surface for each species, for <see cref="MeshScaling"/> equal to 1
+        /// - key: species index
+        /// - value: value of the integral over all cells
+        /// </summary>
+        protected Dictionary<string, double> TotalIntegral_SurfaceSpecies = new Dictionary<string, double>();
+
+        virtual protected double threshold_totSurface {
+            get {
+                return 1.0e-10;
+            }
+        }
+
+        /// <summary>
+        /// verifies that the total volume (cut-cell-volume summed over all cells) is correct
+        /// </summary>
+        public void CompareTotalVolume() {
+            double D = this.Grid.SpatialDimension;
+            CompareTotal("Cut Cell volume", this.TotalIntegral_Volume4Species, spcId => this.latestCCM.CutCellVolumes[spcId].Sum(), threshold_totVolume, this.MeshScaling.Pow(D));
+        }
+
+        /// <summary>
+        /// verifies that the total volume (cut-cell-volume summed over all cells) is correct
+        /// </summary>
+        public void CompareTotalSurface() {
+            double D = this.Grid.SpatialDimension;
+            CompareTotal("Cut Cell surface", this.TotalIntegral_SurfaceSpecies, spcId => this.latestCCM.InterfaceArea[spcId].Sum(), threshold_totSurface, this.MeshScaling.Pow(D - 1));
+        }
+
+        private void CompareTotal(string name, IDictionary<string,double> refDict, Func<SpeciesId, double> getVal, double __threshold, double scaling_D) {
+            foreach (var Species in refDict.Keys) {
+                var SpcId_this = this.LsTrk.GetSpeciesId(Species);
+
+
+                double Vol_this = getVal(SpcId_this);
+
+                double Vol_err = (refDict[Species] - Vol_this/scaling_D).Abs();
+
+
+                Console.WriteLine($"{name}, species {Species} absolute error : {Vol_err:g7}");
+                Console.WriteLine($"      reference value: {Vol_this/scaling_D:g7}   actual result {refDict[Species]:g7}");
+
+                Assert.Less(Vol_err, __threshold, $"{name} error above threshold for species {Species}");
+            }
+        }
 
         /// <summary>
         /// verifies linear/quadratic (<see cref="MeshScaling"/> to the power of the spatial dimension) scaling of level-set surface integrals in 2D/3D;
@@ -93,7 +159,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Console.WriteLine($"Level Set Surface, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
 
-                Assert.Less(relErr, 1.0e-10, $"relative surface error above threshold for species {Species}" );
+                Assert.Less(relErr, threshold_scaling, $"relative surface error above threshold for species {Species}" );
             }
         }
 
@@ -119,7 +185,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Console.WriteLine($"Cut Cell Volume, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Cut Cell Volume, species {Species} relative error : {relErr:g7}");
 
-                Assert.Less(relErr, 1.0e-10, $"relative volume error above threshold for species {Species}");
+                Assert.Less(relErr, threshold_scaling, $"relative volume error above threshold for species {Species}");
             }
         }
 
@@ -144,7 +210,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Console.WriteLine($"Cut Edge area, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Cut Edge area, species {Species} relative error : {relErr:g7}");
 
-                Assert.Less(relErr, 1.0e-10, $"relative edge area error above threshold for species {Species}");
+                Assert.Less(relErr, threshold_scaling, $"relative edge area error above threshold for species {Species}");
             }
         }
 
@@ -167,7 +233,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Console.WriteLine($"Cut line measure, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Cut line measure, species {Species} relative error : {relErr:g7}");
 
-                Assert.Less(relErr, 1.0e-10, $"relative edge area error above threshold for species {Species}");
+                Assert.Less(relErr, threshold_scaling, $"relative edge area error above threshold for species {Species}");
             }
         }
     }
@@ -227,16 +293,124 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
 
+            double surf2D = 4.0 * 2 * Math.PI; // r*2*pi
+            double vol2D_B = 4.0 * 4.0 * Math.PI; // r^2*pi
+
+            base.TotalIntegral_SurfaceSpecies.Add("A", surf2D);
+            base.TotalIntegral_SurfaceSpecies.Add("B", surf2D);
+
+            base.TotalIntegral_Volume4Species.Add("A", 14*14 - vol2D_B);
+            base.TotalIntegral_Volume4Species.Add("B", vol2D_B);
+
             GridCommons grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
             return grd;
         }
+        protected override double threshold_totSurface {
+            get {
+
+                if (QuadratureType == CutCellQuadratureMethod.Classic) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 3e-3;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else {
+                        return 5e-8;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else {
+                        return 4e-7;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 3e-3;
+                    } else if (this.CutCellQuadratureOrder <= 6) {
+                        return 4e-5;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else {
+                        return 2e-6;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.OneStepGaussAndStokes) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 1e-7;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-9;
+                    } else {
+                        return 4e-11;
+                    }
+                }
 
 
+                return base.threshold_totSurface;
+            }
+
+
+        }
+
+        protected override double threshold_totVolume {
+            get {
+
+                if (QuadratureType == CutCellQuadratureMethod.Classic) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 3e-3;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else {
+                        return 3e-8;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if (this.CutCellQuadratureOrder <= 9) {
+                        return 4e-6;
+                    } else {
+                        return 1e-8;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 3e-3;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else {
+                        return 1e-6;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.OneStepGaussAndStokes) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 1e-7;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-9;
+                    } else {
+                        return 4e-11;
+                    }
+                }
+
+
+                return base.threshold_totVolume;
+            }
+
+
+        }
     }
 
 
     /// <summary>
-    /// The 3D testcase is an extrusion of the 2D testcase, i.e., the circle from the 2D testcase is extruded into a cylinder.
+    /// The 3D testcase is an extrusion (sic) in z-direction of the 2D testcase, i.e., the circle from the 2D testcase is extruded into a cylinder.
     /// In this fashion, it can be compared to 2D results, by just multiplying the 2D-results with the domain width in z-direction.
     /// Therefore it 
     /// </summary>
@@ -258,8 +432,117 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             yNodes.ScaleV(MeshScaling);
             zNodes.ScaleV(MeshScaling);
 
+            double surf3D = 4.0 * 2 * Math.PI*zWidht;
+            double vol3D_B = 4.0 * 4.0 * Math.PI*zWidht;
+
+            base.TotalIntegral_SurfaceSpecies.Add("A", surf3D);
+            base.TotalIntegral_SurfaceSpecies.Add("B", surf3D);
+
+            base.TotalIntegral_Volume4Species.Add("A", 14*14*zWidht - vol3D_B);
+            base.TotalIntegral_Volume4Species.Add("B", vol3D_B);
             GridCommons grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
             return grd;
+        }
+        protected override double threshold_totSurface {
+            get {
+
+                if (QuadratureType == CutCellQuadratureMethod.Classic) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 3e-3;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else if (this.CutCellQuadratureOrder <= 8) {
+                        return 1e-7;
+                    } else {
+                        return 5e-8;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if (this.CutCellQuadratureOrder <= 3) {
+                        return 1e-1;
+                    } else if (this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 8e-5;
+                    } else if (this.CutCellQuadratureOrder <= 9) {
+                        return 3e-6;
+                    } else {
+                        return 4e-7;
+                    }
+                }
+
+                
+
+                return base.threshold_totSurface;
+            }
+
+
+        }
+
+        protected override double threshold_totVolume {
+            get {
+
+                if (QuadratureType == CutCellQuadratureMethod.Classic) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 3e-3;
+                    } else  if (this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else {
+                        return 3e-8;
+                    }
+                }
+
+                if (QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if (this.CutCellQuadratureOrder <= 4) {
+                        return 4e-2;
+                    } else if (this.CutCellQuadratureOrder <= 7) {
+                        return 3e-5;
+                    } else if (this.CutCellQuadratureOrder <= 9) {
+                        return 4e-6;
+                    } else {
+                        return 3e-8;
+                    }
+                }
+
+                
+
+
+                return base.threshold_totVolume;
+            }
+
+
+        }
+
+
+
+        double threshold_2dvs3d {
+            get {
+                if (QuadratureType == CutCellQuadratureMethod.Classic) {
+                    if (this.CutCellQuadratureOrder <= 4)
+                        return 1.0e-4;
+
+                    return 1.0e-7;
+                }
+                
+
+                return 1.0e-10;
+            }
+        }
+
+        protected override double threshold_scaling {
+            get {
+                if (QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if (this.CutCellQuadratureOrder <= 4)
+                        return 1.0e-4;
+                    if (this.CutCellQuadratureOrder <= 7)
+                        return 1.0e-7;
+
+                    return 1.0e-8;
+                }
+
+                return base.threshold_scaling;
+            }
         }
 
         public void CompareSurfaceTo2D(TestSetupSingleLevset2D othr) {
@@ -282,14 +565,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Console.WriteLine($"Level Set Surface, species {Species} absolute error : {absErr:g7}");
                 Console.WriteLine($"Level Set Surface, species {Species} relative error : {relErr:g7}");
 
-                Assert.Less(relErr, 1.0e-10, $"relative surface error above threshold for species {Species}");
+                Assert.Less(relErr, threshold_2dvs3d, $"relative surface error above threshold for species {Species}");
             }
-
-
         }
-
-
-
     }
-
 }

@@ -152,87 +152,87 @@ namespace BoSSS.Foundation.XDG {
         /// Writes all the edge rules as vtp files
         /// </summary>
         public void WriteEdgeRulesToVtp() {
-			var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
-			var gd = XDGSpaceMetrics.GridDat;
-			SpeciesId[] species = this.SpeciesList.ToArray();
+            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+            var gd = XDGSpaceMetrics.GridDat;
+            SpeciesId[] species = this.SpeciesList.ToArray();
 
-			for (int iSpc = 0; iSpc < species.Length; iSpc++) {
-				SpeciesId spc = species[iSpc];
+            for (int iSpc = 0; iSpc < species.Length; iSpc++) {
+                SpeciesId spc = species[iSpc];
 
-				var edgeScheme = schH.GetEdgeQuadScheme(spc);
-				var chunRulePairList = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
+                var edgeScheme = schH.GetEdgeQuadScheme(spc);
+                var chunRulePairList = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
 
                 chunRulePairList.ToVtpFilesEdge(gd, "edgeQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// Writes all the volume rules as vtp files
-		/// </summary>
-		public void WriteVolumeRulesToVtp() {
-			var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
-			var gd = XDGSpaceMetrics.GridDat;
-			SpeciesId[] species = this.SpeciesList.ToArray();
+        /// <summary>
+        /// Writes all the volume rules as vtp files
+        /// </summary>
+        public void WriteVolumeRulesToVtp() {
+            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+            var gd = XDGSpaceMetrics.GridDat;
+            SpeciesId[] species = this.SpeciesList.ToArray();
 
-			for (int iSpc = 0; iSpc < species.Length; iSpc++) {
-				SpeciesId spc = species[iSpc];
+            for (int iSpc = 0; iSpc < species.Length; iSpc++) {
+                SpeciesId spc = species[iSpc];
 
-				var volScheme = schH.GetVolumeQuadScheme(spc);
-				var chunRulePairList = volScheme.Compile(gd, this.CutCellQuadratureOrder);
+                var volScheme = schH.GetVolumeQuadScheme(spc);
+                var chunRulePairList = volScheme.Compile(gd, this.CutCellQuadratureOrder);
 
                 chunRulePairList.ToVtpFilesCell(gd, "volQuadFor" + spc.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
-			}
-		}
+            }
+        }
 
-		/// <summary>
-		/// Writes all the surface rules (level set=0) as vtp files
-		/// </summary>
-		public void WriteSurfaceRulesToVtp() {
-			var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
-			var gd = XDGSpaceMetrics.GridDat;
-			SpeciesId[] species = this.SpeciesList.ToArray();
+        /// <summary>
+        /// Writes all the surface rules (level set=0) as vtp files
+        /// </summary>
+        public void WriteSurfaceRulesToVtp() {
+            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
+            var gd = XDGSpaceMetrics.GridDat;
+            SpeciesId[] species = this.SpeciesList.ToArray();
 
-			if (species.Length > 0) {
-				var AllSpc = XDGSpaceMetrics.TotalSpeciesList;
-				var requiredSpecies = XDGSpaceMetrics.SpeciesList;
+            if (species.Length > 0) {
+                var AllSpc = XDGSpaceMetrics.TotalSpeciesList;
+                var requiredSpecies = XDGSpaceMetrics.SpeciesList;
 
-				// loop over all possible pairs of species
-				for (int iSpcA = 0; iSpcA < AllSpc.Count - 1; iSpcA++) {
-					var SpeciesA = AllSpc[iSpcA];
-					var SpeciesADom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(SpeciesA);
-					int iLocalSpcA = requiredSpecies.IndexOf(SpeciesA);
+                // loop over all possible pairs of species
+                for (int iSpcA = 0; iSpcA < AllSpc.Count - 1; iSpcA++) {
+                    var SpeciesA = AllSpc[iSpcA];
+                    var SpeciesADom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(SpeciesA);
+                    int iLocalSpcA = requiredSpecies.IndexOf(SpeciesA);
 
-					// Standard XDG case, where level sets are always
-					// an interface between species
-					for (int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
-						var SpeciesB = AllSpc[iSpcB];
-						int iLocalSpcB = requiredSpecies.IndexOf(SpeciesB);
+                    // Standard XDG case, where level sets are always
+                    // an interface between species
+                    for (int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
+                        var SpeciesB = AllSpc[iSpcB];
+                        int iLocalSpcB = requiredSpecies.IndexOf(SpeciesB);
 
-						if (iLocalSpcA > -1 || iLocalSpcB > -1) {
-							var SpeciesBDom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(SpeciesB);
-							var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
-							int NoOfLs = XDGSpaceMetrics.NoOfLevelSets;
-							for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
-								if (schH.SpeciesAreSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB)) {
-									var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
-									var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
+                        if (iLocalSpcA > -1 || iLocalSpcB > -1) {
+                            var SpeciesBDom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(SpeciesB);
+                            var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
+                            int NoOfLs = XDGSpaceMetrics.NoOfLevelSets;
+                            for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                                if (schH.SpeciesAreSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB)) {
+                                    var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
+                                    var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-									CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
-									var chunRulePairList = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
-									chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA.ToString(XDGSpaceMetrics.Tracker) + "-" + SpeciesB.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+                                    CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                    var chunRulePairList = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
+                                    chunRulePairList.ToVtpFilesCell(gd, "surfQuadFor" + SpeciesA.ToString(XDGSpaceMetrics.Tracker) + "-" + SpeciesB.ToString(XDGSpaceMetrics.Tracker) + HMFvariant);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-		/// <summary>
-		/// Computes Cell-volumes and edge areas before agglomeration.
-		/// </summary>
-		void ComputeNonAgglomeratedMetrics() {
-            using(var tr = new FuncTrace()) {
+        /// <summary>
+        /// Computes Cell-volumes and edge areas before agglomeration.
+        /// </summary>
+        void ComputeNonAgglomeratedMetrics() {
+            using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
 
                 var gd = XDGSpaceMetrics.GridDat;
@@ -265,7 +265,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // edges and volumes
                 // =================
-                for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                     var cellVol = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1);
                     SpeciesId spc = species[iSpc];
 
@@ -276,9 +276,9 @@ namespace BoSSS.Foundation.XDG {
 
                     var edgeScheme = schH.GetEdgeQuadScheme(spc);
                     var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
-                    
 
-				    BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
+
+                    BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
                         edgeRule,
                         _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
@@ -302,12 +302,12 @@ namespace BoSSS.Foundation.XDG {
 
                     var cellSurf = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 2);
 
-                    for(int e = 0; e < EE; e++) {
+                    for (int e = 0; e < EE; e++) {
                         double a = edgArea[e];
                         int jCell0 = E2C[e, 0];
                         int jCell2 = E2C[e, 1];
                         cellSurf[jCell0] += a;
-                        if(jCell2 >= 0)
+                        if (jCell2 >= 0)
                             cellSurf[jCell2] += a;
 
                     }
@@ -332,7 +332,7 @@ namespace BoSSS.Foundation.XDG {
                         },
                         _SaveIntegrationResults: delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) //
                         {
-                            for(int i = 0; i < Length; i++) {
+                            for (int i = 0; i < Length; i++) {
                                 int jCell = i + i0;
                                 Debug.Assert(cellVol[jCell] == 0);
                                 cellVol[jCell] = ResultsOfIntegration[i, 0];
@@ -363,8 +363,8 @@ namespace BoSSS.Foundation.XDG {
                         for (int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
                             var SpeciesB = AllSpc[iSpcB];
                             int iLocalSpcB = requiredSpecies.IndexOf(SpeciesB);
-                            
-                            if(iLocalSpcA > -1 || iLocalSpcB > -1) {
+
+                            if (iLocalSpcA > -1 || iLocalSpcB > -1) {
                                 var SpeciesBDom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(SpeciesB);
                                 var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
                                 int NoOfLs = XDGSpaceMetrics.NoOfLevelSets;
@@ -418,7 +418,7 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(cellMetricsComp.L2Norm() == 0.0);
 #endif
                 }
-                for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                     var spc = species[iSpc];
                     this.InterfaceArea.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
                     this.CutCellVolumes.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
@@ -676,5 +676,8 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
         }
+
+        
+
     }
 }

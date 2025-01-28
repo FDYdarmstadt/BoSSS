@@ -267,7 +267,7 @@ namespace FreeXNSE {
 
         public abstract bool equals(Forcing other);
 
-        public bool Equals(object obj) {
+        public override bool Equals(object obj) {
 
             var other = obj as Forcing;
             if(other == null)
@@ -295,7 +295,7 @@ namespace FreeXNSE {
         [DataMember]
         public bool FailOnSolverFail = true;
 
-        public bool Equals(object obj) {
+        public override bool Equals(object obj) {
             var other = obj as SolverSettings;
             if(other == null)
                 return false;
@@ -557,7 +557,7 @@ namespace FreeXNSE {
             set;
         }
 
-        public bool Equals(object obj) {
+        public override bool Equals(object obj) {
             var other = obj as ActiveTerms;
             if(other == null)
                 return false;

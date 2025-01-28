@@ -87,7 +87,6 @@ namespace BoSSS.Solution {
             base.Init(new EmptyAppControl());
         }
 
-
         static string[] m_LatestCmdLineArgs;
         internal static string[] LatestCmdLineArgs {
             get { return m_LatestCmdLineArgs; }
