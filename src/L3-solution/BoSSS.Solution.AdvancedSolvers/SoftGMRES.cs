@@ -76,7 +76,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		[DataMember]
 		public int MaxIterations = 500;
-		//public int m_MinIterations = 5;
 
 		[DataMember]
 		public double ConvergenceCriterion = 1e-7;
@@ -491,7 +490,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		///  /// <seealso cref="BlockMsrMatrix.SpMV{VectorType1, VectorType2}(double, VectorType1, double, VectorType2)"/>
 		void CalculateSpMV(double alpha, double[] _a, double beta, double[] acc) {
 			if (Matrix != null) {
-				Matrix.SpMV(1.0, _a, 1.0, acc);
+				Matrix.SpMV(alpha, _a, beta, acc);
 			} else {
 				double[] vectorAfterMultiplication = new double[acc.Length]; //intermediate variable to hold Matrix x Vector
 				InnerCycle(_a, vectorAfterMultiplication);                   // perform the equivalent of Matrix x Vector = this * _a
