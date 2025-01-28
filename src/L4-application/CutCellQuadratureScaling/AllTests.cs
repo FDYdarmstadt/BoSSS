@@ -71,22 +71,29 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
             [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
             ) {
-                using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
-                    Ref.Init();
-                    Ref.RunSolverMode();
+            using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
+                Ref.Init();
+                Ref.RunSolverMode();
 
-                    using(var Test = new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType)) {
-                        Test.Init();
-                        Test.RunSolverMode();
+                var surf = Ref.latestCCM.InterfaceArea[Ref.LsTrk.GetSpeciesId("A")].To1DArray().Sum();
+                
+                Console.WriteLine(surf - 4.0*2*Math.PI);
 
-                        
 
-                        Test.CompareSurfaceTo2D(Ref);
-                    }
+                using(var Test = new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType)) {
+                    Test.Init();
+                    Test.RunSolverMode();
 
+                    var surf3D = Test.latestCCM.InterfaceArea[Ref.LsTrk.GetSpeciesId("A")].To1DArray().Sum();
+                    Console.WriteLine(surf3D - 4.0 * 2 * Math.PI*6);
+
+
+                    Test.CompareSurfaceTo2D(Ref);
                 }
 
             }
+
+        }
 
 
 

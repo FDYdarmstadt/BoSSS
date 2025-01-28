@@ -49,6 +49,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 throw new ArgumentException();
             var metrics = m_levelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(qr.Nodes, jCell0, L);
 
+            int D = gridData.SpatialDimension;
+
             int NoOfNodes = qr.NoOfNodes;
             Debug.Assert(metrics.Dimension == 2);
             Debug.Assert(metrics.GetLength(0) == L);
@@ -65,6 +67,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 for(int i = 0; i < L; i++) {
                     for(int k = 0; k < NoOfNodes; k++) {
                         metrics[i, k] = cellJacDet[i + jCell0] / metrics[i, k];
+
+                        //if(D == 3)
+                        //    Console.WriteLine(metrics[i, k] + " " + (gridData as GridData).JacobianDeterminat.GetValue_Cell(qr.Nodes,jCell0 + i)[0]);
                     }
                 }
 

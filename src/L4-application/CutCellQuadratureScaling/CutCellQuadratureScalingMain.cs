@@ -23,7 +23,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye;
+        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Algoim;
         static int order = 8;
 
         public static void Main(string[] args) {
@@ -202,6 +202,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
             LsTrk = new LevelSetTracker(this.GridData as GridData, this.QuadratureType, 1, new[] { "A", "B" }, Phi1);
             LsTrk.UpdateTracker(0.0);
+
+            PlotCurrentState(0.0, new TimestepNumber(0), 4);
         }
 
 
@@ -251,7 +253,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         protected override IGrid CreateOrLoadGrid() {
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            double[] zNodes = GenericBlas.Linspace(-3, -2 + zWidht, 4);
+            double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidht, 4);
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
             zNodes.ScaleV(MeshScaling);
@@ -261,8 +263,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         }
 
         public void CompareSurfaceTo2D(TestSetupSingleLevset2D othr) {
-            PlotCurrentState(0.0, new TimestepNumber(0), 4);
-
+            
 
             double D = othr.Grid.SpatialDimension;
             if(D != 2)
