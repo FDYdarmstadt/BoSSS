@@ -564,8 +564,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup()
-        BlockMsrMatrix m_RawMassMatrix = null;
+        public BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup() public
+		BlockMsrMatrix m_RawMassMatrix = null;
 
         bool setupdone = false;
 

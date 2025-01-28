@@ -83,8 +83,17 @@ namespace BoSSS.Solution.Control {
         /// p-Multigrid (i.e. multigrid over DG polynomial degree), <see cref="AdvancedSolvers.PmgConfig"/>
         /// </summary>
         pMultigrid = 61,
-        
-    }
+
+		///// <summary>
+		///// A highly experimental variant of Schur complement designed for saddle point problems, <see cref="AdvancedSolvers.SchurPrecond"/>
+		///// </summary>
+		//SchurPrecond = 71,
+
+		/// <summary>
+		/// Flexible GMRES, allowing variable preconditioners for GMRES <see cref="AdvancedSolvers.FlexGMRES"/>
+		/// </summary>
+		FlexGMRES = 81,
+	}
     
 
     /// <summary>
@@ -131,7 +140,13 @@ namespace BoSSS.Solution.Control {
                 case LinearSolverCode.pMultigrid:
                     return new AdvancedSolvers.PmgConfig();
 
-                default:
+				//case LinearSolverCode.SchurPrecond:
+				//	return new AdvancedSolvers.SchurPrecondConfig();
+
+				case LinearSolverCode.FlexGMRES:
+					return new AdvancedSolvers.FGMRESConfig();
+
+				default:
                     throw new NotImplementedException("todo: " + config);
             }
 
