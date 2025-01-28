@@ -14,8 +14,13 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         [Test]
         public static void OneLevelSet_2D(
+#if DEBUG
+            [Values(3, 6, 7)] int quadOrder,
+#else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
+#endif
+            [Values(
+            XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
             ) {
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D
 
@@ -24,10 +29,16 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Ref.Init();
                 Ref.RunSolverMode();
 
-                using(var Test = new TestSetupSingleLevset2D(0.5, quadOrder, cutCellQuadType)) {
+                Ref.CompareTotalSurface();
+                Ref.CompareTotalVolume();
+
+
+                using (var Test = new TestSetupSingleLevset2D(0.5, quadOrder, cutCellQuadType)) {
                     Test.Init();
                     Test.RunSolverMode();
 
+                    Test.CompareTotalSurface();
+                    Test.CompareTotalVolume();
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
@@ -41,17 +52,26 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         [Test]
         public static void OneLevelSet_3D(
+#if DEBUG
+            [Values(3, 6, 7)] int quadOrder,
+#else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
+#endif
             [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
             ) {
             using(var Ref = new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
 
-                using(var Test = new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType)) {
+                Ref.CompareTotalSurface();
+                Ref.CompareTotalVolume();
+
+                using (var Test = new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType)) {
                     Test.Init();
                     Test.RunSolverMode();
 
+                    Test.CompareTotalSurface();
+                    Test.CompareTotalVolume();
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
@@ -68,7 +88,11 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// </summary>
         [Test]
         public static void OneLevelSet_2Dvs3D(
+#if DEBUG
+            [Values(3, 6, 7)] int quadOrder,
+#else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
+#endif
             [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
             ) {
             using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
@@ -76,7 +100,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Ref.RunSolverMode();
 
                 var surf = Ref.latestCCM.InterfaceArea[Ref.LsTrk.GetSpeciesId("A")].To1DArray().Sum();
-                Console.WriteLine(surf - 4.0*2*Math.PI);
+                
 
 
                 using(var Test = new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType)) {
@@ -84,7 +108,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.RunSolverMode();
 
                     var surf3D = Test.latestCCM.InterfaceArea[Ref.LsTrk.GetSpeciesId("A")].To1DArray().Sum();
-                    Console.WriteLine(surf3D - 4.0 * 2 * Math.PI*6);
+
 
 
                     Test.CompareSurfaceTo2D(Ref);
