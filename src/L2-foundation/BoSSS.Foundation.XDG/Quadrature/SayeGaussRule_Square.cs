@@ -377,11 +377,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
             MultidimensionalArray rgradient = lsData.GetLevelSetGradients(node, cell, 1).CloneAs();
             rgradient = rgradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
 
-            const double scale = 1.0;
+            double scale = 1.0;
             ////This is required, because Surface quad nodes are treated as Volume quad nodes.
             //double scale;
             //if(IsScalingMatrix(jacobian)) {
-            //    scale = rgradient.L2Norm() / Math.Abs(rgradient[heightDirection]);
+            scale = rgradient.L2Norm() / Math.Abs(rgradient[heightDirection]);
             //    //This is required, because Surface quad nodes are treated as Volume quad nodes.
             //    scale /= jacobian[heightDirection, heightDirection];
             //} else {

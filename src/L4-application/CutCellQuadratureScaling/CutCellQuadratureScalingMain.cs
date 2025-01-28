@@ -24,13 +24,14 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     /// </summary>
     static class CutCellQuadratureScalingMain {
 
-        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Algoim;
-        static int order = 8;
+        static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Saye;
+        static int order = 7;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
             BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
+            
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -328,6 +329,17 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
+                    if(this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 1e-5;
+                    } else {
+                        return 4e-7;
+                    }
+                }
+
+
                 if (QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
                     if (this.CutCellQuadratureOrder <= 4) {
                         return 3e-3;
@@ -370,17 +382,27 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
-                if (QuadratureType == CutCellQuadratureMethod.Saye) {
-                    if (this.CutCellQuadratureOrder <= 4) {
+                if(QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if(this.CutCellQuadratureOrder <= 4) {
                         return 1e-2;
-                    } else if (this.CutCellQuadratureOrder <= 9) {
+                    } else if(this.CutCellQuadratureOrder <= 9) {
                         return 4e-6;
                     } else {
                         return 1e-8;
                     }
                 }
 
-                if (QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
+                    if(this.CutCellQuadratureOrder <= 4) {
+                        return 1e-2;
+                    } else if(this.CutCellQuadratureOrder <= 9) {
+                        return 4e-6;
+                    } else {
+                        return 1e-8;
+                    }
+                }
+
+                if(QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
                     if (this.CutCellQuadratureOrder <= 4) {
                         return 3e-3;
                     } else if (this.CutCellQuadratureOrder <= 7) {
