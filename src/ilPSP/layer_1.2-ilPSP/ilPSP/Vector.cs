@@ -671,6 +671,38 @@ namespace ilPSP {
             return StdBasis(d, 3);
         }
 
+
+        /// <summary>
+        /// the x standard basis in 2D
+        /// </summary>
+        public static Vector StdBasis2Dx() {
+            return StdBasis(0, 2);
+        }
+        /// <summary>
+        /// the y standard basis in 2D
+        /// </summary>
+        public static Vector StdBasis2Dy() {
+            return StdBasis(1, 2);
+        }
+        /// <summary>
+        /// the x standard basis in 3D
+        /// </summary>
+        public static Vector StdBasis3Dx() {
+            return StdBasis(0, 3);
+        }
+        /// <summary>
+        /// the y standard basis in 3D
+        /// </summary>
+        public static Vector StdBasis3Dy() {
+            return StdBasis(1, 3);
+        }
+        /// <summary>
+        /// the z standard basis in 3D
+        /// </summary>
+        public static Vector StdBasis3Dz() {
+            return StdBasis(2, 3);
+        }
+
         /// <summary>
         /// Euclidean distance between the points <paramref name="a"/> and <paramref name="b"/>
         /// </summary>

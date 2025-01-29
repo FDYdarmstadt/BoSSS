@@ -98,7 +98,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 // the metric is the local stretching of the tangent on the boundary line
                 for(int k = 0; k < K; k++) {
                     var TangentTransformed = TangentsTransformed.GetRowPt(k) - TangentsTransformed.GetRow(k + K);
-                    metric[i,k] = TangentTransformed.L2Norm();
+                    //if((TangentTransformed * Vector.StdBasis3Dz()).Abs() <= 1e-8)
+                    //    // perpendicular to z-Axis => in xy-plane
+                    //    metric[i, k] = 0; // 
+                    //else
+                    //    metric[i, k] = TangentTransformed.L2Norm();
+
+                    metric[i, k] = TangentTransformed.L2Norm();
                 }
             }
 

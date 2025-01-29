@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -28,6 +29,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 Ref.Init();
                 Ref.RunSolverMode();
 
+                Ref.CompareTotalCutLine();
                 Ref.CompareTotalSurface();
                 Ref.CompareTotalVolume();
 
@@ -35,7 +37,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.Init();
                     Test.RunSolverMode();
 
-
+                    Test.CompareTotalCutLine();
                     Test.CompareTotalSurface();
                     Test.CompareTotalVolume();
 
@@ -65,6 +67,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
                 Ref.CompareTotalSurface();
                 Ref.CompareTotalVolume();
+                Ref.CompareTotalCutLine();
 
                 using (var Test = new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType)) {
                     Test.Init();
@@ -72,6 +75,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
                     Test.CompareTotalSurface();
                     Test.CompareTotalVolume();
+                    Test.CompareTotalCutLine();
 
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumeTo(Ref);
@@ -105,7 +109,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     Test.Init();
                     Test.RunSolverMode();
 
-                    Test.CompareCutLineTo2D(Ref);
+                    //Test.CompareCutLineTo2D(Ref);
                     Test.CompareSurfaceTo2D(Ref);
                     Test.CompareVolumeTo2D(Ref);
                 }

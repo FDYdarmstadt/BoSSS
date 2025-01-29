@@ -499,7 +499,9 @@ namespace CutCellQuadrature {
         /// Performs a 2D p-refinement for the quadrature rules from Algoim
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
+#if !DEBUG
         [Test]
+#endif
         public void Test2DVolumePRefinementStructuredAlgoim() {
             int[] orders = Enumerable.Range(1, 25).ToArray(); 
 

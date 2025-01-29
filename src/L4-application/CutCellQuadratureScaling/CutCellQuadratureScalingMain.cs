@@ -15,6 +15,7 @@ using ilPSP;
 using BoSSS.Solution.Tecplot;
 using System.Diagnostics;
 using NUnit.Framework;
+using BoSSS.Foundation.Grid.RefElements;
 
 
 namespace BoSSS.Application.CutCellQuadratureScaling {
@@ -25,7 +26,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
     static class CutCellQuadratureScalingMain {
 
         static CutCellQuadratureMethod quadratureType = CutCellQuadratureMethod.Classic;
-        static int order = 3;
+        static int order = 6;
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
@@ -75,6 +76,9 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             return -1;
         }
 
+        /// <summary>
+        /// threshold for all scaling comparisons (scald vs. un-scaled mesh)
+        /// </summary>
         virtual protected double threshold_scaling {
             get {
                 return 1.0e-10;
@@ -103,7 +107,21 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// </summary>
         protected Dictionary<string, double> TotalIntegral_SurfaceSpecies = new Dictionary<string, double>();
 
+        /// <summary>
+        /// Total cut line for each species, for <see cref="MeshScaling"/> equal to 1
+        /// - key: species index
+        /// - value: value of the integral over all cells
+        /// </summary>
+        protected Dictionary<string, double> TotalIntegral_CutLine = new Dictionary<string, double>();
+
+
         virtual protected double threshold_totSurface {
+            get {
+                return 1.0e-10;
+            }
+        }
+
+        virtual protected double threshold_totCutline {
             get {
                 return 1.0e-10;
             }
@@ -123,6 +141,15 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public void CompareTotalSurface() {
             double D = this.Grid.SpatialDimension;
             CompareTotal("Cut Cell surface", this.TotalIntegral_SurfaceSpecies, spcId => this.latestCCM.InterfaceArea[spcId].Sum(), threshold_totSurface, this.MeshScaling.Pow(D - 1));
+        }
+
+
+        /// <summary>
+        /// verifies that the total volume (cut-cell-volume summed over all cells) is correct
+        /// </summary>
+        public void CompareTotalCutLine() {
+            double D = this.Grid.SpatialDimension;
+            CompareTotal("Cut Cell boundary line", this.TotalIntegral_CutLine, spcId => this.latestCCM.CutLineLengthEdge[spcId].Sum(), threshold_totCutline, this.MeshScaling.Pow(D - 2));
         }
 
         private void CompareTotal(string name, IDictionary<string,double> refDict, Func<SpeciesId, double> getVal, double __threshold, double scaling_D) {
@@ -305,6 +332,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             base.TotalIntegral_Volume4Species.Add("A", 14*14 - vol2D_B);
             base.TotalIntegral_Volume4Species.Add("B", vol2D_B);
 
+            base.TotalIntegral_CutLine.Add("A", 16);
+            base.TotalIntegral_CutLine.Add("B", 16);
+
+
             GridCommons grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
             return grd;
         }
@@ -449,22 +480,38 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         const double zWidht = 6;
 
         protected override IGrid CreateOrLoadGrid() {
+            const int noOfZnodes = 4;
             double[] xNodes = GenericBlas.Linspace(-7, +7, 8);
             double[] yNodes = GenericBlas.Linspace(-7, +7, 8);
-            double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidht, 4);
+            double[] zNodes = GenericBlas.Linspace(-3, -3 + zWidht, noOfZnodes);
             xNodes.ScaleV(MeshScaling);
             yNodes.ScaleV(MeshScaling);
             zNodes.ScaleV(MeshScaling);
+            GridCommons grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
 
-            double surf3D = 4.0 * 2 * Math.PI*zWidht;
-            double vol3D_B = 4.0 * 4.0 * Math.PI*zWidht;
 
+            // volume and area of level-set
+            // ============================
+
+            double surf3D = 4.0 * 2 * Math.PI*zWidht; // mantle of a cylinder
+            double vol3D_B = 4.0 * 4.0 * Math.PI*zWidht; // volume of a cylinder
             base.TotalIntegral_SurfaceSpecies.Add("A", surf3D);
             base.TotalIntegral_SurfaceSpecies.Add("B", surf3D);
 
-            base.TotalIntegral_Volume4Species.Add("A", 14*14*zWidht - vol3D_B);
+            base.TotalIntegral_Volume4Species.Add("A", 14 * 14 * zWidht - vol3D_B); // total mesh volume - cylinder volume
             base.TotalIntegral_Volume4Species.Add("B", vol3D_B);
-            GridCommons grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+
+            double line3D = (4.0 * 2 * Math.PI) * noOfZnodes; // 4 circles in xy-planes
+            using(var _2D = new TestSetupSingleLevset2D()) {
+                _2D.Init();
+                _2D.RunSolverMode();
+
+                line3D += _2D.latestCCM.CutLineLengthEdge[_2D.LsTrk.GetSpeciesId("A")].Sum() * zWidht;
+            }
+            base.TotalIntegral_CutLine.Add("A", line3D);
+            base.TotalIntegral_CutLine.Add("B", line3D);
+
+
             return grd;
         }
         protected override double threshold_totSurface {
@@ -564,6 +611,53 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
         }
 
+        protected override double threshold_totCutline {
+            get {
+                if(QuadratureType == CutCellQuadratureMethod.Classic) {
+                    if(this.CutCellQuadratureOrder <= 4) {
+                        return 5e-2;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 5e-5;
+                    } else if(this.CutCellQuadratureOrder <= 8) {
+                        return 2e-5;
+                    } else {
+                        return 5e-6;
+                    }
+                }
+
+                if(QuadratureType == CutCellQuadratureMethod.Saye) {
+                    if(this.CutCellQuadratureOrder <= 3) {
+                        return 6e-2;
+                    } else if(this.CutCellQuadratureOrder <= 4) {
+                        return 5e-3;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 5e-5;
+                    } else if(this.CutCellQuadratureOrder <= 8) {
+                        return 5e-6;
+                    } else {
+                        return 5e-6;
+                    }
+                }
+
+
+                if(QuadratureType == CutCellQuadratureMethod.Algoim) {
+                    if(this.CutCellQuadratureOrder <= 4) {
+                        return 5e-3;
+                    } else if(this.CutCellQuadratureOrder <= 7) {
+                        return 5e-5;
+                    } else if(this.CutCellQuadratureOrder <= 8) {
+                        return 5e-6;
+                    } else {
+                        return 5e-6;
+                    }
+                }
+
+
+
+                return base.threshold_totCutline;
+            }
+        }
+
 
 
         double threshold_2dvs3d {
@@ -598,9 +692,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public void CompareSurfaceTo2D(TestSetupSingleLevset2D othr) {
             CompareTo2D("Level Set Surface", othr, test => test.latestCCM.InterfaceArea, -1);
         }
-        public void CompareCutLineTo2D(TestSetupSingleLevset2D othr) {
-            CompareTo2D("Cut Line Length", othr, test => test.latestCCM.CutLineLength, -2);
-        }
+       
         public void CompareVolumeTo2D(TestSetupSingleLevset2D othr) {
             CompareTo2D("Level Set Volume", othr, test => test.latestCCM.CutCellVolumes, 0);
         }

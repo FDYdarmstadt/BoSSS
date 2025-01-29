@@ -1126,7 +1126,7 @@ namespace BoSSS.Solution.Control {
         /// this setting has no effect.
         /// </summary>
         [DataMember]
-        public CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Saye;
+        public CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
 
         /// <summary>
         /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.

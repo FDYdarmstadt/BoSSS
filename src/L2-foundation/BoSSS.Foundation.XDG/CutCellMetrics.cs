@@ -447,7 +447,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Total length (i.e., D-2 dimensional measure) of 
-        /// level-set intersection (i.e., intersection of the D-1 dimensional level-set 0 with the d-1 dimensional level-set 1)
+        /// level-set intersection (i.e., intersection of the D-1 dimensional level-set 0 with the d-1 dimensional level-set 1) 
         /// for each non-agglomerated cut cell.
         /// - key: species
         /// - index: cell index
@@ -463,6 +463,25 @@ namespace BoSSS.Foundation.XDG {
         }
 
         Dictionary<SpeciesId, MultidimensionalArray> m_IntersectionLength;
+
+
+        /// <summary>
+        /// Total length (i.e., D-2 dimensional measure) of cut line (i.e., intersection of D-1 dimensional level-set surface with D-1 dimensional cell boundary) for each edge.
+        /// for each edge.
+        /// - key: species
+        /// - index: edge index
+        /// </summary>
+        public Dictionary<SpeciesId, MultidimensionalArray> CutLineLengthEdge {
+            get {
+                if(m_CutLineLengthEdge == null) {
+                    ComputeNonAgglomeratedCutLineMetrics();
+                }
+                return m_CutLineLengthEdge;
+            }
+        }
+
+        Dictionary<SpeciesId, MultidimensionalArray> m_CutLineLengthEdge;
+
 
 
         void ComputeNonAgglomeratedCutLineMetrics() {
@@ -489,6 +508,7 @@ namespace BoSSS.Foundation.XDG {
 
                 this.m_CutLineLength = new Dictionary<SpeciesId, MultidimensionalArray>();
                 this.m_IntersectionLength = new Dictionary<SpeciesId, MultidimensionalArray>();
+                this.m_CutLineLengthEdge = new Dictionary<SpeciesId, MultidimensionalArray>();
 
                 tr.Info("Checkpoint1");
 
@@ -545,6 +565,7 @@ namespace BoSSS.Foundation.XDG {
 
                     }*/
 
+                    m_CutLineLengthEdge.Add(spc, edgMeas);
 
                     // sum up edges for surface
                     // ------------------------

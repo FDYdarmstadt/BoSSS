@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
             base.DynamicLoadBalancing_On = true;
             base.DynamicLoadBalancing_RedistributeAtStartup = true;
-
+            
         }
 
 
