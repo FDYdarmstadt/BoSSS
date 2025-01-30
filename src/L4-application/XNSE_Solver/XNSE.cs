@@ -75,17 +75,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            //args = new string[] { "1" };
-            //bool bAlgoim = false;
-            //if(args.Length > 0)
-            //    bAlgoim = int.Parse(args[0]) == 1;
-
-
-            //ilPSP.Environment.NumThreads = 8;
             //InitMPI();
-            //ilPSP.Environment.NumThreads = 1;
+            //ilPSP.Environment.NumThreads = 4;
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
             {
                 XNSE._Main(args, false, delegate () {
@@ -134,10 +126,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            if(Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim
-               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes
-
-               && Control.CutCellQuadratureType != CutCellQuadratureMethod.Classic
+            if(Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye 
+                && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim
+                && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes
                ) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
                     $"{CutCellQuadratureMethod.Saye}, {CutCellQuadratureMethod.Algoim} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
@@ -156,13 +147,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 quadOrder *= 2;
                 quadOrder += 1;
             }
-
-            //if( Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
-            //    ) {
-            //    //See remarks
-            //    quadOrder = 5;
-            //}
-
 
             return quadOrder;
         }

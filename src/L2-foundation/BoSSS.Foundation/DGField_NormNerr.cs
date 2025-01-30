@@ -514,6 +514,7 @@ namespace BoSSS.Foundation {
         /// \f$ b \f$ is the value of <paramref name="function"/> at \f$ \vec{x} \f$.
         /// </param>
         /// <param name="Quadrature_ChunkDataLimitOverride">
+        /// only for debugging purpose,
         /// see <see cref="Foundation.Quadrature.Quadrature{TQuadRule, TDomain}.ChunkDataLimitOverride"/>
         /// </param>
         /// <returns>

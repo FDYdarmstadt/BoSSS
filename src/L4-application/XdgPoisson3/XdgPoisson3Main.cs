@@ -60,11 +60,12 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         static void Main(string[] args) {
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
-            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6);
-            //throw new Exception("remove me");
-            BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
-                return new XdgPoisson3Main();
-            });
+            InitMPI(args);
+            BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(4, 0.6, CutCellQuadratureMethod.Saye);
+            throw new Exception("remove me");
+            //BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
+            //    return new XdgPoisson3Main();
+            //});
         }
 
 #pragma warning disable 649
@@ -225,6 +226,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     }
                 }
 
+                
                 double L2_ERR_HMF_A = this.u.GetSpeciesShadowField("A").LxError(this.Control.InitialValues_Evaluators["uEx#A"].Vectorize(), null, A_rule).Sqrt();
                 double L2_ERR_HMF_B = this.u.GetSpeciesShadowField("B").LxError(this.Control.InitialValues_Evaluators["uEx#B"].Vectorize(), null, B_rule).Sqrt();
                 double L2_ERR_HMF = (L2_ERR_HMF_A.Pow2() + L2_ERR_HMF_B.Pow2()).Sqrt();
@@ -234,9 +236,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
                 Console.WriteLine("Error norm (standard):       " + L2_ERR);
-                Console.WriteLine("Error norm (HMF, Species A): " + L2_ERR_HMF_A);
-                Console.WriteLine("Error norm (HMF, Species B): " + L2_ERR_HMF_B);
-                Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
+                Console.WriteLine($"Error norm ({this.LsTrk.CutCellQuadratureType}, Species A): " + L2_ERR_HMF_A);
+                Console.WriteLine($"Error norm ({this.LsTrk.CutCellQuadratureType}, Species B): " + L2_ERR_HMF_B);
+                Console.WriteLine($"Error norm ({this.LsTrk.CutCellQuadratureType}):            " + L2_ERR_HMF);
             }
 
 #if TEST

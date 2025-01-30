@@ -420,8 +420,7 @@ namespace BoSSS.Foundation.XDG {
                             int cnt = -1;
                             foreach (var SpeciesEval in SpeciesBuilders) {
                                 cnt++;
-                                Console.WriteLine($"Species integration {m_lsTrk.GetSpeciesName(SpeciesId)}, evlauatro # {cnt}");
-
+                                
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
                                     var eval = SpeciesEval[SpeciesId];

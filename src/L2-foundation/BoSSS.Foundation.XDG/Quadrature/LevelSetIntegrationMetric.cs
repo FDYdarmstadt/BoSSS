@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// not used, because of reasons given for <see cref="AlwaysUsePerNodeScaling"/>
         /// </summary>
         public MultidimensionalArray GetScalingsForLinearElements(IGridData gridData, QuadRule qr, int jCell, int L) {
-            throw new NotSupportedException("shall not be called");
+            throw new NotSupportedException("shall not be called: AlwaysUsePerNodeScaling == true (?)");
             
         }
 
@@ -67,9 +67,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 for(int i = 0; i < L; i++) {
                     for(int k = 0; k < NoOfNodes; k++) {
                         metrics[i, k] = cellJacDet[i + jCell0] / metrics[i, k];
-
-                        //if(D == 3)
-                        //    Console.WriteLine(metrics[i, k] + " " + (gridData as GridData).JacobianDeterminat.GetValue_Cell(qr.Nodes,jCell0 + i)[0]);
                     }
                 }
 

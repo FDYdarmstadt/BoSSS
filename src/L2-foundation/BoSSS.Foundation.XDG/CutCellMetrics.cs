@@ -375,6 +375,7 @@ namespace BoSSS.Foundation.XDG {
 
                                         CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
                                         var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
+
                                         BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                                             new int[] { 1 }, gd,
                                             rule,

@@ -80,13 +80,14 @@ namespace BoSSS.Application.XdgPoisson3 {
         [Test]    
         public static void ParabolaTest(
             [Values(2,3,4)] int dgDegree,
-            [Values(0.0, 0.6)] double AggThresshold
+            [Values(0.0, 0.6)] double AggThresshold,
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadratureType
             ) //
         {
-
+            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6)
             using (var solver = new XdgPoisson3Main()) {
                 var C = HardCodedControl.PiecewiseParabola(dgDegree, agg: AggThresshold);
-
+                C.CutCellQuadratureType = cutCellQuadratureType;
                 solver.Init(C);
                 solver.RunSolverMode();
 

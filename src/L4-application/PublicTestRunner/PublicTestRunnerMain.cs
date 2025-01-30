@@ -128,7 +128,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program),
                         typeof(BoSSS.Application.CutCellQuadratureScaling.AllTests)
                     };
@@ -142,7 +142,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
-                        typeof(BoSSS.Application.XNSE_Solver.XNSE),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.CNSProgram),

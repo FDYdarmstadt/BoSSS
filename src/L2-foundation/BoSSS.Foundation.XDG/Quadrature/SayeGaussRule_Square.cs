@@ -370,11 +370,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell) {
-            NodeSet node = new NodeSet(RefElement, X.To2DArray(), true);
+            NodeSet node = new NodeSet(RefElement, X.To2DArray(), false);
             //MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
             //MultidimensionalArray inverseJacobian = grid.InverseJacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
 
-            MultidimensionalArray rgradient = lsData.GetLevelSetGradients(node, cell, 1).CloneAs();
+            //MultidimensionalArray rgradient = lsData.GetLevelSetGradients(node, cell, 1).CloneAs();
+            MultidimensionalArray rgradient = lsData.GetLevelSetReferenceGradients(node, cell, 1).CloneAs();
             rgradient = rgradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
 
             double scale = 1.0;

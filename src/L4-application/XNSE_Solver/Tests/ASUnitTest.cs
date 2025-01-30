@@ -1238,9 +1238,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>
-#if DEBUG
-        [Test]
-#endif
         public static void ChannelTest(
 #if DEBUG
             [Values(2)] int deg,
