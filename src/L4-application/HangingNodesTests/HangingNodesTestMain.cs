@@ -23,6 +23,8 @@ namespace HangingNodesTests {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
+            //HangingNodesTests.HangingNodesTestMain.__Test3Phase();
+            //Assert.IsTrue(false, "remove me and above line");
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
@@ -141,6 +143,13 @@ namespace HangingNodesTests {
             byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
             RunTest(sizes, setup, 3);
         }
+
+        public static void __Test3Phase() {
+            double[] sizes = new double[] { 1e0 };
+            byte[] setup = new byte[] { 0 };
+            RunTest(sizes, setup, 3);
+        }
+
 
         /*
         [Test]

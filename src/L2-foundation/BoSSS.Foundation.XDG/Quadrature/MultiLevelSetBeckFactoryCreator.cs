@@ -23,7 +23,7 @@ using System.Security.Cryptography.X509Certificates;
 using ilPSP.LinSolvers.monkey;
 using System.Data;
 
-namespace BoSSS.Foundation.XDG.Quadrature
+namespace BoSSS.Foundation.XDG.Quadrature.Beck
 {
     public class MultiLevelSetBeckFactoryCreator
     {
@@ -459,9 +459,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     var nodes_t = rule_t.Nodes.GetVolumeNodeSet(singleMask.GridData, trf, false);
                     var weights_t = rule_t.Weights;
 
-                    // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
-                    double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
-                    weights_t.Scale(scale);
+                    //// scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
+                    //double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
+                    //weights_t.Scale(scale);
 
                     specialNodes.Add(nodes_t);
                     specialWeights.Add(weights_t);
@@ -596,21 +596,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 rule.Nodes.Set(NodesOut.ExtractSubArrayShallow(0,-1,-1));
                 rule.Nodes.LockForever();
 
-                if (rule.Nodes.Lengths[0] != 0)
-                {
-                    //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
+                //if (rule.Nodes.Lengths[0] != 0)
+                //{
+                //    //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
 
-                    //Get the Scaling
-                    ScaleWeights(rule,j);
+                //    //Get the Scaling
+                //    ScaleWeights(rule,j);
 
                     
-                }
+                //}
             }
             else
             {
-                //Get the Scaling
-                double scaling = GetScaling(j);
-                rule.Weights.Scale(1 / scaling);
+                ////Get the Scaling
+                //double scaling = GetScaling(j);
+                //rule.Weights.Scale(1 / scaling);
                 rule.Nodes.LockForever();
             }
             
@@ -619,7 +619,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         }
 
-        public abstract void ScaleWeights(QuadRule rule, int j);
+        //public abstract void ScaleWeights(QuadRule rule, int j);
         public abstract void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j);
 
         /// <summary>
@@ -766,12 +766,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <returns></returns>
         public abstract HyperRectangle GetCell(int j);
 
-        /// <summary>
-        /// gives the scaling
-        /// </summary>
-        /// <param name="j"></param>
-        /// <returns></returns>
-        public abstract double GetScaling(int j);
+        ///// <summary>
+        ///// gives the scaling
+        ///// </summary>
+        ///// <param name="j"></param>
+        ///// <returns></returns>
+        //public abstract double GetScaling(int j);
 
         /// <summary>
         /// This method reutrn a Hyperrectangle that is exactly the domain we want to integrate
@@ -853,21 +853,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
         }
 
-        public override double GetScaling(int j)
-        {
-            return 1;
-        }
+        //public override double GetScaling(int j)
+        //{
+        //    return 1;
+        //}
 
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
-            var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
-            var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
-            {
-                //rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
-                rule.Weights[iWeight] = rule.Weights[iWeight]/ jacDet[0, iWeight];
-            }
-        }
+        //public override void ScaleWeights(QuadRule rule, int j)
+        //{
+        //    var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
+        //    var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+        //    for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
+        //    {
+        //        //rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+        //        rule.Weights[iWeight] = rule.Weights[iWeight]/ jacDet[0, iWeight];
+        //    }
+        //}
 
         public override void PointsToNodes(MultidimensionalArray rNode, QuadratureNode qNode, int D, int j)
         {
@@ -939,19 +939,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return (new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
         }
 
-        public override double GetScaling(int j)
-        {
-            return 1;
-        }
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
-            var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
-            var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
-            {
-                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
-            }
-        }
+        //public override double GetScaling(int j)
+        //{
+        //    return 1;
+        //}
+        //public override void ScaleWeights(QuadRule rule, int j)
+        //{
+        //    var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
+        //    var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+        //    for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
+        //    {
+        //        rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+        //    }
+        //}
     }
     internal class BeckSurfaceScheme : BeckBaseScheme
     {
@@ -1008,30 +1008,30 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
         }
 
-        public override double GetScaling(int j)
-        {
-            if (isGlobalMode)
-            {
-                return 1;
-            }
-            else
-            {
-                var ls = (LevelSet)data[lscomb.ID.LevSet0].LevelSet;
-                var grd = ls.GridDat;
-                var ret = grd.Jacobian.GetValue_Cell(GetRefElement().Center, j, 1);
-                return ret[0, 0, 0];
-            }
+        //public override double GetScaling(int j)
+        //{
+        //    if (isGlobalMode)
+        //    {
+        //        return 1;
+        //    }
+        //    else
+        //    {
+        //        var ls = (LevelSet)data[lscomb.ID.LevSet0].LevelSet;
+        //        var grd = ls.GridDat;
+        //        var ret = grd.Jacobian.GetValue_Cell(GetRefElement().Center, j, 1);
+        //        return ret[0, 0, 0];
+        //    }
             
-        }
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
-            var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
-            var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
-            {
-                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
-            }
-        }
+        //}
+        //public override void ScaleWeights(QuadRule rule, int j)
+        //{
+        //    var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
+        //    var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+        //    for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
+        //    {
+        //        rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+        //    }
+        //}
     }
 
     internal class BeckZeroScheme : BeckBaseScheme
@@ -1055,20 +1055,20 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new NotImplementedException();
         }
 
-        public override double GetScaling(int j)
-        {
-            throw new NotImplementedException();
-        }
+        //public override double GetScaling(int j)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public override void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j)
         {
             throw new NotImplementedException();
         }
 
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
-            throw new NotImplementedException();
-        }
+        //public override void ScaleWeights(QuadRule rule, int j)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
     internal class BeckEdgePointScheme : BeckBaseScheme
     {
@@ -1091,20 +1091,20 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new NotImplementedException();
         }
 
-        public override double GetScaling(int j)
-        {
-            throw new NotImplementedException();
-        }
+        //public override double GetScaling(int j)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public override void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j)
         {
             throw new NotImplementedException();
         }
 
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
-            throw new NotImplementedException();
-        }
+        //public override void ScaleWeights(QuadRule rule, int j)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
     internal class lSEvalEdge : IScalarFunction
     {

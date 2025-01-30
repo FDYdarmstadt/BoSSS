@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
     public class XQuadFactoryHelper : XQuadFactoryHelperBase {
 
 
-        public MultiLevelSetBeckFactoryCreator zwoLSSayeFactories { get; private set; }
+        public Quadrature.Beck.MultiLevelSetBeckFactoryCreator zwoLSSayeFactories { get; private set; }
 
         /// <summary>
         /// ctor.
@@ -285,7 +285,7 @@ namespace BoSSS.Foundation.XDG {
                 case CutCellQuadratureMethod.Saye:
                     if (zwoLSSayeFactories == null)
                     {
-                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+                        zwoLSSayeFactories = new Quadrature.Beck.MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
                     }
                     return zwoLSSayeFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
 
@@ -415,7 +415,7 @@ namespace BoSSS.Foundation.XDG {
                 case CutCellQuadratureMethod.Saye:
                     if (zwoLSSayeFactories == null)
                     {
-                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+                        zwoLSSayeFactories = new Quadrature.Beck.MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
                     }
                     return zwoLSSayeFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
                 default:
@@ -552,7 +552,7 @@ namespace BoSSS.Foundation.XDG {
                 case CutCellQuadratureMethod.Saye:
                     if (zwoLSSayeFactories == null)
                     {
-                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+                        zwoLSSayeFactories = new Quadrature.Beck.MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
                     }
                     return zwoLSSayeFactories.GetSurfaceFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
                 default:
