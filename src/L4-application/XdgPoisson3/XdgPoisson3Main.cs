@@ -59,10 +59,9 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
-            InitMPI(args);
-            BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(4, 0.6, CutCellQuadratureMethod.Saye);
-            throw new Exception("remove me");
+            //InitMPI(args);
+            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(4, 0.6, CutCellQuadratureMethod.Saye);
+            //throw new Exception("remove me");
             //BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
             //    return new XdgPoisson3Main();
             //});
