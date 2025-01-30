@@ -279,21 +279,21 @@ namespace BoSSS.Foundation.XDG {
 
 
                     BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
-                        new int[] { 1 }, gd,
-                        edgeRule,
-                        _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
-                        {
-                            EvalResult.SetAll(1.0);
-                        },
-                        _SaveIntegrationResults: delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) //
-                        {
-                            for (int i = 0; i < Length; i++) {
-                                int iEdge = i + i0;
-                                Debug.Assert(edgArea[iEdge] == 0);
-                                edgArea[iEdge] = ResultsOfIntegration[i, 0];
-                                Debug.Assert(!(double.IsNaN(edgArea[iEdge]) || double.IsInfinity(edgArea[iEdge])));
-                            }
-                        }).Execute();
+                    new int[] { 1 }, gd,
+                    edgeRule,
+                    _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
+                    {
+                        EvalResult.SetAll(1.0);
+                    },
+                    _SaveIntegrationResults: delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) //
+                    {
+                        for (int i = 0; i < Length; i++) {
+                            int iEdge = i + i0;
+                            Debug.Assert(edgArea[iEdge] == 0);
+                            edgArea[iEdge] = ResultsOfIntegration[i, 0];
+                            Debug.Assert(!(double.IsNaN(edgArea[iEdge]) || double.IsInfinity(edgArea[iEdge])));
+                        }
+                    }).Execute();
 
                     // sum up edges for surface
                     // ------------------------

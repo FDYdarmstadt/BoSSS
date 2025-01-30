@@ -3,7 +3,6 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,9 +19,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
-            ) {
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) { 
+
 
 
             using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
@@ -59,8 +57,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
-            ) {
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
             using(var Ref = new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
@@ -98,8 +95,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType
-            ) {
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
             using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
                 Ref.Init();
                 Ref.RunSolverMode();

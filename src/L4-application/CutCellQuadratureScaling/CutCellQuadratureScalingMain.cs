@@ -15,7 +15,7 @@ using ilPSP;
 using BoSSS.Solution.Tecplot;
 using System.Diagnostics;
 using NUnit.Framework;
-using BoSSS.Foundation.Grid.RefElements;
+
 
 
 namespace BoSSS.Application.CutCellQuadratureScaling {
@@ -33,8 +33,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
             BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(order, quadratureType);
-
-
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -114,7 +112,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         /// </summary>
         protected Dictionary<string, double> TotalIntegral_CutLine = new Dictionary<string, double>();
 
-
         virtual protected double threshold_totSurface {
             get {
                 return 1.0e-10;
@@ -142,7 +139,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
             double D = this.Grid.SpatialDimension;
             CompareTotal("Cut Cell surface", this.TotalIntegral_SurfaceSpecies, spcId => this.latestCCM.InterfaceArea[spcId].Sum(), threshold_totSurface, this.MeshScaling.Pow(D - 1));
         }
-
 
         /// <summary>
         /// verifies that the total volume (cut-cell-volume summed over all cells) is correct
@@ -461,6 +457,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
         }
+
     }
 
 
@@ -543,7 +540,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
-
                 if(QuadratureType == CutCellQuadratureMethod.Algoim) {
                     if(this.CutCellQuadratureOrder <= 3) {
                         return 1e-1;
@@ -557,7 +553,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 4e-7;
                     }
                 }
-
 
                 return base.threshold_totSurface;
             }
@@ -578,6 +573,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
+
                 if (QuadratureType == CutCellQuadratureMethod.Saye) {
                     if (this.CutCellQuadratureOrder <= 4) {
                         return 4e-2;
@@ -590,7 +586,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     }
                 }
 
-
                 if(QuadratureType == CutCellQuadratureMethod.Algoim) {
                     if(this.CutCellQuadratureOrder <= 4) {
                         return 4e-2;
@@ -602,8 +597,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                         return 3e-8;
                     }
                 }
-
-
 
                 return base.threshold_totVolume;
             }
@@ -657,7 +650,6 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 return base.threshold_totCutline;
             }
         }
-
 
 
         double threshold_2dvs3d {

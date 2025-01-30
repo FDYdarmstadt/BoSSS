@@ -128,7 +128,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(MPITest.Program),
                         typeof(BoSSS.Application.CutCellQuadratureScaling.AllTests)
                     };
