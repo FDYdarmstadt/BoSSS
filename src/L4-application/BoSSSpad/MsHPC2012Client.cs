@@ -354,6 +354,8 @@ namespace BoSSS.Application.BoSSSpad
 
                 // Start the job.
                 Scheduler.SubmitJob(job, Username != null ? Username : null, Password);
+                job.Refresh();
+                Console.WriteLine($"State of current Job :{job.State}");
                 return (job.Id.ToString(), null);
             }
         }
