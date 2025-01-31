@@ -19,12 +19,9 @@ using Microsoft.Hpc.Scheduler;
 using Microsoft.Hpc.Scheduler.Properties;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading;
 
 namespace BoSSS.Application.BoSSSpad
 {
@@ -97,12 +94,9 @@ namespace BoSSS.Application.BoSSSpad
             base.DeployRuntime = DeployRuntime;
             base.RuntimeLocation = "win\\amd64";
 
-
             this.Username = Username;
             this.ComputeNodes = ComputeNodes;
             this.ServerName = ServerName;
-            this.Scheduler = new Scheduler();
-            this.Scheduler.Connect(ServerName);
 
             if (!Directory.Exists(base.DeploymentBaseDirectory))
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
@@ -113,6 +107,15 @@ namespace BoSSS.Application.BoSSSpad
 
         }
 
+        IScheduler GetInstance()
+        {
+            if (_Scheduler == null)
+            {
+                _Scheduler = new Scheduler();
+                _Scheduler.Connect(ServerName);
+            }
+            return _Scheduler;
+        }
         //[NonSerialized]
         //IScheduler m__scheduler;
 
@@ -178,8 +181,8 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// HPC Scheduler Object from Microsoft.Hpc
         /// </summary>
-        [DataMember]
-        protected IScheduler Scheduler;
+        [NonSerialized]
+        protected IScheduler _Scheduler;
 
         ///// <summary>
         ///// Access to the Microsoft HPC job scheduler interface.
@@ -227,6 +230,9 @@ namespace BoSSS.Application.BoSSSpad
                         Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + state);
                         return (JobStatus.FailedOrCanceled, exitCode);
 
+                    case JobState.All:
+                        return (JobStatus.Unknown, exitCode);
+
                     default:
                         throw new NotImplementedException("Unknown job state: " + state);
                 }
@@ -246,7 +252,7 @@ namespace BoSSS.Application.BoSSSpad
                 if (this.ServerName.IsEmptyOrWhite())
                     throw new IOException("'ServerName' for MS HPC scheduler is empty or white");
 
-                var job = Scheduler.OpenJob(id);
+                var job = _Scheduler.OpenJob(id);
                 job.Refresh();
                 JobState state = JobState.All;
                 int exitCode = int.MinValue;
@@ -302,7 +308,7 @@ namespace BoSSS.Application.BoSSSpad
                 str.Write("mpiexec ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
-                str.Write(Path.GetFileName(description.EntryAssembly.Location));
+                str.Write(description.EntryAssemblyName);
                 foreach (string arg in description.CommandLineArguments)
                 {
                     str.Write(" ");
@@ -338,7 +344,7 @@ namespace BoSSS.Application.BoSSSpad
             {
                 int NumberOfCores = GetNumberOfCoresForJobDescription(description);
                 string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
-
+                IScheduler Scheduler = GetInstance();
                 var job = Scheduler.CreateJob();
                 job.Name = description.Name;
                 job.Project = PrjName;
@@ -367,7 +373,7 @@ namespace BoSSS.Application.BoSSSpad
         public ISchedulerJob SubmitJobs(IEnumerable<Job> jobs, string DeploymentDirectory, int NumberOfCores = 64)
         {
             string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
-
+            IScheduler Scheduler = GetInstance();
             var job = Scheduler.CreateJob();
             job.Name = PrjName;
             job.Project = PrjName;
@@ -413,98 +419,6 @@ namespace BoSSS.Application.BoSSSpad
             {
                 return m_AdditionalEnvironmentVars;
             }
-        }
-
-
-
-
-        // TODO TS: Nicht mehr benötigt ?
-        /// <summary>
-        /// Synchronous wrapper around process execution, 
-        /// see https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
-        /// </summary>
-        (int exitcode, string stdOut, string stdErr) ExecuteProcess(string filename, string arguments, int timeout)
-        {
-            using (var tr = new FuncTrace())
-            {
-                string modArguments = arguments; // remove the password in error diagnostics
-                if (!this.Password.IsEmptyOrWhite())
-                    modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
-
-
-                using (Process process = new Process())
-                {
-                    StringBuilder output = new StringBuilder();
-                    StringBuilder error = new StringBuilder();
-
-                    process.StartInfo.FileName = filename;
-                    process.StartInfo.Arguments = arguments;
-                    process.StartInfo.UseShellExecute = false;
-                    process.StartInfo.RedirectStandardOutput = true;
-                    process.StartInfo.RedirectStandardError = true;
-
-                    using (AutoResetEvent outputWaitHandle = new AutoResetEvent(false))
-                    using (AutoResetEvent errorWaitHandle = new AutoResetEvent(false))
-                    {
-                        process.OutputDataReceived += (sender, e) =>
-                        {
-                            if (e.Data == null)
-                            {
-                                outputWaitHandle.Set();
-                            }
-                            else
-                            {
-                                output.AppendLine(e.Data);
-                            }
-                        };
-                        process.ErrorDataReceived += (sender, e) =>
-                        {
-                            if (e.Data == null)
-                            {
-                                errorWaitHandle.Set();
-                            }
-                            else
-                            {
-                                error.AppendLine(e.Data);
-                            }
-                        };
-
-                        tr.Info($"Executing: {filename} {modArguments}");
-
-                        process.Start();
-
-                        process.BeginOutputReadLine();
-                        process.BeginErrorReadLine();
-
-                        if (process.WaitForExit(timeout) &&
-                            outputWaitHandle.WaitOne(timeout) &&
-                            errorWaitHandle.WaitOne(timeout))
-                        {
-                            if (process.ExitCode != 0)
-                            {
-                                throw new IOException(filename + " " + modArguments + " exited with code " + process.ExitCode + System.Environment.NewLine + output.ToString() + System.Environment.NewLine + error.ToString());
-                            }
-
-                            string stdout = output.ToString();
-                            string stderr = error.ToString();
-
-                            tr.Info($"Stdout from {filename} {arguments}   :::::" + stdout + "<<<<<");
-                            tr.Info($"Stderr from {filename} {arguments}   :::::" + stderr + "<<<<<");
-
-                            // Process completed. Check process.ExitCode here.
-                            return (process.ExitCode, stdout, stderr);
-                        }
-                        else
-                        {
-                            // Timed out.
-                            tr.Error("timeout waiting for " + filename + " " + modArguments);
-                            throw new IOException("timeout waiting for " + filename + " " + modArguments);
-                        }
-                    }
-
-                }
-            }
-
         }
     }
 }
