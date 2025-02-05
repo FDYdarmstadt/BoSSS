@@ -329,7 +329,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             var grdDat = this.LevelSetData.GridDat;
             int D = grdDat.SpatialDimension;
             var _Cells = grdDat.Cells;
-            var scalings = grdDat.Edges.SqrtGramian;
+            //var scalings = grdDat.Edges.SqrtGramian;
             var cell2Edge = grdDat.Cells.Cells2Edges;
             //var edge2Cell = tracker.GridDat.Edges.CellIndices;
             //var FaceIdx = tracker.GridDat.Edges.FaceIndices;
@@ -902,7 +902,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     NumbersOfNodesPerFace = PtMeas_noOfNodesPerEdge
                                 };
 
-                                var PtMeas_weights = NewMethod(scalings, EdgeData, jCell, cell2Edge_j, _roots);
+                                var PtMeas_weights = NewMethod(EdgeData, jCell, cell2Edge_j, _roots);
 
                                 subdividedRule.Weights.SetVector(PtMeas_weights);
 
@@ -1130,7 +1130,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                         NumbersOfNodesPerFace = new int[_roots.Length]
                                     };
 
-                                    var PtMeas_weights = NewMethod(scalings, grdDat.Edges, jCell, cell2Edge_j, _roots);
+                                    var PtMeas_weights = NewMethod(grdDat.Edges, jCell, cell2Edge_j, _roots);
                                     double[][] _PtMeas_weights = new double[_roots.Length][];
                                     int cnt = 0;
                                     for (int e = 0; e < _roots.Length; e++) {
@@ -1171,7 +1171,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             this.m_LineMeasureNeg.Add(order, LineMeasureNeg_result.ToArray());
         }
 
-        private static List<double> NewMethod(MultidimensionalArray scalings, GridData.EdgeData EdgeData, int jCell, int[] cell2Edge_j, double[][] _roots) {
+        private static List<double> NewMethod(GridData.EdgeData EdgeData, int jCell, int[] cell2Edge_j, double[][] _roots) {
             var edge2Cell = EdgeData.CellIndices;
             var FaceIdx = EdgeData.FaceIndices;
             

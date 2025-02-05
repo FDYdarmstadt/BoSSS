@@ -645,7 +645,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool ruleDiagnosis = false;
+            static private bool ruleDiagnosis = true;
 
             /// <summary>
             /// ctor

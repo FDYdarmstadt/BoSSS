@@ -121,7 +121,7 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
                         typeof(BoSSS.Application.XDGTest.UnitTest),
                         typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-                        typeof(CutCellQuadrature.Program),
+                        typeof(CutCellQuadrature.CutCellQuadratureMain),
                         typeof(BoSSS.Application.SpecFEM.AllUpTest),
                         typeof(BoSSS.Application.ipViscosity.TestSolution),
                         //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),

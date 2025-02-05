@@ -234,9 +234,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             double SqrtGram(int edge) {
-                var g = grid.Edges.SqrtGramian[edge];
-                g = 1 / g;
-                return g;
+                //var g = grid.Edges.SqrtGramian[edge];
+                //g = 1 / g;
+                //return g;
+                return 1.0;
             }
 
             CombinedID id = new CombinedID {
@@ -266,9 +267,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             double Det(int cell) {
-                MultidimensionalArray inverseJacobian = grid.JacobianDeterminat.GetValue_Cell(Square.Instance.Center, cell, 1);
-                double g = 1 / inverseJacobian[0, 0];
-                return g;
+                //MultidimensionalArray inverseJacobian = grid.JacobianDeterminat.GetValue_Cell(Square.Instance.Center, cell, 1);
+                //double g = 1 / inverseJacobian[0, 0];
+                //return g;
+                return 1.0;
             }
 
             CombinedID id = new CombinedID {
@@ -494,8 +496,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     var weights_t = rule_t.Weights;
 
                     // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
-                    double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
-                    weights_t.Scale(scale);
+                    //double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
+                    //weights_t.Scale(scale);
 
                     specialNodes.Add(nodes_t);
                     specialWeights.Add(weights_t);

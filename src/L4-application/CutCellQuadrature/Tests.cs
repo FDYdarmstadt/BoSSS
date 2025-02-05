@@ -27,14 +27,14 @@ using ilPSP.Utils;
 namespace CutCellQuadrature {
 
     [TestFixture]
-    public partial class Program : Application {
+    public partial class CutCellQuadratureMain : Application {
 
         [Test]
         public void Test2DSurfaceHighOrderRobustnessStructured() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -60,7 +60,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -86,7 +86,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -117,7 +117,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new Smereka2EllipseArcLength(sizes[i], GridTypes.Structured);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -160,7 +160,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new Smereka2EllipseArcLength(sizes[i], GridTypes.Structured);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -208,7 +208,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new Saye2022EllipsePerimeter(sizes[i]);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -259,7 +259,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new Saye2022EllipsePerimeter(sizes[i]);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -287,7 +287,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -313,7 +313,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -339,7 +339,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -370,7 +370,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new MinGibou1EllipseArea(sizes[i], GridTypes.Structured);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -414,7 +414,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new MinGibou1EllipseArea(sizes[i], GridTypes.Structured);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -462,7 +462,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new Saye2022EllipseArea(sizes[i]);
                 testCase.ScaleShifts(0 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -515,7 +515,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new Saye2022EllipseArea(sizes[i]);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -545,7 +545,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.PseudoStructured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -578,7 +578,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new Smereka2EllipseArcLength(sizes[i], GridTypes.PseudoStructured);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);
@@ -615,7 +615,7 @@ namespace CutCellQuadrature {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.PseudoStructured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-            Program app = new Program(testCase);
+            CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
             app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial(0);
@@ -649,7 +649,7 @@ namespace CutCellQuadrature {
                 ITestCase testCase = new MinGibou1EllipseArea(sizes[i], GridTypes.PseudoStructured);
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial(0);

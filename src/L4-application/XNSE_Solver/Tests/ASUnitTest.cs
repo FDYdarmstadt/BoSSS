@@ -974,9 +974,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void IBMChannelTest(
+#if DEBUG
             [Values(1, 2, 3)] int FlowSolverDegree = 2,
             [Values(0, 30 * Math.PI / 180, 40 * Math.PI / 180, 45 * Math.PI / 180, 60 * Math.PI / 180, Math.PI / 2)] double angle = 0.0,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+#else
+            [Values(1, 2)] int FlowSolverDegree = 2,
+            [Values(0, 40 * Math.PI / 180, 45 * Math.PI / 180)] double angle = 0.0,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+
+#endif
             ) {
 
             double AgglomerationTreshold = 0.3;

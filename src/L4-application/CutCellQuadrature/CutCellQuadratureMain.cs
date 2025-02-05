@@ -67,7 +67,7 @@ namespace CutCellQuadrature {
         Algoim
     }
 
-    public partial class Program : Application {
+    public partial class CutCellQuadratureMain : Application {
 
         private static ITestCase[] testCases = new ITestCase[] {
             //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
@@ -182,7 +182,7 @@ namespace CutCellQuadrature {
 
             foreach (var testCase in testCases) {
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.m_mode = Modes.Algoim;
                 app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
@@ -192,7 +192,7 @@ namespace CutCellQuadrature {
 
             foreach (var testCase in testCases) {
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.m_mode = Modes.SayeGaussRules;
                 app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
@@ -203,11 +203,11 @@ namespace CutCellQuadrature {
             FinalizeMPI();
         }
 
-        public Program(ITestCase testCase) {
+        public CutCellQuadratureMain(ITestCase testCase) {
             this.testCase = testCase;
         }
 
-        public Program() {
+        public CutCellQuadratureMain() {
         }
 
         private ILevelSet levelSet;

@@ -10,6 +10,8 @@ using System.Diagnostics;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation;
 using ilPSP;
+using ilPSP.Utils;
+using BoSSS.Solution.Tecplot;
 
 namespace HangingNodesTests {
 
@@ -23,8 +25,8 @@ namespace HangingNodesTests {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
-            //HangingNodesTests.HangingNodesTestMain.__Test3Phase();
-            //Assert.IsTrue(false, "remove me and above line");
+            HangingNodesTests.HangingNodesTestMain.__Test3Phase(CutCellQuadratureMethod.Saye);
+            Assert.IsTrue(false, "remove me and above line");
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
@@ -86,7 +88,7 @@ namespace HangingNodesTests {
                                         speciesAgglomerator.PlotAgglomerationPairs($"agglomerationPairs-{spcName}-MPI{rank}.txt", null, true);
                                     }
                                 }
-                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
+                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)C.CutCellQuadratureType));
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             } catch (Exception e) {
@@ -118,36 +120,36 @@ namespace HangingNodesTests {
         /// single phase
         /// </summary>
         [Test]
-        public static void Test1Phase() {
+        public static void Test1Phase([Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod ccqm) {
             double[] sizes = new double[] { 1e0, 1e-3 };
             byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            RunTest(sizes, setup, 1);
+            RunTest(sizes, setup, 1, ccqm);
         }
 
         /// <summary>
         /// two phases (e.g. air and water)
         /// </summary>
         [Test]
-        public static void Test2Phase() {
+        public static void Test2Phase([Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod ccqm) {
             double[] sizes = new double[] { 1e0, 1e-3 };
             byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            RunTest(sizes, setup, 2);
+            RunTest(sizes, setup, 2, ccqm);
         }
 
         /// <summary>
         /// three phases 
         /// </summary>
         [Test]
-        public static void Test3Phase() {
+        public static void Test3Phase([Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod ccqm) {
             double[] sizes = new double[] { 1e0, 1e-3 };
             byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            RunTest(sizes, setup, 3);
+            RunTest(sizes, setup, 3, ccqm);
         }
 
-        public static void __Test3Phase() {
+        public static void __Test3Phase(CutCellQuadratureMethod ccqm) {
             double[] sizes = new double[] { 1e0 };
-            byte[] setup = new byte[] { 0 };
-            RunTest(sizes, setup, 3);
+            byte[] setup = new byte[] {1 };
+            RunTest(sizes, setup, 3, ccqm);
         }
 
 
@@ -268,7 +270,7 @@ namespace HangingNodesTests {
         }
 
 
-        private static void RunTest(double[] sizes, byte[] setup, int phase) {
+        private static void RunTest(double[] sizes, byte[] setup, int phase, CutCellQuadratureMethod ccqm) {
 
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
@@ -279,9 +281,10 @@ namespace HangingNodesTests {
 
             foreach (double size in sizes) {
                 foreach (byte s in setup) {
-                    string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs : {3}", size, phase, s, procs);
+                    string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs : {3}, CutCellQuadratureMethod: {4}", size, phase, s, procs, ccqm);
                     Description.Add(desc);
                     var C = Control.TestSkeleton(size);
+                    C.CutCellQuadratureType = ccqm;
                     Control.SetAMR(C, size, s);
                     Control.SetLevelSet(C, size, phase);
                     Control.SetParallel(C, procs);
@@ -290,9 +293,14 @@ namespace HangingNodesTests {
                         try {
                             solver.Init(C);
                             solver.RunSolverMode();
+                            Tecplot.PlotFields(
+                                ArrayTools.Cat(solver.CurrentResidual.Fields, solver.LsTrk.LevelSets.Select(f => (LevelSet)f)), "schas", 0.0, 4);
+
+                            //foreach(var spc in solver.LsTrk.SpeciesIdS)
+                            //    solver.LsTrk.GetXDGSpaceMetrics().CutCellMetrics.CutCellVolumes
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                            CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
+                            CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)ccqm));
                         } catch (Exception e) {
                             Console.WriteLine(desc + " : failed");
                             Console.WriteLine(e.Message);
@@ -308,9 +316,10 @@ namespace HangingNodesTests {
             if (procs == 2) {
                 foreach (double size in sizes) {
                     foreach (byte s in setup) {
-                        string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs (transpose) : {3}", size, phase, s, procs);
+                        string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs (transpose) : {3}, CutCellQuadratureMethod: {4}", size, phase, s, procs, ccqm);
                         Description.Add(desc);
                         var C = Control.TestSkeleton(size);
+                        C.CutCellQuadratureType = ccqm;
                         Control.SetAMR(C, size, s);
                         Control.SetLevelSet(C, size, phase);
                         Control.SetParallel(C, -procs);
@@ -321,7 +330,7 @@ namespace HangingNodesTests {
                                 solver.RunSolverMode();
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                                //CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
+                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
                                 
                             } catch (Exception e) {
                                 Console.WriteLine(desc + " : failed");

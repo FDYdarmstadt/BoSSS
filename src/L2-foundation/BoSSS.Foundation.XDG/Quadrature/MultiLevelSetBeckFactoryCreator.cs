@@ -81,6 +81,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
 
         }
         
+        /*
         int GetQuadOrder(int? quadorder)
         {
             int qO = 0;
@@ -94,7 +95,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
             }
             return qO;
         }
-
+        */
         LevelSetCombination FindPhi(CombinedID iD)
         {
             foreach(LevelSetCombination phi in phis)

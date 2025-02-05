@@ -334,6 +334,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return rule;
         }
 
+        /*
         private double VerticalWeight(int edgeNode) {
             (int adjacentA, int adjacentB) = grid.NodesOfVerticalEdge(edgeNode);
             Vector gradiendA = differentialOp.Gradient(adjacentA);
@@ -344,6 +345,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             double weight = grad.Abs() / Math.Abs(grad[0]);
             return weight;
         }
+        */
 
         private QuadRule ExtractHorizontalQuadRule(BitArray nodeMap, int count, NodeSet nodes) {
             QuadRule rule = QuadRule.CreateBlank(Square.Instance, count, 2, true);
@@ -360,6 +362,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return rule;
         }
 
+        /*
         private double HorizontalWeight(int edgeNode) {
             (int adjacentA, int adjacentB) = grid.NodesOfHorizontalEdge(edgeNode);
             Vector gradiendA = differentialOp.Gradient(adjacentA);
@@ -370,6 +373,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             double weight = grad.Abs() / Math.Abs(grad[1]);
             return weight;
         }
+        */
     }
 
     internal class FiniteDifferenceOperator {

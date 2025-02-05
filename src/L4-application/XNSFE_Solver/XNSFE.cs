@@ -157,9 +157,10 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// <exception cref="ArgumentException"></exception>
         override public int QuadOrder() {
             if (Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye
-               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes) {
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes} and {CutCellQuadratureMethod.Algoim}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
