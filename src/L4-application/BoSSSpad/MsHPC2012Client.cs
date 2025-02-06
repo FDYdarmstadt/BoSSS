@@ -23,25 +23,21 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 
-namespace BoSSS.Application.BoSSSpad
-{
+namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
     /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server (or later).
     /// </summary>
     [DataContract]
     [Serializable]
-    public class MsHPC2012Client : BatchProcessorClient
-    {
+    public class MsHPC2012Client : BatchProcessorClient {
         /// <summary>
         /// Empty Constructor for de-serialization
         /// </summary>
-        private MsHPC2012Client() : base()
-        {
+        private MsHPC2012Client() : base() {
             //Console.WriteLine("MsHPC2012Client: empty ctor");
 
-            if (System.Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
+            if (System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
 
@@ -54,10 +50,8 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// Since this is specific for MS Windows systems, it defaults to `win\amd64`
         /// </summary>
-        public override string RuntimeLocation
-        {
-            get
-            {
+        public override string RuntimeLocation {
+            get {
                 if (base.RuntimeLocation != null)
                     return base.RuntimeLocation;
                 else
@@ -83,10 +77,8 @@ namespace BoSSS.Application.BoSSSpad
         /// <param name="DeployRuntime">
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
-        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base()
-        {
-            if (System.Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
+        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
+            if (System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
 
@@ -107,10 +99,8 @@ namespace BoSSS.Application.BoSSSpad
 
         }
 
-        IScheduler GetInstance()
-        {
-            if (_Scheduler == null)
-            {
+        IScheduler GetInstance() {
+            if (_Scheduler == null) {
                 _Scheduler = new Scheduler();
                 _Scheduler.Connect(ServerName);
             }
@@ -201,15 +191,13 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// Job status.
         /// </summary>
-        public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
+            using (var tr = new FuncTrace()) {
                 int id = int.Parse(idToken);
                 var (state, exitCode) = GetStatus(id);
 
-                switch (state)
-                {
+                // TODO: TS Hier rennt der in JobState Failed rein beim Testrunner, das muss gedebuggt werden
+                switch (state) {
                     case JobState.Configuring:
                     case JobState.Submitted:
                     case JobState.Validating:
@@ -243,10 +231,8 @@ namespace BoSSS.Application.BoSSSpad
         /// get MS HPC status (<see cref="JobState"/>) from Scheduler Job ID;
         /// will be translated to <see cref="BoSSSpad.JobStatus"/> by some other method.
         /// </summary>
-        public (JobState s, int? exitCode) GetStatus(int id)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public (JobState s, int? exitCode) GetStatus(int id) {
+            using (var tr = new FuncTrace()) {
                 tr.Info($"Trying to get status for job {id} from scheduler {this.ServerName}");
 
                 if (this.ServerName.IsEmptyOrWhite())
@@ -254,11 +240,10 @@ namespace BoSSS.Application.BoSSSpad
 
                 var job = _Scheduler.OpenJob(id);
                 job.Refresh();
-                JobState state = JobState.All;
+                JobState state = job.State;
                 int exitCode = int.MinValue;
                 var tasks = job.GetTaskList(null, null, false);
-                foreach (ISchedulerTask task in tasks)
-                {
+                foreach (ISchedulerTask task in tasks) {
                     exitCode = task.ExitCode;
                 }
 
@@ -269,8 +254,7 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// Path to standard error file.
         /// </summary>
-        public override string GetStderrFile(string idToken, string DeployDir)
-        {
+        public override string GetStderrFile(string idToken, string DeployDir) {
             if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
                 return null;
             string fp = Path.Combine(DeployDir, "stderr.txt");
@@ -279,8 +263,7 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// Path to standard output file.
         /// </summary>
-        public override string GetStdoutFile(string idToken, string DeployDir)
-        {
+        public override string GetStdoutFile(string idToken, string DeployDir) {
             if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
                 return null;
             string fp = Path.Combine(DeployDir, "stdout.txt");
@@ -288,37 +271,32 @@ namespace BoSSS.Application.BoSSSpad
 
         }
 
-        private int GetNumberOfCoresForJobDescription(Job description)
-        {
+        private int GetNumberOfCoresForJobDescription(Job description) {
             int MPISz = description.NumberOfMPIProcs;
             int NumberOfCores = MPISz * description.NumberOfThreads + MPISz * this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
             return NumberOfCores;
         }
 
-        private ISchedulerTask CreateTaskFromJobDescription(Job description, string DeploymentDirectory, ISchedulerJob job)
-        {
+        private ISchedulerTask CreateTaskFromJobDescription(Job description, string DeploymentDirectory, ISchedulerJob job) {
             int NumberOfCores = GetNumberOfCoresForJobDescription(description);
             var task = job.CreateTask();
             task.MaximumNumberOfCores = NumberOfCores;
             task.MinimumNumberOfCores = NumberOfCores;
             task.WorkDirectory = DeploymentDirectory;
 
-            using (var str = new StringWriter())
-            {
+            using (var str = new StringWriter()) {
                 str.Write("mpiexec ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(description.EntryAssemblyName);
-                foreach (string arg in description.CommandLineArguments)
-                {
+                foreach (string arg in description.CommandLineArguments) {
                     str.Write(" ");
                     str.Write(arg);
                 }
 
                 task.CommandLine = str.ToString();
             }
-            foreach (var kv in description.EnvironmentVars)
-            {
+            foreach (var kv in description.EnvironmentVars) {
                 string name = kv.Key;
                 string valu = kv.Value;
                 task.SetEnvironmentVariable(name, valu);
@@ -327,8 +305,7 @@ namespace BoSSS.Application.BoSSSpad
             task.StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
             task.StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
 
-            if (ComputeNodes != null)
-            {
+            if (ComputeNodes != null) {
                 foreach (string node in ComputeNodes)
                     job.RequestedNodes.Add(node);
             }
@@ -338,10 +315,8 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
-        public override (string id, object optJobObj) Submit(Job description, string DeploymentDirectory)
-        {
-            using (new FuncTrace())
-            {
+        public override (string id, object optJobObj) Submit(Job description, string DeploymentDirectory) {
+            using (new FuncTrace()) {
                 int NumberOfCores = GetNumberOfCoresForJobDescription(description);
                 string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
                 IScheduler Scheduler = GetInstance();
@@ -370,8 +345,7 @@ namespace BoSSS.Application.BoSSSpad
         /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
         /// </summary>
         /// <returns></returns>
-        public ISchedulerJob SubmitJobs(IEnumerable<Job> jobs, string DeploymentDirectory, int NumberOfCores = 64)
-        {
+        public ISchedulerJob SubmitJobs(IEnumerable<Job> jobs, string DeploymentDirectory, int NumberOfCores = 64) {
             string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             IScheduler Scheduler = GetInstance();
             var job = Scheduler.CreateJob();
@@ -384,8 +358,7 @@ namespace BoSSS.Application.BoSSSpad
 
             job.UserName = Username;
 
-            foreach (var description in jobs)
-            {
+            foreach (var description in jobs) {
                 var task = CreateTaskFromJobDescription(description, DeploymentDirectory, job);
                 job.AddTask(task);
             }
@@ -397,8 +370,7 @@ namespace BoSSS.Application.BoSSSpad
         /// <summary>
         /// 
         /// </summary>
-        public override string ToString()
-        {
+        public override string ToString() {
             string NameString = "";
             if (!base.Name.IsEmptyOrWhite())
                 NameString = " " + base.Name + " ";
@@ -413,10 +385,8 @@ namespace BoSSS.Application.BoSSSpad
         /// Additional environment variables for the process. 
         /// </summary>
         [DataMember]
-        public IDictionary<string, string> AdditionalEnvironmentVars
-        {
-            get
-            {
+        public IDictionary<string, string> AdditionalEnvironmentVars {
+            get {
                 return m_AdditionalEnvironmentVars;
             }
         }
