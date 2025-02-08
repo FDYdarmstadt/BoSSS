@@ -1,4 +1,4 @@
-﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.BoSSSpad;
 using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution;
 using ilPSP;
@@ -1552,6 +1552,8 @@ namespace PublicTestRunner {
                 j.NumberOfMPIProcs = NoOfMpiProcs;
                 if(NumThreads != null) {
                     j.NumberOfThreads = NumThreads.Value;
+                } else {
+                    j.NumberOfThreads = 2; // reduced no of threads to improve cluster throughput.
                 }
                 if(TestRunnerRelPath != null)
                     j.EntryAssemblyRedirection = TestRunnerRelPath;
