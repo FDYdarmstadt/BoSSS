@@ -1553,7 +1553,7 @@ namespace PublicTestRunner {
                 if(NumThreads != null) {
                     j.NumberOfThreads = NumThreads.Value;
                 } else {
-                    j.NumberOfThreads = 2; // reduced no of threads to improve cluster throughput.
+                    j.NumberOfThreads = 1; // reduced no of threads to improve cluster throughput.
                 }
                 if(TestRunnerRelPath != null)
                     j.EntryAssemblyRedirection = TestRunnerRelPath;
