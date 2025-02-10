@@ -116,14 +116,103 @@ namespace ValidationTestRunner {
     [NUnitNumThreads(1)]
     static public class WorksheetTests_Local_long {
 
+		/// <summary>
+		/// XNSE Solver, 
+		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+		/// </summary>
+		[NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres2D.ipynb", "AgglomerationTestcases/collidingSpheres2Dpost.ipynb")]
+        [Test]
+		static public void Run__AggCollidingSpheres2D() {
+			// delete the database if it is more than 75 days old;
+			// this will cause a re-execution of all computations
+			// otherwise, i.e. if the database is not deleted, sessions from the database 
+			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+				"CollidingSpheres2D_condStudy",
+				"CollidingSpheres2D_condStudy",
+				"CollidingSpheres2D_condStudy",
+				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
-        /// <summary>
-        /// XDG-IST Solver, 
-        /// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
-        /// </summary>
-        //[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
-        //[Test]
-        static public void Run__XDGIST_BowShock()
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2Dpost.ipynb");
+
+			Console.WriteLine("AggCollidingSpheres2D @ FDYcluster");
+		}
+
+
+		/// <summary>
+		/// XNSE Solver, 
+		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+		/// </summary>
+		[NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres3D.ipynb", "AgglomerationTestcases/collidingSpheres3Dpost.ipynb")]
+		[Test]
+		static public void Run__AggCollidingSpheres3D() {
+			// delete the database if it is more than 75 days old;
+			// this will cause a re-execution of all computations
+			// otherwise, i.e. if the database is not deleted, sessions from the database 
+			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+				"CollidingSpheres3D_condStudy",
+				"CollidingSpheres3D_condStudy",
+				"CollidingSpheres3D_condStudy",
+				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3Dpost.ipynb");
+
+			Console.WriteLine("AggCollidingSpheres3D @ FDYcluster");
+		}
+
+		/// <summary>
+		/// XNSE Solver, 
+		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+		/// </summary>
+		[NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn2D.ipynb", "AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb")]
+		[Test]
+		static public void Run__RotatingPopcorn2D() {
+			// delete the database if it is more than 75 days old;
+			// this will cause a re-execution of all computations
+			// otherwise, i.e. if the database is not deleted, sessions from the database 
+			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+				"Popcorn2D_condStudy",
+				"Popcorn2D_condStudy",
+				"Popcorn2D_condStudy",
+				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn2D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn2Dpost.ipynb");
+
+			Console.WriteLine("RotatingPopcorn2D @ FDYcluster");
+		}
+
+		/// <summary>
+		/// XNSE Solver, 
+		/// publication results for: Toprak, Kummer: Cell agglomeration strategy for cut cells in eXtended discontinuous Galerkin methods
+		/// </summary>
+		[NUnitFileToCopyHack("AgglomerationTestcases/rotatingPopcorn3D.ipynb", "AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb")]
+		[Test]
+		static public void Run__RotatingPopcorn3D() {
+			// delete the database if it is more than 75 days old;
+			// this will cause a re-execution of all computations
+			// otherwise, i.e. if the database is not deleted, sessions from the database 
+			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+				"Popcorn3D_condStudy",
+				"Popcorn3D_condStudy",
+				"Popcorn3D_condStudy",
+				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn3D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn3Dpost.ipynb");
+
+			Console.WriteLine("RotatingPopcorn3D @ FDYcluster");
+		}
+
+
+		/// <summary>
+		/// XDG-IST Solver, 
+		/// publication results for: Vandergrift, Kummer: An extended discontinuous Galerkin shock tracking method, https://onlinelibrary.wiley.com/doi/full/10.1002/fld.5293
+		/// </summary>
+		//[NUnitFileToCopyHack("ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_HPC.ipynb", "ShockFitting/Studies/ConvergenceStudy/bosss_db_levelSets.zip", "ShockFitting/Studies/ConvergenceStudy/BowShockPoints.txt", "ShockFitting/Studies/ConvergenceStudy/ConvergenceStudy_BowShock_PostProcessing.ipynb")]
+		//[Test]
+		static public void Run__XDGIST_BowShock()
         {
             // delete the database if it is more than 75 days old;
             // this will cause a re-execution of all computations
