@@ -26,48 +26,106 @@ using BoSSS.Platform.Utils;
 using System.Diagnostics;
 using MPI.Wrappers;
 using ilPSP.Tracing;
+using ilPSP.LinSolvers.monkey;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    
-    /// <summary>
-    /// Flexible GMRES (FGMRES), i.e. GMRES with flexible preconditioner,
-    /// accordting to
-    /// @article{saad_flexible_1993,
+
+	[Serializable]
+	public class FGMRESConfig : IterativeSolverConfig {
+		/// <inheritdoc/>
+		[DataMember]
+		public override string Name => "Flexible generalized minimum residual method";
+
+		/// <inheritdoc/>
+		[DataMember]
+		public override string Shortname => "FGMRES";
+
+		/// <inheritdoc/>
+		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+			var templinearSolve = new FlexGMRES(this);
+            templinearSolve.TerminationCriterion = this.DefaultTermination;
+
+            // This would initiate a preconditioner using the same MGoperator
+            List<ISolverSmootherTemplate> preconditioners = new List<ISolverSmootherTemplate>();
+            foreach (var pre in Preconditioners) {
+				preconditioners.Add(pre.CreateInstance(level));
+				templinearSolve.IsPreconditionerInitiated = true;
+			}
+
+			templinearSolve.PrecondS = preconditioners.ToArray();
+			templinearSolve.Init(level);
+			return templinearSolve;
+		}
+
+		/// <summary>
+		/// List of preconditioner solver configurations
+		/// </summary>
+		[DataMember]
+		public List<ISolverFactory> Preconditioners = new List<ISolverFactory>();
+
+		/// <summary>
+		/// Number of solution vectors in the internal Krylov-Space
+		/// </summary>
+		[DataMember]
+        public int MaxKrylovDim = 1;
+
+	}
+
+	/// <summary>
+	/// Flexible GMRES (FGMRES), i.e. GMRES with flexible preconditioner,
+	/// accordting to
+	/// @article{saad_flexible_1993,
 	///     title = {A Flexible Inner-Outer Preconditioned {GMRES} Algorithm},
-    ///     volume = {14},
-    ///     issn = {1064-8275, 1095-7197},
-    ///     url = {http://epubs.siam.org/doi/abs/10.1137/0914028},
-    ///     doi = {10.1137/0914028},
-    ///     number = {2},
-    ///     journal = {{SIAM} Journal on Scientific Computing},
-    ///     author = {Saad, Youcef},
-    ///     year = {1993},
-    ///     pages = {461--469}
-    /// }
-    /// </summary>
-    public class FlexGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
+	///     volume = {14},
+	///     issn = {1064-8275, 1095-7197},
+	///     url = {http://epubs.siam.org/doi/abs/10.1137/0914028},
+	///     doi = {10.1137/0914028},
+	///     number = {2},
+	///     journal = {{SIAM} Journal on Scientific Computing},
+	///     author = {Saad, Youcef},
+	///     year = {1993},
+	///     pages = {461--469}
+	/// }
+	/// </summary>
+	public class FlexGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
-        MultigridOperator m_mgop;
 
-        public void Init(MultigridOperator op) {
+		/// <summary>
+		/// ctor
+		/// </summary>
+		public FlexGMRES(FGMRESConfig config) {
+			m_config = config;
+		}
+
+		FGMRESConfig m_config;
+		MultigridOperator m_MgOp;
+		bool m_Converged = false;
+		int m_ThisLevelIterations = 0;
+		public bool IsPreconditionerInitiated = false;
+		public int MaxKrylovDim => m_config.MaxKrylovDim;
+
+		public void Init(MultigridOperator op) {
             using(var tr = new FuncTrace()) {
-                if(object.ReferenceEquals(op, this.m_mgop))
+                if(object.ReferenceEquals(op, this.m_MgOp))
                     return; // already initialized
                 else
                     this.Dispose();
 
                 var M = op.OperatorMatrix;
                 var MgMap = op.DgMapping;
-                this.m_mgop = op;
+                this.m_MgOp = op;
 
-                if(!M.RowPartitioning.EqualsPartition(MgMap))
-                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!M.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration M may not be initialized
+					throw new ArgumentException("Row partitioning mismatch.");
                 if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                foreach(var pc in PrecondS) {
-                    pc.Init(m_mgop);
-                }
+                if (!IsPreconditionerInitiated)
+                    foreach(var pc in PrecondS) {
+                        pc.Init(m_MgOp);
+                        IsPreconditionerInitiated = true;
+				    }
             }
         }
 
@@ -76,40 +134,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public ISolverSmootherTemplate[] PrecondS;
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
+		/// <inheritdoc/>
+		public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public FlexGMRES() {
-            TerminationCriterion = (iIter, r0, ri) => (iIter <= 1, true);
-        }
-
-
-          
-        /// <summary>
-        /// Number of solution vectors in the internal Krylov-Space
-        /// </summary>
-        public int MaxKrylovDim = 50;
-
-        /// <summary>
-        /// ~
-        /// </summary>
-        public void Solve<U, V>(U X, V B)
+		/// <inheritdoc/>
+		public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
         {
             int L = B.Count;
 
-            if(X.Count != this.m_mgop.OperatorMatrix.ColPartition.LocalLength)
+            if(X.Count != this.m_MgOp.OperatorMatrix.ColPartition.LocalLength)
                 throw new ArgumentException("Wrong length of unknowns vector.", "X");
-            if(B.Count != this.m_mgop.OperatorMatrix.RowPartitioning.LocalLength)
+            if(B.Count != this.m_MgOp.OperatorMatrix.RowPartitioning.LocalLength)
                 throw new ArgumentException("Wrong length of RHS vector.", "B");
             
             MultidimensionalArray H = MultidimensionalArray.Create(MaxKrylovDim + 1, MaxKrylovDim);
@@ -126,29 +166,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double iter0_l2Residual = 0;
             double iter_l2Residual = 0;
             while(true) {
-
                 // init for Arnoldi
                 // -----------------
-
-                R0.SetV(B);
-                this.m_mgop.OperatorMatrix.SpMV(-1.0, X0, 1.0, R0);
-                iter0_l2Residual = R0.MPI_L2Norm();
+                R0.SetV(B);  
+                this.m_MgOp.OperatorMatrix.SpMV(-1.0, X0, 1.0, R0);
+                iter_l2Residual = R0.MPI_L2Norm();
                 if (iIter == 0) {
-                    iter_l2Residual = iter0_l2Residual;
+                    iter0_l2Residual = iter_l2Residual;
                 }
 
                 // callback
-                this.IterationCallback?.Invoke(iIter, X0.CloneAs(), R0.CloneAs(), this.m_mgop);
+                this.IterationCallback?.Invoke(iIter-1, X0.CloneAs(), R0.CloneAs(), this.m_MgOp);
 
-                // termination condition
-                var term = TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual);
-                if (!term.bNotTerminate) {
-                    this.m_Converged = term.bSuccess;
+                if (ShouldTerminate(iIter, iter0_l2Residual, iter_l2Residual))
                     break;
-                }
-                                    
-                
-                double beta = R0.L2NormPow2().MPISum().Sqrt();
+
+
+				double beta = R0.L2NormPow2().MPISum().Sqrt();
                 Vau.Add(R0.CloneAs());
                 Vau[0].ScaleV(1.0 / beta);
 
@@ -168,7 +202,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Zed.Add(Zj);
 
                     double[] W = new double[L];
-                    this.m_mgop.OperatorMatrix.SpMV(1.0, Zj, 0.0, W);
+                    this.m_MgOp.OperatorMatrix.SpMV(1.0, Zj, 0.0, W);
 
                     for(int i = 0; i <= j; i++) {
                         double hij = GenericBlas.InnerProd(W, Vau[i]).MPISum();
@@ -193,8 +227,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //    }
                     //    double[] ztmp = new double[Xtmp.Length];
                     //    ztmp.SetV(B);
-                    //    this.m_mgop.OperatorMatrix.SpMV(-1.0, Xtmp, 1.0, ztmp);
-                    //    IterationCallback?.Invoke(j, Xtmp, ztmp, this.m_mgop);
+                    //    this.m_MgOp.OperatorMatrix.SpMV(-1.0, Xtmp, 1.0, ztmp);
+                    //    IterationCallback?.Invoke(j, Xtmp, ztmp, this.m_MgOp);
                     //}
                 }
 
@@ -239,14 +273,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 H.Clear();
 
             }
-        }
+			Console.WriteLine($"total iteration number: {this.m_ThisLevelIterations}");
+		}
 
-        
+		/// <summary>
+		/// helper function to understand and control the termination behavior
+		/// </summary>
+		/// <param name="iIter">iteration number</param>
+		/// <param name="ResNorm0"></param>
+		/// <param name="ResNorm"></param>
+		/// <returns></returns>
+		bool ShouldTerminate(int iIter, double ResNorm0, double ResNorm) {
+			var (shouldNotTerminate, hasConverged) = TerminationCriterion(iIter, ResNorm0, ResNorm);
 
-        bool m_Converged = false;
-        int m_ThisLevelIterations = 0;
+			//if termination is requested, e.g. iter > maxIter  or if already converged
+			if (!shouldNotTerminate || hasConverged) { 
+                this.m_Converged = hasConverged;
+				m_ThisLevelIterations = iIter;
+				return true;
+			}
 
-        public int IterationsInNested {
+			return false;
+		}
+
+		/// <inheritdoc/>
+		public int IterationsInNested {
             get {
                 if(this.PrecondS != null)
                     return this.PrecondS.Sum(pc => pc.IterationsInNested + pc.ThisLevelIterations);
@@ -255,28 +306,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public int ThisLevelIterations {
+		/// <inheritdoc/>
+		public int ThisLevelIterations {
             get { return this.m_ThisLevelIterations; }
         }
 
-        public bool Converged {
+		/// <inheritdoc/>
+		public bool Converged {
             get { return this.m_Converged; }
         }
 
-        public void ResetStat() {
+		/// <inheritdoc/>
+		public void ResetStat() {
             m_Converged = false;
             m_ThisLevelIterations = 0;
         }
 
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+		/// <inheritdoc/>
+		public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
 
-        public object Clone() {
-            var clone = new FlexGMRES();
+		/// <inheritdoc/>
+		public object Clone() {
+            var clone = new FlexGMRES(m_config);
             clone.TerminationCriterion = this.TerminationCriterion;
-            clone.MaxKrylovDim = this.MaxKrylovDim;
             var tmp = new List<ISolverSmootherTemplate>();
             foreach (ISolverSmootherTemplate precond in this.PrecondS) {
                 tmp.Add(precond.CloneAs());
@@ -285,11 +340,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return clone;
         }
 
-        public void Dispose() {
-            throw new NotImplementedException();
-        }
+		/// <inheritdoc/>
+		public void Dispose() {
+			m_MgOp = null;  // setting this to null ensures that Init(...) will actually initialize the solvers
 
-        public long UsedMemory() {
+            if (IsPreconditionerInitiated) {
+				PrecondS?.ForEach(p => p.Dispose());
+				IsPreconditionerInitiated = false;
+			}
+		}
+
+		/// <inheritdoc/>
+		public long UsedMemory() {
             throw new NotImplementedException();
         }
     }
