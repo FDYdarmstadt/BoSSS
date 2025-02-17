@@ -585,13 +585,13 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 
-                    // compute intersection line
-                    // -------------------------
+                    // compute intersection line (between level-set 0 and 1)
+                    // -----------------------------------------------------
 
                     var intersectLine = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1);
 
 
-                    var intersectScheme = schH.GetContactLineQuadScheme(spc, 0);
+                    var intersectScheme = schH.GetContactLineQuadScheme(spc, 0, 1);
                     var intersectRule = intersectScheme.Compile(gd, this.CutCellQuadratureOrder);
 
                     BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(

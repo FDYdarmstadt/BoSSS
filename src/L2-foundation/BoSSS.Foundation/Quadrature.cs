@@ -797,7 +797,7 @@ namespace BoSSS.Foundation.Quadrature {
                             m_QuadResults.Clear(); 
                         } else {
                             // normal evaluation
-                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, m_QuadResults, ThreadRank, NumThreads);
+                            this.m_ExEvaluate(j, ChunkLength, this.CurrentRule, IntegrationMetric, m_QuadResults, ThreadRank, NumThreads);
                         }
                         stpwEval.Stop();
                     }
@@ -1080,7 +1080,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// evaluation of integrand, multiplication with quadrature weights, and summation, in **a multi-threaded environment**.
         /// </summary>
-        public delegate void Del_EvaluateEx(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult, int iThread, int NumOfThreads);
+        public delegate void Del_EvaluateEx(int i0, int Length, TQuadRule rule, IIntegrationMetric metric, MultidimensionalArray EvalResult, int iThread, int NumOfThreads);
 
 
         /// <summary>

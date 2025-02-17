@@ -76,7 +76,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         [Test]
         public static void TestCurved() {
-
+            // --test=BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved
             using(SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCurved();
                 p.Init(ctrl);

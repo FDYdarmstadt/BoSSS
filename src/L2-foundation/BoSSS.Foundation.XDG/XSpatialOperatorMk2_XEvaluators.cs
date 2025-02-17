@@ -32,6 +32,8 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
 using static BoSSS.Foundation.DifferentialOperator;
+using BoSSS.Foundation.Quadrature.NonLin;
+using BoSSS.Foundation.Quadrature.Linear;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -212,16 +214,16 @@ namespace BoSSS.Foundation.XDG {
                         // do the Bulk integration...
                         foreach(var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
-
-
-
+                            
                             SpeciesFrameMatrix<M> mtx = mtx_spc[iSpecies];
                             var _mtx = Matrix != null ? mtx : default(SpeciesFrameMatrix<M>);
 
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
-                            var SpeciesBuilders = DoEdge ? new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder, SpeciesContactLineBuilder } : new[] { SpeciesBulkMtxBuilder };
+                            var SpeciesBuilders = new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder, SpeciesContactLineBuilder };
+                            //int ibuilder = 0;
                             foreach (var SpeciesBuilder in SpeciesBuilders) {
+                                //ibuilder++;
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
 
@@ -241,7 +243,12 @@ namespace BoSSS.Foundation.XDG {
                                             throw new NotSupportedException();
                                         builder.ComputeAffine(vec);
                                     } else {
+                                        
+
+
                                         builder.ComputeMatrix(_mtx, vec, alpha);
+
+                                       
                                     }
                                 }
 
@@ -256,7 +263,7 @@ namespace BoSSS.Foundation.XDG {
 
                     using(var bt = new BlockTrace("surface_integration", tr)) {
                         bt.IntermediateReportOfChildCalls = true;
-                        if (DoEdge) {
+                        if (onlyfordebugging_DoEdge) {
 #if DEBUG
                             {
                                 // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
@@ -411,20 +418,20 @@ namespace BoSSS.Foundation.XDG {
                         foreach (var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
                             var vec = vec_spc[iSpecies];
+                            string spcname = lsTrk.GetSpeciesName(SpeciesId);
 
 
+                            var SpeciesBuilders = new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval };
 
-                            var SpeciesBuilders = DoEdge ? new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval } : new[] { SpeciesBulkEval };
+
+                            int iBuilder = 0;
+                            foreach(var SpeciesEval in SpeciesBuilders) {
+                                iBuilder++;
 
 
-                            int cnt = -1;
-                            foreach (var SpeciesEval in SpeciesBuilders) {
-                                cnt++;
-                                
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
                                     var eval = SpeciesEval[SpeciesId];
-                                    //eval.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
                                     NotifySpecies((DifferentialOperator)(eval.Owner), this.m_lsTrk, SpeciesId);
 
                                     if (trx != null) {
@@ -441,11 +448,12 @@ namespace BoSSS.Foundation.XDG {
                         
                     }
 
+
                     //  coupling
                     ///////////////////
-                    
+
                     using (new BlockTrace("surface_integration", tr)) {
-                        if (DoEdge) {
+                        if (onlyfordebugging_DoEdge) {
                             // TODO: are the quadrature rules non-empty?
 #if DEBUG
                             {
@@ -645,7 +653,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool ruleDiagnosis = true;
+            static private bool onlyfordebugging_RuleDiagnosis = false;
 
             /// <summary>
             /// ctor
@@ -743,7 +751,7 @@ namespace BoSSS.Foundation.XDG {
                             CellQuadratureScheme cellScheme = m_Xowner.VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             
 
-                            if(ruleDiagnosis) {
+                            if(onlyfordebugging_RuleDiagnosis) {
                                 var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
                                 var volRule = cellScheme.Compile(this.GridData, quadOrder);
                                 
@@ -775,7 +783,7 @@ namespace BoSSS.Foundation.XDG {
                             if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                                 EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                if (ruleDiagnosis) {
+                                if (onlyfordebugging_RuleDiagnosis) {
                                     var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
                                     var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
 
@@ -793,7 +801,7 @@ namespace BoSSS.Foundation.XDG {
                             if (m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
                                 EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
                                 CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                                if (ruleDiagnosis) {
+                                if (onlyfordebugging_RuleDiagnosis) {
                                     ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
 									ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}");
                                 }
@@ -904,7 +912,7 @@ namespace BoSSS.Foundation.XDG {
                                                 CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA,  IntegrationDom);
                                                 rule = SurfIntegration.Compile(GridData, quadOrder);
 
-                                                if (ruleDiagnosis) {
+                                                if (onlyfordebugging_RuleDiagnosis) {
                                                     rule.SaveToTextFileCell(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
                                                     rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
                                                 }

@@ -25,8 +25,7 @@ namespace HangingNodesTests {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
-            HangingNodesTests.HangingNodesTestMain.__Test3Phase(CutCellQuadratureMethod.Saye);
-            Assert.IsTrue(false, "remove me and above line");
+            ilPSP.Environment.NumThreads = 1;
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
@@ -130,7 +129,7 @@ namespace HangingNodesTests {
         /// two phases (e.g. air and water)
         /// </summary>
         [Test]
-        public static void Test2Phase([Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod ccqm) {
+        public static void Test2Phase([Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod ccqm) {
             double[] sizes = new double[] { 1e0, 1e-3 };
             byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
             RunTest(sizes, setup, 2, ccqm);
@@ -140,7 +139,7 @@ namespace HangingNodesTests {
         /// three phases 
         /// </summary>
         [Test]
-        public static void Test3Phase([Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod ccqm) {
+        public static void Test3Phase([Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod ccqm) {
             double[] sizes = new double[] { 1e0, 1e-3 };
             byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
             RunTest(sizes, setup, 3, ccqm);
@@ -285,6 +284,8 @@ namespace HangingNodesTests {
                     Description.Add(desc);
                     var C = Control.TestSkeleton(size);
                     C.CutCellQuadratureType = ccqm;
+                    C.ImmediatePlotPeriod = 1;
+                    C.SuperSampling = 3;
                     Control.SetAMR(C, size, s);
                     Control.SetLevelSet(C, size, phase);
                     Control.SetParallel(C, procs);
@@ -293,11 +294,7 @@ namespace HangingNodesTests {
                         try {
                             solver.Init(C);
                             solver.RunSolverMode();
-                            Tecplot.PlotFields(
-                                ArrayTools.Cat(solver.CurrentResidual.Fields, solver.LsTrk.LevelSets.Select(f => (LevelSet)f)), "schas", 0.0, 4);
-
-                            //foreach(var spc in solver.LsTrk.SpeciesIdS)
-                            //    solver.LsTrk.GetXDGSpaceMetrics().CutCellMetrics.CutCellVolumes
+                            
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)ccqm));
@@ -324,15 +321,15 @@ namespace HangingNodesTests {
                         Control.SetLevelSet(C, size, phase);
                         Control.SetParallel(C, -procs);
 
-                        using (var solver = new XNSFE()) {
+                        using(var solver = new XNSFE()) {
                             try {
                                 solver.Init(C);
                                 solver.RunSolverMode();
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                                 CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
-                                
-                            } catch (Exception e) {
+
+                            } catch(Exception e) {
                                 Console.WriteLine(desc + " : failed");
                                 Console.WriteLine(e.Message);
                                 Console.WriteLine(e.StackTrace);

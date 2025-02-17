@@ -85,9 +85,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The order of all cut-cell quadrature rules which are present in the cache.
         /// </summary>
-        public ISet<int> GetCachedOrders() {
+        public ISet<int> GetCachedOrders(int iHistory = 1) {
             HashSet<int> hs = new HashSet<int>();
-            foreach(var t in m_XDGSpaceMetricsHistory.Current.Keys) {
+            foreach(var t in m_XDGSpaceMetricsHistory[iHistory].Keys) {
                 hs.Add(t.Item3);
             }
 
@@ -100,7 +100,7 @@ namespace BoSSS.Foundation.XDG {
         public XDGSpaceMetrics GetXDGSpaceMetrics(int HistoryIndex = 1) {
             int CutCellsQuadOrder;
             if(this.GetCachedOrders().Count > 0)
-                CutCellsQuadOrder = this.GetCachedOrders().Max();
+                CutCellsQuadOrder = this.GetCachedOrders(HistoryIndex).Max();
             else 
                 CutCellsQuadOrder = this.LevelSets.Select(ls => ((ls as LevelSet)?.Basis?.Degree ?? 4)).Max() * 2;
 

@@ -100,6 +100,8 @@ namespace ilPSP.LinSolvers {
         /// Optional column partition of the output matrix; if null, a column partition is chosen automatically.
         /// </param>
         public static MsrMatrix LoadFromFile(string path, MPI_Comm mpi_comm, IPartitioning RowPart = null, IPartitioning ColPart = null) {
+            
+
 
             int rank, size;
             csMPI.Raw.Comm_Rank(mpi_comm, out rank);

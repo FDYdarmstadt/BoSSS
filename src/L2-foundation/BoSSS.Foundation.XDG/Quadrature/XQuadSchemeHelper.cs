@@ -291,39 +291,44 @@ namespace BoSSS.Foundation.XDG {
             return LevSetQrIns;
         }
 
-        public CellQuadratureScheme GetContactLineQuadScheme(SpeciesId sp, int iLevSet) {
+        public CellQuadratureScheme GetContactLineQuadScheme(SpeciesId sp, int iLevSet0, int iLevSet1) {
+            if(iLevSet0 == iLevSet1)
+                throw new ArgumentException("Both level-set indices are the same; self-intersection is not allowed.");
+
             //Find domain
             CellMask allDoublyCuts = CellMask.GetEmptyMask(XDGSpaceMetrics.GridDat, MaskType.Geometrical);
 
-            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
-                    if (iLevSet != jLevSet) {
-                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
-                            allDoublyCuts = allDoublyCuts.Union(GetCutCells(iLevSet, jLevSet));
-                        }
-                    }
+            foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                //for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+                //    if (iLevSet != jLevSet) {
+                if(!SpeciesAreSeparatedByLevSet(iLevSet1, sp, sp)) {
+                    allDoublyCuts = allDoublyCuts.Union(GetCutCells(iLevSet0, iLevSet1));
                 }
+                //    }
+                //}
             }
 
             var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp).ToGeometicalMask();
             var IntegrationDom = allDoublyCuts.Intersect(spdom);
-            var LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
+            var LevSetQrIns = new CellQuadratureScheme(
+                new LevelSetIntersectionIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet0], this.XDGSpaceMetrics.LevelSetData[iLevSet1]),
+                false, IntegrationDom);
 
             //Handle doubly cut cells, do it all again, this time add quadrature Factory
-            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
-                    if (iLevSet != jLevSet) {
-                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
-                            CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
-                            if (doublyCut.Count() > 0) {
-                                var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
-                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref, backupFactory);
-                                LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
-                            }
-                        }
+            foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                //for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+                //    if (iLevSet != jLevSet) {
+                if(!SpeciesAreSeparatedByLevSet(iLevSet1, sp, sp)) {
+                    CellMask doublyCut = this.GetCutCells(iLevSet0, iLevSet1);
+                    if(doublyCut.Count() > 0) {
+                        var jmpJ = IdentifyWingA(iLevSet1, sp);
+                        var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet0, Kref);
+                        var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet0, iLevSet1, Kref, backupFactory);
+                        LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                     }
                 }
+                //    }
+                //}
             }
             return LevSetQrIns;
         }

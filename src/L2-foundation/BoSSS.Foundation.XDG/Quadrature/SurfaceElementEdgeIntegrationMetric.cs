@@ -9,7 +9,9 @@ using System.Text;
 namespace BoSSS.Foundation.XDG.Quadrature {
 
     /// <summary>
-    /// integration metric for $D-2$-dimensional integral the boundary of surface elements for each edge, i.e., for an edge $e_i$
+    /// Integration metric for $D-2$-dimensional integral the boundary of surface elements for each edge.
+    /// This is a point in 2D and a line in 3D,
+    /// i.e., for an edge $e_i$ an integral of the type
     /// \[
     ///    \int_{e_j \cap \mathfrak{I}}  f \mathrm{dl} .
     /// \]
@@ -42,7 +44,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// <summary>
         /// in 2D, the boundary of surface elements are just points -- one needs a count measure, where the integration metric is always 1
         /// </summary>
-        public MultidimensionalArray GetScalingsForLinearElements(IGridData gridData, QuadRule qr, int jCell, int L) {
+        public MultidimensionalArray GetScalingsForLinearElements(IGridData gridData, QuadRule qr, int iEdge, int L) {
             if(m_levelSetData.GridDat.SpatialDimension == 2) {
                 var ret = MultidimensionalArray.Create(L);
                 ret.SetAll(1.0);
@@ -69,6 +71,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             int K = qr.NoOfNodes;
 
             var metric = MultidimensionalArray.Create(L, K);
+            var Tangents = TempBuffer.GetTempMultidimensionalarray(out int iTangentsBuf, 2*K, D);
 
             for(int i = 0; i < L; i++) {
                 int jCell0 = E2C[iEdge + 1, 0];
@@ -80,7 +83,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 var CellNormal = Kref.FaceNormals.GetRowPt(iFace);
 
                 
-                var Tangents = MultidimensionalArray.Create(2*K, D);
 
                 for(int k = 0; k < K; k++) {
                     var SurfNormal = LevSetNormals.GetRowPt(k);
@@ -98,15 +100,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 // the metric is the local stretching of the tangent on the boundary line
                 for(int k = 0; k < K; k++) {
                     var TangentTransformed = TangentsTransformed.GetRowPt(k) - TangentsTransformed.GetRow(k + K);
-                    //if((TangentTransformed * Vector.StdBasis3Dz()).Abs() <= 1e-8)
-                    //    // perpendicular to z-Axis => in xy-plane
-                    //    metric[i, k] = 0; // 
-                    //else
-                    //    metric[i, k] = TangentTransformed.L2Norm();
-
                     metric[i, k] = TangentTransformed.L2Norm();
                 }
             }
+
+            TempBuffer.FreeTempBuffer(iTangentsBuf);
+
 
             return metric;
 

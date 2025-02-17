@@ -1461,15 +1461,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (Jtot[0] == Jtot[1])
                         throw new ArithmeticException("All cells are cut cells - check your settings!");
 
-                    //foreach(var kv in this.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutCellVolumes) {
-                    //    kv.Value.To1DArray().SaveToTextFile("vol-" + m_LsTrk.GetSpeciesName(kv.Key) + "-" + m_LsTrk.CutCellQuadratureType.ToString() + ".txt");
-                    //}
-                    //foreach(var kv in this.m_CurrentAgglomeration.NonAgglomeratedMetrics.InterfaceArea) {
-                    //    kv.Value.To1DArray().SaveToTextFile("int-" + m_LsTrk.GetSpeciesName(kv.Key) + "-" + m_LsTrk.CutCellQuadratureType.ToString() + ".txt");
-                    //}
-                    //foreach(var kv in this.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
-                    //    kv.Value.To1DArray().SaveToTextFile("edge-" + m_LsTrk.GetSpeciesName(kv.Key) + "-" + m_LsTrk.CutCellQuadratureType.ToString() + ".txt");
-                    //}
+                    
                 }
 
 
@@ -1576,76 +1568,19 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                     double[] Affine;
-                    BoSSS.Foundation.Quadrature.NonLin.SignalTemp.b = true;
                     this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
                     Debug.Assert(System == null);
 
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
 
-                    /* 
-                    foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.InterfaceArea) {
-                        var name = $"InterfaceArea-{m_LsTrk.GetSpeciesName(kv.Key)}-{m_LsTrk.CutCellQuadratureType}.txt";
-                        var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
-                        vals.SaveToTextFile(name);
-                    }
-
-                    foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutEdgeAreas) {
-                        var name = $"CutEdge-{m_LsTrk.GetSpeciesName(kv.Key)}-{m_LsTrk.CutCellQuadratureType}.txt";
-                        var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
-                        vals.SaveToTextFile(name);
-
-                    }
-
-                    foreach(var kv in base.m_CurrentAgglomeration.NonAgglomeratedMetrics.CutCellVolumes) {
-                        var name = $"CutCellVolumes-{m_LsTrk.GetSpeciesName(kv.Key)}-{m_LsTrk.CutCellQuadratureType}.txt";
-                        var vals = kv.Value.To1DArray().Select(area => area.IsNaN() ? -1.0 : area).ToArray();
-                        vals.SaveToTextFile(name);
-
-                    }
-
-                    if(m_LsTrk.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
-                        base.Residuals.SaveToTextFile("resisuals.txt");
-
-                        
-
-
-                    } else {
-                        var r = VectorIO.LoadFromTextFile("resisuals.txt");
-                        Console.WriteLine(" --------------  resi dist: " + r.L2Distance(base.Residuals));
-
-                        var Err = base.Residuals.CloneAs();
-                        Err.Acc(-1.0, r);
-                        var ErrVec = Err.ToArray();
-
-                        foreach(var f in Err.Fields) {
-                            var b = f.Basis;
-                            int P = b.Degree;
-                            var fA = ((XDGField)f).GetSpeciesShadowField("A");
-
-                            for(int p = 0; p <= P; p++) {
-                                double acc = 0.0;
-                                foreach(int jCell in m_LsTrk.Regions.GetSpeciesMask("A").ItemEnum) {
-                                    var modes = b.GetPolynomialIndicesForDegree(jCell, p);
-                                    foreach(int n in modes) {
-                                        acc += fA.Coordinates[jCell, n].Pow2();
-                                    }
-                                }
-                                acc = acc.Sqrt();
-                                Console.WriteLine($"   ++++++++++++++  {fA.Identification}, p = {p} : {acc}  ");
-                            }
-                            
-
-
-                        }
-
-                    }
-                    */
-
+                    
                     success = true;
 
 #if DEBUG
                     {
+                        //DifferentialOperator.onlyfordebugging_DoVolume = true;
+                        //DifferentialOperator.onlyfordebugging_DoEdge = true;
 
                         this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
 
@@ -1660,11 +1595,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                         double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
 
-                        if (distL2 >= refL2 * 1.0e-5) {
-                            double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
-                        }
+                        //if (distL2 >= refL2 * 1.0e-5) {
+                        //    double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
+                        //}
 
-                        Tecplot.Tecplot.PlotFields(base.Residuals.Fields, "resi", 0.0, 2);
 
                         Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
 
