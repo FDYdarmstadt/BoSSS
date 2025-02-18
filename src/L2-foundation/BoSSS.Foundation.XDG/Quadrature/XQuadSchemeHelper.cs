@@ -294,6 +294,10 @@ namespace BoSSS.Foundation.XDG {
         public CellQuadratureScheme GetContactLineQuadScheme(SpeciesId sp, int iLevSet0, int iLevSet1) {
             if(iLevSet0 == iLevSet1)
                 throw new ArgumentException("Both level-set indices are the same; self-intersection is not allowed.");
+            if(iLevSet0 < 0 || iLevSet0 >= XDGSpaceMetrics.NoOfLevelSets)
+                throw new ArgumentOutOfRangeException($"iLevSet0 index out-of-range: is {iLevSet0}, number of level sets: {XDGSpaceMetrics.NoOfLevelSets}");
+            if(iLevSet1 < 0 || iLevSet1 >= XDGSpaceMetrics.NoOfLevelSets)
+                throw new ArgumentOutOfRangeException($"iLevSet1 index out-of-range: is {iLevSet0}, number of level sets: {XDGSpaceMetrics.NoOfLevelSets}");
 
             //Find domain
             CellMask allDoublyCuts = CellMask.GetEmptyMask(XDGSpaceMetrics.GridDat, MaskType.Geometrical);
