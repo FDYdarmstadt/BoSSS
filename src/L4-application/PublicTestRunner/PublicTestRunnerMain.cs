@@ -1,5 +1,4 @@
 ﻿using BoSSS.Application.BoSSSpad;
-using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
@@ -9,17 +8,13 @@ using log4net.Config;
 using log4net.Layout;
 using MPI.Wrappers;
 using NUnit.Framework;
-using NUnit.Framework.Interfaces;
 using NUnitLite;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace PublicTestRunner {
 
@@ -84,7 +79,7 @@ namespace PublicTestRunner {
         /// If true, the managed assemblies are not copied for every job; there is only a single copy to reduce IO load.
         /// Uses the <see cref="Job.EntryAssemblyRedirection"/> - hack;
         /// </summary>
-        bool CopyManagedAssembliesCentrally { get; } 
+        bool CopyManagedAssembliesCentrally { get; }
 
         /// <summary>
         /// If true, the deployment directories are deleted for jobs which finished successfully
@@ -791,7 +786,7 @@ namespace PublicTestRunner {
                 }
             }
 
-            if(IOsyncMutex == null) {
+            if (IOsyncMutex == null) {
                 Console.WriteLine("Unable to create mutex: " + mutex_name);
             }
         }
@@ -800,7 +795,7 @@ namespace PublicTestRunner {
         /// to distinct the internalTestRunner
         /// </summary>
         public static string RunnerPrefix = "Pub";
-               
+
 
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
@@ -810,13 +805,13 @@ namespace PublicTestRunner {
 
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-            if(MpiSize != 1) {
+            if (MpiSize != 1) {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
             BoSSSshell.ReloadExecutionQueues();
 
-            if(ExecutionQueueNo >= BoSSSshell.ExecutionQueues.Count)
+            if (ExecutionQueueNo >= BoSSSshell.ExecutionQueues.Count)
                 throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
             BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
@@ -830,23 +825,23 @@ namespace PublicTestRunner {
                 Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
                 do {
                     DateNtime = DateTime.Now.ToString("MMMdd_HHmmss");
-                    string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" +  DateNtime + ".lock");
+                    string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + ".lock");
                     try {
                         ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-                        using(var wrt = new StreamWriter(ServerMutex)) {
+                        using (var wrt = new StreamWriter(ServerMutex)) {
                             wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
                         }
-                    } catch(Exception ee) {
+                    } catch (Exception ee) {
                         Console.Error.WriteLine($"Unable to get lock on {MutexFileName}: {ee}");
                         Console.Error.WriteLine("wait and try again...");
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
-                } while(ServerMutex == null);
+                } while (ServerMutex == null);
                 Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
-                if(DateNtime == null)
+                if (DateNtime == null)
                     throw new ApplicationException("internal error");
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Console.Error.WriteLine("UNRECOVERABLE EXCEPTION DURING CREATION OF OUTPUT DIRECTORY");
                 Console.Error.WriteLine(e.GetType() + ":  " + e.Message);
                 Console.Error.WriteLine(e.StackTrace);
@@ -859,13 +854,13 @@ namespace PublicTestRunner {
             InitTraceFile("JobManagerRun-" + DateNtime);
 
             bool I_StartedMinibatch = false;
-            if(bpc is MiniBatchProcessorClient) {
+            if (bpc is MiniBatchProcessorClient) {
                 I_StartedMinibatch = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: true);
             }
 
-            
+
             int returnCode = 0;
-            using(var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
                 // ===================================
                 // phase 1: discover tests
@@ -873,12 +868,12 @@ namespace PublicTestRunner {
                 //Debugger.Launch();
                 BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
-                
-                
+
+
                 // deployment of assemblies
                 string NativeOverride;
                 string RelManagedPath;
-                if(TestTypeProvider.CopyManagedAssembliesCentrally) {
+                if (TestTypeProvider.CopyManagedAssembliesCentrally) {
                     string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
                     DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
                     ManagedOverride.Create();
@@ -887,7 +882,7 @@ namespace PublicTestRunner {
                     RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
 
                     if (!bpc.RuntimeLocation.IsEmptyOrWhite()) {
-                    
+
                         // 
                         // since we deploy the **managed** assemblies to an alternative location,
                         // we should also deploy the **native binaries**.
@@ -917,24 +912,24 @@ namespace PublicTestRunner {
 
 
                 } else {
-                    NativeOverride = null; 
+                    NativeOverride = null;
                     RelManagedPath = null; //The job manager will deploy the assemblies
                 }
-                
+
 
 
                 // collection for all tests:
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs, int? NumThreads)>();
-                
+
                 // Find all serial tests:
                 {
                     var assln = GetAllAssembliesForTests();
-                    if(assln != null) {
-                        foreach(var a in assln) {
-                            if(FilterTestAssembly(a, AssemblyFilter)) {
+                    if (assln != null) {
+                        foreach (var a in assln) {
+                            if (FilterTestAssembly(a, AssemblyFilter)) {
                                 var allTst4Assi = GetTestsInAssembly(a, AssemblyFilter);
-                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]].Length > 0) {
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    if (ignore_tests_w_deps && allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]].Length > 0) {
                                         Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
                                         break;
                                     }
@@ -945,19 +940,19 @@ namespace PublicTestRunner {
                     }
                 }
 
-               
+
                 // Find all MPI-parallel tests:
                 {
                     var ParAssln = GetAllMpiAssemblies();
-                    if(ParAssln != null) {
-                        foreach(var TT in ParAssln) {
-                            if(FilterTestAssembly(TT.Asbly, AssemblyFilter)) {
+                    if (ParAssln != null) {
+                        foreach (var TT in ParAssln) {
+                            if (FilterTestAssembly(TT.Asbly, AssemblyFilter)) {
 
                                 var a = TT.Asbly;
                                 var allTst4Assi = GetTestsInAssembly(a, AssemblyFilter);
 
-                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]].Length > 0) {
+                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    if (ignore_tests_w_deps && allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]].Length > 0) {
                                         Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
                                         break;
                                     }
@@ -971,7 +966,7 @@ namespace PublicTestRunner {
 
                 Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
                 int cnt = 0;
-                foreach(var t in allTests) {
+                foreach (var t in allTests) {
                     cnt++;
                     Console.WriteLine($"  #{cnt}: {t.testname}");
                     Console.WriteLine($"     {t.shortname}");
@@ -983,12 +978,12 @@ namespace PublicTestRunner {
                     try {
                         var s = File.ReadAllText(BOSSS_TEST_RUNNER_GODMODE);
                         int godval = int.Parse(s);
-                        if(godval != 0) {
+                        if (godval != 0) {
                             Console.WriteLine("Detected Godmode-Cheatfile. Setting all tests to success.");
                             return 0;
                         }
-                    } catch(Exception) { }
-              
+                    } catch (Exception) { }
+
                 }
 
                 // ===================================
@@ -1001,29 +996,29 @@ namespace PublicTestRunner {
 
                 cnt = 0;
                 var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
-                using(new BlockTrace("DEPLOYMENT", tr)) {
+                using (new BlockTrace("DEPLOYMENT", tr)) {
                     var checkResFileName = new HashSet<string>();
 
-                    foreach(var t in allTests) {
+                    foreach (var t in allTests) {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
                             var j = SubmitJob(t.ass, t.testname, t.shortname, TestTypeProvider.RetryCount, bpc, t.depfiles, DateNtime, t.NoOfProcs, t.NumThreads, NativeOverride, RelManagedPath, cnt);
-                            if(checkResFileName.Add(j.resultFile) == false) {
+                            if (checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
 
 
                             Console.WriteLine($"Successfully submitted {j.j.Name}. \n");
                             AllOpenJobs.Add(j);
-                        } catch(Exception e) {
+                        } catch (Exception e) {
                             Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
                             returnCode--;
                         }
                     }
                 }
 
-                if(returnCode == 0) {
+                if (returnCode == 0) {
                     Console.WriteLine($"******* All jobs/tests deployed ({DateTime.Now}) *******");
                 } else {
                     Console.WriteLine($"******* Deployed finished ({DateTime.Now}) -- SOME DEPLOYMENT(S) FAILED *******");
@@ -1036,16 +1031,16 @@ namespace PublicTestRunner {
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)>();
 
 
-                
-                using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
+
+                using (var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)[] UpdateFinishedJobs() {
-                        using(var trr = new FuncTrace("UpdateFinishedJobs")) {
+                        using (var trr = new FuncTrace("UpdateFinishedJobs")) {
                             string CurrentDir = Path.GetDirectoryName(typeof(PublicTestRunnerMain).Assembly.Location);
 
                             var RecentlyFinished = new List<(Job job, string ResFile, string testname, JobStatus LastStatus, OnlineProfiling[] profilings)>();
 
-                            for(int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
+                            for (int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
                                 var s = jj.job.Status;
 
@@ -1053,7 +1048,7 @@ namespace PublicTestRunner {
                                     string resultArg = "--result=";
                                     string resArg = jj.job.EnvironmentVars.Values.Single(arg => arg.StartsWith(resultArg));
                                     string _resFile = resArg.Replace(resultArg, "");
-                                    if(_resFile != jj.ResFile) {
+                                    if (_resFile != jj.ResFile) {
                                         throw new ApplicationException("internal mismatch in result file name");
                                     }
                                 }
@@ -1075,15 +1070,15 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                                if (s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
 
                                     bool reallyDelete = true;
 
                                     // message:
                                     if (s == JobStatus.FinishedSuccessful)
-                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime +  ") // " + jj.testname + " (" + DateTime.Now + ")");
+                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime + ") // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
-                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime +  ") // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
+                                        Console.WriteLine(s + ": " + jj.job.Name + " (" + jj.job.LatestDeployment.RunTime + ") // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
 
 
 
@@ -1091,22 +1086,22 @@ namespace PublicTestRunner {
                                     LogResultFile(ot, jj.job, jj.testname, jj.ResFile);
 
                                     // copy xml result file
-                                    using(new BlockTrace("copy_nunit_xml_result", trr)) {
+                                    using (new BlockTrace("copy_nunit_xml_result", trr)) {
                                         try {
                                             string[] sourceFiles = Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "result-*.xml");
                                             sourceFiles = sourceFiles.Cat(Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "*.html")); // output of jupyter notebooks
 
-                                            foreach(var orig in sourceFiles) {
+                                            foreach (var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
                                                 string dest = Path.Combine(CurrentDir, n);
                                                 File.Copy(orig, dest, true);
                                             }
-                                        } catch(IOException ioe) {
+                                        } catch (IOException ioe) {
                                             Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
                                             returnCode--;
                                         }
                                     }
-                                    
+
                                     OnlineProfiling[] profilings = null;
                                     if (s == JobStatus.FinishedSuccessful) {
                                         using (new BlockTrace("load_profilings", trr)) {
@@ -1161,8 +1156,8 @@ namespace PublicTestRunner {
 
                     UpdateFinishedJobs();
                     double RestTime = Math.Max(1, TimeOutSec - (DateTime.Now - start).TotalSeconds);
-                    while(RestTime > 1.0 && AllOpenJobs.Count > 0) {
-                        using(new BlockTrace("Sleeping", tr)) {
+                    while (RestTime > 1.0 && AllOpenJobs.Count > 0) {
+                        using (new BlockTrace("Sleeping", tr)) {
                             Thread.Sleep(2 * 60 * 1000); // sleep for 2 minutes
                         }
                         var ll = UpdateFinishedJobs();
@@ -1170,14 +1165,14 @@ namespace PublicTestRunner {
                         Console.WriteLine("Remaining minutes until timeout: " + Math.Round(RestTime / 60.0));
                         Console.Write("     Waiting for: ");
                         int i = 0;
-                        foreach(var j in AllOpenJobs) {
+                        foreach (var j in AllOpenJobs) {
                             Console.Write(j.job.Name);
                             Console.Write(" ");
                             i++;
-                            if(i >= 8)
+                            if (i >= 8)
                                 break;
                         }
-                        if(i < AllOpenJobs.Count)
+                        if (i < AllOpenJobs.Count)
                             Console.WriteLine($"... (and {AllOpenJobs.Count - i} more.)");
                         else
                             Console.WriteLine();
@@ -1189,7 +1184,7 @@ namespace PublicTestRunner {
                 // ===================================
 
 
-                if(AllOpenJobs.Count == 0) {
+                if (AllOpenJobs.Count == 0) {
                     Console.WriteLine("----------------------------------------------------------------------------------------------------");
                     Console.WriteLine($"All jobs/tests finished ({DateTime.Now}) - Summary:");
                     Console.WriteLine("----------------------------------------------------------------------------------------------------");
@@ -1214,18 +1209,18 @@ namespace PublicTestRunner {
                 Console.WriteLine("--- Test Results -----------------------------------------------------------------------------------");
 
                 int SuccessfulFinishedCount = 0;
-                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) { // all success 
+                foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) { // all success 
                     Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname}");
                     SuccessfulFinishedCount++;
                 }
 
                 int OtherStatCount = 0;
-                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) { // all failed
+                foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) { // all failed
                     Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname} at {jj.job.LatestDeployment.DeploymentDirectory.FullName}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
-                foreach(var jj in AllOpenJobs) { // all still running
+                foreach (var jj in AllOpenJobs) { // all still running
                     Console.WriteLine($"{jj.job.Status}: {jj.job.Name} ({jj.job.LatestDeployment.RunTime}) // {jj.testname} at {jj.job.Status}");
                     returnCode -= 1;
                     OtherStatCount++;
@@ -1241,7 +1236,7 @@ namespace PublicTestRunner {
                     const string rt = "RunTime";
                     const string nd = "Ndeploy";
                     const string os = "OMPstrat";
-                    
+
 
                     resTable.Add(jn, new List<object>());
                     resTable.Add(tn, new List<object>());
@@ -1279,11 +1274,11 @@ namespace PublicTestRunner {
 
 
                 // very final message:
-                if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
+                if (SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine($"All tests/jobs finished successfully. Sum of runtime of all jobs: {totalTime}");
                     Console.WriteLine("SUCCESS.");
 
-                    if(returnCode != 0) {
+                    if (returnCode != 0) {
                         Console.Error.WriteLine("Ignoring some other error occurred (maybe IO error after successful test run) -- check output log;");
                         //Console.Error.WriteLine("FAILURE.");
                     } else {
@@ -1299,7 +1294,7 @@ namespace PublicTestRunner {
             }
 
 
-            if(I_StartedMinibatch)
+            if (I_StartedMinibatch)
                 MiniBatchProcessor.Server.SendTerminationSignal(WaitForOtherJobstoFinish: false);
 
             CloseTracing();
@@ -1369,7 +1364,7 @@ namespace PublicTestRunner {
                 int l = 0;
                 foreach (var worstRes in worstBenchmarks) {
                     l++;
-                    stw.Write(worstRes.Key + ": " +  worstRes.Value.ToString("g4"));
+                    stw.Write(worstRes.Key + ": " + worstRes.Value.ToString("g4"));
                     if (worstRes.Value < 0.1)
                         stw.Write(" !!!");
                     if (l < L)
@@ -1437,7 +1432,7 @@ namespace PublicTestRunner {
                 }
                 ot.WriteLine("]]]");
 
-                if(stdout == null)
+                if (stdout == null)
                     stdout = "";
 
                 using (var str = new StringReader(stdout)) {
@@ -1540,7 +1535,7 @@ namespace PublicTestRunner {
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
                 }
-                if(BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
+                if (BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_RUNTESTFROMBACKUP.txt"), "BOSSS_RUNTESTFROMBACKUP.txt"));
                 }
                 if (BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER_ENVVAR) {
@@ -1550,10 +1545,10 @@ namespace PublicTestRunner {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
                 }
                 j.NumberOfMPIProcs = NoOfMpiProcs;
-                if(NumThreads != null) {
+                if (NumThreads != null) {
                     j.NumberOfThreads = NumThreads.Value;
                 }
-                if(TestRunnerRelPath != null)
+                if (TestRunnerRelPath != null)
                     j.EntryAssemblyRedirection = TestRunnerRelPath;
                 j.Activate(bpc);
                 return (j, resultFile, TestName);
@@ -1591,7 +1586,7 @@ namespace PublicTestRunner {
                 var dir = Directory.GetCurrentDirectory();
                 tr.Info("Current dir: " + dir);
 
-                foreach (var t in r.tests) { 
+                foreach (var t in r.tests) {
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
                         tr.Info("Origin file: " + fOrigin);
                         if (File.Exists(fOrigin)) {
@@ -1636,11 +1631,11 @@ namespace PublicTestRunner {
             using (var ftr = new FuncTrace()) {
                 Assembly[] assln = GetAllAssembliesForTests();
 
-                if(MpiSize != 1) {
+                if (MpiSize != 1) {
                     // this seems some parallel run
                     // we have to fix the result argument
 
-                    if(args.Where(a => a.StartsWith("--result=")).Count() != 1) {
+                    if (args.Where(a => a.StartsWith("--result=")).Count() != 1) {
                         throw new ArgumentException("MPI-parallel NUnit runs require the '--result' argument.");
                     }
 
@@ -1651,15 +1646,15 @@ namespace PublicTestRunner {
 
 
                     var parAssis = GetAllMpiAssemblies();
-                    foreach(var t in parAssis) {
+                    foreach (var t in parAssis) {
                         Assembly a = t.Asbly;
-                        if(!assln.Contains(a))
+                        if (!assln.Contains(a))
                             a.AddToArray(ref assln);
                     }
 
 
                     int ii = 0;
-                    foreach(var a in assln) {
+                    foreach (var a in assln) {
                         ftr.Info("Assembly #" + ii + ": " + a.ToString());
                         ii++;
                     }
@@ -1667,12 +1662,12 @@ namespace PublicTestRunner {
 
                 int count = 0;
                 bool ret = false;
-                foreach(var a in assln) {
-                    if(!FilterTestAssembly(a, AssemblyFilter)) {
+                foreach (var a in assln) {
+                    if (!FilterTestAssembly(a, AssemblyFilter)) {
                         continue;
                     }
 
-                    if(GetTestsInAssembly(a, AssemblyFilter).NoOfTests <= 0) {
+                    if (GetTestsInAssembly(a, AssemblyFilter).NoOfTests <= 0) {
                         Console.WriteLine("Matching Assembly search string, but none of the methods match. (wrong wildcard?)");
                         continue;
                     }
@@ -1681,7 +1676,7 @@ namespace PublicTestRunner {
                     ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
 
-                    if(MpiRank == 0) {
+                    if (MpiRank == 0) {
                         MegaMurxPlusPlus(a, AssemblyFilter);
                     }
 
@@ -1691,7 +1686,7 @@ namespace PublicTestRunner {
                     Console.WriteLine("All Here.");
 
                     int r;
-                    using(var bt = new BlockTrace("RUNNING_TEST", ftr)) {
+                    using (var bt = new BlockTrace("RUNNING_TEST", ftr)) {
                         var tr = new TextRunner(a);
                         r = tr.Execute(args);
                         //var summary = tr.Summary;
@@ -1699,23 +1694,23 @@ namespace PublicTestRunner {
                         //ftr.Info("Test summary: " + summary.ToString());
                     }
 
-                    using(var bt = new BlockTrace("StdOut/StdErr reset", ftr)) {
+                    using (var bt = new BlockTrace("StdOut/StdErr reset", ftr)) {
                         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
                         Console.SetError(new StreamWriter(Console.OpenStandardError()));
 
-                        
+
 
                         bt.Info("Waiting for all processors to catch up AFTER running test(s)...");
                         //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                        MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD, 10*60, true); // 10 Minute timeout for all processors to arrive.
+                        MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD, 10 * 60, true); // 10 Minute timeout for all processors to arrive.
                         bt.Info("All Here.");
 
-                        
+
                         //var ar = new AutoRun(a);
                         //int r = ar.Execute(args);
 
                         int[] all_rS = r.MPIAllGather();
-                        for(int rnk = 0; rnk < all_rS.Length; rnk++) {
+                        for (int rnk = 0; rnk < all_rS.Length; rnk++) {
                             bt.Info($"Rank {rnk}: NUnit returned code " + r);
                         }
 
@@ -1748,8 +1743,8 @@ namespace PublicTestRunner {
 
                 {
                     ftr.Info("Found  " + count + " assemblies in total");
-                    
-                    if(count <= 0) {
+
+                    if (count <= 0) {
                         Console.WriteLine("Found no assembly matching: " + AssemblyFilter + " (hint: don't provide a filename extension, e.g. '.dll' or '.exe'; assembly names are compared without using an extension, e.g. 'XNSE_Solver', not 'XNSE_Solver.exe' or 'XNSE_Solver.dll'.)");
                         return -1;
                     }
@@ -1811,7 +1806,7 @@ namespace PublicTestRunner {
         /// </param>
         /// <returns></returns>
         public static int _Main(string[] args, ITestTypeProvider ttp) {
-            
+
             if (args.Length > 5) {
                 Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
 
@@ -1832,7 +1827,7 @@ namespace PublicTestRunner {
 
             System.Diagnostics.Trace.Listeners.Clear();
             System.Diagnostics.Trace.Listeners.Add(new MyListener());
-           
+
             if (args.Length < 1) {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
@@ -1854,94 +1849,94 @@ namespace PublicTestRunner {
 
             Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
             ilPSP.Environment.DisableOpenMP();
-            
+
             int ret = -1;
             switch (args[0]) {
                 case "nunit3":
-                if (args.Length < 2) {
-                    Console.WriteLine("Insufficient number of arguments.");
-                    PrintMainUsage();
-                    return -7777;
-                }
-                ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
-                break;
+                    if (args.Length < 2) {
+                        Console.WriteLine("Insufficient number of arguments.");
+                        PrintMainUsage();
+                        return -7777;
+                    }
+                    ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
+                    break;
 
                 case "runjobmanager":
                 case "runjobmanager-debug":
                 case "runjobmanager-release":
                 case "runjobmanager-ignore_tests_w_deps":
-                DeleteResultFiles();
+                    DeleteResultFiles();
 
-                bool runRelease;
+                    bool runRelease;
 #if DEBUG
-                runRelease = false;
+                    runRelease = false;
 #else
                 runRelease = true;
 #endif
 
-                if (args[0].EndsWith("release"))
-                    runRelease = true;
-                if (args[0].EndsWith("debug"))
-                    runRelease = false;
-                discoverRelease = runRelease;
+                    if (args[0].EndsWith("release"))
+                        runRelease = true;
+                    if (args[0].EndsWith("debug"))
+                        runRelease = false;
+                    discoverRelease = runRelease;
 
-                if (args[0].EndsWith("ignore_tests_w_deps"))
-                    ignore_tests_w_deps = true;
+                    if (args[0].EndsWith("ignore_tests_w_deps"))
+                        ignore_tests_w_deps = true;
 
-                int iQueue = 1;
-                string filter = args.Length > 1 ? args[1] : "*";
-                if (args.Length == 3) {
-                    Console.WriteLine("arg 2 is:" + args[2]);
-                    if (args[2].StartsWith("queue#")) {
-                        try {
-                            iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                        } catch (Exception) {
+                    int iQueue = 1;
+                    string filter = args.Length > 1 ? args[1] : "*";
+                    if (args.Length == 3) {
+                        Console.WriteLine("arg 2 is:" + args[2]);
+                        if (args[2].StartsWith("queue#")) {
+                            try {
+                                iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            } catch (Exception) {
+                                ret = -1;
+                                Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
+                                PrintMainUsage();
+                                break;
+                            }
+                        } else {
                             ret = -1;
-                            Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
                             PrintMainUsage();
                             break;
                         }
                     } else {
-                        ret = -1;
-                        PrintMainUsage();
-                        break;
+
                     }
-                } else {
 
-                }
-
-                ret = JobManagerRun(filter, iQueue);
-                break;
+                    ret = JobManagerRun(filter, iQueue);
+                    break;
 
                 case "yaml":
 #if DEBUG
-                discoverRelease = false;
+                    discoverRelease = false;
 #else
                 discoverRelease = true;
 #endif
-                ret = BuildYaml();
-                break;
+                    ret = BuildYaml();
+                    break;
 
                 case "help":
-                PrintMainUsage();
-                ret = 0;
-                break;
+                    PrintMainUsage();
+                    ret = 0;
+                    break;
 
                 default:
-                PrintMainUsage();
-                ret = -1000;
-                break;
+                    PrintMainUsage();
+                    ret = -1000;
+                    break;
             }
 
             MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD);
-            Console.WriteLine("ret b4 finalize = " + ret); 
+            Console.WriteLine("ret b4 finalize = " + ret);
             csMPI.Raw.mpiFinalize();
 
             System.Environment.Exit(ret);
 
             return ret;
         }
-        
+
 
 
         static int Main(string[] args) {
@@ -1950,11 +1945,12 @@ namespace PublicTestRunner {
             //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
             //}
             //Debugger.Launch();
-           
+
+
 
             try {
                 return _Main(args, new PublicTests());
-            } catch(Exception e) {
+            } catch (Exception e) {
                 // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)
                 // seems to silently fail on all exceptions thrown after MPI init.
 
