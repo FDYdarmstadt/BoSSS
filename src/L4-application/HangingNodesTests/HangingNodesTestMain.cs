@@ -27,10 +27,6 @@ namespace HangingNodesTests {
             BoSSS.Solution.Application.InitMPI();
             ilPSP.Environment.NumThreads = 1;
 
-            __Test3Phase(CutCellQuadratureMethod.Saye);
-            Assert.IsTrue(false, "Remove me an line above.");
-
-
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
             byte[] setup = new byte[] { 0 };

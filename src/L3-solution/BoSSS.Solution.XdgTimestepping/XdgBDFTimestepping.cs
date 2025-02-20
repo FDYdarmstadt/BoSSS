@@ -1555,15 +1555,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
-
-                    var tst = new TestingIO(this.Residuals.Mapping.GridDat, "resi.trktor");
-                    tst.AddVector("resi", base.Residuals);
-                    tst.DoIOnow();
-
-                    {
-                        var resi_l2 = tst.AllAbsErr().Select(kv => kv.Value.Pow2()).Sum().Sqrt();
-                        Console.WriteLine(" ===============   resi: " + resi_l2);
-                    }
                     
                     success = true;
 

@@ -407,9 +407,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                     #endregion
 
-                    var tst = new TestingIO(this.GridData, "fotzenscheixx.arsch");
-                    var lst = new List<string>();
-
+                    
                     // bulk
                     // ---------------------
                     using (new BlockTrace("bulk_integration", tr)) {
@@ -426,19 +424,12 @@ namespace BoSSS.Foundation.XDG {
                         foreach (var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
                             var vec = vec_spc[iSpecies];
-                            string spcname = lsTrk.GetSpeciesName(SpeciesId);
 
 
                             var SpeciesBuilders = new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval };
 
                             
-                            int iBuilder = 0;
                             foreach(var SpeciesEval in SpeciesBuilders) {
-                                iBuilder++;
-
-                                var prefix = $"eval-{iBuilder}-{spcname}";
-
-                                double[] save = output.ToArray();
 
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
@@ -453,17 +444,8 @@ namespace BoSSS.Foundation.XDG {
                                     eval.time = base.time;
                                     eval.Evaluate(alpha, 1.0, vec, null);
                                 }
-
-                                save.ScaleV(-1);
-                                save.AccV(1.0, output);
-
-
-                                lst.Add(prefix);
-                                tst.AddVector(prefix, save);
-
                             }
-                        }
-                        
+                        }                        
                     }
 
 
@@ -523,17 +505,11 @@ namespace BoSSS.Foundation.XDG {
                             foreach(var LsEval in necList) {
                                 string prefix = $"coupling-{LsEval.m_LevSetIdx}-{lsTrk.GetSpeciesName(LsEval.SpeciesA)}{lsTrk.GetSpeciesName(LsEval.SpeciesB)}";
                                 
-                                var save = output.ToArray();
-                                
                                 LsEval.time = time;
                                 LsEval.ExecuteParallel = true;
                                 UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
                                 LsEval.Execute();
 
-                                save.ScaleV(-1);
-                                save.AccV(1.0, output);
-                                tst.AddVector(prefix, save);
-                                lst.Add(prefix);
 #if DEBUG
                                 GenericBlas.CheckForNanOrInfV(output);
 #endif
@@ -541,21 +517,6 @@ namespace BoSSS.Foundation.XDG {
 
                         }
                     }
-
-
-                    tst.DoIOnow();
-                    foreach(var colname in lst) {
-                        double acc = 0.0;
-                        foreach(var item in tst.ColumnNames) {
-                            if(item.StartsWith(colname))
-                                acc += tst.AbsError(item).Pow2();
-
-                        }
-
-                        Console.WriteLine("  ----------- " + colname + "  :  " + acc.Sqrt());
-                    }
-
-
 
                     // allow all processes to catch up
                     // -------------------------------
