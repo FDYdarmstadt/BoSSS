@@ -178,8 +178,6 @@ namespace CutCellQuadrature {
         static void Main(string[] args) {
             InitMPI(args);
 
-
-
             foreach (var testCase in testCases) {
 
                 CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
@@ -212,7 +210,14 @@ namespace CutCellQuadrature {
 
         private ILevelSet levelSet;
 
-        private LevelSetTracker levelSetTracker;
+        private LevelSetTracker levelSetTracker {
+            get {
+                return base.LsTrk;
+            }
+            set {
+                base.LsTrk = value;
+            }
+        }
 
         private XDGField XDGField;
 
@@ -1009,7 +1014,9 @@ namespace CutCellQuadrature {
             using (new FuncTrace()) {
                 ScalarFieldQuadrature quadrature;
                 CellQuadratureScheme quadInstr = new CellQuadratureScheme(
-                    factory, cutCellGrid.VolumeMask);
+                    scaling: (testCase is ISurfaceTestCase) ? new LevelSetIntegrationMetric(this.levelSetTracker.DataHistories[0].Current) : new CellIntegrationMetric(),
+                    factory: factory, 
+                    domain: cutCellGrid.VolumeMask);
                 if (testCase is ISurfaceTestCase) {
                     quadrature = new ScalarFieldQuadrature(GridData, SinglePhaseField, quadInstr, order);
                 } else {

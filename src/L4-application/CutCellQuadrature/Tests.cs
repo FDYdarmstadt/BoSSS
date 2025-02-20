@@ -30,7 +30,7 @@ namespace CutCellQuadrature {
     public partial class CutCellQuadratureMain : Application {
 
         [Test]
-        public void Test2DSurfaceHighOrderRobustnessStructured() {
+        static public void Test2DSurfaceHighOrderRobustnessStructured() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -56,7 +56,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DSurfaceHighOrderRobustnessStructuredSaye() {
+        static public void Test2DSurfaceHighOrderRobustnessStructuredSaye() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -82,7 +82,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DSurfaceHighOrderRobustnessStructuredAlgoim() {
+        static public void Test2DSurfaceHighOrderRobustnessStructuredAlgoim() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -107,7 +107,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DSurfaceConvergenceStructured() {
+        static public void Test2DSurfaceConvergenceStructured() {
             int[] orders = Enumerable.Range(0, 10).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -150,7 +150,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DSurfaceConvergenceStructuredSaye() {
+        static public void Test2DSurfaceConvergenceStructuredSaye() {
             int[] orders = Enumerable.Range(0, 10).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -309,7 +309,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DVolumeHighOrderRobustnessStructuredSaye() {
+        static public void Test2DVolumeHighOrderRobustnessStructuredSaye() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -335,7 +335,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DVolumeHighOrderRobustnessStructuredAlgoim() {
+        static public void Test2DVolumeHighOrderRobustnessStructuredAlgoim() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -360,7 +360,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DVolumeConvergenceStructured() {
+        static public void Test2DVolumeConvergenceStructured() {
             int[] orders = Enumerable.Range(0, 9).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -404,7 +404,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DVolumeConvergenceStructuredSaye() {
+        static public void Test2DVolumeConvergenceStructuredSaye() {
             int[] orders = Enumerable.Range(0, 9).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Tiny, GridSizes.Small, GridSizes.Normal };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -452,7 +452,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public void Test2DVolumeConvergenceStructuredAlgoim() {
+        static public void Test2DVolumeConvergenceStructuredAlgoim() {
             int[] orders = Enumerable.Range(1,9).ToArray(); // Higher orders lead to machine epsilon so the convergence behavior is not visible in standard precision
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large };
@@ -500,7 +500,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test] // note: very inconsistent run times: sometimes about 10 minutes, sometimes more than 5 hours
-        public void Test2DVolumePRefinementStructuredAlgoim() {
+        static public void Test2DVolumePRefinementStructuredAlgoim() {
             int[] orders = Enumerable.Range(1, 25).ToArray(); 
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Ultra, GridSizes.Mega, GridSizes.Giga };
@@ -539,7 +539,7 @@ namespace CutCellQuadrature {
 
 
         [Test]
-        public void Test2DSurfaceHighOrderRobustnessUnstructured() {
+        static public void Test2DSurfaceHighOrderRobustnessUnstructured() {
             ITestCase testCase = new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.PseudoStructured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -566,7 +566,7 @@ namespace CutCellQuadrature {
 
 
         [Test]
-        public void Test2DSurfaceConvergenceUnstructured() {
+        static public void Test2DSurfaceConvergenceUnstructured() {
             int[] orders = Enumerable.Range(0, 7).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Small, GridSizes.Normal, GridSizes.Large };
             double[,] results = new double[sizes.Length, orders.Length];
@@ -609,7 +609,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DVolumeHighOrderRobustnessUnstructured() {
+        static public void Test2DVolumeHighOrderRobustnessUnstructured() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.PseudoStructured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
@@ -637,7 +637,7 @@ namespace CutCellQuadrature {
 
 
         [Test]
-        public void Test2DVolumeConvergenceUnstructured() {
+        static public void Test2DVolumeConvergenceUnstructured() {
             int[] orders = Enumerable.Range(0, 6).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Small, GridSizes.Normal, GridSizes.Large };
             double[,] results = new double[sizes.Length, orders.Length];
