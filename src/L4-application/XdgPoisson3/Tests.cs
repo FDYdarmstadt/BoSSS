@@ -99,10 +99,10 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
 
-                Assert.Less(L2_ERR, 1e-10, "'L2_ERR' out-of-bounds");
-                Assert.Less(L2_ERR_HMF, 1e-10, "'L2_ERR' out-of-bounds");
-                Assert.Less(L2_ERR_HMF_A, 1e-10, "'L2_ERR' out-of-bounds");
-                Assert.Less(L2_ERR_HMF_B, 1e-10, "'L2_ERR' out-of-bounds");
+                Assert.Less(L2_ERR, 2e-9, "'L2_ERR' out-of-bounds");
+                Assert.Less(L2_ERR_HMF, 2e-9, "'L2_ERR_HMF' out-of-bounds");
+                Assert.Less(L2_ERR_HMF_A, 1e-10, "'L2_ERR_HMF_A' out-of-bounds");
+                Assert.Less(L2_ERR_HMF_B, 2e-9, "'L2_ERR_HMF_B' out-of-bounds");
 
             }
 

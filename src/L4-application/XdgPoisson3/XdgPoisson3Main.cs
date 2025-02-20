@@ -161,6 +161,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             double penalty_multiplyer = base.Control.penalty_multiplyer;
 
             int order = this.u.Basis.Degree * 2;
+            
 
             double MU_A = this.Control.MU_A;
             double MU_B = this.Control.MU_B;
