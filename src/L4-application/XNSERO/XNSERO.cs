@@ -36,16 +36,17 @@ namespace BoSSS.Application.XNSERO_Solver {
     /// - Phoretic field is used by B. Liebchen (TRR146)
     /// </remarks>
     public class XNSERO : XNSE<XNSERO_Control> {
+        
         /// <summary>
         /// Main 
         /// </summary>
-        /// <param name="args"></param>
         static void Main(string[] args) {
             //InitMPI();
-            //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow_Phoretic();
+            //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
+            ////BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
+            ////TestProgram.TestParticleInShearFlow_Phoretic();
             //Assert.IsFalse(true, "remove me");
-            
+
             void KatastrophenPlot(DGField[] dGFields,string Tag) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }

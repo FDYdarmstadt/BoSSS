@@ -77,7 +77,10 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             //InitMPI();
             //ilPSP.Environment.NumThreads = 4;
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p2_Picard_FullySymmetric(0.0, 0.0, true, CutCellQuadratureMethod.Saye);
+            //NUnit.Framework.Assert.IsTrue(false, "rmove me and lines above");
+
 
             {
                 XNSE._Main(args, false, delegate () {

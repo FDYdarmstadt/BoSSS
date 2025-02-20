@@ -1259,7 +1259,8 @@ namespace BoSSS.Solution.Control {
 
                 foreach(var a in assiList) {
                     var tt = new Dictionary<string, Type>();
-                    knownTypes.Add(a.GetName().Name, tt);
+                    string name = a.GetName().Name;
+                    knownTypes.Add(name, tt);
                     foreach(var t in a.GetExportedTypes()) {
                         tt.Add(t.FullName, t);
                     }
