@@ -35,11 +35,15 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// constructor
         /// </summary>
-        public EdgeRuleFromCellBoundaryFactory(Grid.Classic.GridData g, IQuadRuleFactory<CellBoundaryQuadRule> cellBndQF, CellMask maxDomain) {
+        public EdgeRuleFromCellBoundaryFactory(Grid.Classic.GridData g, bool _scaleReq, IQuadRuleFactory<CellBoundaryQuadRule> cellBndQF, CellMask maxDomain) {
             m_cellBndQF = cellBndQF;
             grd = g;
             m_maxDomain = maxDomain;
+            m_scaleReq = _scaleReq;
         }
+
+        readonly bool m_scaleReq;
+
 
         IQuadRuleFactory<CellBoundaryQuadRule> m_cellBndQF;
 
@@ -380,8 +384,10 @@ namespace BoSSS.Foundation.Quadrature {
             volSplx.GetInverseFaceTrafo(iFace).Transform(CellNodes, FaceNodes);
 
             // build transformation from face to edge
-            var Trafo = AffineTrafo.FromPoints(FaceNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension -1 }), EdgeNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension - 1 }));
-            double scale = Trafo.Matrix.Determinant();
+            var Trafo = AffineTrafo.FromPoints(
+                FaceNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension -1 }), 
+                EdgeNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension - 1 }));
+            double scale = m_scaleReq ? Trafo.Matrix.Determinant() : 1.0;
 
             // construct the NodeSet in edge local coordinates
             NodeSet NodesEdge = new NodeSet(this.RefElement, Trafo.Transform(Nodes), false);
@@ -395,10 +401,12 @@ namespace BoSSS.Foundation.Quadrature {
                 
                 double weight = Weigts[i] * scale;
                 if (this.RefElement.IsWithin(point)) {
+                    // take node
                     NodesOnEdge = NodesOnEdge.Concat(point).ToArray();
                     WeightsOnEdge = WeightsOnEdge.Concat(weight).ToArray();
                     NoOfNodes++;
                 }
+                // else: drop node
             }
 
             // create empty if none of the points lies on this edge

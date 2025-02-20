@@ -1460,8 +1460,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                     if (Jtot[0] == Jtot[1])
                         throw new ArithmeticException("All cells are cut cells - check your settings!");
-
-                    
                 }
 
 
@@ -1517,18 +1515,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 dummy);
                         }
 
-                        //string path = Directory.GetCurrentDirectory();
-                        //var dinfo = Directory.CreateDirectory(Path.Combine(path, "plots"));
-                        //if (!dinfo.Exists)
-                        //    dinfo.Create();
-                        //ExecuteWaterfallAnalysis(dinfo.FullName);
-
-
                         using (var linearSolver = GetLinearSolver(mgOperator)) {
-
-                            
-
-
                             // try to solve the saddle-point system.
                             TimeSpan duration;
                             using (new BlockTrace("Solver_Run", tr)) {
@@ -1541,11 +1528,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                             tr.Info("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
                             success = linearSolver.Converged;
 
-
                             // 'revert' agglomeration
                             Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                             m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
-
 
                             if (base.QueryHandler != null) {
                                 base.QueryHandler.ValueQuery(QueryHandler.Conv, linearSolver.Converged ? 1.0 : 0.0, true);
@@ -1553,10 +1538,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
                                 base.QueryHandler.ValueQuery(QueryHandler.DOFs, mgOperator.Mapping.TotalLength, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
                             }
-
                         }
-
-                        //ExtractSomeSamplepoints("samples");
                     }
 
 
@@ -1574,11 +1556,20 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
 
+                    var tst = new TestingIO(this.Residuals.Mapping.GridDat, "resi.trktor");
+                    tst.AddVector("resi", base.Residuals);
+                    tst.DoIOnow();
+
+                    {
+                        var resi_l2 = tst.AllAbsErr().Select(kv => kv.Value.Pow2()).Sum().Sqrt();
+                        Console.WriteLine(" ===============   resi: " + resi_l2);
+                    }
                     
                     success = true;
 
 #if DEBUG
                     {
+                        
                         //DifferentialOperator.onlyfordebugging_DoVolume = true;
                         //DifferentialOperator.onlyfordebugging_DoEdge = true;
 

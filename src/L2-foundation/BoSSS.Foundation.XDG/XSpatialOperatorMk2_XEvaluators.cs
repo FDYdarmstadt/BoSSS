@@ -263,7 +263,7 @@ namespace BoSSS.Foundation.XDG {
 
                     using(var bt = new BlockTrace("surface_integration", tr)) {
                         bt.IntermediateReportOfChildCalls = true;
-                        if (onlyfordebugging_DoEdge) {
+                        if (onlyfordebugging_DoSurface) {
 #if DEBUG
                             {
                                 // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
@@ -348,6 +348,12 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
+        /// Only for debugging;  can be used to turn surface integration in spatial operators off.
+        /// </summary>
+
+        static bool onlyfordebugging_DoSurface = true;
+
+        /// <summary>
         /// Explicit evaluation of (nonlinear and linear) XDG operators
         /// </summary>
         public class XEvaluatorNonlin : XEvaluatorBase, IEvaluatorNonLin {
@@ -401,6 +407,8 @@ namespace BoSSS.Foundation.XDG {
                     }
                     #endregion
 
+                    var tst = new TestingIO(this.GridData, "fotzenscheixx.arsch");
+                    var lst = new List<string>();
 
                     // bulk
                     // ---------------------
@@ -423,11 +431,14 @@ namespace BoSSS.Foundation.XDG {
 
                             var SpeciesBuilders = new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval };
 
-
+                            
                             int iBuilder = 0;
                             foreach(var SpeciesEval in SpeciesBuilders) {
                                 iBuilder++;
 
+                                var prefix = $"eval-{iBuilder}-{spcname}";
+
+                                double[] save = output.ToArray();
 
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
@@ -443,17 +454,25 @@ namespace BoSSS.Foundation.XDG {
                                     eval.Evaluate(alpha, 1.0, vec, null);
                                 }
 
+                                save.ScaleV(-1);
+                                save.AccV(1.0, output);
+
+
+                                lst.Add(prefix);
+                                tst.AddVector(prefix, save);
+
                             }
                         }
                         
                     }
 
 
+
                     //  coupling
                     ///////////////////
-
+                    
                     using (new BlockTrace("surface_integration", tr)) {
-                        if (onlyfordebugging_DoEdge) {
+                        if (onlyfordebugging_DoSurface) {
                             // TODO: are the quadrature rules non-empty?
 #if DEBUG
                             {
@@ -502,11 +521,19 @@ namespace BoSSS.Foundation.XDG {
                             // (first, collecting all integrators in a list and second, executing them in a separate loop)
                             // should prevent waiting for unevenly balanced level sets
                             foreach(var LsEval in necList) {
+                                string prefix = $"coupling-{LsEval.m_LevSetIdx}-{lsTrk.GetSpeciesName(LsEval.SpeciesA)}{lsTrk.GetSpeciesName(LsEval.SpeciesB)}";
+                                
+                                var save = output.ToArray();
+                                
                                 LsEval.time = time;
                                 LsEval.ExecuteParallel = true;
                                 UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
                                 LsEval.Execute();
 
+                                save.ScaleV(-1);
+                                save.AccV(1.0, output);
+                                tst.AddVector(prefix, save);
+                                lst.Add(prefix);
 #if DEBUG
                                 GenericBlas.CheckForNanOrInfV(output);
 #endif
@@ -515,10 +542,24 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    
+
+                    tst.DoIOnow();
+                    foreach(var colname in lst) {
+                        double acc = 0.0;
+                        foreach(var item in tst.ColumnNames) {
+                            if(item.StartsWith(colname))
+                                acc += tst.AbsError(item).Pow2();
+
+                        }
+
+                        Console.WriteLine("  ----------- " + colname + "  :  " + acc.Sqrt());
+                    }
+
+
+
                     // allow all processes to catch up
                     // -------------------------------
-                    if (trx != null) {
+                    if(trx != null) {
                         trx.TransceiveFinish();
                         trx = null;
                     }
@@ -653,7 +694,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool onlyfordebugging_RuleDiagnosis = false;
+            static private bool onlyfordebugging_RuleDiagnosis = true;
 
             /// <summary>
             /// ctor
@@ -754,14 +795,15 @@ namespace BoSSS.Foundation.XDG {
                             if(onlyfordebugging_RuleDiagnosis) {
                                 var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
                                 var volRule = cellScheme.Compile(this.GridData, quadOrder);
-                                
-                                edgeRule.SaveToTextFileEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
-								edgeRule.ToVtpFilesEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
-                                edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"WgtSumEdge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
 
-                                volRule.SaveToTextFileCell(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
-								volRule.ToVtpFilesCell(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
-                                volRule.SumOfWeightsToTextFileVolume(GridData, $"WgtSumVolume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+                                string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                edgeRule.SaveToTextFileEdge(GridData, $"Edge-{suffix}.csv");
+								edgeRule.ToVtpFilesEdge(GridData, $"Edge-{suffix}");
+                                edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"WgtSumEdge-{suffix}.csv");
+
+                                volRule.SaveToTextFileCell(GridData, $"Volume-{suffix}.csv");
+								volRule.ToVtpFilesCell(GridData, $"Volume-{suffix}");
+                                volRule.SumOfWeightsToTextFileVolume(GridData, $"WgtSumVolume-{suffix}.csv");
                                 
                             }
 
@@ -784,17 +826,20 @@ namespace BoSSS.Foundation.XDG {
                                 EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 if (onlyfordebugging_RuleDiagnosis) {
+
+                                    //if(GridData.MpiRank == 1)
+                                    //    Debugger.Launch();
                                     var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
                                     var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
 
+                                    string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+                                    coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{suffix}.csv");
+                                    coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{suffix}.csv");
 
-                                    coVolRole.SaveToTextFileCell(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
-                                    coEdgRule.SaveToTextFileEdge(GridData, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+                                    coVolRole.ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{suffix}");
+                                    coEdgRule.ToVtpFilesEdge(GridData,  $"surfaceElementOperator_edge_{suffix}");
 
-                                    coVolRole.ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
-                                    coEdgRule.ToVtpFilesEdge(GridData,  $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
-
-                                    SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"wgtSumSurfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+                                    SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"wgtSumSurfaceElementOperator_volume_{suffix}.csv");
                                 }
                                 ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }
@@ -802,8 +847,10 @@ namespace BoSSS.Foundation.XDG {
                                 EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
                                 CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 if (onlyfordebugging_RuleDiagnosis) {
-                                    ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
-									ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}");
+                                    string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";
+
+                                    ContactLine_Volume.SaveToTextFileCell(GridData, quadOrder, $"contactLineOperator_{suffix}.csv");
+									ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{suffix}");
                                 }
                                 ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }
@@ -913,8 +960,9 @@ namespace BoSSS.Foundation.XDG {
                                                 rule = SurfIntegration.Compile(GridData, quadOrder);
 
                                                 if (onlyfordebugging_RuleDiagnosis) {
-                                                    rule.SaveToTextFileCell(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
-                                                    rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+                                                    var suffix = $"{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}";
+                                                    rule.SaveToTextFileCell(GridData, $"Levset{suffix}.csv");
+                                                    rule.SumOfWeightsToTextFileVolume(GridData, $"SumOfWgtLevset{suffix}.csv");
                                                 }
                                             }
 

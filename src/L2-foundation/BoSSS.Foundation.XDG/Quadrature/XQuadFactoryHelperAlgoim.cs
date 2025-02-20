@@ -55,7 +55,7 @@ namespace BoSSS.Foundation.XDG {
 
             var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol, negativeLevelSet);
 
-            var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+            var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                     algoimFactory.GetCellBoundaryVolumeFactory(),
                     m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
 
@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.XDG {
 
 			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
 
-			var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+			var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
 		    cellBoundaryFac,
 		    _cutDom);
 
@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.XDG {
 
             var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
 
-            var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+            var r = new EdgeRuleFromCellBoundaryFactory(gdat, gdat.SpatialDimension > 2,
                     algoimFactory.GetCellBoundarySurfaceFactory(),
                     m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
 
@@ -121,8 +121,8 @@ namespace BoSSS.Foundation.XDG {
 
 			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
 
-			var r = new EdgeRuleFromCellBoundaryFactory(gdat,
-			cellBoundaryFac,
+			var r = new EdgeRuleFromCellBoundaryFactory(gdat, gdat.SpatialDimension > 2,
+            cellBoundaryFac,
 			_cutDom);
 
 			return r;

@@ -13,6 +13,7 @@ using BoSSS.Application.TutorialTests;
 using System.Threading;
 using XESTSF;
 using FreeXNSE;
+using MPI.Wrappers;
 
 namespace ValidationTestRunner {
 
@@ -1298,12 +1299,32 @@ namespace ValidationTestRunner {
 
         static int Main(string[] args) {
             PublicTestRunner.PublicTestRunnerMain.TimeOutSec = 24 * 3600 * 10; // 10 days
+
             try {
                 return PublicTestRunner.PublicTestRunnerMain._Main(args, new ValidationTests());
             } catch(Exception e) {
                 // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)
                 // seems to silently fail on all exceptions thrown after MPI init.
+
+                int rank, size;
+                if(csMPI.Raw.Initialized()) {
+                    csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+                    csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                } else {
+                    rank = 0;
+                    size = 0;
+                }
+
                 Console.WriteLine("Got some exception: " + e);
+
+                using(var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + "." + rank + "of" + size + ".txt")) {
+                    stw.WriteLine("Got some exception: " + e);
+                    stw.WriteLine(e.StackTrace);
+                    stw.Flush();
+                    stw.Close();
+                    System.Environment.Exit(-667);
+                }
+
                 return -667;
             }
         }

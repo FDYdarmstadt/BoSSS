@@ -162,10 +162,13 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// Set WIN32 affinity for current thread
+        /// Set WIN32 affinity for current thread; supports systems with more than 64 processors.
         /// </summary>
         static public void SetAffinity(IEnumerable<int> CPUindices) {
             int CPUsPerGroup = NumberOfCPUsPerGroup;
+
+            // Works only for systems with up to 64 processors:
+            // Process.GetCurrentProcess().ProcessorAffinity
 
             unsafe {
                 GROUP_AFFINITY* affinities = stackalloc GROUP_AFFINITY[16];

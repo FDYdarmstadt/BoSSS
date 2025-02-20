@@ -137,7 +137,7 @@ namespace BoSSS.Foundation.XDG {
         override public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
             int D = gdat.SpatialDimension;
-            return new EdgeRuleFromCellBoundaryFactory(gdat,
+            return new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
                 _GetSurfaceElement_BoundaryRuleFactory(levSetIndex, KrefVol),
                 this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
         }
@@ -257,13 +257,13 @@ namespace BoSSS.Foundation.XDG {
             CheckJmp(jmp);
 
             if (D == 2) {
-                var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+                var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                     GetCellFaceFactory(levSetIndex, KrefVol, jmp),
                     m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
                 return r;
             } else {
                 if (jmp == JumpTypes.Heaviside) {
-                    var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+                    var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                         GetCellFaceFactory(levSetIndex, KrefVol, JumpTypes.Heaviside),
                         m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
                     return r;

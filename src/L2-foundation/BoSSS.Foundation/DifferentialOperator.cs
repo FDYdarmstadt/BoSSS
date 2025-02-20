@@ -1603,10 +1603,12 @@ namespace BoSSS.Foundation {
                     output.CheckForNanOrInfV(true, true, true);
 #endif
 
-                    if(m_NonlinearVolume != null && onlyfordebugging_DoVolume) {
+                    if(m_NonlinearVolume != null) {
                         using(var bt = new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
                             m_NonlinearVolume.m_Output = output;
+                            if(!onlyfordebugging_DoVolume)
+                                m_NonlinearVolume.m_Output = new double[output.Count];
                             m_NonlinearVolume.m_alpha = alpha;
                             m_NonlinearVolume.Time = time;
                             m_NonlinearVolume.Execute();
