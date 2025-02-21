@@ -73,8 +73,9 @@ namespace ilPSP {
 
                     string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
                     string a_runtimeconfig_json = Path.Combine(MainAssemblyDir, Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
+                    string a_deps_json = Path.Combine(MainAssemblyDir, Path.GetFileNameWithoutExtension(DelpoyAss) + ".deps.json");
 
-                    foreach (var a_acc in new[] { a_config, a_runtimeconfig_json }) {
+                    foreach (var a_acc in new[] { a_config, a_runtimeconfig_json, a_deps_json }) {
                         if (File.Exists(a_acc)) {
                             files.Add(a_acc);
                         }
