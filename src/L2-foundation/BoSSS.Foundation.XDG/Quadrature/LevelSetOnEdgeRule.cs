@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         /// <summary>
-        /// Call this function when the IsSpecialCell returns true.
+        /// Call this function when the <see cref="IsSpecialCell"/> returns true.
         /// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         /// special case: level-set coincides with a cell-face; 
         /// cell is either full or empty 
@@ -63,7 +63,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         /// <summary>
-        /// Call this function when the IsSpecialCell returns true.
+        /// Call this function when the <see cref="IsSpecialCell"/> returns true.
         /// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         /// special case: level-set coincides with a cell-face; 
         /// cell is either full or empty 
@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         /// <summary>
-        /// Call this function when the IsSpecialCell returns true.
+        /// Call this function when the <see cref="IsSpecialCell"/> returns true.
         /// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         /// special case: level-set coincides with a cell-face; 
         /// cell is either full or empty 

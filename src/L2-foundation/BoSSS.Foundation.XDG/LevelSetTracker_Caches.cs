@@ -516,8 +516,6 @@ namespace BoSSS.Foundation.XDG {
                 return result;
             }
 
-
-
             private class LevelSetReferenceHessianCache : Caching.CacheLogic_CNs {
 
                 private LevelSetData m_owner;
@@ -652,7 +650,6 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 
             /// </summary>
-
             public object Clone() {
                 throw new NotImplementedException();
             }

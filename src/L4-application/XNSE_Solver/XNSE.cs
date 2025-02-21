@@ -76,10 +76,16 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
             //InitMPI();
-            //ilPSP.Environment.NumThreads = 4;
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p2_Picard_FullySymmetric(0.0, 0.0, true, CutCellQuadratureMethod.Saye);
-            //NUnit.Framework.Assert.IsTrue(false, "rmove me and lines above");
+            //ilPSP.Environment.NumThreads = 1;
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2,
+            //    0.1,
+            //    ViscosityMode.FullySymmetric,
+            //    0.0, true, CutCellQuadratureMethod.Algoim,
+            //    NonLinearSolverCode.Newton);
+
+
+
+            NUnit.Framework.Assert.IsTrue(false, "rmove me and lines above");
 
 
             {
@@ -144,7 +150,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             
             if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye 
-                //|| Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
+                || Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
                 ) {
                 //See remarks
                 quadOrder *= 2;

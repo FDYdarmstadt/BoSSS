@@ -90,17 +90,40 @@ namespace BoSSS.Foundation.XDG {
             throw new NotImplementedException();
         }
 
+        Quadrature.HMF.LineAndPointQuadratureFactory[] LineAndPoint_in2D = null;
+
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
-            CheckKref(levSetIndex, KrefVol);
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
+            int D = gdat.SpatialDimension;
 
-            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+            if(D == 2) {
+                if(LineAndPoint_in2D == null)
+                    LineAndPoint_in2D = new LineAndPointQuadratureFactory[this.m_LevelSetDatas.Length];
 
-            var r = new EdgeRuleFromCellBoundaryFactory(gdat, gdat.SpatialDimension > 2,
-                    algoimFactory.GetCellBoundarySurfaceFactory(),
-                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                if(LineAndPoint_in2D[levSetIndex] == null) {
+                    LineAndPoint_in2D[levSetIndex] = new LineAndPointQuadratureFactory(
+                        KrefVol,
+                        this.m_LevelSetDatas[levSetIndex],
+                        true);
+                }
 
-            return r;
+                //return LineAndPoint_in2D[levSetIndex].GetPointFactory();
+
+                return new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
+                        LineAndPoint_in2D[levSetIndex].GetPointFactory(),
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+            } else {
+                CheckKref(levSetIndex, KrefVol);
+                
+
+                var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+
+                var r = new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
+                        algoimFactory.GetCellBoundarySurfaceFactory(),
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+
+                return r;
+            }
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {

@@ -1266,11 +1266,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ) {
             var Tst = new ChannelTest(angle, IncludeConvection);
 
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);
-            //C.ImmediatePlotPeriod = 1;
-            //C.SuperSampling = 3;
-            //C.SkipSolveAndEvaluateResidual = true;
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType,
+                //SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, 
+                SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                nonlinsolver: nonlinsolver,
+                GridResolution: 2);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
             XNSESolverTest(Tst, C);
+
+            Assert.IsFalse(true, "remove me");
             if (deg == 2)
                 ASScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);
             if (deg == 3)
@@ -1747,7 +1752,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #endif
 
         private static void ASScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, CutCellQuadratureMethod CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard) {
-#if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
 
             double AgglomerationTreshold = 0.1;
@@ -1763,6 +1767,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             conf.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_innerCut] = (XAxisDesignation.Grid_1Dres, 0.5, -0.7);
 
             ConditionNumberScalingTest.Perform(LaLa, conf);
+#if !DEBUG
 #endif
         }
 
