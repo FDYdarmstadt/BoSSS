@@ -296,10 +296,6 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// override of <see cref="DefineMomentumEquation(OperatorFactory, XNSE_OperatorConfiguration, int, int)"/>
         /// adding evaporation extension for Navier-Stokes equations
         /// </summary>
-        /// <param name="opFactory"></param>
-        /// <param name="config"></param>
-        /// <param name="d"></param>
-        /// <param name="D"></param>
         protected override void DefineMomentumEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int d, int D) {
             base.DefineMomentumEquation(opFactory, config, d, D);
 
