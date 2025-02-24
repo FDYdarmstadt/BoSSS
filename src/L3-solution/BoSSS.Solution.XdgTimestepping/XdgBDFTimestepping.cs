@@ -959,7 +959,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                         // Agglomeration update in the case of splitting - agglomeration does **NOT** depend on previous time-steps
 
-                        Debug.Assert(m_IterationCounter == 0);
+                        Debug.Assert(m_IterationCounter == 0, "Iteration counter is " + m_IterationCounter + ", expecting 0. If you are estimating condition number via operator analysis routine, you can ignore this.");
                         m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold,
                             AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true, Tag: "AssembleMatrixCallback");
 

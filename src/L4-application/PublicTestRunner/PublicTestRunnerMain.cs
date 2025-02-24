@@ -41,7 +41,7 @@ namespace PublicTestRunner {
         }
 
         public override void Fail(string message, string detailMessage) {
-            Console.Error.WriteLine("Assertion Fail: >>>" + message + ": " + ", detailed message is: " + detailMessage);
+            Console.Error.WriteLine("Assertion Fail: >>>" + message + ": " + ", detailed message is: " + detailMessage );
             Assert.Fail(message + ", details: " + detailMessage);
         }
     }

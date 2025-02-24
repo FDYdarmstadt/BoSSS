@@ -276,11 +276,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void Run_RestartTests(
-                [Values(false, true)] bool transient,
-                [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
-                [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme,
-                [Values(false, true)] bool AMRon,
-                [Values(3, 4, 5)] int savePeriod){
+#if DEBUG
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler)] TimeSteppingScheme timestepScheme,
+            [Values(false, true)] bool AMRon,
+            [Values(3)] int savePeriod
+#else
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme,
+            [Values(false, true)] bool AMRon,
+            [Values(3, 4, 5)] int savePeriod
+#endif
+            ) {
 
             if (savePeriod > 3 && (!AMRon || !transient))
                 return;

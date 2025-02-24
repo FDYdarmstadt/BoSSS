@@ -673,7 +673,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.BasicThreePhase"/>
         /// </summary>
+#if !DEBUG
         [Test]
+#endif
         public static void BasicThreePhaseTest(
             [Values(true, false)] bool bSteady = false,
             [Values(true, false)] bool performsolve = false,
@@ -975,14 +977,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void IBMChannelTest(
 #if DEBUG
+            [Values(1)] int FlowSolverDegree = 2,
+            [Values(40 * Math.PI / 180)] double angle = 0.0,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+#else
             [Values(1, 2, 3)] int FlowSolverDegree = 2,
             [Values(0, 30 * Math.PI / 180, 40 * Math.PI / 180, 45 * Math.PI / 180, 60 * Math.PI / 180, Math.PI / 2)] double angle = 0.0,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
-#else
-            [Values(1, 2)] int FlowSolverDegree = 2,
-            [Values(0, 40 * Math.PI / 180, 45 * Math.PI / 180)] double angle = 0.0,
-            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
-
 #endif
             ) {
 
@@ -1006,9 +1007,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void IBMChannelSolverTest(
+#if DEBUG
+            [Values(1)] int FlowSolverDegree = 2,
+            [Values(0)] double angle = 0.0,
+            [Values(LinearSolverCode.direct_pardiso, LinearSolverCode.exp_Kcycle_schwarz_CoarseMesh)] LinearSolverCode solvercode = LinearSolverCode.direct_pardiso
+
+#else
             [Values(1, 2, 3)] int FlowSolverDegree = 2,
             [Values(0)] double angle = 0.0,
             [Values(LinearSolverCode.direct_pardiso, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_Kcycle_schwarz_CoarseMesh, LinearSolverCode.exp_Kcycle_schwarz_PerProcess, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.direct_pardiso
+#endif
             ) {
             double AgglomerationTreshold = 0.3;
 
@@ -1610,7 +1618,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
         /// </summary>
+#if !DEBUG
         [Test]
+#endif
         public static void ScalingRotCubeTests2D_p1([Values(0.1, 0.2, 0.3)] double AggTreshold  ) {
             // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p1 --result=blabla.xml
 
@@ -1618,7 +1628,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingRotCubeTest(deg, 2, AggTreshold);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ScalingRotCubeTests2D_p2([Values(0.1, 0.2, 0.3)] double AggTreshold) {
             // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p2 --result=blabla.xml
 
@@ -1626,7 +1638,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingRotCubeTest(deg, 2, AggTreshold);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ScalingRotCubeTests2D_p3([Values(0.1, 0.2, 0.3)] double AggTreshold) {
             // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p3 --result=blabla.xml
 
