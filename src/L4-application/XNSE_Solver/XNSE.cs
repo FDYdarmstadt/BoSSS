@@ -78,14 +78,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //InitMPI();
             //ilPSP.Environment.NumThreads = 1;
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2,
-            //    0.1,
+            //    0.01,
             //    ViscosityMode.FullySymmetric,
             //    0.0, true, CutCellQuadratureMethod.Algoim,
             //    NonLinearSolverCode.Newton);
-
-
-
-            NUnit.Framework.Assert.IsTrue(false, "rmove me and lines above");
+            //NUnit.Framework.Assert.IsTrue(false, "rmove me and lines above");
 
 
             {

@@ -1071,30 +1071,6 @@ namespace BoSSS.Application.XNSEC {
             return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, config, this.MultigridOperatorConfig);
         }
 
-
-        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-        //    // Cells Numbers
-        //    var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
-        //    if (CellNumbers == null) {
-        //        CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
-        //        this.RegisterField(CellNumbers);
-        //    }
-        //    CellNumbers.Clear();
-        //    CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-        //        int K = result.GetLength(1); // No nof Nodes
-        //        for (int j = 0; j < Len; j++) {
-        //            for (int k = 0; k < K; k++) {
-        //                result[j, k] = j0 + j;
-        //            }
-        //        }
-        //    }, new CellQuadratureScheme());
-
-
-        //    //DGField[] RefinedFields = new[] { Refined_u, Refined_TestData, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
-        //    //string filename2 = "RefinedGrid." + timestepNo;
-        //    //Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
-        //}
-
         /// <summary>
         /// User-defined validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds,
         /// e.g. to avoid un-physical 'solutions' (e.g. negative density).

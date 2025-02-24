@@ -4,13 +4,86 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static BoSSS.Foundation.XDG.LevelSetTracker;
 
 namespace BoSSS.Foundation.XDG.Quadrature {
+
+
+    class LevelSetOnEdgeRuleFactory : IQuadRuleFactory<QuadRule> {
+
+
+        static public CellMask ComputeMask(LevelSetTracker tracker, int iLevelSet, int iKref) {
+            var CoincidFaces = tracker.Regions.LevSetCoincidingFaces;
+            var gdat = tracker.GridDat;
+
+            if(CoincidFaces == null) {
+                return CellMask.GetEmptyMask(gdat, MaskType.Geometrical);
+            }
+
+            int J = gdat.iGeomCells.Count;
+            BitArray bitMask = new BitArray(J);
+
+            for(int j = 0; j < J; j++) {
+                if(gdat.iGeomCells.GetRefElementIndex(j) != iKref)
+                    continue;
+
+                if(CoincidFaces[j] == null) 
+                    continue;
+
+                foreach(var t in CoincidFaces[j]) {
+                    if(t.iLevSet == iLevelSet)
+                        bitMask[j] = true;
+                }
+
+            }
+
+
+            return new CellMask(gdat, bitMask, MaskType.Geometrical);
+        }
+
+
+
+        public LevelSetOnEdgeRuleFactory(RefElement _RefElement, LevelSetTracker.LevelSetData levelSetData) {
+            RefElement = _RefElement;
+            m_LevelSetData = levelSetData;
+            m_LevelSetOnEdgeRule = new LevelSetOnEdgeRule(m_LevelSetData);
+        }
+
+        public RefElement RefElement {
+            get;
+            private set;
+        }
+
+        readonly LevelSetTracker.LevelSetData m_LevelSetData;
+
+        public int[] GetCachedRuleOrders() {
+            return new int[0];
+        }
+
+        readonly LevelSetOnEdgeRule m_LevelSetOnEdgeRule;
+
+        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            if(mask.MaskType != MaskType.Geometrical) {
+                throw new ArgumentException($"wrong type of mask ({mask.MaskType})");
+            }
+
+            var ret = new List<ChunkRulePair<QuadRule>>();
+
+            foreach(int jCell in mask.ItemEnum) {
+                ret.Add(m_LevelSetOnEdgeRule.SurfaceQuadRule(order, jCell));
+            }
+
+            return ret;
+        }
+    }
+
+
     class LevelSetOnEdgeRule {
         GridData grddat;
 
@@ -94,7 +167,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
             int J = grddat.CellPartitioning.LocalLength;
 
-            // surface rule -- classification, using conformality of edges
+            // surface rule -- classification, using con-formality of edges
             // always use conformal cell, if both conformal choose lower global index
             bool EmptyOrFool; // true: full rule; false: empty rule
             {

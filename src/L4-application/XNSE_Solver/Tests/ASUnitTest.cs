@@ -1079,7 +1079,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #if !DEBUG
         [Test]
         public static void ChannelTest_p2_Newton_Standard(
-            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1093,7 +1093,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void ChannelTest_p2_Picard_Standard(
-             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
              [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1106,7 +1106,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
         [Test]
         public static void ChannelTest_p2_Newton_FullySymmetric(
-            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1120,7 +1120,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void ChannelTest_p2_Picard_FullySymmetric(
-             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
              [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1134,7 +1134,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void ChannelTest_p3_Newton_Standard(
-            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1148,7 +1148,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void ChannelTest_p3_Picard_Standard(
-             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
              [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1161,7 +1161,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
         [Test]
         public static void ChannelTest_p3_Newton_FullySymmetric(
-            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1175,7 +1175,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void ChannelTest_p3_Picard_FullySymmetric(
-             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
              [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1188,7 +1188,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
         [Test]
         public static void ChannelTest_p4_Newton_Standard(
-            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1202,7 +1202,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void ChannelTest_p4_Picard_Standard(
-             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
              [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1215,7 +1215,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
         [Test]
         public static void ChannelTest_p4_Newton_FullySymmetric(
-            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1229,7 +1229,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         [Test]
         public static void ChannelTest_p4_Picard_FullySymmetric(
-             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(true, false)] bool IncludeConvection,
              [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType
@@ -1256,7 +1256,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
 #else
             [Values(2, 3, 4)] int deg,
-            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.1)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
             [Values(true, false)] bool IncludeConvection, 
@@ -1275,7 +1275,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SuperSampling = 3;
             XNSESolverTest(Tst, C);
 
-            Assert.IsFalse(true, "remove me");
             if (deg == 2)
                 ASScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);
             if (deg == 3)

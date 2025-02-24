@@ -102,6 +102,11 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             /// <seealso cref="BoSSS.Solution.OperatorAnalysisConfig.CalculateGlobalConditionNumbers"/>
             /// </summary>
             public bool ComputeGlobalCondNo = true;
+
+            /// <summary>
+            /// Visualization option for stencil condition number <see cref="ComputeStencilCondNo"/>
+            /// </summary>
+            public bool PlotStencilConditionNumbers = false;
         }
 
 
@@ -447,7 +452,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     var prop = solver.OperatorAnalysis(
                         new OperatorAnalysisConfig() {
                             CalculateStencilConditionNumbers = m_config.ComputeStencilCondNo,
-                            CalculateGlobalConditionNumbers = m_config.ComputeGlobalCondNo
+                            CalculateGlobalConditionNumbers = m_config.ComputeGlobalCondNo,
+                            PlotStencilConditionNumbers = m_config.PlotStencilConditionNumbers
                         });
                     Console.WriteLine("  finished analysis.");
 
