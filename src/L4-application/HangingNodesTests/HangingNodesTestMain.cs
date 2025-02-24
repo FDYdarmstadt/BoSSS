@@ -203,7 +203,7 @@ namespace HangingNodesTests {
 
             int TestCounter = 0;
             foreach (double size in sizes) {
-                foreach (byte s in setup) {
+                foreach(byte s in setup) {
                     TestCounter++;
                     string desc = String.Format($"Test #{TestCounter}: Size : {size}, Phases : {phase}, Setup : {s}, Procs : {procs}, CutCellQuadratureMethod: {ccqm}");
                     Description.Add(desc);
@@ -215,58 +215,26 @@ namespace HangingNodesTests {
                     C.ImmediatePlotPeriod = 1;
                     C.SuperSampling = 4;
 
-                    using (var solver = new XNSFE()) {
+                    using(var solver = new XNSFE()) {
                         try {
                             solver.Init(C);
                             solver.RunSolverMode();
-                            
+
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)ccqm));
-                        } catch (Exception e) {
-                            Console.Error.WriteLine( "MPI" + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ": " +  desc + " : failed");
+                        } catch(Exception e) {
+                            Console.Error.WriteLine("MPI" + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ": " + desc + " : failed");
                             Console.Error.WriteLine(e.Message);
                             Console.Error.WriteLine(e.StackTrace);
                             TemperatureRes.Add(-1.0);
                             MomentumRes.Add(-1.0);
                         }
-                    }                    
+                    }
                 }
             }
 
-            /*
-            if (procs == 2) {
-                TestCounter = 0;
-                foreach(double size in sizes) {
-                    foreach (byte s in setup) {
-                        TestCounter++;
-                        string desc = String.Format($"Test #{TestCounter}: Size : {size}, Phases : {phase}, Setup : {s}, Procs : {procs}, CutCellQuadratureMethod: {ccqm}");
-                        Description.Add(desc);
-                        var C = Control.TestSkeleton(size);
-                        C.CutCellQuadratureType = ccqm;
-                        Control.SetAMR(C, size, s);
-                        Control.SetLevelSet(C, size, phase);
-                        Control.SetParallel(C, -procs);
-
-                        using(var solver = new XNSFE()) {
-                            try {
-                                solver.Init(C);
-                                solver.RunSolverMode();
-                                
-                                MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
-                                TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)ccqm));
-                            } catch(Exception e) {
-                                Console.Error.WriteLine("MPI" + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ": " + desc + " : failed");
-                                Console.Error.WriteLine(e.Message);
-                                Console.Error.WriteLine(e.StackTrace);
-                                TemperatureRes.Add(-1.0);
-                                MomentumRes.Add(-1.0);
-                            }
-                        }
-                    }
-                }
-            }*/
+           
             
 
             Console.WriteLine("Finished Hanging Nodes Test with {0} procs.", procs);

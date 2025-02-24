@@ -21,12 +21,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         static public CellMask ComputeMask(LevelSetTracker tracker, int iLevelSet, int iKref) {
             var CoincidFaces = tracker.Regions.LevSetCoincidingFaces;
             var gdat = tracker.GridDat;
-
+            
             if(CoincidFaces == null) {
                 return CellMask.GetEmptyMask(gdat, MaskType.Geometrical);
             }
 
-            int J = gdat.iGeomCells.Count;
+            int J = gdat.iGeomCells.NoOfLocalUpdatedCells;
             BitArray bitMask = new BitArray(J);
 
             for(int j = 0; j < J; j++) {
