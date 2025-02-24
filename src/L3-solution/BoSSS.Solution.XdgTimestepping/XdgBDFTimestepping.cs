@@ -1462,6 +1462,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
 
+                Console.WriteLine("Length is: " + m_Stack_u[0].Mapping.GlobalCount);
 
 
                 if (!ComputeOnlyResidual) {

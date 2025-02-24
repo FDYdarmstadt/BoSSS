@@ -272,6 +272,7 @@ namespace BoSSS.Foundation.XDG {
                     LevSetQrIns = LevSetQrIns.AddFactory(surfaceFactory, XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask());
                 }
             }
+
             //Handle doubly cut cells
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
@@ -288,6 +289,35 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
             }
+
+            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // Special case handling:
+                // Some  level-set is (more-or-less) exactly on a cell edge;
+                // therefore, we need some stable handling of such cases;
+                // in the respective cells, the level-set surface quadrature will be overwritten
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                    int iKref = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomCells.RefElements, Kref);
+
+                    CellMask modIntegrationDom = IntegrationDom.ToGeometicalMask();
+                    for(int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; jLevSet++) {
+                        if(jLevSet != iLevSet) {
+                            CellMask doublyCut = GetDoubleCutCells(iLevSet, jLevSet);
+                            if(doublyCut.NoOfItemsLocally > 0) {
+                                modIntegrationDom = modIntegrationDom.Except(doublyCut);
+
+                            }
+                        }
+                    }
+
+                    var mask = LevelSetOnEdgeRuleFactory.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKref);
+                    var fact = new LevelSetOnEdgeRuleFactory(Kref, this.XDGSpaceMetrics.LevelSetData[iLevSet]);
+                    LevSetQrIns.AddFactoryDomainPair(fact, mask.Intersect(modIntegrationDom));
+                }
+            }
+
             return LevSetQrIns;
         }
 

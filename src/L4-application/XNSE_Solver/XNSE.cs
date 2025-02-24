@@ -77,12 +77,10 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             //InitMPI();
             //ilPSP.Environment.NumThreads = 1;
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2,
-            //    0.01,
-            //    ViscosityMode.FullySymmetric,
-            //    0.0, true, CutCellQuadratureMethod.Algoim,
-            //    NonLinearSolverCode.Newton);
-            //NUnit.Framework.Assert.IsTrue(false, "rmove me and lines above");
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(3, 1, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Algoim, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p3_Newton_FullySymmetric(0.01d, 0.0d, false, CutCellQuadratureMethod.Algoim);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
+            //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
 
             {
