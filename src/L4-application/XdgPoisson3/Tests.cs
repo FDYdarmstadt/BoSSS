@@ -86,6 +86,12 @@ namespace BoSSS.Application.XdgPoisson3 {
         {
             //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6)
             using (var solver = new XdgPoisson3Main()) {
+                if(cutCellQuadratureType == CutCellQuadratureMethod.Classic && solver.MPISize > 1) {
+                    Console.WriteLine($"Reminder: {CutCellQuadratureMethod.Classic} does not work MPI-parallel");
+                    return;
+                }
+
+
                 var C = HardCodedControl.PiecewiseParabola(dgDegree, agg: AggThresshold);
                 C.CutCellQuadratureType = cutCellQuadratureType;
                 solver.Init(C);
