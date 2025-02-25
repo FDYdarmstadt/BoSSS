@@ -1342,6 +1342,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TranspiratingChannelTest(
+#if DEBUG
+            [Values(2)] int deg,
+            [Values(0.1)] double AgglomerationTreshold,
+            [Values(0.1)] double U2,
+            [Values(ViscosityMode.Standard)] ViscosityMode vmode,
+            [Values(true)] bool periodicity,
+            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver
+#else
             [Values(2)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(0.0, 0.1)] double U2,
@@ -1349,6 +1358,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(true, false)] bool periodicity,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
+
+#endif
             ) {
 
             var Tst = new TranspiratingChannelTest(U2, periodicity);
