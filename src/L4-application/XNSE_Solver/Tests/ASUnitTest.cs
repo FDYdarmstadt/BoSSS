@@ -356,12 +356,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void BcTest_PressureOutletTest(
+#if DEBUG
+            [Values(2)] int spatialDimension,
+            [Values(1)] int deg,
+            [Values(0.1)] double AgglomerationTreshold,
+            [Values(CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
+            [Values(false)] bool performsolve
+#else
             [Values(2, 3)] int spatialDimension,
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.Curvature_Projected, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(true, false)] bool performsolve
+
+#endif
             ) {
 
             var Tst = new BcTest_PressureOutlet(spatialDimension);
@@ -400,7 +410,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         {
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         }
-#else 
+#else
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>

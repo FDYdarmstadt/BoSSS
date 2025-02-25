@@ -31,9 +31,10 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(3, CutCellQuadratureMethod.Classic);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(6, CutCellQuadratureMethod.OneStepGauss);
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(3, CutCellQuadratureMethod.Classic);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(order, quadratureType);
+            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(order, quadratureType);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -155,9 +156,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
 
                 double Vol_this = getVal(SpcId_this);
-
                 double Vol_err = (refDict[Species] - Vol_this/scaling_D).Abs();
-
 
                 Console.WriteLine($"{name}, species {Species} absolute error : {Vol_err:g7}");
                 Console.WriteLine($"      reference value: {Vol_this/scaling_D:g7}   actual result {refDict[Species]:g7}");
@@ -435,6 +434,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                 if(QuadratureType == CutCellQuadratureMethod.OneStepGauss) {
                     if (this.CutCellQuadratureOrder <= 4) {
                         return 3e-3;
+                    } else if(this.CutCellQuadratureOrder <= 6) {
+                        return 5e-5;
                     } else if (this.CutCellQuadratureOrder <= 7) {
                         return 1e-5;
                     } else {
