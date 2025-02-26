@@ -341,6 +341,11 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        public override void Cancel(string Id, string message) {
+            int id = int.Parse(Id);
+            IScheduler Scheduler = GetInstance();
+            Scheduler.CancelJob(id, message);
+        }
         /// <summary>
         /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
         /// </summary>

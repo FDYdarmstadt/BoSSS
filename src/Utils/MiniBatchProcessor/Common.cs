@@ -14,15 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using ilPSP;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MiniBatchProcessor {
 
@@ -33,7 +30,7 @@ namespace MiniBatchProcessor {
 
         static Random rnd = new Random();
 
-        
+
 
         /// <summary>
         /// ctor.
@@ -42,7 +39,7 @@ namespace MiniBatchProcessor {
             config = new Configuration(BatchInstructionDir);
             config.Load();
         }
-        
+
         /// <summary>
         /// %.
         /// </summary>
@@ -56,7 +53,7 @@ namespace MiniBatchProcessor {
                 return rnd.Next(500, 1500);
             }
         }
-       
+
 
         /// <summary>
         /// Maximum number of times an IO Operation is re-tryed.
@@ -75,7 +72,7 @@ namespace MiniBatchProcessor {
 
         private void ReadWorkDir(Dictionary<int, Tuple<JobData, JobStatus>> R) {
             string dir = Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR);
-            if(!Directory.Exists(dir))
+            if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
@@ -86,7 +83,7 @@ namespace MiniBatchProcessor {
                     continue;
 
                 Tuple<JobData, JobStatus> JS;
-                if(!R.TryGetValue(id, out JS)) {
+                if (!R.TryGetValue(id, out JS)) {
 
                     var Jdata = JobData.FromFile(Path.Combine(dir, fName));
 
@@ -97,7 +94,7 @@ namespace MiniBatchProcessor {
                     R.Add(id, JS);
                 } else {
                     // job is already known
-                    if(JS.Item2 == JobStatus.Finished) {
+                    if (JS.Item2 == JobStatus.Finished) {
                         continue;
                     }
                 }
@@ -105,17 +102,17 @@ namespace MiniBatchProcessor {
 
                 {
                     string exit_token = id + "_exit.txt";
-                    if(File.Exists(Path.Combine(dir, exit_token))) {
+                    if (File.Exists(Path.Combine(dir, exit_token))) {
                         JS = Tuple.Create(JS.Item1, JobStatus.Finished);
                     } else {
-                        if(File.Exists(GetStdoutFile(id)) && File.Exists(GetStderrFile(id))) {
+                        if (File.Exists(GetStdoutFile(id)) && File.Exists(GetStderrFile(id))) {
                             JS = Tuple.Create(JS.Item1, JobStatus.Working);
                         }
                     }
                 }
 
 
-                if(JS.Item1.ID != id)
+                if (JS.Item1.ID != id)
                     throw new ApplicationException("Mismatch between job id in file and file name.");
 
 
@@ -124,7 +121,7 @@ namespace MiniBatchProcessor {
         }
 
 
-        
+
         /// <summary>
         /// Path to a jobs standard output file.
         /// </summary>
@@ -143,7 +140,7 @@ namespace MiniBatchProcessor {
 
         private void ReadQueueDir(Dictionary<int, Tuple<JobData, JobStatus>> R) {
             string dir = Path.Combine(config.BatchInstructionDir, QUEUE_DIR);
-            if(!Directory.Exists(dir))
+            if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
@@ -153,15 +150,15 @@ namespace MiniBatchProcessor {
                 if (!IsInt)
                     continue;
 
-                if(R.ContainsKey(id))
-                    continue; 
+                if (R.ContainsKey(id))
+                    continue;
 
                 var J = JobData.FromFile(Path.Combine(dir, fName));
 
                 if (J == null)
                     continue;
 
-                if(J.ID != id) {
+                if (J.ID != id) {
                     //throw new ApplicationException("Mismatch between job id in file and file name.");
                     Console.Error.WriteLine("Mismatch between job id in file and file name.");
                     continue;
@@ -172,8 +169,8 @@ namespace MiniBatchProcessor {
         }
 
         void UpdateLists() {
-            using(new FuncTrace()) {
-                lock(padlock_AllJobs) {
+            using (new FuncTrace()) {
+                lock (padlock_AllJobs) {
                     var AllJobsNew = new Dictionary<int, Tuple<JobData, JobStatus>>();
                     AllJobsNew.AddRange(m_AllJobs);
 
@@ -202,7 +199,7 @@ namespace MiniBatchProcessor {
             }
         }
 
-     
+
 
         /// <summary>
         /// %
@@ -212,27 +209,27 @@ namespace MiniBatchProcessor {
         /// </param>
         /// <returns></returns>
         public (JobStatus stat, int ExitCode) GetStatusFromID(int JobId) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 UpdateLists();
                 Tuple<JobData, JobStatus> jd = null;
-                lock(padlock_AllJobs) {
-                    if(!m_AllJobs.ContainsKey(JobId)) {
+                lock (padlock_AllJobs) {
+                    if (!m_AllJobs.ContainsKey(JobId)) {
                         return (JobStatus.Undefined, -1);
                     }
                     jd = m_AllJobs[JobId];
                 }
 
                 {
-                    if(jd.Item1.ID == JobId) {
+                    if (jd.Item1.ID == JobId) {
                         int ExitCode = 0;
 
-                        if(jd.Item2 == JobStatus.Finished) {
+                        if (jd.Item2 == JobStatus.Finished) {
                             try {
                                 string ExitCodeFile = Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR, JobId.ToString() + "_exit.txt");
-                                using(var exit = new StreamReader(ExitCodeFile)) {
+                                using (var exit = new StreamReader(ExitCodeFile)) {
                                     ExitCode = int.Parse(exit.ReadLine());
                                 }
-                            } catch(Exception) {
+                            } catch (Exception) {
                                 ExitCode = -1;
                             }
                         }
@@ -244,6 +241,7 @@ namespace MiniBatchProcessor {
             }
         }
 
+
         IDictionary<int, Tuple<JobData, JobStatus>> m_AllJobs;
 
         /// <summary>
@@ -252,7 +250,7 @@ namespace MiniBatchProcessor {
         public IList<JobData> AllJobs {
             get {
                 UpdateLists();
-                lock(padlock_AllJobs) {
+                lock (padlock_AllJobs) {
                     return m_AllJobs.Values.Select(job => job.Item1).ToList().AsReadOnly();
                 }
             }
@@ -261,7 +259,7 @@ namespace MiniBatchProcessor {
         object padlock_AllJobs = new object();
 
         internal void UpdateStatus(int id, JobStatus newStat) {
-            lock(padlock_AllJobs) {
+            lock (padlock_AllJobs) {
                 var JS = m_AllJobs[id];
                 var nJS = Tuple.Create(JS.Item1, newStat);
                 m_AllJobs[id] = nJS;
@@ -274,7 +272,7 @@ namespace MiniBatchProcessor {
         public IList<JobData> Queue {
             get {
                 UpdateLists();
-                lock(padlock_AllJobs) {
+                lock (padlock_AllJobs) {
                     return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Queued)
                         .Select(job => job.Item1)
                         .ToList().AsReadOnly();
@@ -288,7 +286,7 @@ namespace MiniBatchProcessor {
         public IList<JobData> Working {
             get {
                 UpdateLists();
-                lock(padlock_AllJobs) {
+                lock (padlock_AllJobs) {
                     return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Working)
                         .Select(job => job.Item1)
                         .ToList().AsReadOnly();
@@ -302,7 +300,7 @@ namespace MiniBatchProcessor {
         public IList<JobData> Finished {
             get {
                 UpdateLists();
-                lock(padlock_AllJobs) {
+                lock (padlock_AllJobs) {
                     return m_AllJobs.Values.Where(job => job.Item2 == JobStatus.Finished)
                         .Select(job => job.Item1)
                         .ToList().AsReadOnly();

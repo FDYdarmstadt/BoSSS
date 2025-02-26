@@ -14,15 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
+using ilPSP.Tracing;
 using System;
+using System.Collections.Generic;
 //using Renci.SshNet;
 using System.IO;
-using System.Runtime.Serialization;
-using ilPSP;
-using System.Diagnostics;
-using ilPSP.Tracing;
 using System.Linq;
-using System.Collections.Generic;
+using System.Runtime.Serialization;
 //using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -65,9 +64,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to the ssh client which should be used on the local system for the connection; if not specified, just `ssh` will be used.
         /// </summary>
         [DataMember]
-        public string SshClientExeToUse { 
-            get; 
-            set; 
+        public string SshClientExeToUse {
+            get;
+            set;
         }
 
         /// <summary>
@@ -145,10 +144,10 @@ namespace BoSSS.Application.BoSSSpad {
         SshClient SSHConnection {
             get {
                 string keyname = (this.Name ?? "SLURM") + ":" + Username + "@" + ServerName;
-                
-                if(m_SSHConnection == null) {
-                    if(m_SSHConnectionReuse.TryGetValue(keyname, out m_SSHConnection)) {
-                        
+
+                if (m_SSHConnection == null) {
+                    if (m_SSHConnectionReuse.TryGetValue(keyname, out m_SSHConnection)) {
+
                     }
                 }
 
@@ -179,7 +178,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (m_SSHConnection == null || m_SSHConnection.IsConnected == false)
                     throw new IOException($"SSH connection to {ServerName} cant be established or is very unreliable.");
-                else 
+                else
                     m_SSHConnectionReuse[keyname] = m_SSHConnection;
 
                 return m_SSHConnection;
@@ -191,7 +190,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Empty constructor for de-serialization
         /// </summary>
         private SlurmClient() : base() {
-        
+
             base.RuntimeLocation = "linux/amd64-openmpi";
         }
 
@@ -201,7 +200,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override string RuntimeLocation {
             get {
-                if(base.RuntimeLocation != null)
+                if (base.RuntimeLocation != null)
                     return base.RuntimeLocation;
                 else
                     return "linux/amd64-openmpi";
@@ -214,7 +213,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void TestSSH() {
             Console.WriteLine($"Performing test for ssh connection of {this.ToString()} ...");
-            var output = SSHConnection.RunCommand("ls", verbose:true);
+            var output = SSHConnection.RunCommand("ls", verbose: true);
             //Console.WriteLine(output);
             Console.WriteLine($"Test finished.");
         }
@@ -252,7 +251,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
 
-        
+
         /// <summary>
         /// If set, SLURM may send email notifications for the current job
         /// </summary>
@@ -261,13 +260,13 @@ namespace BoSSS.Application.BoSSSpad {
             set;
             get;
         }
-        
+
 
         /// <summary>
         /// .
         /// </summary>
-        public override (BoSSSpad.JobStatus,int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) { 
-        //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
+            //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (var tr = new FuncTrace()) {
                 //string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
                 //DeployDir = null;
@@ -277,7 +276,7 @@ namespace BoSSS.Application.BoSSSpad {
                 //SubmitCount = 0;
 
 
-                if(DeployDir == null)
+                if (DeployDir == null)
                     DeployDir = "";
 
                 tr.Info("Trying to determine status of SLURM job in " + DeployDir);
@@ -326,55 +325,63 @@ namespace BoSSS.Application.BoSSSpad {
                     tr.Info("stderr: " + sshCall.stderr);
 
                     string output = sshCall.stdout;
-                    using(var Reader = new StringReader(output)) {
+                    using (var Reader = new StringReader(output)) {
 
                         string line = Reader.ReadLine();
-                        while(line != null && !line.Equals("state", StringComparison.InvariantCultureIgnoreCase))
+                        while (line != null && !line.Equals("state", StringComparison.InvariantCultureIgnoreCase))
                             line = Reader.ReadLine();
-                        tr.Info("line is " + (line??"Null"));
+                        tr.Info("line is " + (line ?? "Null"));
 
-                        if(line == null || !line.Equals("state", StringComparison.InvariantCultureIgnoreCase)) {
+                        if (line == null || !line.Equals("state", StringComparison.InvariantCultureIgnoreCase)) {
                             tr.Info("returning `Unknown` state");
                             return (JobStatus.Unknown, null);
                         }
 
                         string jobstatus = Reader.ReadLine();
-                        tr.Info("jobstatus is `" + (jobstatus??"Null") + "`");
-                        if(jobstatus == null) {
+                        tr.Info("jobstatus is `" + (jobstatus ?? "Null") + "`");
+                        if (jobstatus == null) {
                             tr.Info("returning `Unknown` state");
                             return (JobStatus.FailedOrCanceled, null); // `running.txt` exists, but no job known to SLURM: probably canceled.
                         }
 
-                        switch(jobstatus.ToUpperInvariant()) {
+                        switch (jobstatus.ToUpperInvariant()) {
                             case "PENDING":
-                            tr.Info("returning `PendingInExecutionQueue`");
-                            return (JobStatus.PendingInExecutionQueue, null);
+                                tr.Info("returning `PendingInExecutionQueue`");
+                                return (JobStatus.PendingInExecutionQueue, null);
 
                             case "RUNNING":
                             case "COMPLETING":
-                            tr.Info("returning `InProgress`");
-                            return (JobStatus.InProgress, null);
+                                tr.Info("returning `InProgress`");
+                                return (JobStatus.InProgress, null);
 
                             case "SUSPENDED":
                             case "STOPPED":
                             case "PREEMPTED":
                             case "FAILED":
-                            tr.Info("returning `FailedOrCanceled`");
-                            return (JobStatus.FailedOrCanceled, int.MinValue);
+                                tr.Info("returning `FailedOrCanceled`");
+                                return (JobStatus.FailedOrCanceled, int.MinValue);
 
                             case "":
                             case "COMPLETED":
-                            // completed, but 'exit.txt' does not exist, something is shady here
-                            tr.Info("returning `FailedOrCanceled`");
-                            return (JobStatus.FailedOrCanceled, -1);
+                                // completed, but 'exit.txt' does not exist, something is shady here
+                                tr.Info("returning `FailedOrCanceled`");
+                                return (JobStatus.FailedOrCanceled, -1);
 
                             default:
-                            tr.Info("returning `Unknown`");
-                            return (JobStatus.Unknown, null);
+                                tr.Info("returning `Unknown`");
+                                return (JobStatus.Unknown, null);
                         }
                         //}
                     }
                 }
+            }
+        }
+
+        public override void Cancel(string idToken, string message) {
+            using (var tr = new FuncTrace()) {
+                tr.Info($"Canceling Job {idToken}");
+                var cancelcmd = "scancel " + idToken;
+                SSHConnection.RunCommand(cancelcmd);
             }
         }
 
@@ -421,7 +428,7 @@ namespace BoSSS.Application.BoSSSpad {
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
 
                 string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(DeploymentDirectory), out var _stdout, out var _stderr);
-                if(jobId.IsEmptyOrWhite())
+                if (jobId.IsEmptyOrWhite())
                     throw new IOException("missing job id return value from slurm command; stderr from slurm: " + _stderr + "<<<<<<<; stdout from slurm: " + _stdout + "<<<<<<<;");
 
                 return (jobId, null);
@@ -451,7 +458,7 @@ namespace BoSSS.Application.BoSSSpad {
             //} else {
             //    memPerCPU = "5000";
             //}
-            
+
             using (var str = new StringWriter()) {
                 str.Write($"srun {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
                 //if (MPIcores > 1) {
@@ -572,7 +579,7 @@ namespace BoSSS.Application.BoSSSpad {
         public override string ToString() {
 
             string NameString = "";
-            if(!base.Name.IsEmptyOrWhite())
+            if (!base.Name.IsEmptyOrWhite())
                 NameString = " " + base.Name + " ";
 
             return "SlurmClient" + NameString + ": " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");

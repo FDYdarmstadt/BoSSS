@@ -1,5 +1,4 @@
 using BoSSS.Application.BoSSSpad;
-using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
@@ -1178,7 +1177,11 @@ namespace PublicTestRunner {
                         else
                             Console.WriteLine();
                     }
+
+                    // Stop all remaining Jobs
+                    AllOpenJobs.ForEach(a => a.job.LatestDeployment.Cancel("Timeout"));
                 }
+
 
                 // ===================================
                 // phase 4: summary

@@ -33,8 +33,6 @@ namespace BoSSS.Application.BoSSSpad {
     /// A compute-job for the meta-job-manager.
     /// </summary>
     public class Job {
-
-
         /// <summary>
         /// ctor.
         /// </summary>
@@ -584,8 +582,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Data record for each deployment, i.e. each attempt to run a job.
         /// </summary>
         public class Deployment {
-
-
             Job m_owner;
 
             internal Deployment(DirectoryInfo _DeploymentDirectory, Job _owner, object __optInfo = null) {
@@ -857,6 +853,10 @@ namespace BoSSS.Application.BoSSSpad {
                         return bpc_status;
                     }
                 }
+            }
+
+            public void Cancel(string reason) {
+                m_owner.AssignedBatchProc.Cancel(this.BatchProcessorIdentifierToken, reason);
             }
 
             /// <summary>
@@ -1654,9 +1654,6 @@ namespace BoSSS.Application.BoSSSpad {
 
                 using (new DeploymentsAtomic(this)) {
                     using (BoSSSshell.WorkflowMgm.EnterSessionAtomic()) {
-
-
-
                         // ================
                         // identify success
                         // ================
