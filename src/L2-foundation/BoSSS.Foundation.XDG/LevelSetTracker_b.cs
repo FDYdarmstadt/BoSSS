@@ -147,6 +147,27 @@ namespace BoSSS.Foundation.XDG {
             return dict[key];
         }
 
+        public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<SpeciesId> Spc, CutCellQuadratureMethod CutCellsQuadType, int CutCellsQuadOrder, int HistoryIndex = 1) {
+            //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
+            //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
+            //}
+            var _Spc = Spc.ToArray();
+
+            var factory = GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex);
+            Console.WriteLine("The variant is: " + factory.CutCellQuadratureType);
+            Debug.Assert(factory.CutCellQuadratureType == CutCellsQuadType, "something is wrong here");
+
+            return new XDGSpaceMetrics(this,
+                        factory,
+                        CutCellsQuadOrder,
+                        _Spc,
+                        HistoryIndex
+                        );
+            
+        }
+
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -190,8 +211,24 @@ namespace BoSSS.Foundation.XDG {
             string Tag = null
             ) {
             MPICollectiveWatchDog.Watch(token: 169);
-            return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
+            var ret = new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
                 __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold, Tag);
+
+            if(AgglomerationAlgorithm.debugging_PlotAgglomeration) {
+                ret.PlotAgglomerationPairs("aggpairs");
+
+                foreach(var spc in Spc) {
+                    Console.WriteLine("Agglomeration species " + this.GetSpeciesName(spc) + ": ");
+                    Console.WriteLine(ret.GetAgglomerator(spc).AggInfo.ToString());
+                }
+
+
+
+
+
+            }
+
+            return ret;
         }
 
 

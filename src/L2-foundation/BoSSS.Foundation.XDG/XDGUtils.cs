@@ -45,7 +45,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // Classic HMF uses order+1 for Surface Integrals and additionally 1 order higher for the HMF system
                 // e.g order-2 is the cached quad rule 
-                if (SchemeHelper.MomentFittingVariant == CutCellQuadratureMethod.Classic)
+                if (SchemeHelper.CutCellQuadratureMethod == CutCellQuadratureMethod.Classic)
                     HMForder -= 2;
 
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());

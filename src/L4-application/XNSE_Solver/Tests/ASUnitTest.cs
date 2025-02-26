@@ -1312,29 +1312,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        ///// <summary>
-        ///// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
-        ///// </summary>
-        //public static void NervTest() {
-        //    double AgglomerationTreshold = 0.01d;
-        //    NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton;
-        //    ViscosityMode vmode = ViscosityMode.Standard;
-        //    var CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
+        /// </summary>
+        public static void NervTest() {
+            double AgglomerationTreshold = 0.01d;
+            NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            var CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
 
-        //    var Tst = new ChannelTest(0.0, false);
+            var Tst = new ChannelTest(0.0, false);
 
-        //    var C = TstObj2CtrlObj(Tst, 3, AgglomerationTreshold, vmode, CutCellQuadratureType,
-        //        SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local,
-        //        //SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-        //        nonlinsolver: nonlinsolver,
-        //        GridResolution: 2);
-        //    C.ImmediatePlotPeriod = 1;
-        //    C.SuperSampling = 3;
-        //    C.SkipSolveAndEvaluateResidual = true;
-        //    XNSESolverTest(Tst, C);
-        //}
-
-
+            var C = TstObj2CtrlObj(Tst, 3, AgglomerationTreshold, vmode, CutCellQuadratureType,
+                SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                //SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                nonlinsolver: nonlinsolver,
+                GridResolution: 4);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+            C.SkipSolveAndEvaluateResidual = false;
+            C.PlotAgglomeration = false;
+            XNSESolverTest(Tst, C);
+        }
 
 
         /// <summary>
@@ -1834,7 +1833,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            var conf = new ConditionNumberScalingTest.Config() { plot = true, title = Name };
+            var conf = new ConditionNumberScalingTest.Config() { plot = true, title = Name, PlotStencilConditionNumbers = true };
             conf.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_innerCut] = (XAxisDesignation.Grid_1Dres, 0.5, -0.7);
 
             ConditionNumberScalingTest.Perform(LaLa, conf);

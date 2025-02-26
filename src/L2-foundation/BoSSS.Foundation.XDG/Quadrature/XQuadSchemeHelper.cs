@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Selected variant of the moment-fitting procedure
         /// </summary>
-        public CutCellQuadratureMethod MomentFittingVariant {
+        public CutCellQuadratureMethod CutCellQuadratureMethod {
             get {
                 return XDGSpaceMetrics.CutCellQuadratureType;
             }
