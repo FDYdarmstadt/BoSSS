@@ -1607,7 +1607,7 @@ namespace PublicTestRunner {
             }
         }
 
-
+        const string TelemetryFolder = "c:\\telemetry";
 
         /// <summary>
         /// Runs all tests serially
@@ -1617,6 +1617,29 @@ namespace PublicTestRunner {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
+
+            string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
+            string TelemetryFile = Guid.NewGuid().ToString() + $".{MpiRank}of{MpiSize}";
+            if(CCP_AFFINITY.IsNonEmpty()) {
+                var start = DateTime.Now;
+                if(!Directory.Exists(TelemetryFolder)) {
+                    Thread.Sleep(Math.Abs(TelemetryFile.GetHashCode())%10000);
+                    Directory.CreateDirectory(TelemetryFolder);
+                }
+
+                string TelemetryPath = Path.Combine(TelemetryFolder, TelemetryFile);
+                using(var tele = new StreamWriter(TelemetryPath)) {
+
+                    tele.WriteLine(start.ToFileTimeUtc());
+                    tele.WriteLine(CPUAffinityWindows.TotalNumberOfCPUs + " " + CPUAffinityWindows.NumberOfCPUsPerGroup);
+                    tele.WriteLine(CCP_AFFINITY);
+                    tele.WriteLine(CPUAffinityWindows.GetAffinity().ToConcatString("", ", ", ""));
+                    tele.WriteLine(CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("", ", ", ""));
+                    tele.WriteLine(start);
+
+                }
+            }
+
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
             Tracer.NamespacesToLog_EverythingOverrideTestRunner = true;
@@ -1757,8 +1780,29 @@ namespace PublicTestRunner {
                 }
 
 
+
+
                 Console.WriteLine();
                 ftr.Info($"failstate all tests: {ret} (false means OK)");
+
+                if(CCP_AFFINITY.IsNonEmpty()) {
+                    var start = DateTime.Now;
+                    
+
+                    string TelemetryPath = Path.Combine(TelemetryFolder, TelemetryFile + ".end");
+                    using(var tele = new StreamWriter(TelemetryPath)) {
+
+                        tele.WriteLine(start.ToFileTimeUtc());
+                        tele.WriteLine(CPUAffinityWindows.TotalNumberOfCPUs + " " + CPUAffinityWindows.NumberOfCPUsPerGroup);
+                        tele.WriteLine(CCP_AFFINITY);
+                        tele.WriteLine(CPUAffinityWindows.GetAffinity().ToConcatString("", ", ", ""));
+                        tele.WriteLine(CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("", ", ", ""));
+                        tele.WriteLine(start);
+
+                    }
+                }
+
+
                 return ret ? -1 : 0;
             }
         }
