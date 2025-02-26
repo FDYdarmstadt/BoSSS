@@ -1620,8 +1620,8 @@ namespace PublicTestRunner {
 
             string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
             string TelemetryFile = Guid.NewGuid().ToString() + $".{MpiRank}of{MpiSize}";
+            var start = DateTime.Now;
             if(CCP_AFFINITY.IsNonEmpty()) {
-                var start = DateTime.Now;
                 if(!Directory.Exists(TelemetryFolder)) {
                     Thread.Sleep(Math.Abs(TelemetryFile.GetHashCode())%10000);
                     Directory.CreateDirectory(TelemetryFolder);
@@ -1786,17 +1786,19 @@ namespace PublicTestRunner {
                 ftr.Info($"failstate all tests: {ret} (false means OK)");
 
                 if(CCP_AFFINITY.IsNonEmpty()) {
-                    var start = DateTime.Now;
-                    
+                    var end = DateTime.Now;
+                    var duration = end - start;
 
                     string TelemetryPath = Path.Combine(TelemetryFolder, TelemetryFile + ".end");
                     using(var tele = new StreamWriter(TelemetryPath)) {
 
                         tele.WriteLine(start.ToFileTimeUtc());
+                        tele.WriteLine(duration.TotalSeconds);
                         tele.WriteLine(CPUAffinityWindows.TotalNumberOfCPUs + " " + CPUAffinityWindows.NumberOfCPUsPerGroup);
                         tele.WriteLine(CCP_AFFINITY);
                         tele.WriteLine(CPUAffinityWindows.GetAffinity().ToConcatString("", ", ", ""));
                         tele.WriteLine(CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("", ", ", ""));
+                        tele.WriteLine(duration);
                         tele.WriteLine(start);
 
                     }
