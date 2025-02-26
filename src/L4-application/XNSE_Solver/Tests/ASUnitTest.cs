@@ -1312,28 +1312,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
-        /// </summary>
-        public static void NervTest() {
-            double AgglomerationTreshold = 0.01d;
-            NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton;
-            ViscosityMode vmode = ViscosityMode.FullySymmetric;
-            var CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
+        ///// <summary>
+        ///// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
+        ///// </summary>
+        //public static void NervTest() {
+        //    double AgglomerationTreshold = 0.01d;
+        //    NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton;
+        //    ViscosityMode vmode = ViscosityMode.FullySymmetric;
+        //    var CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
 
-            var Tst = new ChannelTest(0.0, false);
+        //    var Tst = new ChannelTest(0.0, false);
 
-            var C = TstObj2CtrlObj(Tst, 3, AgglomerationTreshold, vmode, CutCellQuadratureType,
-                SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                //SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                nonlinsolver: nonlinsolver,
-                GridResolution: 4);
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
-            C.SkipSolveAndEvaluateResidual = false;
-            C.PlotAgglomeration = false;
-            XNSESolverTest(Tst, C);
-        }
+        //    var C = TstObj2CtrlObj(Tst, 3, AgglomerationTreshold, vmode, CutCellQuadratureType,
+        //        SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+        //        //SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+        //        nonlinsolver: nonlinsolver,
+        //        GridResolution: 4);
+        //    C.ImmediatePlotPeriod = 1;
+        //    C.SuperSampling = 3;
+        //    C.SkipSolveAndEvaluateResidual = false;
+        //    C.PlotAgglomeration = false;
+        //    XNSESolverTest(Tst, C);
+        //}
 
 
         /// <summary>

@@ -1503,91 +1503,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
                         RHS.ScaleV(-1);
 
-                        //{
-                        //    m_CurrentAgglomeration.NonAgglomeratedMetrics.CutCellVolumes[m_LsTrk.GetSpeciesId("A")].To1DArray().SaveToTextFile($"vol-a-{this.m_LsTrk.CutCellQuadratureType}.txt");
-                        //    m_CurrentAgglomeration.NonAgglomeratedMetrics.CutCellVolumes[m_LsTrk.GetSpeciesId("B")].To1DArray().SaveToTextFile($"vol-b-{this.m_LsTrk.CutCellQuadratureType}.txt");
+                       
 
-                        //}
-
-
-                        { // **********************************************************************************************************************************************+++++
-                            string filename = $"Mtx-{System.RowPartitioning.TotalLength}.bin";
-                            string filename_rhs = $"Rhs-{System.RowPartitioning.TotalLength}.rhs";
-                            //if(this.m_LsTrk.
-                            //    CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
-                            //    System.ToMsrMatrix().SaveToFile(filename);
-                            //    RHS.SaveToTextFile(filename_rhs);
-                            //} else 
-                            {
-                                double[] TestV = new double[System.RowPartitioning.LocalLength];
-                                TestV.FillRandom(0);
-                                double[] refRes = new double[TestV.Length];
-                                double[] sysRes = new double[TestV.Length];
-
-
-                                var RefMtx = MsrMatrix.LoadFromFile(filename, System.MPI_Comm, System.RowPartitioning, System.ColPartition);
-
-                                var RHSref = VectorIO.LoadFromTextFile(filename_rhs);
-
-
-                                RefMtx.SpMV(1.0, TestV, 0.0, refRes);
-                                System.SpMV(1.0, TestV, 0.0, sysRes);
-
-
-                                var dist = new CoordinateVector(base.Residuals.Mapping.Fields.Select(f => f.CloneAs()).ToArray());
-                                dist.SetV(refRes);
-                                dist.AccV(-1.0, sysRes);
-                                //Tecplot.Tecplot.PlotFields(dist.Mapping.Fields, "distance", 0.0, 4);
-
-
-                                var ErrMtx = RefMtx.CloneAs();
-                                ErrMtx.Acc(-1, System);
-
-
-                                Console.WriteLine("**********************************");
-                                Console.WriteLine("******** L: " + TestV.Length);
-                                Console.WriteLine("******** Error matrix: " + ErrMtx.InfNorm());
-                                Console.WriteLine("******** Error vec:    " + sysRes.L2Distance(refRes));
-                                Console.WriteLine("******** Error rhs:    " + RHSref.L2Distance(RHS));
-                                Console.WriteLine("**********************************");
-                                Console.WriteLine("**********************************");
-                                Console.WriteLine("**********************************");
-
-
-                                System.Clear();
-                                System.Acc(1.0, RefMtx);
-
-                                RHS.Clear();
-                                RHS.SetV(RHSref);
-                            }
-                        } // **********************************************************************************************************************************************+++++
-
-                        string filename_pc = $"PCMtx-{System.RowPartitioning.TotalLength}.bin";
-
-                        string mama_pc = $"mama-{System.RowPartitioning.TotalLength}.bin";
-                        if(this.m_LsTrk.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
-                            MaMa.ToMsrMatrix().SaveToFile(mama_pc);
-
-                        } else {
-                            var RefMtx = MsrMatrix.LoadFromFile(mama_pc, MaMa.MPI_Comm, MaMa.RowPartitioning, MaMa.ColPartition);
-
-                            var ErrMama = RefMtx.CloneAs();
-                            ErrMama.Acc(-1, MaMa);
-
-                            RefMtx.SaveToTextFileSparse("MaMaOk.txt");
-                            ErrMama.SaveToTextFileSparse("MaMaFu.txt");
-
-
-                            Console.WriteLine("**********************************");
-                            Console.WriteLine("******** L: " + MaMa.NoOfRows);
-                            Console.WriteLine("******** Error  Mama: " + ErrMama.InfNorm());
-                            Console.WriteLine("**********************************");
-                            Console.WriteLine("**********************************");
-                            Console.WriteLine("**********************************");
-                        }
-
-                            // update the multigrid operator
-                            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        // update the multigrid operator
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                         MultigridOperator mgOperator;
                         using (new BlockTrace("MultigridOperator setup", tr)) {
 
@@ -1598,27 +1517,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 System, MaMa,
                                 this.Config_MultigridOperator,
                                 dummy);
-
-
-                            //if(this.m_LsTrk.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
-                            //    mgOperator.OperatorMatrix.ToMsrMatrix().SaveToFile(filename_pc);
-                               
-                            //} else 
-                            {
-
-                                var IstMtx = mgOperator.OperatorMatrix;
-                                var RefMtx = MsrMatrix.LoadFromFile(filename_pc, IstMtx.MPI_Comm, IstMtx.RowPartitioning, IstMtx.ColPartition);
-
-                                var ErrMtx = RefMtx.CloneAs();
-                                ErrMtx.Acc(-1, IstMtx);
-
-                                Console.WriteLine("**********************************");
-                                Console.WriteLine("******** L: " + RefMtx.NoOfRows);
-                                Console.WriteLine("******** Error PC mtx: " + ErrMtx.InfNorm());
-                                Console.WriteLine("**********************************");
-                                Console.WriteLine("**********************************");
-                                Console.WriteLine("**********************************");
-                            }
                         }
 
                         using (var linearSolver = GetLinearSolver(mgOperator)) {

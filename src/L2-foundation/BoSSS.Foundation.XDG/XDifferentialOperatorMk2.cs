@@ -1478,16 +1478,6 @@ namespace BoSSS.Foundation.XDG {
         #region QuadSchemeProvider
 
         static EdgeQuadratureScheme DefaultEQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-            //Console.WriteLine("testcode remove me: EDGE: " + lsTrk.GetSpeciesName(spc));
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-
-
-            //var altHelp = new XQuadSchemeHelper(lsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spc }, CutCellQuadratureMethod.Saye, quadOrder, TrackerHistory));
-            //return SchemeHelper.GetEdgeQuadScheme(spc);
-
             var edgeScheme = SchemeHelper.GetEdgeQuadScheme(spc);
             return edgeScheme;
         }
@@ -1520,16 +1510,6 @@ namespace BoSSS.Foundation.XDG {
         
 
         static CellQuadratureScheme DefaultCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-            //Console.WriteLine("testcode remove me: VOL: " + lsTrk.GetSpeciesName(spc));
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1");
-
-
-            //var altHelp = new XQuadSchemeHelper(lsTrk.GetXDGSpaceMetrics(new SpeciesId[] {spc}, CutCellQuadratureMethod.Saye, quadOrder, TrackerHistory));
-            //return SchemeHelper.GetVolumeQuadScheme(spc);
-
             var volScheme = SchemeHelper.GetVolumeQuadScheme(spc);
             return volScheme;
         }

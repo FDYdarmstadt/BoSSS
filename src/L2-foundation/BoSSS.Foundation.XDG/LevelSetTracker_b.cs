@@ -147,26 +147,6 @@ namespace BoSSS.Foundation.XDG {
             return dict[key];
         }
 
-        public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<SpeciesId> Spc, CutCellQuadratureMethod CutCellsQuadType, int CutCellsQuadOrder, int HistoryIndex = 1) {
-            //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
-            //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
-            //}
-            var _Spc = Spc.ToArray();
-
-            var factory = GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex);
-            Console.WriteLine("The variant is: " + factory.CutCellQuadratureType);
-            Debug.Assert(factory.CutCellQuadratureType == CutCellsQuadType, "something is wrong here");
-
-            return new XDGSpaceMetrics(this,
-                        factory,
-                        CutCellsQuadOrder,
-                        _Spc,
-                        HistoryIndex
-                        );
-            
-        }
-
-
 
         /// <summary>
         /// 
@@ -193,7 +173,7 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="ExceptionOnFailedAgglomeration">
         /// If true, an exception is thrown for 
-        /// any cell which should be agglomerated, if no neighbour is found.
+        /// any cell which should be agglomerated, if no neighbor is found.
         /// </param>
         /// <param name="NewbornAndDecasedThreshold">
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
