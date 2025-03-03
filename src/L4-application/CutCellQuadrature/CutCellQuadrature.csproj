@@ -23,4 +23,7 @@
   <ItemGroup>
     <Compile Remove="QuadRuleFactory.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
+  </ItemGroup>
 </Project>

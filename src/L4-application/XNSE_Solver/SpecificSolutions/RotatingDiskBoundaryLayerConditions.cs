@@ -29,9 +29,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         [JsonProperty]
         double m_kinViscosity;
 
-        [JsonProperty]
-        double m_density;
-
 
         /// <summary>
         /// HAM coefficeint for radial velocity U
@@ -47,11 +44,10 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
 
         public void SetData(MultidimensionalArray _CoeffVariableU, MultidimensionalArray _CoeffVariableV,
-            double OmegaStar, double kinViscosity, double density) {
+            double OmegaStar, double kinViscosity) {
 
             m_OmegaStar = OmegaStar;
             m_kinViscosity = kinViscosity;
-            m_density = density;
 
             if (_CoeffVariableU.Dimension != 2)
                 throw new ArgumentException("_CoeffVariableU: Expecting Dimension 2");
@@ -131,9 +127,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             if (other == null)
                 return false;
 
-
-            if (m_density != other.m_density)
-                return false;
             if (m_kinViscosity != other.m_kinViscosity)
                 return false;
             if (m_OmegaStar != other.m_OmegaStar)
@@ -165,9 +158,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         [JsonProperty]
         double m_kinViscosity;
 
-        [JsonProperty]
-        double m_density;
-
 
         /// <summary>
         /// HAM coefficeint for radial velocity U
@@ -177,11 +167,10 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
 
         public void SetData(MultidimensionalArray _CoeffVariableU, 
-            double OmegaStar, double kinViscosity, double density) {
+            double OmegaStar, double kinViscosity) {
 
             m_OmegaStar = OmegaStar;
             m_kinViscosity = kinViscosity;
-            m_density = density;
 
             if (_CoeffVariableU.Dimension != 2)
                 throw new ArgumentException("_CoeffVariableU: Expecting Dimension 2");
@@ -249,9 +238,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             if (other == null)
                 return false;
 
-
-            if (m_density != other.m_density)
-                return false;
             if (m_kinViscosity != other.m_kinViscosity)
                 return false;
             if (m_OmegaStar != other.m_OmegaStar)
@@ -282,9 +268,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         [JsonProperty]
         double m_kinViscosity;
 
-        [JsonProperty]
-        double m_density;
-
 
         /// <summary>
         /// HAM coefficeint for radial velocity U
@@ -300,11 +283,10 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
 
         public void SetData(MultidimensionalArray _CoeffVariableU, MultidimensionalArray _CoeffVariableV,
-            double OmegaStar, double kinViscosity, double density) {
+            double OmegaStar, double kinViscosity) {
 
             m_OmegaStar = OmegaStar;
             m_kinViscosity = kinViscosity;
-            m_density = density;
 
             if (_CoeffVariableU.Dimension != 2)
                 throw new ArgumentException("_CoeffVariableU: Expecting Dimension 2");
@@ -384,9 +366,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             if (other == null)
                 return false;
 
-
-            if (m_density != other.m_density)
-                return false;
             if (m_kinViscosity != other.m_kinViscosity)
                 return false;
             if (m_OmegaStar != other.m_OmegaStar)
@@ -418,9 +397,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         [JsonProperty]
         double m_kinViscosity;
 
-        [JsonProperty]
-        double m_density;
-
 
         /// <summary>
         ///  HAM coefficeint for azimuthal velocity V
@@ -430,11 +406,10 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
 
         public void SetData(MultidimensionalArray _CoeffVariableV,
-            double OmegaStar, double kinViscosity, double density) {
+            double OmegaStar, double kinViscosity) {
 
             m_OmegaStar = OmegaStar;
             m_kinViscosity = kinViscosity;
-            m_density = density;
 
 
             if (_CoeffVariableV.Dimension != 2)
@@ -504,8 +479,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
                 return false;
 
 
-            if (m_density != other.m_density)
-                return false;
             if (m_kinViscosity != other.m_kinViscosity)
                 return false;
             if (m_OmegaStar != other.m_OmegaStar)
@@ -518,7 +491,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             return true;
         }
     }
-
 
 
     /// <summary>
@@ -536,9 +508,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         [JsonProperty]
         double m_kinViscosity;
 
-        [JsonProperty]
-        double m_density;
-
 
         /// <summary>
         /// HAM coefficeint for radial velocity W
@@ -549,11 +518,10 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
 
         public void SetData(MultidimensionalArray _CoeffVariableW, 
-            double OmegaStar, double kinViscosity, double density) {
+            double OmegaStar, double kinViscosity) {
 
             m_OmegaStar = OmegaStar;
             m_kinViscosity = kinViscosity;
-            m_density = density;
 
             if (_CoeffVariableW.Dimension != 2)
                 throw new ArgumentException("_CoeffVariableW: Expecting Dimension 2");
@@ -620,8 +588,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
                 return false;
 
 
-            if (m_density != other.m_density)
-                return false;
             if (m_kinViscosity != other.m_kinViscosity)
                 return false;
             if (m_OmegaStar != other.m_OmegaStar)
@@ -634,6 +600,123 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             return true;
         }
     }
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [Serializable]
+    public class RotatingDiskBoundaryLayerConditionsHAM_VelocityX2D : IBoundaryAndInitialData {
+
+        /// <summary>
+        /// rotation rate
+        /// </summary>
+        [JsonProperty]
+        double m_OmegaStar;
+
+        [JsonProperty]
+        double m_kinViscosity;
+
+        [JsonProperty]
+        double m_Radius;
+
+
+        /// <summary>
+        /// HAM coefficeint for azimuthal velocity X in 2D
+        /// </summary>
+        [JsonProperty]
+        MultidimensionalArray CoeffVariableV;
+
+
+
+        public void SetData(MultidimensionalArray _CoeffVariableV,
+            double OmegaStar, double kinViscosity, double radius) {
+
+            m_OmegaStar = OmegaStar;
+            m_kinViscosity = kinViscosity;
+            m_Radius = radius;
+
+            if (_CoeffVariableV.Dimension != 2)
+                throw new ArgumentException("_CoeffVariableU: Expecting Dimension 2");
+            if (_CoeffVariableV.Lengths[0] != _CoeffVariableV.Lengths[1])
+                throw new ArgumentException("_CoeffVariableU: Expecting same lengths for both dimensions");
+
+
+            this.CoeffVariableV = _CoeffVariableV;
+
+        }
+
+
+        /// <summary>
+        /// Evaluation
+        /// </summary>
+        /// <param name="X"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        public double Evaluate(double[] X, double t) {
+
+            if (X.Length != 2)
+                throw new NotSupportedException("only supported for 2D");
+
+            double m_Lstar = Math.Sqrt(m_kinViscosity / m_OmegaStar);
+
+            double z = X[1];
+            double eta = z / m_Lstar;
+
+            int coeffDim = CoeffVariableV.Lengths[0];
+
+            double velV = 0.0;
+            for (int n = 0; n < coeffDim; n++) {
+                for (int i = 0; i < coeffDim; i++) {
+                    velV += CoeffVariableV[n, i] * Math.Exp(-n * eta) * Math.Pow(eta, i);
+                }
+            }
+
+            double returnVal = velV * m_Radius * m_OmegaStar;
+
+            return returnVal;
+        }
+
+
+        /// <summary>
+        /// Vectorized evaluation
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="time"></param>
+        /// <param name="output"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            ScalarFunction sF = NonVectorizedScalarFunction.Vectorize(this.Evaluate, time);
+            sF(input, output);
+        }
+
+
+
+        /// <summary>
+        /// equality
+        /// </summary>
+        public override bool Equals(object obj) {
+            var other = obj as RotatingDiskBoundaryLayerConditionsHAM_VelocityX2D;
+            if (other == null)
+                return false;
+
+
+            if (m_Radius != other.m_Radius)
+                return false;
+            if (m_kinViscosity != other.m_kinViscosity)
+                return false;
+            if (m_OmegaStar != other.m_OmegaStar)
+                return false;
+
+            if (!CoeffVariableV.Equals(other.CoeffVariableV))
+                return false;
+
+
+            return true;
+        }
+    }
+
+
 
     /// <summary>
     /// 

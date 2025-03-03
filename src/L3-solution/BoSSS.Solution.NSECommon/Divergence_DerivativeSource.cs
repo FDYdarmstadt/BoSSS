@@ -95,7 +95,7 @@ namespace BoSSS.Solution.NSECommon {
         protected int component;
 
 
-        IncompressibleBoundaryCondMap bcmap;
+        protected IncompressibleBoundaryCondMap bcmap;
 
         /// <summary>
         /// Ctor for incompressible flows.

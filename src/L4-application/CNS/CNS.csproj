@@ -68,4 +68,7 @@
     <Compile Remove="OperatorFactory.cs" />
     <Compile Remove="Tests\MovingIBMTests\MovingIBMCylinderControl.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
+  </ItemGroup>
 </Project>

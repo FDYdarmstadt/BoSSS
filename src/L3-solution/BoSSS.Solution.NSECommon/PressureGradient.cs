@@ -39,7 +39,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected int m_d = -1;
 
-        BoundaryCondMap<IncompressibleBcType> m_bcmap;
+        protected BoundaryCondMap<IncompressibleBcType> m_bcmap;
 
         /// <summary>
         /// ctor
