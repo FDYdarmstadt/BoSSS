@@ -1138,7 +1138,7 @@ namespace ValidationTestRunner {
     /// NUnit entry point for each example worksheet which represents a short-running validation test;
     /// </summary>
     /// <remarks>
-    /// - short running rests are fully re-computed every timem
+    /// - short running rests are fully re-computed every time
     /// - All these tests here are intended to be run at the local MS windows HPC cluster (aka. FDYcluster) at Chair of Fluid Dynamics (FDY)
     /// </remarks>
     [TestFixture]
