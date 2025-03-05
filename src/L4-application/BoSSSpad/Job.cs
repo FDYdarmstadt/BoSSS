@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -1216,7 +1216,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        int m_NumberOfThreads = 4;
+        int m_NumberOfThreads = 1;
 
         /// <summary>
         /// Number of threads for each MPI rank
