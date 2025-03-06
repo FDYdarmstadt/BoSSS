@@ -2059,26 +2059,31 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.LinearSolver = new PmgConfig() {
             //    ConvergenceCriterion = 1e-9
             //};
-            //C.LinearSolver = new OrthoMGSchwarzConfig() {
-            //    ConvergenceCriterion = 1e-9
-            //};
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                CoarseKickIn = 4000,
+                TargetBlockSize = 4000,
+                SchwarzImplementation = SchwarzImplementation.CoarseMesh
+            };
 
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-            var config = new FGMRESConfig();
-			config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
-                ConvergenceCriterion = 1e-3,
-                CoarseKickIn = 5000,
-                TargetBlockSize = 1000
-            });
+   //         var config = new FGMRESConfig();
+			//config.Preconditioners.Add(new OrthoMGSchwarzConfig() {
+   //             ConvergenceCriterion = 1e-3,
+   //             CoarseKickIn = 5000,
+   //             TargetBlockSize = 1000
+   //         });
 
             //config.Preconditioners.Add(new DirectSolver.Config() {
             //    WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
             //    });
 
-            C.LinearSolver = config;
+            //C.LinearSolver = new SchurPrecondConfig() { 
+            //    Option = SchurPrecond.SchurOptions.exact
+            //};
             //	new DirectSolver.Config() {
             //	WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO
             //}; //new SchurPrecondConfig();
