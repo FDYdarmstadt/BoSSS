@@ -39,19 +39,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	public class SchurPrecondConfig : IterativeSolverConfig {
 		/// <inheritdoc/>
 		[DataMember]
-		public override string Name => "Schur complement with Uzawa algorithm";
+		public override string Name => "Schur complement with UzawaGMRES algorithm";
 		/// <inheritdoc/>
 		[DataMember]
-		public override string Shortname => "Uzawa";
+		public override string Shortname => "UzawaGMRES";
 
         /// <inheritdoc/>
         [DataMember]
-        SchurPrecond.SchurOptions option = SchurPrecond.SchurOptions.Uzawa;
+        public SchurPrecond.SchurOptions Option = SchurPrecond.SchurOptions.UzawaGMRES;
 
 		/// <inheritdoc/>
 		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
 			var templinearSolve = new SchurPrecond(this);
-            templinearSolve.SchurOpt = option;
+            templinearSolve.SchurOpt = Option;
 			templinearSolve.Init(level);
 			return templinearSolve;
 		}
@@ -126,11 +126,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			get { return Pidx.Length; }
 		}
 
-		public enum SchurOptions { Uzawa = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3, exact_matlab = 4, least_square_commutor }
+		public enum SchurOptions { UzawaGMRES = 0, exact = 1, decoupledApprox = 2, SIMPLE = 3, exact_matlab = 4, least_square_commutor }
 
         public bool ApproxScaling = false;
         
-        public SchurOptions SchurOpt = SchurOptions.Uzawa;
+        public SchurOptions SchurOpt = SchurOptions.UzawaGMRES;
 
         public void Init(MultigridOperator op)
         {
@@ -156,7 +156,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			long i0 = Mtx.RowPartitioning.i0;
 
 			switch (SchurOpt) { //BlockMsr or Msr
-				case SchurOptions.Uzawa:
+				case SchurOptions.UzawaGMRES:
 					blockConvDiff = M.GetSubMatrix(Uidx, Uidx);
 					blockpGrad = M.GetSubMatrix(Uidx, Pidx);
 					blockdivVel = M.GetSubMatrix(Pidx, Uidx);
@@ -203,8 +203,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			switch (SchurOpt)
             {
-				case SchurOptions.Uzawa: {
-                        Console.WriteLine("Uzawa with iterative solver is set");
+				case SchurOptions.UzawaGMRES: {
+                        Console.WriteLine("UzawaGMRES with iterative solver is set");
                         return;
                     }
 				case SchurOptions.exact_matlab:
@@ -427,7 +427,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						//                   Mtx, null, configs, null);
 
 
-						Console.WriteLine("Uzawa is set");
+						Console.WriteLine("UzawaGMRES is set");
 						return;
 					}
 				case SchurOptions.exact: {
@@ -696,7 +696,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						return;
 					}
 
-				case SchurOptions.Uzawa: {
+				case SchurOptions.UzawaGMRES: {
 						Console.WriteLine("starting uzawa iteration");
 						var b1 = Uidx.Select(ind => B[MgMap.Global2Local(ind)]);
 						var b2 = Pidx.Select(ind => B[MgMap.Global2Local(ind)]);
@@ -928,7 +928,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             X.SetV(temp);
         }
-
 
         /// <summary>
         /// Approximate the inverse of the Schur matrix and perform two Poisson solves and Matrix-Vector products. Finite elements and Fast Iterative Solvers p.383
