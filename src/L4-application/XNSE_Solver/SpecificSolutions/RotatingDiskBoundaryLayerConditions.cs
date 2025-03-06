@@ -722,6 +722,116 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
     /// 
     /// </summary>
     [Serializable]
+    public class RotatingDiskBoundaryLayerConditionsHAM_VelocityY2D : IBoundaryAndInitialData {
+
+        /// <summary>
+        /// rotation rate
+        /// </summary>
+        [JsonProperty]
+        double m_OmegaStar;
+
+        [JsonProperty]
+        double m_kinViscosity;
+
+
+        /// <summary>
+        /// HAM coefficeint for radial velocity W
+        /// </summary>
+        [JsonProperty]
+        MultidimensionalArray CoeffVariableW;
+
+
+
+        public void SetData(MultidimensionalArray _CoeffVariableW,
+            double OmegaStar, double kinViscosity) {
+
+            m_OmegaStar = OmegaStar;
+            m_kinViscosity = kinViscosity;
+
+            if (_CoeffVariableW.Dimension != 2)
+                throw new ArgumentException("_CoeffVariableW: Expecting Dimension 2");
+            if (_CoeffVariableW.Lengths[0] != _CoeffVariableW.Lengths[1])
+                throw new ArgumentException("_CoeffVariableW: Expecting same lengths for both dimensions");
+
+
+            this.CoeffVariableW = _CoeffVariableW;
+
+        }
+
+
+        /// <summary>
+        /// Evaluation
+        /// </summary>
+        /// <param name="X"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
+        public double Evaluate(double[] X, double t) {
+
+            if (X.Length != 2)
+                throw new NotSupportedException("only supported for 2D");
+
+            double m_Lstar = Math.Sqrt(m_kinViscosity / m_OmegaStar);
+
+            double z = X[1];
+            double eta = z / m_Lstar;
+
+            int coeffDim = CoeffVariableW.Lengths[0];
+
+            double velW = 0.0;
+            for (int n = 0; n < coeffDim; n++) {
+                for (int i = 0; i < coeffDim; i++) {
+                    velW += CoeffVariableW[n, i] * Math.Exp(-n * eta) * Math.Pow(eta, i);
+                }
+            }
+
+            double returnVal = velW * Math.Sqrt(m_kinViscosity * m_OmegaStar);
+
+            return returnVal;
+        }
+
+
+        /// <summary>
+        /// Vectorized evaluation
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="time"></param>
+        /// <param name="output"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            ScalarFunction sF = NonVectorizedScalarFunction.Vectorize(this.Evaluate, time);
+            sF(input, output);
+        }
+
+
+
+        /// <summary>
+        /// equality
+        /// </summary>
+        public override bool Equals(object obj) {
+            var other = obj as RotatingDiskBoundaryLayerConditionsHAM_VelocityY2D;
+            if (other == null)
+                return false;
+
+
+            if (m_kinViscosity != other.m_kinViscosity)
+                return false;
+            if (m_OmegaStar != other.m_OmegaStar)
+                return false;
+
+            if (!CoeffVariableW.Equals(other.CoeffVariableW))
+                return false;
+
+
+            return true;
+        }
+    }
+
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    [Serializable]
     public class RotatingDiskBoundaryLayerConditionsHAM_PressureP : IBoundaryAndInitialData {
 
         /// <summary>
