@@ -146,11 +146,11 @@ namespace BoSSS.Solution.NSECommon {
             IncompressibleBcType edgeType = bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch (edgeType) {
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 throw new ArithmeticException("Tests on channel flow indicate that b.c. " + edgeType + " is ill-posed, fk 25may16.");
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet:
-                case IncompressibleBcType.Outlet_RotDisk: 
+                case IncompressibleBcType.Dong_OutFlow: 
                 {
                     FluxInCell = 0.0;
                     break;

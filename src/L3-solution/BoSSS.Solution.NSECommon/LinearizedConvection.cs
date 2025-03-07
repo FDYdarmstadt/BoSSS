@@ -311,7 +311,7 @@ namespace BoSSS.Solution.NSECommon {
                     return r;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     double r = 0.0;
                     double u1, u2, u3 = 0, u_d;
@@ -354,7 +354,7 @@ namespace BoSSS.Solution.NSECommon {
 
                     return r;
                 }
-                case IncompressibleBcType.Outlet_RotDisk: {
+                case IncompressibleBcType.Dong_OutFlow: {
                         double r = 0.0;
                         double u1, u2, u3 = 0, u_d;
 
@@ -364,14 +364,24 @@ namespace BoSSS.Solution.NSECommon {
                             u_d = Uin[0];
                             u1 = inp.Parameters_IN[0];
                             u2 = inp.Parameters_IN[1];
-                            u3 = inp.Parameters_IN[2];
+                            if (m_SpatialDimension == 3)
+                                u3 = inp.Parameters_IN[2];
                         }
 
-                        double theta = Math.Atan2(inp.X[1], inp.X[0]);
-                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1] * Math.Cos(theta) + u3 * inp.Normal[2]);
+                        double ndotu = (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        double uAbs2 = u1.Pow2() + u2.Pow2();
+                        //r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        if (m_SpatialDimension == 3) {
+                            ndotu += u3 * inp.Normal[2];
+                            uAbs2 += u3.Pow2();
+                        }
+                        r += u_d * ndotu;
 
-                        //double rho = EoS.GetDensity(inp.Parameters_IN[2 * m_SpatialDimension]);
-                        //r *= rho;
+                        // Dong energy term
+                        double U0 = 1.0;
+                        double delta = 1.0 / 20.0;
+                        double Sout = 0.5 * (1.0 + Math.Tanh(ndotu/(U0*delta)));
+                        r += 0.5 * uAbs2 * Sout * inp.Normal[m_component];
 
                         return r;
                     }
@@ -785,7 +795,7 @@ namespace BoSSS.Solution.NSECommon {
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
                     double r = 0.0;
@@ -828,21 +838,34 @@ namespace BoSSS.Solution.NSECommon {
 
                     return r;
                 }
-                case IncompressibleBcType.Outlet_RotDisk: {
+                case IncompressibleBcType.Dong_OutFlow: {
                         double r = 0.0;
                         double u1, u2, u3 = 0, u_d;
 
-                        u_d = Uin[argumentIndex];
-                        u1 = Uin[0];
-                        u2 = Uin[1];
-                        u3 = Uin[2];
+                        if (m_UseBoundaryVelocityParameter) {
+                            throw new NotImplementedException();
+                        } else {
+                            u_d = Uin[argumentIndex];
+                            u1 = inp.Parameters_IN[0];
+                            u2 = inp.Parameters_IN[1];
+                            if (m_SpatialDimension == 3)
+                                u3 = inp.Parameters_IN[2];
+                        }
 
-                        double theta = Math.Atan2(inp.X[1], inp.X[0]);
-                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1] * Math.Cos(theta) + u3 * inp.Normal[2]);
+                        double ndotu = (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        double uAbs2 = u1.Pow2() + u2.Pow2();
+                        //r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                        if (m_SpatialDimension == 3) {
+                            ndotu += u3 * inp.Normal[2];
+                            uAbs2 += u3.Pow2();
+                        }
+                        r += u_d * ndotu;
 
-                        //double[] densityArguments = Uin.GetSubVector(m_SpatialDimension, 1); // Only Temp
-                        //double rho = EoS.GetDensity(densityArguments);
-                        //r *= rho;
+                        // Dong energy term
+                        double U0 = 1.0;
+                        double delta = 1.0 / 20.0;
+                        double Sout = 0.5 * (1.0 + Math.Tanh(ndotu / (U0 * delta)));
+                        r += 0.5 * uAbs2 * Sout * inp.Normal[m_component];
 
                         return r;
                     }

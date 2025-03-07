@@ -106,7 +106,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public bool _OutflowBoundary {
             get {
-                return (BCTypeUseCount[IncompressibleBcType.Outflow] > 0);
+                return (BCTypeUseCount[IncompressibleBcType.SIMPLE_Outflow] > 0);
             }
         }
 

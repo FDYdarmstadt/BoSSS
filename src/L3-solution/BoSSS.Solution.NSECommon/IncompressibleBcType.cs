@@ -51,7 +51,7 @@ namespace BoSSS.Solution.NSECommon {
         ///     \left( \psi \myMatrix{I} - \frac{1}{\reynolds} \nabla \vec{u} \right) \cdot \vec{n}_{\partial \Omega} = 0
         /// \f]
         /// </summary>
-        Outflow = 3,
+        SIMPLE_Outflow = 3,
 
         /// <summary>
         /// Dirichlet boundary condition for pressure.
@@ -95,10 +95,17 @@ namespace BoSSS.Solution.NSECommon {
         ScalarDirichlet_PressureOutlet = 9,
 
         /// <summary>
-        /// pressure outlet B.C. for a cartesian cut-out in a rotating disk flow field (von Karman flow) 
-        /// specialized use for 3D and angular velocities with \f[ \vec{\omega} = (0, 0, \omega)^T\f]
+        /// outflow boundary condition according to Dong et. al.
+        /// \f[
+        ///     \left( - \psi \myMatrix{I} + \frac{1}{\reynolds} \nabla \vec{u} - \frac{1}{2} \abs{\vec{u}}^2 S_{out} (\vec{n} \cdot \vec{u}) \right) \cdot \vec{n}_{\partial \Omega} = 0
+        /// \f]
+        /// where 
+        /// \f[
+        ///     S_{out}(-) = \frac{1}{2}(1 - tanh(\frac{(-)}{U_0 \delta}))
+        /// \f]
+        /// with U_0 is the characteristic velocity scale, and δ > 0 is a chosen non-dimensional positive constant that is sufficiently small
         /// </summary>
-        Outlet_RotDisk = 10
+        Dong_OutFlow = 10
 
     }
 }

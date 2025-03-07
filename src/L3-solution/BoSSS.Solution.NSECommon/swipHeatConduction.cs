@@ -139,7 +139,7 @@ namespace BoSSS.Solution.NSECommon {
 
                         break;
                     }
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.NoSlipNeumann: {

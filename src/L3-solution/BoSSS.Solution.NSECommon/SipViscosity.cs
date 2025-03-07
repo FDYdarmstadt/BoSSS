@@ -688,8 +688,9 @@ namespace BoSSS.Solution.NSECommon {
                     //        goto case IncompressibleBcType.Velocity_Inlet;
                     //    }
                     //}
-                case IncompressibleBcType.Outflow:
-                case IncompressibleBcType.Pressure_Outlet: {
+                case IncompressibleBcType.SIMPLE_Outflow:
+                case IncompressibleBcType.Pressure_Outlet:
+                case IncompressibleBcType.Dong_OutFlow: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
                     double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag, inp.time);
@@ -715,23 +716,6 @@ namespace BoSSS.Solution.NSECommon {
                     Acc *= base.m_alpha;
 
                     break;
-                }
-                case IncompressibleBcType.Outlet_RotDisk: {
-
-                    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag, inp.time);
-                    double theta = Math.Atan2(inp.X[1], inp.X[0]);
-
-                    for (int d = 0; d < inp.D; d++) {
-                        if (d == 1)
-                            Acc += 0.5 * muA * (_Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d] * Math.Cos(theta);  // consistency term  
-                        else
-                            Acc += 0.5 * muA * (_Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d];  // consistency term  
-                    }
-                    Acc *= base.m_alpha;
-
-                    Acc += 0.5 * muA * g_N * Math.Cos(theta) * _vA * base.m_alpha;
-
-                    break;    
                 }
                 default:
                     throw new NotImplementedException();
@@ -1173,7 +1157,8 @@ namespace BoSSS.Solution.NSECommon {
 
                 //        break;
                 //    }
-                case IncompressibleBcType.Pressure_Dirichlet:                    
+                case IncompressibleBcType.Pressure_Dirichlet:
+                case IncompressibleBcType.Dong_OutFlow:
                     // Inner values of velocity gradient are taken, i.e.
                     // no boundary condition for the velocity (resp. velocity gradient) is imposed.                        
                     for (int i = 0; i < inp.D; i++) {
@@ -1181,7 +1166,7 @@ namespace BoSSS.Solution.NSECommon {
                     }                    
                     Acc *= base.m_alpha;
                     break;
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     //if (!base.g_Neu_GradU.IsNullOrEmpty()) {
                     //    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
@@ -1200,23 +1185,6 @@ namespace BoSSS.Solution.NSECommon {
                     }
                     Acc *= base.m_alpha;
                     break;
-                }
-                case IncompressibleBcType.Outlet_RotDisk: {
-
-                     double theta = Math.Atan2(inp.X[1], inp.X[0]);
-
-                     for (int i = 0; i < inp.D; i++) {
-                         if (i == 1)
-                            Acc += 0.5 * muA * (_Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i] * Math.Cos(theta); // consistency term
-                         else
-                            Acc += 0.5 * muA * (_Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i]; // consistency term
-                        }
-                     Acc *= base.m_alpha;
-
-                     //double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
-                     //Acc += 0.5 * muA * g_N * Math.Cos(theta) * _vA * base.m_alpha;
-
-                     break;
                 }
                 default:
                     throw new NotSupportedException();
@@ -1570,7 +1538,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
                     if(base.g_Neu_Override == null) {
