@@ -172,6 +172,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         dt,
                         underRelax,
                         incremental);
+
+                    EnforceContinuity();
+
                     AfterMoveLevelSet(
                         phaseInterface,
                         DomainVarFields,

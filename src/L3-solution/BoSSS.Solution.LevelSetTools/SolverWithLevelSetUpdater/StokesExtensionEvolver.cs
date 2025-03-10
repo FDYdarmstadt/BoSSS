@@ -189,8 +189,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
+            if (phaseInterface.LevelSetIndex > 0) return; //skip the second level set
             // after level-set evolution and for initializing non-signed-distance level set fields
-            if(ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
+            if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
 
                 Console.WriteLine("Performing ReInit");
                 ReInit_Control.Potential = ReInitPotential.BastingSingleWell;
