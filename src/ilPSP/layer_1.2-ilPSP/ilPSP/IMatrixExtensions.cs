@@ -16,6 +16,7 @@ limitations under the License.
 
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,6 +24,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace ilPSP {
 
@@ -54,7 +57,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// writes this matrix into a text file;
+        /// writes this matrix into a single text file;
         /// </summary>
         /// <param name="name">path to the text file</param>
         /// <param name="M">matrix</param>
@@ -67,6 +70,29 @@ namespace ilPSP {
                 txt.Flush();
             }
         }
+
+        /// <summary>
+        /// writes this matrix into a text file for each call;
+        /// </summary>
+        /// <param name="name">path to the text file</param>
+        /// <param name="M">matrix</param>
+        /// <param name="fm">file creation mode</param>
+        static public void SaveToTextFileUnsteady(this IMatrix M, string filename, FileMode fm = FileMode.Create) {
+            int Rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
+            string ext = ".txt";
+
+            int c = 0;
+            string fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+
+            while (File.Exists(fullfilename)) {
+                c++;
+                fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+            }
+
+            M.SaveToTextFile(fullfilename, fm);
+        }
+
 
         /// <summary>
         /// Writes this matrix to a stream, in text format.
@@ -93,7 +119,6 @@ namespace ilPSP {
             }
 
             txt.Flush();
-
         }
 
 
@@ -852,7 +877,20 @@ namespace ilPSP {
         {
             M.GEMV(xScaling, x, yScaling, y, transpose);
         }
-        
+
+        /// <summary>
+        /// Alias for <see cref="GEMV"/>
+        /// </summary>
+        static public double[] MatVecMul<MatrixType, VectorType1>(this MatrixType M, double xScaling, VectorType1 x, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double>//
+        {
+            double[] y = new double[transpose ? M.NoOfCols : M.NoOfRows];
+            M.GEMV(xScaling, x, 0.0, y, transpose);
+            return y;
+        }
+
+
         /// <summary>
         /// Alias for <see cref="GEMV"/>
         /// </summary>
@@ -911,7 +949,7 @@ namespace ilPSP {
             where Matrix2 : IMatrix
             where Matrix3 : IMatrix //
         {
-            
+
             if (!transA && !transB) {
                 if (A.NoOfCols != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
@@ -950,20 +988,21 @@ namespace ilPSP {
                     return;
             }
 
+            bool inPlace = false;
             if (object.ReferenceEquals(C, A))
-                throw new ArgumentException("in-place GEMM is not supported");
-            if(object.ReferenceEquals(C, A))
-                throw new ArgumentException("in-place GEMM is not supported");
+                inPlace = true;
+            if (object.ReferenceEquals(C, B))
+                inPlace = true;
             if (C.NoOfCols == 0 || C.NoOfRows == 0)
                 return;
+             
 
-
-            if (A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
+            if (!inPlace && A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
                 int a00 = _A.Index(0, 0);
                 int b00 = _B.Index(0, 0);
                 int c00 = _C.Index(0, 0);
 
-                if(_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
+                if (_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Data layout is suitable to use BLAS DGEMM
                     // directly on MultidimenasionalArray storage.
@@ -1393,46 +1432,65 @@ namespace ilPSP {
                     }
                 }
             }
+
+            // If it is L type, convert it to U or vice versa
+            target.SwitchStructure(source);
+
         }
 
-        /*
-        /// <summary>
-        /// standard gemm: 
-        /// <paramref name="C"/> = <paramref name="beta"/>*<paramref name="C"/>
-        /// + <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/>;
-        /// </summary>
-        /// <param name="A"></param>
-        /// <param name="alpha"></param>
-        /// <param name="B"></param>
-        /// <param name="C"></param>
-        /// <param name="beta"></param>
-        static public void Gemm(IMatrix A, double alpha, IMatrix B, IMatrix C, double beta) {
-            if (A.NoOfCols != B.NoOfRows)
-                throw new ArgumentException("Matrix size mismatch.");
-            if (A.NoOfRows != C.NoOfRows)
-                throw new ArgumentException("Matrix size mismatch.");
-            if (B.NoOfCols != C.NoOfCols)
-                throw new ArgumentException("Matrix size mismatch.");
+            static public void SwitchStructure<M1, M2>(this M1 target, M2 source) where M1 : IMatrix where M2 : IMatrix {
 
-            int M = A.NoOfRows, N = A.NoOfCols, K = B.NoOfCols;
-
-            for (int i = 0; i < M; i++) {
-                for (int j = 0; j < K; j++) {
-                    double r = 0;
-
-                    for (int k = 0; k < N; k++)
-                        r += A[i, k] * B[k, j];
-
-                    C[i, j] = C[i, j] * beta + r * alpha;
+                switch (source.StructureType) {
+                case MatrixStructure.LowerTriangular:
+                    target.StructureType = MatrixStructure.UpperTriangular;
+                    break;
+                case MatrixStructure.UpperTriangular:
+                    target.StructureType = MatrixStructure.LowerTriangular;
+                    break;
                 }
-            }
-        }*/
 
-        /// <summary>
-        /// only supported for 1x1, 2x2, 3x3 and 4x4 - matrices;
-        /// </summary>
-        /// <returns></returns>
-        static public double Determinant<T>(this T M) where T : IMatrix {
+
+            }
+
+
+                /*
+                /// <summary>
+                /// standard gemm: 
+                /// <paramref name="C"/> = <paramref name="beta"/>*<paramref name="C"/>
+                /// + <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/>;
+                /// </summary>
+                /// <param name="A"></param>
+                /// <param name="alpha"></param>
+                /// <param name="B"></param>
+                /// <param name="C"></param>
+                /// <param name="beta"></param>
+                static public void Gemm(IMatrix A, double alpha, IMatrix B, IMatrix C, double beta) {
+                    if (A.NoOfCols != B.NoOfRows)
+                        throw new ArgumentException("Matrix size mismatch.");
+                    if (A.NoOfRows != C.NoOfRows)
+                        throw new ArgumentException("Matrix size mismatch.");
+                    if (B.NoOfCols != C.NoOfCols)
+                        throw new ArgumentException("Matrix size mismatch.");
+
+                    int M = A.NoOfRows, N = A.NoOfCols, K = B.NoOfCols;
+
+                    for (int i = 0; i < M; i++) {
+                        for (int j = 0; j < K; j++) {
+                            double r = 0;
+
+                            for (int k = 0; k < N; k++)
+                                r += A[i, k] * B[k, j];
+
+                            C[i, j] = C[i, j] * beta + r * alpha;
+                        }
+                    }
+                }*/
+
+                /// <summary>
+                /// only supported for 1x1, 2x2, 3x3 and 4x4 - matrices;
+                /// </summary>
+                /// <returns></returns>
+                static public double Determinant<T>(this T M) where T : IMatrix {
             int m_NoOfCols = M.NoOfCols, m_NoOfRows = M.NoOfRows;
             if (m_NoOfCols != m_NoOfRows)
                 throw new NotSupportedException("Determinate only defined for quadratic matrices.");
@@ -1795,9 +1853,23 @@ namespace ilPSP {
             }
         }
 
-        static private void GramSchmidt<FullMatrix1, FullMatrix2>(FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
+        /// <summary>
+        /// Performs a Gram-Schmidt orthonormalization on a matrix <paramref name="Mtx"/>
+        /// </summary>
+        /// <param name="Mtx"></param>
+        /// <param name="B">
+        /// on exit, an upper triangular matrix so that 
+        /// <paramref name="B"/>^T * <paramref name="Mtx"/> * <paramref name="B"/> is an identity matrix.
+        /// </param>
+        /// <param name="Diag">
+        /// Not used, if Gram-Schmid performs as normal, i.e. if <paramref name="Mtx"/> is positive definite,
+        /// If the algorithm runs into some trouble, i.e. if the matrix is positive definite or close to indefinitenes, 
+        /// a negative norm may occur; 
+        /// </param>
+        static public void GramSchmidt<FullMatrix1, FullMatrix2>(this FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
             where FullMatrix1 : IMatrix
-            where FullMatrix2 : IMatrix {
+            where FullMatrix2 : IMatrix //
+        {
             B.Clear();
             int N = B.NoOfRows;
 
@@ -2663,7 +2735,7 @@ namespace ilPSP {
 
                 //double[] _this_Entries;
                 //int BufOffset;
-                //if (M is MultidimensionalArray Mda && Mda.IsContinious) {
+                //if (M is MultidimensionalArray Mda && Mda.IsContinuous) {
                 //    _this_Entries = Mda.Storage; // fk, 06apr22: does not work, because MultidimensionalArray is in C-order
                 //    iBuf = -1;
                 //    BufOffset = Mda.Index(0, 0);
@@ -2913,15 +2985,22 @@ namespace ilPSP {
                         throw new ArgumentException("Illegal Matrix Norm Specifier.");
 
                     LAPACK.F77_LAPACK.DGETRF(ref N, ref N, A, ref LDA, IPIV, out INFO);
-                    if(INFO > 0)
+                    if (INFO > 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
                         return double.PositiveInfinity;
-
-                    if(INFO != 0)
+                    }
+                    if (INFO != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
                         throw new ArithmeticException("LAPACK DGETRF info is " + INFO);
-                    
+                    }
                     LAPACK.F77_LAPACK.DGECON_(ref NORM, ref N, A, ref LDA, ref ANORM, ref RCOND, work, Iwork, ref INFO);
-                    if(INFO != 0)
+                    if (INFO != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
                         throw new ArithmeticException("LAPACK DGECON info is " + INFO);
+                    }
                 }
 
                 TempBuffer.FreeTempBuffer(i0);
@@ -2959,7 +3038,7 @@ namespace ilPSP {
             unsafe {
                 int i0;
                 double[] _M = TempBuffer.GetTempBuffer(out i0, N * N);
-                fixed (double* pM = _M, pTAU = &TAU[0]) {
+                fixed (double* pM = _M, pTAU = TAU) {
                     CopyToUnsafeBuffer(M, pM, true);
 
                     LAPACK.F77_LAPACK.DGEQRF(ref N, ref N, pM, ref N, pTAU);
@@ -3032,8 +3111,8 @@ namespace ilPSP {
             unsafe {
                 int i0;
                 double[] _M = TempBuffer.GetTempBuffer(out i0, N * N);
-                fixed (double* pM = _M, pTAU = &TAU[0]) {
-                    fixed (int* pP = &P[0]) {
+                fixed (double* pM = _M, pTAU = TAU) {
+                    fixed (int* pP = P) {
                         CopyToUnsafeBuffer(M, pM, true);
 
                         LAPACK.F77_LAPACK.DGEQP3(ref N, ref N, pM, ref N, pP, pTAU);
@@ -3470,6 +3549,25 @@ namespace ilPSP {
             int I1 = inp.NoOfCols;
             for(int i = 0; i < I1; i++)
                 inp[RowNo, i] = 0.0;
+        }
+
+        /// <summary>
+        /// clears the <paramref name="ColNo"/>-th column from <paramref name="inp"/> .
+        /// </summary>
+        /// <param name="inp">
+        /// matrix that should be altered
+        /// </param>
+        /// <param name="ColNo">
+        /// column index of the column to set
+        /// </param>
+        public static void ClearCol(this IMatrix inp, int ColNo) {
+
+            if (ColNo < 0 || ColNo >= inp.NoOfCols)
+                throw new IndexOutOfRangeException("ColNo out of range");
+
+            int I1 = inp.NoOfRows;
+            for (int i = 0; i < I1; i++)
+                inp[i, ColNo] = 0.0;
         }
 
         /// <summary>

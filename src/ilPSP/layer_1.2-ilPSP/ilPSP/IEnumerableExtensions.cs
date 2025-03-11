@@ -46,6 +46,18 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// - Returns a value from a dictionary <paramref name="dict"/>, if <paramref name="key"/> is present; 
+        /// - returns null, if <paramref name="key"/> is not in the dictionary.
+        /// </summary>
+        public static U Get<T, U>(this IDictionary<T, U> dict, T key)
+            where U : class //
+        {
+            
+            dict.TryGetValue(key, out var val);
+            return val;
+        }
+
+        /// <summary>
         /// Checks whether all elements of the given sequence are uniform (or
         /// homogeneous) with respect to the given <paramref name="selector"/>.
         /// That is, it checks whether <paramref name="selector"/>(element)
@@ -271,6 +283,8 @@ namespace ilPSP {
         /// <paramref name="seq"/>, or -1, if not found.
         /// </returns>
         public static int IndexOf<T>(this IEnumerable<T> seq, T element, Func<T, T, bool> comparer) {
+            if (seq == null)
+                return -1;
             int i = 0;
             foreach (var e in seq) {
                 if (comparer(e, element))
@@ -296,6 +310,8 @@ namespace ilPSP {
         /// where <paramref name="condition"/> evaluates to true
         /// </returns>
         public static int IndexWhere<T>(this IEnumerable<T> seq, Func<T, bool> condition) {
+            if (seq == null)
+                return -1;
             int cnt = 0;
             int ret = -1;
             int ifound = 0;
@@ -329,6 +345,8 @@ namespace ilPSP {
         /// where <paramref name="condition"/> evaluates to true
         /// </returns>
         public static int FirstIndexWhere<T>(this IEnumerable<T> seq, Func<T, bool> condition) {
+            if (seq == null)
+                return -1;
             int cnt = 0;
             foreach (var t in seq) {
                 if (condition(t))
@@ -354,6 +372,8 @@ namespace ilPSP {
         /// where <paramref name="condition"/> evaluates to true
         /// </returns>
         public static int LastIndexWhere<T>(this IEnumerable<T> seq, Func<T, bool> condition) {
+            if (seq == null)
+                return -1;
             int r = -1;
             int cnt = 0;
             foreach (var t in seq) {
@@ -667,6 +687,30 @@ namespace ilPSP {
             return true;
         }
 
+
+        /// <summary>
+        /// Negation of <see cref="IsEmptyOrWhite(string)"/>
+        /// </summary>
+        public static bool IsNonEmpty(this string s) {
+            return !s.IsEmptyOrWhite();
+        }
+
+        /// <summary>
+        /// Tests if a string is null/empty or contains only whitespaces.
+        /// </summary>
+        public static bool ContainsWhite(this string s) {
+            if (s == null)
+                return true;
+
+            int L = s.Length;
+            for (int l = 0; l < L; l++) {
+                if (char.IsWhiteSpace(s[l]))
+                    return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Converts a wildcard-string into a regular expression; probably stolen from stackoverflow.
         /// </summary>
@@ -740,16 +784,24 @@ namespace ilPSP {
             using(var stw = new StringWriter()) {
                 if(firstSign != null)
                     stw.Write(firstSign);
+                if(ie == null) {
+                    stw.Write(lastSign);
+                    return stw.ToString();
+                }
+
+
                 int L = ie.Count();
                 int cnt = 0;
-                foreach(var o in ie) {
-                    if (o != null)
-                        stw.Write(o);
-                    else
-                        stw.Write("Null");
-                    if(cnt < (L - 1))
-                        stw.Write(separator);
-                    cnt++;
+                if (ie != null) {
+                    foreach (var o in ie) {
+                        if (o != null)
+                            stw.Write(o);
+                        else
+                            stw.Write("Null");
+                        if (cnt < (L - 1))
+                            stw.Write(separator);
+                        cnt++;
+                    }
                 }
                 if(lastSign != null)
                     stw.Write(lastSign);
@@ -758,5 +810,49 @@ namespace ilPSP {
             }
         }
 
+
+        /// <summary>
+        /// Helps to print an enumeration of objects into a nice string, e.g. something like:
+        /// ```
+        ///   (obj1, obj2, obj3)
+        /// ```
+        /// </summary>
+        /// <param name="ie"></param>
+        /// <param name="firstSign">
+        /// first part of the return string
+        /// </param>
+        /// <param name="separator">
+        /// separator between elements
+        /// </param>
+        /// <param name="lastSign">
+        /// final part of the return string
+        /// </param>
+        /// <returns></returns>
+        public static string ToConcatString(this IEnumerable<double> ie, string firstSign, string separator, string lastSign, string format = "g7") {
+            using (var stw = new StringWriter()) {
+                if (firstSign != null)
+                    stw.Write(firstSign);
+                if (ie == null) {
+                    stw.Write(lastSign);
+                    return stw.ToString();
+                }
+
+                int L = ie.Count();
+                int cnt = 0;
+                if (ie != null) {
+                    foreach (var o in ie) {
+                        stw.Write(o.ToString(format));
+                        
+                        if (cnt < (L - 1))
+                            stw.Write(separator);
+                        cnt++;
+                    }
+                }
+                if (lastSign != null)
+                    stw.Write(lastSign);
+
+                return stw.ToString();
+            }
+        }
     }
 }

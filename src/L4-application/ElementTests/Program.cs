@@ -24,6 +24,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Application.ElementTests {
 

@@ -67,7 +67,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public NodeSet ProjectOnto(NodeSet nodes)
         {
-            NodeSet projection = new NodeSet(refElement, nodes.NoOfNodes, refElement.SpatialDimension);
+            NodeSet projection = new NodeSet(refElement, nodes.NoOfNodes, refElement.SpatialDimension, false);
             for (int j = 0; j < nodes.NoOfNodes; ++j)
             {
                 for (int i = 0; i < fixedDims.Count; ++i)
@@ -223,7 +223,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 centerArr[i] = (boundaries[i][0] + boundaries[i][1]) / 2.0;
             }
-            this.center = new NodeSet(refElement, centerArr);
+            this.center = new NodeSet(refElement, centerArr, false);
             this.center.LockForever();
         }
 
@@ -502,7 +502,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             QuadRule RuleToRuleThemAll = QuadRule.CreateEmpty(refElement, count, spatialDim);
-            RuleToRuleThemAll.Nodes = new NodeSet(refElement, nodes);
+            RuleToRuleThemAll.Nodes = new NodeSet(refElement, nodes, true);
             RuleToRuleThemAll.Weights = weights;
             return RuleToRuleThemAll;
         }

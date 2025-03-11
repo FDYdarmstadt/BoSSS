@@ -22,6 +22,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
 
 namespace NSE_SIMPLE {
 
@@ -32,6 +33,15 @@ namespace NSE_SIMPLE {
 
         MaterialLaw EoS;
 
+        public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+            return new QuadratureMatrix_Rho(m_Basis, GridDat, EoS, m_Scalar) {
+                Matrix = this.Matrix
+            };
+        }
+
+        Basis m_Basis;
+        SinglePhaseField[] m_Scalar;
+
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -40,8 +50,11 @@ namespace NSE_SIMPLE {
         /// <param name="EoS"></param>
         /// <param name="Scalar"></param>
         public QuadratureMatrix_Rho(Basis Basis, IGridData GridDat, MaterialLaw EoS, params SinglePhaseField[] Scalar)
-            : base(Basis, GridDat, Scalar) {
-                this.EoS = EoS;
+            : base(Basis, GridDat, Scalar) //
+        {
+            this.EoS = EoS;
+            this.m_Scalar = Scalar;
+            this.m_Basis = Basis;
         }
 
         protected override double FieldFunc(params double[] FieldVal) {            

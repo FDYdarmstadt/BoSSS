@@ -126,9 +126,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Constructs a new factory
         /// </summary>
-        /// <param name="tracker">
-        /// Tracker for the considered level set
-        /// </param>
         /// <param name="Kref">
         /// Reference element index
         /// </param>
@@ -250,7 +247,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         for (int k = 0; k < subSegments.Length; k++) {
                             // Evaluate sub segment at center to determine sign
-                            NodeSet _point = new NodeSet(this.RefElement, subSegments[k].GetPointOnSegment(0.0));
+                            NodeSet _point = new NodeSet(this.RefElement, subSegments[k].GetPointOnSegment(0.0), false);
                             
                             double weightFactor = subSegments[k].Length / referenceSegment.Length;
 
@@ -306,7 +303,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    NodeSet localNodes = new NodeSet(this.RefElement, nodes.Count, D);
+                    NodeSet localNodes = new NodeSet(this.RefElement, nodes.Count, D, true);
                     for (int j = 0; j < nodes.Count; j++) {
                         for (int d = 0; d < D; d++) {
                             localNodes[j, d] = nodes[j][d];

@@ -25,6 +25,9 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using NUnit.Framework;
+using System.Configuration;
+using System.Xml.Serialization;
 
 namespace BoSSS.Foundation {
 
@@ -186,15 +189,15 @@ namespace BoSSS.Foundation {
                 // get basis values
                 MultidimensionalArray BasisValues = m_Owner.Basis.CellEval(NodesUntransformed, i0, Length);
 
-                // (ScalarField) * (m-th Basis function)                
-                for (int j = 0; j < Length; j++) {   // loop over cells
-                    for (int n = 0; n < N; n++) {    // loop over quadrature nodes
-                        for (int m = 0; m < M; m++) { // loop over coordinates
-                            EvalResult[j, n, m] = m_FunctionValues[j, n] * BasisValues[j, n, m];
-                        }
-                    }
-                }
-
+                //// (ScalarField) * (m-th Basis function)                
+                //for (int j = 0; j < Length; j++) {   // loop over cells
+                //    for (int n = 0; n < N; n++) {    // loop over quadrature nodes
+                //        for (int m = 0; m < M; m++) { // loop over coordinates
+                //            EvalResult[j, n, m] = m_FunctionValues[j, n] * BasisValues[j, n, m];
+                //        }
+                //    }
+                //}
+                EvalResult.Multiply(1.0, m_FunctionValues, BasisValues, 0.0, "jnm", "jn", "jnm");
             }
 
             /// <summary>
@@ -225,6 +228,12 @@ namespace BoSSS.Foundation {
                         }
                     }
                 }
+            }
+
+            public override Quadrature<QuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                return new ProjectionQuadrature(this.m_Owner, this.m_alpha, this.m_func, this.m_compositeRule) {
+                    m_func2 = this.m_func2
+                };
             }
         }
 
@@ -261,8 +270,11 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="scheme"></param>
         virtual public void ProjectField(double alpha, ScalarFunction func, CellQuadratureScheme scheme = null) {
-            using (new FuncTrace()) {
-                int order = this.Basis.Degree * 2 + 2;
+            using (var tr = new FuncTrace()) {
+                int dgDeg = this.Basis.Degree;
+                int order = dgDeg * 2 + 2;
+                tr.Info($"dg degree {dgDeg}, quad order {order}");
+
                 var rule = scheme.SaveCompile(this.Basis.GridDat, order);
 
                 //Stopwatch w = new Stopwatch();
@@ -317,8 +329,10 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="scheme"></param>
         public void ProjectField(double alpha, ScalarFunctionEx func, CellQuadratureScheme scheme = null) {
-            using (new FuncTrace()) {
-                int order = this.Basis.Degree * 2 + 2;
+            using (var tr = new FuncTrace()) {
+                int dgDeg = this.Basis.Degree;
+                int order = dgDeg * 2 + 2;
+                tr.Info($"dg degree {dgDeg}, quad order {order}");
                 var pq = new ProjectionQuadrature(this, alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
                 pq.Execute();
             }
@@ -563,6 +577,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
+            // TODO incorporate scaling factor
             if (j < 0 || j >= Basis.GridDat.iLogicalCells.Count)
                 throw new ArgumentException($"cell index out of range: got {j}, expecting between 0 and {Basis.GridDat.iLogicalCells.Count}, MPI rank {Basis.GridDat.MpiRank}.", "j");
 
@@ -667,17 +682,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 
-                unsafe
-                {
-                    double[] sendBuf = new double[] { Integral };
-                    double[] rvcBuf = new double[1];
-
-                    fixed (double* pSend = sendBuf, pRcv = rvcBuf) {
-                        csMPI.Raw.Allreduce((IntPtr)pSend, (IntPtr)pRcv, 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
-                    }
-
-                    return rvcBuf[0];
-                }
+                return Integral.MPISum();
             }
 
         }
@@ -942,8 +947,20 @@ namespace BoSSS.Foundation {
             long globalID, globalIndex;
             bool inside, dummy;
             Basis.GridDat.LocatePoint(_inp, out globalID, out globalIndex, out inside, out dummy);
-            if (!inside)
-                throw new ArgumentException("specified point is outside of grid");
+            
+            //exception if point is not inside grid.
+            if (!inside )
+            {
+                string outputString = "x=[" + _inp[0];
+                for(int i = 1; i < _inp.Length; i++)
+                {
+                    outputString = outputString + "," + _inp[i];
+                }
+                outputString = outputString + "]";
+                throw new ArgumentException($"specified point {outputString} is outside of grid");
+            }
+               
+                
 
             // process which own the cell
             int ownerProc = Basis.GridDat.CellPartitioning.FindProcess((int)globalIndex);
@@ -962,7 +979,7 @@ namespace BoSSS.Foundation {
 
                 MultidimensionalArray locVtx = outp.ExtractSubArrayShallow(0, -1, -1);
                 RefElement Kref = this.GridDat.iGeomCells.GetRefElement(j);
-                NodeSet cont = new NodeSet(Kref, locVtx);
+                NodeSet cont = new NodeSet(Kref, locVtx, false);
 
                 MultidimensionalArray res = MultidimensionalArray.Create(1, 1);
                 this.Evaluate(j, 1, cont, res);
@@ -973,6 +990,58 @@ namespace BoSSS.Foundation {
             value = value.MPIBroadcast(ownerProc);
             return value;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="parametrization"></param>
+        /// <param name="nRef"></param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public double[] EvaluateAlongCurve(Func<double, double[]> parametrization, int nRef,double min, double max)
+        {
+            int D = this.GridDat.SpatialDimension;
+            double[] xMin = parametrization(min);
+            if (xMin.Length != D) {
+                throw new NotSupportedException("wrong output dimension of parametrization - must be " + D);
+
+            }
+            if (nRef<2)
+            {
+                throw new NotSupportedException("nRef smaller than two");
+            }
+            double[] result = new double[nRef];
+            double[] x;
+            for (int n=0;n<nRef;n++)
+            {
+                double scale1 = ((double)nRef - 1 - n) / (nRef - 1);
+                double scale2 = ((double)n) / (nRef - 1);
+                x = parametrization(min * scale1 + max * scale2);
+                result[n] = this.ProbeAt(x);               
+            }
+            return result;
+        }
+        /// <summary>
+        /// Evaluates along a line prescribed by two points
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <param name="nRef"></param>
+        /// <returns></returns>
+        public double[] EvaluateAlongLine(double[] p1, double[] p2, int nRef)
+        {
+            Func<double, double[]> prm = delegate (double t)
+            {
+                double[] ret = new double[p1.Length];
+                ret.AccV(1 - t, p1);
+                ret.AccV(t, p2);
+                return ret;
+            };
+            return EvaluateAlongCurve(prm, nRef,0,1);
+        }
+
+
 
         /// <summary>
         /// adds a vector to the coordinates vector of this field;

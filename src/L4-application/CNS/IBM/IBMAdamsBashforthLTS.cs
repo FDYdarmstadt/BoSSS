@@ -35,7 +35,7 @@ namespace CNS.IBM {
 
         private ImmersedSpeciesMap speciesMap;
 
-        private SpatialOperator boundaryOperator;
+        private DifferentialOperator boundaryOperator;
 
         private CoordinateMapping boundaryParameterMap;
 
@@ -45,13 +45,13 @@ namespace CNS.IBM {
 
         private CellMask cutAndTargetCells;
 
-        private SpatialOperator standardOperator;
+        private DifferentialOperator standardOperator;
 
         private CoordinateMapping fieldsMap;
 
         private IBMControl control;
 
-        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, bool forceReclustering, int maxNumOfSubSteps = 0, bool logging = false, bool consoleOutput = false)
+        public IBMAdamsBashforthLTS(DifferentialOperator standardOperator, DifferentialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, bool forceReclustering, int maxNumOfSubSteps = 0, bool logging = false, bool consoleOutput = false)
             : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid, forceReclustering: forceReclustering, logging: logging, consoleOutput: consoleOutput) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;

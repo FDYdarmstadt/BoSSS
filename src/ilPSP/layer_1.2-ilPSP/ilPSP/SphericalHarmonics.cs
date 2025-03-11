@@ -90,7 +90,7 @@ namespace ilPSP.Utils {
         /// </summary>
         /// <param name="l"></param>
         /// <param name="m">
-        /// For <paramref name="m"/>=0, one obtaines Legendre Polynomials
+        /// For <paramref name="m"/>=0, one obtains Legendre Polynomials
         /// </param>
         /// <param name="x"></param>
         /// <returns></returns>

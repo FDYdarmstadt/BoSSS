@@ -53,7 +53,13 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         Multiphase,
 
-
+        /// <summary>
+        /// Incompressible Helical Symmetric Flows,
+        /// i.e. solving equations for
+        /// mass, momentum in Helical Coordintaes.
+        /// Attention \frac{\partial}{\partial \eta} = 0. 
+        /// Due to helical symmetry. 
+        /// </summary>
         Helical,
 
         /// <summary>
@@ -295,9 +301,11 @@ namespace BoSSS.Solution.NSECommon {
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
+
+        public const string ElectricPoissonEquation = "ElectricPoissonEq";
     }
 
-    
+
     /// <summary>
     /// predefined variable names for velocity, pressure, etc. that should be used
     /// by all Navier-Stokes - Solvers
@@ -1764,5 +1772,51 @@ namespace BoSSS.Solution.NSECommon {
         /// Max Sigma
         /// </summary>
         public const string MaxSigma = "MaximalSigma";
+
+        /// <summary>
+        /// vector of orientation of a rigid object, used in XNSERO. Currently only in 2D
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] OrientationVector(int D) {
+            if (D == 2)
+                return new string[] { OrientationVectorX, OrientationVectorY };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
+
+        /// <summary>
+        /// the name of the <paramref name="d"/>-th orientationVector component
+        /// </summary>
+        /// <param name="d">
+        /// spatial component {0,1} in 2D;
+        /// </param>
+        /// <returns></returns>
+        static public string OrientationVectorComponent(int d) {
+            switch (d) {
+                case 0: return OrientationVectorX;
+                case 1: return OrientationVectorY;
+                default: throw new NotSupportedException("unsupported spatial dimension: d = " + d + ".");
+            }
+        }
+
+        /// <summary>
+        /// vector of orientation of a rigid object, used in XNSERO - x component
+        /// </summary>
+        public const string OrientationVectorX = "OrientationVectorX";
+
+        /// <summary>
+        /// vector of orientation of a rigid object, used in XNSERO - y component
+        /// </summary>
+        public const string OrientationVectorY = "OrientationVectorY";
+
+
+        /// <summary>
+        /// Electric potential, dimensi is Voltage
+        /// </summary>
+        public const string ElectricPotential = "ElectricPotential";
+
+        public const string FreechargeDensity = "FreechargeDensity";
     }
 }

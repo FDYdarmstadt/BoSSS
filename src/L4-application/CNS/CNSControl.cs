@@ -19,6 +19,7 @@ using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
@@ -28,6 +29,8 @@ using CNS.Source;
 using ilPSP;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace CNS {
 
@@ -68,6 +71,10 @@ namespace CNS {
         [ExclusiveLowerBound(0.0)]
         public double CFLFraction;
 
+        public Func<double[], double> InitialPressurePertubation;
+        public Func<double[], double> InitialDensityPertubation;
+        public Func<double[], double> InitialVelocityXPertubation;
+        public double shockPosition=1.0;
 
 
         /// <summary>
@@ -219,11 +226,13 @@ namespace CNS {
         /// </summary>
         public SpongeLayerConfig SpongeLayerConfig = null;
 
+        /*
         /// <summary>
         /// A classifier that decides which performance class a cell
         /// (currently) belongs to
         /// </summary>
         public ICellClassifier DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
+        */
 
         /// <summary>
         /// The maximum number of sub-steps in the smallest cluster in a LTS clustering
@@ -256,6 +265,7 @@ namespace CNS {
         /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've
         /// covered all cases
+        /// fk,26sep23: No Björn, you have not!
         /// </summary>
         /// <returns></returns>
         public override object Clone() {
@@ -274,8 +284,9 @@ namespace CNS {
             clone.CustomEnergySources = new List<Func<ISpeciesMap, INonlinearSource>>();
             clone.CustomEnergySources.AddRange(this.CustomEnergySources);
 
-            clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
-            clone.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(this.DynamicLoadBalancing_CellCostEstimatorFactories);
+            clone.m_DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
+            clone.DynamicLoadBalancing_CellCostEstimators.AddRange(
+                this.DynamicLoadBalancing_CellCostEstimators.Select(e => e.CloneAs()));
             
             return clone;
         }
@@ -284,7 +295,7 @@ namespace CNS {
         /// To launch CNS.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(CNS.Program);
+            return typeof(CNS.CNSProgram);
         }
     }
 }

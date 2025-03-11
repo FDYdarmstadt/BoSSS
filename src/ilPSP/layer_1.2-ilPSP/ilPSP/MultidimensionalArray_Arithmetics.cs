@@ -148,7 +148,7 @@ namespace ilPSP {
             }
 
             // Optimized accumulation for continuous pieces of memory
-            if (this.IsContinious && other.IsContinious) {
+            if (this.IsContinuous && other.IsContinuous) {
                 int[] index = new int[Dimension];
                 int thisOffset = this.Index(index);
                 int otherOffset = other.Index(index);
@@ -291,6 +291,17 @@ namespace ilPSP {
             if (m_LockedForever)
                 throw new ApplicationException("illegal call - object is locked.");
 
+            ApplyAllInternal(op); // op might modify this arrays content
+        }
+
+
+        /// <summary>
+        /// Used by <see cref="ApplyAll(Action{int[], double})"/>, which can also be executed on locked arrays
+        /// </summary>
+        /// <param name="op">
+        /// must promise not to change the content if <see cref="m_LockedForever"/> is true
+        /// </param>
+        private void ApplyAllInternal(ApplyAllOperation op) {
             // special treatment for empty arrays
             for (int i = this.Dimension - 1; i >= 0; i--) {
                 if (this.GetLength(i) <= 0)
@@ -316,7 +327,7 @@ namespace ilPSP {
             if(m_LockedForever)
                 throw new ApplicationException("illegal call - object is locked.");
 
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 // optimized branch 
                 int L = this.Length;
                 int i0 = this.m_Offset;
@@ -337,17 +348,20 @@ namespace ilPSP {
         /// applies the action <paramref name="op"/> to all entries of this array
         /// </summary>
         public void ApplyAll(Action<int[], double> op) {
-            bool oldState = this.m_LockedForever;
-            this.m_LockedForever = false;
-            try {
-                ApplyAll(delegate(int[] i, ref double d) {
+            //bool oldState = this.m_LockedForever;
+            //this.m_LockedForever = false;
+            //try {
+
+
+            ApplyAllInternal(delegate(int[] i, ref double d) {
+                    // do not modify `d`
                     op(i, d);
                 });
-            } catch(Exception e) {
-                throw e;
-            } finally {
-                this.m_LockedForever = oldState;
-            }
+            //} catch(Exception e) {
+            //    throw e;
+            //} finally {
+            //    this.m_LockedForever = oldState;
+            //}
         }
 
 
@@ -355,7 +369,7 @@ namespace ilPSP {
         /// applies the action <paramref name="op"/> to all entries of this array
         /// </summary>
         public void ApplyAll(Action<double> op) {
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 // optimized branch
                 int L = this.Length;
                 int i0 = this.m_Offset;
@@ -376,7 +390,8 @@ namespace ilPSP {
         /// array
         /// </summary>
         unsafe private void ApplyAllRec(int dim, int* index, int[] _index, int index_lin, double* pStorage, ApplyAllOperation op) {
-            Debug.Assert(!m_LockedForever, "illegal call - object is locked.");
+            //Debug.Assert(!m_LockedForever, "illegal call - object is locked.");
+
             int L = this.GetLength(dim);
             int C = this.GetCycle(dim);
             if (dim == m_Dimension - 1) {
@@ -399,7 +414,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="alpha"></param>
         public void Scale(double alpha) {
-            if(this.IsContinious) {
+            if(this.IsContinuous) {
                 unsafe {
                     fixed(double* pStorage = this.m_Storage) {
                         BLAS.dscal(this.Length, alpha, pStorage + this.m_Offset, 1);
@@ -426,7 +441,7 @@ namespace ilPSP {
                     throw new ArgumentException("mismatch in dimension " + k);
             }
 
-            if(this.IsContinious && other.IsContinious) {
+            if(this.IsContinuous && other.IsContinuous) {
                 unsafe {
                     fixed(double* pStorageThis = this.m_Storage, pStorageOther = other.m_Storage) {
                         return BLAS.ddot(this.Length, pStorageThis, 1, pStorageOther, 1);

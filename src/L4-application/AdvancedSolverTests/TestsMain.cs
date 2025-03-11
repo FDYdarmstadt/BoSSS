@@ -33,7 +33,8 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
             //AdvancedSolverTests.Solver.mklILUtest.CompareFactorization();
             //AdvancedSolverTests.SubBlocking.LocalTests.SubSelection(SelectionType.all_combined);
-            AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
+            //Debugger.Launch();
+            AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
         }
 
     }

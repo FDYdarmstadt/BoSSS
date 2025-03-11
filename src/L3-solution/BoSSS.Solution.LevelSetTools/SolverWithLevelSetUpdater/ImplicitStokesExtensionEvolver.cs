@@ -22,7 +22,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// - original implemented by Fk, jan21, <see cref="StokesExtensionEvolver"/>
     /// - cloned and modified by Lauritz, april21
     /// </remarks>
-    public class ImplicitStokesExtensionEvolver : ILevelSetEvolver {
+    public class ImplicitStokesExtensionEvolver {
 
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public IList<string> VariableNames => null;
 
-        
+
         /// <summary>
         /// Currently empty
         /// </summary>
@@ -92,7 +92,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         RungeKutta explicitTimeStepper;
 
         private (BDFTimestepper, RungeKutta) InitializeTimeStepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
-            var diffOp = new SpatialOperator(new string[] { "Phi" },
+            var diffOp = new DifferentialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
                 QuadOrderFunc.NonLinear(1));
@@ -134,13 +134,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
             if (implicitTimeStepper == null) {
-                (implicitTimeStepper, explicitTimeStepper)  = InitializeTimeStepper(levelSet.DGLevelSet, extensionVelocity);
+                (implicitTimeStepper, explicitTimeStepper) = InitializeTimeStepper(levelSet.DGLevelSet, extensionVelocity);
             }
-            if (!ReferenceEquals(implicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet) 
-                || ! ReferenceEquals(explicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet)) {
+            if (!ReferenceEquals(implicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet)
+                || !ReferenceEquals(explicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet)) {
                 throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
             }
-            if(Math.Abs(time - internalTime) < dt * 1e-10 || first) {
+            if (Math.Abs(time - internalTime) < dt * 1e-10 || first) {
                 implicitTimeStepper.FinishTimeStep();
                 internalTime = time + dt;
                 first = false;

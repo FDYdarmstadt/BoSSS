@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
@@ -6,6 +6,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 
@@ -263,14 +264,73 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// <summary>
             /// 
             /// </summary>
-            internal void EnforceContinuity() {
+            internal void EnforceContinuity(bool enforceOnNearband = false) {
                 LevelSetTracker Tracker = phaseInterface.Tracker;
                 CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
 
-                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
-            }
+                //enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
 
+                ContinuityProjection preEnforcer = new ContinuityProjection(
+                    phaseInterface.CGLevelSet.Basis,
+                    phaseInterface.DGLevelSet.Basis,
+                    Tracker.GridDat,
+                    ContinuityProjectionOption.None);
+                LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+                preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
+                LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+                preTracker.UpdateTracker(0.0);
+
+                CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
+                CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
+                PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
+                preTracker.Dispose();
+
+                bool FalseContactline = false;
+
+                if (!enforceOnNearband) {
+                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
+
+                    EdgeMask CCplusBnd = CCplus.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(CCplus.GetAllInnerEdgesMask()));
+                    foreach (int iEdge in CCplusBnd.ItemEnum) {
+                        Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+                        if (phiIn.Max() * phiIn.Min() < 0 || phiOut.Max() * phiOut.Min() < 0) {
+                            FalseContactline = true;
+                        }
+                    }
+
+                    FalseContactline = FalseContactline.MPIOr();
+
+                    if (FalseContactline) {
+                        Console.WriteLine("Error in continuity projection, extending computation to nearband!");
+                        EnforceContinuity(true);
+                    }
+                } else {
+                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+
+                    EdgeMask NearBnd = Near1.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(Near1.GetAllInnerEdgesMask()));
+                    foreach (int iEdge in NearBnd.ItemEnum) {
+                        Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+                        phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+                        if (phiIn.Max() * phiIn.Min() < 0) {
+                            FalseContactline = true;
+                        }   
+                    }
+
+                    FalseContactline = FalseContactline.MPIOr();
+
+                    if (FalseContactline) {
+                        throw new ApplicationException("Continuity projection failed, cannot recover!");
+                    }
+                }                
+            }
 
             public void UpdateParameters(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,
@@ -544,7 +604,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             bool incremental) {
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
-            
+
+            //Console.WriteLine("Plotting ...");
+            //Tecplot.Tecplot.PlotFields( new DGField[] {InnerParameterFields["VelocityX@Phi"], InnerParameterFields["VelocityY@Phi"] }, "Velocity@Phi_BeforeFirstUpdate", time, 3);
             UpdateParameters(DomainVarFields, InnerParameterFields, time);
             //Tecplot.Tecplot.PlotFields( new DGField[] {lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetBeforeUpdate", time, 3);
             foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {
@@ -559,8 +621,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 residual += resi_x.Abs();
             }
             //Tecplot.Tecplot.PlotFields( new DGField[] { lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetAfterUpdate", time, 3);
+            //Tecplot.Tecplot.PlotFields(new DGField[] { InnerParameterFields["VelocityX@Phi"], InnerParameterFields["VelocityY@Phi"] }, "Velocity@Phi_AfterFirstUpdate", time, 3);
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
             UpdateParameters(DomainVarFields, InnerParameterFields, time + dt); // update parameters after change of level-set.
+            //Tecplot.Tecplot.PlotFields(new DGField[] { InnerParameterFields["VelocityX@Phi"], InnerParameterFields["VelocityY@Phi"] }, "Velocity@Phi_AfterSecondUpdate", time, 3);
+            //Console.WriteLine("... done");
 
             return residual;
         }
@@ -587,8 +652,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 InitializeParameters(updater.LevelSetParameters, DomainVarFields, ParameterVarFields);
             }
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
+            //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "beforeUpdateParametersInitial", 0.0, 2);
             UpdateParameters(DomainVarFields, InnerParameterFields, 0.0);
             //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "afterUpdateParametersInitial", 0.0, 2);
+
 
         }
 

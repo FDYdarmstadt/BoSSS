@@ -38,7 +38,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// <summary>
         /// The encoding to identify all six faces of the cube.
         /// </summary>
-        public enum Edge {
+        public enum Faces {
             /// <summary>
             /// edge between this cell the neighbour cell with \f$ x \f$--coordinates closer to negative infinity.
             /// </summary>
@@ -106,7 +106,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                 var _Vertices = new double[8, 3] { { -1, -1, -1 }, { 1, -1, -1 }, { -1, 1, -1 }, { -1, -1, 1 },
                                                    { 1, 1, -1 }, { 1, 1, 1 }, { 1, -1, 1 }, { -1, 1, 1 }};
-                this.m_Vertices = new NodeSet(this, 8, 3);
+                this.m_Vertices = new NodeSet(this, 8, 3, false);
                 this.m_Vertices.InitializeFrom(_Vertices);
                 this.m_Vertices.LockForever();
 
@@ -150,50 +150,57 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// <see cref="RefElement.GetQuadratureRule"/>
         /// </summary>
         /// <remarks>
-        /// The 3D-Rules occupy a significant amount of memory (about 200 MB), so we only create those that we need on the fly.
+        /// The 3D-Rules occupy a significant amount of memory (about 200 MB, particularly bad when running with lots of MPI cores:
+        /// E.g., 100 Processors, 20 GB of memory just for quadrature rules), so we only create those that we need on the fly.
         /// </remarks>
         public override QuadRule GetQuadratureRule(int DesiredOrder) {
             if (DesiredOrder > HighestKnownOrder) {
                 throw new ArgumentOutOfRangeException("no quadrature rule for desired order " + DesiredOrder + " available for simplex " + this.GetType().Name + ".", "DesiredOrder");
             }
-                       
 
-            QuadRule realQr;
-            if(!m_3drules.TryGetValue(DesiredOrder, out realQr)) {
+            lock (m_3drules) {
 
-                int OrderOfPrecision = m_1Drules.Keys.Where(order => order >= DesiredOrder).Min();
+                QuadRule realQr;
+                if (!m_3drules.TryGetValue(DesiredOrder, out realQr)) {
 
-                if(!m_3drules.TryGetValue(OrderOfPrecision, out realQr)) {
-                    var _1Drule = m_1Drules[OrderOfPrecision];
+                    //
+                    //
+                    //
 
-                    int NN = _1Drule.Weights.GetLength(0);
-                    int D = this.SpatialDimension;
-                    realQr = QuadRule.CreateEmpty(this, NN * NN * NN, D);
+                    int OrderOfPrecision = m_1Drules.Keys.Where(order => order >= DesiredOrder).Min();
 
-                    for(int i = 0; i < NN; i++) {
-                        for(int j = 0; j < NN; j++) {
-                            for(int k = 0; k < NN; k++) {
-                                realQr.Nodes[(i * NN + j) * NN + k, 0] = _1Drule.Nodes[k, 0];
-                                realQr.Nodes[(i * NN + j) * NN + k, 1] = _1Drule.Nodes[j, 0];
-                                realQr.Nodes[(i * NN + j) * NN + k, 2] = _1Drule.Nodes[i, 0];
-                                realQr.Weights[(i * NN + j) * NN + k] = _1Drule.Weights[i] * _1Drule.Weights[j] * _1Drule.Weights[k];
+                    if (!m_3drules.TryGetValue(OrderOfPrecision, out realQr)) {
+                        var _1Drule = m_1Drules[OrderOfPrecision];
+
+                        int NN = _1Drule.Weights.GetLength(0);
+                        int D = this.SpatialDimension;
+                        realQr = QuadRule.CreateEmpty(this, NN * NN * NN, D, true);
+
+                        for (int i = 0; i < NN; i++) {
+                            for (int j = 0; j < NN; j++) {
+                                for (int k = 0; k < NN; k++) {
+                                    realQr.Nodes[(i * NN + j) * NN + k, 0] = _1Drule.Nodes[k, 0];
+                                    realQr.Nodes[(i * NN + j) * NN + k, 1] = _1Drule.Nodes[j, 0];
+                                    realQr.Nodes[(i * NN + j) * NN + k, 2] = _1Drule.Nodes[i, 0];
+                                    realQr.Weights[(i * NN + j) * NN + k] = _1Drule.Weights[i] * _1Drule.Weights[j] * _1Drule.Weights[k];
+                                }
                             }
                         }
-                    }
 
-                    realQr.OrderOfPrecision = OrderOfPrecision;
-                    realQr.Nodes.LockForever();
-                    realQr.Weights.LockForever();
-                    m_3drules.Add(OrderOfPrecision, realQr); // the rule of order 'OrderOfPrecision' must also be used for order 'DesiredOrder'
-                    if(DesiredOrder != OrderOfPrecision)
+                        realQr.OrderOfPrecision = OrderOfPrecision;
+                        realQr.Nodes.LockForever();
+                        realQr.Weights.LockForever();
+                        m_3drules.Add(OrderOfPrecision, realQr); // the rule of order 'OrderOfPrecision' must also be used for order 'DesiredOrder'
+                        if (DesiredOrder != OrderOfPrecision)
+                            m_3drules.Add(DesiredOrder, realQr);
+                    } else {
                         m_3drules.Add(DesiredOrder, realQr);
-                } else {
-                    m_3drules.Add(DesiredOrder, realQr);
+                    }
                 }
-            } 
-            
+                
+                return realQr;
+            }
 
-            return realQr;
         }
 
         /// <summary>
@@ -205,74 +212,74 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
         }
         /// <summary>
-        /// transforms some vertices (<paramref name="EdgeVertices"/>) from the local 2D-coordinate system of either
-        /// the top, bottom, left, right, front or back edge (see <see cref="Edge"/>) to the local 
+        /// transforms some vertices (<paramref name="FaceVertices"/>) from the local 2D-coordinate system of either
+        /// the top, bottom, left, right, front or back edge (see <see cref="Faces"/>) to the local 
         /// coordinate system of the cube;
         /// </summary>
-        /// <param name="EdgeIndex">0, 1, 2, 3, 4 or 5; <see cref="Edge"/></param>
-        /// <param name="EdgeVertices">input;</param>
+        /// <param name="FaceIndex">0, 1, 2, 3, 4 or 5; <see cref="Faces"/></param>
+        /// <param name="FaceVertices">input;</param>
         /// <param name="VolumeVertices">output;</param>
-        public override void TransformFaceCoordinates(int EdgeIndex, MultidimensionalArray EdgeVertices, MultidimensionalArray VolumeVertices) {
-            if (EdgeVertices.Dimension != 2)
+        public override void TransformFaceCoordinates(int FaceIndex, MultidimensionalArray FaceVertices, MultidimensionalArray VolumeVertices) {
+            if (FaceVertices.Dimension != 2)
                 throw new ArgumentException("dimension of EdgeVertices must be 2.", "EdgeVertices");
             if (VolumeVertices.Dimension != 2)
                 throw new ArgumentException("dimension of VolumeVertices must be 2.", "VolumeVertices");
             if (VolumeVertices.GetLength(1) != 3)
                 throw new ArgumentException("wrong spatial dimension of output", "VolumeVertices");
-            if (EdgeVertices.GetLength(1) != 2)
+            if (FaceVertices.GetLength(1) != 2)
                 throw new ArgumentException("wrong spatial dimension of input", "EdgeVertices");
-            if (EdgeVertices.GetLength(0) != VolumeVertices.GetLength(0))
+            if (FaceVertices.GetLength(0) != VolumeVertices.GetLength(0))
                 throw new ArgumentException("mismatch in number of vertices between input and output.", "EdgeVertices,VolumeVertices");
+            
+            int L = FaceVertices.GetLength(0);
 
-            int L = EdgeVertices.GetLength(0);
-
-            switch (EdgeIndex) {
-                case (int)Edge.Front:
+            switch (FaceIndex) {
+                case (int)Faces.Front:
                     for (int i = 0; i < L; i++) {
-                        VolumeVertices[i, 0] = EdgeVertices[i, 0];
-                        VolumeVertices[i, 1] = EdgeVertices[i, 1];
+                        VolumeVertices[i, 0] = FaceVertices[i, 0];
+                        VolumeVertices[i, 1] = FaceVertices[i, 1];
                         VolumeVertices[i, 2] = 1.0;
                     }
                     break;
 
-                case (int)Edge.Back:
+                case (int)Faces.Back:
                     for (int i = 0; i < L; i++) {
-                        VolumeVertices[i, 0] = EdgeVertices[i, 0];
-                        VolumeVertices[i, 1] = EdgeVertices[i, 1];
+                        VolumeVertices[i, 0] = FaceVertices[i, 0];
+                        VolumeVertices[i, 1] = FaceVertices[i, 1];
                         VolumeVertices[i, 2] = -1.0;
                     }
                     break;
 
 
-                case (int)Edge.Left:
+                case (int)Faces.Left:
                     for (int i = 0; i < L; i++) {
                         VolumeVertices[i, 0] = -1.0;
-                        VolumeVertices[i, 1] = EdgeVertices[i, 1];
-                        VolumeVertices[i, 2] = EdgeVertices[i, 0];
+                        VolumeVertices[i, 1] = FaceVertices[i, 1];
+                        VolumeVertices[i, 2] = FaceVertices[i, 0];
                     }
                     break;
 
-                case (int)Edge.Right:
+                case (int)Faces.Right:
                     for (int i = 0; i < L; i++) {
                         VolumeVertices[i, 0] = 1.0;
-                        VolumeVertices[i, 1] = EdgeVertices[i, 1];
-                        VolumeVertices[i, 2] = EdgeVertices[i, 0];
+                        VolumeVertices[i, 1] = FaceVertices[i, 1];
+                        VolumeVertices[i, 2] = FaceVertices[i, 0];
                     }
                     break;
 
-                case (int)Edge.Top:
+                case (int)Faces.Top:
                     for (int i = 0; i < L; i++) {
-                        VolumeVertices[i, 0] = EdgeVertices[i, 0];
+                        VolumeVertices[i, 0] = FaceVertices[i, 0];
                         VolumeVertices[i, 1] = 1.0;
-                        VolumeVertices[i, 2] = EdgeVertices[i, 1];
+                        VolumeVertices[i, 2] = FaceVertices[i, 1];
                     }
                     break;
 
-                case (int)Edge.Bottom:
+                case (int)Faces.Bottom:
                     for (int i = 0; i < L; i++) {
-                        VolumeVertices[i, 0] = EdgeVertices[i, 0];
+                        VolumeVertices[i, 0] = FaceVertices[i, 0];
                         VolumeVertices[i, 1] = -1.0;
-                        VolumeVertices[i, 2] = EdgeVertices[i, 1];
+                        VolumeVertices[i, 2] = FaceVertices[i, 1];
                     }
                     break;
 

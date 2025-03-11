@@ -43,7 +43,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         /// </param>
         /// <param name="numberOfSubdivisions">
         /// The number of subdivisions, see
-        /// <see cref="Grid.RefElement.SubdivisionTree"/>.
+        /// <see cref="RefElement.SubdivisionTreeNode"/>.
         /// </param>
         public BruteForceSubdivisionStrategy(RefElement refElement, int numberOfSubdivisions) {
             this.RefElement = refElement;
@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         }
 
         /// <summary>
-        /// Uses <see cref="Grid.RefElement.SubdivisionTree"/> to create the brute
+        /// Uses <see cref="RefElement.SubdivisionTreeNode"/> to create the brute
         /// force subdivision which is the same for all cells. As a result, the
         /// chunks of <paramref name="mask"/> are not altered.
         /// </summary>
@@ -73,9 +73,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         /// </returns>
         /// <remarks>
         /// Currently, the nodes returned by
-        /// <see cref="Grid.RefElement.SubdivisionTree"/> are unnecessarily
+        /// <see cref="RefElement.SubdivisionTreeNode"/> are unnecessarily
         /// boxed by this method. This should be changed by changing the return
-        /// type of <see cref="Grid.RefElement.SubdivisionTree"/> at some
+        /// type of <see cref="RefElement.SubdivisionTreeNode"/> at some
         /// point.
         /// </remarks>
         public IEnumerable<KeyValuePair<Chunk, IEnumerable<SubdivisionNode>>> GetSubdivisionNodes(ExecutionMask mask) {

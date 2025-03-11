@@ -114,7 +114,6 @@ namespace BoSSS.Solution.LevelSetTools {
                 case ContinuityProjectionOption.None: {
                         Console.WriteLine("WARNING: No additional enforcement of the level-set continuity!");
                         LevelSet SmoothedLevelSet = new LevelSet(DGLevelSet.Basis, VariableNames.LevelSetCG);
-                        DGLevelSet = SmoothedLevelSet;
                         return SmoothedLevelSet;
                     }
                 default:
@@ -134,7 +133,10 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="DGLevelSet">input; may be discontinuous on cell boundaries</param>
         /// <param name="LevelSet">output; should be continuous</param>
         /// <param name="Domain"></param>
-        /// <param name="PosMask"></param>
+        /// <param name="PosMask">
+        /// If the FAR-field is set to a constant value (<paramref name="setFarFieldConstant"/> is true), this determines which cells belong to the positive part of the FAR-field;
+        /// The negative part is determined by a complement-operation (<see cref="ExecutionMask.Complement{T}"/>)
+        /// </param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
             using(var ft = new FuncTrace()) {
                 //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
@@ -168,7 +170,6 @@ namespace BoSSS.Solution.LevelSetTools {
             LevelSet.AccConstant(-1, Neg);
         }
 
-
         /// <summary>
         /// computes the jump norm of field <paramref name="f"/> at inner edges on <paramref name="mask"/>
         /// </summary>
@@ -185,6 +186,26 @@ namespace BoSSS.Solution.LevelSetTools {
             }
             SubGrid maskSG = new SubGrid(mask);
             EdgeMask innerEM = maskSG.InnerEdgesMask;
+
+            return JumpNorm(f, innerEM);
+        }
+
+
+        /// <summary>
+        /// computes the jump norm of field <paramref name="f"/> at inner edges on <paramref name="mask"/>
+        /// </summary>
+        /// <param name="f"></param>
+        /// <param name="mask"> if null full mask is chosen </param>
+        /// <returns></innerEM>
+        static double JumpNorm(DGField f, EdgeMask innerEM = null) {
+            GridData grd = (GridData)f.GridDat;
+            int D = grd.SpatialDimension;
+            var e2cTrafo = grd.Edges.Edge2CellTrafos;
+
+            if (innerEM == null) {
+                innerEM = EdgeMask.GetFullMask(grd, MaskType.Geometrical);
+            }
+            
 
             f.MPIExchange();
 
@@ -211,8 +232,8 @@ namespace BoSSS.Solution.LevelSetTools {
                             MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
                             MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
 
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT);
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT, false);
 
                             f.Evaluate(jCell_IN, 1, NS_IN, uIN);
                             f.Evaluate(jCell_OT, 1, NS_OT, uOT);
@@ -291,12 +312,16 @@ namespace BoSSS.Solution.LevelSetTools {
         ConstrainedDGFieldMk3 m_projector;
 
         ConstrainedDGFieldMk3 Update(CellMask domain) {
+            
             bool DomainChanged = m_projector != null ? (!m_projector.domainLimit.Equals(domain)).MPIOr() : false;
             if (m_projector == null || DomainChanged) {
                 if(m_projector != null)
                     m_projector.Dispose();
                 m_projector = new ConstrainedDGField_Global(m_myBasis, domain);
+                //m_projector = new ConstrainedDgField_Patchwise(m_myBasis, domain);
+
             }
+            //m_projector = new ConstrainedDGField_Global(m_myBasis, domain);
 
             return m_projector;
         }

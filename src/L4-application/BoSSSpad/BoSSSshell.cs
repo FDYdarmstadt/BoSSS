@@ -5,19 +5,24 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
+using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
+using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using log4net;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
 using Microsoft.DotNet.Interactive.Formatting;
+using NUnit.Framework.Internal;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -74,12 +79,14 @@ namespace BoSSS.Application.BoSSSpad {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
             BoSSS.Solution.Application.InitMPI();
+            bool InBatchMode = !System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName).IsEmptyOrWhite();
+            BoSSS.Solution.Application.InitMPI(num_threads: (InBatchMode ? 1 : null));
+
+
             CallRandomStuff();
             try {
-
-
-
                 databases = DatabaseController.LoadDatabaseInfosFromXML();
 
                 ReloadExecutionQueues();
@@ -92,10 +99,10 @@ namespace BoSSS.Application.BoSSSpad {
                     "{0} occurred with message '{1}' while loading the databases.",
                      e.GetType(),
                      e.Message);
-                InteractiveShell.LastError = e;
+                //InteractiveShell.LastError = e;
             }
             InitTraceFile();
-            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everything, so we might find something useful
 
             Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
             Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;
@@ -125,6 +132,45 @@ namespace BoSSS.Application.BoSSSpad {
             AddEnumFormatter<Job>();
 
             //AddTableFormatter();
+
+
+
+
+            {
+                try {
+                    // Synchronization during batch-execution of BoSSS-worksheets:
+                    // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
+
+                    var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
+                    if (!tempguid.IsEmptyOrWhite()) {
+                        Console.WriteLine("Worksheet got tempguid = " + tempguid + " @ " + DateTime.Now);
+                        ilPSP.Environment.DisableOpenMP(); // prevent openMP deadlocks occurring with multiple tests running simultaneously on windows cluster.
+                        using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
+                            using (var cts = new CancellationTokenSource()) {
+                                var t = pipeServer.WaitForConnectionAsync(cts.Token);
+
+                                bool timeot = t.Wait(1000 * 60);
+                                if (timeot == false) {
+                                    Console.Error.WriteLine("timeout in worksheet  @ " + DateTime.Now);
+                                    cts.Cancel();
+                                } else {
+                                    pipeServer.WriteByte(1);
+                                }
+                            }
+                        }
+
+                        //File.WriteAllText(tempguid + ".txt", "Hallo du Arsch!");
+                        //Console.WriteLine("token file written @ " + DateTime.Now);
+                    }
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message} at {DateTime.Now}");
+                    throw new AggregateException(e);
+                }
+
+                Console.WriteLine("BoSSSpad is ready to go!");
+            }
+
+
         }
 
         /// <summary>
@@ -310,7 +356,7 @@ namespace BoSSS.Application.BoSSSpad {
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
             } catch (NullReferenceException) {
-                Console.WriteLine("Trying alternative method");
+                //Console.WriteLine("Trying alternative method");
                 Type AltFormatter = typeof(Formatter);
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
@@ -364,14 +410,14 @@ namespace BoSSS.Application.BoSSSpad {
             Process.Start(dbeXmlPath);
         }
 
-        /// <summary>
-        /// Saves the current interactive session as a worksheet that can be
-        /// loaded by the worksheet edition of the BoSSSPad
-        /// </summary>
-        /// <param name="path"></param>
-        public static void SaveSessionAsWorksheet(string path) {
-            ReadEvalPrintLoop.SaveSessionAsWorksheet(path);
-        }
+        ///// <summary>
+        ///// Saves the current interactive session as a worksheet that can be
+        ///// loaded by the worksheet edition of the BoSSSPad
+        ///// </summary>
+        ///// <param name="path"></param>
+        //public static void SaveSessionAsWorksheet(string path) {
+        //    ReadEvalPrintLoop.SaveSessionAsWorksheet(path);
+        //}
 
         /// <summary>
         /// Clears the console window.
@@ -585,25 +631,24 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
 
-            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
+            return OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
         /// <summary>
         /// Opens an existing database at a specific path
         /// </summary>
         static public IDatabaseInfo OpenDatabase(string dbDir) {
-            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, false);
+            return OpenOrCreateDatabase_Impl(dbDir, false);
         }
 
-        /*
-        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
-            foreach (var existing_dbi in InteractiveShell.databases) {
+        internal static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+            foreach (var existing_dbi in BoSSSshell.databases) {
                 if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
                 }
             }
-        
-            
+
+
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
@@ -629,7 +674,6 @@ namespace BoSSS.Application.BoSSSpad {
 
             return dbi;
         }
-        */
 
         static internal Document CurrentDoc = null;
 
@@ -834,6 +878,7 @@ namespace BoSSS.Application.BoSSSpad {
             int[,] Edge2GeomCell = grd.iGeomEdges.CellIndices;
             int[] G2L = grd.iGeomCells.GeomCell2LogicalCell;
             byte[] EdgeTags = grd.iGeomEdges.EdgeTags;
+            int Jup = grd.iLogicalCells.NoOfLocalUpdatedCells;
 
             i = 0;
             foreach (var t in et2Name) { // loop over all different edge tag names...
@@ -864,7 +909,9 @@ namespace BoSSS.Application.BoSSSpad {
                                 jL = G2L[jG];
 
                             // color respective cell
-                            FI.SetMeanValue(jL, tag2color);
+                            if (jL < Jup) {
+                                FI.SetMeanValue(jL, tag2color);
+                            }
                         }
 
                     }
@@ -983,19 +1030,39 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        static string user_overrideName = null;
+
+        /// <summary>
+        /// Allows to specify the queue within the worksheet
+        /// </summary>
+        public static void SetDefaultQueue(string DefaultQueueName) {
+            user_overrideName = DefaultQueueName.CloneAs();
+        }
+
+
         /// <summary>
         /// Default execution queue. 
         /// - globally, can specified by the <see cref="BatchProcessorConfig.DefaultQueueIndex"/> in configuration file `~/.BoSSS/etc/BatchProcessorConfig.json`
         /// - can be overwritten for each project using the file `~/.BoSSS/etc/DefaultQueuesProjectOverride.txt`
+        /// - can be overwritten within a notebook by <see cref="SetDefaultQueue"/>
         /// </summary>
         public static BatchProcessorClient GetDefaultQueue() {
             ReloadExecutionQueues();
 
+            if(!user_overrideName.IsEmptyOrWhite()) {
+                foreach (var q in executionQueues) {
+                    if (q.Name?.Equals(user_overrideName, StringComparison.InvariantCultureIgnoreCase) ?? false) {
+                        return q;
+                    }
+                }
+            }
+
+
             if(!wmg.CurrentProject.IsEmptyOrWhite()) {
                 string overrideName = BatchProcessorConfig.GetDefaultBatchnameForProject(wmg.CurrentProject);
-                if(overrideName != null) {
+                if(!overrideName.IsEmptyOrWhite()) {
                     foreach(var q in executionQueues) {
-                        if(q.Name.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase)) {
+                        if(q.Name?.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase) ?? false) {
                             return q;
                         }
                     }
@@ -1048,5 +1115,63 @@ namespace BoSSS.Application.BoSSSpad {
 
             BatchProcessorConfig.SaveConfiguration(conf);
         }
+
+        /// <summary>
+        /// Prints a name of lots of BoSSS assemblies to the console.
+        /// The presence of this method enforces the compiler to link all solver assemblies, 
+        /// e.g. <see cref="NSE_SIMPLE.NSE_SIMPLEMain"/>, to BoSSSpad.
+        ///
+        /// Without this method, the compiler would prune unused dependencies; in consequence, worksheets which use e.g. <see cref="NSE_SIMPLE.NSE_SIMPLEMain"/>
+        /// will not work unless the reference the solver assembly directly.
+        /// </summary>
+        public static void EnforceSolverLinkage() {
+
+            var AllSolvers = new Type[] {
+                typeof(ilPSP.Environment),
+                typeof(ilPSP.LinSolvers.SimpleSolversInterface),
+                typeof(BatchmodeConnector), // Do it this cause connector is not referenced anywhere else, i.e. the assembly will often be missing otherwise
+                typeof(NUnit.Framework.Assert),
+                typeof(BoSSS.PlotGenerator.PlotApplication),
+                typeof(BoSSS.Platform.Utils.Geom.BoundingBox),
+                typeof(BoSSS.Foundation.Basis),
+                typeof(BoSSS.Foundation.XDG.XDGField),
+                typeof(BoSSS.Foundation.Grid.Classic.Grid1D),
+                typeof(BoSSS.Solution.Application),
+                typeof(BoSSS.Solution.Gnuplot.Gnuplot),
+                typeof(BoSSS.Solution.GridImport.Cgns),
+                typeof(BoSSS.Solution.Statistic.CellLocalization),
+                typeof(BoSSS.Solution.Tecplot.Tecplot),
+                typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver),
+                typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator),
+                typeof(BoSSS.Solution.LevelSetTools.CurvatureAlgorithms),
+                typeof(BoSSS.Solution.EnergyCommon.Dissipation),
+                typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity),
+                typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling),
+                typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection),
+                typeof(BoSSS.Solution.CompressibleFlowCommon.ShockFinding.InflectionPointFinder),
+                typeof(BoSSSpad.BoSSSpadMain),
+                typeof(MiniBatchProcessor.Client),
+                typeof(System.Numerics.Complex),
+                typeof(MathNet.Numerics.Complex32),
+                typeof(CNS.CNSProgram),
+                typeof(XNSE_Solver.XNSE),
+                typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+                typeof(Rheology.Rheology),
+                typeof(XNSERO_Solver.XNSERO),
+                typeof(BoSSS.Foundation.SpecFEM.SpecFemField),
+                typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+                typeof(NSE_SIMPLE.NSE_SIMPLEMain),
+                typeof(XNSEC.XNSEC),
+                typeof(GridGen.GridGenMain)
+            };
+
+
+            var AllAssemblies = AllSolvers.Select(x => x.Assembly).ToArray();
+
+            foreach(var a in AllAssemblies) {
+                Console.WriteLine(a);
+            }
+        }
+
     }
 }

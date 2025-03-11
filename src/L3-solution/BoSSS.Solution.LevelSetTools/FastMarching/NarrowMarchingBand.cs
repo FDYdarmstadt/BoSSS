@@ -607,7 +607,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             string[] ParamNames = ArrayTools.Cat(VariableNames.LevelSetGradient(D), VariableNames.ExtensionVelocity(D));
             string[] varNames = ArrayTools.Cat(new string[] { "Phi" }, ParamNames, "c1");
-            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), varNames);
+            DifferentialOperator TimeEvoOp = new DifferentialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), varNames);
             TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector(D));
             //TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source());
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm(D));
@@ -1141,7 +1141,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 else
                     InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker.GridDat.SpatialDimension);
 
-                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
+                XDifferentialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
 
                 var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 , InterfaceFlux, Tracker, subMask.GetBitMaskWithExternal());
 
@@ -1194,9 +1194,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //    time: 0,
                     //    MPIParameterExchange:false,
                     //    whichSpc:Tracker.GetSpeciesId("A"));
-                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
+                    XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
 
-                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.1);
+                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.1, Tag: "NarrowMarchingBand"); //which throws an agglomeration error [Toprak]
                     //mtxBuilder.SpeciesOperatorCoefficients[Tracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[Tracker.GetSpeciesId("A")];
                     mtxBuilder.CellLengthScales.Add(Tracker.GetSpeciesId("A"), dummy.CellLengthScales[Tracker.GetSpeciesId("A")]);
 
@@ -1404,7 +1404,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
  
         /// <summary>
         /// Finds the extremals of the level-set field on the boundary between cut- and near cells:
-        /// we need this to detect wether the level-set has left the cell.
+        /// we need this to detect whether the level-set has left the cell.
         /// </summary>
         public static void ExtremalsOnEdge(ConventionalDGField LevSet, CellMask cutCellsMask, EdgeMask em, out double[] minis, out double[] maxis) {
             GridData gdat = (GridData)(LevSet.GridDat);
@@ -1458,7 +1458,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 int iKrefEdge = gdat.Edges.GetRefElementIndex(iEdge);
                 if(TestNodes[iKrefEdge] == null) {
-                    Debug.Assert(gdat.Edges.EdgeRefElements[iKrefEdge].SpatialDimension == 1, "Number of thest vertices maybe is high.");
+                    Debug.Assert(gdat.Edges.EdgeRefElements[iKrefEdge].SpatialDimension == 1, "Number of test vertices maybe is high.");
                     TestNodes[iKrefEdge] = gdat.Edges.EdgeRefElements[iKrefEdge].GetSubdivisionTree((LevSet.Basis.Degree + 1) * 2).GlobalVertice;
                 }
 
@@ -1467,7 +1467,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 int NoOfNodes = TestNodes[iKrefEdge].NoOfNodes;
                 MultidimensionalArray LevelSetValAtEdge = MultidimensionalArray.Create(1, NoOfNodes);
-                LevSet.Evaluate(jCell, 1, TestNodes[iKrefEdge].GetVolumeNodeSet(gdat, iTrafo), LevelSetValAtEdge);
+                LevSet.Evaluate(jCell, 1, TestNodes[iKrefEdge].GetVolumeNodeSet(gdat, iTrafo, false), LevelSetValAtEdge);
 
                 minis[i] = LevelSetValAtEdge.Min();
                 maxis[i] = LevelSetValAtEdge.Max();

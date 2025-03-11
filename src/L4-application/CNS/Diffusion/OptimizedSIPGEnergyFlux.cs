@@ -32,7 +32,18 @@ namespace CNS.Diffusion {
     /// <summary>
     /// Optimized implementation of the SIPG Energy Flux for ideal gases
     /// </summary>
-    class OptimizedSIPGEnergyFlux : INonlinear2ndOrderForm {
+    class OptimizedSIPGEnergyFlux : INonlinear2ndOrderForm, IMultitreadSafety {
+
+        public IEquationComponent CloneForThread() {
+            return null;
+        }
+
+        public object GetPadlock() {
+            return config; // the more 'global' the padlock object is, the better the lock
+        }
+
+        public bool IsMultithreadSafe => false;
+
 
         private CNSControl config;
 

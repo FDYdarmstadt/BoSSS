@@ -59,6 +59,8 @@ namespace BoSSS.Foundation.SpecFEM {
 
         private void ConstructorCreateNodalPolynomials(Grid.Classic.GridData grdDat, int p) {
             this.GridDat = grdDat;
+            if (p < 2)
+                throw new ArgumentException($"Nober of Nodes per Edge must be at minimum 1, but {p} was supplied.");
 
             var Krefs = grdDat.Grid.RefElements;
             m_CellNodes = new NodeSet[Krefs.Length];
@@ -283,12 +285,12 @@ namespace BoSSS.Foundation.SpecFEM {
         int[][] m_Type;
 
         /// <summary>
-        /// The entity index, see also <see cref="RefElement.GetNodeSet(int, out NodeSet, out int[], out int[], int[])"/>.
+        /// The entity index, see also <see cref="BoSSS.Foundation.Grid.RefElements.RefElement.GetNodeSet(int, out NodeSet, out int[], out int[], int[])"/>.
         /// If the k-th node is 
-        /// * a cell node, the EntityIndex[k] is 0
-        /// * a face/edge node, the EntityIndex[k] is the index of the face within the reference element
-        /// * a co-face/co-edge node, the EntityIndex[k] is the index of the co-face within the reference element
-        /// * a vertex node, the EntityIndex[k] is the index of the vertex within the reference element
+        /// - a cell node, the EntityIndex[k] is 0
+        /// - a face/edge node, the EntityIndex[k] is the index of the face within the reference element
+        /// - a co-face/co-edge node, the EntityIndex[k] is the index of the co-face within the reference element
+        /// - a vertex node, the EntityIndex[k] is the index of the vertex within the reference element
         ///  - 1st index: reference element;<br/>
         ///  - 2nd index: cell node;
         /// </summary>

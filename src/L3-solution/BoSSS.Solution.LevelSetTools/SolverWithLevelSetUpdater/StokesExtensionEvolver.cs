@@ -1,10 +1,11 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
+using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.Smoothing;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
@@ -20,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel.Design;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
@@ -38,7 +40,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true, int ReInitPeriod = 0) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -52,6 +54,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.m_grd = grd;
             timeStepOrder = 2;
+
+            this.ReInit_Period = ReInitPeriod;
+            ReInit_Control = new EllipticReInitAlgoControl();
         }
 
         IGridData m_grd;
@@ -98,7 +103,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         ITimeStepper timeStepper;
 
         private ITimeStepper InitializeAdamsBashforth(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
-            var diffOp = new SpatialOperator(new string[] { "Phi" },
+            var diffOp = new DifferentialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
                 QuadOrderFunc.NonLinear(1));
@@ -118,7 +123,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         private ITimeStepper InitializeRungeKutta(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
-            var diffOp = new SpatialOperator(new string[] { "Phi" },
+            var diffOp = new DifferentialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
                 QuadOrderFunc.NonLinear(1));
@@ -138,7 +143,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using(var tr = new FuncTrace()) {
-
                 int D = levelSet.Tracker.GridDat.SpatialDimension;
 
                 SinglePhaseField[] meanVelocity = D.ForLoop(
@@ -169,6 +173,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+        // alternative reinitialization, keep?
+        /*
         static int lastReinit = 0;
         public bool Reinitialize(
             DualLevelSet phaseInterface,
@@ -391,6 +397,50 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             //    if (rcnt < 100) goto REINIT;
             //}
             return changed;
+        }*/
+
+
+
+        private EllipticReInitAlgoControl ReInit_Control;
+        private static int ReInit_TimestepIndex = 0;
+        private int ReInit_Period = 0;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phaseInterface"></param>
+        /// <param name="time"></param>
+        /// <param name="dt"></param>
+        /// <param name="incremental"></param>
+        /// <param name="DomainVarFields"></param>
+        /// <param name="ParameterVarFields"></param>
+        public bool Reinitialize(
+            DualLevelSet phaseInterface,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            bool changed = false;
+            // after level-set evolution and for initializing non-signed-distance level set fields
+            if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
+
+                Console.WriteLine("Performing ReInit");
+                ReInit_Control.Potential = ReInitPotential.BastingSingleWell;
+                EllipticReInit.EllipticReInit ReInitPDE = new EllipticReInit.EllipticReInit(phaseInterface.Tracker, ReInit_Control, phaseInterface.DGLevelSet);
+                ReInitPDE.ReInitialize(); // Restriction: phaseInterface.Tracker.Regions.GetCutCellSubGrid());
+
+                //FastMarchReinit FastMarchReinitSolver = new FastMarchReinit(phaseInterface.DGLevelSet.Basis);
+                //CellMask Accepted = phaseInterface.Tracker.Regions.GetCutCellMask();
+                ////CellMask ActiveField = phaseInterface.Tracker.Regions.GetNearFieldMask(1);
+                //CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
+                //FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, null);
+                changed = true;
+            }
+
+            ReInit_TimestepIndex++;
+            return changed;
         }
-        }
+    }
 }

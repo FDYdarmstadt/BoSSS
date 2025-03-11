@@ -1,5 +1,7 @@
 ﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+Copyright 2017 
+Technische Universitaet Darmstadt, 
+Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,6 +36,11 @@ using BoSSS.Solution.LevelSetTools;
 using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
+using BoSSS.Solution.AdvancedSolvers;
+using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
+using System.IO;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -96,6 +103,21 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingViscosityJumpTest(3, vmode, CutCellQuadratureType);
         }
 #endif
+        /// <summary>
+        /// See <see cref="PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194"/>.
+        /// </summary>
+        //[Test]
+        public static void CapillaryRiseTest() {
+
+            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194();
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
+            }
+            
+        }
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
@@ -116,8 +138,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingViscosityJumpTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingViscosityJumpTest-p" + deg });
         }
+
 
 #if !DEBUG
         /// <summary>
@@ -222,10 +245,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
         /// </summary>
+        [Test]
         public static void ScalingStaticDropletTest(
-            int deg,
-            ViscosityMode vmode,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(1, 2, 3)] int deg,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
             ) {
 
             double AgglomerationTreshold = 0.1;
@@ -246,7 +270,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingStaticDropletTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingStaticDropletTest-p" + deg });
         }
 
 
@@ -274,7 +298,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plot: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = false, title = "ScalingSinglePhaseChannelTest-p" + deg });
         }
 #endif      
 
@@ -582,14 +606,54 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
         [Test]
-        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
-            [Values(2, 3)] int FlowSolverDegree,
-            [Values(false, true)] bool SchurCompl,
-            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p2(
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
             ) {
+            int FlowSolverDegree = 2;
+            bool SchurCompl = false;
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
         }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p2(
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
+            ) {
+            int FlowSolverDegree = 2;
+            bool SchurCompl = true;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Soff_p3(
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
+            ) {
+            int FlowSolverDegree = 3;
+            bool SchurCompl = false;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux_Son_p3(
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
+            ) {
+            int FlowSolverDegree = 3;
+            bool SchurCompl = true;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
+        }
+
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>; Schur complement off
@@ -654,6 +718,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 #endif
 
+        /*
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
@@ -670,7 +735,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, stm, SchurCompl, nonlinsolver);
         }
-
+        */
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
@@ -763,8 +828,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 GridResolution: 1,
                 nonlinsolver: nonlinsolver);
             C.NoOfMultigridLevels = 1;
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 4;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 4;
             C.SkipSolveAndEvaluateResidual = true;
             XNSESolverTest(Tst, C);
 
@@ -803,7 +868,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void IBMChannelSolverTest(
             [Values(1, 2, 3)] int FlowSolverDegree = 2,
             [Values(0)] double angle = 0.0,
-            [Values(LinearSolverCode.direct_pardiso, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.direct_pardiso
+            [Values(LinearSolverCode.direct_pardiso, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_Kcycle_schwarz_CoarseMesh, LinearSolverCode.exp_Kcycle_schwarz_PerProcess, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.direct_pardiso
             ) {
             double AgglomerationTreshold = 0.3;
 
@@ -841,7 +906,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void IBMChannelSolverTest_Transient(
             [Values(1, 2, 3)] int FlowSolverDegree = 2,
             [Values(0)] double angle = 0.0,
-            [Values(LinearSolverCode.direct_pardiso, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.direct_pardiso
+            [Values(LinearSolverCode.direct_pardiso, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_Kcycle_schwarz_CoarseMesh, LinearSolverCode.exp_Kcycle_schwarz_PerProcess, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.direct_pardiso
             ) {
             double AgglomerationTreshold = 0.3;
 
@@ -871,18 +936,185 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSESolverTest(Tst, C);
         }
 
+#if !DEBUG
+        [Test]
+        public static void ChannelTest_p2_Newton_Standard(
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+        ) {
+            ChannelTest(2,
+                AgglomerationTreshold,
+                ViscosityMode.Standard,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Newton);
+        }
 
+        [Test]
+        public static void ChannelTest_p2_Picard_Standard(
+             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+             [Values(true, false)] bool IncludeConvection,
+             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+         ) {
+            ChannelTest(2,
+                AgglomerationTreshold,
+                ViscosityMode.Standard,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Picard);
+        }
+        [Test]
+        public static void ChannelTest_p2_Newton_FullySymmetric(
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+        ) {
+            ChannelTest(2,
+                AgglomerationTreshold,
+                ViscosityMode.FullySymmetric,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Newton);
+        }
 
+        [Test]
+        public static void ChannelTest_p2_Picard_FullySymmetric(
+             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+             [Values(true, false)] bool IncludeConvection,
+             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+         ) {
+            ChannelTest(2,
+                AgglomerationTreshold,
+                ViscosityMode.FullySymmetric,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Picard);
+        }
+
+        [Test]
+        public static void ChannelTest_p3_Newton_Standard(
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+        ) {
+            ChannelTest(3,
+                AgglomerationTreshold,
+                ViscosityMode.Standard,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Newton);
+        }
+
+        [Test]
+        public static void ChannelTest_p3_Picard_Standard(
+             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+             [Values(true, false)] bool IncludeConvection,
+             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+         ) {
+            ChannelTest(3,
+                AgglomerationTreshold,
+                ViscosityMode.Standard,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Picard);
+        }
+        [Test]
+        public static void ChannelTest_p3_Newton_FullySymmetric(
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+        ) {
+            ChannelTest(3,
+                AgglomerationTreshold,
+                ViscosityMode.FullySymmetric,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Newton);
+        }
+
+        [Test]
+        public static void ChannelTest_p3_Picard_FullySymmetric(
+             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+             [Values(true, false)] bool IncludeConvection,
+             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+         ) {
+            ChannelTest(3,
+                AgglomerationTreshold,
+                ViscosityMode.FullySymmetric,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Picard);
+        }
+        [Test]
+        public static void ChannelTest_p4_Newton_Standard(
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+        ) {
+            ChannelTest(4,
+                AgglomerationTreshold,
+                ViscosityMode.Standard,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Newton);
+        }
+
+        [Test]
+        public static void ChannelTest_p4_Picard_Standard(
+             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+             [Values(true, false)] bool IncludeConvection,
+             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+         ) {
+            ChannelTest(4,
+                AgglomerationTreshold,
+                ViscosityMode.Standard,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Picard);
+        }
+        [Test]
+        public static void ChannelTest_p4_Newton_FullySymmetric(
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+        ) {
+            ChannelTest(4,
+                AgglomerationTreshold,
+                ViscosityMode.FullySymmetric,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Newton);
+        }
+
+        [Test]
+        public static void ChannelTest_p4_Picard_FullySymmetric(
+             [Values(0.0)] double AgglomerationTreshold,
+             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+             [Values(true, false)] bool IncludeConvection,
+             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+         ) {
+            ChannelTest(4,
+                AgglomerationTreshold,
+                ViscosityMode.FullySymmetric,
+                angle, IncludeConvection, CutCellQuadratureType,
+                NonLinearSolverCode.Picard);
+        }
+
+#endif
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>
+#if DEBUG
         [Test]
+#endif
         public static void ChannelTest(
 #if DEBUG
             [Values(2)] int deg,
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0)] double angle,
+            [Values(true, false)] bool IncludeConvection, 
             [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
 #else
@@ -890,11 +1122,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
+            [Values(true, false)] bool IncludeConvection, 
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
-#endif      
+#endif
             ) {
-            var Tst = new ChannelTest(angle);
+            var Tst = new ChannelTest(angle, IncludeConvection);
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);
 
@@ -958,20 +1191,33 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="SphericalHarmonicsTest"/>
         /// </summary>
         [Test]
-        public static void SphericalHarmonoicsPostprocessingTest() {
-            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonoicsPostprocessingTest()
+        public static void SphericalHarmonicsPostprocessingTest(
+            [Values(true, false)] bool OnQuarterDomain,
+            [Values(3, 5)] int MaxLength,
+            [Values(true, false)] bool RotationalSymmetric) {
+            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonicsPostprocessingTest()
+
+            if(MaxLength == 5 && (OnQuarterDomain || RotationalSymmetric))
+                return;
+
             var Tst = new SphericalHarmonicsTest();
+            Tst.ComputeOnQuarterDomain = OnQuarterDomain;
+            Tst.IsRotationalSymmetric = RotationalSymmetric;
             var C = TstObj2CtrlObj(Tst, 2, 0.1,
                 ViscosityMode.FullySymmetric, 
                 XQuadFactoryHelper.MomentFittingVariants.Saye, 
                 SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-            var pp = new Logging.SphericalHarmonicsLogging();
+            var pp = new Logging.SphericalHarmonicsLogging() { MaxL = MaxLength, RotSymmetric = RotationalSymmetric};
             C.PostprocessingModules.Add(pp);
             C.SkipSolveAndEvaluateResidual = true;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 0;
+            //C.AdaptiveMeshRefinement = true;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            //C.AMR_startUpSweeps = 1;
+
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 0;
 
             XNSESolverTest(Tst, C);
 
@@ -1102,9 +1348,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     var solver = new XNSE();
                     solvers[k] = solver;
                     {
-                        Console.WriteLine("Warning! - enabled immediate plotting");
-                        C.ImmediatePlotPeriod = 1;
-                        C.SuperSampling = 3;
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
 
                         solver.Init(C);
                         solver.RunSolverMode();
@@ -1181,6 +1427,186 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
            
         }
 
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
+        /// </summary>
+        [Test]
+        public static void ScalingRotCubeTests2D_p1([Values(0.1, 0.2, 0.3)] double AggTreshold  ) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p1 --result=blabla.xml
+
+            int deg = 1;
+            ScalingRotCubeTest(deg, 2, AggTreshold);
+        }
+
+        [Test]
+        public static void ScalingRotCubeTests2D_p2([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p2 --result=blabla.xml
+
+            int deg = 2;
+            ScalingRotCubeTest(deg, 2, AggTreshold);
+        }
+
+        [Test]
+        public static void ScalingRotCubeTests2D_p3([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p3 --result=blabla.xml
+
+            int deg = 3;
+            ScalingRotCubeTest(deg, 2, AggTreshold);
+        }
+
+        public static void ScalingRotTorusTests2D_p1([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotTorusTests2D_p1 --result=blabla.xml
+
+            int deg = 1;
+            ScalingRotTorusTest(deg, 2, AggTreshold);
+        }
+
+        public static void ScalingRotTorusTests2D_p2([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotTorusTests2D_p2 --result=blabla.xml
+
+            int deg = 2;
+            ScalingRotTorusTest(deg, 2, AggTreshold);
+        }
+
+        public static void ScalingRotTorusTests2D_p3([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotTorusTests2D_p3 --result=blabla.xml
+
+            int deg = 3;
+            ScalingRotTorusTest(deg, 2, AggTreshold);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.RotatingTiltedXRigid"/>
+        /// </summary>
+        public static void ScalingRotTorusTest(int deg = 1, int spatialDimension = 2, double AgglomerationTreshold = 0.1) {
+            Console.WriteLine("Agg Threshold is set to " + AgglomerationTreshold);
+
+            var Controls = new List<XNSE_Control>();
+
+            foreach (var Res in new[] { 16, 32, 64 }) {
+                var C = HardcodedControl.RotatingTiltedXRigid(k: deg, Res: Res , SpaceDim: spatialDimension, AMR: true, AMRLevel:1, shape: Shape.Torus, TiltAngle: 0.0, RotAxis: "z");
+                C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+                C.PhysicalParameters.IncludeConvection = true;
+                C.NonLinearSolver.ConvergenceCriterion = 10e-6;
+                C.NoOfTimesteps = 1;
+                C.AgglomerationThreshold = AgglomerationTreshold;
+                Controls.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(Controls, new ConditionNumberScalingTest.Config() { plot = true, title = $"Scaling{spatialDimension}DRotTorus-p{deg}-Agg{AgglomerationTreshold}" });
+        }
+
+        /// <summary>
+        /// A simple Shear flow with interfacial slip
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.InterfaceSlipTest"/>
+        /// </summary>
+        [Test]
+        public static void InterfaceSlipTest(
+#if DEBUG
+            [Values(2)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(1.0, double.PositiveInfinity)] double slipI,
+            [Values(0.143)] double viscosityratio
+#else
+            [Values(2, 3, 4)] int deg,
+            [Values(0.0)] double AgglomerationTreshold,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(0.0)] double angle,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
+            [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
+            [Values(1.0, 0.143, 13.0)] double viscosityratio
+#endif
+            ) {
+            var Tst = new InterfaceSlipTest(angle, slipI, viscosityratio);
+
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, nonlinsolver: nonlinsolver);
+            C.PhysicalParameters.slipI = Tst.slipI;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+
+            // clear initial values, such that not only consistency is checked
+            C.InitialValues.Clear();
+            C.InitialValues_Evaluators.Clear();
+
+            C.Phi = Tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+
+            XNSESolverTest(Tst, C);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
+        /// </summary>
+        public static void ScalingRotCubeTest(int deg = 1, int spatialDimension = 2, double AgglomerationTreshold = 0.1) {
+            Console.WriteLine("Agg Threshold is set to " + AgglomerationTreshold);
+
+            var Controls = new List<XNSE_Control>();
+
+            foreach (var Res in new[] { 2, 4, 8, 16}) {
+                var C = HardcodedControl.Rotating_Something_Unsteady(k: deg, Res: Res * 5, SpaceDim: spatialDimension, useAMR: true, useLoadBal: true, Gshape: Shape.Cube);
+                C.PhysicalParameters.IncludeConvection = true;
+                C.NonLinearSolver.ConvergenceCriterion = 10e-6;
+                C.NoOfTimesteps = 3;
+                C.AgglomerationThreshold = AgglomerationTreshold;
+                Controls.Add(C);
+            }
+            var conf = new ConditionNumberScalingTest.Config() { plot = true, title = $"Scaling{spatialDimension}DRotCube-p{deg}-Agg{AgglomerationTreshold}" };
+            conf.ExpectedSlopes[ConditionNumberScalingTest.Config.TotCondNo] = (XAxisDesignation.Grid_1Dres, 2.4, 1.3);
+            ConditionNumberScalingTest.Perform(Controls, conf);
+        }
+
+#if !DEBUG
+        [Test]
+        public static void RotatingCubeTest(
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants MFV,
+            [Values(Newton.GlobalizationOption.None, Newton.GlobalizationOption.LineSearch, Newton.GlobalizationOption.Dogleg)] Newton.GlobalizationOption globalizationOption,
+            [Values(IncompressibleBcType.Pressure_Outlet)] IncompressibleBcType __OuterBcType 
+            ) {
+
+            //this error does happen when number of processors =2 but not with np=4
+            var C = HardcodedControl.Rotating_Something_Unsteady(k: 4, Res: 30, SpaceDim: 2, useAMR: false, Gshape: Shape.Cube, OuterBcType: __OuterBcType);
+
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            //C.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.Globalization = globalizationOption;
+            C.NonLinearSolver.ConvergenceCriterion = 0.0; // As accurate as possible
+            C.NonLinearSolver.MinSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            C.UseSchurBlockPrec = false;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.NoOfTimesteps = 1;
+
+            C.CutCellQuadratureType = MFV;
+
+            C.TracingNamespaces = "BoSSS";
+
+
+            XNSE.DeleteOldPlotFiles();
+            using (var Slv = new XNSE()) {
+                Slv.Init(C);
+                Slv.RunSolverMode();
+
+                var resNorms = new List<(string id, double val)>();
+                foreach(XDGField f in Slv.CurrentResidual.Fields) {
+                    double ResNorm = f.L2NormAllSpecies();
+                    resNorms.Add((f.Identification, ResNorm));
+                    Console.WriteLine($"Residual norm of {f.Identification}: {ResNorm}");
+                }
+                foreach(var tt in resNorms)
+                    Assert.Less(tt.val, 1.0e-5, $"Residual norm of {tt.id} out of bounds.");
+            }
+            
+        }
+#endif
+
         private static void ASScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard) {
 #if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
@@ -1193,11 +1619,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.SkipSolveAndEvaluateResidual = false;
                 LaLa.Add(C);
             }
-            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
+
+            var conf = new ConditionNumberScalingTest.Config() { plot = true, title = Name };
+            conf.ExpectedSlopes[ConditionNumberScalingTest.Config.StencilCondNo_innerCut] = (XAxisDesignation.Grid_1Dres, 0.5, -0.7);
+
+            ConditionNumberScalingTest.Perform(LaLa, conf);
 #endif
         }
 
-        static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
+        internal static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1,

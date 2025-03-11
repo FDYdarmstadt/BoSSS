@@ -82,6 +82,11 @@ namespace BoSSS.Solution.LevelSetTools {
         Phasefield,
 
         /// <summary>
+        /// Use this when you want to use a custom solution only implemented in a higher level
+        /// </summary>
+        CustomLevelSet,
+
+        /// <summary>
         /// Level Set is moved by advection particles.
         /// This evolution features three subtypes <see cref="BoSSS.Application.SemiLagrangianLevelSetTestSuite.LagrangianMode"/>
         /// </summary>
@@ -120,5 +125,15 @@ namespace BoSSS.Solution.LevelSetTools {
         /// A level set formulation for the surface of rigid objects. The Movement depends only on the position and orientation of the object.
         /// </summary>
         RigidObject,
+
+        /// <summary>
+        /// Parameterized Level Set
+        /// </summary>
+        /// <remarks>
+        /// For details:
+        /// <see cref="BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.ParameterizedInterfaceEvolver"/>.
+        /// </remarks>
+        ParameterizedLevelSet,
+
     }
 }

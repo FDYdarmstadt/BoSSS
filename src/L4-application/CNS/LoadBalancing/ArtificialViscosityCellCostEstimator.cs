@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ using System.Linq;
 namespace CNS.LoadBalancing {
 
     /// <summary>
-    /// A cell cost estimator based on aritificial viscosity
+    /// A cell cost estimator based on artificial viscosity
     /// </summary>
     public class ArtificialViscosityCellCostEstimator : ICellCostEstimator {
 
@@ -34,33 +35,54 @@ namespace CNS.LoadBalancing {
 
         private int performanceClass;
 
-        /// <summary>
-        /// <see cref="ICellCostEstimator"/>
-        /// </summary>
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
-        }
+        ///// <summary>
+        ///// <see cref="ICellCostEstimator"/>
+        ///// </summary>
+        //public int CurrentPerformanceClassCount {
+        //    get;
+        //    private set;
+        //}
 
         /// <summary>
         /// <see cref="ICellCostEstimator"/>
         /// </summary>
-        public double EstimatedLocalCost {
-            get;
-            private set;
+        double EstimatedLocalCost;
+
+        public void Init(IApplication app) {
+            
+        }
+
+        public void UpdateEstimates(IApplication app) {
+            var cls = new ArtificialViscosityCellClassifier();
+            
+            int[] cellToPerformanceClassMap = cls.ClassifyCells(app);
+            UpdateEstimates(cellToPerformanceClassMap);
         }
 
         /// <summary>
-        /// A cell cost estimator based on aritificial viscosity
-        /// Performance class 0: Cells without AV
-        /// Performance class 1: Cells with AV
+        /// <see cref="ICellCostEstimator.GetEstimatedCellCosts"/>
+        /// </summary>
+        /// <returns></returns>
+        public int[][] GetEstimatedCellCosts() {
+            return new[] { cellToCostMap };
+        }
+
+
+        public object Clone() {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// A cell cost estimator based on artificial viscosity
+        /// - Performance class 0: Cells without AV
+        /// - Performance class 1: Cells with AV
         /// </summary>
         public ArtificialViscosityCellCostEstimator(int performanceClass) {
             this.performanceClass = performanceClass;
         }
 
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
-            CurrentPerformanceClassCount = performanceClassCount;
+        void UpdateEstimates(int[] cellToPerformanceClassMap) {
+           
 
             // One balance constraint per cluster
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
@@ -78,24 +100,20 @@ namespace CNS.LoadBalancing {
         /// AV cells are ten times more expensive than non-AV cells
         /// </summary>
         /// <returns></returns>
-        public static Func<IApplication, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
-            return (p, i) => new StaticCellCostEstimator(
-                new int[] { 1, 10 });
-            //return delegate (IApplication<AppControl> p, int i) {
-            //    return new StaticCellCostEstimator(new int[] { 1, 10 });
-            //};
+        public static ICellCostEstimator[] GetStaticCostBasedEstimator() {
+            return new ICellCostEstimator[] {
+                new StaticCellCostEstimator(new int[] { 1, 10 })
+            };
         }
 
         /// <summary>
         /// AV cells are <paramref name="X"/> times more expensive than non-AV cells
         /// </summary>
         /// <returns></returns>
-        public static Func<IApplication, int, ICellCostEstimator> GetStaticCostBasedEstimator(int X) {
-            return (p, i) => new StaticCellCostEstimator(
-                new int[] { 1, X });
-            //return delegate (IApplication<AppControl> p, int i) {
-            //    return new StaticCellCostEstimator(new int[] { 1, 10 });
-            //};
+        public static ICellCostEstimator[] GetStaticCostBasedEstimator(int X) {
+            return new ICellCostEstimator[] { 
+                new StaticCellCostEstimator(new int[] { 1, X }) 
+            };
         }
 
         /// <summary>
@@ -104,20 +122,17 @@ namespace CNS.LoadBalancing {
         /// (can be arbitrary)
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<Func<IApplication, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
+        public static ICellCostEstimator[] GetMultiBalanceConstraintsBasedEstimators() {
             int noOfPerformancesClasses = 2; // Cells with AV + cells without AV
+            var ret = new ICellCostEstimator[noOfPerformancesClasses];
             for (int i = 0; i < noOfPerformancesClasses; i++) {
                 int temp = i; // Avoid delegate creation from capturing variable $i
-                yield return (app, classCount) => new ArtificialViscosityCellCostEstimator(temp);
+                ret[i] = new ArtificialViscosityCellCostEstimator(temp);
             }
+            return ret; 
         }
 
-        /// <summary>
-        /// <see cref="ICellCostEstimator"/>
-        /// </summary>
-        /// <returns></returns>
-        public int[] GetEstimatedCellCosts() {
-            return cellToCostMap;
-        }
+  
+       
     }
 }

@@ -16,20 +16,20 @@ limitations under the License.
 
 using ilPSP;
 using ilPSP.Tracing;
-using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
     /// In an MPI-parallel run, this class can be used to obtain a model of how
     /// load is distributed to MPI processes.
     /// </summary>
-    public class RuntimeCellCostEstimator : ICellCostEstimator {
+    [Serializable]
+    public class RuntimeCellCostEstimator : CellTypeBasedEstimator {
 
         /// <summary>
         /// <see cref="MaxNoOfTimesteps"/>
@@ -57,27 +57,17 @@ namespace BoSSS.Solution {
         /// <see cref="InstrumentationPaths"/>, for the most recent call to
         /// <see cref="UpdateLocalTimes"/>.
         /// </summary>
+        [NonSerialized]
         private double[] ActualInstrumentationTimeStamps;
 
         /// <summary>
         /// Old values of <see cref="ActualInstrumentationTimeStamps"/>.
         /// </summary>
+        [NonSerialized]
         private double[] LastInstrumentationTimeStamps;
 
-        /// <summary>
-        /// Difference between the sum of
-        /// <see cref="ActualInstrumentationTimeStamps"/> and
-        /// <see cref="LastInstrumentationTimeStamps"/>.
-        /// </summary>
-        public double EstimatedLocalCost {
-            get;
-            private set;
-        }
 
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
-        }
+        int CurrentPerformanceClassCount;
 
         /// <summary>
         /// Constructor.
@@ -89,12 +79,14 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="performanceClassCount"></param>
-        /// <param name="cellToPerformanceClassMap"></param>
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
-            CurrentPerformanceClassCount = performanceClassCount;
+        override public void UpdateEstimates(IApplication app) {
+
+            var cellToPerformanceClassMap = base.CellClassifier.ClassifyCells(app);
+            int performanceClassCount = cellToPerformanceClassMap.Max().MPIMax();
+
+            CurrentPerformanceClassCount = performanceClassCount + 1;
             currentCellToPerformanceClassMap = cellToPerformanceClassMap;
-            int J = cellToPerformanceClassMap.Length;
+            int J = m_app.GridData.CellPartitioning.LocalLength;
 
             UpdateLocalTimes();
             CallCount++;
@@ -103,7 +95,7 @@ namespace BoSSS.Solution {
             if (CallCount >= 3) {
 
                 // Locally count cells for each performance class
-                double[] cellCountPerClass = new double[performanceClassCount];
+                double[] cellCountPerClass = new double[CurrentPerformanceClassCount];
                 for (int j = 0; j < J; j++) {
                     int performanceClass = cellToPerformanceClassMap[j];
                     cellCountPerClass[performanceClass]++;
@@ -113,19 +105,21 @@ namespace BoSSS.Solution {
             }
         }
 
+        [NonSerialized]
+        double EstimatedLocalCost;
+
         /// <summary>
         /// Solves a linear regression cost model
         /// </summary>
         /// <returns></returns>
-        public int[] GetEstimatedCellCosts() {
+        override public int[][] GetEstimatedCellCosts() {
             MPICollectiveWatchDog.Watch();
 
             int noOfEstimates = localCellCounts.Count;
             Debug.Assert(noOfEstimates == localRunTimeEstimates.Count);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSize);
 
-            MultidimensionalArray SendBuf = MultidimensionalArray.Create(
-                noOfEstimates, CurrentPerformanceClassCount + 1);
+            MultidimensionalArray SendBuf = MultidimensionalArray.Create(noOfEstimates, CurrentPerformanceClassCount + 1);
             for (int i = 0; i < noOfEstimates; i++) {
                 for (int j = 0; j < CurrentPerformanceClassCount; j++) {
                     SendBuf[i, j] = localCellCounts[i][j];
@@ -134,11 +128,10 @@ namespace BoSSS.Solution {
                 SendBuf[i, CurrentPerformanceClassCount] = localRunTimeEstimates[i];
             }
 
-            MultidimensionalArray RecvBuf = MultidimensionalArray.Create(
-                MpiSize, noOfEstimates, CurrentPerformanceClassCount + 1);
+            MultidimensionalArray RecvBuf = MultidimensionalArray.Create(MpiSize, noOfEstimates, CurrentPerformanceClassCount + 1);
 
             unsafe {
-                fixed (double* pSendBuf = &SendBuf.Storage[0], pRecvBuf = &RecvBuf.Storage[0]) {
+                fixed (double* pSendBuf = SendBuf.Storage, pRecvBuf = RecvBuf.Storage) {
                     csMPI.Raw.Allgather(
                         (IntPtr)pSendBuf, SendBuf.Length, csMPI.Raw._DATATYPE.DOUBLE,
                         (IntPtr)pRecvBuf, SendBuf.Length, csMPI.Raw._DATATYPE.DOUBLE,
@@ -174,46 +167,6 @@ namespace BoSSS.Solution {
                 }
             }
 
-
-            //// REMOVE IDENTICAL ROWS
-            //List<int> obsoleteRows = new List<int>();
-            //List<double> averages = new List<double>();
-            //for (int row0 = 0; row0 < matrix.NoOfRows; row0++) {
-            //    if (obsoleteRows.Contains(row0)) {
-            //        continue;
-            //    }
-
-            //    List<int> identicalRows = new List<int>();
-            //    for (int row1 = row0 + 1; row1 < matrix.NoOfRows; row1++) {
-            //        bool rowIsIdentical = true;
-            //        for (int col = 0; col < matrix.NoOfCols; col++) {
-            //            rowIsIdentical &= (matrix[row0, col] == matrix[row1, col]);
-            //        }
-
-            //        if (rowIsIdentical) {
-            //            identicalRows.Add(row1);
-            //        }
-            //    }
-
-            //    obsoleteRows.AddRange(identicalRows);
-            //    double average = (rhs[row0, 0] + identicalRows.Sum(i => rhs[i, 0])) / (1 + identicalRows.Count);
-            //    averages.Add(average);
-            //}
-
-            //MultidimensionalArray reducedMatrix = MultidimensionalArray.Create(
-            //    matrix.NoOfRows - obsoleteRows.Count(), matrix.NoOfCols);
-            //MultidimensionalArray reducedRHS = MultidimensionalArray.Create(
-            //    reducedMatrix.NoOfRows, 1);
-            //int reducedRow = 0;
-            //foreach (int row in Enumerable.Range(0, matrix.NoOfRows).Except(obsoleteRows)) {
-            //    for (int col = 0; col < reducedMatrix.NoOfCols; col++) {
-            //        reducedMatrix[reducedRow, col] = matrix[row, col];
-            //    }
-            //    reducedRHS[reducedRow, 0] = averages[reducedRow];
-
-            //    reducedRow++;
-            //}
-
             
 
             if (MpiSize > 1 && rhs.Length > MpiSize) {
@@ -240,9 +193,9 @@ namespace BoSSS.Solution {
                 for (int j = 0; j < cellCosts.Length; j++) {
                     cellCosts[j] = intCost[currentCellToPerformanceClassMap[j]];
                 }
-                return cellCosts;
+                return new int[][] { cellCosts };
             } else {
-                return null;
+                return new int[0][];
             }
         }
 
@@ -284,8 +237,10 @@ namespace BoSSS.Solution {
             }
         }
 
+        [NonSerialized]
         private List<double[]> localCellCounts = new List<double[]>();
 
+        [NonSerialized]
         private List<double> localRunTimeEstimates = new List<double>();
         
         /// <summary>
@@ -304,8 +259,26 @@ namespace BoSSS.Solution {
             }
         }
 
+        [NonSerialized]
         private int CallCount = 0;
 
+        [NonSerialized]
         private int[] currentCellToPerformanceClassMap;
+
+        /// <summary>
+        /// Serialization constructor
+        /// </summary>
+        private RuntimeCellCostEstimator() {
+
+        }
+
+
+        public override object Clone() {
+            return new RuntimeCellCostEstimator() {
+                CellClassifier = this.CellClassifier.CloneAs(),
+                m_MaxNoOfTimesteps = this.m_MaxNoOfTimesteps,
+                InstrumentationPaths = this.InstrumentationPaths.Select(sa => sa.Select(s => s.CloneAs()).ToArray()).ToArray()
+            };
+        }
     }
 }

@@ -109,6 +109,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 get;
                 set;
             } = true;
+
+            /// <summary>
+            /// - true: use double precision floats internally (default)
+            /// - false: use single precision; might be useful for solution guesses in preconditioners; only supported for <see cref="WhichSolver"/>==<see cref="_whichSolver.PARDISO"/>.
+            /// </summary>
+            public bool UseDoublePrecision {
+                get;
+                set;
+            } = true;
         }
 
 
@@ -163,8 +172,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var MgMap = op.DgMapping;
                 MatrixNMapping = op;
 
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
-                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration Mtx may not be initialized
+					throw new ArgumentException("Row partitioning mismatch.");
                 if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
@@ -211,14 +220,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         class DenseSolverWrapper : ISparseSolver {
 
-            MultidimensionalArray FullMatrix;
+            MultidimensionalArray LU_FullMatrix;
+
+            int[] ipiv;
 
             public void DefineMatrix(IMutableMatrixEx M) {
-                FullMatrix = M.ToFullMatrixOnProc0();
+                LU_FullMatrix = M.ToFullMatrixOnProc0();
+                ipiv = new int[LU_FullMatrix.NoOfRows];
+                LU_FullMatrix.FactorizeLU(ipiv);
             }
 
             public void Dispose() {
-                FullMatrix = null;
+                LU_FullMatrix = null;
             }
 
             public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
@@ -237,7 +250,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(Int_rhs == null)
                     Int_rhs = rhs.ToArray();
 
-                FullMatrix.Solve(Int_x, Int_rhs);
+                //LU_FullMatrix.Solve(Int_x, Int_rhs);
+                LU_FullMatrix.BacksubsLU(ipiv, Int_x, Int_rhs);
 
                 if(writeBack)
                     x.SetV(Int_x);
@@ -256,18 +270,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ISparseSolver solver;
 
             bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF;
-            
-            
-            switch(config.WhichSolver) {
+
+            if(config.WhichSolver != _whichSolver.PARDISO) {
+                if (!config.UseDoublePrecision)
+                    throw new NotSupportedException($"{config.WhichSolver} is not supported in single precision");
+            }
+
+
+            switch (config.WhichSolver) {
                 case _whichSolver.PARDISO:
                 bool CachingOn = false;
                 if (ActivateCaching != null) {
                     CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, (MatrixNMapping as MultigridOperator)?.LevelIndex ?? -1);
                 }
-                
+
+                    
                 solver = new PARDISOSolver() {
                     CacheFactorization = CachingOn,
-                    UseDoublePrecision = true,
+                    UseDoublePrecision = config.UseDoublePrecision,
                     Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
                 break;
@@ -296,7 +316,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return solver;
         }
 
-        BlockMsrMatrix m_Mtx;
+        public BlockMsrMatrix m_Mtx;
         int IterCnt = 1;
 
 
@@ -440,7 +460,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(m_Solver != null)
                 m_Solver.Dispose();
             m_Solver = null;
-            this.m_Mtx = null;
+			this.MatrixNMapping = null;
+			this.m_Mtx = null;
         }
 
         public long UsedMemory() {

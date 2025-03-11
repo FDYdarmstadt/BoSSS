@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh, usePhoretic, AllParticles);
                 AddVariableNames(Solution.NSECommon.VariableNames.VelocityVector(D).Cat(Solution.NSECommon.VariableNames.Pressure));
                 AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray());
-                AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.SurfaceForceVector(D)).ToArray());
+                AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.OrientationVector(D)).ToArray());
             }
 
 
@@ -71,15 +71,17 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                     default: throw new NotSupportedException($"Unknown fluid species: {this.m_fluidPhase}");
                 }
 
-                // convective operator
-                // ===================
-                if(physParams.IncludeConvection && config.isTransport) {
-                    var ConvIB = new ConvectionAtIB( d, D, LFF, boundaryMap, rho, isMovingMesh, m_iLevSet, m_fluidPhase, m_solidPhase, true);
-                    AddComponent(ConvIB);
-                }
-                if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+            // convective operator
+            // ===================
+            if (physParams.IncludeConvection && config.isTransport) {
+                if (AllParticles[0].ActiveStress != 0)
+                    throw new NotImplementedException("Convective transport not implemented for active particles");
+                var ConvIB = new ConvectionAtIB(d, D, LFF, boundaryMap, rho, isMovingMesh, m_iLevSet, m_fluidPhase, m_solidPhase, true);
+                AddComponent(ConvIB);
+            }
+            if (isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
                     // if Moving mesh, we need the interface transport term somehow
-                    throw new NotImplementedException("Something missing here.");
+                    throw new NotImplementedException("Convective terms for active boundary in case of moving mesh are unknown (Feb 2022).");
                 }
 
                 // pressure gradient
@@ -96,7 +98,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                     switch(dntParams.ViscosityMode) {
                         case ViscosityMode.Standard:
                         case ViscosityMode.TransposeTermMissing:
-                        AddComponent(new ViscosityAtIB(d, D, AllParticles, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, usePhoretic));
+                        AddComponent(new ViscosityAtIB(d, D, AllParticles, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, usePhoretic));
                         break;
                         case ViscosityMode.FullySymmetric:
                         case ViscosityMode.Viscoelastic:

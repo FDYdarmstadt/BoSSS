@@ -142,21 +142,22 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
             double polar1 = Interpolate(radius, Radius[i1][j_11], Radius[i1][j_12], PolarVel[i1][j_11], PolarVel[i1][j_12]);
             double polar2 = Interpolate(radius, Radius[i2][j_21], Radius[i2][j_22], PolarVel[i2][j_21], PolarVel[i2][j_22]);
-            double v_polar = Interpolate(theta, Theta[i1], Theta[i2], polar1, polar2);
+            double v_theta = Interpolate(theta, Theta[i1], Theta[i2], polar1, polar2);
 
             double radial1 = Interpolate(radius, Radius[i1][j_11], Radius[i1][j_12], RadialVel[i1][j_11], RadialVel[i1][j_12]);
             double radial2 = Interpolate(radius, Radius[i2][j_21], Radius[i2][j_22], RadialVel[i2][j_21], RadialVel[i2][j_22]);
             double v_radial = Interpolate(theta, Theta[i1], Theta[i2], radial1, radial2);
 
-            /*
-            double Vxy = Math.Cos(theta)*v_radial
-                + Math.Sin(theta)*v_theta;
-            double Vz = Math.Sin(theta)*v_radial
-                - Math.Cos(theta)*v_theta;
-            */
 
-            double Vxy = v_radial*Math.Sin(theta) + v_polar*Math.Cos(theta);        
-            double Vz = v_radial*Math.Cos(theta) - v_polar*Math.Sin(theta);         
+            //double Vxy = Math.Cos(theta)*v_radial
+            //    + Math.Sin(theta)*v_theta;
+            //double Vz = Math.Sin(theta)*v_radial
+            //    - Math.Cos(theta)*v_theta;
+            double Vxy = v_radial * Math.Sin(theta)
+                + v_theta * Math.Cos(theta);
+            double Vz = v_radial * Math.Cos(theta)
+                - v_theta * Math.Sin(theta);
+     
 
             var Vel = new Vector(Dx * Vxy, Dy * Vxy, Vz);
 

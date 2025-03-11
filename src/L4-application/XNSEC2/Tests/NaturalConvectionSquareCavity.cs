@@ -59,6 +59,7 @@ namespace BoSSS.Application.XNSEC {
             C.timeDerivativeEnergyp0_OK = false;
             C.timeDerivativeConti_OK = false;
             C.PhysicalParameters.IncludeConvection = true;
+            C.ImmediatePlotPeriod = 1;
             return C;
         } 
 

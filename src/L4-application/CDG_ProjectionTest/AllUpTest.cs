@@ -28,7 +28,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
     static public class AllUpTest {
 
         /// <summary>
-        /// case 1, 2, 3
+        /// case 0, 1, 2
         /// </summary>
         [Test]
         static public void AllUp_globalOnly(
@@ -37,16 +37,39 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(2)] int dimension,
             [Values(2)] int degree,
             [Values(2, 4)] int gridResolution,
+            [Values(0, 1)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
 #else
             [Values(0, 1, 2)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
 #endif
             ) {
-            AllUp(caseNo, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.globalOnly);
+            AllUp(caseNo, dimension, degree, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.globalOnly);
+        }
+
+        /// <summary>
+        /// case 0
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case0(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            //[Values(0, 2)] int AMRlevel,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(0, dimension, degree, gridResolution, 0, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
         }
 
         /// <summary>
@@ -58,63 +81,137 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(2)] int dimension,
             [Values(2)] int degree,
             [Values(2, 4)] int gridResolution,
+            [Values(0, 1)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
 #else
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis
 #endif
             ) {
-            AllUp(1, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+            AllUp(1, dimension, degree, gridResolution, AMRlevel, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
         }
 
         /// <summary>
         /// case 2
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly_case2(
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p2(
 #if DEBUG
             [Values(2)] int dimension,
-            [Values(2)] int degree,
             [Values(2, 4)] int gridResolution,
-            [Values(true, false)] bool projectOnSameBasis
+            [Values(0, 1)] int AMRlevel
 #else
             [Values(2, 3)] int dimension,
-            [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
-            [Values(true, false)] bool projectOnSameBasis
+            [Values(0, 2)] int AMRlevel
 #endif
             ) {
-            AllUp(2, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+            AllUp(2, dimension, 2, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
+        }
+        
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p2(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2, 4)] int gridResolution,
+            [Values(0, 1)] int AMRlevel
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+#endif
+            ) {
+            AllUp(2, dimension, 2, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
+        }
+
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p3(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 3, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
         }
 
         /// <summary>
-        /// case 3
+        /// case 2
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly_case3(
-#if DEBUG
-            [Values(2)] int dimension,
-            [Values(2)] int degree,
-            [Values(2, 4)] int gridResolution,
-            [Values(true, false)] bool projectOnSameBasis
-#else
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p3(
             [Values(2, 3)] int dimension,
-            [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
-            [Values(true, false)] bool projectOnSameBasis
-#endif
+            [Values(0, 2)] int AMRlevel
             ) {
-            AllUp(3, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+            AllUp(2, dimension, 3, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
         }
-        
+#if! DEBUG
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p4_grd2n4(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p4_grd2n4(
+            [Values(2, 3)] int dimension,
+            [Values(2, 4)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
+        }
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_sameDegree_p4_grd8(
+            [Values(2, 3)] int dimension,
+            [Values(8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, true, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2_higherDegree_p4_grd8(
+            [Values(2, 3)] int dimension,
+            [Values(8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel
+            ) {
+            AllUp(2, dimension, 4, gridResolution, AMRlevel, false, ProjectionStrategy.patchwiseOnly);
+        }
+#endif
+
+
+
         static public void AllUp(
 #if DEBUG
             [Values(0, 1, 2)] int caseNo,
             [Values(2)] int dimension,
             [Values(2)] int degree,
             [Values(2, 4)] int gridResolution,
+            [Values(0, 1)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
 #else
@@ -122,6 +219,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
 #endif
@@ -129,7 +227,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             CDGprojectionMain p = null;
             if (caseNo == 0 && dimension == 3
-                || dimension == 3 && degree > 2 && gridResolution == 8)
+                || dimension == 3 && degree > 2 && gridResolution == 8
+                || caseNo == 0 && AMRlevel > 0)
                 return;
 
             BoSSS.Solution.Application._Main(new string[0], true, delegate () {
@@ -138,6 +237,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 p.dimension = dimension;
                 p.degree = degree;
                 p.gridResolution = gridResolution;
+                p.AMRlevel = AMRlevel;
                 p.projectOnSameBasis = projectOnSameBasis;
                 p.projectStrategy = projectStrategy;
                 return p;
@@ -156,12 +256,14 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(2)] int dimension,
             [Values(2)] int degree,
             [Values(4)] int gridResolution,
+            [Values(0, 1)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
 #else
             [Values(3, 4, 5)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
+            [Values(0, 2)] int AMRlevel,
             [Values(4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
@@ -178,6 +280,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 p.dimension = dimension;
                 p.degree = degree;
                 p.gridResolution = gridResolution;
+                p.AMRlevel = AMRlevel;
                 p.projectOnSameBasis = projectOnSameBasis;
                 p.projectStrategy = projectStrategy;
                 return p;
@@ -195,6 +298,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(2)] int dimension,
             [Values(2)] int degree,
             [Values(2, 4)] int gridResolution,
+            [Values(0, 1)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
 
@@ -202,6 +306,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
+            [Values(0, 2)] int AMRlevel,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
 #endif
@@ -218,6 +323,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 p.dimension = dimension;
                 p.degree = degree;
                 p.gridResolution = gridResolution;
+                p.AMRlevel = AMRlevel;
                 p.projectOnSameBasis = projectOnSameBasis;
                 p.projectStrategy = projectStrategy;
                 return p;

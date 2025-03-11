@@ -98,6 +98,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             if (config.physParams.IncludeConvection && config.isTransport) {
                 var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
                 AddComponent(conv);
             }
 

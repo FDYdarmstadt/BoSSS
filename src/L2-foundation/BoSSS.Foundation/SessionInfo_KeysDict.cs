@@ -22,7 +22,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using ilPSP;
-
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.IO {
     public partial class SessionInfo {
@@ -82,15 +82,16 @@ namespace BoSSS.Foundation.IO {
                 }
             }
             
+     
+
+
             public object this[string key] {
                 get {
-                    
                     if (key == null)
                         throw new ArgumentNullException();
                     int idx = m_Keys.IndexOf(key,(a, b) => a.Equals(b));
                     if (idx < 0)
                         throw new KeyNotFoundException();
-
                     return m_Values[idx];
                 }
                 set {
@@ -175,7 +176,8 @@ namespace BoSSS.Foundation.IO {
             }
 
             public bool ContainsKey(string key) {
-                return (m_Keys.IndexOf(key, (a, b) => a.Equals(b)) >= 0);
+                bool r = (m_Keys.IndexOf(key, (a, b) => a.Equals(b)) >= 0);
+                return r;
             }
 
             public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex) {

@@ -65,7 +65,7 @@ namespace CutCellQuadrature {
                         case 1: {
                                 // Cell not really cut
                                 MultidimensionalArray levelSetValue = tracker.DataHistories[0].Current.GetLevSetValues(
-                                    new NodeSet(RefElement, new double[2]), cell, 1);
+                                    new NodeSet(RefElement, new double[2], false), cell, 1);
                                 if (Math.Sign(levelSetValue.Storage[0]) < 0) {
                                     // Cell is completely void
                                     QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, 2);
@@ -162,7 +162,7 @@ namespace CutCellQuadrature {
             Vector n = new Vector(-(q[1] - p[1]), q[0] - p[0]);
 
             // Use gradient of first root to determine correct direction of normal vector
-            NodeSet bla = new NodeSet(RefElement, firstNode);
+            NodeSet bla = new NodeSet(RefElement, firstNode, false);
             MultidimensionalArray gradient = tracker.DataHistories[0].Current.GetLevelSetGradients(bla, cell, 1);
             Vector gradientVector = new Vector(
                 gradient[0, 0, 0], gradient[0, 0, 1]);

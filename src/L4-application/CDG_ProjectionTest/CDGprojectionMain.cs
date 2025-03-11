@@ -31,6 +31,10 @@ using BoSSS.Solution.Utils;
 using System.Collections;
 using NUnit.Framework;
 using BoSSS.Foundation.XDG;
+using ilPSP.Tracing;
+using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Linq;
 
 namespace BoSSS.Application.CDG_ProjectionTest {
 
@@ -41,16 +45,17 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         static void Main(string[] args) {
 
-            //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(2, 3, 2, 8, true, ProjectionStrategy.patchwiseOnly);
-            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(1, 3, 2, 4, false, ProjectionStrategy.patchwiseOnly);
-            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(0, 2, 2, 2, true, ProjectionStrategy.globalOnly);
-            //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
-            //AUT.AllUp(4, 3, 4, 2, false, ProjectionStrategy.globalOnly);
-            ////AUT.AllUp_Cube(3, 4, 4, true);
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp_patchwiseOnly_case2_sameDegree_p3(3, 4, 2);
+            ////BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(2, 3, 2, 8, true, ProjectionStrategy.patchwiseOnly);
+            ////BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(1, 3, 2, 4, false, ProjectionStrategy.patchwiseOnly);
+            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(2, 2, 2, 2, 2, true, ProjectionStrategy.globalOnly);
+            ////var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
+            ////AUT.AllUp(4, 3, 4, 2, false, ProjectionStrategy.globalOnly);
+            //////AUT.AllUp_Cube(3, 4, 4, true);
             //BoSSS.Solution.Application.FinalizeMPI();
-            //Assert.IsTrue(false, "Remove me");
-            //return;
+            Assert.IsTrue(false, "Remove me");
+            return;
 
             BoSSS.Solution.Application._Main(args, true, delegate () {
                 CDGprojectionMain p = new CDGprojectionMain();
@@ -58,13 +63,14 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             });
         }
 
-        internal int dimension = 3;
-        internal int gridResolution = 8;
+        internal int dimension = 2;
+        internal int gridResolution = 4;
+        internal int AMRlevel = 0;
         internal int degree = 2;
         internal bool projectOnSameBasis = false;   // if false projection on a DG basis with degree + 1
-        internal int projectionCase = 5;
+        internal int projectionCase = 0;
 
-        internal ProjectionStrategy projectStrategy = ProjectionStrategy.patchwiseOnly;
+        internal ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly;
 
 
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
@@ -96,6 +102,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             return base.ComputeNewCellDistribution(TimeStepNo, physTime);
         }
 
+        double[] refinementPoint;
+
 
         protected override IGrid CreateOrLoadGrid() {
 
@@ -123,16 +131,19 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                     case 2: {
                         grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: false, periodicY: false);
                         //grid = Grid2D.Cartesian2DGrid(nodes, node2, periodicX: false, periodicY: false);
+                        refinementPoint = new double[] { 0.55, 0.55 };
                         break;
                     }
                     case 3:
                     case 4:
                     case 5: {
                         grid = Grid2D.Cartesian2DGrid(droplet_z, droplet_z, periodicX: false, periodicY: false);
+                        refinementPoint = new double[] { 0.6, 0.5 };
                         break;
                     }
                     case 6: {
                         grid = Grid2D.Cartesian2DGrid(cube, cube, periodicX: false, periodicY: false);
+                        refinementPoint = new double[] { 0.25, 0.25 };
                         break;
                     }
                     default:
@@ -143,17 +154,20 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                     case 1:
                     case 2: {
                         grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: false, periodicY: false, periodicZ: false);
-                        break;
+                            refinementPoint = new double[] { 0.55, 0.55, 0.55 };
+                            break;
                     }
                     case 3:
                     case 4:
                     case 5: {
                         grid = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z, periodicX: false, periodicY: false, periodicZ: false);
-                        break;
+                            refinementPoint = new double[] { 0.6, 0.6, 0.5 };
+                            break;
                     }
                     case 6: {
                         grid = Grid3D.Cartesian3DGrid(cube, cube, cube, periodicX: false, periodicY: false, periodicZ: false);
-                        break;
+                            refinementPoint = new double[] { 0.25, 0.25, 0.25 };
+                            break;
                     }
                     default:
                         throw new ArgumentException("no such projection case available");
@@ -164,6 +178,57 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             return grid;
 
         }
+
+
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            using (var tr = new FuncTrace()) {
+
+                if (AMRlevel > 0) {
+
+                    // Check grid changes
+                    // ==================
+
+                    int[] desiredLevels = new int[this.GridData.CellPartitioning.TotalLength];
+                    this.GridData.LocatePoint(refinementPoint, out long GlobalID, out long GlobalIndex, out bool IsInside, out bool OnThisProc);
+                    desiredLevels[GlobalIndex] = AMRlevel;
+
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if (AnyChange.MPIOr()) {
+                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                        NoOfCellsToRefine = glb[0];
+                        NoOfCellsToCoarsen = glb[1];
+                    }
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                    // Update Grid
+                    // ===========
+                    if (AnyChange.MPIOr()) {
+
+                        Console.WriteLine(" Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                    } else {
+
+                        newGrid = null;
+                        old2NewGrid = null;
+                    }
+
+                } else {
+
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+            }
+        }
+
+
 
         SinglePhaseField origin;
         SinglePhaseField result;
@@ -183,9 +248,18 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }
+
+
+        protected override void SetInitial(double time) {
+
+            this.Control.AdaptiveMeshRefinement = (this.AMRlevel > 0) ? true : false;
+            this.Control.AMR_startUpSweeps = this.AMRlevel;
+
+            base.SetInitial(time);
+        }
+
 
         public bool passed = false;
 
@@ -525,8 +599,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                             MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
                             MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
 
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT);
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT, false);
 
                             f.Evaluate(jCell_IN, 1, NS_IN, uIN);
                             f.Evaluate(jCell_OT, 1, NS_OT, uOT);

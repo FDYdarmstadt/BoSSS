@@ -44,7 +44,7 @@ namespace ilPSP {
 
             int[] _BlockType = new int[LocalNoOfBlocks];
             long firstBlock = othrPart.FirstBlock;
-            int NoOfBlockTypes = 0;
+            int NoOfBlockTypes = -1;
             for(int iBlockLoc = 0; iBlockLoc < LocalNoOfBlocks; iBlockLoc++) {
                 long globBlock = iBlockLoc + firstBlock;
                 int blockType = othrPart.GetBlockType(globBlock);
@@ -62,10 +62,14 @@ namespace ilPSP {
             
 
             if(othrPart.AllBlockSizesEqual) {
-                if(othrPart.LocalNoOfBlocks > 0)
-                    FrameBlockSize = checked((int)(othrPart.GetBlockI0(firstBlock + 1) - othrPart.GetBlockI0(firstBlock)));
-                else
+                if (othrPart.LocalNoOfBlocks > 0) {
+                    if (othrPart.LocalNoOfBlocks > 1)
+                        FrameBlockSize = checked((int)(othrPart.GetBlockI0(firstBlock + 1) - othrPart.GetBlockI0(firstBlock)));
+                    else
+                        FrameBlockSize = othrPart.LocalLength;
+                } else {
                     FrameBlockSize = 0; // phatologic case, somehow
+                }
             } else {
                 FrameBlockSize = -2356675;
             }
@@ -609,6 +613,14 @@ namespace ilPSP {
             }
         }
 
+        public override String ToString() {
+            string st = "";
+            var ListOfProperties = this.GetType().GetProperties();
+            foreach (var Prop in ListOfProperties)
+                st += $"{Prop.Name}: {Prop.GetValue(this)} ({Prop.PropertyType}) \n";
+
+            return st;
+        }
         public bool AllBlockSizesEqual {
             get {
                 Debug.Assert(m_FrameBlockSize != 0);

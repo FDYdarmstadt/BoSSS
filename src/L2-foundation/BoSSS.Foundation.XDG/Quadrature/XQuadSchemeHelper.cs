@@ -56,8 +56,8 @@ namespace BoSSS.Foundation.XDG {
         /// If true, <see cref="GetEdgeGhostScheme(SpeciesId, EdgeMask)"/> is supported, otherwise not.
         /// </summary>
         /// <remarks>
-        /// Currently (april2016), nobody is using this feature (<see cref="XSpatialOperator.GhostEdgesOperator"/>),
-        /// therefore this is hardcoded to false.
+        /// Currently (april2016), nobody is using this feature,
+        /// therefore this is hard-coded to false.
         /// </remarks>
         public bool GhostSupport {
             get {
@@ -605,7 +605,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Quadrature scheme which is used for the penalty components in <see cref="XSpatialOperator.GhostEdgesOperator"/>, for species <paramref name="sp"/>.
+        /// Quadrature scheme which is used for the penalty components on ghost edges, for species <paramref name="sp"/>.
         /// </summary>
         public EdgeQuadratureScheme GetEdgeGhostScheme(SpeciesId sp, EdgeMask IntegrationDomainRestriction = null) {
             if (!this.SpeciesList.Contains(sp))
@@ -731,7 +731,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // now: rules for the cut-cells:
                 for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
-                    if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
+                    if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {                    // it seems that with this usage it checks if both sides of this level set are different species (which can happen like {A,A})
                         var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
                         var cutCells = cutDom.Intersect(CellMask);
 
@@ -748,8 +748,8 @@ namespace BoSSS.Foundation.XDG {
 
                 //now: rules for the doubly cut-cells
                 for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
-                    if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
-                        var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
+                    if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {                    // it seems that with this usage it checks if both sides of this level set are different species (which can happen like {A,A})
+					var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
                         var cutCells = cutDom.Intersect(CellMask);
 
                         var jmp = IdentifyWingA(iLevSet, sp);

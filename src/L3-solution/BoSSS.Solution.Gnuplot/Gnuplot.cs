@@ -118,7 +118,7 @@ namespace BoSSS.Solution.Gnuplot {
             int NN = upsampling;
             simplex = c.iGeomCells.GetRefElement(0);
 
-            localNodes = new NodeSet(simplex, NN, 1);
+            localNodes = new NodeSet(simplex, NN, 1, false);
             double left = simplex.Vertices[0, 0];
             double right = simplex.Vertices[1, 0];
             if (NN >= 2) {
@@ -577,6 +577,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="writeSlope"> triangle with slope </param>
         /// <param name="size"> size of the triangle, good value to try is 10% of x-Axis length </param>
         /// <param name="pos"> position of triangle, 'a' = auto, 'r'=right, 'l' = left</param>
+        /// <param name="round"></param>
         public void PlotLogSlope(double slope, double[] intercept, string title = null, PlotFormat format = null, bool deferred = true, bool useX2 = false, bool useY2 = false, bool writeSlope = true, double size = -1, char pos = 'a', double round = 0.0) {
 
             if (round > 0.0) {

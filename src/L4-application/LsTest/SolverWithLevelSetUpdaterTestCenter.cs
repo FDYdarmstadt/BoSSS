@@ -144,7 +144,7 @@ namespace BoSSS.Application.LsTest {
         /// <param name="D"></param>
         /// <param name="levelSetUpdater"></param>
         /// <returns></returns>
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             // Collect equation components
             Dictionary<string, List<IEquationComponent>> components = new Dictionary<string, List<IEquationComponent>>();
@@ -159,18 +159,13 @@ namespace BoSSS.Application.LsTest {
             }
 
             // Get Spatial Operator
-            XSpatialOperatorMk2 XOP = new XSpatialOperatorMk2(components.Keys.Select(k => k).ToList(), components.Keys.Select(k => k).ToList(), (x,y,z) => this.QuadOrder(), LsTrk.SpeciesNames); // these are dummy fields
+            XDifferentialOperatorMk2 XOP = new XDifferentialOperatorMk2(components.Keys.Select(k => k).ToList(), components.Keys.Select(k => k).ToList(), (x,y,z) => this.QuadOrder(), LsTrk.SpeciesNames); // these are dummy fields
             foreach(var kvp in components) {
                 foreach(var comp in kvp.Value) {
                     XOP.EquationComponents[kvp.Key].Add(comp);
                 }
             }
-            XOP.AgglomerationThreshold = 0.1;
-            AgglomerationAlgorithm.RecoverFromAgglomerationFail = true;
-            if (AgglomerationAlgorithm.RecoverFromAgglomerationFail) {
-                Console.WriteLine("Careful activated experimental agglomeration fail recovery - i.e. do not agglomerate when no target is found");
-                AgglomerationAlgorithm.Katastrophenplot = null; // no plotting for agglomeration fails
-            }
+            XOP.AgglomerationThreshold = 0.1;            
             XOP.TemporalOperator = new ConstantXTemporalOperator(XOP, 0.0);
 
             // === level set related parameters === //

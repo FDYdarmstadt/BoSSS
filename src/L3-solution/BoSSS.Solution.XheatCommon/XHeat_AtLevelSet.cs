@@ -12,6 +12,7 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using System.Collections;
 using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.XheatCommon {
 
@@ -867,14 +868,14 @@ namespace BoSSS.Solution.XheatCommon {
             // ==========================
             double[] VelocityMeanIn = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanIn[d] = U_Neg[1 + d];
+                VelocityMeanIn[d] = cp.Parameters_IN[d];
             }
 
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
 
             double[] VelocityMeanOut = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanOut[d] = U_Pos[1 + d];
+                VelocityMeanOut[d] = cp.Parameters_OUT[d];
             }
 
 
@@ -995,6 +996,11 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0MeanVector(m_D));
+            }
+        }
 
 
         public override TermActivationFlags LevelSetTerms {
@@ -1383,7 +1389,77 @@ namespace BoSSS.Solution.XheatCommon {
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class HeatSourceAtLevelSet : ILevelSetForm, ISupportsJacobianComponent {
 
+        //LevelSetTracker m_LsTrk;
+        string phaseA, phaseB;
+        public HeatSourceAtLevelSet(int SpatialDim, Formula HeatSource, string phaseA, string phaseB, int iLevSet = 0) {
+            this.m_D = SpatialDim;
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            this.source = HeatSource;
+
+            this.iLevSet = iLevSet;
+        }
+
+        int m_D;
+        int iLevSet;
+        Formula source;
+
+        /// <summary>
+        /// default-implementation
+        /// </summary>
+        public double InnerEdgeForm(ref CommonParams inp,
+        //public override double EdgeForm(ref Linear2ndDerivativeCouplingFlux.CommonParams inp,
+            double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            Debug.Assert(inp.jCellIn == inp.jCellOut);
+
+            double Ret = -0.5 * source.Evaluate(inp.X, inp.time) * (vA + vB);            
+
+            Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
+            return Ret;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+        public int LevelSetIndex {
+            get { return iLevSet; }
+        }
+
+        public IList<string> ArgumentOrdering {
+            get { return new string[0]; }
+        }
+
+        public string PositiveSpecies {
+            get { return phaseB; }
+        }
+
+        public string NegativeSpecies {
+            get { return phaseA; }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return null;
+            }
+        }
+
+    }
 
     /// <summary>
     /// 
@@ -1392,7 +1468,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         //LevelSetTracker m_LsTrk;
         string phaseA, phaseB;
-        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0) {
+        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0, IBM_ThermalBoundaryType bndTyp = IBM_ThermalBoundaryType.NoSlip) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
@@ -1405,9 +1481,10 @@ namespace BoSSS.Solution.XheatCommon {
             this.Tsat = _Tsat;
             this.iLevSet = iLevSet;
             //m_LsTrk = lstrk;
-
+            this.bndTyp = bndTyp;
         }
 
+        IBM_ThermalBoundaryType bndTyp;
         double kA;
         double kB;
 
@@ -1438,24 +1515,42 @@ namespace BoSSS.Solution.XheatCommon {
             Debug.Assert(Grad_uA.GetLength(1) == m_D);
             Debug.Assert(Grad_uB.GetLength(1) == m_D);
 
-            double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
-            for (int d = 0; d < m_D; d++) {
-                Grad_uA_xN += Grad_uA[0, d] * N[d];
-                Grad_uB_xN += Grad_uB[0, d] * N[d];
-                Grad_vA_xN += Grad_vA[d] * N[d];
-                Grad_vB_xN += Grad_vB[d] * N[d];
-            }
-
-            double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
-            double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
-
             double Ret = 0.0;
+            switch (bndTyp) {
+                case IBM_ThermalBoundaryType.NoSlip: {
+                        double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
+                        for (int d = 0; d < m_D; d++) {
+                            Grad_uA_xN += Grad_uA[0, d] * N[d];
+                            Grad_uB_xN += Grad_uB[0, d] * N[d];
+                            Grad_vA_xN += Grad_vA[d] * N[d];
+                            Grad_vB_xN += Grad_vB[d] * N[d];
+                        }
 
-            Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
-            Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+                        double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
+                        double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
 
-            Ret += pnlty * wPenalty * (uA[0] - uB[0]) * (vA - vB); // penalty term
 
+                        Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                        Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+
+                        Ret += pnlty * wPenalty * (uA[0] - uB[0]) * (vA - vB); // penalty term
+                        break;
+                    }
+                case IBM_ThermalBoundaryType.ThermalSlip: {
+                        double ls = Lslip[inp.jCellIn];
+
+                        if (ls == 0.0)
+                            goto case IBM_ThermalBoundaryType.NoSlip;
+
+                        // robin b.c.
+                        // +++++++++++++++++++++
+                        //Ret += 0.5 * kA / ls * (uA[0] - uB[0]) * (vA - 0.0); // half the slip length from bot sides
+                        //Ret += 0.5 * kB * (kA / kB) / ls * (uA[0] - uB[0]) * (0.0 - vB); // sliplength defined from A-side, we want the Heatfluxes to be continuous, therefore we need kA/kB
+                        double alpha = (kA + kB) / (2 * ls);
+                        Ret += alpha * (uA[0] - uB[0]) * (vA - vB);
+                        break;
+                    }
+            }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
@@ -1463,6 +1558,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         BitArray evapMicroRegion;
 
+        /// <summary>
+        /// slip-length for the thermal slip B.C.
+        /// </summary>
+        protected MultidimensionalArray Lslip;
 
         /// <summary>
         /// base multiplier for the penalty computation
@@ -1523,6 +1622,11 @@ namespace BoSSS.Solution.XheatCommon {
 
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+            if (csA.UserDefinedValues != null) {
+                if (csA.UserDefinedValues.Keys.Contains("ThermalSlipLengths"))
+                    Lslip = (MultidimensionalArray)csA.UserDefinedValues["ThermalSlipLengths"];
+            }
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

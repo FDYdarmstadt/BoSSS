@@ -56,25 +56,25 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// See <see cref="ImplicitTimeStepper"/>
         /// </summary>
-        public CrankNicolson(ISparseSolverExt solver, SpatialOperator spatialOp, CoordinateMapping fields)
+        public CrankNicolson(ISparseSolverExt solver, DifferentialOperator spatialOp, CoordinateMapping fields)
             : this(solver, AllTrue(fields.Fields.Count), spatialOp, fields) { }
 
         /// <summary>
         /// See <see cref="ImplicitTimeStepper"/>
         /// </summary>
-        public CrankNicolson(ISparseSolverExt solver, bool[] temporalOp, SpatialOperator spatialOp, CoordinateMapping fields)
+        public CrankNicolson(ISparseSolverExt solver, bool[] temporalOp, DifferentialOperator spatialOp, CoordinateMapping fields)
             : base(solver, temporalOp, spatialOp, fields) { }
 
         /// <summary>
         /// See <see cref="ImplicitTimeStepper"/>
         /// </summary>
-        public CrankNicolson(ISparseSolverExt solver, SpatialOperator spatialOp, params DGField[] fields)
+        public CrankNicolson(ISparseSolverExt solver, DifferentialOperator spatialOp, params DGField[] fields)
             : this(solver, AllTrue(fields.Length), spatialOp, fields) { }
 
         /// <summary>
         /// See <see cref="ImplicitTimeStepper"/>
         /// </summary>
-        public CrankNicolson(ISparseSolverExt solver, bool[] temporalOp, SpatialOperator spatialOp, params DGField[] fields)
+        public CrankNicolson(ISparseSolverExt solver, bool[] temporalOp, DifferentialOperator spatialOp, params DGField[] fields)
             : this(solver, temporalOp, spatialOp, new CoordinateMapping(fields)) { }
 
         /// <summary>

@@ -272,7 +272,7 @@ namespace BoSSS.Solution.XNSECommon {
                     if (config.isRecoilPressure) {
                         AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
                     }
-                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getPhysParams, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
                     AddComponent(new ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(d, D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
                  
             } else {
@@ -350,6 +350,7 @@ namespace BoSSS.Solution.XNSECommon {
                 if (NonLinSolverCode == NonLinearSolverCode.Newton) {
                     var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
                     AddComponent(conv);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]); // we still use this for penalty computation
                 } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
                     var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
                     AddComponent(conv);

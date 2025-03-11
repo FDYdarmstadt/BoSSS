@@ -209,7 +209,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Spatial operator 
         /// </summary>
-        SpatialOperator XOP;
+        DifferentialOperator XOP;
 
      
         /// <summary>
@@ -298,7 +298,7 @@ namespace BoSSS.Application.Rheology {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_Timestepper.DataBackupBeforeBalancing(L);
         }
 
@@ -307,7 +307,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Initialize Calculation, Create Equations
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             int D = this.GridData.SpatialDimension;
 
             if (XOP != null && L == null && Control.Weissenberg == 0.0)
@@ -346,7 +346,7 @@ namespace BoSSS.Application.Rheology {
 
                     string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
-                    XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinearWithoutParameters(2));
+                    XOP = new DifferentialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinearWithoutParameters(2));
 
                     // Development switches to turn specific components on or off, 
                     // for the sake of iterative solver testing:
@@ -559,7 +559,7 @@ namespace BoSSS.Application.Rheology {
                     m_Timestepper = new XdgTimestepping(XOP, 
                         this.CurrentSolution.Fields, this.CurrentResidual.Fields, 
                         Control.TimeSteppingScheme, 
-                        this.MultigridOperatorConfig, this.MultigridSequence, 
+                        this.MultigridOperatorConfig,
                         Control.LinearSolver, Control.NonLinearSolver, null, this.QueryHandler);
 
                     m_Timestepper.RegisterResidualLogger(this.ResLogger);
@@ -591,7 +591,6 @@ namespace BoSSS.Application.Rheology {
                 dt = base.GetTimestep();
 
 
-                int NoIncrementTimestep;
 
                 Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
                 var overallstart = DateTime.Now;
@@ -858,7 +857,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Only for testing / NUnit:
         /// checks whether the finite difference approximation of the Jacobian of <see cref="XOP"/>
-        /// and the Jacobian operator (<see cref="ISpatialOperator.GetJacobiOperator"/>)
+        /// and the Jacobian operator (<see cref="IDifferentialOperator.GetJacobiOperator"/>)
         /// provide approximately the same matrix and affine vector.
         /// </summary>
         internal void CheckJacobian() {
@@ -1324,14 +1323,17 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// automatized analysis of condition number 
         /// </summary>
-        public override IDictionary<string, double> OperatorAnalysis() {
+        public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
 
             int[] varGroup_convDiff = new int[] { 0, 1 };
             int[] varGroup_Stokes = new int[] { 0, 1, 2 };
             int[] varGroup_Constitutive = new int[] { 3, 4, 5 };
             int[] varGroup_all = new int[] { 0, 1, 2, 3, 4, 5 };
 
-            var res = m_Timestepper.TimesteppingBase.OperatorAnalysis(new[] {varGroup_convDiff, varGroup_Stokes, varGroup_Constitutive, varGroup_all });
+            var res = m_Timestepper.TimesteppingBase.OperatorAnalysis(new[] {varGroup_convDiff, varGroup_Stokes, varGroup_Constitutive, varGroup_all },
+                calculateGlobals: config.CalculateGlobalConditionNumbers,
+                calculateStencils: config.CalculateStencilConditionNumbers
+                );
 
             // filter only those results that we want;
             // this is a DG app, but it uses the LevelSetTracker; therefore, we want to filter analysis results for cut cells and only return uncut cells resutls

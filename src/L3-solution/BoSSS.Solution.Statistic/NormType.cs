@@ -20,7 +20,7 @@ namespace BoSSS.Solution.Statistic {
     public enum NormType {
 
         /// <summary>
-        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors_L2(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>; 
+        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors_L2(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, bool)"/>; 
         /// very accurate, but requires geometrically embedded meshes
         /// </summary>
         L2_embedded,
@@ -45,7 +45,7 @@ namespace BoSSS.Solution.Statistic {
 
         /// <summary>
         /// Approximate comparison, the mean value (average) of the DG fields is ignored.
-        /// This is typically used for comparing pressure in incompressible simpulations.
+        /// This is typically used for comparing pressure in incompressible simulations.
         /// 
         /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2noMean(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>.
         /// </summary>

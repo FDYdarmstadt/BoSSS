@@ -21,6 +21,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.LinSolvers.PARDISO;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
@@ -29,6 +30,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.AccessControl;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -61,6 +63,10 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        /// <summary>
+        /// If agglomeration plots are demanded. A flag for debugging purposes in the agglomeration algorithm.
+        /// </summary>
+        private static bool plotAgglomeration = false;
 
         /// <summary>
         /// The quadrature order used for computing cell volumes and edge areas.
@@ -140,20 +146,24 @@ namespace BoSSS.Foundation.XDG {
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
         /// this should typically be the same order which is used to evaluate the XDG operator matrix.
         /// </param>
+        /// <param name="Tag"> Tag to pass debug information </param>
         internal MultiphaseCellAgglomerator(
             LevelSetTracker lsTrk,
             SpeciesId[] Spc, int CutCellsQuadOrder,
             double __AgglomerationTreshold,
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true,
             double[] oldTs__AgglomerationTreshold = null,
-            double NewbornAndDecasedThreshold = 1.0e-6
+            double NewbornAndDecasedThreshold = 1.0e-6, string Tag = null
             ) {
-            MPICollectiveWatchDog.Watch();
+            MPICollectiveWatchDog.Watch(token: 158);
             if (__AgglomerationTreshold < 0.0 || __AgglomerationTreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
 
             if (NewbornAndDecasedThreshold < 0.0 || NewbornAndDecasedThreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
+
+            if (Tag == null)
+                Tag = "";
 
             this.Tracker = lsTrk;
 
@@ -227,19 +237,19 @@ namespace BoSSS.Foundation.XDG {
                 throw new Exception();
             }
             */
-
             // perform agglomeration
             foreach (var spc in this.SpeciesList) {
-                
-                                
+
+
 
                 var aggAlg = new AgglomerationAlgorithm(this.Tracker, spc, CutCellsQuadOrder,
                     AgglomerationThreshold, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold,
                     AgglomerateNewborn, AgglomerateDecased,
-                    ExceptionOnFailedAgglomeration
+                    ExceptionOnFailedAgglomeration, Tag
                     );
 
-                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
+                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairsWithRanks); // CellAgglomerator v2
+                //var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs); // CellAgglomerator v1
 
                 //int myRank = lsTrk.GridDat.MpiRank;
                 //foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
@@ -250,6 +260,15 @@ namespace BoSSS.Foundation.XDG {
             }
 
             this.TotalNumberOfAgglomerations = this.DictAgglomeration.Values.Sum(agg => agg.TotalNumberOfAgglomerations);
+
+            if (PlotAgglomeration) {
+                string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
+                for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
+                    AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString(Tracker)}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
+                }
+                Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
+                AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt",true);
+            }
 
             // compute metrics of AGGLOMERATED cut cells
             this.LengthScaleAgg();
@@ -267,12 +286,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        private Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>> GetFrameMatrices<M>(M Matrix, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
+        private Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>> GetFrameMatrices<M>(M Matrix, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
             where M : IMutableMatrixEx {
-            var ret = new Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>>();
+            var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var mtx_spc = new XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker.Regions, Species, RowMap, ColMap);
+                var mtx_spc = new XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker.Regions, Species, RowMap, ColMap);
                 ret.Add(Species, mtx_spc);
             }
 
@@ -339,6 +358,91 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
+
+        /// <summary>
+        /// returns the projection operator 
+        /// </summary>
+        /// <param name="RowMap"></param>
+        /// <param name="RowMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on.</param>
+
+        public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping RowMap, bool[] RowMapAggSw = null) {
+            var tt = GetManipulationMatrices(false, RowMap, null, RowMapAggSw, null);
+            return tt.LeftMul;
+        }
+
+
+        /// <summary>
+        /// returns the prolongation operator 
+        /// </summary>
+        /// <param name="ColMap"></param>
+        /// <param name="ColMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on. </param>
+
+        public BlockMsrMatrix GetColManipulationMatrix(UnsetteledCoordinateMapping ColMap, bool[] ColMapAggSw = null) {
+            var tt = GetManipulationMatrices(false, ColMap, null, ColMapAggSw, null);
+            return tt.LeftMul.Transpose();
+        }
+
+
+        (BlockMsrMatrix LeftMul, BlockMsrMatrix RightMul) GetManipulationMatrices(bool RequireRight, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap, bool[] RowMapAggSw = null, bool[] ColMapAggSw = null) {
+
+            bool RightIsDifferent;
+            if (RequireRight == false) {
+                // we don't need multiplication-from-the-right at all
+                RightIsDifferent = false;
+            } else {
+                if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
+                    // we can use the same matrix for right and left multiplication
+                    RightIsDifferent = false;
+
+                } else {
+                    // separate matrix for the multiplication-from-the-right is required
+                    RightIsDifferent = true;
+                }
+            }
+
+            BlockMsrMatrix LeftMul = null, RightMul = null;
+            {
+
+                foreach (var kv in DictAgglomeration) {
+                    var Species = kv.Key;
+                    var m_Agglomerator = kv.Value;
+
+                    if (m_Agglomerator != null) {
+
+                        CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
+
+                        MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
+                        BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
+                        if (LeftMul == null) {
+                            LeftMul = LeftMul_Species;
+                        } else {
+                            LeftMul.Acc(1.0, LeftMul_Species);
+                        }
+
+
+                        if (RightIsDifferent && RequireRight) {
+                            MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
+                            BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
+
+                            if (RightMul == null) {
+                                RightMul = RightMul_Species;
+                            } else {
+                                RightMul.Acc(1.0, RightMul_Species);
+                            }
+
+                        } else if (RequireRight) {
+                            RightMul = LeftMul;
+                        } else {
+                            RightMul = null;
+                        }
+                    }
+                }
+            }
+
+
+            return (LeftMul, RightMul);
+        }
+
         /// <summary>
         /// applies the agglomeration on a general matrix
         /// </summary>
@@ -370,59 +474,10 @@ namespace BoSSS.Foundation.XDG {
                 // generate agglomeration sparse matrices
                 // ======================================
 
-                int RequireRight;
-                if (Matrix == null) {
-                    // we don't need multiplication-from-the-right at all
-                    RequireRight = 0;
-                } else {
-                    if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
-                        // we can use the same matrix for right and left multiplication
-                        RequireRight = 1;
+                
 
-                    } else {
-                        // separate matrix for the multiplication-from-the-right is required
-                        RequireRight = 2;
-                    }
-                }
+                var (LeftMul, RightMul) = GetManipulationMatrices(Matrix != null, RowMap, ColMap, RowMapAggSw, ColMapAggSw);
 
-                BlockMsrMatrix LeftMul = null, RightMul = null;
-                {
-
-                    foreach (var kv in DictAgglomeration) {
-                        var Species = kv.Key;
-                        var m_Agglomerator = kv.Value;
-
-                        if (m_Agglomerator != null) {
-
-                            CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
-
-                            MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
-                            BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
-                            if (LeftMul == null) {
-                                LeftMul = LeftMul_Species;
-                            } else {
-                                LeftMul.Acc(1.0, LeftMul_Species);
-                            }
-
-
-                            if(RequireRight == 2) {
-                                MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
-                                BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
-
-                                if (RightMul == null) {
-                                    RightMul = RightMul_Species;
-                                } else {
-                                    RightMul.Acc(1.0, RightMul_Species);
-                                }
-
-                            } else if (RequireRight == 1) {
-                                RightMul = LeftMul;
-                            } else {
-                                RightMul = null;
-                            }
-                        }
-                    }
-                }
 
                 // apply the agglomeration to the matrix
                 // =====================================
@@ -443,8 +498,8 @@ namespace BoSSS.Foundation.XDG {
                         _Matrix.Clear();
                         _Matrix.Acc(1.0, AggMatrix);
                     } else {
-                        Matrix.Acc(-1.0, _Matrix); //   das ist so
-                        Matrix.Acc(1.0, AggMatrix); //  meagaschlecht !!!!!!
+                        Matrix.Acc(-1.0, _Matrix);
+                        Matrix.Acc(1.0, AggMatrix);
                     }
                 }
 
@@ -463,12 +518,12 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameVector<T>> GetFrameVectors<T>(T vec, UnsetteledCoordinateMapping Map)
+        Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameVector<T>> GetFrameVectors<T>(T vec, UnsetteledCoordinateMapping Map)
             where T : IList<double> {
-            var ret = new Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameVector<T>>();
+            var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameVector<T>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var vec_spc = new XSpatialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
+                var vec_spc = new XDifferentialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
                 ret.Add(Species, vec_spc);
             }
             return ret;
@@ -533,7 +588,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// In a vector <paramref name="vec"/>, this method performs a
+        /// For a list of DG fields, this method performs a
         /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
         /// </summary>
         public void Extrapolate(CoordinateMapping Map) {
@@ -562,6 +617,33 @@ namespace BoSSS.Foundation.XDG {
                 }
 
             }
+        }
+
+        /// <summary>
+        /// For a vector <paramref name="vec"/> 
+        /// which is interpreted as a set of DG fields,
+        /// defined through the mapping <paramref name="map"/>, 
+        /// this method performs a
+        /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
+        /// </summary>
+        public void Extrapolate<T>(T vec, UnsetteledCoordinateMapping map) where T : IList<double> {
+            var bs = map.BasisS.ToArray();
+            DGField[] fields = new DGField[bs.Length];
+            for (int i = 0; i < fields.Length; i++) {
+                var b = bs[i];
+                if (b is XDGBasis)
+                    fields[i] = new XDGField(b as XDGBasis);
+                else if (b is BoSSS.Foundation.Basis)
+                    fields[i] = new SinglePhaseField(b);
+                else
+                    throw new NotImplementedException();
+            }
+
+            var VecDG = new CoordinateVector(fields);
+            VecDG.SetV(vec);
+            Extrapolate(VecDG.Mapping);
+
+            vec.SetV(VecDG);
         }
 
 
@@ -655,6 +737,8 @@ namespace BoSSS.Foundation.XDG {
                 return gMaxLevel + 1;
             }
         }
+
+        public static bool PlotAgglomeration { get => plotAgglomeration; set => plotAgglomeration = value; }
 
         /// <summary>
         /// Initializes <see cref="CellLengthScales"/>,
@@ -784,7 +868,16 @@ namespace BoSSS.Foundation.XDG {
                         if(iLevel == 0) {
                             // convert un-cut volume into volume fraction
                             for(int j = 0; j < J; j++) {
-                                VolumeFrac[j] = CellVolume[j] / VolumeFrac[j]; 
+                                // if (Math.Abs(VolumeFrac[j]) < 1e-25) {
+                                //    Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
+                                //    VolumeFrac[j] = 1;
+                                // }
+                                double uncutVolume = VolumeFrac[j]; // so far, VolumeFrac[j] is the un-cut cell volume;
+                                if (!(VolumeFrac[j].IsNaNorInf() || Math.Abs(VolumeFrac[j]) < 1e25)){
+                                    VolumeFrac[j] = CellVolume[j] / VolumeFrac[j];
+                                    if (VolumeFrac[j] < 0 || VolumeFrac[j] > 1.1)
+                                        throw new ArithmeticException($"Agglomerated cell volume fraction is {VolumeFrac[j]}; expected to be between 0 and 1; cut cell volume = {CellVolume[j]}, un-cut volume = {uncutVolume}");
+                                }
                             }
                         }
 
@@ -799,18 +892,37 @@ namespace BoSSS.Foundation.XDG {
                     // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
                     CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
 
+                    var uncutLengthScale = Tracker.GridDat.Cells.CellLengthScale;
+
                     for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                         SpeciesId spc = species[iSpc];
                         MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
                         MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
                         MultidimensionalArray LengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
                         MultidimensionalArray VolumeFrac = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2);
-                        
+
                         // Loop includes external cells
                         for(int j = 0; j < JE; j++) {
-                            LengthScales[j] = CellVolume[j] / CellSurface[j];
-                            
-                            if(AgglomerationAlgorithm.RecoverFromAgglomerationFail) LengthScales[j] = Math.Max(LengthScales[j], BLAS.MachineEps * this.Tracker.GridDat.Cells.h_min[j]);
+                            // Note: the following un-guarded division might result in NaN's or Inf's.
+                            // (especially in void-cells, the NaN's are desired)
+                            // This is intended, since it will create exceptions in the penalty computation when something is wrong with the cut-cell integration domain.
+
+                            if (Math.Abs(CellSurface[j]) < 1e-25) {
+                                    LengthScales[j] = System.Double.NaN;
+                                } else {
+                                LengthScales[j] = CellVolume[j] / CellSurface[j]; // length scale is [Volume / Area]
+                                LengthScales[j] = Math.Max(LengthScales[j], BLAS.MachineEps * this.Tracker.GridDat.Cells.h_min[j]);
+                            }
+
+
+                            // Darios alternation:
+                            // if (Math.Abs(CellSurface[j]) < 1e-25) {
+                            //     // Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
+                            // LengthScales[j] = Math.Pow(CellVolume[j], 1.0/3);
+                            // } else {
+                            //     LengthScales[j] = CellVolume[j] / CellSurface[j];
+                            // }
+
                         }
 
 
@@ -824,7 +936,7 @@ namespace BoSSS.Foundation.XDG {
                                 double Fraction = VolumeFrac[j];
 
                                 if(Fraction <= 1.0e-10)
-                                    LengthScales[j] = 1e10;
+                                    LengthScales[j] = 1e10*uncutLengthScale[j];
                             }
                         }
                     }
@@ -839,7 +951,7 @@ namespace BoSSS.Foundation.XDG {
                     this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
                     this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
                     this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
-                    
+
                     for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                         SpeciesId spc = species[iSpc];
                         this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
@@ -852,5 +964,28 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+    
+    
+        /// <summary>
+        /// Prints human-readable information on the writer <paramref name="stw"/>
+        /// </summary>
+        public void PrintInfo(System.IO.TextWriter stw, bool verbose = true) {
+            var LsTrk = this.Tracker;
+
+            foreach (SpeciesId S in this.DictAgglomeration.Keys)
+                stw.WriteLine($"Species {LsTrk.GetSpeciesName(S)}, no. of agglomerated cells {GetAgglomerator(S).AggInfo.SourceCells.Count()} ");
+
+            if (!verbose)
+                return;
+
+            foreach (SpeciesId S in this.DictAgglomeration.Keys) {
+                stw.Write($"Species {LsTrk.GetSpeciesName(S)}, source cells are: ");
+                stw.Write(GetAgglomerator(S).AggInfo.SourceCells.GetSummary());
+                stw.Write(", in detail: ");
+                stw.Write(GetAgglomerator(S).AggInfo.AgglomerationPairs.ToConcatString("", ",", ";"));
+                stw.WriteLine();
+            }
+
+        }
     }
 }

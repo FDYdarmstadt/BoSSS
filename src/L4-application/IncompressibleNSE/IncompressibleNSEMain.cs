@@ -7,6 +7,8 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +20,14 @@ namespace BoSSS.Application.IncompressibleNSE {
     /// </summary>
     public class IncompressibleNSEMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<IncompressibleControl> {
 
+
+
+
+
         static void Main(string[] args) {
+
+
+
             _Main(args, false, delegate () {
                 var p = new IncompressibleNSEMain();
                 return p;
@@ -77,7 +86,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// <summary>
         /// Declaration of the spatial operator
         /// </summary>
-        protected override SpatialOperator GetOperatorInstance(int D) {
+        protected override DifferentialOperator GetOperatorInstance(int D) {
 
             // instantiate boundary condition mapping
             // ======================================
@@ -87,7 +96,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             // ====================
             string[] CodName = (new[] { "ResidualMomentumX", "ResidualMomentumY", "ResidualMomentumZ" }).GetSubVector(0, D).Cat("ResidualConti");
 
-            var op = new SpatialOperator(
+            var op = new DifferentialOperator(
                 __DomainVar: VariableNames.VelocityVector(D).Cat(VariableNames.Pressure),
                 __ParameterVar: VariableNames.GravityVector(D),
                 __CoDomainVar: CodName,

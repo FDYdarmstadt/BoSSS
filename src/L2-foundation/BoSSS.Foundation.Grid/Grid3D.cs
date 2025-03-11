@@ -115,12 +115,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int nY = yNodes.Length - 1;
                 int nZ = zNodes.Length - 1;
 
-                if (nX < 3 && periodicX)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
-                if (nY < 3 && periodicY)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
-                if (nZ < 3 && periodicZ)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
+                if (nX < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
+                if (nY < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
+                if (nZ < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
 
                 int myrank;
                 int size;
@@ -169,7 +169,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         new Vector { xNodes[nX], yNodes[nY], zNodes[0] },
                                         new Vector { xNodes[0], yNodes[nY], zNodes[nZ] }
                                         };
-                    grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 1.0, 0 }, Inlet, new double[] { 0, 1.00, 0 }, out peryTag);
+                    grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 1.0, 0 }, Inlet, new double[] { 0, 1.0, 0 }, out peryTag);
                     grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
                 }
 
@@ -367,7 +367,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = perxTag,
                                                 PeriodicInverse = false,
-                                                FaceIndex = (int)Cube.Edge.Right,
+                                                FaceIndex = (int)Cube.Faces.Right,
                                                 NeighCell_GlobalID = 0 + (jNeigh) * (nX) + kNeigh * (nX) * (nY)
                                             }).AddToArray(ref C_cnt.CellFaceTags);
                                             //System.Diagnostics.Debugger.Break();
@@ -380,7 +380,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = perxTag,
                                                 PeriodicInverse = true,
-                                                FaceIndex = (int)Cube.Edge.Left,
+                                                FaceIndex = (int)Cube.Faces.Left,
                                                 NeighCell_GlobalID = (nX - 1) + (jNeigh) * (nX) + kNeigh * nX * nY
                                             }).AddToArray(ref C_cnt.CellFaceTags);
                                             //System.Diagnostics.Debugger.Break();
@@ -395,7 +395,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = peryTag,
                                                 PeriodicInverse = false,
-                                                FaceIndex = (int)Cube.Edge.Top,
+                                                FaceIndex = (int)Cube.Faces.Top,
                                                 NeighCell_GlobalID = iNeigh + (0) * (nX) + kNeigh * (nX) * (nY)
                                             }).AddToArray(ref C_cnt.CellFaceTags);
                                         }
@@ -407,7 +407,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = peryTag,
                                                 PeriodicInverse = true,
-                                                FaceIndex = (int)Cube.Edge.Bottom,
+                                                FaceIndex = (int)Cube.Faces.Bottom,
                                                 NeighCell_GlobalID = iNeigh + (nY - 1) * (nX) + kNeigh * nX * nY
                                             }).AddToArray(ref C_cnt.CellFaceTags);
                                         }
@@ -421,7 +421,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = perzTag,
                                                 PeriodicInverse = false,
-                                                FaceIndex = (int)Cube.Edge.Front,
+                                                FaceIndex = (int)Cube.Faces.Front,
                                                 NeighCell_GlobalID = iNeigh + jNeigh * (nX) + 0 * (nX) * (nY)
                                             }).AddToArray(ref C_cnt.CellFaceTags);
                                         }
@@ -433,7 +433,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = perzTag,
                                                 PeriodicInverse = true,
-                                                FaceIndex = (int)Cube.Edge.Back,
+                                                FaceIndex = (int)Cube.Faces.Back,
                                                 NeighCell_GlobalID = iNeigh + jNeigh * (nX) + (nZ - 1) * (nX) * (nY)
                                             }).AddToArray(ref C_cnt.CellFaceTags);
                                         }
@@ -750,7 +750,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = persTag,
                                                 PeriodicInverse = false,
-                                                FaceIndex = (int)Cube.Edge.Top,
+                                                FaceIndex = (int)Cube.Faces.Top,
                                                 NeighCell_GlobalID = iNeigh + (0) * (nR) + lNeigh * (nR) * (nS)
                                             }).AddToArray(ref Cj0.CellFaceTags);
                                         }
@@ -762,7 +762,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = persTag,
                                                 PeriodicInverse = true,
-                                                FaceIndex = (int)Cube.Edge.Bottom,
+                                                FaceIndex = (int)Cube.Faces.Bottom,
                                                 NeighCell_GlobalID = iNeigh + (nS - 1) * (nR) + lNeigh * nR * nS
                                             }).AddToArray(ref Cj0.CellFaceTags);
                                         }
@@ -776,7 +776,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = perzTag,
                                                 PeriodicInverse = false,
-                                                FaceIndex = (int)Cube.Edge.Front,
+                                                FaceIndex = (int)Cube.Faces.Front,
                                                 NeighCell_GlobalID = iNeigh + kNeigh * (nR) + 0 * (nR) * (nS)
                                             }).AddToArray(ref Cj0.CellFaceTags);
                                         }
@@ -788,7 +788,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             (new CellFaceTag() {
                                                 EdgeTag = perzTag,
                                                 PeriodicInverse = true,
-                                                FaceIndex = (int)Cube.Edge.Back,
+                                                FaceIndex = (int)Cube.Faces.Back,
                                                 NeighCell_GlobalID = iNeigh + kNeigh * (nR) + (nZ - 1) * (nR) * (nS)
                                             }).AddToArray(ref Cj0.CellFaceTags);
                                         }
@@ -1184,7 +1184,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Number of nodes in rotational direction for each of the four ring segments.
         /// </param>
         /// <param name="NoOfRadialNodes">Number of nodes in the radial section.</param>
-        /// <param name="NoOfNodesPerSection">Number of nodes in rotational direction for each of the four ring segmants</param>
         /// <param name="type">Cell type.</param>
         /// <param name="zNodes">Nodes along the cylinder heigh.</param>
         /// <returns>
@@ -1304,14 +1303,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 // neigborship
                                 if (iX > 0) {
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Left,
+                                        FaceIndex = (int)Square.Faces.Left,
                                         NeighCell_GlobalID = CenterSection_Gid[iX - 1, iY, iZ],
                                         ConformalNeighborship = true
                                     }, ref Cj.CellFaceTags);
                                 } else {
                                     // connection to left ring segment
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Left,
+                                        FaceIndex = (int)Square.Faces.Left,
                                         NeighCell_GlobalID = RingSections_Gid[0][0, iY, iZ],
                                         ConformalNeighborship = true
                                     }, ref Cj.CellFaceTags);
@@ -1319,14 +1318,14 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 if (iX < (NoOfCenterNodes - 2)) {
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Right,
+                                        FaceIndex = (int)Square.Faces.Right,
                                         NeighCell_GlobalID = CenterSection_Gid[iX + 1, iY, iZ],
                                         ConformalNeighborship = true
                                     }, ref Cj.CellFaceTags);
                                 } else {
                                     // connection to right ring segment
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Right,
+                                        FaceIndex = (int)Square.Faces.Right,
                                         NeighCell_GlobalID = RingSections_Gid[1][0, NoOfCenterNodes - 2 - iY, iZ],
                                         ConformalNeighborship = true
                                     }, ref Cj.CellFaceTags);
@@ -1334,26 +1333,26 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 if (iY > 0) {
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Bottom,
+                                        FaceIndex = (int)Square.Faces.Bottom,
                                         NeighCell_GlobalID = CenterSection_Gid[iX, iY - 1, iZ]
                                     }, ref Cj.CellFaceTags);
                                 } else {
                                     // connection to bottom ring segment
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Bottom,
+                                        FaceIndex = (int)Square.Faces.Bottom,
                                         NeighCell_GlobalID = RingSections_Gid[3][0, NoOfCenterNodes - 2 - iX, iZ]
                                     }, ref Cj.CellFaceTags);
                                 }
 
                                 if (iY < (NoOfCenterNodes - 2)) {
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Top,
+                                        FaceIndex = (int)Square.Faces.Top,
                                         NeighCell_GlobalID = CenterSection_Gid[iX, iY + 1, iZ]
                                     }, ref Cj.CellFaceTags);
                                 } else {
                                     // connection to top ring segment
                                     ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int)Square.Edge.Top,
+                                        FaceIndex = (int)Square.Faces.Top,
                                         NeighCell_GlobalID = RingSections_Gid[2][0, iX, iZ]
                                     }, ref Cj.CellFaceTags);
                                 }
@@ -1505,7 +1504,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     // neigborship
                                     if (iR > 0) {
                                         ArrayTools.AddToArray(new CellFaceTag() {
-                                            FaceIndex = (int)Square.Edge.Bottom,
+                                            FaceIndex = (int)Square.Faces.Bottom,
                                             NeighCell_GlobalID = RingSections_Gid[iRing][iR - 1, iPhi, iZ],
                                             ConformalNeighborship = true
                                         }, ref Cj.CellFaceTags);
@@ -1513,7 +1512,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         // connection to center section
 
                                         ArrayTools.AddToArray(new CellFaceTag() {
-                                            FaceIndex = (int)Square.Edge.Bottom,
+                                            FaceIndex = (int)Square.Faces.Bottom,
                                             NeighCell_GlobalID = CenterSection_Gid[OiX + iPhi * inc_iX, OiY + iPhi * inc_iY, iZ],
                                             ConformalNeighborship = true
                                         }, ref Cj.CellFaceTags);
@@ -1521,7 +1520,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                     if (iR < (NoOfRadialNodes - 2)) {
                                         ArrayTools.AddToArray(new CellFaceTag() {
-                                            FaceIndex = (int)Square.Edge.Top,
+                                            FaceIndex = (int)Square.Faces.Top,
                                             NeighCell_GlobalID = RingSections_Gid[iRing][iR + 1, iPhi, iZ],
                                             ConformalNeighborship = true
                                         }, ref Cj.CellFaceTags);
@@ -1534,14 +1533,14 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                     if (iPhi > 0) {
                                         ArrayTools.AddToArray(new CellFaceTag() {
-                                            FaceIndex = (int)Square.Edge.Left,
+                                            FaceIndex = (int)Square.Faces.Left,
                                             NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi - 1, iZ],
                                             ConformalNeighborship = true
                                         }, ref Cj.CellFaceTags);
                                     } else {
                                         // connection to previous ring segment
                                         ArrayTools.AddToArray(new CellFaceTag() {
-                                            FaceIndex = (int)Square.Edge.Left,
+                                            FaceIndex = (int)Square.Faces.Left,
                                             NeighCell_GlobalID = RingSections_Gid[iPrevRing][iR, NoOfCenterNodes - 2, iZ],
                                             ConformalNeighborship = true
                                         }, ref Cj.CellFaceTags);
@@ -1549,14 +1548,14 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                     if (iPhi < (NoOfCenterNodes - 2)) {
                                         ArrayTools.AddToArray(new CellFaceTag() {
-                                            FaceIndex = (int)Square.Edge.Right,
+                                            FaceIndex = (int)Square.Faces.Right,
                                             NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi + 1, iZ],
                                             ConformalNeighborship = true
                                         }, ref Cj.CellFaceTags);
                                     } else {
                                         // connection to next ring segment
                                         ArrayTools.AddToArray(new CellFaceTag() {
-                                            FaceIndex = (int)Square.Edge.Right,
+                                            FaceIndex = (int)Square.Faces.Right,
                                             NeighCell_GlobalID = RingSections_Gid[iNextRing][iR, 0, iZ],
                                             ConformalNeighborship = true
                                         }, ref Cj.CellFaceTags);

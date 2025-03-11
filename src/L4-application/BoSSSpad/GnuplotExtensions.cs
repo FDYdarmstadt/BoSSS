@@ -32,7 +32,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public static class GnuplotExtensions {
         
-        
+        /*
         /// <summary>
         /// Plot to a gif file (`set terminal png`).
         /// </summary>
@@ -73,6 +73,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="yRes">Vertical resolution in pixels.</param>
         static public Microsoft.AspNetCore.Html.HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
             string OutfileName = Path.GetTempFileName();
+
+            Console.WriteLine("Note: In a Jupyter Worksheet, you must NOT have a trailing semicolon in order to see the plot on screen; otherwise, the output migth be surpressed.!");
 
             try {
                 gp.SaveToSVG(OutfileName, xRes, yRes);

@@ -32,7 +32,11 @@ namespace BoSSS.Solution.Queries {
     /// </summary>
     public class QueryHandler {
 
-
+        /// <summary>
+        /// Default name for number of nonlinear solver iterations for the most recent call of some nonlinear solver.
+        /// </summary>
+        public const string NonLinIter = "NonLinIter";
+       
         /// <summary>
         /// Default name for number of linear solver iterations for the most recent call of some linear solver.
         /// </summary>

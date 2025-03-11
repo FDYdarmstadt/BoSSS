@@ -21,19 +21,28 @@ using ilPSP;
 using ilPSP.Utils;
 using System.Linq;
 using MPI.Wrappers;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Platform.Utils.Geom {
 
     /// <summary>
     /// primitive bounding box
     /// </summary>
+    [Serializable]
+    [DataContract]
     public class BoundingBox : ICloneable {
+
+        /// <summary>
+        /// private ctor for serialization
+        /// </summary>
+        private BoundingBox() {
+        }
 
         /// <summary>
         /// creates an empty bounding box
         /// </summary>
         /// <param name="D">dimension of the bounding box</param>
-        public BoundingBox(int D) {
+       public BoundingBox(int D) {
             if (D < 1)
                 throw new ApplicationException("zero or lower dimensional bounding boxes are not known.");
             if (D > 3)
@@ -134,11 +143,13 @@ namespace BoSSS.Platform.Utils.Geom {
         /// <summary>
         /// the lower bound of the bounding box
         /// </summary>
+        [DataMember]
         public double[] Min;
 
         /// <summary>
         /// the upper bound of the bounding box
         /// </summary>
+        [DataMember]
         public double[] Max;
 
         

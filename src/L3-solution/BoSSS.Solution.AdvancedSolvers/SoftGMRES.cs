@@ -28,14 +28,62 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using System.IO;
 using ilPSP.Tracing;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    /// <summary>
-    /// Standard preconditioned GMRES.
-    /// </summary>
-    public class SoftGMRES : ISubsystemSolver, ISolverWithCallback, IProgrammableTermination {
 
-        Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
+
+	[Serializable]
+	public class SoftGMRESConfig : IterativeSolverConfig {
+		/// <inheritdoc/>
+		[DataMember]
+		public override string Name => "Standard preconditioned generalized minimum residual method";
+
+		/// <inheritdoc/>
+		[DataMember]
+		public override string Shortname => "SoftGMRES";
+
+		public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+
+			var templinearSolve = new SoftGMRES();
+
+            // set convergence configuration
+            templinearSolve.MaxIterations = this.MaxSolverIterations;
+			templinearSolve.MinSolverIterations = this.MinSolverIterations;
+			templinearSolve.ConvergenceCriterion = this.ConvergenceCriterion;
+
+			templinearSolve.Init(level);
+			return templinearSolve;
+		}
+
+		/// <inheritdoc/>
+		[DataMember]
+		public new int MaxSolverIterations = 300;
+
+		/// <inheritdoc/>
+		[DataMember]
+		public new int MinSolverIterations = 0;
+
+		/// <inheritdoc/>
+		[DataMember]
+		public new double ConvergenceCriterion = 1e-10;
+	}
+
+	/// <summary>
+	/// Standard preconditioned GMRES.
+	/// </summary>
+	public class SoftGMRES : ISubsystemSolver, ISolverWithCallback, ISolverWithInnerCycle, IProgrammableTermination {
+
+		[DataMember]
+		public int MaxIterations = 500;
+
+		[DataMember]
+		public double ConvergenceCriterion = 1e-7;
+
+		[DataMember]
+		public int MinSolverIterations = 0;
+
+		Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
 
         /// <summary>
         /// ~
@@ -49,20 +97,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /// <summary>
-        /// ctor
-        /// </summary>
-        public SoftGMRES() {
-            m_TerminationCriterion = (iIter, r0, ri) => {
-                return (iIter <= 500 && ri > 1e-7, ri <= 1e-7);
+		bool CalculateWithMatrix;
+
+		BlockMsrMatrix Matrix {
+			get {
+				return CalculateWithMatrix ? m_mgop.OperatorMatrix : null;
+			}
+		}
+
+		public string m_SessionPath;
+
+		private int NoOfIterations = 0;
+
+		IOperatorMappingPair m_mgop;
+
+		public ISolverSmootherTemplate Precond;
+
+		/// <summary>
+		/// MPI_world responsible for this solver
+		/// </summary>
+		MPI_Comm m_MPI_Comm => Matrix != null ? Matrix.MPI_Comm : csMPI.Raw._COMM.WORLD; //currently not much need to define separate worlds as they are not used
+
+		/// <summary>
+		/// ctor
+		/// </summary>
+		public SoftGMRES(bool calculateWithMatrix = true) {
+			this.CalculateWithMatrix = calculateWithMatrix;
+			m_TerminationCriterion = (iIter, r0, ri) => {
+                return (iIter <= MaxIterations && iIter >= MinSolverIterations && ri  > ConvergenceCriterion, ri <= ConvergenceCriterion);
             };
         }
 
-
-        /// <summary>
-        /// ~
-        /// </summary>
-        public void Init(IOperatorMappingPair op) {
+		/// <summary>
+		/// ~
+		/// </summary>
+		public void Init(IOperatorMappingPair op) {
             InitImpl(op);
         }
 
@@ -100,19 +169,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+		/*
+        ISparseMatrix m_Matrix;
 
-        IOperatorMappingPair m_mgop;
+        ISparseMatrix Matrix {
+            get {
+                if(m_Matrix == null) {
+                    m_Matrix = m_mgop.OperatorMatrix; // activate for BlockMatrixSpMV
 
-        public ISolverSmootherTemplate Precond;
+                    //var hypreMtx = new ilPSP.LinSolvers.HYPRE.IJMatrix(m_mgop.OperatorMatrix); // HYPRE
+                    //m_Matrix = hypreMtx;
 
-        BlockMsrMatrix Matrix => m_mgop.OperatorMatrix;
+                    //var monkeyMtx = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(m_mgop.OperatorMatrix.ToMsrMatrix()); // Monkey
+                    //m_Matrix = monkeyMtx;
 
-        public string m_SessionPath;
-
-        //public double m_Tolerance = 1.0e-10;
-        //public int m_MaxIterations = 10000;
-
-        private int NoOfIterations = 0;
+                }
+                return m_Matrix; 
+            }
+        }
+        */
 
         /// <summary>
         /// ~
@@ -146,8 +221,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public bool m_Converged = false;
-
         /// <summary>
         /// ~
         /// </summary>
@@ -156,6 +229,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V2 : IList<double> {
 
             using(var tr = new FuncTrace()) {
+                ThisLevelTime.Start();
                 tr.InfoToConsole = false;
                 tr.Info("IterationCallback set? " + (this.IterationCallback != null));
                 tr.Info("Preconditioner is " + (this.Precond?.ToString() ?? "null"));
@@ -172,34 +246,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                double bnrm2 = B.MPI_L2Norm(Matrix.MPI_Comm);
+                double bnrm2 = B.MPI_L2Norm(m_MPI_Comm);
                 if(bnrm2 == 0.0) {
                     bnrm2 = 1.0;
                 }
 
-                int Nloc = Matrix.RowPartitioning.LocalLength;
-                long Ntot = Matrix.RowPartitioning.TotalLength;
+                int Nloc = Matrix != null ? Matrix.RowPartitioning.LocalLength : X.Length; // RowPart.LocalLength;
 
-                double[] r = new double[Nloc];
-                double[] z = new double[Nloc];
+				double[] r = new double[Nloc]; //residual variable (if preconditioned, preconditioned residual)
+                double[] z = new double[Nloc]; //intermediate variable for residual
 
                 //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
-                Matrix.SpMV(-1.0, X, 1.0, z);
-                IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
+                CalculateSpMV(-1.0, X, 1.0, z);
+				IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
-                if(this.Precond != null) {
-                    r.Clear();
-                    this.Precond.Solve(r, z);
-                } else {
-                    r.SetV(z);
-                }
+				ApplyPreconditioner(z, r);
 
-                // Inserted for real residual
-                double error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
+				// Inserted for real residual
+				double error2 = z.MPI_L2Norm(m_MPI_Comm);
                 double iter0_error2 = error2;
 
-                double error = (r.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt()) / bnrm2;
+                double error = (r.L2NormPow2().MPISum(m_MPI_Comm).Sqrt()) / bnrm2;
                 var term0 = TerminationCriterion(0, error2, error2);
                 if(!term0.bNotTerminate) {
 
@@ -221,35 +289,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[] cs = new double[m];
                 double[] sn = new double[m];
-                //double[] s = new double[m+1];
-                double[] e1 = new double[Nloc];
-                //if(Matrix.RowPartitioning.Rank == 0)
-                e1[0] = 1.0;
+                double[] s = new double[m + 2];
+                //double[] e1 = new double[Nloc];
+                //if (RowPart.i0 == 0 && Nloc > 0)
+                //    e1[0] = 1; // set standard-basis vector
 
-                double[] s = new double[Nloc], w = new double[Nloc], y;
+                double[] w = new double[Nloc], y;
                 double temp;
                 int iter;
                 int totIterCounter = 0;
                 for(iter = 1; true; iter++) { // GMRES iterations
                                               // r = M \ ( b-A*x );
                     z.SetV(B);
-                    Matrix.SpMV(-1.0, X, 1.0, z);
+					CalculateSpMV(-1.0, X, 1.0, z);
+                    error2 = CheckAndGetNorm(z);
 
-                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
-
-                    if(this.Precond != null) {
-                        r.Clear();
-                        this.Precond.Solve(r, z);
-                    } else {
-                        r.SetV(z);
-                    }
-
-                    // V(:,1) = r / norm( r );
-                    double norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
-                    V[0].SetV(r, alpha: (1.0 / norm_r));
+                    ApplyPreconditioner(z, r);                    
+                    double norm_r = CheckAndGetNorm(r); // V(:,1) = r / norm( r );
+					V[0].SetV(r, alpha: (1.0 / norm_r));
 
                     //s = norm( r )*e1;
-                    s.SetV(e1, alpha: norm_r);
+                    //s.SetV(e1, alpha: norm_r);
+                    s.ClearEntries();
+                    s[0] = norm_r;
 
                     int i;
 
@@ -259,22 +321,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         #region Arnoldi procdure
 
-                        //w = M \ (A*V(:,i));                         
-                        Matrix.SpMV(1.0, V[i - 1], 0.0, z);
-                        if(this.Precond != null) {
-                            w.Clear();
-                            this.Precond.Solve(w, z);
-                        } else {
-                            w.SetV(z);
-                        }
+                        //w = M \ (A*V(:,i));
+						CalculateSpMV(1.0, V[i-1], 0.0, z);
+						ApplyPreconditioner(z, w);
 
-                        for(int k = 1; k <= i; k++) {
-                            H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum(Matrix.MPI_Comm);
+                        
+                        for(int k = 0; k < i; k++) {
+                            //MPItime.Start();
+                            H[k, i - 1] = GenericBlas.InnerProd(w, V[k]).MPISum(m_MPI_Comm); // quite costly MPI communication 
+                            //MPItime.Stop();
                             //w = w - H(k,i)*V(:,k);
-                            w.AccV(-H[k - 1, i - 1], V[k - 1]);
+                            w.AccV(-H[k, i - 1], V[k]);
                         }
 
-                        double norm_w = w.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
+                        double norm_w = w.L2NormPow2().MPISum(m_MPI_Comm).Sqrt();
                         H[i + 1 - 1, i - 1] = norm_w; // the +1-1 actually makes me sure I haven't forgotten to subtract -1 when porting the code
                                                       //V(:,i+1) = w / H(i+1,i);
                         V[i + 1 - 1].SetV(w, alpha: (1.0 / norm_w));
@@ -290,6 +350,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                         //	 [cs(i),sn(i)] = rotmat( H(i,i), H(i+1,i) ); % form i-th rotation matrix
                         rotmat(out cs[i - 1], out sn[i - 1], H[i - 1, i - 1], H[i + 1 - 1, i - 1]);
+                        
+
                         temp = cs[i - 1] * s[i - 1]; //                       % approximate residual norm
                         H[i - 1, i - 1] = cs[i - 1] * H[i - 1, i - 1] + sn[i - 1] * H[i + 1 - 1, i - 1];
                         H[i + 1 - 1, i - 1] = 0.0;
@@ -297,10 +359,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         #endregion
 
                         // update the residual vector (s == beta in many pseudocodes)
-                        s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
+                        s[i] = -sn[i - 1] * s[i - 1];
                         s[i - 1] = temp;
-                        error = Math.Abs(s[i + 1 - 1]) / bnrm2;
-                        error2 = Math.Abs(s[i + 1 - 1]);
+                        error = Math.Abs(s[i]) / bnrm2;
+                        error2 = Math.Abs(s[i]);
 
                         // For Residual tracking, do not delete
                         /*
@@ -355,19 +417,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // compute residual: r = M \ ( b-A*x )     
                     z.SetV(B);
-                    Matrix.SpMV(-1.0, X, 1.0, z);
-                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
+					CalculateSpMV(-1.0, X, 1.0, z);
+                    error2 = CheckAndGetNorm(z);
                     IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
-
-                    if(this.Precond != null) {
-                        r.Clear();
-                        this.Precond.Solve(r, z);
-                    } else {
-                        r.SetV(z);
-                    }
-
-                    norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
+                    ApplyPreconditioner(z, r);
+                    norm_r = CheckAndGetNorm(r);
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
                                                          //  if (error2 <= m_Tolerance) Check for error not error2
@@ -376,7 +431,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(IterationCallback != null) {
                     z.SetV(B);
-                    Matrix.SpMV(-1.0, X, 1.0, z);
+					CalculateSpMV(-1.0, X, 1.0, z);
                     IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
                 }
 
@@ -389,13 +444,69 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // otherwise the Precond must be initialized very often.
                 //if (this.Precond is IDisposable)
                 //    (this.Precond as IDisposable).Dispose();
+
+                ThisLevelTime.Stop();
             }
         }
 
-        /// <summary>
-        /// ~
+		/// <summary>
+        /// Apply preconditioner to residual
         /// </summary>
-        public int IterationsInNested {
+        /// <param name="z">Intermediate variable (or raw residual)</param>
+        /// <param name="r">Preconditioned residual </param>
+		void ApplyPreconditioner(double[] z, double[] r) {
+			if (Precond != null) {
+				r.Clear();
+                StopwatchPrecond.Start();
+                this.Precond.Solve(r, z);
+                StopwatchPrecond.Stop();
+			} else {
+				r.SetV(z);
+			}
+		}
+
+		double CheckAndGetNorm(double[] X) {
+            double norm = X.MPI_L2Norm(m_MPI_Comm);
+
+			if (double.IsNaN(norm) || double.IsInfinity(norm))
+				throw new ArithmeticException();
+
+            return norm;
+		}
+
+		/// <summary>
+		/// The inner cycle to calculate Matrix.SpMV(-1.0, x, 1.0, z) in case the matrix is not explicitly available i.e., matrix-free gmres
+		/// </summary>
+		public Action<double[], double[]> InnerCycle { get; set; }
+
+		/// <summary>
+		///  Calculates Matrix.SpMV(alpha,  _a, beta, acc) if matrix available explicitly 
+		///  If not, calculates the equivalent of it by given InnerCircle action 
+		/// </summary>
+		/// <param name="alpha">scale of  _a</param>
+		/// <param name="_a">input vector to be multiplied</param>
+		/// <param name="beta">scale of acc</param>
+		/// <param name="acc">accumulation vector</param>
+		///  /// <seealso cref="BlockMsrMatrix.SpMV{VectorType1, VectorType2}(double, VectorType1, double, VectorType2)"/>
+		void CalculateSpMV(double alpha, double[] _a, double beta, double[] acc) {
+			if (Matrix != null) {
+				Matrix.SpMV(alpha, _a, beta, acc);
+			} else {
+				double[] vectorAfterMultiplication = new double[acc.Length]; //intermediate variable to hold Matrix x Vector
+				InnerCycle(_a, vectorAfterMultiplication);                   // perform the equivalent of Matrix x Vector = this * _a
+				vectorAfterMultiplication.ScaleV(alpha);                     // this*_a*alpha
+				acc.ScaleV(beta);                                            // acc*beta
+				acc.AccV(1.0, vectorAfterMultiplication);                    // acc = acc*beta + this*_a*alpha
+			}
+			return;
+		}
+
+		public bool m_Converged = false;
+
+		/// <summary>
+		/// ~
+		/// </summary>
+		public int IterationsInNested {
             get {
                 if(this.Precond != null)
                     return this.Precond.IterationsInNested + this.Precond.ThisLevelIterations;
@@ -422,13 +533,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public void ResetStat() {
+		public void ResetStat() {
             this.m_Converged = false;
             this.NoOfIterations = 0;
             if(this.Precond != null)
                 this.Precond.ResetStat();
+            StopwatchPrecond.Reset();
+            ThisLevelTime.Reset();
+            //MPItime.Reset();
         }
-
 
         public object Clone() {
             SoftGMRES Clone = new SoftGMRES();
@@ -440,15 +553,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Clone;
         }
 
+        //Stopwatch MPItime = new Stopwatch();
+        Stopwatch ThisLevelTime = new Stopwatch();
+        Stopwatch StopwatchPrecond = new Stopwatch();
+
         public void Dispose() {
-            if(this.Precond != null)
-                this.Precond.Dispose();
+            //if (m_MTracker != null) m_MTracker.Dispose();
+            if (this.m_mgop is MultigridOperator _mgop) {
+                int lv = _mgop.LevelIndex;
+                Console.WriteLine($"SoftGMRES lv {lv} - total runtime: {ThisLevelTime.Elapsed.TotalSeconds:F1} sec");
+                Console.WriteLine($"SoftGMRES lv {lv} - precond runtime: {StopwatchPrecond.Elapsed.TotalSeconds:F1} sec ({100*StopwatchPrecond.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");
+                //Console.WriteLine($"SoftGMRES lv {lv} - MPI routine runtime: {MPItime.Elapsed.TotalSeconds:F1} sec ({100*MPItime.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");
+            }
+
+            this.Precond?.Dispose();
+            this.m_mgop = null;
         }
 
         public long UsedMemory() {
             long Memory = 0;
-            if(Precond != null)
-                Memory += Precond.UsedMemory();
+            Memory += Precond?.UsedMemory() ?? 0;
             return Memory;
         }
     }

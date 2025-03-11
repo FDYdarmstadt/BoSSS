@@ -205,7 +205,7 @@ namespace BoSSS.Foundation.Quadrature {
                     var CellBndR = cellBndRule[iChunk[i]].Rule;
                     QuadRule qrEdge = null;
 
-                    if(Faces[i] >= 0)
+                    if(Faces[i] >= 0) //check if it is conforming or not (negative values: non-conformal)
                         qrEdge = this.CombineQr(null, CellBndR, Faces[i] - 333);
                     else {                       
                         qrEdge = this.CombineQrNonConformal(null, CellBndR, -Faces[i] - 333, EdgeIndices[i], Cells[i]);                        
@@ -246,10 +246,10 @@ namespace BoSSS.Foundation.Quadrature {
             // extract edge rule
             // -----------------
 
-            int i0 = 0, iE = 0;
+            int i0 = 0, iE = 0; //determine where the edge rule is stored from the cluster
             for (int i = 0; i < iFace; i++)
-                i0 += givenRule.NumbersOfNodesPerFace[i];
-            iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1;
+                i0 += givenRule.NumbersOfNodesPerFace[i]; //accumulate the number of nodes for the previous faces (e.g., i0 for iFace=2 : NumbersOfNodesPerFace[0] + NumbersOfNodesPerFace[1])
+            iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1; //end index of the node belonging to iFace
 
             if (iE < i0) {
                 // rule is empty (measure is zero).
@@ -257,7 +257,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if (qrEdge == null) {
                     QuadRule ret = new QuadRule();
                     ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1));
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), false);
                     ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;
@@ -270,10 +270,12 @@ namespace BoSSS.Foundation.Quadrature {
 
             MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
             MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
-            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD);
+            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, qrEdge == null);
 
+            // transform from the cell coordinate system to the face
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
             Nodes.LockForever();
+            //Nodes.SaveToTextFileUnsteady($"NodesFace{iFace}");
 
             //Debug.Assert((Weigts.Sum() - grd.Grid.GridSimplex.EdgeSimplex.Volume).Abs() < 1.0e-6, "i've forgotten the gramian");
 
@@ -295,7 +297,7 @@ namespace BoSSS.Foundation.Quadrature {
                 int L2 = Nodes.GetLength(0);
                 Debug.Assert(coD == qrEdge.Nodes.GetLength(1));
 
-                NodeSet newNodes = new NodeSet(this.RefElement, L1 + L2, coD);
+                NodeSet newNodes = new NodeSet(this.RefElement, L1 + L2, coD, true);
                 newNodes.SetSubArray(qrEdge.Nodes, new int[] { 0, 0 }, new int[] { L1 - 1, coD - 1 });
                 newNodes.SetSubArray(Nodes, new int[] { L1, 0 }, new int[] { L1 + L2 - 1, coD - 1 });
                 newNodes.LockForever();
@@ -342,7 +344,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if (qrEdge == null) {
                     QuadRule ret = new QuadRule();
                     ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1));
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), false);
                     ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;
@@ -357,7 +359,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
             MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
-            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD);
+            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, false);
 
             // as before, nodes from cell transformed to face
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
@@ -365,7 +367,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             // get edge endpoints 
             var EdgeNodes = this.RefElement.Vertices;
-            NodeSet FaceNodes = new NodeSet(this.RefElement, this.RefElement.Vertices.NoOfNodes, coD);
+            NodeSet FaceNodes = new NodeSet(this.RefElement, this.RefElement.Vertices.NoOfNodes, coD, false);
             // Transform to cell
             int trf;
             if (grd.Edges.CellIndices[iEdge, 0] == jCell) {
@@ -373,7 +375,7 @@ namespace BoSSS.Foundation.Quadrature {
             } else {
                 trf = grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
             }
-            var CellNodes = EdgeNodes.GetVolumeNodeSet(grd, trf);
+            var CellNodes = EdgeNodes.GetVolumeNodeSet(grd, trf, false);
             // Transform to face
             volSplx.GetInverseFaceTrafo(iFace).Transform(CellNodes, FaceNodes);
 
@@ -382,7 +384,7 @@ namespace BoSSS.Foundation.Quadrature {
             double scale = Trafo.Matrix.Determinant();
 
             // construct the NodeSet in edge local coordinates
-            NodeSet NodesEdge = new NodeSet(this.RefElement, Trafo.Transform(Nodes));
+            NodeSet NodesEdge = new NodeSet(this.RefElement, Trafo.Transform(Nodes), false);
 
             double[] NodesOnEdge = new double[0];
             double[] WeightsOnEdge = new double[0];
@@ -407,7 +409,7 @@ namespace BoSSS.Foundation.Quadrature {
             }
 
             // override the Node set with the "true" nodes located on the edge and in edge local coordinates
-            Nodes = new NodeSet(this.RefElement, MultidimensionalArray.CreateWrapper(NodesOnEdge, new int[] { NoOfNodes, this.RefElement.SpatialDimension }));
+            Nodes = new NodeSet(this.RefElement, MultidimensionalArray.CreateWrapper(NodesOnEdge, new int[] { NoOfNodes, this.RefElement.SpatialDimension }), qrEdge == null);
             Weigts = MultidimensionalArray.CreateWrapper(WeightsOnEdge, new int[] { NoOfNodes });
             Nodes.LockForever();
 
@@ -431,7 +433,7 @@ namespace BoSSS.Foundation.Quadrature {
                 int L2 = Nodes.GetLength(0);
                 Debug.Assert(coD == qrEdge.Nodes.GetLength(1));
 
-                NodeSet newNodes = new NodeSet(this.RefElement, L1 + L2, coD);
+                NodeSet newNodes = new NodeSet(this.RefElement, L1 + L2, coD, true);
                 newNodes.SetSubArray(qrEdge.Nodes, new int[] { 0, 0 }, new int[] { L1 - 1, coD - 1 });
                 newNodes.SetSubArray(Nodes, new int[] { L1, 0 }, new int[] { L1 + L2 - 1, coD - 1 });
                 newNodes.LockForever();

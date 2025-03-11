@@ -36,7 +36,7 @@ namespace BoSSS.Solution.XheatCommon {
         // Heat equation
         //==============
 
-        public static void AddSpeciesHeatEq(XSpatialOperatorMk2 XOp, IHeat_Configuration config, int D, 
+        public static void AddSpeciesHeatEq(XDifferentialOperatorMk2 XOp, IHeat_Configuration config, int D, 
             string spcName, SpeciesId spcId, ThermalMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
@@ -122,7 +122,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        public static void AddInterfaceHeatEq(XSpatialOperatorMk2 XOp, IXHeat_Configuration config, int D, 
+        public static void AddInterfaceHeatEq(XDifferentialOperatorMk2 XOp, IXHeat_Configuration config, int D, 
             ThermalMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
@@ -224,6 +224,11 @@ namespace BoSSS.Solution.XheatCommon {
         /// include volumetric heat source
         /// </summary>
         bool isHeatSource { get; }
+
+        /// <summary>
+        /// include interface heat source
+        /// </summary>
+        bool isHeatSourceIBM { get; }
 
         /// <summary>
         /// include transport operator

@@ -352,7 +352,7 @@ namespace BoSSS.Foundation {
                     double[] b = new double[D]; // Maximum per dimension
 
                     NodeSet Vertices = Kref.Vertices;
-                    NodeSet OffsetVertices = new NodeSet(Vertices.RefElement, Vertices.NoOfNodes, D);
+                    NodeSet OffsetVertices = new NodeSet(Vertices.RefElement, Vertices.NoOfNodes, D, false);
                     for (int d = 0; d < D; d++) {
                         for (int n = 0; n < Vertices.NoOfNodes; n++) {
                             OffsetVertices[n, d] = Vertices[n, d];
@@ -392,7 +392,7 @@ namespace BoSSS.Foundation {
 
                     // collect vertices on scaled refelement face
                     NodeSet FaceVertices = Kref.FaceCenters;
-                    NodeSet OffsetFaceVertices = new NodeSet(FaceVertices.RefElement, FaceVertices.NoOfNodes, D);
+                    NodeSet OffsetFaceVertices = new NodeSet(FaceVertices.RefElement, FaceVertices.NoOfNodes, D, false);
                     for (int d = 0; d < D; d++) {
                         for (int n = 0; n < FaceVertices.NoOfNodes; n++) {
                             OffsetFaceVertices[n, d] = FaceVertices[n, d];
@@ -418,7 +418,7 @@ namespace BoSSS.Foundation {
                     List<Polynomial> polys = new List<Polynomial>();
 
                     NodeSet Vertices = Kref.Vertices;
-                    NodeSet OffsetVertices = new NodeSet(Vertices.RefElement, Vertices.NoOfNodes, D);
+                    NodeSet OffsetVertices = new NodeSet(Vertices.RefElement, Vertices.NoOfNodes, D, false);
                     for (int d = 0; d < D; d++) {
                         for (int n = 0; n < Vertices.NoOfNodes; n++) {
                             OffsetVertices[n, d] = Vertices[n, d];

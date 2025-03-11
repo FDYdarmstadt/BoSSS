@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Application.LoadBalancingTest {
 
@@ -29,8 +30,8 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
-
-            //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            
+            ////MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
             //// dbg_launch();
             //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
@@ -183,7 +184,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// <summary>
         /// The operator d/dx
         /// </summary>
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
 
         /// <summary>
         /// The BDF time integrator - makes load balancing challenging.
@@ -192,10 +193,10 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         //XdgBDFTimestepping AltTimeIntegration;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
 
-            Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, LsTrk.SpeciesNames, "u", "c1");
+            Op = new XDifferentialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, LsTrk.SpeciesNames, "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
@@ -205,6 +206,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             Op.AgglomerationThreshold = this.THRESHOLD;
             Op.TemporalOperator = new ConstantXTemporalOperator(Op, 1.0);
 
+            Op.FluxesAreNOTMultithreadSafe = false;
             Op.Commit();
 
             if (L == null) {
@@ -215,7 +217,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     new DGField[] { u }, new DGField[] { uResidual },
                     TimeSteppingScheme.BDF3,
                     () => new LevelSetTimestepping(this), LevelSetHandling.LieSplitting,
-                    MultigridOperatorConfig, MultigridSequence,
+                    MultigridOperatorConfig, 
                     _AgglomerationThreshold: this.THRESHOLD,
                     LinearSolver: this.Control.LinearSolver, NonLinearSolver: this.Control.NonLinearSolver);
                 
@@ -273,7 +275,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             //    phystime,
             //    false,
             //    base.LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping);
 
             mtxBuilder.CellLengthScales.AddRange(AgglomeratedCellLengthScales);
 
@@ -288,7 +290,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         
 
 
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
          
             TimeIntegration.DataBackupBeforeBalancing(L);
             //AltTimeIntegration.DataBackupBeforeBalancing(L);
@@ -298,6 +300,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             using (new FuncTrace()) {
                 // Elo
                 Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime + " ... ");
+
 
                 // timestepping params
                 base.NoOfTimesteps = 20;
@@ -332,7 +335,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
 
-        internal Func<IApplication, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
+        internal Func<ICellCostEstimator[]> cellCostEstimatorFactory = () => CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
 
 
         /// <summary>
@@ -357,15 +360,11 @@ namespace BoSSS.Application.LoadBalancingTest {
             Console.WriteLine("Number of cut cells: " + NoCutCells);
 
             if (balancer == null) {
-                balancer = new LoadBalancer(
-                    new List<Func<IApplication, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
-                    );
+                balancer = new LoadBalancer(cellCostEstimatorFactory(), this);
             }
 
             NewPart = balancer.GetNewPartitioning(
                 this,
-                2,
-                PerformanceClasses,
                 TimeStepNo,
                 GridPartType.none,
                 "",

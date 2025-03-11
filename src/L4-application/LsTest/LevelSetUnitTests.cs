@@ -286,8 +286,8 @@ namespace BoSSS.Application.LsTest {
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 3;
 
-                AgglomerationAlgorithm.Katastrophenplot = delegate (DGField[] plotFields) {
-
+                AgglomerationAlgorithm.Katastrophenplot = delegate (DGField[] plotFields, string Tag) {
+                    Tag ??= "";
                     List<DGField> allfields = new();
                     allfields.AddRange(plotFields);
                     
@@ -298,6 +298,7 @@ namespace BoSSS.Application.LsTest {
 
                     Tecplot.PlotFields(allfields, "AgglomFail", 0.0, 4);
                 };
+
 
                 solver.Init(C);
                 solver.RunSolverMode();

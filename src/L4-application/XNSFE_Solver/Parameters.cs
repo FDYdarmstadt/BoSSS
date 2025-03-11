@@ -37,127 +37,142 @@ namespace BoSSS.Application.XNSFE_Solver {
             DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using (new FuncTrace()) {
+                // Evaporative part
+                BitArray EvapMicroRegion = new BitArray(levelSet.Tracker.GridDat.Cells.Count);  //this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
 
-            // Evaporative part
-            BitArray EvapMicroRegion = new BitArray(levelSet.Tracker.GridDat.Cells.Count);  //this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+                double kA = 0, kB = 0, rhoA = 0, rhoB = 0;
 
-            double kA = 0, kB = 0, rhoA = 0, rhoB = 0;
-
-            foreach(var spc in levelSet.Tracker.SpeciesNames) {
-                switch (spc) {
-                    case "A": { kA = thermalParameters.k_A; rhoA = thermalParameters.rho_A; break; }
-                    case "B": { kB = thermalParameters.k_B; rhoB = thermalParameters.rho_B; break; }
-                    default: { throw new ArgumentException("unknown species"); }
+                foreach (var spc in levelSet.Tracker.SpeciesNames) {
+                    switch (spc) {
+                        case "A": { kA = thermalParameters.k_A; rhoA = thermalParameters.rho_A; break; }
+                        case "B": { kB = thermalParameters.k_B; rhoB = thermalParameters.rho_B; break; }
+                        default: { throw new ArgumentException("unknown species"); }
+                    }
                 }
+
+                XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
+
+                int dgDeg = ParameterVarFields[ParameterNames[0]].Basis.Degree;
+                int order = dgDeg*dgDeg + 2;
+                var quadrule = (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order).Compile(levelSet.Tracker.GridDat, order);
+
+                VectorField<DGField> evapVecVel = new VectorField<DGField>(D.ForLoop(d => ParameterVarFields[ParameterNames[d]]));
+
+                // `GetSpeciesShadowField(...)` is an MPI-Collective function (it calls `MPICollectiveWatchDog.Watch()`) , calling it from inside the integrand might cause some deadlock
+                var VelVecA = D.ForLoop(dd => ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A"));
+                var VelVecB = D.ForLoop(dd => ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B"));
+                var temperatureA = temperature.GetSpeciesShadowField("A");
+                var temperatureB = temperature.GetSpeciesShadowField("B");
+
+                //for (int d = 0; d < D; d++) {
+                //    DGField evapVelocity = ParameterVarFields[ParameterNames[d]];
+
+                evapVecVel.Clear();
+                evapVecVel.ProjectField(1.0,
+                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                        int K = result.GetLength(1); // No nof Nodes
+
+                        MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
+                        MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
+
+
+                        for (int dd = 0; dd < D; dd++) {
+                            VelVecA[dd].Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                            VelVecB[dd].Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        }
+
+                        MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
+                        MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
+
+                        temperatureA.EvaluateGradient(j0, Len, NS, GradTempA_Res);
+                        temperatureB.EvaluateGradient(j0, Len, NS, GradTempB_Res);
+
+                        MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
+                        MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
+
+                        //for (int dd = 0; dd < D; dd++) {
+                        //    ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        //    ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        //}
+
+
+                        MultidimensionalArray TempA_Res = MultidimensionalArray.Create(Len, K);
+                        MultidimensionalArray TempB_Res = MultidimensionalArray.Create(Len, K);
+                        //MultidimensionalArray Curv_Res = MultidimensionalArray.Create(Len, K);
+                        //MultidimensionalArray Pdisp_Res = MultidimensionalArray.Create(Len, K);
+
+                        temperatureA.Evaluate(j0, Len, NS, TempA_Res);
+                        temperatureB.Evaluate(j0, Len, NS, TempB_Res);
+                        //ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature].Evaluate(j0, Len, NS, Curv_Res);
+                        //this.DisjoiningPressure.Evaluate(j0, Len, NS, Pdisp_Res);
+
+                        var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
+
+                        for (int j = 0; j < Len; j++) {
+
+                            MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
+                            levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
+
+                            for (int k = 0; k < K; k++) {
+
+                                double qEvap = 0.0;
+                                if (EvapMicroRegion[j]) {
+                                    throw new NotImplementedException("Check consistency for micro regions");
+                                    // micro region
+                                    //double Tsat = this.Control.ThermalParameters.T_sat;
+                                    //double pc = this.Control.ThermalParameters.pc;
+                                    //double pc0 = (pc < 0.0) ? this.Control.PhysicalParameters.Sigma * Curv_Res[j, k] + Pdisp_Res[j, k] : pc;
+                                    //double f = this.Control.ThermalParameters.fc;
+                                    //double R = this.Control.ThermalParameters.Rc;
+                                    //if (this.Control.ThermalParameters.hVap_A > 0) {
+                                    //    hVap = this.Control.ThermalParameters.hVap_A;
+                                    //    rho_l = this.Control.PhysicalParameters.rho_A;
+                                    //    rho_v = this.Control.PhysicalParameters.rho_B;
+                                    //    double TintMin = Tsat * (1 + (pc0 / (hVap * rho_l)));
+                                    //    double Rint = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rho_v * hVap.Pow2());
+                                    //    if (TempA_Res[j, k] > TintMin)
+                                    //        qEvap = -(TempA_Res[j, k] - TintMin) / Rint;
+                                    //} else {
+                                    //    hVap = -this.Control.ThermalParameters.hVap_A;
+                                    //    rho_l = this.Control.PhysicalParameters.rho_B;
+                                    //    rho_v = this.Control.PhysicalParameters.rho_A;
+                                    //    double TintMin = Tsat * (1 + (pc0 / (hVap * rho_l)));
+                                    //    double Rint = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rho_v * hVap.Pow2());
+                                    //    if (TempB_Res[j, k] > TintMin)
+                                    //        qEvap = (TempB_Res[j, k] - TintMin) / Rint;
+                                    //}
+
+                                } else {
+                                    //macro region
+                                    for (int dd = 0; dd < D; dd++) {
+                                        //qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
+                                        qEvap += ((-kA) * GradTempA_Res[j, k, dd] - (-kB) * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
+                                    }
+                                }
+                                //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
+                                double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                                double mEvap = (config.prescribedMassflux != null) ? config.prescribedMassflux(globX, time) : qEvap / thermalParameters.hVap; // mass flux
+                                                                                                                                                              //double mEvap = qEvap / this.Control.ThermalParameters.hVap;
+                                                                                                                                                              //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
+                                                                                                                                                              //Console.WriteLine("prescribedMassFlux = {0}", this.XOpConfig.prescribedMassflux(globX, hack_Phystime));
+                                for (int d = 0; d < D; d++) {
+                                    double sNeg = VelA[j, k, d] - mEvap * (1 / rhoA) * Normals[j, k, d];
+                                    //Console.WriteLine("sNeg = {0}", sNeg);
+                                    double sPos = VelB[j, k, d] - mEvap * (1 / rhoB) * Normals[j, k, d];
+                                    //Console.WriteLine("sPos = {0}", sPos);
+
+                                    result[j, k, d] = (rhoA * sNeg + rhoB * sPos) / (rhoA + rhoB);   // density averaged evap velocity 
+                                }
+                            }
+                        }
+                    }, quadrule);
+
+                //}
+
             }
 
-            XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
-            for (int d = 0; d < D; d++) {
-                DGField evapVelocity = ParameterVarFields[ParameterNames[d]];
-
-                int order = evapVelocity.Basis.Degree * evapVelocity.Basis.Degree + 2;
-                evapVelocity.Clear();
-                evapVelocity.ProjectField(1.0,
-                   delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                       int K = result.GetLength(1); // No nof Nodes
-
-                       MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
-                       MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
-
-                       for (int dd = 0; dd < D; dd++) {
-                           ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                           ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                       }
-
-                       MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
-                       MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
-
-                       temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
-                       temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
-
-                       MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
-                       MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
-
-                       //for (int dd = 0; dd < D; dd++) {
-                       //    ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                       //    ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                       //}
-
-
-                       MultidimensionalArray TempA_Res = MultidimensionalArray.Create(Len, K);
-                       MultidimensionalArray TempB_Res = MultidimensionalArray.Create(Len, K);
-                       //MultidimensionalArray Curv_Res = MultidimensionalArray.Create(Len, K);
-                       //MultidimensionalArray Pdisp_Res = MultidimensionalArray.Create(Len, K);
-
-                       temperature.GetSpeciesShadowField("A").Evaluate(j0, Len, NS, TempA_Res);
-                       temperature.GetSpeciesShadowField("B").Evaluate(j0, Len, NS, TempB_Res);
-                       //ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature].Evaluate(j0, Len, NS, Curv_Res);
-                       //this.DisjoiningPressure.Evaluate(j0, Len, NS, Pdisp_Res);
-
-                       var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
-
-                       for (int j = 0; j < Len; j++) {
-
-                           MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
-                           levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
-
-                           for (int k = 0; k < K; k++) {
-
-                               double qEvap = 0.0;
-                               if (EvapMicroRegion[j]) {
-                                   throw new NotImplementedException("Check consistency for micro regions");
-                                   // micro region
-                                   //double Tsat = this.Control.ThermalParameters.T_sat;
-                                   //double pc = this.Control.ThermalParameters.pc;
-                                   //double pc0 = (pc < 0.0) ? this.Control.PhysicalParameters.Sigma * Curv_Res[j, k] + Pdisp_Res[j, k] : pc;
-                                   //double f = this.Control.ThermalParameters.fc;
-                                   //double R = this.Control.ThermalParameters.Rc;
-                                   //if (this.Control.ThermalParameters.hVap_A > 0) {
-                                   //    hVap = this.Control.ThermalParameters.hVap_A;
-                                   //    rho_l = this.Control.PhysicalParameters.rho_A;
-                                   //    rho_v = this.Control.PhysicalParameters.rho_B;
-                                   //    double TintMin = Tsat * (1 + (pc0 / (hVap * rho_l)));
-                                   //    double Rint = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rho_v * hVap.Pow2());
-                                   //    if (TempA_Res[j, k] > TintMin)
-                                   //        qEvap = -(TempA_Res[j, k] - TintMin) / Rint;
-                                   //} else {
-                                   //    hVap = -this.Control.ThermalParameters.hVap_A;
-                                   //    rho_l = this.Control.PhysicalParameters.rho_B;
-                                   //    rho_v = this.Control.PhysicalParameters.rho_A;
-                                   //    double TintMin = Tsat * (1 + (pc0 / (hVap * rho_l)));
-                                   //    double Rint = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rho_v * hVap.Pow2());
-                                   //    if (TempB_Res[j, k] > TintMin)
-                                   //        qEvap = (TempB_Res[j, k] - TintMin) / Rint;
-                                   //}
-
-                               } else {
-                                   //macro region
-                                   for (int dd = 0; dd < D; dd++) {
-                                       //qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
-                                       qEvap += ((-kA) * GradTempA_Res[j, k, dd] - (-kB) * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
-                                   }
-                               }
-                               //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
-                               double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
-                               double mEvap = (config.prescribedMassflux != null) ? config.prescribedMassflux(globX, time) : qEvap / thermalParameters.hVap; // mass flux
-                                                                                                                                                             //double mEvap = qEvap / this.Control.ThermalParameters.hVap;
-                                                                                                                                                             //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
-                                                                                                                                                             //Console.WriteLine("prescribedMassFlux = {0}", this.XOpConfig.prescribedMassflux(globX, hack_Phystime));
-
-                               double sNeg = VelA[j, k, d] - mEvap * (1 / rhoA) * Normals[j, k, d];
-                               //Console.WriteLine("sNeg = {0}", sNeg);
-                               double sPos = VelB[j, k, d] - mEvap * (1 / rhoB) * Normals[j, k, d];
-                               //Console.WriteLine("sPos = {0}", sPos);
-
-                               result[j, k] = (rhoA * sNeg + rhoB * sPos) / (rhoA + rhoB);   // density averaged evap velocity 
-                           }
-                       }
-                   }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
-
-            } 
-
         }
-        
     }
 
     public class LevelSetVelocityGeneralNonMaterial : LevelSetVelocity {

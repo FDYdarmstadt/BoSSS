@@ -1,4 +1,5 @@
-﻿using ilPSP.Utils;
+﻿
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,7 +36,7 @@ namespace ilPSP {
                     string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
                     if(AssiFiles.Length != 1) {
                         //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
-                        Console.WriteLine("Skipping: " + b.Name);
+                        //Console.WriteLine("Skipping: " + b.Name);
                         continue;
                     }
                     na = Assembly.LoadFile(AssiFiles[0]);

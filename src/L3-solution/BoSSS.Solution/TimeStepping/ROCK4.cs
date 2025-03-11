@@ -28,18 +28,24 @@ using System.Diagnostics;
 using System.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Factorization;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.Timestepping {
 
     /// <summary>
     /// ROCK4 adaptive timestepping
     /// </summary>
+    /// <remarks>
+    /// See: Fourth Order Chebyshev Methods with Recurrence Relation, Assyr Abdulle, https://doi.org/10.1137/S106482750037954
+    /// 
+    /// Original code: http://www.unige.ch/~hairer/rock.tar
+    /// </remarks>
     public partial class ROCK4 : ITimeStepper {
 
         /// <summary>
         /// ctor.
         /// </summary>
-        public ROCK4(SpatialOperator op, CoordinateVector V, CoordinateMapping ParamFields) {
+        public ROCK4(DifferentialOperator op, CoordinateVector V, CoordinateMapping ParamFields) {
             this.CurrentState = V;
             this.OpEv = op.GetEvaluatorEx(this.Mapping, 
                 ParamFields != null ? ParamFields.Fields : new DGField[0], 

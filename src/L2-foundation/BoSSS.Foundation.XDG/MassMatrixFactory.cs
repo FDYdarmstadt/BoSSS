@@ -197,10 +197,9 @@ namespace BoSSS.Foundation.XDG {
         /// don't mess with those values
         /// </returns>
         public MassMatrixBlockContainer GetMassMatrixBlocks(Basis b, SpeciesId spc) {
+            UpdateBlocks(b.Degree, new SpeciesId[] { spc });
             if (!b.IsSubBasis(this.MaxBasis))
                 throw new NotSupportedException("requested basis exceeds maximally supported basis.");
-
-            UpdateBlocks(b.Degree, new SpeciesId[] { spc });
 
             var MMB = this.MassBlocks[spc];
 //#if DEBUG
@@ -784,7 +783,7 @@ namespace BoSSS.Foundation.XDG {
 
 #endif
                             } catch (ArithmeticException) {
-                                Console.WriteLine("WARNING: indefinite mass matrix.");
+                                //Console.WriteLine("WARNING: indefinite mass matrix.");
                                 blk.InvertTo(inv_Blk);
 #if DEBUG
                                 for (int n = 0; n < N; n++)

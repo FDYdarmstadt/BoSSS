@@ -46,20 +46,30 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         direct_pardiso = 2,
 
-        
+
         ///// <summary>
         ///// Conjugate gradient (from monkey library) without any preconditioning (<see cref="AdvancedSolvers.MonkeySolver.Config"/>
         ///// </summary>
         //cg = 40,
 
         /// <summary>
-        /// Multiple levels of additive Schwarz, in a Krylov multi-grid cycle.
+        /// Multiple levels of additive Schwarz, in a Krylov multi-grid cycle; <see cref="AdvancedSolvers.OrthoMGSchwarzConfig"/>
         /// </summary>
         exp_Kcycle_schwarz = 41,
 
+        /// <summary>
+        /// Equal to <see cref="exp_Kcycle_schwarz"/>, but hardcoded to employ <see cref="AdvancedSolvers.SchwarzImplementation.CoarseMesh"/>
+        /// </summary>
+        exp_Kcycle_schwarz_CoarseMesh = 42,
 
         /// <summary>
-        /// GMRES with p-multigrid on the same mesh level; direct solver is used for lowest polynomial level
+        /// Equal to <see cref="exp_Kcycle_schwarz"/>, but hardcoded to employ <see cref="AdvancedSolvers.SchwarzImplementation.PerProcess"/>
+        /// </summary>
+        exp_Kcycle_schwarz_PerProcess = 43,
+
+
+        /// <summary>
+        /// GMRES with p-multigrid on the same mesh level; direct solver is used for lowest polynomial level, <see cref="AdvancedSolvers.PTGconfig"/>
         /// </summary>
         exp_gmres_levelpmg = 47,
 
@@ -73,8 +83,17 @@ namespace BoSSS.Solution.Control {
         /// p-Multigrid (i.e. multigrid over DG polynomial degree), <see cref="AdvancedSolvers.PmgConfig"/>
         /// </summary>
         pMultigrid = 61,
-        
-    }
+
+		///// <summary>
+		///// A highly experimental variant of Schur complement designed for saddle point problems, <see cref="AdvancedSolvers.SchurPrecond"/>
+		///// </summary>
+		//SchurPrecond = 71,
+
+		/// <summary>
+		/// Flexible GMRES, allowing variable preconditioners for GMRES <see cref="AdvancedSolvers.FlexGMRES"/>
+		/// </summary>
+		FlexGMRES = 81,
+	}
     
 
     /// <summary>
@@ -88,29 +107,47 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         static public BoSSS.Solution.AdvancedSolvers.ISolverFactory GetConfig(this LinearSolverCode config) {
 
-            switch(config) {
+            switch (config) {
                 case LinearSolverCode.automatic:
                 case LinearSolverCode.direct_pardiso:
-                return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+                    return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
 
                 case LinearSolverCode.direct_mumps:
-                return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.MUMPS };
+                    return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.MUMPS };
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                return new AdvancedSolvers.OrthoMGSchwarzConfig();
+                    return new AdvancedSolvers.OrthoMGSchwarzConfig();
+
+                case LinearSolverCode.exp_Kcycle_schwarz_CoarseMesh: {
+                        var c = new AdvancedSolvers.OrthoMGSchwarzConfig();
+                        c.SchwarzImplementation = AdvancedSolvers.SchwarzImplementation.CoarseMesh;
+                        return c;
+                    }
+                case LinearSolverCode.exp_Kcycle_schwarz_PerProcess: {
+                        var c = new AdvancedSolvers.OrthoMGSchwarzConfig();
+                        c.SchwarzImplementation = AdvancedSolvers.SchwarzImplementation.PerProcess;
+                        return c;
+                    }
+
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                return new AdvancedSolvers.PTGconfig();
+                    return new AdvancedSolvers.PTGconfig();
 
-                
+
                 case LinearSolverCode.exp_Kcycle_ILU:
-                return new AdvancedSolvers.OrthoMGILUconfig();
-                
+                    return new AdvancedSolvers.OrthoMGILUconfig();
+
                 case LinearSolverCode.pMultigrid:
-                return new AdvancedSolvers.PmgConfig();
-                
-                default:
-                throw new NotImplementedException("todo: " + config);
+                    return new AdvancedSolvers.PmgConfig();
+
+				//case LinearSolverCode.SchurPrecond:
+				//	return new AdvancedSolvers.SchurPrecondConfig();
+
+				case LinearSolverCode.FlexGMRES:
+					return new AdvancedSolvers.FGMRESConfig();
+
+				default:
+                    throw new NotImplementedException("todo: " + config);
             }
 
 

@@ -113,10 +113,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public FourierLevSetControl FourierLevSetControl;
 
         /// <summary>
+        /// Options for the initialization of the Parameterized Level-set
+        /// </summary>
+        [DataMember]
+        public LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControl ParameterizedLevelSetControl;
+
+        /// <summary>
         /// Options for the initialization of the Phasefield Level-set
         /// </summary>
         [DataMember]
-        public PhasefieldControl PhasefieldControl;
+        public PhasefieldSettings PhasefieldControl;
 
 
         /// <summary>
@@ -137,6 +143,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         [DataMember]
         public int FastMarchingReInitPeriod = 0;
+
+        /// <summary>
+        /// Reinitilization period for the LevelSetUpdater
+        /// </summary>
+        [DataMember]
+        public int ReInitPeriod = 0;
 
         /// <summary>
         /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set

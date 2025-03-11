@@ -171,6 +171,17 @@ namespace BoSSS.Solution.Gnuplot {
             this.LineColor = values[i % values.Length];
         }
 
+        /// <summary>
+        /// Conversts continuous numbers into line colors; useful, when a Plot is created by a loop.
+        /// </summary>
+        public void SetPointTypeFromIndex(int i) {
+            if (i < 0)
+                throw new ArgumentOutOfRangeException();
+
+            var values = Enum.GetValues(typeof(PointTypes)).Cast<PointTypes>().ToArray();
+            this.PointType = values[i % values.Length];
+        }
+
 
         [DataMember]
         private DashTypes? dashType;
@@ -274,7 +285,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// Cloning and setting <see cref="LineWidth"/>.
         /// </summary>
         public PlotFormat WithLineWidth(double lineWidth) {
-            return new PlotFormat(baseLineFormat: this, lineWidth: LineWidth);
+            return new PlotFormat(baseLineFormat: this, lineWidth: lineWidth);
         }
 
         /// <summary>

@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
-using static BoSSS.Foundation.SpatialOperator;
+using static BoSSS.Foundation.DifferentialOperator;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
     /// it can have components which couple the phases.
     /// Mk2: enables the definition of different equation components for each phase 
     /// </summary>
-    partial class XSpatialOperatorMk2 {
+    partial class XDifferentialOperatorMk2 {
 
         /// <summary>
         /// Assembly of matrices for linear (or linearized) XDG operators
@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// ctor
             /// </summary>
-            internal XEvaluatorLinear(XSpatialOperatorMk2 ownr,
+            internal XEvaluatorLinear(XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory) :
@@ -227,7 +227,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var builder = SpeciesBuilder[SpeciesId];
                                     //builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
-                                    NotifySpecies((SpatialOperator)(builder.Owner), this.m_lsTrk, SpeciesId);
+                                    NotifySpecies((DifferentialOperator)(builder.Owner), this.m_lsTrk, SpeciesId);
 
                                     if(trx != null) {
                                         trx.TransceiveFinish();
@@ -254,7 +254,8 @@ namespace BoSSS.Foundation.XDG {
                     ///////////////////
 
 
-                    using(new BlockTrace("surface_integration", tr)) {
+                    using(var bt = new BlockTrace("surface_integration", tr)) {
+                        bt.IntermediateReportOfChildCalls = true;
                         if (DoEdge) {
 #if DEBUG
                             {
@@ -305,6 +306,7 @@ namespace BoSSS.Foundation.XDG {
                             foreach(var MtxBuilder in allBuilders) {
                                 MtxBuilder.time = time;
                                 UpdateLevelSetCoefficients(MtxBuilder.m_LevSetIdx, MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
+                                MtxBuilder.ExecuteParallel = true;
                                 MtxBuilder.Execute();
 
 #if DEBUG
@@ -345,7 +347,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-            internal XEvaluatorNonlin(XSpatialOperatorMk2 ownr,
+            internal XEvaluatorNonlin(XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 CoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory) :
@@ -417,7 +419,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     var eval = SpeciesEval[SpeciesId];
                                     //eval.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
-                                    NotifySpecies((SpatialOperator)(eval.Owner), this.m_lsTrk, SpeciesId);
+                                    NotifySpecies((DifferentialOperator)(eval.Owner), this.m_lsTrk, SpeciesId);
 
                                     if (trx != null) {
                                         trx.TransceiveFinish();
@@ -438,6 +440,7 @@ namespace BoSSS.Foundation.XDG {
 
                     using (new BlockTrace("surface_integration", tr)) {
                         if (DoEdge) {
+                            // TODO: are the quadrature rules non-empty?
 #if DEBUG
                             {
                                 // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
@@ -486,6 +489,7 @@ namespace BoSSS.Foundation.XDG {
                             // should prevent waiting for unevenly balanced level sets
                             foreach(var LsEval in necList) {
                                 LsEval.time = time;
+                                LsEval.ExecuteParallel = true;
                                 UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
                                 LsEval.Execute();
 
@@ -598,12 +602,12 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// equal to <see cref="Owner"/>
             /// </summary>
-            internal XSpatialOperatorMk2 m_Owner;
+            internal XDifferentialOperatorMk2 m_Owner;
 
             /// <summary>
             /// the operator used to construct this object
             /// </summary>
-            public ISpatialOperator Owner {
+            public IDifferentialOperator Owner {
                 get {
                     return m_Owner;
                 }
@@ -641,7 +645,7 @@ namespace BoSSS.Foundation.XDG {
             /// ctor
             /// </summary>
             protected internal XEvaluatorBase(
-                XSpatialOperatorMk2 ownr,
+                XDifferentialOperatorMk2 ownr,
                 LevelSetTracker lsTrk,
                 UnsetteledCoordinateMapping DomainVarMap, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int __TrackerHistoryIndex) //
@@ -738,9 +742,11 @@ namespace BoSSS.Foundation.XDG {
                                 var volRule = cellScheme.Compile(this.GridData, quadOrder);
                                 //edgeRule.(GridData, $"Edge{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
                                 edgeRule.ToTextFileEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+								edgeRule.ToVtpFilesEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
                                 edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}.csv");
 
                                 volRule.ToTextFileCell(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.csv");
+								volRule.ToVtpFilesCell(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
                                 volRule.SumOfWeightsToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}.csv");
                             }
 
@@ -765,6 +771,10 @@ namespace BoSSS.Foundation.XDG {
                                 if (ruleDiagnosis) {
                                     SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}.txt");
                                     SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}.txt");
+									
+                                    SurfaceElement_volume.Compile(GridData,quadOrder).ToVtpFilesCell(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}");
+									SurfaceElement_Edge.Compile(GridData, quadOrder).ToVtpFilesEdge(GridData, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}");
+
                                     SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}.txt");
                                 }
                                 ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
@@ -774,6 +784,7 @@ namespace BoSSS.Foundation.XDG {
                                 CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 if (ruleDiagnosis) {
                                     ContactLine_Volume.ToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}.csv");
+									ContactLine_Volume.Compile(GridData, quadOrder).ToVtpFilesCell(GridData, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}-MPI{this.GridData.MpiRank}");
                                 }
                                 ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }
@@ -925,17 +936,17 @@ namespace BoSSS.Foundation.XDG {
             abstract protected void ctorSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperatorMk2.GhostEdgesOperator"/>
+            /// Create integrator for <see cref="XDifferentialOperatorMk2.GhostEdgesOperator"/>
             /// </summary>
             abstract protected void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
+            /// Create integrator for <see cref="XDifferentialOperatorMk2.SurfaceElementOperator_Ls0"/>
             /// </summary>
             abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
-            /// Create Integrator for <see cref="XSpatialOperatorMk2.ContactLineOperator_Ls0"/>
+            /// Create Integrator for <see cref="XDifferentialOperatorMk2.ContactLineOperator_Ls0"/>
             /// </summary>
             abstract protected void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
@@ -945,7 +956,7 @@ namespace BoSSS.Foundation.XDG {
             abstract protected void ctorLevSetFormIntegrator(int iLevSet, SpeciesId SpeciesA, SpeciesId SpeciesB, ICompositeQuadRule<QuadRule> rule);
 
             /// <summary>
-            /// all species to integrate, defined through <see cref="XSpatialOperatorMk2.Species"/>
+            /// all species to integrate, defined through <see cref="XDifferentialOperatorMk2.Species"/>
             /// </summary>
             protected SpeciesId[] ReqSpecies;
 
@@ -957,7 +968,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// the spatial operator
             /// </summary>
-            protected XSpatialOperatorMk2 m_Xowner;
+            protected XDifferentialOperatorMk2 m_Xowner;
 
             /// <summary>
             /// Parameter fields for each species, for <see cref="XDGField"/>s the species shadow, see <see cref="XDGField.GetSpeciesShadowField(SpeciesId)"/>
@@ -1053,9 +1064,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// calls all <see cref="IEquationComponentSpeciesNotification.SetParameter(string, SpeciesId)"/> methods
+            /// calls all <see cref="IEquationComponentSpeciesNotification.SetParameter"/> methods
             /// </summary>
-            protected static void NotifySpecies(SpatialOperator Owner, LevelSetTracker lsTrk, SpeciesId id) {
+            protected static void NotifySpecies(DifferentialOperator Owner, LevelSetTracker lsTrk, SpeciesId id) {
                 string sNmn = lsTrk.GetSpeciesName(id);
 
                 string[] CodNames = Owner.CodomainVar.ToArray();

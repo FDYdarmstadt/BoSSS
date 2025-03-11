@@ -24,6 +24,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Queries;
 using CommandLine;
 using CommandLine.Text;
@@ -36,6 +37,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -44,105 +46,13 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Xml;
 
 namespace BoSSS.Solution {
 
-    /// <summary>
-    /// Configuration of <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>
-    /// </summary>
-    [DataContract]
-    public class MatlabConnectorConfig {
-        /// <summary>
-        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable"/>
-        /// </summary>
-        [DataMember]
-        public string MatlabExecuteable;
-
-        /// <summary>
-        /// <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector.Flav"/>
-        /// </summary>
-        [DataMember]
-        public string Flav = ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor.Matlab.ToString();
-
-
-        /// <summary>
-        /// Loads configuration from default location in user directory
-        /// </summary>
-        public static MatlabConnectorConfig LoadDefault(string userDir) {
-            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
-            if (!File.Exists(ConfigFile)) {
-                var r = new MatlabConnectorConfig();
-                r.SaveDefault(userDir);
-                return r;
-            }
-            string str = File.ReadAllText(ConfigFile);
-
-            return Deserialize(str);
-        }
-
-        /// <summary>
-        /// Saves configuration in default location in user directory
-        /// </summary>
-        public void SaveDefault(string userDir) {
-            string ConfigFile = Path.Combine(userDir, "etc", "MatlabConnectorConfig.json");
-            var Str = this.Serialize();
-            File.WriteAllText(ConfigFile, Str);
-        }
-
-
-        /// <summary>
-        /// JSON deserialization
-        /// </summary>
-        public static MatlabConnectorConfig Deserialize(string Str) {
-
-
-            JsonSerializer formatter = new JsonSerializer() {
-                NullValueHandling = NullValueHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.Auto,
-                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                ReferenceLoopHandling = ReferenceLoopHandling.Error
-            };
-
-
-            using (var tr = new StringReader(Str)) {
-                //string typeName = tr.ReadLine();
-                Type ControlObjectType = typeof(MatlabConnectorConfig); //Type.GetType(typeName);
-                using (JsonReader reader = new JsonTextReader(tr)) {
-                    var obj = formatter.Deserialize(reader, ControlObjectType);
-
-                    MatlabConnectorConfig ctrl = (MatlabConnectorConfig)obj;
-                    return ctrl;
-                }
-
-            }
-        }
-
-        /// <summary>
-        /// JSON serialization
-        /// </summary>
-        public string Serialize() {
-            JsonSerializer formatter = new JsonSerializer() {
-                NullValueHandling = NullValueHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.Auto,
-                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                ReferenceLoopHandling = ReferenceLoopHandling.Error,
-                Formatting = Newtonsoft.Json.Formatting.Indented
-            };
-
-            using (var tw = new StringWriter()) {
-                //tw.WriteLine(this.GetType().AssemblyQualifiedName);
-                using (JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
-                    formatter.Serialize(writer, this);
-                }
-
-                string Ret = tw.ToString();
-                return Ret;
-            }
-        }
-
-    }
+   
 
 
     /// <summary>
@@ -171,6 +81,18 @@ namespace BoSSS.Solution {
                 throw new NotSupportedException();
             }
 
+        }
+
+        public void Init() {
+            base.Init(new EmptyAppControl());
+        }
+
+        static string[] m_LatestCmdLineArgs;
+        internal static string[] LatestCmdLineArgs {
+            get { return m_LatestCmdLineArgs; }
+            set {
+                m_LatestCmdLineArgs = value;
+            }
         }
     }
 
@@ -287,13 +209,16 @@ namespace BoSSS.Solution {
         /// <param name="args">
         /// command line arguments
         /// </param>
+        /// <param name="num_threads">
+        /// number of threads to use, see <see cref="ilPSP.Environment.InitThreading"/>
+        /// </param>
         /// <returns>
         /// Whether this call actually initialized MPI
         /// - true, if this routine actually called <see cref="IMPIdriver.Init"/>; then, the call should be 
         ///   an other call to <see cref="FinalizeMPI"/>.
         /// - false, if not.
         /// </returns>
-        public static bool InitMPI(string[] args = null) {
+        public static bool InitMPI(string[] args = null, int? num_threads = null) {
             if (args == null)
                 args = new string[0];
 
@@ -302,12 +227,24 @@ namespace BoSSS.Solution {
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             m_Logger.Info("Bootstrapping.");
-
+            m_Logger.Info("Git commit: " + GitCommitHash);
 
             ilPSP.Environment.Bootstrap(
                 args,
                 GetNativeLibraryDir(),
                 out bool _MustFinalizeMPI);
+
+            //ilPSP.Utils.CPUAffinityWindows.SetOMP_PLACESfromCCPVar(1);
+            if(args.Contains("--num_threads") || args.Contains("-T")) {
+                int iOff = args.FirstIndexWhere(arg => arg == "--num_threads" || arg == "-T");
+                try {
+                    num_threads = int.Parse(args[iOff + 1]);
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"During parsing --num_threads/-T the following exception occurred: {e}");
+                }
+            }
+            ilPSP.Environment.InitThreading(true, num_threads);
+            
 
             m_Logger.Info("_MustFinalizeMPI = " + _MustFinalizeMPI);
 
@@ -330,10 +267,17 @@ namespace BoSSS.Solution {
                     Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
                     Console.WriteLine(@"                                                                      ");
 
+                    Console.Write(DateTime.Now);
+                    Console.Write("  ");
                     if (size <= 1)
-                        Console.WriteLine("Running with 1 MPI process (single core)");
+                        Console.WriteLine($"Running with 1 MPI process (single core), {ilPSP.Environment.NumThreads} threads");
                     else
-                        Console.WriteLine("Running with " + size + " MPI processes ");
+                        Console.WriteLine($"Running with {size}*{ilPSP.Environment.NumThreads} MPI processes * threads");
+
+                    Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
+                    Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
+                    Console.WriteLine($"Current commit hash: {GitCommitHash}");
+
 
                     Console.WriteLine("User: " + System.Environment.UserName);
 
@@ -384,11 +328,29 @@ namespace BoSSS.Solution {
 
             m_Logger.Info("Hello from MPI rank " + rank + " of " + size + "!");
 
+
             ReadBatchModeConnectorConfig();
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
+
             return _MustFinalizeMPI;
+        }
+
+        public static string GitCommitHash {
+            get {
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                using (Stream stream = assembly.GetManifestResourceStream("BoSSS.Solution.commit_hash.txt")) {
+                    if (stream == null)
+                        return "unkonwn";
+                    using (StreamReader reader = new StreamReader(stream)) {
+                        string commitHash = reader.ReadToEnd();
+			commitHash = commitHash.Trim();
+                        return commitHash;
+                    }
+                }
+
+            }
         }
 
         /// <summary>
@@ -452,6 +414,8 @@ namespace BoSSS.Solution {
             }
         }
 
+    
+
         /// <summary>
         /// parses command line arguments, parses control file, runs the
         /// application
@@ -467,101 +431,108 @@ namespace BoSSS.Solution {
             Func<Application<T>> ApplicationFactory) {
 
             m_Logger.Info("Entering _Main routine...");
+            Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.None;
 
-
+            Application.LatestCmdLineArgs = args.CloneAs();
             int MPIrank = int.MinValue;
-//#if DEBUG
-//            {
-
-                
-//#else
-//            try {
-//#endif
-                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
-                bool _MustFinalizeMPI = InitMPI(args);
-                ReadBatchModeConnectorConfig();
-
-                MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
-
-                // lets see if we have environment variables which override command line arguments
-                // (environment variables are usually more robust w.r.t. e.g. escape characters)
-                args = ArgsFromEnvironmentVars(args);
+            //#if DEBUG
+            //            {
 
 
-                // parse arguments
-                CommandLineOptions opt = new CommandLineOptions();
-                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                    argsParseSuccess = parser.ParseArguments(args, opt);
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                } else {
-                    argsParseSuccess = false;
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                }
+            //#else
+            //            try {
+            //#endif
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-                if (!argsParseSuccess) {
-                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                    _MustFinalizeMPI = false;
-                    m_Logger.Error("Unable to parse arguments - exiting.");
-                    System.Environment.Exit(-1);
-                }
+            bool _MustFinalizeMPI = InitMPI(args);
+            ReadBatchModeConnectorConfig();
 
-                if (opt.ControlfilePath != null) {
-                    opt.ControlfilePath = opt.ControlfilePath.Trim();
-                }
-                m_Logger.Info("Braodcasting command line options..");
-                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
+
+            // lets see if we have environment variables which override command line arguments
+            // (environment variables are usually more robust w.r.t. e.g. escape characters)
+            args = ArgsFromEnvironmentVars(args);
+
+
+            // parse arguments
+            CommandLineOptions opt = new CommandLineOptions();
+            //ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+            
+            bool argsParseSuccess;
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var CmdlineParseRes = Parser.Default.ParseArguments<CommandLineOptions>(args);
+                opt = CmdlineParseRes.Value;
+                argsParseSuccess = CmdlineParseRes.Errors.IsNullOrEmpty();
+                //argsParseSuccess = parser.ParseArguments(args, opt);
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            } else {
+                argsParseSuccess = false;
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            }
+
+
+            if (!argsParseSuccess) {
+                MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                _MustFinalizeMPI = false;
+                m_Logger.Error("Unable to parse arguments - exiting.");
+                System.Environment.Exit(-1);
+            }
+
+            if (opt.ControlfilePath != null) {
+                opt.ControlfilePath = opt.ControlfilePath.Trim();
+            }
+            m_Logger.Info("Braodcasting command line options..");
+            opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            m_Logger.Info("done.");
+
+            // Delete old plots if requested
+            if (opt.delPlt) {
+                m_Logger.Info("Deletion of old plot files...");
+                DeleteOldPlotFiles();
                 m_Logger.Info("done.");
+            }
 
-                // Delete old plots if requested
-                if (opt.delPlt) {
-                    m_Logger.Info("Deletion of old plot files...");
-                    DeleteOldPlotFiles();
-                    m_Logger.Info("done.");
-                }
+            ilPSP.Environment.InitThreading(true, opt.NumThreads);
 
+            // load control file
+            T ctrlV2 = null;
+            T[] ctrlV2_ParameterStudy = null;
+            if (!noControlFile) {
+                m_Logger.Info("Loading control object...");
+                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                m_Logger.Info("done.");
+            } else {
+                ctrlV2 = new T();
+                m_Logger.Info("No control Object.");
+            }
 
-                // load control file
-                T ctrlV2 = null;
-                T[] ctrlV2_ParameterStudy = null;
-                if (!noControlFile) {
-                    m_Logger.Info("Loading control object...");
-                    LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-                    m_Logger.Info("done.");
-                } else {
-                    ctrlV2 = new T();
-                    m_Logger.Info("No control Object.");
-                }
+            AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
-                AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
+            if (_MustFinalizeMPI)
+                FinalizeMPI();
 
-                if (_MustFinalizeMPI)
-                    FinalizeMPI();
+            //#if DEBUG
+            //            }
+            //#else
+            //            } catch (Exception e) {
+            //                // handle exception logging, for automated processing in WorkflowMgm etc.
+            //                // make sure the exception is appended to the stderr in session directory!
 
-//#if DEBUG
-//            }
-//#else
-//            } catch (Exception e) {
-//                // handle exception logging, for automated processing in WorkflowMgm etc.
-//                // make sure the exception is appended to the stderr in session directory!
-
-//                Console.Error.WriteLine(e.StackTrace);
-//                Console.Error.WriteLine();
-//                Console.Error.WriteLine();
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
-//                Console.Error.WriteLine(e.Message);
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine();
-//                Console.Error.Flush();
-//                //System.Environment.Exit(-1);
-//            }
-//#endif
+            //                Console.Error.WriteLine(e.StackTrace);
+            //                Console.Error.WriteLine();
+            //                Console.Error.WriteLine();
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
+            //                Console.Error.WriteLine(e.Message);
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine();
+            //                Console.Error.Flush();
+            //                //System.Environment.Exit(-1);
+            //            }
+            //#endif
         }
 
         /// <summary>
@@ -578,7 +549,7 @@ namespace BoSSS.Solution {
                         break;
 
                     System.Environment.SetEnvironmentVariable(ArgOverrideName, null); // delete the envvar
-                    // many test internally call the _Main function with arguments;
+                    // many tests internally call the _Main function with arguments;
                     // this would be overridden (and thus not work properly) if we don't delete the variable here and now.
 
                     if (ArgCounter < _args.Count) {
@@ -682,6 +653,50 @@ namespace BoSSS.Solution {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 Console.Write("rm");
                 foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+        /// <summary>
+        /// On process rank 0, deletes all txt and csv files in the current directory
+        /// </summary>
+        public static void DeleteOldTextFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.txt").Concat(dir.GetFiles("*.csv"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+
+        /// <summary>
+        /// On process rank 0, deletes all text and csv files in the current directory
+        /// </summary>
+        public static void DeleteOldTxtFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.txt").Concat(dir.GetFiles("*.csv"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+
+        /// <summary>
+        /// On process rank 0, deletes all image files in the current directory
+        /// </summary>
+        public static void DeleteOldImageFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.png").Concat(dir.GetFiles("*.jpg")).Concat(dir.GetFiles("*.jpeg")).Concat(dir.GetFiles("*.tiff")).Concat(dir.GetFiles("*.bmp"))) {
                     Console.Write(" " + pltFile.Name);
                     pltFile.Delete();
                 }
@@ -800,11 +815,13 @@ namespace BoSSS.Solution {
         /// </param>
         public virtual void Init(AppControl control) {
 
+
             if (control != null) {
                 this.Control = (T)control;
             } else {
                 this.Control = new T();
             }
+
 
             ReadBatchModeConnectorConfig();
 
@@ -837,6 +854,9 @@ namespace BoSSS.Solution {
                     this.RollingSave = this.Control.rollingSaves;
                 }
             }
+
+            OnlineProfiling = new OnlineProfiling(this.Control);
+            //ilPSP.MultithreadPerformanceEval.ExecuteBenchmarks();
         }
 
         /// <summary>
@@ -1154,6 +1174,8 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
+
+                Tracer.MemoryInstrumentationLevel = this.Control.MemoryInstrumentationLevel;
             } else {
                 this.passiveIo = true;
             }
@@ -1200,7 +1222,7 @@ namespace BoSSS.Solution {
                 // access the GridData object here, to enforce its creation:
                 ht.Info("loaded grid with " + this.GridData.CellPartitioning.TotalLength + " cells");
 
-
+               
 
                 bool DoDbLogging = !passiveIo
                     && this.Control != null
@@ -1263,7 +1285,9 @@ namespace BoSSS.Solution {
                     if (DBpath == null)
                         DBpath = "NULL";
                     if (DatabaseDriver.MyRank == 0) {
-                        Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
+                        Console.WriteLine($"Session ID: {this.CurrentSessionInfo.ID.ToString()}, DB path: '{DBpath}'");
+                        var sdir = Path.Combine(DBpath, StandardFsDriver.SessionsDir, this.CurrentSessionInfo.ID.ToString());
+                        Console.WriteLine($"Session directory '{sdir}'.");
                     }
                 } else {
                     Console.WriteLine("IO deactivated.");
@@ -1271,25 +1295,28 @@ namespace BoSSS.Solution {
 
                 // kernel setup
                 //====================
-                //RedistributeGrid();
-
                 {
-                    Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+                    Grid.Redistribute(this.Database, Control.GridPartType, Control.GridPartOptions);
+                    //Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+
                     if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
-                        DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
+                        DatabaseDriver.SaveGrid(this.Grid, this.Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     }
 
 
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                    } else {
-                        this.MultigridSequence = new AggregationGridData[0];
-                    }
+                    
+
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                        (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                            MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                            );
+                    else
+                        (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
                 }
-
-
+                
+               
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (this.CurrentSessionInfo != null) {
@@ -1406,6 +1433,9 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.ComputeNodeNames.Clear();
                 CurrentSessionInfo.ComputeNodeNames.AddRange(ilPSP.Environment.MPIEnv.HostnameForRank);
 
+                //set number of threads per mpi rank
+                CurrentSessionInfo.ThreadPerMPIRank = ilPSP.Environment.NumThreads;
+
                 // save
                 this.CurrentSessionInfo.Save();
             }
@@ -1449,8 +1479,9 @@ namespace BoSSS.Solution {
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
-            get;
-            private set;
+            get {
+                return GridData.MultigridSequence;
+            }
         }
 
         /// <summary>
@@ -1470,18 +1501,24 @@ namespace BoSSS.Solution {
         /// <summary>
         /// <see cref="DatabaseDriver"/>
         /// </summary>
-        private IDatabaseInfo m_Database;
+        public IDatabaseInfo m_Database;
+
+        public IDatabaseInfo Database {
+            get {
+                if (m_Database == null) {
+                    m_Database = GetDatabase();
+                }
+                return m_Database;
+            }
+        }
+
 
         /// <summary>
         /// interface to the database driver
         /// </summary>
         public IDatabaseDriver DatabaseDriver {
             get {
-                if (m_Database == null) {
-                    return null;
-                } else {
-                    return m_Database.Controller.DBDriver;
-                }
+                return Database?.Controller?.DBDriver;
             }
         }
 
@@ -1491,8 +1528,6 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
-
-                
 
 
                 if (this.Control != null) {
@@ -1649,7 +1684,53 @@ namespace BoSSS.Solution {
         /// </param>
         /// <param name="timestepno">time-step number</param>
         protected virtual TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields);
+
+            // store the MPI rank
+            var _fields = m_IOFields.ToArray();
+
+            {
+                string ID_MPIrank = "MPIrank";
+                {
+                    int no = 2;
+                    while (IOFields.Any(f => f.Identification == ID_MPIrank)) {
+                        ID_MPIrank = "MPIrank_" + no;
+                        no++;
+                    }
+                }
+
+                SinglePhaseField MPIrnk;
+                {
+                    MPIrnk = new SinglePhaseField(new Basis(this.GridData, 0), ID_MPIrank);
+                    int rnk = MPIRank;
+                    MPIrnk.AccConstant(this.MPIRank);
+                }
+
+               
+                MPIrnk.AddToArray(ref _fields);
+            }
+
+            if(this.IOFields.Any(f => f is XDGField) && LsTrk != null) {
+
+                string ID_CutCells = "CutCells";
+                {
+                    int no = 2;
+                    while (IOFields.Any(f => f.Identification == ID_CutCells)) {
+                        ID_CutCells = "CutCells_" + no;
+                        no++;
+                    }
+                }
+
+                SinglePhaseField CutCells;
+                {
+                    CutCells = new SinglePhaseField(new Basis(this.GridData, 0), ID_CutCells);
+                    CutCells.AccConstant(1.0, LsTrk.Regions.GetCutCellMask());
+                }
+
+                CutCells.AddToArray(ref _fields);
+            }
+
+            //
+            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, _fields);
         }
 
         /// <summary>
@@ -1694,6 +1775,51 @@ namespace BoSSS.Solution {
                 return tsi;
             }
         }
+
+
+        /// <summary>
+        /// If data logging is turned on, saves all fields in
+        /// <param name="fieldsToSave"/> to the database 
+        /// </summary>
+        /// <param name="t">
+        /// time value which will be associated with the field
+        /// </param>
+        /// <param name="timestepno">time-step number</param>
+        protected virtual ITimestepInfo SaveFieldsToDatabase(ICollection<DGField> fieldsToSave, TimestepNumber timestepno, double t) {
+            using (var ht = new FuncTrace()) {
+
+                if (DatabaseDriver.FsDriver == null)
+                    return null;
+                if (this.CurrentSessionInfo.ID.Equals(Guid.Empty))
+                    return null;
+
+                TimestepInfo tsi = new TimestepInfo(t, this.CurrentSessionInfo, timestepno, fieldsToSave);
+                //Exception e = null;
+                try {
+                    this.DatabaseDriver.SaveTimestep(tsi);
+                } catch (Exception ee) {
+                    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.StackTrace);
+                    //tsi = null;
+                    //e = ee;
+
+                    if (ContinueOnIOError) {
+                        Console.WriteLine("Ignoring IO error: " + DateTime.Now);
+
+                    } else {
+                        throw ee;
+                    }
+
+                    tsi = null;
+                }
+
+                // e.ExceptionBcast();
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                return tsi;
+            }
+        }
+
 
         /// <summary>
         /// Calculation is not stopped if an I/O exception is thrown in <see cref="SaveToDatabase(TimestepNumber, double)"/>,
@@ -1740,17 +1866,23 @@ namespace BoSSS.Solution {
                     double dtMin = this.Control.dtMin;
                     if(dtMin > 0) {
                         if(time + dtMin == time) { // time is so advanced, that the timestep becomes invisible
+                            tr.Info($"Time for restart: time ({time}) is so advanced, that the timestep becomes invisible (time + dt = time, after round-off-errors), resetting time...");
                             MustResetTime = true;
                         }
                     }
                 }
 
-                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode) || MustResetTime) {
+                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode)) {
                     if (Convert.ToInt32(mode) == (int)AppControl._TimesteppingMode.Steady) {
-                        Console.WriteLine("Restarting from steady-state, resetting time ...");
-                        time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                        tr.Info("Restarting from steady-state, resetting time ...");
+                        MustResetTime = true;
                     }
                 }
+
+                if (MustResetTime) {
+                    time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                }
+                
 
                 if (tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
                     var tsiI = tp.GetInternal() as TimestepInfo;
@@ -1818,12 +1950,22 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
+        /// called after <see cref="CreateEquationsAndSolvers"/> for time-dependent initialization routines (e.g. delayed BDF-timestepper)
+        /// </summary>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepNo"></param>
+        protected virtual void AfterSolverCreation(double phystime, int TimestepNo) { 
+        }
+
+
+        /// <summary>
         /// sets initial values as defined in the control file. Override this
         /// method to set initial values for the fields;
         /// </summary>
         protected virtual void SetInitial(double time) {
             using (var tr = new FuncTrace()) {
 
+                
                 this.QueryResultTable.UpdateKey("Timestep", ((int)0));
 
                 if (this.Control == null) {
@@ -1886,7 +2028,11 @@ namespace BoSSS.Solution {
                 }
 
                 if (LsTrk != null) {
-                    LsTrk.UpdateTracker(time);
+                    int[] AllowedLSMovement = new int[LsTrk.NoOfLevelSets];
+                    for (int i = 0; i < AllowedLSMovement.Length; i++) {
+                        AllowedLSMovement[i] = LsTrk.NearRegionWidth + 1;
+                    }
+                    LsTrk.UpdateTracker(time, __LevSetAllowedMovement: AllowedLSMovement);  // disable CFL-check for first time (setInitial is called after initial AMR and depending on the projected LS the near region may change more than the allowed movement)
                     LsTrk.UpdateTracker(time); // doppeltes Update h�lt besser; 
                 }
 
@@ -1966,9 +2112,9 @@ namespace BoSSS.Solution {
         /// Number of Consecutive timesteps which are saved -- this is intended to be used by BDF or Adams-Bashforth time integrators which require multiple time steps
         /// (e.g. 3 to save time-step 98, 99, 100 for a save-period of 100;)
         /// </summary>
-        protected virtual int BurstSave {
+        protected virtual int BurstSaves {
             get {
-                return Math.Max(1, this.Control.BurstSave);
+                return Math.Max(1, this.Control.BurstSaves);
             }
         }
 
@@ -2075,7 +2221,9 @@ namespace BoSSS.Solution {
 
             using (var tr = new FuncTrace()) {
 
-                var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
+                //tr.InfoToConsole = true;
+                rollingSavesTsi = new List<Tuple<int, ITimestepInfo, bool>>();
+
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -2100,58 +2248,53 @@ namespace BoSSS.Solution {
                     }
                 }
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
                 m_queryHandler.QueryResults.Clear();
+
 
                 if (this.Control.RestartInfo != null) {
                     CreateEquationsAndSolvers(null);
+                    AfterSolverCreation(physTime, i0.MajorNumber);
+
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                     if(LsTrk != null) {
-                        if(LsTrk.Regions.Time != physTime)
+                        if (LsTrk.Regions.Time != physTime) {
                             LsTrk.UpdateTracker(physTime);
-                        LsTrk.PushStacks();
+                            //LsTrk.PushStacks();
+                        }
                     }
                 }
+
 
                 // =========================================================
                 // Adaptive-Mesh-Refinement and/or load balancing on startup
                 // =========================================================
 
+                if (this.Control.RestartInfo == null) {
 
-                // load balancing solo
-                if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
-                    PlotAndSave(physTime, i0, rollingSavesTsi);
-                    MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
-                    PlotAndSave(physTime, i0, rollingSavesTsi);
-                }
+                    // load balancing solo
+                    tr.Info("DynamicLoadBalancing_RedistributeAtStartup = " + this.Control.DynamicLoadBalancing_RedistributeAtStartup);
+                    tr.Info("AdaptiveMeshRefinement = " + this.Control.AdaptiveMeshRefinement);
+                    if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
+                        PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(0)));
+                        MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                        PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(1)));
+                    }                       
 
-                // load balancing and adaptive mesh refinement
-                if (this.Control.AdaptiveMeshRefinement) {
-                    
-                    // unprocessed initial value IO
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+                    // load balancing and adaptive mesh refinement
+                    if (this.Control.AdaptiveMeshRefinement) {
 
-                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
-                    if (this.RollingSave)
-                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr));
+                        // unprocessed initial value IO
+                        PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(0)));   // save the initial value
 
+                        bool initialRedist = false;
+                        for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                            initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
 
-                    bool initialRedist = false;
-                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
-                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
-
-                        if (initialRedist == true) {
-
-                            if (this.Control.ImmediatePlotPeriod > 0)
-                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
-
-                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
-                            if (this.RollingSave)
-                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr);
-
+                            if (initialRedist == true) 
+                                PlotAndSave(physTime, new TimestepNumber(i0.Numbers.Cat(s)));   // save the AMR'ed initial value
+                       
                         }
                     }
                 }
@@ -2164,15 +2307,15 @@ namespace BoSSS.Solution {
 
                 if (this.Control.RestartInfo == null) {
                     CreateEquationsAndSolvers(null);
-                }
-                {
+                    AfterSolverCreation(physTime, i0.MajorNumber);
+
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                     if (LsTrk != null)
                         LsTrk.PushStacks();
-                }
 
+                }
                 // ========================================================================
                 // initial value IO:
                 // (note: in some apps, the initial values might be tweaked in the 
@@ -2181,13 +2324,10 @@ namespace BoSSS.Solution {
                 // ========================================================================
 
 
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+                PlotAndSave(physTime, i0, rollingSavesTsi);  // save the initial value
 
-                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
-                if (this.RollingSave)
-                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
-
+                
+                this.ProfilingLog();
 
                 // =========================================
                 // Adaptive-Mesh-Refinement on startup
@@ -2211,13 +2351,15 @@ namespace BoSSS.Solution {
                 // Main/outmost time-stepping loop
                 // (in steady-state: only one iteration)
                 // =================================================================================
+                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 {
 
 
                     // setup of logging
                     foreach (var l in PostprocessingModules) {
                         l.Setup(this);
-                        l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
+                        if (l.SolverStage != 2) //Check if the module is designed to run before or after the solver routine
+                            l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
                     }
 
 
@@ -2225,18 +2367,27 @@ namespace BoSSS.Solution {
                         return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
                     }
 
+                    bool gridChanged;
+
+                    var lastLogWrite = DateTime.Now;
+
                     for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
-                        this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        gridChanged = this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
+                        if( i <= i0.MajorNumber + 1 || (DateTime.Now - lastLogWrite > new TimeSpan(0, 5, 0))) { // prevent writing the log to often
+                            this.ProfilingLog();
+                            lastLogWrite = DateTime.Now;
+                        }
                         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
 
-                        if(LsTrk != null) {
+
+                        if (LsTrk != null) {
                             if(LsTrk.Regions.Time != physTime) {
                                 // correct the level-set tracker time if some solver did not correctly updated it.
                                 LsTrk.UpdateTracker(physTime);
@@ -2245,46 +2396,13 @@ namespace BoSSS.Solution {
 
 
                         foreach (var l in PostprocessingModules) {
-                            l.DriverTimestepPostProcessing(i, physTime, !RunLoop(i + 1));
-                        }
-
-                        ITimestepInfo tsi = null;
-
-                        if (this.BurstSave < 1) {
-                            throw new NotSupportedException("misconfiguration of burst save variable.");
+                            if (l.SolverStage != 1) //Check if the module is designed to run before or after the solver routine
+                                l.DriverTimestepPostProcessing(i, physTime);
                         }
 
 
-                        for (int sb = 0; sb < this.BurstSave; sb++) {
-                            if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
-                                tsi = SaveToDatabase(i, physTime);
-                                this.ProfilingLog();
-                                break;
-                            }
-                        }
+                        SaveApplicationToDatabase(i, physTime, RunLoop(i + 1), gridChanged);
 
-                        if (this.RollingSave) {
-                            if (tsi == null) {
-                                tsi = SaveToDatabase(i, physTime);
-                            }
-                            rollingSavesTsi.Add(Tuple.Create(i, tsi));
-
-                            while (rollingSavesTsi.Count > this.BurstSave) { // delete overdue rolling timesteps...
-                                var top_i_tsi = rollingSavesTsi[0];
-
-                                rollingSavesTsi.RemoveAt(0);
-
-                                if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
-                                    if (DatabaseDriver.FsDriver != null &&
-                                        !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                                        if (MPIRank == 0) {
-                                            this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
-                                            ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
-                                        }
-                                    }
-                                }
-                            }
-                        }
 
                         if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
@@ -2338,14 +2456,89 @@ namespace BoSSS.Solution {
             }
         }
 
-        private void PlotAndSave(double TS, TimestepNumber TSno, List<Tuple<int, ITimestepInfo>> rollingSavesSammeldingens) {
+        /// <summary>
+        /// used for initial plot and save routine (mesh adaption and load balancing)
+        /// </summary>
+        /// <param name="pT"></param>
+        /// <param name="TSnum"></param>
+        /// <param name="rollingSaves"></param>
+        private void PlotAndSave(double pT, TimestepNumber TSnum, List<Tuple<int, ITimestepInfo, bool>> rollingSaves = null) {
             if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                PlotCurrentState(TS, new TimestepNumber(TSno.Numbers.Cat(0)), this.Control.SuperSampling);
+                PlotCurrentState(pT, TSnum, this.Control.SuperSampling);
 
-            var ts0amr = SaveToDatabase(new TimestepNumber(TSno.Numbers.Cat(0)), TS); // save the initial value
-            if (this.RollingSave)
-                rollingSavesSammeldingens.Add(Tuple.Create(0, ts0amr));
+            var tsi = SaveToDatabase(TSnum, pT);
+            if (rollingSaves != null && this.RollingSave)
+                rollingSaves.Add(Tuple.Create(TSnum.MajorNumber, tsi, false));
         }
+
+
+        /// <summary>
+        /// List of currently saved rolling TimestepInfos
+        /// </summary>
+        protected List<Tuple<int, ITimestepInfo, bool>> rollingSavesTsi;
+
+
+        /// <summary>
+        /// summarizes the various save routines <see cref="BurstSaves"/> and <see cref="RollingSave"/> for the application 
+        /// intended to be overridden for additional save routines in derived applications
+        /// </summary>
+        protected virtual void SaveApplicationToDatabase(int timeStepInt, double physTime, bool runNextLoop, bool gridChanged) {
+
+            ITimestepInfo tsi = null;
+
+            if (this.BurstSaves < 1) {
+                throw new NotSupportedException("misconfiguration of burst save variable.");
+            }
+
+
+            for (int sb = 0; sb < this.BurstSaves; sb++) {
+                if ((timeStepInt + sb) % SavePeriod == 0 || (!runNextLoop && sb == 0)) {
+                    tsi = SaveToDatabase(timeStepInt, physTime);
+                    //Console.WriteLine($"timestep: {tsi} saved");
+                    this.ProfilingLog();
+                    break;
+                }
+            }
+
+
+            if (this.RollingSave) {
+                bool deleteTS = false;
+                if (tsi == null) {
+                    tsi = SaveToDatabase(timeStepInt, physTime);
+                    deleteTS = true;
+                    //Console.WriteLine($"timestep: {tsi} saved");
+                }
+                rollingSavesTsi.Add(Tuple.Create(timeStepInt, tsi, deleteTS));
+                //Console.WriteLine($"timestep: {tsi} added to rollingSaves (deleteTs = {deleteTS})");
+
+                while (rollingSavesTsi.Count > this.BurstSaves) { // delete overdue rolling timesteps...
+                    var top_i_tsi = rollingSavesTsi[0];
+
+                    rollingSavesTsi.RemoveAt(0);
+                    //Console.WriteLine($"timestep: {top_i_tsi} removed from rollingSaves (deleteTs = {top_i_tsi.Item3})");
+
+                    //bool deleteTS = true;
+                    //for (int sb = 0; sb < this.BurstSaves; sb++) {
+                    //    if ((top_i_tsi.Item1 + sb) % SavePeriod == 0) { // && (top_i_tsi.Item1 / SavePeriod) == (timeStepInt / SavePeriod)) {
+                    //        deleteTS = false;
+                    //    }
+                    //}
+
+                    if (top_i_tsi.Item3) { // ...only if they should not be saved anyway
+                        if (DatabaseDriver.FsDriver != null &&
+                            !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                            if (MPIRank == 0) {
+                                this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                //Console.WriteLine($"timestep: {top_i_tsi.Item2} deleted");
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
 
         /// <summary>
         /// Main routine for dynamic load balancing and adaptive mesh refinement.
@@ -2356,13 +2549,16 @@ namespace BoSSS.Solution {
         /// </returns>
         virtual protected bool MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
 
-            DoMeshAdaption(TimeStepNo, physTime);
-            DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation);
+            bool gridChanged = false;
+
+            gridChanged |= DoMeshAdaption(TimeStepNo, physTime);
+            gridChanged |= DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation);
 
             //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true); 
             //PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
 
-            return true;
+            return gridChanged;
+
         }
 
         /// <summary>
@@ -2396,7 +2592,7 @@ namespace BoSSS.Solution {
             using (new FuncTrace()) {
                 int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
                 if (NewPartition == null)
-                    return false; // immidiate quit, because there is nothing to do
+                    return false; // immediate quit, because there is nothing to do
 
                 int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
@@ -2425,7 +2621,6 @@ namespace BoSSS.Solution {
                 // ===============
                 GridData newGridData;
                 {
-                    this.MultigridSequence = null;
 
                     this.Grid.RedistributeGrid(NewPartition);
                     newGridData = (GridData)this.Grid.iGridData;
@@ -2435,9 +2630,11 @@ namespace BoSSS.Solution {
                     }
 
                     if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                            MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                            );
                     else
-                        this.MultigridSequence = new AggregationGridData[0];
+                        (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
 
                     //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                 }
@@ -2561,8 +2758,7 @@ namespace BoSSS.Solution {
                     // ===============
                     GridData newGridData;
                     {
-                        this.MultigridSequence = null;
-
+                        
                         this.Grid = newGrid;
                         newGridData = (GridData)this.Grid.iGridData;
                         oldGridData.Invalidate();
@@ -2573,10 +2769,11 @@ namespace BoSSS.Solution {
                         oldGridData = null;
 
                         if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                            (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                                );
                         else
-                            this.MultigridSequence = new AggregationGridData[0];
+                            (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
 
                         //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                     }
@@ -2624,8 +2821,6 @@ namespace BoSSS.Solution {
                         PostRestart(physTime, TimeStepNo);
 
                     ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
-                    
-
                 }
                 return true;
             }
@@ -2769,56 +2964,35 @@ namespace BoSSS.Solution {
         /// In the case of one MPI process, this method should always return <c>null</c>.
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-            if (Control == null
-                || !Control.DynamicLoadBalancing_On
-                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
-                || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
-                || MPISize <= 1) {
-                return null;
-            }
-
-            // Should only be called when needed
-            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
-            if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
-                throw new ApplicationException();
-            }
-
-            if (m_Balancer == null) {
-                var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
-                if (estimatorFactories.IsNullOrEmpty()) {
-                    estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
-                        //CellCostEstimatorLibrary.AllCellsAreEqual
-                    };
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
+                if (Control == null
+                    || !Control.DynamicLoadBalancing_On
+                    || (     TimeStepNo % Control.DynamicLoadBalancing_Period != 0 
+                        && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
+                    || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
+                    || MPISize <= 1) {
+                    return null;
                 }
-                m_Balancer = new LoadBalancer(estimatorFactories);
+
+                
+                if (m_Balancer == null) {
+                    m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators, this);
+
+                    
+                }
+
+                return m_Balancer.GetNewPartitioning(
+                    this,
+                    TimeStepNo,
+                    Control.GridPartType,
+                    Control.GridPartOptions,
+                    Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
+                    Control != null ? Control.DynamicLoadBalancing_Period : 5,
+                    redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
+                    TimestepNoRestart: TimeStepNoRestart);
             }
-
-            return m_Balancer.GetNewPartitioning(
-                this,
-                performanceClassCount,
-                cellToPerformanceClassMap,
-                TimeStepNo,
-                Control.GridPartType,
-                Control.GridPartOptions,
-                Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
-                Control != null ? Control.DynamicLoadBalancing_Period : 5,
-                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
-                TimestepNoRestart: TimeStepNoRestart);
-        }
-
-
-        /// <summary>
-        /// Provides cell-performance classes for the default implementation of <see cref="ComputeNewCellDistribution(int, double)"/>,
-        /// which is using the algorithms from <see cref="LoadBalancer"/>.
-        /// </summary>
-        /// <param name="NoOfClasses"></param>
-        /// <param name="CellPerfomanceClasses">
-        /// Performance classes for the Cut-Cell-Balancer.
-        /// </param>
-        /// <param name="TimeStepNo"></param>
-        /// <param name="physTime"></param>
-        virtual protected void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
-            throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
+           
         }
 
         /// <summary>
@@ -2856,6 +3030,19 @@ namespace BoSSS.Solution {
                 IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
+
+                if (Tracer.MemtraceFile != null) {
+                    try {
+                        Tracer.MemtraceFile.Flush();
+                        Tracer.MemtraceFile.Close();
+                        Tracer.MemtraceFile.Dispose();
+                    } catch (IOException) {
+
+                    } finally {
+                        Tracer.MemtraceFile = null;
+                    }
+                }
+
             }
             if (m_ResLogger != null) {
                 m_ResLogger.Close();
@@ -2873,69 +3060,59 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// profiling info which is updated during the application lifetime on a continuous basis
+        /// </summary>
+        public OnlineProfiling OnlineProfiling { 
+            get; 
+            private set; 
+        }
+
+        /// <summary>
         /// writes the profiling report 
         /// </summary>
         protected virtual void ProfilingLog() {
-            var R = Tracer.Root;
+            using (new FuncTrace()) {
+                if (OnlineProfiling == null)
+                    //OnlineProfiling = new OnlineProfiling(this.Control);
+                    return; // for some reason (i.e., because only Dispose was called()) not initialized yet
+                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                OnlineProfiling.AppEndTime = DateTime.Now;
+                
+                OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
+                Tracer.Current.UpdateTime();
 
-            if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
-                try {
-                    using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
-                        var str = R.Serialize();
-                        using (StreamWriter stw = new StreamWriter(stream)) {
-                            stw.Write(str);
-                            stw.Flush();
+                if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
+                    try {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                            var str = OnlineProfiling.Serialize();
+                            using (StreamWriter stw = new StreamWriter(stream)) {
+                                stw.Write(str);
+                                stw.Flush();
+                            }
+
                         }
-
+                    } catch (Exception e) {
+                        Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_bin: " + e.Message);
                     }
-                } catch (Exception e) {
-                    Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_bin: " + e.Message);
-                }
 
-                try {
-                    using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
-                        using (StreamWriter stw = new StreamWriter(stream)) {
-                            WriteProfilingHeader(stw);
-                            WriteProfilingReport(stw, R);
-                            stw.Flush();
-                            stream.Flush();
-                            stw.Close();
+                    try {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                            using (StreamWriter stw = new StreamWriter(stream)) {
+                                OnlineProfiling.WriteProfilingReport(stw);
+                                stw.Flush();
+                                stream.Flush();
+                                stw.Close();
+                            }
                         }
+                    } catch (Exception e) {
+                        Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_summary: " + e.Message);
                     }
-                } catch (Exception e) {
-                    Console.Error.WriteLine(e.GetType().Name + " during writing of profiling_summary: " + e.Message);
-                }
 
+                }
             }
         }
 
-        private void WriteProfilingHeader(StreamWriter stw ) {
-            stw.WriteLine($"Date       : {DateTime.Now}");
-            stw.WriteLine($"Computer   : {ilPSP.Environment.MPIEnv.Hostname} ");
-            stw.WriteLine($"User Name  : {System.Environment.UserName}");
-            stw.WriteLine($"MPI rank   : {this.MPIRank}");
-            stw.WriteLine($"MPI size   : {this.MPISize}");
-
-            void TryWrite(string s, Func<object> o) {
-                try {
-                    stw.WriteLine(s + o());
-                } catch(Exception e) {
-                    stw.WriteLine(s + $"{e.GetType().Name}, {e.Message}");
-                }
-
-            }
-
-            TryWrite("Number of cells (last mesh)      : ", () => this.Grid.NumberOfCells);
-            TryWrite("Number of local cells (last mesh): ", () => this.Grid.CellPartitioning.LocalLength);
-            if(m_RegisteredFields != null) {
-                foreach(var f in m_RegisteredFields) {
-                    //                                         :
-                    TryWrite("    Field: ", () => $"{f.Identification}, degree {f.Basis.Degree}, XDG: {f.Basis is XDGBasis}");
-                }
-            }
-
-            Console.WriteLine();
-        }
+       
 
 
         /// <summary>
@@ -3041,6 +3218,7 @@ namespace BoSSS.Solution {
                         } else {
                             Console.WriteLine("Warning: unable to obtain grid resolution");
                         }
+                        nlog.LogValue("GitCommitHash", GitCommitHash);
 #if DEBUG
                     }
 #else
@@ -3425,241 +3603,14 @@ namespace BoSSS.Solution {
 
         ResidualLogger m_ResLogger;
 
-        /// <summary>
-        /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
-        /// </summary>
-        public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
-            var R = Root;
-
-            wrt.WriteLine();
-            wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
-            wrt.WriteLine("(sum over all calling parents)");
-            wrt.WriteLine("=========================================================");
-
-            MethodCallRecordExtension.GetMostExpensiveCalls(wrt, R);
-
-            wrt.WriteLine();
-            wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
-            wrt.WriteLine("(distinction by parent call)");
-            wrt.WriteLine("=========================================================");
-
-            MethodCallRecordExtension.GetMostExpensiveCallsDetails(wrt, R);
-            
-            wrt.WriteLine();
-            wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
-            wrt.WriteLine("(sum over all calling parents)");
-            wrt.WriteLine("===========================================================================");
-
-            MethodCallRecordExtension.GetMostMemoryConsumingCalls(wrt, R);
-
-            wrt.WriteLine();
-            wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
-            wrt.WriteLine("(distinction by parent call)");
-            wrt.WriteLine("==========================================================================");
-
-            MethodCallRecordExtension.GetMostMemoryConsumingCallsDetails(wrt, R);
-            
-
-            /*
-            wrt.WriteLine();
-            wrt.WriteLine("Details on nonlinear operator evaluation:");
-            wrt.WriteLine("=========================================");
-
-            var OpEval = R.FindChildren("BoSSS.Foundation.SpatialOperator*Evaluator*Evaluate*");
-            if (OpEval.Count() == 0) {
-                wrt.WriteLine("not called.");
-            } else {
-                try {
-                    wrt.WriteLine((new CollectionReport(OpEval.ToArray())).ToString());
-
-                    wrt.WriteLine("Blocks:");
-                    wrt.WriteLine("-------");
-
-                    List<MethodCallRecord>[] OpEval_Blocks = ((int)2).ForLoop(iii => new List<MethodCallRecord>());
-                    Dictionary<string, List<MethodCallRecord>>[] QuadratureExecuteBlocks = ((int)2).ForLoop(iii => new Dictionary<string, List<MethodCallRecord>>());
-
-                    foreach (MethodCallRecord mcr in OpEval) {
-                        OpEval_Blocks[0].AddRange(mcr.FindChildren("Edge_Integration_NonLin"));
-                        OpEval_Blocks[1].AddRange(mcr.FindChildren("Volume_Integration_NonLin"));
-                    }
-
-                    for (int ii = 0; ii < 2; ii++) {
-                        var L = OpEval_Blocks[ii];
-
-                        foreach (MethodCallRecord mcr in L) {
-                            MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-
-                            foreach (var subBlock in quadCall.Calls.Values) {
-                                List<MethodCallRecord> col;
-                                if (!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
-                                    col = new List<MethodCallRecord>();
-                                    QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
-                                }
-                                col.Add(subBlock);
-                            }
-                        }
-                    }
-
-                    for (int ii = 0; ii < 2; ii++) {
-                        wrt.WriteLine((new CollectionReport(OpEval_Blocks[ii])).ToString());
-                        foreach (var col in QuadratureExecuteBlocks[ii].Values) {
-                            wrt.Write("  ");
-                            wrt.WriteLine((new CollectionReport(col)).ToString());
-                        }
-                    }
-
-
-                } catch (Exception e) {
-                    wrt.WriteLine(e.GetType().Name + ": " + e.Message);
-                    wrt.WriteLine(e.StackTrace);
-                }
-            }
-
-
-
-            wrt.WriteLine();
-            wrt.WriteLine("Details on Matrix compilation:");
-            wrt.WriteLine("==============================");
-
-            var Matrix = R.FindChildren("BoSSS.Foundation.SpatialOperator*ComputeMatrix*");
-            if (Matrix.Count() == 0) {
-                wrt.WriteLine("not called.");
-            } else {
-                try {
-                    wrt.WriteLine((new CollectionReport(Matrix.ToArray())).ToString());
-
-                    wrt.WriteLine("Blocks:");
-                    wrt.WriteLine("-------");
-
-                    List<MethodCallRecord>[] Matrix_Blocks = ((int)4).ForLoop(iii => new List<MethodCallRecord>());
-                    Dictionary<string, List<MethodCallRecord>>[] QuadratureExecuteBlocks = ((int)4).ForLoop(iii => new Dictionary<string, List<MethodCallRecord>>());
-
-                    foreach (MethodCallRecord mcr in Matrix) {
-                        Matrix_Blocks[0].AddRange(mcr.FindChildren("Edge_Integration_(legacy)"));
-                        Matrix_Blocks[1].AddRange(mcr.FindChildren("Edge_Integration_(new)"));
-                        Matrix_Blocks[2].AddRange(mcr.FindChildren("Volume_Integration_(legacy)"));
-                        Matrix_Blocks[3].AddRange(mcr.FindChildren("Volume_Integration_(new)"));
-                    }
-
-                    for (int ii = 0; ii < 4; ii++) {
-                        var L = Matrix_Blocks[ii];
-
-                        foreach (MethodCallRecord mcr in L) {
-                            MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-                            if(quadCall != null) {
-                                foreach(var subBlock in quadCall.Calls.Values) {
-                                    List<MethodCallRecord> col;
-                                    if(!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
-                                        col = new List<MethodCallRecord>();
-                                        QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
-                                    }
-                                    col.Add(subBlock);
-                                }
-                            }
-                        }
-                    }
-
-                    for (int ii = 0; ii < 4; ii++) {
-                        if (Matrix_Blocks[ii].Any()) {
-                            wrt.WriteLine((new CollectionReport(Matrix_Blocks[ii])).ToString());
-                            foreach (var col in QuadratureExecuteBlocks[ii].Values) {
-                                wrt.Write("  ");
-                                wrt.WriteLine((new CollectionReport(col)).ToString());
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    wrt.WriteLine(e.GetType().Name + ": " + e.Message);
-                    wrt.WriteLine(e.StackTrace);
-                }
-            }
-
-
-            wrt.WriteLine();
-            wrt.WriteLine("Details on XDG Matrix compilation:");
-            wrt.WriteLine("==================================");
-
-            var XMatrix = R.FindChildren("BoSSS.Foundation.XDG.XSpatialOperator*ComputeMatrix*");
-            if (XMatrix.Count() == 0) {
-                wrt.WriteLine("not called.");
-            } else {
-                try {
-                    wrt.WriteLine((new CollectionReport(XMatrix.ToArray())).ToString());
-
-                    wrt.WriteLine("Blocks (coarse):");
-                    wrt.WriteLine("----------------");
-
-                    List<MethodCallRecord> XMatrix_agglomeration = new List<MethodCallRecord>();
-                    List<MethodCallRecord> XMatrix_surface_integration = new List<MethodCallRecord>();
-                    List<MethodCallRecord> XMatrix_bulk_integration = new List<MethodCallRecord>();
-                    List<MethodCallRecord> XMatrix_QuadRule_compilation = new List<MethodCallRecord>();
-
-                    foreach (MethodCallRecord mcr in XMatrix) {
-                        XMatrix_agglomeration.AddRange(mcr.FindChildren("agglomeration"));
-                        XMatrix_surface_integration.AddRange(mcr.FindChildren("surface_integration"));
-                        XMatrix_bulk_integration.AddRange(mcr.FindChildren("bulk_integration"));
-                        XMatrix_QuadRule_compilation.AddRange(mcr.FindChildren("QuadRule-compilation"));
-                    }
-
-                    wrt.WriteLine((new CollectionReport(XMatrix_agglomeration)).ToString());
-                    wrt.WriteLine((new CollectionReport(XMatrix_surface_integration)).ToString());
-                    wrt.WriteLine((new CollectionReport(XMatrix_bulk_integration)).ToString());
-                    wrt.WriteLine((new CollectionReport(XMatrix_QuadRule_compilation)).ToString());
-
-                    wrt.WriteLine("Blocks (fine):");
-                    wrt.WriteLine("--------------");
-
-                    List<MethodCallRecord>[] Matrix_Blocks = ((int)5).ForLoop(iii => new List<MethodCallRecord>());
-                    Dictionary<string, List<MethodCallRecord>>[] QuadratureExecuteBlocks = ((int)5).ForLoop(iii => new Dictionary<string, List<MethodCallRecord>>());
-
-                    foreach (MethodCallRecord mcr in XMatrix) {
-                        Matrix_Blocks[0].AddRange(mcr.FindChildren("Edge_Integration_(legacy)"));
-                        Matrix_Blocks[1].AddRange(mcr.FindChildren("Edge_Integration_(new)"));
-                        Matrix_Blocks[2].AddRange(mcr.FindChildren("Volume_Integration_(legacy)"));
-                        Matrix_Blocks[3].AddRange(mcr.FindChildren("Volume_Integration_(new)"));
-                        Matrix_Blocks[4].AddRange(mcr.FindChildren("surface_integration"));
-                    }
-
-                    for (int ii = 0; ii < 5; ii++) {
-                        var L = Matrix_Blocks[ii];
-
-                        foreach (MethodCallRecord mcr in L) {
-                            MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-
-                            foreach (var subBlock in quadCall.Calls.Values) {
-                                List<MethodCallRecord> col;
-                                if (!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
-                                    col = new List<MethodCallRecord>();
-                                    QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
-                                }
-                                col.Add(subBlock);
-                            }
-                        }
-                    }
-
-                    for (int ii = 0; ii < 5; ii++) {
-                        wrt.WriteLine((new CollectionReport(Matrix_Blocks[ii])).ToString());
-                        foreach (var col in QuadratureExecuteBlocks[ii].Values) {
-                            wrt.Write("  ");
-                            wrt.WriteLine((new CollectionReport(col)).ToString());
-                        }
-                    }
-
-                } catch (Exception e) {
-                    wrt.WriteLine(e.GetType().Name + ": " + e.Message);
-                    wrt.WriteLine(e.StackTrace);
-                }
-            }
-            */
-        }
-
+      
         /// <summary>
         /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator
         /// </summary>
         /// <returns>
         /// Pairs of property name and value, e.g. ConditionNumber and the respective value of the operators Jacobian matrix condition number.
         /// </returns>
-        virtual public IDictionary<string, double> OperatorAnalysis() {
+        virtual public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
             throw new NotImplementedException();
         }
 
@@ -3692,10 +3643,11 @@ namespace BoSSS.Solution {
         public static Type[] DllEnforcer() {
             using(var tr = new FuncTrace()) {
                 var types = new Type[] {
-                   typeof(Microsoft.CodeAnalysis.Compilation),
+                    typeof(Microsoft.CodeAnalysis.Compilation),
                     typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation),
                     typeof(Microsoft.CodeAnalysis.Scripting.Script),
-                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript)
+                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript),
+                    typeof(System.Configuration.Configuration)
                 };
 
                 foreach(var t in types) {

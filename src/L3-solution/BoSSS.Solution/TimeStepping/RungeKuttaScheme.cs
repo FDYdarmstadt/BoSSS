@@ -28,11 +28,11 @@ namespace BoSSS.Solution.Timestepping {
     ///    y' = f(t,y), y(0) = y0 
     /// \f] 
     /// is defined as:
-    /// \f{align*}{
-    /// k[0] & = f(0,y0), \\
-    /// k[r] & = f(c[r],y0 + k[0]*a[r,0] + ... + k[r-1]*a[r,r-1]); \\
-    /// y1   & = y0 + (b[0]*k[0] + ... + b[s-1]*k[s-1]);
-    /// \f}
+    /// ```math
+    /// k[0] = f(0,y0), \\
+    /// k[r] = f(c[r],y0 + k[0]*a[r,0] + ... + k[r-1]*a[r,r-1]); \\
+    /// y1   = y0 + (b[0]*k[0] + ... + b[s-1]*k[s-1]);
+    /// ```
     /// </summary>
     public class RungeKuttaScheme : ICloneable {
 
@@ -422,7 +422,7 @@ namespace BoSSS.Solution.Timestepping {
         }
 
         /// <summary>
-        /// Toulorge & Desmet 2012: Optimal Runge–Kutta schemes for
+        /// Toulorge and Desmet 2012: Optimal Runge–Kutta schemes for
         /// discontinuous Galerkin space discretizations applied to wave
         /// propagation problems
         /// Scheme optimized towards size of the stability region and
@@ -575,6 +575,59 @@ namespace BoSSS.Solution.Timestepping {
                 ret.b[0] = ret.a[2, 0];
                 ret.b[1] = ret.a[2, 1];
                 ret.b[2] = x;
+
+
+                return ret;
+            }
+        }
+        /// <summary>
+        /// 6-stage 4nd order, taken from Nayas
+        /// </summary>
+        public static RungeKuttaScheme ESDIRK_64
+        {
+            get
+            {
+                RungeKuttaScheme ret = new RungeKuttaScheme();
+                ret.a = new double[6, 6];
+                ret.b = new double[6];
+                ret.c = new double[6];
+
+
+                ret.a[1, 0] = 1.0/4.0;
+                ret.a[1, 1] = 1.0/4.0;
+
+                ret.a[2, 0] = 8611.0/62500.0;
+                ret.a[2, 1] = -1743.0/31250.0;
+                ret.a[2, 2] = 1.0/4.0;
+
+                ret.a[3, 0] = 5012029.0/34652500;
+                ret.a[3, 1] = -654441.0/2922500.0;
+                ret.a[3, 2] = 174375.0/388108.0;
+                ret.a[3, 3] = 1.0/4.0;
+
+                ret.a[4, 0] = 15267082809.0/155376265600.0;
+                ret.a[4, 1] = -71443401.0/120774400.0;
+                ret.a[4, 2] = 730878875.0/902184768.0;
+                ret.a[4, 3] = 2285395.0/8070912.0;
+                ret.a[4, 4] = 1.0/4.0;
+
+                ret.a[5, 0] = 82889.0/524892.0;
+                ret.a[5, 1] = 0;
+                ret.a[5, 2] = 15625.0/83664.0;
+                ret.a[5, 3] = 69875.0/102672.0;
+                ret.a[5, 4] = -2260.0/8211.0;
+                ret.a[5, 5] = 1.0/4.0;
+
+
+                for (int i = 0; i < 6; i++) ret.b[i] = ret.a[5, i];
+
+                ret.c[0] = 0;
+                ret.c[1] = 1.0/2.0;
+                ret.c[2] = 83.0/250.0;
+                ret.c[3] = 31.0/50.0;
+                ret.c[4] = 17.0/20.0;
+                ret.c[5] = 1.0;
+
 
                 return ret;
             }

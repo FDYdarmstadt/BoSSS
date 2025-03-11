@@ -32,6 +32,8 @@ using System.Collections;
 using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using BoSSS.Solution.LoadBalancing;
+using Newtonsoft.Json.Linq;
 
 namespace BoSSS.Solution.Control {
 
@@ -40,7 +42,7 @@ namespace BoSSS.Solution.Control {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class AppControl {
+    public class AppControl : ICloneable {
 
         /// <summary>
         /// Returns the type of the solver main class;
@@ -486,7 +488,7 @@ namespace BoSSS.Solution.Control {
 
             public bool TryGetValue(string key, out R value) {
                 var r = home.TryGetValue(key, out var tt);
-                value = Ex(tt);
+                value = r ? Ex(tt) : default(R);
                 return r;
             }
 
@@ -570,7 +572,17 @@ namespace BoSSS.Solution.Control {
         public IDictionary<string, ScalarFunctionTimeDep> InitialValues_EvaluatorsVec {
             get {
                 Sync__InitialValues_Evaluators();
-                return new ProxyDict_ScalarFunction() { home = m_InitialValues_Evaluators };
+                var ret = new ProxyDict_ScalarFunction() { home = m_InitialValues_Evaluators };
+
+                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+
+                return ret;
             }
         }
 
@@ -585,12 +597,22 @@ namespace BoSSS.Solution.Control {
         /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
         /// </remarks>
         [JsonIgnore]
-        public IDictionary<string, Func<double[],double>> InitialValues_Evaluators {
+        public IDictionary<string, Func<double[], double>> InitialValues_Evaluators {
             get {
                 Sync__InitialValues_Evaluators();
-                return new ProxyDict_Func() {
-                    home = m_InitialValues_Evaluators 
+                var ret = new ProxyDict_Func() {
+                    home = m_InitialValues_Evaluators
                 };
+
+                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                //if (!ret.Keys.SetEquals(InitialValues_EvaluatorsVec.Keys))
+                //    throw new ApplicationException($"InitialValues_EvaluatorsVec keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+
+                return ret;
             }
         }
 
@@ -606,12 +628,22 @@ namespace BoSSS.Solution.Control {
         /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
         /// </remarks>
         [JsonIgnore]
-        public IDictionary<string, Func<double[],double,double>> InitialValues_Evaluators_TimeDep {
+        public IDictionary<string, Func<double[], double, double>> InitialValues_Evaluators_TimeDep {
             get {
                 Sync__InitialValues_Evaluators();
-                return new ProxyDict_Func_TimeDep() {
-                    home = m_InitialValues_Evaluators 
+                var ret = new ProxyDict_Func_TimeDep() {
+                    home = m_InitialValues_Evaluators
                 };
+
+                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                    throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
+
+                //if (!ret.Keys.SetEquals(InitialValues_EvaluatorsVec.Keys))
+                //    throw new ApplicationException($"InitialValues_EvaluatorsVec keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+                //if (!ret.Keys.SetEquals(InitialValues_Evaluators.Keys))
+                //    throw new ApplicationException($"InitialValues_Evaluators keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
+
+                return ret;
             }
         }
 
@@ -673,7 +705,8 @@ namespace BoSSS.Solution.Control {
 
         /// <summary>
         /// Saves restart Information: GUID of the restarted session and the time-step
-        /// If empty, no restart is done.
+        /// - If empty, no restart is done.
+        /// - if the 2dn argument (<see cref="TimestepNumber"/>) is null, the last timestep is taken
         /// </summary>
         [DataMember]
         public Tuple<Guid, TimestepNumber> RestartInfo;
@@ -838,6 +871,13 @@ namespace BoSSS.Solution.Control {
         public bool rollingSaves = false;
 
 
+        /// <summary>
+        /// Number of Consecutive timesteps which are saved -- this is intended to be used by BDF or Adams-Bashforth time integrators which require multiple time steps
+        /// (e.g. 3 to save time-step 98, 99, 100 for a save-period of 100;)
+        /// </summary>
+        [DataMember]
+        public int BurstSaves = 1;
+
 
         /// <summary>
         /// lower threshold for the time-step
@@ -970,6 +1010,12 @@ namespace BoSSS.Solution.Control {
         public string TracingNamespaces = null;
 
         /// <summary>
+        /// Activate/Deactivate memory allocation logging
+        /// </summary>
+        [DataMember]
+        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.None;
+
+        /// <summary>
         /// File system path to database.
         /// </summary>
         [DataMember]
@@ -1030,11 +1076,27 @@ namespace BoSSS.Solution.Control {
         public bool DynamicLoadBalancing_RedistributeAtStartup = false;
 
         /// <summary>
+        /// If true, a plot for agglomeration would be written in addition to ImmediatePlotPeriod
+        /// time-step starts
+        /// </summary>
+        [DataMember]
+        public bool PlotAgglomeration = false;
+
+        /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
+        [DataMember]
+        public ICollection<ICellCostEstimator> DynamicLoadBalancing_CellCostEstimators { 
+            get {
+                return m_DynamicLoadBalancing_CellCostEstimators;
+            }
+        }
+
+        /// <summary>
+        /// implementation of <see cref="DynamicLoadBalancing_CellCostEstimators"/>
+        /// </summary>
         [JsonIgnore]
-        public List<Func<IApplication, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
-            new List<Func<IApplication, int, ICellCostEstimator>>();
+        protected List<ICellCostEstimator> m_DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
@@ -1069,9 +1131,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int AMR_startUpSweeps = 1;
-
-
-
 
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
@@ -1117,8 +1176,10 @@ namespace BoSSS.Solution.Control {
                 Formatting = Formatting.Indented
 //                ObjectCreationHandling = ObjectCreationHandling.
             };
-                        
-            using(var tw = new StringWriter()) {
+
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
+
+            using (var tw = new StringWriter()) {
                 tw.WriteLine(this.GetType().AssemblyQualifiedName);
                 using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
                     formatter.Serialize(writer, this);
@@ -1152,7 +1213,7 @@ namespace BoSSS.Solution.Control {
         /// Used for control objects in work-flow management, 
         /// re-loads  an object from memory.
         /// </summary>
-        public static AppControl Deserialize(string Str, SerializationBinder binder) {
+        public static AppControl Deserialize(string Str, Newtonsoft.Json.Serialization.ISerializationBinder binder) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -1160,21 +1221,22 @@ namespace BoSSS.Solution.Control {
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
             };
 
-
-            
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
+ 
             using(var tr = new StringReader(Str)) {
                 string typeName = tr.ReadLine();
                 Type ControlObjectType = Type.GetType(typeName);
 
+                
                 if(binder != null)
-                    formatter.Binder = binder;
+                    formatter.SerializationBinder = binder;
                 else
-                    formatter.Binder = new KnownTypesBinder(ControlObjectType);
-
+                    formatter.SerializationBinder = new KnownTypesBinder(ControlObjectType);
+                
 
                 using(JsonReader reader = new JsonTextReader(tr)) {
                     var obj = formatter.Deserialize(reader, ControlObjectType);
-
+                    
                     AppControl ctrl = (AppControl)obj;
                     return ctrl;
                 }
@@ -1195,7 +1257,11 @@ namespace BoSSS.Solution.Control {
             */
         }
 
-        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+        public object Clone() {
+            return Deserialize(this.Serialize());
+        }
+
+        class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
             internal KnownTypesBinder(Type entry) {
 
@@ -1236,6 +1302,15 @@ namespace BoSSS.Solution.Control {
                     try {
                         na = Assembly.Load(b);
                     } catch(FileNotFoundException) {
+                        //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
+                        //if(AssiFiles.Length != 1) {
+                        //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        //    Console.WriteLine("Skipping: " + b.Name);
+                        //    continue;
+                        //}
+                        //na = Assembly.LoadFile(AssiFiles[0]);
+                        continue;
+                    } catch (FileLoadException) {
                         //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
                         //if(AssiFiles.Length != 1) {
                         //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
@@ -1444,12 +1519,6 @@ namespace BoSSS.Solution.Control {
             return -1;
         }
 
-        /// <summary>
-        /// Number of Consecutive timesteps which are saved -- this is intended to be used by BDF or Adams-Bashforth time integrators which require multiple time steps
-        /// (e.g. 3 to save time-step 98, 99, 100 for a save-period of 100;)
-        /// </summary>
-        [DataMember]
-        public int BurstSave = 1;
 
         /// <summary>
         /// Equality of control files - mostly relevant for the job manager
@@ -1482,9 +1551,9 @@ namespace BoSSS.Solution.Control {
             if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
                 return false;
             if(this.RestartInfo != null) {
-                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                if(!this.RestartInfo.Item1.Equals(oCtr.RestartInfo.Item1))
                     return false;
-                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                if(!this.RestartInfo.Item2.Equals(oCtr.RestartInfo.Item2))
                     return false;
             }
 

@@ -8,6 +8,9 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
+using ilPSP;
+using BoSSS.Solution.Control;
+
 
 namespace BoSSS.Solution.XheatCommon {
     public class Heat : BulkEquation {
@@ -63,6 +66,7 @@ namespace BoSSS.Solution.XheatCommon {
             // ==========================
             if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 double penalty = dntParams.PenaltySafety;
+                AddCoefficient("ThermalSlipLengths");
 
                 var Visc = new ConductivityInSpeciesBulk(
                     penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
@@ -406,7 +410,8 @@ namespace BoSSS.Solution.XheatCommon {
             string phaseB,
             int iLevSet,
             int dimension,            
-            IXHeat_Configuration config) : base() {
+            IXHeat_Configuration config,
+            Dictionary<string, string> HeatSourceIBM) : base() {
 
             
 
@@ -414,7 +419,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.solidPhase = phaseB;
 
             codomainName = EquationNames.HeatEquation;
-            AddInterfaceHeatEq(iLevSet, dimension, config);
+            AddInterfaceHeatEq(iLevSet, dimension, config, HeatSourceIBM);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
             if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
             AddCoefficient("EvapMicroRegion");
@@ -431,7 +436,8 @@ namespace BoSSS.Solution.XheatCommon {
         void AddInterfaceHeatEq(
             int iLevSet,
             int dimension,
-            IXHeat_Configuration config) {
+            IXHeat_Configuration config,
+            Dictionary<string, string> HeatSourceIBM) {
 
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -450,14 +456,22 @@ namespace BoSSS.Solution.XheatCommon {
             // viscous operator (laplace)
             // ==========================
             if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-
+                AddCoefficient("ThermalSlipLengths");
                 double penalty = dntParams.PenaltySafety;
 
                 //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
-                var Visc = new ConductivityAtLevelSet_material(dimension, kF, kS, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
-                AddComponent(Visc);                
+                var Visc = new ConductivityAtLevelSet_material(dimension, kF, kS, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet, bndTyp: dntParams.IBM_ThermalBoundaryType);
+                AddComponent(Visc);               
             } else {
                 throw new NotImplementedException();
+            }
+
+            if (config.isHeatSourceIBM) {
+                HeatSourceIBM.TryGetValue(FirstSpeciesName + SecondSpeciesName, out string source);
+                if (source.IsNonEmpty()) {
+                    var heatsourceComponent = new HeatSourceAtLevelSet(dimension, new Formula(source, true), FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
+                    AddComponent(heatsourceComponent);
+                }
             }
 
         }

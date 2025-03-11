@@ -47,8 +47,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public IList<string> ParameterOrdering => VariableNames.AsLevelSetVariable("Interface", VariableNames.VelocityVector(m_D));
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            //Console.WriteLine("ivb parameter " + ParameterOrdering[0] + " " + inp.Parameters_IN[0]);
+            //Console.WriteLine("ivb parameter " + ParameterOrdering[1] + " " + inp.Parameters_IN[1]);
+            //Console.WriteLine("ivb parameter " + ParameterOrdering[2] + " " + inp.Parameters_IN[2]);
+            //Console.WriteLine("ivb parameter out " + ParameterOrdering[0] + " " + inp.Parameters_OUT[0]);
+            //Console.WriteLine("ivb parameter out " + ParameterOrdering[1] + " " + inp.Parameters_OUT[1]);
+            //Console.WriteLine("ivb parameter out " + ParameterOrdering[2] + " " + inp.Parameters_OUT[2]);
             double Ret = 0;
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
+
+            // enforce interface velocity including tangential component
+            //Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
+            //Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
+
             //only enforce interface normal velocity
             for (int dN = 0; dN<m_D; dN++) {
                 Ret += (uA[dN] - inp.Parameters_IN[dN]) * inp.Normal[dN] * vA* inp.Normal[m_d] * pnlty;
@@ -58,7 +69,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         }
 
         public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
-            //throw new NotImplementedException();
+            throw new NotImplementedException("bug here? pls check");
+            /*
             if(Parameters.Length != 1) {
                 throw new ArgumentException();
             }
@@ -66,11 +78,12 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 Parameters[0].Clear();
                 Parameters[0].AccLaidBack(1.0, m_InterfaceVelocityComponent);
             }
-
+            */
         }
 
         public DGField[] MyParameterAlloc(DGField[] Arguments) {
-            return new DGField[] { m_InterfaceVelocityComponent };
+            throw new NotImplementedException("bug here? pls check");
+            //return new DGField[] { m_InterfaceVelocityComponent };
         }
 
         /// <summary>

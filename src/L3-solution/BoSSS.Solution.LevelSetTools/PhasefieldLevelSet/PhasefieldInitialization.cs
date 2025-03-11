@@ -57,7 +57,6 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
-                MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver, 
                 queryHandler:this.QueryHandler);
 
@@ -69,7 +68,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
             if(L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -208,7 +207,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
                 // mobility coefficient, could be inverse of Pe = Re*Sc
                 // following Yue et. al. (2010), see also Manzanero (2019), for now fixed mobility
-                this.Control.diff = this.Control.ModTyp == PhasefieldControl.ModelType.modelA ? 1e-4 : 1e-4;//this.Control.cahn.Pow2();// (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
+                this.Control.diff = this.Control.ModTyp == ModelType.modelA ? 1e-4 : 1e-4;//this.Control.cahn.Pow2();// (_Cahn / 4.0).Pow2() / this.Viscosity;//_Cahn; //1.0 / this.Peclet;
 
                 // 0.0 = pure bulk diffusion, 1.0 = pure surface diffusion, not implemented in model A
                 this.Control.lambda = 0.0;

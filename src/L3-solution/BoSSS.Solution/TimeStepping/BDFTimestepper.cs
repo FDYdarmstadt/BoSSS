@@ -40,7 +40,7 @@ namespace BoSSS.Solution.TimeStepping {
         /// <summary>
         /// The spatial operator this time stepper is based on
         /// </summary>
-        public SpatialOperator Operator {
+        public DifferentialOperator Operator {
             get;
             private set;
         }
@@ -77,7 +77,7 @@ namespace BoSSS.Solution.TimeStepping {
         /// </summary>
         /// <remarks>
         /// If boundary conditions are time-dependent, this vector may change over 
-        /// time; Re-calculation can be implemented e.g. in <see cref="BeforeTimeStep"/>.
+        /// time.
         /// At a given time <em>t</em>, for given initial values
         /// it is 
         /// the convention is that this vector represents the inhomogeouos b.c.
@@ -104,7 +104,7 @@ namespace BoSSS.Solution.TimeStepping {
 
         /// <summary>
         /// The sparse solver used to solve the equation system in
-        /// <see cref="PerformTimeStep"/>
+        /// <see cref="Perform"/>
         /// </summary>
         /// <remarks>
         /// The Matrix of the system is stored within the sparse solver;
@@ -138,7 +138,7 @@ namespace BoSSS.Solution.TimeStepping {
         /// </param>
         /// <param name="DelayInit">TODO: Delayed Initialization for restarts etc.</param>
         /// <param name="subGrid">TODO: Perform Time-Marching only on Substep</param>
-        public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit, SubGrid subGrid = null) {
+        public BDFTimestepper(DifferentialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit, SubGrid subGrid = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
                 //if (spatialOp.ContainsNonlinear) { throw new NotImplementedException("No Inversion of Nonlinear Operators implemented, yet."); };

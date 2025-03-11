@@ -249,8 +249,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
 
 
-
-
             double res = +0.5 * (uAxN + uBxN) * (this.rhoA * vA - this.rhoB * vB); // This is correct WITHOUT mass evaporation flux
             //double res = 0.5 * (this.rhoA * uAxN + this.rhoB * uBxN) * (vA - vB); // This is correct WITH mass evaporation flux
 

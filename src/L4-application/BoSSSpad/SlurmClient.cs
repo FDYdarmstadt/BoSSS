@@ -22,6 +22,7 @@ using ilPSP;
 using System.Diagnostics;
 using ilPSP.Tracing;
 using System.Linq;
+using System.Collections.Generic;
 //using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -58,6 +59,15 @@ namespace BoSSS.Application.BoSSSpad {
         public string ServerName {
             get;
             set;
+        }
+
+        /// <summary>
+        /// Path to the ssh client which should be used on the local system for the connection; if not specified, just `ssh` will be used.
+        /// </summary>
+        [DataMember]
+        public string SshClientExeToUse { 
+            get; 
+            set; 
         }
 
         /// <summary>
@@ -123,26 +133,54 @@ namespace BoSSS.Application.BoSSSpad {
         [NonSerialized]
         SshClient m_SSHConnection;
 
+        /// <summary>
+        /// Non-instance storage of SSH connection objects:
+        /// This enables re-using an open SSH connection if the <see cref="SlurmClient"/> is re-instantiated multiple times,
+        /// which happens quite often due to frequent calls to <see cref="BoSSSshell.ReloadExecutionQueues"/>.
+        /// Otherwise, we might have multiple abandoned <see cref="SshClient"/> objects.
+        /// </summary>
+        static Dictionary<string, SshClient> m_SSHConnectionReuse = new Dictionary<string, SshClient>();
+
+
         SshClient SSHConnection {
             get {
-                if (m_SSHConnection == null || m_SSHConnection.IsConnected == false) {
+                string keyname = (this.Name ?? "SLURM") + ":" + Username + "@" + ServerName;
+                
+                if(m_SSHConnection == null) {
+                    if(m_SSHConnectionReuse.TryGetValue(keyname, out m_SSHConnection)) {
+                        
+                    }
+                }
+
+                if (m_SSHConnection != null && m_SSHConnection.IsConnected == false) {
+                    m_SSHConnection.Dispose();
+                    m_SSHConnectionReuse.Remove(keyname);
+                    m_SSHConnection = null;
+                }
+
+                if (m_SSHConnection == null) {
                     // SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
                     if (PrivateKeyFilePath != null) {
                         var pkf = new PrivateKeyFile(PrivateKeyFilePath);
-                        m_SSHConnection = new SshClient(ServerName, Username, pkf);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, pkf, SshClientExeToUse);
                     } else if (Password != null) {
-                        m_SSHConnection = new SshClient(ServerName, Username, Password);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password, SshClientExeToUse);
                     } else if (Password == null) {
                         Console.WriteLine();
                         Console.WriteLine("Please enter your password...");
                         Password = ReadPassword();
-                        m_SSHConnection = new SshClient(ServerName, Username, Password);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password, SshClientExeToUse);
                     } else {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
                     }
 
                     //m_SSHConnection.Connect();
                 }
+
+                if (m_SSHConnection == null || m_SSHConnection.IsConnected == false)
+                    throw new IOException($"SSH connection to {ServerName} cant be established or is very unreliable.");
+                else 
+                    m_SSHConnectionReuse[keyname] = m_SSHConnection;
 
                 return m_SSHConnection;
             }
@@ -214,6 +252,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
 
+        
         /// <summary>
         /// If set, SLURM may send email notifications for the current job
         /// </summary>
@@ -222,6 +261,7 @@ namespace BoSSS.Application.BoSSSpad {
             set;
             get;
         }
+        
 
         /// <summary>
         /// .
@@ -264,7 +304,7 @@ namespace BoSSS.Application.BoSSSpad {
                         tr.Info("found running.txt token");
                     } else {
                         // no 'isrunning.txt'-token and no 'exit.txt' token: job should be pending in queue
-                        tr.Info("jobb seems to be pending");
+                        tr.Info("job seems to be pending");
                         return (JobStatus.PendingInExecutionQueue, null);
 
                         //isRunning = false;
@@ -302,7 +342,7 @@ namespace BoSSS.Application.BoSSSpad {
                         tr.Info("jobstatus is `" + (jobstatus??"Null") + "`");
                         if(jobstatus == null) {
                             tr.Info("returning `Unknown` state");
-                            return (JobStatus.Unknown, null);
+                            return (JobStatus.FailedOrCanceled, null); // `running.txt` exists, but no job known to SLURM: probably canceled.
                         }
 
                         switch(jobstatus.ToUpperInvariant()) {
@@ -343,6 +383,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns path to text-file for standard error stream
         /// </summary>
         public override string GetStderrFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
@@ -351,6 +393,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns path to text-file for standard output stream
         /// </summary>
         public override string GetStdoutFile(string idToken, string DeployDir) {
+            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+                return null;
             string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
         }
@@ -364,10 +408,6 @@ namespace BoSSS.Application.BoSSSpad {
         //    }
         //}
 
-        /// <summary>
-        /// Sets debug flag for Mono
-        /// </summary>
-        public bool MonoDebug = false;
 
         /// <summary>
         ///
@@ -397,12 +437,13 @@ namespace BoSSS.Application.BoSSSpad {
             //string jobpath_unix = jobpath_win.Replace("\\", "/");
             string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
-            string jobname = myJob.Name;
-            string executiontime = this.ExecutionTime;
+            string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
+            string executiontime = myJob.ExecutionTime != null ? myJob.ExecutionTime : this.ExecutionTime; //if execution time is not defined. Use the default value.
             int MPIcores = myJob.NumberOfMPIProcs;
-            string userName = Username;
+            int NumThreads = myJob.NumberOfThreads;
+            //string userName = Username;
             string startupstring;
-            string quote = "\"";
+            //string quote = "\"";
             string slurmAccount = this.SlurmAccount;
             //string memPerCPU = "5000";
             //if (myJob.MemPerCPU != null) {
@@ -410,24 +451,21 @@ namespace BoSSS.Application.BoSSSpad {
             //} else {
             //    memPerCPU = "5000";
             //}
-            string email = Email;
-
+            
             using (var str = new StringWriter()) {
-                str.Write($"mpiexec {base.DotnetRuntime} ");
-                if (MonoDebug) { 
-                    str.Write("-v --debug "); 
-                }
-                str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
-                str.Write(" ");
-                str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
-                str.Write(" ");
+                str.Write($"srun {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
+                //if (MPIcores > 1) {
+                //    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
+                //} else {
+                //    str.Write($"{base.DotnetRuntime} ");
+                //}
 
-                // How the controlfile is handled (serialized or compiled at runtime)
-                if (myJob.EnvironmentVars["BOSSS_ARG_1"].Equals("control.obj")) {
-                    str.Write(jobpath_unix + "/" + myJob.EnvironmentVars["BOSSS_ARG_1"]);
-                } else {
-                    str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
-                }
+                str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
+                //str.Write(" ");
+                //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
+                //str.Write(" ");
+
+
 
                 startupstring = str.ToString();
             }
@@ -451,8 +489,9 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
-                if (!email.IsEmptyOrWhite()) {
-                    sw.WriteLine("#SBATCH --mail-user=" + email);
+                sw.WriteLine("#SBATCH -c " + NumThreads);
+                if (!this.Email.IsEmptyOrWhite()) {
+                    sw.WriteLine("#SBATCH --mail-user=" + this.Email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
                 foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
@@ -463,6 +502,19 @@ namespace BoSSS.Application.BoSSSpad {
                 // Load modules
                 foreach (string arg in moduleLoad) {
                     sw.WriteLine(arg);
+                }
+
+                // Set environment variables for Job
+                foreach (var envvar in myJob.EnvironmentVars) {
+                    if (envvar.Key.ContainsWhite())
+                        throw new NotSupportedException("Unable to handle environment variable with whitespace: " + envvar.Key);
+
+                    string envValue = envvar.Value;
+                    if (envValue.ContainsWhite() || envValue.Contains("'")) {
+                        envValue = envValue.Replace("'", "'\"'\"'"); // see: https://stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
+                        envValue = "'" + envValue + "'";
+                    }
+                    sw.WriteLine($"export {envvar.Key}={envValue}");
                 }
 
                 // Set startupstring

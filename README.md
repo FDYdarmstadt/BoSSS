@@ -4,8 +4,6 @@ BoSSS (Bounded Support Spectral Solver) is a flexible framework for the developm
 application of numerical discretization schemes based on the Discontinuous Galerkin (DG) method.
 
 
-
-
 ## Getting Started
 
 ### Wiki:
@@ -20,6 +18,12 @@ application of numerical discretization schemes based on the Discontinuous Galer
 (Compiling from source code, etc.)
 - [Getting Started as Developer/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
 - [Getting Started as Developer/Internal Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
+
+### Latest Installers:
+- Please Read [Installation/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Installation-and-Testing) first!
+- Windows: https://kummer.pages.rwth-aachen.de/bosss-public/BoSSS-setup-latest.exe
+- Linux: https://kummer.pages.rwth-aachen.de/bosss-public/BoSSS-setup-latest.run
+- (If links fail, please take a look at https://kummer.pages.rwth-aachen.de/bosss-public/ and search for `*.exe` or `*.run` - files)
 
 ## Note for publication
 

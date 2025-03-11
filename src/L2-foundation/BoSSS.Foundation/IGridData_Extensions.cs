@@ -734,7 +734,7 @@ namespace BoSSS.Foundation.Grid {
             if (OmmitPeriodic && g.iLogicalEdges.EdgeToParts != null)
                 throw new NotImplementedException("todo"); // problem: edge tags have geometric index.
 
-            for (int k = 0; k < K; k++) {
+            for (int k = 0; k < K; k++) { // loop over edges
                 int q = Cell2Edges_jCell[k];
                 int iEdge = Math.Abs(q) - 1;
                 int iOther = q >= 0 ? 1 : 0;
@@ -961,7 +961,7 @@ namespace BoSSS.Foundation.Grid {
                     MultidimensionalArray vert = MultidimensionalArray.Create(N, D);
                     vert.SetSubArray(Kref.Vertices, new int[] { 0, 0 }, new int[] { N - 2, D - 1 });
 
-                    m_CFL_EvalPoints[i] = new NodeSet(Kref, vert);
+                    m_CFL_EvalPoints[i] = new NodeSet(Kref, vert, true);
                 }
                 
 

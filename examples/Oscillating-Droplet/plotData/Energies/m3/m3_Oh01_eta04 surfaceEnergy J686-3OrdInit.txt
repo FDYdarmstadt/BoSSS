@@ -1,0 +1,5 @@
+Grouping:surfaceEnergy J686-3OrdInit
+# x 	 y
+0.0000000000000000E+000	3.1992380984069779E-001
+
+ 

@@ -22,6 +22,7 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Collections.Generic;
 //using Microsoft.AspNetCore.Html;
 
 namespace BoSSS.Solution.Gnuplot {
@@ -258,6 +259,8 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="gp"></param>
         /// <param name="_2DData"></param>
         /// <param name="mode">'a' = average, '+' = max, '-' = min</param>
+        /// <param name="round"></param>
+        /// <param name="format"></param>
         public static void PlotLogSlope(this Gnuplot gp, Plot2Ddata _2DData, char mode = 'a', PlotFormat format = null, double round = 0.5) {
 
             var slopes = _2DData.Regression();
@@ -335,6 +338,43 @@ namespace BoSSS.Solution.Gnuplot {
             return gp;
         }
 
+        /// <summary>
+        /// Multiple plot windows:
+        /// Converts multiple <see cref="Plot2Ddata"/> into an alive Gnuplot object.
+        /// </summary>
+        /// <param name="_2DData">a list of plots</param>
+        /// <param name="layout">
+        /// describes the 2d-multiplot arrangement
+        /// - 1st index: multiplot row index
+        /// - 2nd index: multiplot column index
+        /// - content: index into <paramref name="_2DData"/>
+        /// </param>
+        public static Gnuplot ToGnuplot(this IEnumerable<Plot2Ddata> _2DData, int[,] layout = null) {
+
+            if(layout == null) {
+                layout = new int[_2DData.Count(), 1];
+                for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
+                    layout[iRow, 0] = iRow;
+                }
+            }
+   
+
+            Gnuplot gp = new Gnuplot();
+
+            gp.SetMultiplot(layout.GetLength(0), layout.GetLength(1));
+           
+            for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
+                for(int iCol = 0; iCol < layout.GetLength(1); iCol++) {
+                    int elem = layout[iRow, iCol];
+                    if(elem >= 0 && elem < _2DData.Count()) {
+                        gp.SetSubPlot(iRow, iCol);
+                        _2DData.ElementAt(elem).ToGnuplot(gp);
+                    }
+                }
+            }
+            return gp;
+        }
+
 
         /// <summary>
         /// <see cref="Plot2Ddata"/> into an alive Gnuplot object and executes Gnuplot interactively
@@ -372,9 +412,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// Writes a 2D multi-plot to Gnuplot and saves the 
         /// plot to a PNG file ('set terminal png').
         /// </summary>
-        static public void SaveToGIF(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
-            using (var gp = _2DData.ToGnuplot(layout)) {
-                gp.SaveToGIF(OutfileName);
+        static public void SaveToGIF(this Plot2Ddata[,] _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
+            using (var gp = _2DData.ToGnuplot()) {
+                gp.SaveToGIF(OutfileName, xRes, yRes);
             }
         }
 

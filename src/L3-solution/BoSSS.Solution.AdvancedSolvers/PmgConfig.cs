@@ -26,8 +26,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             var r = CreateInstanceImpl__Kummer(level, level.DGpolynomialDegreeHierarchy);
+            //var r = CreateInstanceImpl__BottiDiPietro(level, level.DGpolynomialDegreeHierarchy);
 
-            if(r is IProgrammableTermination pt) {
+            if (r is IProgrammableTermination pt) {
                 pt.TerminationCriterion =  this.DefaultTermination;
 
             }
@@ -79,13 +80,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         internal ISubsystemSolver CreateInstanceImpl__Kummer(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                //var precond = new LevelPmg();
-                //precond.config.UseHiOrderSmoothing = false;
-                //precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
-                //precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
-                //precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
-                //precond.config.EqualOrder = this.EqualOrder;
-
+                
                 var MPIcomm = level.DgMapping.MPI_Comm;
 
                 //weirdo idea:
@@ -104,8 +99,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     OrthonormalizationMultigrid createOMG() {
 
-                        tr.Info("OrthoMG solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
-
+                       
 
                         var coarseSolver = new GridAndDegRestriction() {
                             RestrictedDeg = DegreeHierarchy[iLevel + skip].CloneAs(),
@@ -113,6 +107,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         };
 
                         ISolverSmootherTemplate post, pre;
+
+                        ISolverSmootherTemplate[] aps = null;
 
                         //var bj = new BlockJacobi() {
                         //    NoOfIterations = 1,
@@ -137,11 +133,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             };
 
                             ((CellILU)post).id = "Lv0";
-
-                            //post = new SparseILU() {
-                            //    UsedLibrary = SparseILU.Library.Intel_MKL
-                            //};
-
+                            
+                            if (iLevel == 0) {
+                                aps = new ISolverSmootherTemplate[] {
+                                    //new VelocityPredictionSolver(),
+                                    //new PressureCorrectionSolver()
+                                };
+                            }
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
@@ -149,35 +147,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             pre = null;
                         }
 
+                        tr.Info("OrthoMG (pre = " + (pre?.GetType()?.Name ?? "NULL") + " post = " + (post?.GetType()?.Name ?? "NULL") +  ") solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
+
+
 
                         var omg = new OrthonormalizationMultigrid() {
                             CoarserLevelSolver = coarseSolver,
                             PreSmoother = pre,
                             PostSmoother = post,
+                            AdditionalPostSmoothers = aps
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
                         omg.config.m_omega = 1;
-                        omg.config.CoarseOnLovwerLevel = false;
+                        omg.config.CoarseOnLowerLevel = false;
                         return omg;
                     }
 
                     //Console.WriteLine("###########################   testcode aktiv ##################################");
                     if ((iLevel >= 2) || (DegreeHierarchy.Length == iLevel + 1)) {
-
-                        tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
-
                         // ++++++++++++
                         // lowest level 
                         // ++++++++++++
+                        tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
+
                         var s = new DirectSolver();
                         s.config.TestSolution = false;
                         s.ActivateCaching = (a, b) => true;
+                        s.config.UseDoublePrecision = false;
                         return s;
                     } else if (iLevel >= 2) {
                         // +++++++++++++++++++++++++++
                         // intermediate level / coarse
                         // +++++++++++++++++++++++++++
-
                         tr.Info("GMRES solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
                         var gmRes = new SoftGMRES();
@@ -269,7 +270,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     ClassicMultigrid createMG() {
 
-                        tr.Info("OrthoMG solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
+                        tr.Info("ClassicMG solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
 
                         var coarseSolver = new GridAndDegRestriction() {

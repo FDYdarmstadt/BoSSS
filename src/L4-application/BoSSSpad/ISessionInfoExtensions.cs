@@ -23,7 +23,6 @@ using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using ilPSP.Utils;
-using Mono.CSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,6 +33,8 @@ using System.Xml;
 using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
 using BoSSS.Solution.Statistic;
+using BoSSS.Application.XdgPoisson3;
+using BoSSS.Solution;
 
 namespace BoSSS.Foundation.IO {
 
@@ -408,40 +409,49 @@ namespace BoSSS.Foundation.IO {
         /// Loads the profiling information for a session
         /// </summary>
         /// <param name="session"></param>
+        /// <param name="Ranks">
+        /// A selection of MPI ranks; there is a separate profiling log for each MPI rank; if null or empty, all profiling for all MPI ranks are returned.
+        /// </param>
         /// <returns>
-        /// An array of profiling trees, one for each MPI rank; th index into the returned array corresponds with the MPI rank.
+        /// An array of profiling trees, one for each MPI rank; the index into the returned array corresponds with <paramref name="Ranks"/>.
         /// </returns>
-        public static MethodCallRecord[] GetProfiling(this ISessionInfo session) {
+        public static OnlineProfiling[] GetProfiling(this ISessionInfo session, params int[] Ranks) {
             // find
             string sessDir = DatabaseDriver.GetSessionDirectory(session);
-            string[] TextFils = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
-            if (TextFils.Count() <= 0)
+            string[] TextFiles = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
+            if (TextFiles.Count() <= 0)
                 throw new IOException("Unable to find profiling information.");
 
             // sort according to process rank
-            int[] Ranks = new int[TextFils.Length];
-            for (int i = 0; i < Ranks.Length; i++) {
-                var parts = TextFils[i].Split(new string[] { "profiling_bin.", ".txt" }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length <= 0)
-                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
-                Ranks[i] = int.Parse(parts.Last());
-                if (Ranks[i] < 0)
-                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
-            }
-
             int MPISize = session.ComputeNodeNames.Count;
-            if(MPISize != Ranks.Max() + 1) {
-                Console.WriteLine("WARNING: mismatch between number of MPI ranks (" + MPISize + ") for session and max rank of profiling information (" + (Ranks.Max() + 1) + ").");
+            if (Ranks == null || Ranks.Length <= 0)
+                Ranks = MPISize.ForLoop(rnk => rnk);
+            string[] TextFilesSorted = new string[Ranks.Length];
+            for (int i = 0; i < Ranks.Length; i++) {
+                if (Ranks[i] >= MPISize || Ranks[i] < 0)
+                    throw new ArgumentException($"Illegal MPI rank specified (Rank: {Ranks[i]}). MPI size is {MPISize}, ranks are excepted in the range of 0 to {MPISize - 1} (including); Session: {session} @ {session.GetSessionDirectory()}");
+                TextFilesSorted[i] = TextFiles.SingleOrDefault(FileName => FileName.Contains("." + Ranks[i] + "."));
+                if (TextFilesSorted[i] == null)
+                    throw new IOException($"Unable to find profiling file for MPI rank {Ranks[i]}; Session: {session} @ {session.GetSessionDirectory()}");
+
+                //var parts = TextFils[i].Split(new string[] { "profiling_bin.", ".txt" }, StringSplitOptions.RemoveEmptyEntries);
+                //if (parts.Length <= 0)
+                //    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
+                //Ranks[i] = int.Parse(parts.Last());
+                                
+                //if (Ranks[i] < 0)
+                //    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
             }
 
+            
             // load 
-            var R = new MethodCallRecord[Ranks.Max() + 1];
+            var R = new OnlineProfiling[Ranks.Max() + 1];
             for(int i = 0; i < Ranks.Length; i++) {
                 int rnk = Ranks[i];
 
-                var f = TextFils[i];
+                var f = TextFilesSorted[i];
                 var JSON = File.ReadAllText(f);
-                var mcr = MethodCallRecord.Deserialize(JSON);
+                var mcr = OnlineProfiling.Deserialize(JSON);
 
                 if (R[rnk] != null)
                     throw new IOException("It seems profiling info was written more than once for MPI rank " + rnk + ".");
@@ -459,7 +469,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session"></param>
         /// <param name="rank"></param>
         /// <returns></returns>
-        public static MethodCallRecord GetProfilingOfRank(this ISessionInfo session, int rank) {
+        public static OnlineProfiling GetProfilingOfRank(this ISessionInfo session, int rank) {
 
             // check if within bounds
             int MPISize = session.ComputeNodeNames.Count;
@@ -475,26 +485,26 @@ namespace BoSSS.Foundation.IO {
                 throw new IOException("Unable to locate '" + pathf + "'.");
 
             // check if unique
-            int many = Directory.GetFiles(sessDir, namef).Length;
-            if (many > 1)
-                throw new ArgumentException("profiling is not unique, occurances: " + many);
+            var many = Directory.GetFiles(sessDir, namef);
+            if (many.Length > 1)
+                throw new ArgumentException("profiling is not unique; got " + many.ToConcatString("", ", ", ";"));
 
             // load 
             var f = pathf;
             var JSON = File.ReadAllText(f);
-            var mcr = MethodCallRecord.Deserialize(JSON);
+            var mcr = OnlineProfiling.Deserialize(JSON);
 
             return mcr;
         }
 
-        private static void PrintImbalance(Dictionary<string, Tuple<double, double, int>> dictImbalances, int printcnt) {
-            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.Item1);
+        private static void PrintImbalance(Dictionary<string, (double RelInbalance, double Imbalance, int CallCount)> dictImbalances, int printcnt) {
+            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.RelInbalance);
             int i = 1;
             var wrt = Console.Out;
             foreach (var kv in mostimbalance) {
                 wrt.Write("#" + i + ": ");
                 wrt.WriteLine(string.Format(
-                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusivesec",
+                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusive",
                     kv.Key,
                     kv.Value.Item3,
                     kv.Value.Item1,
@@ -514,7 +524,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>
         public static void PrintTotalImbalance(this ISessionInfo SI, int printcnt = 0) {
-            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling());
+            var dictImbalances = MethodCallRecordExtension.GetFuncImbalance(SI.GetProfiling().Select(p => p.RootCall).ToArray());
             PrintImbalance(dictImbalances, printcnt);
         }
 
@@ -529,7 +539,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>
         public static void PrintMPIImbalance(this ISessionInfo SI, int printcnt = 0) {
-            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling());
+            var dictImbalances = MethodCallRecordExtension.GetMPIImbalance(SI.GetProfiling().Select(p => p.RootCall).ToArray());
             PrintImbalance(dictImbalances, printcnt);
         }
 
@@ -1160,15 +1170,13 @@ namespace BoSSS.Foundation.IO {
         public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true, NormType normType = NormType.L2_approximate) {
             ISessionInfo[] _session = sessions.ToArray();
             ITimestepInfo[] _timesteps = sessions.Select(s => s.Timesteps.Last()).ToArray();
+            //Debugger.Launch();
             return _timesteps.ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof, normType);
         }
 
         /// <summary>
         /// Tries to loads the control file of the given
-        /// <paramref name="session"/> in the new REPL format. Note: Use
-        /// <see cref="InteractiveBase.LoadAssembly"/> to load the
-        /// corresponding solver assembly to be able to use solver-specific
-        /// sub-classes of <see cref="AppControl"/>.
+        /// <paramref name="session"/> in the new REPL format. 
         /// </summary>
         /// <param name="session">
         /// The session whose configuration file should be loaded
@@ -1689,6 +1697,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// The number of threads per mpi rank used for this simulation
+        /// </summary>
+        public static int NumberOfThreadsPerRank(this ISessionInfo session) {
+            return session.ThreadPerMPIRank;
+        }
+
+        /// <summary>
         /// Function to evaluate results of calculations of FixedCylinder, OscillatingCylinder, ParticleInShear and Particle in Gravity
         /// </summary>
         /// <param name="sessions"></param>
@@ -1854,18 +1869,18 @@ namespace BoSSS.Foundation.IO {
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
-            var mcr = sessions.Pick(idx).GetProfiling();
+            var profiling = sessions.Pick(idx).GetProfiling();
 
             // Find methods if none given
             if (methods == null) {
                 
-                var findMainMethod = mcr[0].FindChild(mainMethod);
+                var findMainMethod = profiling[0].RootCall.FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
                 
                 if (findMainMethod != null) {
                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 } else {
-                    mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                    mostExpensive = profiling[0].RootCall.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 }
 
                 methods = new string[maxNumberMethods];
@@ -1886,7 +1901,7 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberSessions; i++) {
 
                 // was missing
-                mcr = sessions.Pick(i).GetProfiling();
+                profiling = sessions.Pick(i).GetProfiling();
 
                 // Get number of processors and save for later
                 int fileCount = (from file in Directory.EnumerateFiles(@path + "\\sessions\\" + sessions.Pick(i).ID, "profiling_bin.*", SearchOption.AllDirectories)
@@ -1906,9 +1921,9 @@ namespace BoSSS.Foundation.IO {
                         double[] tempFractions = new double[numberMethods];
                         int occurence = methods.Take(k+1).Where(x => x.Equals(methods[k])).Count();
 
-                        value = mcr[j].FindChild(mainMethod);
+                        value = profiling[j].RootCall.FindChild(mainMethod);
                         if (value == null) {
-                            value = mcr[j];
+                            value = profiling[j].RootCall;
                         }
                         if (exclusive) {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
@@ -2056,12 +2071,106 @@ namespace BoSSS.Foundation.IO {
         /// imports the specified log file data 
         /// </summary>
         /// <param name="sess"> List of sessions to be evaluated </param>
+        /// <param name="logName"> which log file to be evaluated </param>
+        /// <param name="values"> which log values to be evaluated </param>
+        /// <param name="evalName"></param>
+        /// <param name="keyName"></param>
+        /// <returns></returns>
+        public static List<Plot2Ddata> ReadLogData(this List<ISessionInfo> sess, string logName, string[] values, string evalName = null, string keyName = null) {
+
+            List<Plot2Ddata> plotData = new List<Plot2Ddata>();
+
+            int numberSessions = sess.Count();
+            int numberValues = values.Count();
+            for (int vIdx = 2; vIdx < numberValues; vIdx++) {
+
+                double[][] times = new double[numberSessions][];
+                double[][] valueDatas = new double[numberSessions][];
+
+                // Read all data
+                for (int j = 0; j < numberSessions; j++) {
+                    string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
+                    string[] lines = File.ReadAllLines(path);
+
+                    if (sess.Pick(j).RestartedFrom == Guid.Empty) {
+
+                        double[] time = new double[lines.Length - 1];
+                        double[] valueData = new double[lines.Length - 1];
+
+                        for (int i = 0; i < lines.Length - 1; i++) {
+                            time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                        }
+                        times[j] = time;
+                        valueDatas[j] = valueData;
+
+                    } else {
+
+                        string pathR = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).RestartedFrom.ToString(), logName + ".txt");
+                        string[] linesR = File.ReadAllLines(pathR);
+
+                        int len = (lines.Length - 1) + (linesR.Length - 1);
+                        double[] time = new double[len];
+                        double[] valueData = new double[len];
+                        int iL = 0;
+                        for (int i = 0; i < linesR.Length - 1; i++) {
+                            time[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                            iL++;
+                        }
+                        for (int i = 0; i < lines.Length - 1; i++) {
+                            time[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                            iL++;
+                        }
+
+                        // remove doubled time steps 
+                        List<double> rTime = new List<double>();
+                        List<double> rValDat = new List<double>();
+                        rTime.Add(time[len - 1]);
+                        rValDat.Add(valueData[len - 1]);
+                        for (int i = len - 2; i >= 0; i--) {
+                            if (time[i] < rTime.Last()) {
+                                rTime.Add(time[i]);
+                                rValDat.Add(valueData[i]);
+                            }
+                        }
+                        rTime.Reverse();
+                        rValDat.Reverse();
+
+                        times[j] = rTime.ToArray();
+                        valueDatas[j] = rValDat.ToArray();
+
+                    }
+                }
+
+                // Build DataSet
+                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
+                for (int i = 0; i < numberSessions; i++) {
+                    string sessName;
+                    if (evalName == null || keyName == null)
+                        sessName = (sess.Pick(i).Name).Replace("_", "-");
+                    else
+                        sessName = evalName + (Convert.ToDouble(sess.Pick(i).KeysAndQueries[keyName])).ToString();
+
+                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i] });
+                }
+                Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
+                plotData.Add(new Plot2Ddata(dataRowsValue));
+            }
+
+            return plotData;
+        }
+
+        /// <summary>
+        /// imports the specified log file data 
+        /// </summary>
+        /// <param name="sess"> List of sessions to be evaluated </param>
         /// <param name="logName"> which log values to be evaluated </param>
         /// <param name="evalName"></param>
         /// <param name="keyName"></param>
         /// <returns></returns>
         public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, string logName, string evalName = null, string keyName = null) {
-
 
             string[] values;
             switch (logName) {
@@ -2097,106 +2206,30 @@ namespace BoSSS.Foundation.IO {
                     throw new ArgumentException("No specified LogFormat");
             }
 
-
-            List<Plot2Ddata> plotData = new List<Plot2Ddata>();
-
-            int numberSessions = sess.Count();
-            int numberValues = values.Count();      
-            for (int vIdx = 2; vIdx < numberValues; vIdx++) {       
-
-                double[][] times = new double[numberSessions][];
-                double[][] valueDatas = new double[numberSessions][];
-
-                // Read all data
-                for (int j = 0; j < numberSessions; j++) {
-                    string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
-                    string[] lines = File.ReadAllLines(path);
-
-                    if (sess.Pick(j).RestartedFrom == Guid.Empty) { 
-                   
-                        double[] time = new double[lines.Length - 1];
-                        double[] valueData = new double[lines.Length - 1];
-
-                        for (int i = 0; i < lines.Length - 1; i++) {
-                            time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                        }
-                        times[j] = time;
-                        valueDatas[j] = valueData;
-
-                    } else {
-
-                        string pathR = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).RestartedFrom.ToString(), logName + ".txt");
-                        string[] linesR = File.ReadAllLines(pathR);
-
-                        int len = (lines.Length - 1) + (linesR.Length - 1);
-                        double[] time = new double[len];
-                        double[] valueData = new double[len];
-                        int iL = 0;
-                        for (int i = 0; i < linesR.Length - 1; i++) {
-                            time[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                            iL++;
-                        }
-                        for (int i = 0; i < lines.Length - 1; i++) {
-                            time[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                            iL++;
-                        }
-
-                        // remove doubled time steps 
-                        List<double> rTime = new List<double>();
-                        List<double> rValDat = new List<double>();
-                        rTime.Add(time[len-1]);
-                        rValDat.Add(valueData[len-1]);
-                        for(int i = len-2; i >= 0; i--) {
-                            if (time[i] < rTime.Last()) {
-                                rTime.Add(time[i]);
-                                rValDat.Add(valueData[i]);
-                            }
-                        }
-                        rTime.Reverse();
-                        rValDat.Reverse();
-
-                        times[j] = rTime.ToArray();
-                        valueDatas[j] = rValDat.ToArray();
-
-                    }
-                }
-
-                // Build DataSet
-                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
-                for (int i = 0; i < numberSessions; i++) {
-                    string sessName;
-                    if (evalName == null || keyName == null)
-                        sessName = (sess.Pick(i).Name).Replace("_", "-");
-                    else
-                        sessName = evalName + (Convert.ToDouble(sess.Pick(i).KeysAndQueries[keyName])).ToString();
-
-                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i] });
-                }
-                Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
-                plotData.Add(new Plot2Ddata(dataRowsValue));
-            }
-
-            return plotData;
-
+            return ReadLogData(sess, logName, values, evalName, keyName);
         }
 
         /// <summary>
         /// special purpose method, most likely legacy stuff
         /// </summary>
-        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess) {
+        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess, string[] CustomValues = null) {
 
-            string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+
+            string[] values;
+            if (CustomValues != null) {
+                values = CustomValues;
+            } else {
+                values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-Velocity", "contact-angle" };
+            }
 
             // check number of contact lines
             string path = @sess.Pick(0).Database.Path + "\\sessions\\" + sess.Pick(0).ID + "\\ContactAngle.txt";
             string[] lines = File.ReadAllLines(path);
-            int numCL = 0;
-            for (int i = 1; i <= 4; i++) {       // max number of contact lines should be 4
+            int numCL = 1;
+            int ts0 = (int)Convert.ToDouble(lines[1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
+            for (int i = 2; i <= 4; i++) {       // max number of contact lines should be 4
                 int ts = (int)Convert.ToDouble(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
-                if (ts == 0)
+                if (ts == ts0)
                     numCL++;
             }
 
@@ -2427,6 +2460,74 @@ namespace BoSSS.Foundation.IO {
 
         }
 
+
+        /// <summary>
+        /// Check for condition number loggings 
+        /// </summary>
+        /// <param name="pSessions"></param>
+        /// <returns>An array of dictionaries, where each dictionary represents a session, with keys as column names (string) and values as a list of doubles.</returns>
+        public static Dictionary<Guid, Dictionary<string, List<double>>> CheckForCondLogging(this IEnumerable<ISessionInfo> pSessions)
+        {
+            string[] allColumnNames = new string[] { ""};
+            int numberSessions = pSessions.Count();
+
+            //the so-called database the first key: session Id, second key: column name, value: list of entries
+            Dictionary<Guid, Dictionary<string, List<double>>> logsForAllSessions = new Dictionary<Guid, Dictionary<string, List<double>>>(numberSessions);
+            
+            for (int j = 0; j < numberSessions; j++){
+                ISessionInfo currentSession = pSessions.Pick(j);
+                //Initiate the "database", it should suffice the need
+                Dictionary<string, List<double>> logs = new Dictionary<string, List<double>>();
+                logsForAllSessions[currentSession.ID] = logs;
+
+                Console.WriteLine("Session: {0}", currentSession.ID);
+                string path = @currentSession.Database.Path + "\\sessions\\" + currentSession.ID + "\\CondNumbers.txt";
+                string[] lines;
+                string header;
+
+                try{ //reading
+                    lines = File.ReadAllLines(path);
+                    header = lines[0];
+                } catch{
+                    Console.WriteLine("no logging file available");
+                    continue;
+                }
+
+                //Get column names
+                var columnsNames = header.Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries);
+                if (!allColumnNames.SequenceEqual(columnsNames)) {
+                    allColumnNames = columnsNames;
+                    allColumnNames.ForEach(c => Console.Write(c + ", "));
+                    Console.WriteLine("");
+                }
+                //Initiate a list for each column and add to the database
+                for (int i = 0; i < columnsNames.Length; i++){
+                    string columnName = columnsNames[i];
+                    var list = new List<double>();
+                    logs.Add(columnName, list);  
+                }
+
+                // loop for each line in the log
+                for (int k = 1; k < lines.Length; k++){
+                    for (int i = 0; i < columnsNames.Length; i++){
+                        string currentColumn = columnsNames[i];
+                        string value = lines[k].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i];
+                        double valueDouble;
+
+                        //Check if it is NaN or Infinity
+                        if (Double.TryParse(value, out valueDouble)){
+                            logs[currentColumn].Add(valueDouble);
+                        } else {
+                            logs[currentColumn].Add(double.NaN);
+                            Console.WriteLine($"The value '{value}' could not be converted to a double for line {k} at column {i} in session {currentSession.Name}.");
+                        }
+                    }
+                }
+
+            }
+            return logsForAllSessions;
+        }
+
         /// <summary>
         /// Plots selected energy over time if an  "Energy.txt" exists.
         /// </summary>
@@ -2512,16 +2613,129 @@ namespace BoSSS.Foundation.IO {
 
         }
 
+        /// <summary>
+        /// Standard output of some session
+        /// </summary>
+        public static string GetStdout(this ISessionInfo sess, int rank = 0) {
+            var StdoutFile = sess.FilesInSessionDir("stdout." + rank + ".txt").FirstOrDefault();
+            if(StdoutFile == null || !File.Exists(StdoutFile)) {
+                Console.Error.WriteLine("Missing stdout file for session: " + sess);
+                return "";
+            }
+
+            using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (StreamReader reader = new StreamReader(stream)) {
+                    string stdout = reader.ReadToEnd();
+                    return stdout;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Standard output of some session
+        /// </summary>
+        public static string GetStderr(this ISessionInfo sess, int rank = 0) {
+            var StdoutFile = sess.FilesInSessionDir("stderr." + rank + ".txt").FirstOrDefault();
+            if (StdoutFile == null || !File.Exists(StdoutFile)) {
+                Console.Error.WriteLine("Missing stderr file for session: " + sess);
+                return "";
+            }
+
+            using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (StreamReader reader = new StreamReader(stream)) {
+                    string stdout = reader.ReadToEnd();
+                    return stdout;
+                }
+            }
+        }
+
+        /// <summary>
+        /// total memory (aka. sum) over all MPI ranks over time
+        /// </summary>
+        static public Plot2Ddata GetMPItotalMemory(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
+            var ret = ana.GetMPItotalMemory();
+
+            ret.Title = "Total memory of session " + sess;
+
+
+            return ret;        
+        }
+
+        /// <summary>
+        /// minimum, average and maximum memory allocations over all MPI ranks over time
+        /// </summary>
+        static public Plot2Ddata GetMinAvgMaxMemory(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
+            var ret = ana.GetMinAvgMaxMemPlot();
+            ret.Title = "Memory of session " + sess.ID;
+            return ret;
+        }
+
+        /// <summary>
+        /// Returns the memory instrumentation for a session (if available),
+        /// combined from files `memory.mpi_rank.txt` in the session directory
+        /// </summary>
+        public static SessionMemtrace GetMemtrace(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ret = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
+            return ret;
+        }
+
+
+        /// <summary>
+        /// Reports the largest memory-allocating routines in descending order
+        /// </summary>
+        static public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators(this ISessionInfo sess, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()), LineOffset, MaxLines);
+            return ana.ReportLargestAllocators();
+        }
+
+
+        /// <summary>
+        /// total memory (aka. sum) over all MPI ranks over time
+        /// </summary>
+        static public Plot2Ddata GetMPItotalMemory(this IEnumerable<ISessionInfo> sessS, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionsComparisonMemtrace(
+                sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray(),
+                LineOffset, MaxLines);
+
+            int L = ana.NoOfTimeEntries;
+
+            var ret = new Plot2Ddata();
+            int ColorCounter = 0;
+            foreach (var tt in ana.GetTotalMemoryMegs()) {
+
+                var fmt = new PlotFormat();
+                fmt.SetLineColorFromIndex(ColorCounter); ColorCounter++;
+                fmt.WithStyle(Styles.Lines);
+
+                ret.AddDataGroup(new XYvalues(
+                    $"Tot Mem [MegB] at {tt.MPISz} cores",
+                    L.ForLoop(i => (double)i),
+                    tt.TotalMem),
+                    fmt);
+            }
+
+            ret.Title = "Total memory of sessions at " + ana.MPIsizeOfRuns.ToConcatString("", ", ", "") + " MPI cores";
+
+
+            return ret;
+        }
+
+
+        /// <summary>
+        /// Reports the largest differences in memory allocation between the multiple runs
+        /// </summary>
+        static public (int TimelineIndex, double Imbalance, double[] AllocMegs, string Name)[] ReportLargestAllocatorImbalance(this IEnumerable<ISessionInfo> sessS, int LineOffset = 0, int MaxLines = 10000) {
+            var ana = new SessionsComparisonMemtrace(
+               sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray(),
+               LineOffset, MaxLines);
+            return ana.ReportLargestAllocatorImbalance();
+        }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="pltDat"></param>
-        /// <param name="xLabel"></param>
-        /// <param name="yLabel"></param>
-        /// <param name="convData">
-        /// if true, a log-log plot is performed
-        /// </param>
         public static void PlotData(Plot2Ddata pltDat, string xLabel, string yLabel, bool convData = false) {
 
             int lineColor = 0;

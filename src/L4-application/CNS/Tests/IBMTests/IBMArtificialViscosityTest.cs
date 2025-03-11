@@ -233,7 +233,7 @@ namespace CNS.Tests.IBMTests {
             c.ProjectName = "IBM artificial viscosity tests";
             c.SessionName = String.Format("IBM artificial viscosity test (contact discontinuity), no cut cells are agglomerated");
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -247,7 +247,7 @@ namespace CNS.Tests.IBMTests {
             c.SessionName = String.Format("IBM artificial viscosity test (contact discontinuity), all cut cells are agglomerated");
             c.AgglomerationThreshold = 0.99;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 

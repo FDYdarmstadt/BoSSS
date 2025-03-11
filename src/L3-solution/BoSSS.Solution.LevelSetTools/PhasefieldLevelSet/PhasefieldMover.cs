@@ -66,22 +66,22 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // Perform timestep
                 // ================                
 
-                if (this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledOnce)
-                {
-                    phi0.Clear();
-                    phi0.Acc(1.0, phi);
-                    gradPhi0.Clear();
-                    gradPhi0.Gradient(1.0, phi0);
+                //if (this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledOnce)
+                //{
+                //    phi0.Clear();
+                //    phi0.Acc(1.0, phi);
+                //    gradPhi0.Clear();
+                //    gradPhi0.Gradient(1.0, phi0);
 
-                    VectorField<SinglePhaseField> filtgrad;
-                    CurvatureAlgorithms.CurvatureDriver(
-                                    SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                                    CurvatureAlgorithms.FilterConfiguration.Phasefield,
-                                    this.DCurvature, out filtgrad, CorrectionLsTrk,
-                                    this.DCurvature.Basis.Degree * 2,
-                                    phi0);
+                //    VectorField<SinglePhaseField> filtgrad;
+                //    CurvatureAlgorithmsForLevelSet.CurvatureDriver(
+                //                    CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                //                    CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
+                //                    this.DCurvature, out filtgrad, CorrectionLsTrk,
+                //                    this.DCurvature.Basis.Degree * 2,
+                //                    phi0);
 
-                }                
+                //}                
 
                 //PlotCurrentState(_phystime, new Foundation.IO.TimestepNumber(new int[] { _TimestepNo , 0}), 2);
                 base.Timestepping.Solve(_phystime, _dt);
@@ -90,13 +90,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // algebraic correction
                 switch (this.Control.CorrectionType)
                 {
-                    case PhasefieldControl.Correction.Concentration:
+                    case Correction.Concentration:
                         ConservativityCorrection();
                         break;
-                    case PhasefieldControl.Correction.Mass:
+                    case Correction.Mass:
                         MassCorrection();
                         break;
-                    case PhasefieldControl.Correction.None:
+                    case Correction.None:
                     default:
                         break;
                 }

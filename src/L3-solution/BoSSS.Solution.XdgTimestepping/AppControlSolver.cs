@@ -12,11 +12,13 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.Control {
 
     /// <summary>
-    /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers
+    /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers,
+    /// resp. for implicit time-stepping.
     /// </summary>
     [Serializable]
     [DataContract]
-    public class AppControlSolver : AppControl {
+    public class AppControlSolver : AppControl
+    {
 
         /// <summary>
         /// ctor
@@ -63,7 +65,7 @@ namespace BoSSS.Solution.Control {
         /// In the case of multi-step methods (e.g. BDF2 and higher), multiple initial values, resp. 
         /// </summary>
         [DataMember]
-        public bool MultiStepInit = true;
+        public bool MultiStepInit = false;
 
         /// <summary>
         /// Kind of timestepping to use
@@ -77,10 +79,11 @@ namespace BoSSS.Solution.Control {
                 return base.TimesteppingMode;
             }
             set {
-                base.TimesteppingMode = value;
-                if(value == _TimesteppingMode.Steady) {
+                base.TimesteppingMode = value; // should set timestep to a large number if steady.
+                if (value == _TimesteppingMode.Steady) {
                     TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-                    
+                    if (dtFixed <= 1.0e100)
+                        throw new Exception("someone changed base implementation.");
                 }
             }
         }

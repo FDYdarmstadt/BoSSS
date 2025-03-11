@@ -187,8 +187,18 @@ namespace ilPSP {
             return ret;
         }
 
-        
-    
+
+        /// <summary>
+        /// extracts <paramref name="N"/> items from the <paramref name="RowNo"/>-th row of matrix <paramref name="inp"/>, starting at column <paramref name="j0"/>
+        /// </summary>
+        public static double[] GetRowPart(this IMatrix inp, int RowNo, int j0, int N) {
+            double[] ret = new double[N];
+            for (int i = 0; i < N; i++)
+                ret[i] = inp[RowNo, i + j0];
+            return ret;
+        }
+
+
         /// <summary>
         /// extracts the <paramref name="ColNo"/>-th column from
         /// <paramref name="inp"/> and copies it to <paramref name="outp"/>,

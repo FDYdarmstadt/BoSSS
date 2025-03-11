@@ -37,37 +37,37 @@ namespace BoSSS.Solution.Timestepping {
         public enum RungeKuttaSchemes {
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.ExplicitEuler"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.ExplicitEuler"/>
             /// </summary>
             ExplicitEuler,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.RungeKutta1901"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.RungeKutta1901"/>
             /// </summary>
             RungeKutta1901,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.Heun"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.Heun"/>
             /// </summary>
             Heun,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.Middlepoint"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.Middlepoint"/>
             /// </summary>
             Middlepoint,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.TVD3"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.TVD3"/>
             /// </summary>
             TVD3,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.ThreeOverEight"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.ThreeOverEight"/>
             /// </summary>
             ThreeOverEight,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.SSP54"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.SSP54"/>
             /// </summary>
             SSP54
         }
@@ -75,28 +75,28 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// one more ctor.
         /// </summary>
-        public RungeKutta(RungeKuttaSchemes schemeEnum, SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null)
+        public RungeKutta(RungeKuttaSchemes schemeEnum, DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null)
             : this(SchemeFactory(schemeEnum), spatialOp, Fieldsmap, Parameters, timeStepConstraints, sgrd) {
         }
 
         /// <summary>
         /// yet another ctor.
         /// </summary>
-        public RungeKutta(RungeKuttaScheme scheme, SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, SubGrid sgrd=null)
+        public RungeKutta(RungeKuttaScheme scheme, DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, SubGrid sgrd=null)
             : this(scheme, spatialOp, Fieldsmap, Parameters, null, sgrd) {
         }
 
         /// <summary>
         /// another ctor.
         /// </summary>
-        public RungeKutta(RungeKuttaScheme scheme, SpatialOperator spatialOp, params DGField[] Fields)
+        public RungeKutta(RungeKuttaScheme scheme, DifferentialOperator spatialOp, params DGField[] Fields)
             : this(scheme, spatialOp, new CoordinateMapping(Fields),null, null) {
         }
 
         /// <summary>
         /// another ctor.
         /// </summary>
-        public RungeKutta(RungeKuttaSchemes scheme, SpatialOperator spatialOp, params DGField[] Fields)
+        public RungeKutta(RungeKuttaSchemes scheme, DifferentialOperator spatialOp, params DGField[] Fields)
             : this(scheme, spatialOp, new CoordinateMapping(Fields),null, null) {
         }
 
@@ -111,7 +111,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <paramref name="spatialOp"/> contains no parameters;
         /// must match the parameter field list of
         /// <paramref name="spatialOp"/>, see
-        /// <see cref="BoSSS.Foundation.SpatialOperator.ParameterVar"/>
+        /// <see cref="BoSSS.Foundation.DifferentialOperator.ParameterVar"/>
         /// </param>
         /// <param name="timeStepConstraints">
         /// optional list of time step constraints <see cref="TimeStepConstraint"/>
@@ -119,7 +119,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="sgrd">
         /// optional restriction to computational domain
         /// </param>
-        public RungeKutta(RungeKuttaScheme scheme, SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, IList<TimeStepConstraint> timeStepConstraints, SubGrid sgrd = null)
+        public RungeKutta(RungeKuttaScheme scheme, DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, IList<TimeStepConstraint> timeStepConstraints, SubGrid sgrd = null)
             : base(spatialOp, Fieldsmap, Parameters, timeStepConstraints, sgrd) {
             using (new ilPSP.Tracing.FuncTrace()) {
                 m_Scheme = scheme;

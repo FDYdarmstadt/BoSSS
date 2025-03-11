@@ -17,7 +17,7 @@ downloadFromJenkins() {
     unzip archive.zip
     cd archive
     ls
-    FILES=$("$myFind" . -name '*.html')
+    FILES=$("$myFind" . -name "$2")
     echo "${FILES}"
     echo 'copy'
     cp $FILES ./..
@@ -26,5 +26,10 @@ downloadFromJenkins() {
 }
 
 # next ...
-downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atFDYcluster/lastSuccessfulBuild/artifact/*zip*/archive.zip
-downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atLichtenberg/lastSuccessfulBuild/artifact/*zip*/archive.zip
+downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atFDYcluster/lastSuccessfulBuild/artifact/*zip*/archive.zip '*.html'
+downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atLichtenberg/lastSuccessfulBuild/artifact/*zip*/archive.zip '*.html'
+downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage1-Installer-Win/lastSuccessfulBuild/artifact/*zip*/archive.zip '*.exe'
+downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage1-Installer-Linux/lastSuccessfulBuild/artifact/*zip*/archive.zip '*.run'
+
+cp `ls BoSSS-setup-*.exe` BoSSS-setup-latest.exe
+cp `ls BoSSS-setup-*.run` BoSSS-setup-latest.run

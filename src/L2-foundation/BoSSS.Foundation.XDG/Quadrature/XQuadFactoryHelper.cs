@@ -26,103 +26,31 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.XDG.Quadrature;
+using IntersectingQuadrature;
 
 namespace BoSSS.Foundation.XDG {
 
+
+    
 
     /// <summary>
     /// Auxiliary class that helps with the creation of XDG-quadrature schemes;
     /// instances can be obtained via <see cref="LevelSetTracker.GetXQuadFactoryHelper"/>.
     /// </summary>
-    public class XQuadFactoryHelper {
-
-        /// <summary>
-        /// Different variants of the moment-fitting procedure for the creation
-        /// of the surface and volume quadrature rules.
-        /// </summary>
-        public enum MomentFittingVariants {
-
-            /// <summary>
-            /// The original method published in 2013 which uses a two-step
-            /// procedure: The surface rules are created first and then used to
-            /// create the volume rules
-            /// </summary>
-            Classic,
-
-            /// <summary>
-            /// One-step variant proposed by Florian (see XNSE paper, submitted
-            /// 2015). Surface and volume rules are created using a single
-            /// moment-fitting by additionally enforcing Gauss' theorem on the
-            /// discrete level.
-            /// </summary>
-            OneStepGauss,
-
-            /// <summary>
-            /// Same as <see cref="OneStepGauss"/>, but additionally enforces
-            /// Stokes' theorem on a discrete level.
-            /// </summary>
-            OneStepGaussAndStokes,
-
-            /// <summary>
-            /// Two step-procedure: using Stokes theorem to create surface rules, 
-            /// and the Gauss theorem to create Volume rules.
-            /// </summary>
-            TwoStepStokesAndGauss,
+    public class XQuadFactoryHelper : XQuadFactoryHelperBase {
 
 
-            /// <summary>
-            /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
-            /// </summary>
-            ExactCircle,
-
-            /// <summary>
-            /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
-            /// obtained throug recursive subdivision, as described in 
-            /// (Saye 2015)
-            /// </summary>
-            /// <remarks>
-            /// High-Order Quadrature Methods for Implicitly Defined Surfaces and Volumes in Hyperrectangles,
-            /// R. Saye, SIAM Journal on Scientific Computing, 2015
-            /// </remarks>
-            Saye,
-        }
-
-        /// <summary>
-        /// Used type of the HMF.
-        /// </summary>
-        public MomentFittingVariants CutCellQuadratureType {
-            get;
-            private set;
-        }
+        public MultiLevelSetBeckFactoryCreator zwoLSSayeFactories { get; private set; }
 
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, MomentFittingVariants momentFittingVariant) {
-            //var lsTrk = lsDatas[0].Tracker;
-            int iHi = lsDatas[0].HistoryIndex;
-            //if(lsDatas.Length != lsTrk.LevelSets.Count)
-            //    throw new ArgumentException();
-            for (int iLs = 0; iLs < lsDatas.Length; iLs++) {
-                if (lsDatas[iLs].LevelSetIndex != iLs)
-                    throw new ArgumentException();
-                //if(!object.ReferenceEquals(lsDatas[iLs].Tracker, lsTrk))
-                //    throw new ArgumentException();
-                if (lsDatas[iLs].HistoryIndex != iHi)
-                    throw new ArgumentException();
-            }
+        internal XQuadFactoryHelper(LevelSetTracker.LevelSetData[] lsDatas, MomentFittingVariants momentFittingVariant) 
+            : base(lsDatas) {
 
             this.CutCellQuadratureType = momentFittingVariant;
-            this.m_LevelSetDatas = lsDatas.CloneAs();
         }
 
-#if DEBUG
-        public static bool CheckQuadRules = true;
-#else
-        public static bool CheckQuadRules = false;
-#endif
-
-        LevelSetTracker.LevelSetData[] m_LevelSetDatas;
 
         MultiLevelSetBruteForceQuadratureFactory zwoLSBruteForceFactories;
 
@@ -203,7 +131,7 @@ namespace BoSSS.Foundation.XDG {
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
-        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
+        override public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
             int D = gdat.SpatialDimension;
             return new EdgeRuleFromCellBoundaryFactory(gdat,
@@ -219,12 +147,26 @@ namespace BoSSS.Foundation.XDG {
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
-        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            if (zwoLSBruteForceFactories == null) {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-            }
-            return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+        public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        {
+            //switch (CutCellQuadratureType)
+            //{
+                //case MomentFittingVariants.Saye:
+                //    if (zwoLSSayeFactories == null)
+                //    {
+                //        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+                //    }
+                //    return zwoLSSayeFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+                //default:
+                    //old stuff 
+                    if (zwoLSBruteForceFactories == null)
+                    {
+                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                    }
+                    return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+            //}
         }
+
 
 
         /// <summary>
@@ -262,6 +204,15 @@ namespace BoSSS.Foundation.XDG {
                         CellFaceVolume_in3D[levSetIndex] = SayeFactories.SayeGaussRule_EdgeVolume3D(
                             this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm);
                         break;
+
+                        //case MomentFittingVariants.Algoim:
+                        //    if (CellFaceVolume_in3D == null)
+                        //        CellFaceVolume_in3D = new IQuadRuleFactory<CellBoundaryQuadRule>[this.m_LevelSetDatas.Length];
+
+                        //    var factory = new AlgoimFactories(this.m_LevelSetDatas[levSetIndex], Kref);
+                        //    CellFaceVolume_in3D[levSetIndex] = factory.GetEdgeVolumeFactory();
+                        //    break;
+
                         default:
                         if (CellFaceVolume_in3D == null)
                             CellFaceVolume_in3D = new LevelSetEdgeVolumeQuadRuleFactory[this.m_LevelSetDatas.Length];
@@ -284,7 +235,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates a quadrature rule factory for the cut edge integrals.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
+        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
 
             //void Phi(int x, NodeSet nodes, MultidimensionalArray inU, MultidimensionalArray outU)
             //{
@@ -324,62 +275,80 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates an edge quadrature rule factory for edges cut by two level sets.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
-            if (zwoLSBruteForceFactories == null)
+            switch (CutCellQuadratureType)
             {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                case MomentFittingVariants.Saye:
+                    if (zwoLSSayeFactories == null)
+                    {
+                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+                    }
+                    return zwoLSSayeFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+
+                default:
+
+                    if (zwoLSBruteForceFactories == null)
+                    {
+                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                    }
+                    return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
             }
-            return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
         }
 
         /// <summary>
         /// Generates a quadrature rule factory for the cut volume integrals.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref) {
+        override public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex, JumpTypes jmp, RefElement Kref)
+        {
             CheckJmp(jmp);
             var ctx = this.m_LevelSetDatas[levSetIndex].GridDat;
 
-            if (jmp == JumpTypes.Heaviside) {
+            if (jmp == JumpTypes.Heaviside)
+            {
                 if (m_SurfaceFactory == null)
                     m_SurfaceFactory = new IQuadRuleFactory<QuadRule>[m_LevelSetDatas.Length];
                 if (m_VolumeFactory == null)
                     m_VolumeFactory = new IQuadRuleFactory<QuadRule>[m_LevelSetDatas.Length];
 
-                if (m_VolumeFactory[levSetIndex] == null) {
-                    switch (CutCellQuadratureType) {
+                if (m_VolumeFactory[levSetIndex] == null)
+                {
+                    switch (CutCellQuadratureType)
+                    {
                         case MomentFittingVariants.Classic:
-                        m_VolumeFactory[levSetIndex] = new LevelSetVolumeQuadRuleFactory(
-                            this.m_LevelSetDatas[levSetIndex],
-                            GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
-                            GetSurfaceFactory(levSetIndex, Kref),
-                            jumpType: jmp);
-                        break;
+                            m_VolumeFactory[levSetIndex] = new LevelSetVolumeQuadRuleFactory(
+                                this.m_LevelSetDatas[levSetIndex],
+                                GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
+                                GetSurfaceFactory(levSetIndex, Kref),
+                                jumpType: jmp);
+                            break;
 
                         case MomentFittingVariants.OneStepGauss:
-                        case MomentFittingVariants.OneStepGaussAndStokes: {
-                            bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
-                            LevelSetComboRuleFactory2 ComboRuleFactroy = new LevelSetComboRuleFactory2(
-                                    this.m_LevelSetDatas[levSetIndex],
-                                    this.GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
-                                    bStokes ? this._GetSurfaceElement_BoundaryRuleFactory(levSetIndex, Kref) : null,
-                                    _UseAlsoStokes: bStokes,
-                                    _SurfaceNodesOnZeroLevset: false,
-                                    _DoCheck: CheckQuadRules);
-                            m_VolumeFactory[levSetIndex] = ComboRuleFactroy.GetVolumeFactory(); 
-                            m_SurfaceFactory[levSetIndex] = ComboRuleFactroy.GetSurfaceFactory();
-                            break;
-                        }
+                        case MomentFittingVariants.OneStepGaussAndStokes:
+                            {
+                                bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
+                                LevelSetComboRuleFactory2 ComboRuleFactroy = new LevelSetComboRuleFactory2(
+                                        this.m_LevelSetDatas[levSetIndex],
+                                        this.GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
+                                        bStokes ? this._GetSurfaceElement_BoundaryRuleFactory(levSetIndex, Kref) : null,
+                                        _UseAlsoStokes: bStokes,
+                                        _SurfaceNodesOnZeroLevset: false,
+                                        _DoCheck: CheckQuadRules);
+                                m_VolumeFactory[levSetIndex] = ComboRuleFactroy.GetVolumeFactory();
+                                m_SurfaceFactory[levSetIndex] = ComboRuleFactroy.GetSurfaceFactory();
+                                break;
+                            }
 
                         case MomentFittingVariants.TwoStepStokesAndGauss:
-                        case MomentFittingVariants.ExactCircle: {
-                            m_VolumeFactory[levSetIndex] = (new LevelSetVolumeQuadRuleFactory2b(Kref,
-                                    this.m_LevelSetDatas[levSetIndex],
-                                    GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
-                                    GetSurfaceFactory(levSetIndex, Kref),
-                                    jmp));
-                            break;
-                        }
+                        case MomentFittingVariants.ExactCircle:
+                            {
+                                m_VolumeFactory[levSetIndex] = (new LevelSetVolumeQuadRuleFactory2b(Kref,
+                                        this.m_LevelSetDatas[levSetIndex],
+                                        GetCellFaceFactory(levSetIndex, Kref, JumpTypes.Heaviside),
+                                        GetSurfaceFactory(levSetIndex, Kref),
+                                        jmp));
+                                break;
+                            }
                         case MomentFittingVariants.Saye:
                             var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
@@ -387,28 +356,47 @@ namespace BoSSS.Foundation.XDG {
                             m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                             m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                             break;
+                        case MomentFittingVariants.Algoim:
+                            var algoimComboFactory = new Quadrature.AlgoimFactories(
+                                    this.m_LevelSetDatas[levSetIndex],
+                                    Kref);
+                            m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();
+                            m_SurfaceFactory[levSetIndex] = algoimComboFactory.GetSurfaceFactory();
+                            break;
                         default:
-                        throw new NotSupportedException(String.Format(
-                            "Variant {0} not implemented.", CutCellQuadratureType));
+                            throw new NotSupportedException(String.Format(
+                                "Variant {0} not implemented.", CutCellQuadratureType));
                     }
                 }
 
                 Debug.Assert(m_VolumeFactory[levSetIndex] != null);
                 return m_VolumeFactory[levSetIndex];
-            } else if (jmp == JumpTypes.OneMinusHeaviside) {
+            }
+            else if (jmp == JumpTypes.OneMinusHeaviside)
+            {
                 IQuadRuleFactory<QuadRule> ret;
-                switch (CutCellQuadratureType) {
+                switch (CutCellQuadratureType)
+                {
                     case MomentFittingVariants.Saye:
-                    ret = Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
-                            new LineSegment.SafeGuardedNewtonMethod(1e-14));
-                    break;
+                        ret = Quadrature.SayeFactories.SayeGaussRule_NegativeVolume(this.m_LevelSetDatas[levSetIndex],
+                                new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                        break;
+                    case MomentFittingVariants.Algoim:
+                        var algoimComboFactory = new Quadrature.AlgoimFactories(
+                                this.m_LevelSetDatas[levSetIndex],
+                                Kref,
+                                true);
+                        ret = algoimComboFactory.GetVolumeFactory();
+                        break;
                     default:
-                    ret = new ComplementaryRuleFactory(GetVolRuleFactory(levSetIndex, JumpTypes.Heaviside, Kref));
-                    break;
+                        ret = new ComplementaryRuleFactory(GetVolRuleFactory(levSetIndex, JumpTypes.Heaviside, Kref));
+                        break;
                 }
                 Debug.Assert(ret != null);
                 return ret;
-            } else {
+            }
+            else
+            {
                 throw new ArgumentOutOfRangeException("unsupported jump type");
             }
         }
@@ -417,18 +405,27 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates a volume quadrature rule factory for cells cut by two level sets.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        public override IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
-            if(zwoLSBruteForceFactories == null)
+            switch (CutCellQuadratureType)
             {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                case MomentFittingVariants.Saye:
+                    if (zwoLSSayeFactories == null)
+                    {
+                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+                    }
+                    return zwoLSSayeFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+                default:
+                    if (zwoLSBruteForceFactories == null)
+                    {
+                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                    }
+                    return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
             }
-            return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
         }
 
         /// <summary>
-        /// Integration orders of all quadrature rules for volume integrals that have been cached so far,
-        /// see <see cref="GetVolRuleFactory"/>
+        /// Integration orders of all quadrature rules for volume integrals that have been cached so far
         /// </summary>
         public int[] GetCachedVolumeOrders(int levSetIdx) {
             /*
@@ -471,7 +468,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates a quadrature rule factory for integrating over the zero-level-set surface.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref) {
+        override public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex, RefElement Kref) {
             //if (m_ComboRuleFactroy == null)
             //    m_ComboRuleFactroy = new LevelSetComboRuleFactory2[this.lsTrk.LevelSets.Count];
             if (m_SurfaceFactory == null)
@@ -525,6 +522,13 @@ namespace BoSSS.Foundation.XDG {
                         m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                         m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                         break;
+                    case MomentFittingVariants.Algoim:
+                        var algoimComboFactory = new Quadrature.AlgoimFactories(
+                                this.m_LevelSetDatas[levSetIndex],
+                                Kref);
+                        m_VolumeFactory[levSetIndex] = algoimComboFactory.GetVolumeFactory();
+                        m_SurfaceFactory[levSetIndex] = algoimComboFactory.GetSurfaceFactory();
+                        break;
                     default:
                         throw new NotSupportedException(String.Format(
                             "Variant {0} not implemented.", CutCellQuadratureType));
@@ -538,15 +542,25 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory for integrating over a surface.
         /// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
-            if (zwoLSBruteForceFactories == null)
+            switch (CutCellQuadratureType)
             {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                case MomentFittingVariants.Saye:
+                    if (zwoLSSayeFactories == null)
+                    {
+                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+                    }
+                    return zwoLSSayeFactories.GetSurfaceFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+                default:
+                    if (zwoLSBruteForceFactories == null)
+                    {
+                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                    }
+                    return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0,
+                        levSetIndex1,
+                        jmp1, backupFactory);
             }
-            return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0, 
-                levSetIndex1, 
-                jmp1, backupFactory);
         }
 
 
@@ -554,16 +568,25 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory the intersection of levelset0 and levelset1 where levelset0 = levelset1 = 0
         /// This is a point in 2D, a line in 3D.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            if (zwoLSBruteForceFactories == null) {
+        public override IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
+            //switch (CutCellQuadratureType)
+            //{
+            //    case MomentFittingVariants.OneStepGauss:
+            //        if (zwoLSSayeFactories == null)
+            //        {
+            //            zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
+            //        }
+            //        return zwoLSSayeFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1, backupFactory);
+            //    default:
+                    if (zwoLSBruteForceFactories == null) {
                 zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
             return zwoLSBruteForceFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1, backupFactory);
+                    //}
         }
 
         /// <summary>
-        /// Integration orders of all quadrature rules for volume integrals that have been cached so far,
-        /// see <see cref="GetVolRuleFactory"/>
+        /// Integration orders of all quadrature rules for volume integrals that have been cached so far
         /// </summary>
         public int[] GetCachedSurfaceOrders(int levSetIdx) {
             /*
@@ -634,7 +657,7 @@ namespace BoSSS.Foundation.XDG {
                     QuadRule compQr = new QuadRule();
                     compQr.OrderOfPrecision = qr.OrderOfPrecision;
 
-                    compQr.Nodes = new NodeSet(this.RefElement, L1 + L2, D);
+                    compQr.Nodes = new NodeSet(this.RefElement, L1 + L2, D, true);
                     compQr.Weights = MultidimensionalArray.Create(L1 + L2);
 
 

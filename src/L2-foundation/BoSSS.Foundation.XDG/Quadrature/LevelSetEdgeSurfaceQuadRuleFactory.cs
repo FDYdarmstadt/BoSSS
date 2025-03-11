@@ -198,7 +198,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 optimizedRule.Nodes = new NodeSet(
                     this.RefElement,
                     optimizedRule.Weights.Length,
-                    LevelSetData.GridDat.SpatialDimension);
+                    LevelSetData.GridDat.SpatialDimension,
+                    true);
                 //optimizedRule.Nodes.LockForever();
 
                 if (optimizedRule.NoOfNodes == 0) {
@@ -241,7 +242,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     NodeSet irgendwelcheNodes = new NodeSet(this.RefElement,
                         optimizedRule.Nodes.ExtractSubArrayShallow(
                            new int[] { noOfProcessedNodes, 0 },
-                           new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, optimizedRule.SpatialDim - 1 }));
+                           new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, optimizedRule.SpatialDim - 1 }), 
+                        false);
                     MultidimensionalArray phiValues = EvaluatePhis(irgendwelcheNodes, cell, e);
                     
 
@@ -474,6 +476,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     throw new NotSupportedException();
             }
 
+            public override Quadrature<CellEdgeBoundaryQuadRule, CellMask> CloneForThreadParallelization(int iThread, int NumThreads) {
+                throw new ApplicationException("This quadrature is not Supposed to be run Thread-Parallel."); // 
+            }
+
             public override void Execute() {
                 Results = new double[gridData.iGeomCells.RefElements[0].NoOfFaces, IntegralCompDim[0]];
                 base.Execute();
@@ -512,8 +518,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             NodeSet[] family;
 
-            protected override void QuadNodesChanged(NodeSet newNodes) {
+            protected override void QuadNodesChanged(NodeSet newNodes, int iThread, int NumThreads) {
                 Debug.Assert(object.ReferenceEquals(newNodes, this.CurrentRule.Nodes));
+                if(NumThreads > 1)
+                    throw new NotImplementedException("Not Supporting parallel execution");
+
 
                 int noOfRelevantEdges = CurrentRule.NumbersOfNodesPerFace.Count(n => n > 0);
                 family = new NodeSet[1 + noOfRelevantEdges];
@@ -533,7 +542,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         newNodes.RefElement,
                         CurrentRule.Nodes.ExtractSubArrayShallow(
                             new int[] { noOfProcessedNodes, 0 },
-                            new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, CurrentRule.SpatialDim - 1 }));
+                            new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, CurrentRule.SpatialDim - 1 }), 
+                        true);
                     noOfProcessedNodes += noOfNodesOnEdge;
                     nodeSetIndex++;
                 }

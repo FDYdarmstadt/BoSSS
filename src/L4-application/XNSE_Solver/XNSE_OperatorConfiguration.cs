@@ -41,6 +41,7 @@ namespace BoSSS.Application.XNSE_Solver {
             VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("VolumeForce")).Any();
             Continuity = true;
             PressureGradient = true;
+            InterfaceSlip = control.PhysicalParameters.slipI > 0.0;
             UseImmersedBoundary = control.UseImmersedBoundary;
             Transport = control.PhysicalParameters.IncludeConvection;
             Viscous = control.PhysicalParameters.IncludeDiffusion;
@@ -143,6 +144,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// include pressure gradient
         /// </summary>
         public bool PressureGradient;
+
+        /// <summary>
+        /// slip on fluid-fluid interface
+        /// </summary>
+        public bool InterfaceSlip;
 
         /// <summary>
         /// Use the surface force term -- mostly only useful for manufactured solutions.
@@ -252,6 +258,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool isPressureGradient {
             get { return PressureGradient; }
+        }
+
+        public bool isInterfaceSlip {
+            get { return InterfaceSlip; }
         }
 
         public bool isContinuity {

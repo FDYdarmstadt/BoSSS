@@ -50,12 +50,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double[] AcceptableResidual => new double[] { 1.0e-8, 1.0e-8, 1.0e-8, 1.0e-8 };
 
+
+        public bool ComputeOnQuarterDomain = false;
+
+        public bool IsRotationalSymmetric = false;
+
+
         public GridCommons CreateGrid(int Resolution) {
             //double sz = 2;
             double sz = 0.65;
             
             var nodes = GenericBlas.Linspace(-sz, +sz, 20 * Resolution + 1);
             var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
+            if (ComputeOnQuarterDomain) {
+                var nodesPos = GenericBlas.Linspace(0, +sz, 10 * Resolution + 1);
+                grd = Grid3D.Cartesian3DGrid(nodesPos, nodesPos, nodes);
+            }
 
             grd.DefineEdgeTags((Vector X) => "wall");
 
@@ -92,16 +102,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         };
         */
 
-        internal (int l, int m, double Ylm)[] modes = new[] {
+        internal (int l, int m, double Ylm)[] modesNonRotSym = new[] {
             (+0, +0, 1.0*SphericalHarmonics.Get_Nlm(0,0)),
             (+1, -1, -0.1*SphericalHarmonics.Get_Nlm(1,-1)),
             (+1, +0, -0.2*SphericalHarmonics.Get_Nlm(1,0)),
             (+1, +1, -0.3*SphericalHarmonics.Get_Nlm(1,1)),
             (+2,  0, 0.4*SphericalHarmonics.Get_Nlm(2,0))
         };
-        
 
-        
+        internal (int l, int m, double Ylm)[] modesRotSym = new[] {
+            (+0, +0, 1.0*SphericalHarmonics.Get_Nlm(0,0)),
+            (+1, +0, -0.2*SphericalHarmonics.Get_Nlm(1,0)),
+            (+2,  0, 0.4*SphericalHarmonics.Get_Nlm(2,0)),
+            //(+3,  0, -0.3*SphericalHarmonics.Get_Nlm(3,0))
+        };
+
+        internal (int l, int m, double Ylm)[] modes; 
 
 
         /// <summary>
@@ -110,12 +126,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public double ComputeModeError(double[] LinearModes) {
             double ret = 0.0;
 
-            double[] Shallmodes = new double[Logging.SphericalHarmonicsLogging.SH_dim(modes.Max(tt => tt.l))];
+            modes = IsRotationalSymmetric ? modesRotSym : modesNonRotSym;
+            double[] Shallmodes = new double[Logging.SphericalHarmonicsLogging.SH_dim(modes.Max(tt => tt.l), IsRotationalSymmetric)];
             int LL = LinearModes.Length;
             int I = Math.Max( modes.Max(tt => tt.l), LL);
 
             for(int i = 0; i < Math.Max(LinearModes.Length, Shallmodes.Length); i++) {
-                var (l, m) = Logging.SphericalHarmonicsLogging.SH_mappingInv(i);
+                var (l, m) = Logging.SphericalHarmonicsLogging.SH_mappingInv(i, IsRotationalSymmetric);
 
                 double ma = i < LL ? LinearModes[i] : 0.0;
                 double mb = modes.SingleOrDefault(tt => tt.l == l && tt.m == m).Ylm;
@@ -139,6 +156,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 double R = X.L2Norm();
                 var (u, v) = SphericalHarmonics.GetAngular(X);
 
+                modes = IsRotationalSymmetric ? modesRotSym : modesNonRotSym;
                 double r = 0;
                 foreach(var tt in modes)
                     r += SphericalHarmonics.MyRealSpherical(tt.l, tt.m, u, v)*tt.Item3;

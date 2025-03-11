@@ -456,7 +456,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// Create XOperator and Timestepper
         /// </summary>
         /// <param name="L"></param>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
             #region Checks
             // CreateEquationsAndSolvers might be called multiple times
@@ -555,7 +555,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,
                         (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
-                        this.MultigridOperatorConfig, base.MultigridSequence,
+                        this.MultigridOperatorConfig,
                         this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
                         this.Control.AgglomerationThreshold,
                         true,
@@ -1718,10 +1718,6 @@ namespace BoSSS.Application.XRheology_Solver {
         }
 
 
-        protected override void Bye() {
-            base.Bye();
-        }
-
 
         // =========================
         // adaptive mesh refinement
@@ -2004,7 +2000,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
         }
 

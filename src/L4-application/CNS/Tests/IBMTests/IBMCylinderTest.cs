@@ -49,7 +49,7 @@ namespace CNS.Tests.IBMTests {
             int dgDegree = 0;
             double endTime = 800.723;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 
@@ -72,12 +72,13 @@ namespace CNS.Tests.IBMTests {
         /// <summary>
         /// Test using first order DG
         /// </summary>
+        [NUnitFileToCopyHack("Tests/IBMTests/IBMCylinderTests.zip")]
         [Test]
         public static void IBMCylinder1st() {
             int dgDegree = 1;
             double endTime = 800.207;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 
@@ -98,12 +99,13 @@ namespace CNS.Tests.IBMTests {
         /// <summary>
         /// Test using second order DG
         /// </summary>
+        [NUnitFileToCopyHack("Tests/IBMTests/IBMCylinderTests.zip")]
         [Test]
         public static void IBMCylinder2nd() {
             int dgDegree = 2;
             double endTime = 800.122;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 
@@ -125,12 +127,13 @@ namespace CNS.Tests.IBMTests {
         /// <summary>
         /// Test using third order DG
         /// </summary>
+        [NUnitFileToCopyHack("Tests/IBMTests/IBMCylinderTests.zip")]
         [Test]
         public static void IBMCylinder3rd() {
             int dgDegree = 3;
             double endTime = 540.817;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 

@@ -41,8 +41,8 @@ namespace NSE_SIMPLE {
             SolverConfiguration SolverConf, int SpatialDirection)
             : base(VelocityMapping, PressureMapping, null, SolverConf, true, SpatialDirection: SpatialDirection, OnlyBoundaryEdges: false) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
-            SpatialOperator PressureOp = new SpatialOperator(new string[] { VariableNames.Pressure }, new string[] { "p1" },QuadOrderFunc.Linear());
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+            DifferentialOperator PressureOp = new DifferentialOperator(new string[] { VariableNames.Pressure }, new string[] { "p1" },QuadOrderFunc.Linear());
             PressureOp.EquationComponents["p1"].Add(new PressureGradientLin_d(SpatialDirection, SolverConf.BcMap));
 
             if (SolverConf.Control.PressureGradientSource != null) {
@@ -73,8 +73,8 @@ namespace NSE_SIMPLE {
             SolverConfiguration SolverConf, int SpatialIndex)
             : base(RowMapping, ColMapping, null, SolverConf, true, SpatialIndex, SpatialIndex) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
-            SpatialOperator DivergenceOp = new SpatialOperator(new string[] { VariableNames.Velocity_d(SpatialComponent) }, new string[] { "div_d" }, QuadOrderFunc.Linear());
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+            DifferentialOperator DivergenceOp = new DifferentialOperator(new string[] { VariableNames.Velocity_d(SpatialComponent) }, new string[] { "div_d" }, QuadOrderFunc.Linear());
             DivergenceOp.EquationComponents["div_d"].Add(new Divergence_DerivativeSource(SpatialComponent, SolverConf.SpatialDimension));
             DivergenceOp.EquationComponents["div_d"].Add(new Divergence_DerivativeSource_Flux(SpatialComponent, SolverConf.BcMap));
             DivergenceOp.Commit();
@@ -95,7 +95,7 @@ namespace NSE_SIMPLE {
         public DivergencePressureStabilization(UnsetteledCoordinateMapping PressureMapping, SolverConfiguration SolverConf)
             : base(PressureMapping, PressureMapping, null, SolverConf, true) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             return (new PressureStabilization(
                 SolverConf.Control.PressureStabilizationScaling,
                 SolverConf.Control.Reynolds)).Operator();

@@ -28,7 +28,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         ZeroGradient = 1,
 
-        ConstantHeatFlux = 2
+        ConstantHeatFlux = 2,
+
+        /// <summary>
+        /// Boundary Condition of type $ T - T_D = l_s * \nabla T \cdot \vec{n}$
+        /// </summary>
+        TemperatureSlip = 3
 
     }
 

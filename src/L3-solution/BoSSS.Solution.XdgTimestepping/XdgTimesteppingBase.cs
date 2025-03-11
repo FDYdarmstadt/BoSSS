@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,7 +48,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="CurrentState">
     /// Current solution, resp. linearization point;
     /// For linear problems the output matrix and vector must be (per definition) independent of the linearization point,
-    /// otherwise the problem is nonlinear (see also <see cref="ISpatialOperator.IsLinear"/>).
+    /// otherwise the problem is nonlinear (see also <see cref="IDifferentialOperator.IsLinear"/>).
     /// </param>
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
@@ -353,8 +353,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// The sequence of aggregation grids, on which multi grid solvers work.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
-            get;
-            protected set;
+            get {
+                return this.CurrentStateMapping.GridDat.MultigridSequence;
+            }
         }
 
         /// <summary>
@@ -496,18 +497,37 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var R = this.Residuals;
                     R.Clear();
 
+                    /*
+                    double Norm(IList<double> V, ISparseMatrix Mass) {
+                        double[] tmp = new double[V.Count];
+                        Mass.SpMV(1.0, V, 0.0, tmp);
+                        return V.MPI_InnerProd(tmp).Sqrt();
+                    }
+
+                    Console.WriteLine($"RESILOG: w.r.t. MG OP {Norm(currentRes, Mgop.MassMatrix):0.####E-00}");
+                    */
+
                     Mgop.TransformRhsFrom(R, currentRes);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-
+                    /*
                     //// plotting during Newton iterations:  
-                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+                    var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+
+
+                    //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
+                    //var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                    //Console.WriteLine($"RESILOG: w.r.t. XDG (nonagg): {Norm(R, FreshMama):0.####E-00}");
+                    */
 
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
-                        if (field is XDGField) {
-                            foreach (var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
-                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
+                        if (field is XDGField xField) {
+                            XDGBasis xBasis = xField.Basis;
+                            foreach (var spc in xBasis.Tracker.SpeciesNames) {
+                                //var cm = xBasis.Tracker.Regions.GetSpeciesMask(spc);
+                                //double L2Res = xField.GetSpeciesShadowField(spc).L2Norm(cm);
+                                double L2Res = xField.L2NormSpecies(spc);
                                 m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
                                 totResi += L2Res.Pow2();
                             }
@@ -567,7 +587,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = true;
+        public bool m_TransformedResi = false;
 
         public double m_LastLevelSetResidual;
 
@@ -616,7 +636,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Les spatial operateur 
         /// </summary>
-        public virtual ISpatialOperator AbstractOperator {
+        public virtual IDifferentialOperator AbstractOperator {
             get;
             protected set;
         }
@@ -654,20 +674,91 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        abstract internal protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
+        abstract internal protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out IDifferentialOperator abstractOperator);
 
         /// <summary>
         /// Unscaled, agglomerated mass matrix used by the preconditioner.
         /// </summary>
         protected BlockMsrMatrix m_PrecondMassMatrix;
 
-        
 
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, 
+            bool calculateGlobals = true,
+            bool plotStencilCondNumViz = false, 
+            bool calculateStencils = true, 
+            bool calculateMassMatrix = false) {
+            AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
+
+            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
+
+            if (VarGroups == null) {
+                int NoOfVar = this.CurrentStateMapping.Fields.Count;
+                VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
+            }
+
+            var StencilCondNoVizS = new List<DGField>();
+
+            var Ret = new Dictionary<string, double>();
+            //int k = 0;
+            foreach (int[] varGroup in VarGroups) {
+                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
+
+                ana.CalculateGlobals = calculateGlobals;
+
+                ana.CalculateMassMatrix = calculateMassMatrix;
+
+                ana.PlotStencilCondNumViz = plotStencilCondNumViz;
+
+                //check if stencilCondNumbers are required
+                if (plotStencilCondNumViz == true || calculateStencils == true) {
+                    ana.CalculateStencils = true;
+                } else {
+                    ana.CalculateStencils = false;
+                }
+
+                ana.VarGroup = varGroup;
+                var Table = ana.GetNamedProperties();
+
+                foreach (var kv in Table) {
+                    if (!Ret.ContainsKey(kv.Key)) {
+                        Ret.Add(kv.Key, kv.Value);
+                    }
+                }
+
+
+                /*
+                {
+                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
+                    var bla = ana.MinimalEigen();
+                    Console.WriteLine("done: " + bla.lambdaMin);
+                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                }*/
+                //k++;
+            }
+
+            //if (StencilCondNoVizS.Count > 0) {
+            //    var LevelSets = m_LsTrk.LevelSetHistories;
+
+            //    foreach (var levelSet in LevelSets) {
+            //        StencilCondNoVizS.Add((LevelSet)levelSet.Current);
+            //    }
+            //    Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
+            //}
+
+            return Ret;
+        }
+
+        /*
+        /// <summary>
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability,
+        /// <see cref="IApplication.OperatorAnalysisAk"/>.
+        /// </summary>
+        public IDictionary<string, double> OperatorAnalysisAk(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, string nameOfStencil = null) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
@@ -698,23 +789,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
 
-                /*
-                {
-                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
-                    var bla = ana.MinimalEigen();
-                    Console.WriteLine("done: " + bla.lambdaMin);
-                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
-                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
-                }*/
-                //k++;
+               
             }
 
+
             if(StencilCondNoVizS.Count > 0) {
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), "stencilCond", 0.0, 1);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), nameOfStencil, 0.0, 1);
             }
 
             return Ret;
-        }
+        } //*/
 
         /// <summary>
         /// The time associated with the current solution (<see cref="CurrentState"/>)

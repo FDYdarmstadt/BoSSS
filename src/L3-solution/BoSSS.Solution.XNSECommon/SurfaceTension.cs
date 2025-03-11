@@ -414,7 +414,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             IncompressibleBcType edgType = m_edgeTag2Type[inp.EdgeTag];
 
-            switch(edgType) {
+            switch (edgType) {
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.Pressure_Outlet: {
 
@@ -438,28 +438,28 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                     int D = inp.D;
 
-                    double[] PSnI = new double[D]; // projection of surface/level-set normal onto domain boundary tangent
-                    for(int d1 = 0; d1 < D; d1++) {
-                        for(int d2 = 0; d2 < D; d2++) {
-                            double nn = EdgeNormal[d1] * EdgeNormal[d2];
-                            if(d1 == d2) {
-                                PSnI[d1] += (1 - nn) * SurfaceNormal_IN[d2];
-                            } else {
-                                PSnI[d1] += -nn * SurfaceNormal_IN[d2];
-                            }
-                        }
-                    }
-                    double[] PSnINormal_IN = PSnI.Normalize(); // line normal: tangential to domain boundary & normal on contact line
-
 
                     // isotropic surface tension terms
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         double m_sigma = inp.Parameters_IN[inp.D];
                         Flx_InCell -= m_sigma * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
                     }
 
 
-                    if(edgType == IncompressibleBcType.NavierSlip_Linear) {
+                    if (edgType == IncompressibleBcType.NavierSlip_Linear) {
+                        double[] PSnI = new double[D]; // projection of surface/level-set normal onto domain boundary tangent
+                        for (int d1 = 0; d1 < D; d1++) {
+                            for (int d2 = 0; d2 < D; d2++) {
+                                double nn = EdgeNormal[d1] * EdgeNormal[d2];
+                                if (d1 == d2) {
+                                    PSnI[d1] += (1 - nn) * SurfaceNormal_IN[d2];
+                                } else {
+                                    PSnI[d1] += -nn * SurfaceNormal_IN[d2];
+                                }
+                            }
+                        }
+                        double[] PSnINormal_IN = PSnI.Normalize(); // line normal: tangential to domain boundary & normal on contact line
+
 
                         // Young's relation (static contact angle)
                         double m_sigma = inp.Parameters_IN[inp.D];
@@ -470,14 +470,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                         double g_D = this.velFunction[inp.EdgeTag](inp.X, inp.time);
 
-                        for(int d = 0; d < D; d++) {
+                        for (int d = 0; d < D; d++) {
                             Flx_InCell += m_beta * ((_uA[d] - g_D) * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
                         }
                     }
                     break;
                 }
                 default:
-                break;
+                    break;
             }
 
             return Flx_InCell * _vA;
@@ -643,14 +643,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return Flx_InCell * V;
         }        
 
-        // only parameter dependent, leave empty
+        // only parameter dependent, return self
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
     }
 
     /// <summary>
-    /// LaplaceBeltrami with max sigma as parameter, for contact line between two level sets
+    /// LaplaceBeltrami with max sigma as parameter, for contact line **between two level sets**,
+    /// i.e. contact line at the immersed boundary.
     /// </summary>
     public class SurfaceTension_GNBC_Contactline : IBM_ContactLine, IVolumeForm, ISupportsJacobianComponent {
         int comp;
@@ -697,9 +698,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return Flx_InCell * V;
         }
 
-        // only parameter dependent, leave empty
+        // only parameter dependent, return self
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
     }
 
@@ -1001,7 +1002,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { }; // only parameter dependent, not present in jacobian
+            return new IEquationComponent[] { this }; // at most linear at contact-lines
         }
     }
 

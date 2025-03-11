@@ -33,7 +33,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="func">function which is integrated</param>
         /// <param name="HMForder"></param>
         /// <param name="spc">species, over whose surface is integrated</param>
-        /// <returns>Integral of <param name="func">func</param> over all MPI processors</returns>
+        /// <returns>Integral of <paramref name="func"/> over all MPI processors</returns>
         static public double GetIntegralOverZeroLevelSet(LevelSetTracker LsTrk, ScalarFunctionEx func, int HMForder, SpeciesId spc) {
             using (new FuncTrace()) {
                 if (LsTrk.LevelSets.Count != 1)

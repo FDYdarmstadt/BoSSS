@@ -163,7 +163,7 @@ namespace IntersectingLevelSetTest {
             du_dx_Exact.ProjectField((x, y) => 1);
         }
 
-        private XSpatialOperatorMk2 Op;
+        private XDifferentialOperatorMk2 Op;
 
         private int QuadOrder {
             get {
@@ -171,8 +171,8 @@ namespace IntersectingLevelSetTest {
             }
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1,
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
+            Op = new XDifferentialOperatorMk2(1, 0, 1,
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new[] { "A", "B", "C"},
                 __varnames: new[] { "u", "c1" });
@@ -182,6 +182,7 @@ namespace IntersectingLevelSetTest {
             Op.EquationComponents["c1"].Add(new LevSetJump_CA()); // flux am lev-set 1
             Op.EquationComponents["c1"].Add(new LevSetJump_CB()); // flux am lev-set 1
 
+            Op.FluxesAreNOTMultithreadSafe = true;
             Op.Commit();
         }
 
@@ -190,20 +191,23 @@ namespace IntersectingLevelSetTest {
 
             //phystime = 1.8;
             LsUpdate(phystime);
+			PlotCurrentState(phystime, TimestepNo);
 
-            // operator-matrix assemblieren
-            MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
+			// operator-matrix assemblieren
+			MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             OperatorMatrix.SaveToTextFile("operatorMatrix.txt");
 
             // mass matrix factory
             SpeciesId[] species = new SpeciesId[] { LsTrk.GetSpeciesId("A") , LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("C") };
-            var Mfact = LsTrk.GetXDGSpaceMetrics(species, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
+			LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("A"), LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("C") }, QuadOrder, 1).WriteAllQuadratureRulesToVtp();// write quadrature nodes
+
+			var Mfact = LsTrk.GetXDGSpaceMetrics(species, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
 
 
             // Mass matrix/Inverse Mass matrix

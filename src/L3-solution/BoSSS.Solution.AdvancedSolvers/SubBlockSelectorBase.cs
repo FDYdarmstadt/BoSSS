@@ -178,9 +178,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentNullException("empty mapping! This will not end well ...");
             m_map = map;
             this.CellSelector();
-            this.VariableSelector();
-            this.SpeciesSelector();
-            this.ModeSelector();
+            this.SetVariableSelector();
+            this.SetSpeciesSelector();
+            this.SetModeSelector();
         }
 
         //internal get
@@ -335,7 +335,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Selects all Variable blocks
         /// </summary>
         /// <returns></returns>
-        public SubBlockSelectorBase VariableSelector() {
+        public SubBlockSelectorBase SetVariableSelector() {
             this.m_VariableFilter = delegate (int iCell, int iVar) {
 #if DEBUG
                 int NoOfVar = m_map.NoOfVariables;
@@ -350,27 +350,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// 
         /// </summary>
-        public SubBlockSelectorBase VariableSelector(params int[] SetOfVariables) {
-            return VariableSelector((ICollection<int>)SetOfVariables);
+        public SubBlockSelectorBase SetVariableSelector(params int[] SetOfVariables) {
+            return SetVariableSelector((ICollection<int>)SetOfVariables);
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public SubBlockSelectorBase VariableSelector(int iVariable) {
+        public SubBlockSelectorBase SetVariableSelector(int iVariable) {
             if (iVariable < 0)
                 throw new ArgumentOutOfRangeException("Variable index cannot be negative.");
             if (iVariable >= m_NoOfVar)
                 throw new ArgumentOutOfRangeException("Variable index is larger than number of variables..");
 
-            return VariableSelector(new int[] { iVariable });
+            return SetVariableSelector(new int[] { iVariable });
         }
 
 
         /// <summary>
         /// 
         /// </summary>
-        public SubBlockSelectorBase VariableSelector(IEnumerable<int> SetOfVariables) {
+        public SubBlockSelectorBase SetVariableSelector(IEnumerable<int> SetOfVariables) {
             int[] Variables = SetOfVariables.ToArray();
             if (!Variables.IsSet())
                 throw new ArgumentOutOfRangeException("Input is not a set - some variable index is listed twice.");
@@ -397,7 +397,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Selects all species blocks
         /// </summary>
         /// <returns></returns>
-        public SubBlockSelectorBase SpeciesSelector() {
+        public SubBlockSelectorBase SetSpeciesSelector() {
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
                 int NoOfSpec = m_map.GetNoOfSpecies(iCell);
                 return GetAllInstruction(NoOfSpec)(iSpec);
@@ -408,7 +408,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects Species by <see cref="SpeciesId"/>.
         /// </summary>
-        public SubBlockSelectorBase SpeciesSelector(SpeciesId SId) {
+        public SubBlockSelectorBase SetSpeciesSelector(SpeciesId SId) {
 
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
                 if (!this.m_map.IsXDGvariable(iVar))
@@ -447,7 +447,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects multiple species by <see cref="IEnumerable{SpeciesId}"/>.
         /// </summary>
-        public SubBlockSelectorBase SpeciesSelector(IEnumerable<SpeciesId> SetOfSpecies) {
+        public SubBlockSelectorBase SetSpeciesSelector(IEnumerable<SpeciesId> SetOfSpecies) {
             //for (int v = 0; v < m_map.NoOfVariables; v++) {
             //    if (this.m_map.AggBasis[v].GetType() == typeof(XdgAggregationBasis))
             //        Console.WriteLine("WARNING: Variable {0} has no XdgBasis and thus may be not selected",v);
@@ -476,7 +476,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Selects all Modes
         /// </summary>
         /// <returns></returns>
-        public SubBlockSelectorBase ModeSelector() {
+        public SubBlockSelectorBase SetModeSelector() {
             this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
 #if DEBUG
                 int maxDG = m_DGdegree[iVar];

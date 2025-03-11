@@ -81,14 +81,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             DGField[] IterationResiduals,
             LevelSetTracker LsTrk,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            ISpatialOperator abstractOperator,
+            IDifferentialOperator abstractOperator,
             Func<ISlaveTimeIntegrator> _UpdateLevelset,
             RungeKuttaScheme _RKscheme,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             SpatialOperatorType _SpatialOperatorType,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool useX,
@@ -122,14 +121,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.AbstractOperator = abstractOperator;
             base.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.m_RKscheme = _RKscheme.CloneAs();
-            base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             base.CurrentParameters = __Parameters.ToArray();
-            if (_MultigridSequence == null || _MultigridSequence.Length < 1)
+            m_CurrentState = new CoordinateVector(Fields);
+            if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
-            m_CurrentState = new CoordinateVector(Fields);
 
             if (_MultigridOperatorConfig != null) {
                 Config_MultigridOperator = _MultigridOperatorConfig;
@@ -398,7 +396,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ===========================================
             // update level-set (in the case of splitting)
             // ===========================================
-            bool performSplitting;
+            int MassMatrixCount;
             if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                 || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
 
@@ -436,9 +434,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
 
                 // yes, we use splitting (i.e. only one mass matrix is required)
-                performSplitting = true;
+                MassMatrixCount = 1;
+            } else if (this.Config_LevelSetHandling == LevelSetHandling.None) {
+                MassMatrixCount = 1;
             } else {
-                performSplitting = false;
+                MassMatrixCount = 2;
             }
 
             // ==============================================
@@ -446,7 +446,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ==============================================
 
             // init mass matrix & cut-cell metrics 
-            BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[performSplitting ? 1 : 2];
+            BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[MassMatrixCount];
             m_RequiredTimeLevels = 0;
             m_LsTrk.PushStacks();
             
@@ -600,6 +600,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var nonlinSolver = GetNonlinSolver();
                     success = nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
+                    if (base.QueryHandler != null) {
+                        base.QueryHandler.ValueQuery(QueryHandler.Conv, success ? 1.0 : 0.0, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.NonLinIter, nonlinSolver.NoOfNonlinearIter, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.DOFs, nonlinSolver.EssentialDOFs, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+                    }
+
                 } else {
                     // Linear Solver (Stokes)
                     // ----------------------
@@ -666,7 +673,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Matrix/Affine assembly in the case of an implicit RK stage.
         /// </summary>
-        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out IDifferentialOperator abstractOp) {
 
             abstractOp = base.AbstractOperator;
            

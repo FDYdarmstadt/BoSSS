@@ -84,17 +84,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             private EdgeMask[] m_Edges4RefElement;
             
-            ///// <summary>
-            ///// For each (edge) reference element, this method provides a
-            ///// mask containing all cells which are mapped from the specific
-            ///// reference element.
-            ///// </summary>
-            ///// <param name="iKrefIndex">
-            ///// reference element index: <see cref="EdgeRefElements"/>;
-            ///// </param>
-            //public EdgeMask GetEdges4RefElement(int iKrefIndex) {
-            //    return this.GetEdges4RefElement(this.EdgeRefElements[iKrefIndex]);
-            //}
+ 
 
             /// <summary>
             /// For each (edge) reference element, this method provides a
@@ -402,16 +392,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var CellNeighbours_Global = m_owner.m_Cells.CellNeighbours_global_tmp;
 
                     int Je = m_owner.Cells.Count;
-                    int J = m_owner.Cells.NoOfLocalUpdatedCells;
+                    int Jup = m_owner.Cells.NoOfLocalUpdatedCells;
+                    var CellPart = m_owner.CellPartitioning;
                     long j0 = m_owner.CellPartitioning.i0;
+                    long Jglb = m_owner.CellPartitioning.TotalLength;
                     long[] GlidxExternal = m_owner.Parallel.GlobalIndicesExternalCells;
 
                     if (m_EdgesTmp != null)
                         throw new ApplicationException("internal error.");
-                    m_EdgesTmp = new List<ComputeEdgesHelper>(J * 2);
+                    m_EdgesTmp = new List<ComputeEdgesHelper>(Jup * 2);
                    
 #if DEBUG
-                    for (int j = 0; j < J; j++) {
+                    for (int j = 0; j < Jup; j++) {
                         int[] CellNeigh = CellNeighbours[j];
                         foreach(int jN in CellNeigh) {
                             Debug.Assert(jN >= 0);
@@ -420,47 +412,60 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 #endif
 
-                    int mask;
-                    unchecked {
-                        mask = (int)0x80000000;
-                    }
+                    //const int mask = unchecked((int)0x80000000);
+                    bool[][] DoneMarkers = Jup.ForLoop(j => new bool[CellNeighbours_Global[j].Length]);
 
-                    //Debug.Assert(false, "break0" + m_owner.MyRank);
 
                     // loop over all locally updated cells...
-                    for (int j = 0; j < J; j++) {
+                    for (int j = 0; j < Jup; j++) {
 
-                        int[] CellNeigh = CellNeighbours[j];
-                        int K = CellNeigh.Length;
+                        //int[] CellNeigh = CellNeighbours[j];
+                        int K = CellNeighbours_Global[j].Length;
 
 
                         // loop over neighbor...
                         for (byte e = 0; e < K; e++) {
 
-                            if ((CellNeigh[e] & mask) != 0)
-                                continue; // this edge is already in the list
-                            // we use the most significant bit to mark processed edges
+                            //if ((CellNeigh[e] & mask) != 0)
+                            //    continue; // this edge is already in the list
+                            //// we use the most significant bit to mark processed edges
+                            if (DoneMarkers[j][e])
+                                // already taken care of the edge by the connection from a lower cell index to this one
+                                continue;
 
-                            int jNeig = CellNeigh[e];
-                            long jNeigGlob;
-                            if(jNeig < J) {
-                                Debug.Assert(jNeig >= 0);
-                                jNeigGlob = jNeig + j0;
-                            } else {
-                                Debug.Assert(jNeig >= J);
-                                Debug.Assert(jNeig < Je);
-                                jNeigGlob = (GlidxExternal[jNeig - J]);
+                            //int jNeig = CellNeigh[e];
+                            //long jNeigGlob;
+                            //if(jNeig < J) {
+                            //    Debug.Assert(jNeig >= 0);
+                            //    jNeigGlob = jNeig + j0;
+                            //} else {
+                            //    Debug.Assert(jNeig >= J);
+                            //    Debug.Assert(jNeig < Je);
+                            //    jNeigGlob = (GlidxExternal[jNeig - J]);
+                            //}
+                            //GridCommons.Neighbour cn_je = CellNeighbours_Global[j].Single(Neigh => Neigh.Neighbour_GlobalIndex == jNeigGlob);
+
+                            GridCommons.Neighbour cn_je = CellNeighbours_Global[j][e];
+                            long jNeigGlob = cn_je.Neighbour_GlobalIndex;
+                            if(cn_je.Neighbour_GlobalIndex >= Jglb) {
+                                // connection to a boundary-condition-cell; skip for now.
+                                continue;
                             }
+                            
+                            // **if we reach this point, we've found a new edge**
 
-                            //Single(dnsjdkvnskj)
-                            //GridCommons.Neighbour cn_je = CellNeighbours_Global[j].ElementAt(e);
-                            GridCommons.Neighbour cn_je = CellNeighbours_Global[j].Single(Neigh => Neigh.Neighbour_GlobalIndex == jNeigGlob);
 
-                            // if we reach this point, we've found a new edge
+                            int jNeigh;
+                            if(CellPart.IsInLocalRange(jNeigGlob))
+                                jNeigh = CellPart.TransformIndexToLocal(jNeigGlob);
+                            else
+                                jNeigh = m_owner.Parallel.GetLocalCellIndex(jNeigGlob);
+
+                           
                             ComputeEdgesHelper ceh = default(ComputeEdgesHelper);
                             ceh.info = EdgeInfo.Default;
                             ceh.Cell1 = j;
-                            ceh.Cell2 = CellNeigh[e];
+                            ceh.Cell2 = jNeigh;
                             ceh.FaceIndex1 = (byte)cn_je.CellFaceTag.FaceIndex;
                             ceh.FaceIndex2 = byte.MaxValue; // still unknown
                             ceh.IsPeriodic = cn_je.IsPeriodicNeighbour;
@@ -468,17 +473,32 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if (!cn_je.CellFaceTag.ConformalNeighborship)
                                 ceh.info |= EdgeInfo.Cell1_Nonconformal;
                             
-                            if (ceh.Cell2 < J) {
+                            if (ceh.Cell2 < Jup) {
                                 // ++++++++++++++++++++++++++++++++++++
                                 // edge between cells on this processor
                                 // ++++++++++++++++++++++++++++++++++++
 
-                                int K2 = CellNeighbours[ceh.Cell2].Length;
+                                int K2 = CellNeighbours_Global[ceh.Cell2].Length;
                                 int found = 0;
                                 for (int e2 = 0; e2 < K2; e2++) {
-                                    if (CellNeighbours[ceh.Cell2][e2] == j) {
-                                        found++;
-                                        CellNeighbours[ceh.Cell2][e2] |= mask;
+                                    if (CellNeighbours_Global[ceh.Cell2][e2].Neighbour_GlobalIndex == CellPart.i0 + j) {
+                                        if (cn_je.IsPeriodicNeighbour) {
+                                            if(CellNeighbours_Global[ceh.Cell2][e2].CellFaceTag.EdgeTag == cn_je.CellFaceTag.EdgeTag
+                                                && CellNeighbours_Global[ceh.Cell2][e2].CellFaceTag.PeriodicInverse != cn_je.CellFaceTag.PeriodicInverse) {
+
+                                                found++;
+                                                if (ceh.Cell2 < Jup)
+                                                    DoneMarkers[ceh.Cell2][e2] = true;
+
+                                            }
+                                        } else {
+                                            if (CellNeighbours_Global[ceh.Cell2][e2].IsPeriodicNeighbour == false) {
+                                                found++;
+                                                if (ceh.Cell2 < Jup)
+                                                    DoneMarkers[ceh.Cell2][e2] = true;
+                                                //CellNeighbours[ceh.Cell2][e2] |= mask;
+                                            }
+                                        }
                                     }
                                 }
 
@@ -502,7 +522,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             {
-                                GridCommons.Neighbour cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + j0));
+                                GridCommons.Neighbour cn_je2;
+                                if (ceh.IsPeriodic) {
+                                    cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(
+                                        x => x.Neighbour_GlobalIndex == (j + j0)
+                                            && x.CellFaceTag.EdgeTag == cn_je.CellFaceTag.EdgeTag
+                                            && x.CellFaceTag.PeriodicInverse != cn_je.CellFaceTag.PeriodicInverse
+                                    );
+                                } else {
+                                    cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + j0) && x.IsPeriodicNeighbour == false);
+                                }
                                 ceh.FaceIndex2 = (byte)cn_je2.CellFaceTag.FaceIndex;
                                 if (!cn_je2.CellFaceTag.ConformalNeighborship)
                                     ceh.info |= EdgeInfo.Cell2_Nonconformal;
@@ -523,6 +552,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (ceh.IsPeriodic) {
                                     if (cn_je.CellFaceTag.PeriodicInverse == cn_je2.CellFaceTag.PeriodicInverse)
                                         throw new ApplicationException("inconsistent specification of periodic boundaries. " + cn_je.CellFaceTag.PeriodicInverse + cn_je2.CellFaceTag.PeriodicInverse);
+                                        //Console.Error.WriteLine("inconsistent specification of periodic boundaries. " + cn_je.CellFaceTag.PeriodicInverse + cn_je2.CellFaceTag.PeriodicInverse);
 
                                     ceh.Cell1_PeriodicTrafoIdx = ((int)cn_je.CellFaceTag.EdgeTag) - GridCommons.FIRST_PERIODIC_BC_TAG;
                                     if (cn_je.CellFaceTag.PeriodicInverse) {
@@ -540,7 +570,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             // mark edges that touch ghost cells
-                            if (ceh.Cell1 >= J || ceh.Cell2 >= J)
+                            if (ceh.Cell1 >= Jup || ceh.Cell2 >= Jup)
                                 ceh.info |= EdgeInfo.Interprocess;
 
                             // add edge to list
@@ -551,6 +581,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
 
+                    /*
                     // remove the marking
                     int invmask = ~mask;
                     Je = CellNeighbours.Length;
@@ -565,10 +596,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                             CellNeigh[e] &= invmask;
                         }
                     }
-
+                    */
 
 #if DEBUG
-                    for (int j = 0; j < J; j++) {
+                    for (int j = 0; j < Jup; j++) {
 
                         int[] CellNeigh = CellNeighbours[j];
                         int K = CellNeigh.Length;
@@ -650,7 +681,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         //}
 
                         // second face of edge: cell j2, face e2 ...
-                        var V_f2 = MultidimensionalArray.Create(L2, D); //        ... in local coordinates of cell j1, obtained by transformation
+                        var V_f2 = MultidimensionalArray.Create(L2, D); //     ... in local coordinates of cell j1, obtained by transformation
                         NodeSet V_f2_in_K2 = Kref2.GetFaceVertices(face2);  // ... in local coordinates of cell j2, where they are defined
                         {
                             //for (int l2 = 0; l2 < L2; l2++) {
@@ -799,16 +830,20 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             cell1_edges.Add(e - skippedEdgesCount);
                             cell2_edges.Add(e - skippedEdgesCount);
+                            //if (j1 != j2) {
+                            //    Debug.Assert(Edge.IsPeriodic); // periodicity with one cell in periodic direction
+                            //    cell2_edges.Add(e - skippedEdgesCount);
+                            //}
                         }
                         
                         {
                             var KrefEdge = this.EdgeRefElements[Edge.EdgeKrefIndex];
                             
-                            NodeSet V1 = new NodeSet(Kref1, KrefEdge.NoOfVertices, D);
+                            NodeSet V1 = new NodeSet(Kref1, KrefEdge.NoOfVertices, D, false);
                             Trafo1.Transform(KrefEdge.Vertices, V1);
                             V1.LockForever();
                             
-                            NodeSet V2 = new NodeSet(Kref2, KrefEdge.NoOfVertices, D);
+                            NodeSet V2 = new NodeSet(Kref2, KrefEdge.NoOfVertices, D, false);
                             Trafo2.Transform(KrefEdge.Vertices, V2);
                             V2.LockForever();
 
@@ -1592,7 +1627,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // select all edges that bound to face 's'
                             var neigs = allEdges.Where(x => (
                                    (m_EdgesTmp[x].FaceIndex1 == s && m_EdgesTmp[x].Cell1 == j)
-                                || (m_EdgesTmp[x].FaceIndex2 == s && m_EdgesTmp[x].Cell2 == j)));
+                                || (m_EdgesTmp[x].FaceIndex2 == s && m_EdgesTmp[x].Cell2 == j))).ToSet().ToArray();
 
                             byte EdgeTag;
                             {
@@ -1816,11 +1851,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // - 2nd index: enumeration
                     // - Item1: process rank R
                     // - Item2: index of edge on rank R
-                    Tuple<int, int>[][] EdgeIndicesOnOtherProcessors = new Tuple<int, int>[E][];
+                    (int MPIrank, int Index)[][] EdgeIndicesOnOtherProcessors = new (int, int)[E][];
                     using(var bt1 = new BlockTrace("LocalIndicesForeign", tr)) {
 
                         for (int e = 0; e < E; e++) {
-                            EdgeIndicesOnOtherProcessors[e] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, e) };
+                            EdgeIndicesOnOtherProcessors[e] = new (int, int)[] { (myRank, e) };
                         }
 
 
@@ -2035,7 +2070,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (matchCount != 1)
                                     throw new ApplicationException("error in algorithm");
 
-                                (new Tuple<int, int>(originRank, iEdge_foreign)).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
+                                (originRank, iEdge_foreign).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
                             }
                         }
                     }
@@ -2052,7 +2087,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int[][] EdgeSendLists;
                     int[][] EdgeInsertLists;
                     Tuple<int, int>[] LocalId;
-                    NegogiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
+                    NegotiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
                         out EdgePermuation, out NoOfPureLocal, out NoOfShOwned, out NoOfShForeign, out NoOfPeriodicElim, out NoOfExternal,
                         out EdgeSendLists, out EdgeInsertLists,
                         out LocalId);
@@ -2248,11 +2283,28 @@ namespace BoSSS.Foundation.Grid.Classic {
                             int iEdge = Cells2Edges_j[k];
                             var Edge = EdgTmp[iEdge];
 
-                            Debug.Assert((Edge.Cell1 == j) != (Edge.Cell2 == j));
+                            if (Edge.Cell1 == Edge.Cell2 && Edge.IsPeriodic) {
+                                // for periodic edges, with one cell in periodic direction, in- and out-cell might be the same, actually.
 
-                            Cells2Edges_j[k]++;
-                            if (Edge.Cell2 == j) {
-                                Cells2Edges_j[k] *= -1;
+                                Debug.Assert((Edge.Cell1 == j) && (Edge.Cell2 == j));
+
+
+                                Cells2Edges_j[k]++;
+                                if (Cells2Edges_j.GetSubVector(k+1, Cells2Edges_j.Length - k - 1).Contains(iEdge + 1)) {
+                                    Cells2Edges_j[k] *= -1;
+                                }
+
+
+
+                            } else {
+                                // all other cases
+
+                                Debug.Assert((Edge.Cell1 == j) != (Edge.Cell2 == j));
+
+                                Cells2Edges_j[k]++;
+                                if (Edge.Cell2 == j) {
+                                    Cells2Edges_j[k] *= -1;
+                                }
                             }
                         }
                     }
@@ -2421,7 +2473,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 //    EdgeCenters[iKref][this.FaceIndices[e, 0]],
                                 //    Jac,
                                 //    0, Cell1.Type, Cell1.TransformationParams);
-                                m_owner.EvaluateJacobian(KrefEdge.Center.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0]), jCell1, 1, Jac);
+                                m_owner.EvaluateJacobian(KrefEdge.Center.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0], false), jCell1, 1, Jac);
                                 JacTj.Acc(1.0, JacSh);
 
 
@@ -2431,7 +2483,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Gramian.GEMM(1.0, JacFullTranp, JacFull, 0.0);
                                 this.SqrtGramian[e] = Math.Sqrt(Gramian.Determinant());
                                 if(double.IsInfinity(this.SqrtGramian[e]) || double.IsNaN(this.SqrtGramian[e]) || this.SqrtGramian[e] == 0)
-                                    throw new ArithmeticException(string.Format("Illegal Gramian determint for some edge at cell {0}; value is {1}.", jCell1, this.SqrtGramian[e]));
+                                    throw new ArithmeticException(string.Format("Illegal Gramian determinant for some edge at cell {0}; value is {1}.", jCell1, this.SqrtGramian[e]));
 
                             } else {
                                 this.SqrtGramian[e] = double.NaN;
@@ -2447,7 +2499,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 double scaling = this.SqrtGramian[iEdge];
 
                 RefElement KrefEdge = this.GetRefElement(iEdge);
-                NodeSet KRefVert = KrefEdge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[iEdge, _inOut]);
+                NodeSet KRefVert = KrefEdge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[iEdge, _inOut], false);
 
                 int D = this.m_owner.SpatialDimension;
                 double len = 0.0;
@@ -2571,7 +2623,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         jCell = CellIndices[e, 0];
                         
                         RefElement Kref_edge = this.EdgeRefElements[GetRefElementIndex(e)];
-                        NodeSet verticesLoc = Kref_edge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0]);
+                        NodeSet verticesLoc = Kref_edge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0], false);
 
                         int N = verticesLoc.NoOfNodes;
                         if(verticesGlob.GetLength(1) != N) {

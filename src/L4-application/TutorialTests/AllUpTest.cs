@@ -32,6 +32,7 @@ namespace BoSSS.Application.TutorialTests {
     /// Runs all the worksheets contained in the BoSSS handbook.
     /// </summary>
     [TestFixture]
+    [NUnitNumThreads(1)]
     static public class AllUpTest {
 
         
@@ -52,39 +53,7 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("InitialValues/InitialValues.ipynb");
         }
 
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
-        [Test]
-        static public void Run__BoundaryAndInitialData() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
-            NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
-            NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
-            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
-        [Test]
-        static public void Run__MetaJobManager() {
-            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
-            NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-            NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
-            RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("GridGeneration/GridGeneration.ipynb")]
-        [Test]
-        static public void Run__GridGeneration() {
-            RunWorksheet("GridGeneration/GridGeneration.ipynb");
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartIBM/channel.ipynb")]
-        [Test]
-        static public void Run__channel() {
-            RunWorksheet("quickStartIBM/channel.ipynb");
-        }
+      
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.ipynb")]
@@ -101,63 +70,6 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
-        [Test]
-        static public void Run__SpatialOperatorNexpTimeInt() {
-            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb");
-        }
-#endif
-
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.ipynb")]
-        [Test]
-        static public void Run__ue5NumFluxConv() {
-            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.ipynb");
-        }
-#endif
-
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
-        [Test]
-        static public void Run__ue6ScalarConvStability() {
-            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.ipynb");
-        }
-#endif
-
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial9-SIP/sip.ipynb")]
-        [Test]
-        static public void Run__sip() {
-            RunWorksheet("tutorial9-SIP/sip.ipynb");
-        }
-#endif
-
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.ipynb")]
-        [Test]
-        static public void Run__Poisson() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__Poisson
-            RunWorksheet("tutorial10-PoissonSystem/Poisson.ipynb");
-        }
-#endif
-
-#if !DEBUG
-
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.ipynb")]
-        [Test]
-        static public void Run__StokesEq() {
-            RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
-        }
-#endif
- 
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
         [Test]
@@ -165,24 +77,69 @@ namespace BoSSS.Application.TutorialTests {
             // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
             RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
         }
-#endif
 
-#if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
+        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
         [Test]
-        static public void Run__convStudy() {
-            NotebookRunner.DeleteDatabase("ConvStudyTutorial");
-            NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
-            RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
+        static public void Run__SpatialOperatorNexpTimeInt() {
+            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb");
         }
-#endif
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.ipynb")]
+        [Test]
+        static public void Run__ue5NumFluxConv() {
+            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("HeatEquationSolver/HeatEquationSolver.ipynb")]
+        [Test]
+        static public void Run__HeatEquationSolver() {
+            RunWorksheet("HeatEquationSolver/HeatEquationSolver.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
+        [Test]
+        static public void Run__ue6ScalarConvStability() {
+            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial9-SIP/sip.ipynb")]
+        [Test]
+        static public void Run__sip() {
+            RunWorksheet("tutorial9-SIP/sip.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.ipynb")]
+        [Test]
+        static public void Run__Poisson() {
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__Poisson
+            RunWorksheet("tutorial10-PoissonSystem/Poisson.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("tutorial11-Stokes/StokesEq.ipynb")]
+        [Test]
+        static public void Run__StokesEq() {
+            RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("XDGagglomeration/XDGagglomeration.ipynb")]
+        [Test]
+        static public void Run__XDGagglomeration() {
+            RunWorksheet("XDGagglomeration/XDGagglomeration.ipynb");
+        }
 
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
         static public void RunWorksheet(string NotebookPartialPath) {
-            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset)) { }
+            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset, false)) { }
         }
 
     }
@@ -195,10 +152,10 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// 
         /// </summary>
-        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset) {
+        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset, bool __allowErrors) {
             NotebookPartialPath = __NotebookPartialPath;
             DirectoryOffset = __DirectoryOffset;
-            RunWorksheet();
+            RunWorksheet(__allowErrors);
         }
 
         /// <summary>
@@ -222,14 +179,16 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
-        void RunWorksheet() {
+        void RunWorksheet(bool allowErrors) {
 
             // locate script
             string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
             string WorksheetName;
             if (!File.Exists(TexFileName)) {
+                Console.WriteLine($"Must search for file {TexFileName} ({NotebookPartialPath})");
                 WorksheetName = LocateFile(NotebookPartialPath).Single();
             } else {
+                Console.WriteLine($"Found File {TexFileName} ({NotebookPartialPath}) in current directory.");
                 WorksheetName = TexFileName;
             }
 
@@ -244,8 +203,8 @@ namespace BoSSS.Application.TutorialTests {
             // start the minibatchprocessor which is used internally
             OneTimeSetUp();
 
-            BoSSSpad.Job.UndocumentedSuperHack = true;
-            BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
+            //BoSSSpad.Job.UndocumentedSuperHack = true;
+            //BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:
@@ -256,15 +215,23 @@ namespace BoSSS.Application.TutorialTests {
                     mode = "--JupyterBatch";
 
                 
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
+                ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
-                Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
-                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
+                if(!allowErrors)
+                    Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
+                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.)."); // fail only on negative numbers (file-not-found, something completely off)
             } finally {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
             }
+        }
+
+        /// <summary>
+        /// return value from BoSSSpad 
+        /// </summary>
+        public int ErrCount {
+            get; private set;
         }
 
 
@@ -274,6 +241,8 @@ namespace BoSSS.Application.TutorialTests {
                 repoRoot = new DirectoryInfo(DirectoryOffset);
             else
                 repoRoot = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+            Console.WriteLine($"Root directory of repository set as: {repoRoot.FullName} (DirectoryOffset = {DirectoryOffset ?? "NULL"})");
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);
@@ -343,6 +312,7 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         void OneTimeSetUp() {
+            /*
             Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
             bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
             if(r)
@@ -351,13 +321,14 @@ namespace BoSSS.Application.TutorialTests {
                 Console.WriteLine("already running.");
             
             killBatch = r;
+            */
         }
 
         /// <summary>
         /// Deletes a database <paramref name="Directory"/>
         /// 
         /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
-        /// of the <see "BoSSSshell.GetDefaultQueue"/>.
+        /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
         /// </summary>
         public static void DeleteDatabase(string Directory) {
 
@@ -379,7 +350,7 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary>
-        /// Deletes all deployments matchin the search patter <paramref name="DirectoryWildCard"/>
+        /// Deletes all deployments matching the search patter <paramref name="DirectoryWildCard"/>
         /// </summary>
         public static void DeleteDeployments(string DirectoryWildCard) {
 

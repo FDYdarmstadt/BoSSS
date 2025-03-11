@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -85,7 +86,6 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
-        /// <param name="gridData">Information about the grid</param>
         public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false, CellAgglomerator cellAgglomerator = null) {
             this.gridData = gridData;
             this.MaxSubSteps = maxNumOfSubSteps;
@@ -99,7 +99,6 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Creates the sub-grids of the clustering
         /// </summary>     
-        /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
         public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null) {
             //using (var tr = new ilPSP.Tracing.FuncTrace()) {
@@ -209,7 +208,6 @@ namespace BoSSS.Solution.Utils {
         /// values between maximum and minimum value of a given cell metric, 
         /// e.g., minimal distance between two nodes in a cell <see cref="GridData.CellData.h_min"/>
         /// </summary>
-        /// <param name="cellMetric">Given cell metric</param>
         /// <returns>Double[] with the length of the number of given sub-grids></returns>
         private MultidimensionalArray CreateInitialMeans(MultidimensionalArray cellMetric, int numOfClusters) {
             System.Diagnostics.Debug.Assert(

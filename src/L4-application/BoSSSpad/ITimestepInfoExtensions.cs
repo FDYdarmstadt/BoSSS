@@ -688,42 +688,7 @@ namespace BoSSS.Application.BoSSSpad {
                     Dictionary<string, double[]> errors;
                     double[] resolution;
                     Guid[] tsiIds;
-
-                    //if(normType == NormType.L2_embedded) {
-                    //    DGFieldComparisonEmbedded.ComputeErrors_L2(
-                    //        new string[] { fieldName },
-                    //        group.ToArray(),
-                    //        out resolution,
-                    //        out DOFs,
-                    //        out errors,
-                    //        out tsiIds);
-                    //} else if(normType == NormType.L2_approximate) {
-                    //    DGFieldComparisonNonEmb.ComputeErrors_L2(
-                    //        new string[] { fieldName },
-                    //        group.ToArray(),
-                    //        out resolution,
-                    //        out DOFs,
-                    //        out errors,
-                    //        out tsiIds);
-                    //} else if(normType == NormType.L2noMean_approximate) {
-                    //    DGFieldComparisonNonEmb.ComputeErrors_L2noMean(
-                    //        new string[] { fieldName },
-                    //        group.ToArray(),
-                    //        out resolution,
-                    //        out DOFs,
-                    //        out errors,
-                    //        out tsiIds);
-                    //} else if(normType == NormType.H1_approximate) {
-                    //    DGFieldComparisonNonEmb.ComputeErrors_H1(
-                    //        new string[] { fieldName },
-                    //        group.ToArray(),
-                    //        out resolution,
-                    //        out DOFs,
-                    //        out errors,
-                    //        out tsiIds);
-                    //} else {
-                    //    throw new NotImplementedException();
-                    //}
+                                        
                     DGFieldComparison.ComputeErrors(new string[] { fieldName },
                             group.ToArray(),
                             out resolution,

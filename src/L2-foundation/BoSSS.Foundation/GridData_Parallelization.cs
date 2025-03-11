@@ -83,13 +83,10 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </remarks>
             public int GetLocalCellIndex(long globalCellIndex) {
                 Partitioning part = m_owner.CellPartitioning;
-                long i0 = part.i0;
-                int J = part.LocalLength;
-                int jLoc = checked((int)(globalCellIndex - i0));
-                if (jLoc >= 0 && jLoc < J) {
-                    return jLoc;
+                if (part.IsInLocalRange(globalCellIndex)) {
+                    return part.TransformIndexToLocal(globalCellIndex);
                 } else {
-                    if (Global2LocalIdx.TryGetValue(globalCellIndex, out jLoc)) {
+                    if (Global2LocalIdx.TryGetValue(globalCellIndex, out int jLoc)) {
                         return jLoc;
                     } else {
                         return int.MinValue;
