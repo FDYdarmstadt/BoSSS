@@ -234,6 +234,8 @@ namespace PublicTestRunner {
         /// </summary>
         static bool ignore_tests_w_deps = false;
 
+        private static List<Job> AllJobs = new();
+
         /// <summary>
         /// finds all assemblies which potentially contain tests.
         /// </summary>
@@ -612,7 +614,19 @@ namespace PublicTestRunner {
         /// </summary>
         public static string RunnerPrefix = "Pub";
 
+        public static void CancelAllJobsOnExit(object sender, EventArgs args) {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Forcefully Cancelling All Jobs");
+            foreach ( Job job in AllJobs ) {
+                job.LatestDeployment.Cancel("Forcefully Cancelled");
+                Console.WriteLine($"Canceling {job.Name}");
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
         public static int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
+            AppDomain.CurrentDomain.ProcessExit += CancelAllJobsOnExit;
+            Console.CancelKeyPress += CancelAllJobsOnExit;
 
             // ===================================
             // phase 0: setup
@@ -810,6 +824,11 @@ namespace PublicTestRunner {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({shortname})...");
                             (Job job, string resultFile, string name) j = SubmitJob(ass, testname, shortname, TestTypeProvider.RetryCount, bpc, depfiles, DateNtime, NoOfProcs, NumThreads, NativeOverride, RelManagedPath, cnt);
+
+                            // Cancel Jobs when program exits forcefully!
+                            AllJobs.Add(j.job);
+
+                            // Check if there exists timing information for this job
                             if ( !monitor.JobExists(j.job) ) {
                                 Console.ForegroundColor = ConsoleColor.Yellow;
                                 Console.WriteLine($"Warning: There is no timing information for {j.job.Name}, please add the information manually to TimeRecords.json");
@@ -1120,6 +1139,8 @@ namespace PublicTestRunner {
 
             return returnCode;
         }
+
+        private static void CurrentDomain_ProcessExit(object sender, EventArgs e) => throw new NotImplementedException();
 
         /// <summary>
         /// Checks all profiling's in all MPI ranks for something fishy.
