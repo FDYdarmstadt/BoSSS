@@ -164,7 +164,8 @@ namespace PublicTestRunner {
                         typeof(BUIDT.Tests.BUIDTTestProgram),
                         typeof(SAIDT.Tests.SAIDTTestProgram),
                         typeof(XESF.Tests.XESFTestProgram),
-                        typeof(StokesHelical_Ak.HelicalMain)
+                        typeof(StokesHelical_Ak.HelicalMain),
+                        typeof(BoSSS.Application.LsTest.LevelSetUnitTests)
                 };
             }
         }
