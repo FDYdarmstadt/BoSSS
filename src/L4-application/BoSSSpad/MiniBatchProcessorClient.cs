@@ -52,7 +52,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         MiniBatchProcessor.Client Client {
             get {
-                if (m_Client == null) {
+                if ( m_Client == null ) {
                     m_Client = new MiniBatchProcessor.Client(BatchInstructionDir);
                 }
                 return m_Client;
@@ -64,7 +64,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard output file, if present - otherwise null.
         /// </summary>
         public override string GetStdoutFile(string idToken, string DeployDir) {
-            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+            if ( idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite() )
                 return null;
             return Client.GetStdoutFile(int.Parse(idToken));
         }
@@ -73,7 +73,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard error file, if present - otherwise null.
         /// </summary>
         public override string GetStderrFile(string idToken, string DeployDir) {
-            if (idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite())
+            if ( idToken.IsEmptyOrWhite() || DeployDir.IsEmptyOrWhite() )
                 return null;
             return Client.GetStderrFile(int.Parse(idToken));
         }
@@ -86,37 +86,37 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         public MiniBatchProcessorClient(string DeployDir = null) : base() {
             var userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
-            if (userDir == null || userDir.Length <= 0 || !Directory.Exists(userDir)) {
+            if ( userDir == null || userDir.Length <= 0 || !Directory.Exists(userDir) ) {
                 throw new ApplicationException("Unable to create local machine batch, user settings path ('.BoSSS' - directory) does not exist or unable to find.");
             }
 
-            if (System.OperatingSystem.IsWindows())
+            if ( System.OperatingSystem.IsWindows() )
                 base.RuntimeLocation = "win\\amd64";
             else
                 base.RuntimeLocation = "linux\\amd64-openmpi";
 
             //base.DeployDirectory = Path.Combine(userDir, "batch");
 
-            if (string.IsNullOrWhiteSpace(DeployDir)) {
+            if ( string.IsNullOrWhiteSpace(DeployDir) ) {
                 string localAppData = System.Environment.GetEnvironmentVariable("LOCALAPPDATA")
                     ?? System.Environment.GetEnvironmentVariable("HOME");
 
                 this.DeploymentBaseDirectory = Path.Combine(localAppData, "BoSSS-LocalJobs");
-                if (!Directory.Exists(this.DeploymentBaseDirectory)) {
+                if ( !Directory.Exists(this.DeploymentBaseDirectory) ) {
                     Directory.CreateDirectory(this.DeploymentBaseDirectory);
                 }
             } else {
                 this.DeploymentBaseDirectory = DeployDir;
             }
 
-            if (!Directory.Exists(this.DeploymentBaseDirectory))
+            if ( !Directory.Exists(this.DeploymentBaseDirectory) )
                 throw new IOException("Deploy directory '" + this.DeploymentBaseDirectory + "' does not exist.");
 
             {
                 string localUserDir = System.Environment.GetEnvironmentVariable("USERPROFILE") ?? System.Environment.GetEnvironmentVariable("HOME");
-                if (localUserDir != null)
+                if ( localUserDir != null )
                     base.AllowedDatabasesPaths.Add(new AllowedDatabasesPair(localUserDir, null));
-                if (Path.DirectorySeparatorChar == '\\')
+                if ( Path.DirectorySeparatorChar == '\\' )
                     base.AllowedDatabasesPaths.Add(new AllowedDatabasesPair("C:\\", null));
                 else
                     base.AllowedDatabasesPaths.Add(new AllowedDatabasesPair("/", null));
@@ -126,7 +126,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         private string GetFullJobName(Job myJob) {
             string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
-            if (string.IsNullOrWhiteSpace(BoSSSshell.WorkflowMgm.CurrentProject)) {
+            if ( string.IsNullOrWhiteSpace(BoSSSshell.WorkflowMgm.CurrentProject) ) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
             return PrjName + "__" + myJob.Name;
@@ -137,12 +137,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
             //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
-            using (new FuncTrace()) {
+            using ( new FuncTrace() ) {
                 int ID = int.Parse(idToken);
                 var mbpStatus = Client.GetStatusFromID(ID);
                 int ExitCode = mbpStatus.ExitCode;
 
-                switch (mbpStatus.stat) {
+                switch ( mbpStatus.stat ) {
                     case MiniBatchProcessor.JobStatus.Queued:
                         // we know nothing
                         return (BoSSSpad.JobStatus.PendingInExecutionQueue, null);
@@ -185,7 +185,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             var started = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: true);
-            if (started) {
+            if ( started ) {
                 Console.WriteLine("Warning: MiniBatchProcessor server was not running, started by job activation; it might be beneficial to start `MiniBatchProcessor.dll` externally, for the future.");
             }
 
@@ -210,6 +210,12 @@ namespace BoSSS.Application.BoSSSpad {
             return (id.ToString(), JD);
         }
 
+        /// <summary>
+        /// Cancels the job with the given id
+        /// </summary>
+        /// <param name="idToken">The identifier for the job</param>
+        /// <param name="message">The reason the job was cancelled</param>
+        /// <exception cref="NotImplementedException"></exception>
         public override void Cancel(string idToken, string message) {
             // TODO: Rewrite MiniBatch so that it is a true parallel scheduler and does not hang on job execution
             throw new NotImplementedException();
@@ -220,7 +226,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override string ToString() {
             string NameString = "";
-            if (!base.Name.IsEmptyOrWhite())
+            if ( !base.Name.IsEmptyOrWhite() )
                 NameString = " " + base.Name + " ";
 
             return $"MiniBatchProcessor client {NameString}@{this.DeploymentBaseDirectory}";

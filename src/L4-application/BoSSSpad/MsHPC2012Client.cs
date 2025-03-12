@@ -344,7 +344,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Cancels the job with the given id
         /// </summary>
-        /// <param name="idToken">The identifier for the job</param>
+        /// <param name="Id">The identifier for the job</param>
         /// <param name="message">The reason the job was cancelled</param>
         public override void Cancel(string Id, string message) {
             int id = int.Parse(Id);
