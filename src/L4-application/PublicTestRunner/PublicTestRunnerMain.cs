@@ -945,6 +945,8 @@ namespace PublicTestRunner {
                 // ===================================
 
                 var monitor = new JobDeadlineMonitor("");
+                monitor.Save();
+                return 0;
 
                 Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
