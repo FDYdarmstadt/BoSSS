@@ -36,9 +36,10 @@ using BoSSS.Solution.XheatCommon;
 namespace HFSISolver {
 
     /// <summary>
-    /// ZLS: Two-Level-Set-Solver;
-    /// - Main purpose seems to be Euler/Euler fluid-structure interaction
-    /// - Original author: Lauritz Beck
+    /// HFSI: Heat-Fluid–Structure-Interaction;
+    /// - Combining ZLS (Lauritz Beck) and XNSFE (Matthias Rieckmann) 
+    /// - solvers for fluid-solid interaction with heat transfer
+    /// - Author: Chen Miao / Matthias Rieckmann / Lauritz Beck
     /// </summary>
     public class HFSI : XNSFE<HFSI_Control> {
 
