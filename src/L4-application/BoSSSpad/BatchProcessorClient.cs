@@ -67,7 +67,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// 
         /// </summary>
         public override string ToString() {
-            if (PathAtRemote.IsEmptyOrWhite())
+            if ( PathAtRemote.IsEmptyOrWhite() )
                 return LocalMountPath;
             else
                 return LocalMountPath + " == " + PathAtRemote;
@@ -168,7 +168,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Cancels the job
         /// </summary>
-        /// <param name="id"> Id of the Job to cancel.</param>
+        /// <param name="idToken"> Id of the Job to cancel.</param>
         /// <param name="message"> Message why the job was cancelled.</param>
         abstract public void Cancel(string idToken, string message);
 
@@ -194,15 +194,15 @@ namespace BoSSS.Application.BoSSSpad {
         /// <seealso cref="AllowedDatabasesPaths"/>
         public bool IsDatabaseAllowed(AppControl ctrl) {
 
-            if (AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+            if ( AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0 )
                 return true;
             var dbi = ctrl.GetDatabase();
-            if (dbi == null)
+            if ( dbi == null )
                 return true;
 
             // fix any relative path
             string fullDbPath;
-            if (!System.IO.Path.IsPathRooted(dbi.Path)) {
+            if ( !System.IO.Path.IsPathRooted(dbi.Path) ) {
 
                 fullDbPath = Path.GetFullPath(dbi.Path);
                 //ilPSP.Environment.MPIEnv.Hostname
@@ -214,23 +214,23 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             // check if path is allowed
-            foreach (var pp in AllowedDatabasesPaths) {
-                if (!Path.IsPathRooted(pp.LocalMountPath)) {
+            foreach ( var pp in AllowedDatabasesPaths ) {
+                if ( !Path.IsPathRooted(pp.LocalMountPath) ) {
                     throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
                 }
 
-                if (fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase)) {
+                if ( fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase) ) {
                     var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
                     relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
 
 
                     string PathAtRemote = pp.PathAtRemote;
-                    if (PathAtRemote.IsEmptyOrWhite())
+                    if ( PathAtRemote.IsEmptyOrWhite() )
                         PathAtRemote = pp.LocalMountPath;
                     PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
 
                     string DirSep;
-                    if (PathAtRemote.StartsWith("/")) {
+                    if ( PathAtRemote.StartsWith("/") ) {
                         // very likely to be a Unix path
 
                         // convert Windows path to UNIX
@@ -247,8 +247,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                     string fullAltPath = PathAtRemote + DirSep + relDbPath;
 
-                    if (ctrl.AlternateDbPaths != null) {
-                        if (ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)))
+                    if ( ctrl.AlternateDbPaths != null ) {
+                        if ( ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)) )
                             return true;
                     }
 
@@ -270,12 +270,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public bool IsDatabasePathAllowed(string dbPath) {
 
-            if (AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+            if ( AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0 )
                 return true;
 
             // fix any relative path
             string fullDbPath;
-            if (!System.IO.Path.IsPathRooted(dbPath)) {
+            if ( !System.IO.Path.IsPathRooted(dbPath) ) {
 
                 fullDbPath = Path.GetFullPath(dbPath);
 
@@ -285,23 +285,23 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             // check if path is allowed
-            foreach (var pp in AllowedDatabasesPaths) {
-                if (!Path.IsPathRooted(pp.LocalMountPath)) {
+            foreach ( var pp in AllowedDatabasesPaths ) {
+                if ( !Path.IsPathRooted(pp.LocalMountPath) ) {
                     throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
                 }
 
-                if (fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase)) {
+                if ( fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase) ) {
                     var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
                     relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
 
 
                     string PathAtRemote = pp.PathAtRemote;
-                    if (PathAtRemote.IsEmptyOrWhite())
+                    if ( PathAtRemote.IsEmptyOrWhite() )
                         PathAtRemote = pp.LocalMountPath;
                     PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
 
                     string DirSep;
-                    if (PathAtRemote.StartsWith("/")) {
+                    if ( PathAtRemote.StartsWith("/") ) {
                         // very likely to be a Unix path
 
                         // convert Windows path to UNIX
@@ -333,10 +333,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         virtual public DateTime? GetStartTime(string idToken, object optInfo, string DeployDir) {
             string stdout_path = GetStdoutFile(idToken, DeployDir);
-            if (stdout_path.IsEmptyOrWhite())
+            if ( stdout_path.IsEmptyOrWhite() )
                 return null;
             var FI = new FileInfo(stdout_path);
-            if (!FI.Exists)
+            if ( !FI.Exists )
                 return null;
 
             return FI.CreationTime;
@@ -347,10 +347,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         virtual public DateTime? GetEndTime(string idToken, object optInfo, string DeployDir) {
             string stdout_path = GetStdoutFile(idToken, DeployDir);
-            if (stdout_path.IsEmptyOrWhite())
+            if ( stdout_path.IsEmptyOrWhite() )
                 return null;
             var FI = new FileInfo(stdout_path);
-            if (!FI.Exists)
+            if ( !FI.Exists )
                 return null;
 
             return FI.LastWriteTime;
@@ -382,21 +382,21 @@ namespace BoSSS.Application.BoSSSpad {
         /// Creates (or opens) a database in a location which is ensured to work with this batch processor
         /// </summary>
         public IDatabaseInfo CreateOrOpenCompatibleDatabase(string dbDir) {
-            if (Path.IsPathRooted(dbDir))
+            if ( Path.IsPathRooted(dbDir) )
                 throw new ArgumentException("Expecting a relative path.");
-            if (AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+            if ( AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0 )
                 throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             var pp = AllowedDatabasesPaths[0];
 
-            if (!Path.IsPathRooted(pp.LocalMountPath))
+            if ( !Path.IsPathRooted(pp.LocalMountPath) )
                 throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
 
             string fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
 
             IDatabaseInfo dbi = BoSSSshell.OpenOrCreateDatabase(fullPath);
 
-            if (!pp.PathAtRemote.IsEmptyOrWhite()) {
+            if ( !pp.PathAtRemote.IsEmptyOrWhite() ) {
                 string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
                 string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
                 fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
@@ -411,7 +411,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Creates (or opens) a database in a location which is ensured to work with this batch processor
         /// </summary>
         public IDatabaseInfo CreateTempDatabase() {
-            if (AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+            if ( AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0 )
                 throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             string relPath = null;
@@ -424,7 +424,7 @@ namespace BoSSS.Application.BoSSSpad {
                     var __TempDir = new DirectoryInfo(Path.Combine(pathOffset, tempDir));
                     Exists = __TempDir.Exists;
                     relPath = tempDir;
-                } while (Exists == true);
+                } while ( Exists == true );
             }
 
             return CreateOrOpenCompatibleDatabase(relPath);
@@ -443,7 +443,7 @@ namespace BoSSS.Application.BoSSSpad {
             int MaxTry = 10;
             Random rnd = null;
             Exception latest = null;
-            for (int iTry = 0; iTry < MaxTry; iTry++) {
+            for ( int iTry = 0; iTry < MaxTry; iTry++ ) {
                 // on network file-systems, there seem to be some rare hiccups, sometimes:
                 // hundreds of files copied successfully, suddenly an IOException: file already exists.
                 // File indeed exists, but is empty -- makes no sense, since deploy directory is freshly created.
@@ -451,18 +451,18 @@ namespace BoSSS.Application.BoSSSpad {
                 try {
 
                     latest = op(iTry);
-                    if (latest != null)
+                    if ( latest != null )
                         break;
                     else {
-                        if (iTry > 0)
+                        if ( iTry > 0 )
                             Console.WriteLine("success.");
                         return;
                     }
-                } catch (IOException e) {
+                } catch ( IOException e ) {
                     Console.Error.WriteLine(e.GetType().Name + " " + Message + " : " + e.Message);
 
                     Console.WriteLine($"Retrying {iTry + 1} of {MaxTry} (waiting for some time before) ...");
-                    if (rnd == null)
+                    if ( rnd == null )
                         rnd = new Random();
                     latest = e;
                     int iwait = rnd.Next(77 * 1000);
@@ -470,7 +470,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            if (SurpressException == false && latest != null)
+            if ( SurpressException == false && latest != null )
                 throw latest;
         }
 
@@ -481,7 +481,7 @@ namespace BoSSS.Application.BoSSSpad {
         internal static void WriteFileWR(string fTarget, byte[] Content) {
 
             Exception OP(int iTry) {
-                if (iTry == 0 && File.Exists(fTarget)) {
+                if ( iTry == 0 && File.Exists(fTarget) ) {
                     return new IOException("File '" + fTarget + "' already exists - wont over write.");
                 }
                 File.WriteAllBytes(fTarget, Content);
@@ -514,7 +514,7 @@ namespace BoSSS.Application.BoSSSpad {
         internal static void CreateDirectoryWR(string dstSubDir, bool SurpressException = false) {
 
             Exception op(int i) {
-                if (!Directory.Exists(dstSubDir))
+                if ( !Directory.Exists(dstSubDir) )
                     Directory.CreateDirectory(dstSubDir);
                 return null;
             }
@@ -532,17 +532,17 @@ namespace BoSSS.Application.BoSSSpad {
         public static void CopyDirectoryRec(string srcDir, string dstDir, string filter) {
             string[] srcFiles = Directory.GetFiles(srcDir);
 
-            foreach (string srcFile in srcFiles) {
+            foreach ( string srcFile in srcFiles ) {
                 //TryCopy(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)));
                 CopyFileWR(srcFile, Path.Combine(dstDir, Path.GetFileName(srcFile)), SurpressException: true);
             }
 
             string[] subDirs;
-            if (filter == null)
+            if ( filter == null )
                 subDirs = Directory.GetDirectories(srcDir);
             else
                 subDirs = Directory.GetDirectories(srcDir, filter);
-            foreach (string srcAbsDir in subDirs) {
+            foreach ( string srcAbsDir in subDirs ) {
                 string srcRelDir = Path.GetFileName(srcAbsDir);
                 string dstSubDir = Path.Combine(dstDir, srcRelDir);
                 CreateDirectoryWR(dstSubDir);
