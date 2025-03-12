@@ -855,6 +855,10 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+            /// <summary>
+            /// Cancels the job
+            /// </summary>
+            /// <param name="reason">Reason for cancelation</param>
             public void Cancel(string reason) {
                 m_owner.AssignedBatchProc.Cancel(this.BatchProcessorIdentifierToken, reason);
             }
