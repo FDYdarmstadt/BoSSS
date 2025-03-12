@@ -583,156 +583,6 @@ namespace PublicTestRunner {
 
         }
 
-        public static int BuildYaml() {
-
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSize);
-            if ( MpiSize != 1 ) {
-                throw new NotSupportedException("yaml subprogram must be executed serially");
-            }
-
-            using var tr = new FuncTrace();
-
-            // ===================================
-            // phase 1: submit jobs
-            // ===================================
-
-            var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
-            {
-                Assembly[] assln = GetAllAssembliesForTests();
-                if ( assln != null ) {
-                    foreach ( Assembly a in assln ) {
-                        {
-                            (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string, string[]> RequiredFiles4Test, int?[] NumThreads) = GetTestsInAssembly(a, null);
-                            for ( int iTest = 0; iTest < NoOfTests; iTest++ ) {
-                                allTests.Add((a, tests[iTest], shortnames[iTest], RequiredFiles4Test[tests[iTest]], 1));
-                            }
-                        }
-                    }
-                }
-            }
-
-            {
-                (Assembly Asbly, int NoOfProcs)[] ParAssln = GetAllMpiAssemblies();
-                if ( ParAssln != null ) {
-                    foreach ( (Assembly Asbly, int NoOfProcs) in ParAssln ) {
-                        {
-
-                            Assembly a = Asbly;
-                            (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string, string[]> RequiredFiles4Test, int?[] NumThreads) = GetTestsInAssembly(a, null);
-
-                            for ( int iTest = 0; iTest < NoOfTests; iTest++ ) {
-                                allTests.Add((a, tests[iTest], shortnames[iTest], RequiredFiles4Test[tests[iTest]], NoOfProcs));
-                            }
-                        }
-                    }
-                }
-            }
-
-            Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
-            int cnt = 0;
-            foreach ( (Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs) in allTests ) {
-                cnt++;
-                Console.WriteLine($"  #{cnt}: {testname}");
-                Console.WriteLine($"     {shortname}");
-                Console.WriteLine($"     {NoOfProcs} MPI processors.");
-            }
-
-            Console.WriteLine($"******* Writing new yaml file ({DateTime.Now}) *******");
-
-            string yamlName;
-
-            yamlName = "jobs.yml";
-
-            using var YAML = new StreamWriter(yamlName);
-            YAML.WriteLine("################################################################################");
-            YAML.WriteLine($"# this is an auto-generated file by {TestTypeProvider.GetType().Assembly.FullName}.");
-            YAML.WriteLine("# any modification might get over-written");
-            YAML.WriteLine($"# created: {DateTime.Now}");
-            YAML.WriteLine($"# user:    {System.Environment.UserName}");
-            YAML.WriteLine($"# system:  {System.Environment.MachineName}");
-            YAML.WriteLine("################################################################################");
-            YAML.WriteLine();
-
-            //Set Workflow
-            YAML.WriteLine("workflow:");
-            YAML.WriteLine("  rules:");
-            YAML.WriteLine("    - when: always");
-            YAML.WriteLine();
-
-            //Set Stages
-            YAML.WriteLine("stages:");
-            YAML.WriteLine("  - test");
-            YAML.WriteLine("  - test parallel");
-            YAML.WriteLine();
-
-            if ( allTests.Count == 0 ) {
-                YAML.WriteLine("EmptyTest:");
-                YAML.WriteLine("  stage: test");
-                YAML.WriteLine("  script:");
-                YAML.WriteLine("    - echo \"Empty\"");
-            } else {
-                //Set job class
-                // ======================================================================
-                //Gitlab yaml sets RUNNER_PATH, RUNNER_EXE, BUILD_DEPENDENCY, ARTIFACT_REF_PATH
-                //Gitlab automatically sets CI_PROJECT_PATH, CI_MERGE_REQUEST_REF_PATH
-
-                YAML.WriteLine(".Test:");
-                YAML.WriteLine("  before_script:");
-                YAML.WriteLine("    - cd $RUNNER_PATH");
-                YAML.WriteLine("    - bash -c \"chmod +x $RUNNER_EXE\"");
-                YAML.WriteLine("  artifacts:");
-                YAML.WriteLine("    reports:");
-                YAML.WriteLine("      junit: $RUNNER_PATH/TestResult.*");
-                YAML.WriteLine("    expire_in: 2 days");
-                YAML.WriteLine("  needs:");
-                YAML.WriteLine("    - project: $CI_PROJECT_PATH");
-                YAML.WriteLine("      job: $BUILD_DEPENDENCY");
-                YAML.WriteLine("      ref: $ARTIFACT_REF_PATH");
-                YAML.WriteLine("      artifacts: true");
-                YAML.WriteLine();
-
-                cnt = 0;
-                var checkResFileName = new HashSet<string>();
-                foreach ( (Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs) in allTests ) {
-
-                    if ( testname.Contains("TutorialTest") ) {
-                        Console.WriteLine("skipping: " + testname);
-                        continue;
-                    }
-
-                    if ( NoOfProcs == 1 ) {
-                        YAML.WriteLine(DebugOrReleaseSuffix + "#" + shortname + ":" + testname + ":");
-                    } else {
-                        YAML.WriteLine(DebugOrReleaseSuffix + "#p" + NoOfProcs + "#" + shortname + ":" + testname + ":");
-                    }
-
-                    YAML.WriteLine("   extends: .Test");
-
-                    if ( NoOfProcs == 1 ) {
-                        YAML.WriteLine("   stage: test");
-                    } else {
-                        YAML.WriteLine("   stage: test parallel");
-                    }
-
-                    YAML.WriteLine("   script:");
-                    if ( NoOfProcs == 1 ) {
-                        YAML.WriteLine($"     - '& ./$RUNNER_EXE nunit3 {Path.GetFileName(ass.Location)} --test={testname} --result=TestResult.xml'");
-                    } else {
-                        YAML.WriteLine($"     - mpiexec -n {NoOfProcs} ./$RUNNER_EXE nunit3 {Path.GetFileName(ass.Location)} --test={testname} --result=TestResult.xml");
-                    }
-
-                    if ( NoOfProcs > 1 ) {
-                        YAML.WriteLine("   tags:");
-                        YAML.WriteLine($"    - {NoOfProcs}cores");
-                    }
-
-                    YAML.WriteLine();
-                }
-            }
-
-            return 0;
-        }
-
         /// <summary>
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE);
         /// appending of the user name avoids "unauthorized access"-exceptions
@@ -945,8 +795,6 @@ namespace PublicTestRunner {
                 // ===================================
 
                 var monitor = new JobDeadlineMonitor("");
-                monitor.Save();
-                return 0;
 
                 Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
@@ -1015,6 +863,10 @@ namespace PublicTestRunner {
                                 if ( _resFile != ResFile ) {
                                     throw new ApplicationException("internal mismatch in result file name");
                                 }
+                            }
+
+                            if ( s is JobStatus.FinishedSuccessful ) {
+                                monitor.UpdateEntry(job);
                             }
 
                             if ( s is JobStatus.FailedOrCanceled or JobStatus.Unknown ) {
@@ -1144,12 +996,14 @@ namespace PublicTestRunner {
 
                     // Stop all remaining Jobs
                     AllOpenJobs.ForEach(a => a.job.LatestDeployment.Cancel("Timeout"));
+                    _ = UpdateFinishedJobs();
                 }
 
                 // ===================================
                 // phase 4: summary
                 // ===================================
                 monitor.Save();
+                GitlabResultsTable.WriteResultsTable(AllFinishedJobs.Select(t => t.job).ToList(), "TestRunner");
                 if ( AllOpenJobs.Count == 0 ) {
                     Console.WriteLine("----------------------------------------------------------------------------------------------------");
                     Console.WriteLine($"All jobs/tests finished ({DateTime.Now}) - Summary:");
@@ -1878,15 +1732,6 @@ namespace PublicTestRunner {
                     }
 
                     ret = JobManagerRun(filter, iQueue);
-                    break;
-
-                case "yaml":
-#if DEBUG
-                    discoverRelease = false;
-#else
-                discoverRelease = true;
-#endif
-                    ret = BuildYaml();
                     break;
 
                 case "help":
