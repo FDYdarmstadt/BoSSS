@@ -44,6 +44,27 @@ namespace BoSSS.Application.XNSE_Solver {
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
             return new GradientAndCurvature(levelSet, curvatureDegree, levelSetDegree, m_HMForder, D, AdvancedDiscretizationOptions.SST_isotropicMode, AdvancedDiscretizationOptions.FilterConfiguration);
         }
+
+        public static Curvature Curvature(XNSE_Control control, string levelSetName, int m_HMForder, int D) {
+            string curvature = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            int curvatureDegree;
+            if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts)) {
+                curvatureDegree = opts.Degree;
+            } else {
+                throw new Exception("Curvature options not found in FieldOptions");
+            }
+
+            string levelSet = levelSetName;
+            int levelSetDegree;
+            if (control.FieldOptions.TryGetValue(levelSet, out FieldOpts lsOpts)) {
+                var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
+                levelSetDegree = (levelSetSource == Solution.LevelSetTools.CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
+            } else {
+                levelSetDegree = 1;
+            }
+            DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
+            return new Curvature(levelSet, curvatureDegree, m_HMForder, D, AdvancedDiscretizationOptions.SST_isotropicMode, AdvancedDiscretizationOptions.FilterConfiguration);
+        }
     }
 
     /// <summary>
