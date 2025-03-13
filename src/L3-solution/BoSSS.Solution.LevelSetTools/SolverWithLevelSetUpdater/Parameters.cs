@@ -72,6 +72,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
     }
 
+    /// <summary>
+    /// Compute gradient and curvature
+    /// </summary>
     public class GradientAndCurvature : ParameterS, ILevelSetParameter {
 
         int m_HMForder;
@@ -82,7 +85,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         int curvatureDegree;
 
-        public GradientAndCurvature(string LsName, int curvatureDegree, int gradientDegree, int m_HMForder, int D) : this(LsName, curvatureDegree, gradientDegree, m_HMForder, D, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, CurvatureAlgorithms.FilterConfiguration.NoFilter) {            
+        public GradientAndCurvature(string LsName, int curvatureDegree, int gradientDegree, int m_HMForder, int D) : this(LsName, curvatureDegree, gradientDegree, m_HMForder, D, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, CurvatureAlgorithms.FilterConfiguration.NoFilter) {
         }
 
         SurfaceStressTensor_IsotropicMode m_mode;
@@ -102,17 +105,34 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             m_filter = filter;
         }
 
-        public override IList<string> ParameterNames => lsParameters;
+        IList<string> ILevelSetParameter.ParameterNames => lsParameters;
+
+        public override IList<string> ParameterNames => new[] { lsParameters.Last()}; // the operator only uses the curvature!
 
         public override DelParameterFactory Factory => ParameterFactory;
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[1];
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+
+            int pmax = gridData.iGeomCells.RefElements.Min(r => r.HighestSupportedPolynomialDegree);
+            if (curvatureDegree > pmax) {
+                Console.WriteLine("Curvature Degree higher than supported, setting down to order {0}", pmax);
+                curvatureDegree = pmax;
+            }
+
+            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
+            fields[0] = (this.ParameterNames[0], new SinglePhaseField(curvatureBasis, this.ParameterNames[0]));
+            return fields;
+        }
+
+        (string ParameterName, DGField ParamField)[] ILevelSetParameter.ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             int paramCount = lsParameters.Length;
             (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[lsParameters.Length];
             IGridData gridData = DomainVarFields.First().Value.GridDat;
 
             Basis basis = new Basis(gridData, gradientDegree);
-            for (int i = 0; i < paramCount - 1; i++) {
+            for (int i = 0; i < paramCount - 1; ++i) {
                 fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
             }
 
@@ -123,9 +143,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             Basis curvatureBasis = new Basis(gridData, curvatureDegree);
-            fields[paramCount-1] = (lsParameters[paramCount-1], new SinglePhaseField(curvatureBasis, lsParameters[paramCount - 1]));
+            fields[paramCount - 1] = (lsParameters[paramCount - 1], new SinglePhaseField(curvatureBasis, lsParameters[paramCount - 1]));
             return fields;
         }
+
 
         public void LevelSetParameterUpdate(
            DualLevelSet phaseInterface,
@@ -149,70 +170,4 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
     }
-
-    public class Curvature : ParameterS, ILevelSetParameter {
-
-        int m_HMForder;
-
-        string[] lsParameters;
-
-        int curvatureDegree;
-
-        public Curvature(string LsName, int curvatureDegree, int m_HMForder, int D) : this(LsName, curvatureDegree, m_HMForder, D, SurfaceStressTensor_IsotropicMode.Curvature_Projected, CurvatureAlgorithms.FilterConfiguration.NoFilter) {
-        }
-
-        SurfaceStressTensor_IsotropicMode m_mode;
-        CurvatureAlgorithms.FilterConfiguration m_filter;
-
-        public Curvature(string LsName, int curvatureDegree, int m_HMForder, int D, SurfaceStressTensor_IsotropicMode mode, CurvatureAlgorithms.FilterConfiguration filter) {
-            if (LsName == VariableNames.LevelSetCG) {
-                lsParameters = new[] { VariableNames.Curvature };
-            } else {
-                lsParameters = new[] { VariableNames.AsLevelSetVariable(LsName, VariableNames.Curvature) };
-            }
-            this.m_HMForder = m_HMForder;
-            this.curvatureDegree = curvatureDegree;
-
-            m_mode = mode;
-            m_filter = filter;
-        }
-
-        public override IList<string> ParameterNames => lsParameters;
-
-        public override DelParameterFactory Factory => ParameterFactory;
-
-        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
-            int paramCount = lsParameters.Length;
-            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[lsParameters.Length];
-            IGridData gridData = DomainVarFields.First().Value.GridDat;
-
-            int pmax = gridData.iGeomCells.RefElements.Min(r => r.HighestSupportedPolynomialDegree);
-            if (curvatureDegree > pmax) {
-                Console.WriteLine("Curvature Degree higher than supported, setting down to order {0}", pmax);
-                curvatureDegree = pmax;
-            }
-
-            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
-            fields[0] = (lsParameters[0], new SinglePhaseField(curvatureBasis, lsParameters[0]));
-            return fields;
-        }
-
-        public void LevelSetParameterUpdate(
-           DualLevelSet phaseInterface,
-           double time,
-           IReadOnlyDictionary<string, DGField> DomainVarFields,
-           IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[lsParameters[0]];
-            VectorField<SinglePhaseField> filtLevSetGradient;
-            CurvatureAlgorithms.CurvatureDriver(
-                m_mode,
-                m_filter,
-                Curvature,
-                out filtLevSetGradient,
-                phaseInterface.Tracker,
-                m_HMForder,
-                phaseInterface.DGLevelSet);            
-        }
-    }
-
 }

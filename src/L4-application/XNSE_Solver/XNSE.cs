@@ -583,10 +583,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    Curvature lsCurvature =
-                        FromControl.Curvature(Control, "Phi", quadOrder, D);
-                    opFactory.AddParameter(lsCurvature);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsCurvature);
+                    GradientAndCurvature lsGradientCurvature
+                        = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
+                    opFactory.AddParameter(lsGradientCurvature);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientCurvature);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
