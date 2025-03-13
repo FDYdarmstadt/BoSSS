@@ -380,7 +380,7 @@ namespace BoSSS.Solution.NSECommon {
                         // Dong energy term
                         double U0 = 1.0;
                         double delta = 1.0 / 20.0;
-                        double Sout = 0.5 * (1.0 + Math.Tanh(ndotu/(U0*delta)));
+                        double Sout = 0.5 * (1.0 - Math.Tanh(ndotu/(U0*delta)));
                         r += 0.5 * uAbs2 * Sout * inp.Normal[m_component];
 
                         return r;
@@ -864,7 +864,7 @@ namespace BoSSS.Solution.NSECommon {
                         // Dong energy term
                         double U0 = 1.0;
                         double delta = 1.0 / 20.0;
-                        double Sout = 0.5 * (1.0 + Math.Tanh(ndotu / (U0 * delta)));
+                        double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
                         r += 0.5 * uAbs2 * Sout * inp.Normal[m_component];
 
                         return r;
