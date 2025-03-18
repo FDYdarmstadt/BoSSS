@@ -253,7 +253,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         methodTagLS = "FastMarchCurv";
                         Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
                         FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.FilterConfiguration = Solution.LevelSetTools.CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                         break;
                     }
@@ -273,7 +273,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         methodTagLS = "ExtVelCurv";
                         Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
                         EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                        AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+                        AdvancedDiscretizationOptions.FilterConfiguration = Solution.LevelSetTools.CurvatureAlgorithms.FilterConfiguration.Default;
                         AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
                         EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
                         fullReInit = true;

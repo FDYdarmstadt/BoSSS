@@ -28,7 +28,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 
 
-namespace BoSSS.Application.XNSE_Solver.Tests {
+namespace BoSSS.Application.LsTest {
 
     class LevelSetReinitializationTest {
     }

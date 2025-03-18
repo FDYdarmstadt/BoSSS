@@ -28,7 +28,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 
 
-namespace BoSSS.Application.XNSE_Solver.Tests {
+namespace BoSSS.Application.LsTest {
 
     /// <summary>
     /// Basic test case for a shearing the level-set field
@@ -54,7 +54,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <param name="Resolution"></param>
         /// <param name="LSdegree"></param>
         /// <returns></returns>
-        public override double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+        public override double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution) {
             int gridCells1D = (9 * Resolution) * (AMRlevel + 1);
             double h = 1.0 * L / (double)gridCells1D;
             double dt = h / Uscale;
@@ -174,10 +174,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// Level-Set: at t=0 circle with radius R, at the center (0,0); evolution not known
         /// </summary>
-        public override Func<double[], double, double> GetPhi() {
-            return delegate (double[] X, double time) {
-
-
+        public override Func<double[], double, double>[] GetPhi() {
+            return new Func<double[], double, double>[] {delegate (double[] X, double time) {
                 double x = X[0], y = X[1];
                 //x -= time * Uscale;
 
@@ -191,44 +189,42 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 return quadratic ? (Radius * Radius - dist * dist) : Radius - dist;
 
-            };
+            } };
         }
 
         /// <summary>
         /// velocity: constant rotational velocity field.
         /// </summary>
-        public override Func<double[], double, double> GetU(string species, int d) {
+        public override Func<double[], double, double>[][] GetU() {
+            var Ret = new Func<double[], double, double>[this.NoOfLevelsets][];
             switch (SpatialDimension) {
                 case 2:
-                if (d == 0)
-                    return ((_2D)((x, y) => Uscale * y)).Convert_xy2X().Convert_X2Xt();
-                else if (d == 1)
-                    return ((_2D)((x, y) => 0.0)).Convert_xy2X().Convert_X2Xt();
-                else
-                    throw new ArgumentOutOfRangeException();
+                    Ret[0] = new Func<double[], double, double>[] {
+                        ((_2D)((x, y) => Uscale * y)).Convert_xy2X().Convert_X2Xt(),
+                        ((_2D)((x, y) => 0.0)).Convert_xy2X().Convert_X2Xt()
+                        };
+                    break;
                 case 3:
-                if (d == 0)
-                    return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
-                else if (d == 1)
-                    return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
-                else if (d == 2)
-                    return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
-                else
-                    throw new ArgumentOutOfRangeException();
+                    Ret[0] = new Func<double[], double, double>[] {
+                        ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt(),
+                        ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt(),
+                        ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt()
+                    };
+                    break;
                 default:
-                throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException();
             }
-
+            return Ret;
         }
 
 
-        public override double[] AcceptableL2Error {
+        public override double[,] AcceptableError {
             get {
-                return new double[] { 1.0e-6, 1.0e-6, 1.0e-1 };
+                return new double[,] { { 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6 } }; //{ { 1.0e-6, 1.0e-6, 1.0e-1 } }; from XNSE copy
             }
         }
 
-
+        public override int NoOfLevelsets => 1;
     }
 
 }

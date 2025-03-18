@@ -1238,7 +1238,7 @@ namespace BoSSS.Foundation.XDG {
                     // cell 'jCell' should be agglomerated to some other cell
                     Debug.Assert(AgglomCellsBitmask[jCell] == true);
 
-                    double frac_neigh_max = -1.0;
+                    double frac_neigh_max = 0.0;//-1.0;
                     int e_max = -1;
                     int jEdge_max = int.MinValue;
                     int jCellNeigh_max = int.MinValue;

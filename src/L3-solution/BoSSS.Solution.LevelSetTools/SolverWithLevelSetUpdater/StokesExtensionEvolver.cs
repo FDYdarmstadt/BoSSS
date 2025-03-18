@@ -2,17 +2,26 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.Smoothing;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.TimeStepping;
+using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.LinSolvers.PARDISO;
 using ilPSP.Tracing;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel.Design;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
@@ -71,7 +80,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => Reinitialize;
+        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
 
 
         /// <summary>
@@ -148,8 +157,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         f.Clear();
                 }
 
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
-            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
+                ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
                 if(timeStepper == null) {
                     //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
@@ -166,7 +175,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-
+ 
         private EllipticReInitAlgoControl ReInit_Control;
         private static int ReInit_TimestepIndex = 0;
         private int ReInit_Period = 0;
@@ -180,7 +189,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="incremental"></param>
         /// <param name="DomainVarFields"></param>
         /// <param name="ParameterVarFields"></param>
-        public void Reinitialize(
+        public bool Reinitialize(
             DualLevelSet phaseInterface,
             double time,
             double dt,
@@ -188,6 +197,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
+            bool changed = false;
             // after level-set evolution and for initializing non-signed-distance level set fields
             if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
 
@@ -201,9 +211,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ////CellMask ActiveField = phaseInterface.Tracker.Regions.GetNearFieldMask(1);
                 //CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
                 //FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, null);
+                changed = true;
             }
 
             ReInit_TimestepIndex++;
+            return changed;
         }
     }
 }

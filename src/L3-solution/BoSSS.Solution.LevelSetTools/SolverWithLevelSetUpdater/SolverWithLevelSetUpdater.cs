@@ -184,6 +184,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         DGlevelSets[iLevSet] = fourierLevelSetDG;
                         break;
                     case LevelSetEvolution.Prescribed:
+                    case LevelSetEvolution.PrescribedVelocity:
                     case LevelSetEvolution.StokesExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Phasefield:
@@ -305,8 +306,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             break;
                         }
                     case LevelSetEvolution.Prescribed: {
-                            var prescrEvo = new PrescribedEvolver(this.Control.InitialValues_EvaluatorsVec[LevelSetCG]);
-                            lsUpdater.AddEvolver(LevelSetCG, prescrEvo);
+                        var prescrEvo = new PrescribedEvolver(this.Control.InitialValues_EvaluatorsVec[LevelSetCG]);
+                        lsUpdater.AddEvolver(LevelSetCG, prescrEvo);
+                        break;
+                    }
+                    case LevelSetEvolution.PrescribedVelocity: {
+                            var prescrVelEvo = new PrescribedVelocityEvolver(LevelSetCG, D);
+                            lsUpdater.AddEvolver(LevelSetCG, prescrVelEvo);
                             break;
                         }
                     case LevelSetEvolution.RigidObject: {
@@ -402,6 +408,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.Prescribed:
+                    case LevelSetEvolution.PrescribedVelocity:
                     case LevelSetEvolution.StokesExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.None: {

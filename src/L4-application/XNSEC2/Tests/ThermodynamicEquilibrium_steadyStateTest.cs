@@ -273,7 +273,7 @@ namespace BoSSS.Application.XNSEC {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
@@ -570,7 +570,7 @@ namespace BoSSS.Application.XNSEC {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 

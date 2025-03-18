@@ -452,6 +452,10 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             // Set timestep as minimum of capillary timestep restriction or level set CFL
             //SetTimestep();
+
+            // set underrelaxation
+            // base.Timestepping.TimesteppingBase.LSUnderrelax = this.Control.LSunderrelax; // is this relevant, base.Timestepping.TimesteppingBase.LSUnderrelax seems to not be really used by anything, deprecated?
+
             return base.RunSolverOneStep(TimestepNo, phystime, dt);
         }
 

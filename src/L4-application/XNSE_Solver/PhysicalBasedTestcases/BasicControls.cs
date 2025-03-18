@@ -816,7 +816,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.SIP;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
@@ -947,7 +947,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -1070,7 +1070,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -1194,7 +1194,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -1321,7 +1321,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #region solver
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;

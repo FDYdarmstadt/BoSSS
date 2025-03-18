@@ -172,7 +172,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         dt,
                         underRelax,
                         incremental);
-                    AfterMoveLevelSet(
+                }
+
+                //Make Continuous
+                EnforceContinuity();
+
+                if (dt > 0 && lsMover != null) {
+                    bool changed = AfterMoveLevelSet(
                         phaseInterface,
                         DomainVarFields,
                         ParameterVarFields,
@@ -180,9 +186,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         dt,
                         underRelax,
                         incremental);
+
+                    if(changed) EnforceContinuity();
                 }
-                //Make Continuous
-                EnforceContinuity();
+
 
                 //Calculate Residual
                 CellMask oldCC = phaseInterface.Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex);
@@ -231,7 +238,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// Additional routines, the Evolver might call after LS Movement
             /// E.g. Reinitialization
             /// </summary>
-            void AfterMoveLevelSet(
+            bool AfterMoveLevelSet(
                 DualLevelSet phaseInterface,
                 IReadOnlyDictionary<string, DGField> DomainVarFields,
                 IReadOnlyDictionary<string, DGField> ParameterVarFields,
@@ -241,13 +248,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 bool incremental) {
 
                 if(lsMover.AfterMovePhaseInterface != null)
-                    lsMover.AfterMovePhaseInterface.Invoke(
+                    return lsMover.AfterMovePhaseInterface.Invoke(
                         phaseInterface,
                         time,
                         dt,
                         incremental,
                         DomainVarFields,
                         ParameterVarFields);
+
+                return false;
 
             }
 

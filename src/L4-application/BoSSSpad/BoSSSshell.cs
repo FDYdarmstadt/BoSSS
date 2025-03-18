@@ -1143,7 +1143,7 @@ namespace BoSSS.Application.BoSSSpad {
                 typeof(BoSSS.Solution.Tecplot.Tecplot),
                 typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver),
                 typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator),
-                typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms),
+                typeof(BoSSS.Solution.LevelSetTools.CurvatureAlgorithms),
                 typeof(BoSSS.Solution.EnergyCommon.Dissipation),
                 typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity),
                 typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling),

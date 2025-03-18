@@ -34,16 +34,56 @@ using ilPSP.Utils;
 using ilPSP.LinSolvers.PARDISO;
 using BoSSS.Foundation.Grid.Classic;
 
-namespace BoSSS.Solution.LevelSetTools
-{
+namespace BoSSS.Solution.LevelSetTools {
 
+    /// <summary>
+    /// Options for the treatment of the isotropic part of the surface stress tensor 
+    /// </summary>
+    public enum SurfaceStressTensor_IsotropicMode {
+
+        /// <summary>
+        /// Curvature is evaluated locally, i.e. the projection of $\divergence{ \nabla \varphi / | \nabla \varphi | $.
+        /// onto a DG field is used.
+        /// </summary>
+        Curvature_Projected,
+
+        /// <summary>
+        /// Curvature is evaluated locally at closest points on the level-set, i.e. 
+        /// the value of $\divergence{ \nabla \varphi / | \nabla \varphi | $ on the zero-set is extended to the domain.
+        /// </summary>
+        Curvature_ClosestPoint,
+
+
+        /// <summary>
+        /// A cell-wise mean-curvature is computed from a Laplace-Beltrami-ansatz.
+        /// </summary>
+        Curvature_LaplaceBeltramiMean,
+
+        /// <summary>
+        /// Curvature is computed from a specialized Level-Set as Fourier-series
+        /// </summary>
+        Curvature_Fourier,
+
+        /// <summary>
+        /// use a cell-wise Laplace-Beltrami formulation.
+        /// </summary>
+        LaplaceBeltrami_Local,
+
+        /// <summary>
+        /// a Laplace-Beltrami formulation where level-set tangents are averaged at the cell boundary.
+        /// </summary>
+        LaplaceBeltrami_Flux,
+
+        /// <summary>
+        /// a cell-wise Laplace-Beltrami formulation with handling of the contact line
+        /// </summary>
+        LaplaceBeltrami_ContactLine
+    }
 
     /// <summary>
     /// A collection of algorithms to evaluate the curvature of a level-set.
     /// </summary>
-    public static class CurvatureAlgorithmsForLevelSet {
-
-        
+    public static class CurvatureAlgorithms {        
 
         public enum GradientOption {
             //external = 0,
@@ -66,6 +106,7 @@ namespace BoSSS.Solution.LevelSetTools
             fromReinit
         }
 
+        [DataContract]
         public class FilterConfiguration {
 
             /// <summary>
@@ -80,6 +121,9 @@ namespace BoSSS.Solution.LevelSetTools
                     r.useFiltLevSetHess = false;
                     r.FilterCurvatureCycles = 0;
                     r.LevelSetSource = LevelSetSource.fromC0;
+                    r.PatchRecoveryDomWidth = 0;
+                    r.NoOfPatchRecoverySweeps = 0;
+                    r.CurvatureLimiting = false;
 
                     return r;
                 }
@@ -93,14 +137,16 @@ namespace BoSSS.Solution.LevelSetTools
                 get
                 {
                     FilterConfiguration r = new FilterConfiguration();
-                    r.gradOpt = GradientOption.LevSet;
-                    r.hessOpt = HessianOption.LevSetH;
-                    r.useFiltLevSetGrad = false;
-                    r.useFiltLevSetHess = false;
+                    r.gradOpt = GradientOption.FiltLevSet;
+                    r.hessOpt = HessianOption.FiltLevSetH;
+                    r.useFiltLevSetGrad = true;
+                    r.useFiltLevSetHess = true;
                     r.FilterCurvatureCycles = 3;
                     r.LevelSetSource = LevelSetSource.fromDG;
-                    r.UseWholeField = false;
-                    r.FieldWidth = 2;
+                    r.PatchRecoveryDomWidth = 0;
+                    r.NoOfPatchRecoverySweeps = 3;
+                    r.CurvatureLimiting = true;
+                    r.UseWholeField = true;
 
                     return r;
                 }
@@ -112,32 +158,52 @@ namespace BoSSS.Solution.LevelSetTools
             public static FilterConfiguration Default {
                 get {
                     FilterConfiguration r = new FilterConfiguration();
+                    r.gradOpt = GradientOption.FiltLevSet;
+                    r.hessOpt = HessianOption.FiltLevSetGrad;
+                    r.useFiltLevSetGrad = true;
+                    r.useFiltLevSetHess = true;
+                    r.FilterCurvatureCycles = 0;
+                    r.LevelSetSource = LevelSetSource.fromC0;
+                    r.PatchRecoveryDomWidth = 0;
+                    r.NoOfPatchRecoverySweeps = 3;
+                    r.CurvatureLimiting = false;
+
                     return r;
                 }
             }
 
+            [DataMember]
             public bool UseWholeField = false;
 
-            public GradientOption gradOpt = GradientOption.FiltLevSet;
+            [DataMember]
+            public GradientOption gradOpt = GradientOption.LevSet;
 
-            public HessianOption hessOpt = HessianOption.FiltLevSetGrad;
+            [DataMember]
+            public HessianOption hessOpt = HessianOption.LevSetGrad;
 
-            public bool useFiltLevSetGrad = true;
+            [DataMember]
+            public bool useFiltLevSetGrad = false;
 
-            public bool useFiltLevSetHess = true;
+            [DataMember]
+            public bool useFiltLevSetHess = false;
 
+            [DataMember]
             public int FilterCurvatureCycles = 0;
 
-            public int FieldWidth = 0;
+            [DataMember]
+            public LevelSetSource LevelSetSource = LevelSetSource.fromC0;
 
-            public LevelSetSource LevelSetSource = LevelSetSource.fromDG;
+            [DataMember]
+            public int PatchRecoveryDomWidth = 0;
 
+            [DataMember]
+            public int NoOfPatchRecoverySweeps = 0;
+
+            [DataMember]
+            public bool CurvatureLimiting = false;
         }
 
-        public enum SurfaceStressTensor_IsotropicMode
-        {
-            Curvature_Projected
-        }
+
 
         /// <summary>
         /// The main driver routine, which provides unified access to all implemented variants.
@@ -179,12 +245,12 @@ namespace BoSSS.Solution.LevelSetTools
             }
             else
             {
-                CC = LsTrk.Regions.GetNearFieldMask(config.FieldWidth);
+                CC = LsTrk.Regions.GetNearMask4LevSet(0, config.PatchRecoveryDomWidth); // we assume the fluid interface is level-set 0
             }
 
-                
 
-            //CurvatureBasedSurfaceTension.hmin = LsTrk.GridDat.Cells.h_minGlobal;
+
+            CurvatureInNormalDirectionAlongLevelSet.hmin = LsTrk.GridDat.Cells.h_minGlobal;
 
             Curvature.Clear();
 
@@ -197,42 +263,77 @@ namespace BoSSS.Solution.LevelSetTools
             // =============================================
             SinglePhaseField[] G; // gradient
             SinglePhaseField[,] H; // Hessian
-            //L2PatchRecovery l2pr;
-            Filter(levSet, Curvature.Basis, CC, surfTenM, config, out G, out H);
+            L2PatchRecovery l2pr;
+            Filter(levSet, Curvature.Basis, CC, surfTenM, config, out l2pr, out G, out H);
 
             // now, do all the rest...
             // =======================
+            switch (surfTenM) {
+                default: {
+                        // same as SurfaceStressTensor_IsotropicMode.Curvature_Projecte, but Hessian does not exist yet
+                        int[] lim;
+                        ComputeHessian(levSet, CC, config, out H, out H, levSet, G, G, l2pr); // do not distinguish between filtered and unfiltered, use what is available
+                        ProjectTotalCurvature(G, H, Curvature, CC, out lim);
+
+                        if (!config.CurvatureLimiting)
+                            lim = null;
+
+                        if (config.CurvatureLimiting)
+                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+
+                        Curvature.CheckForNanOrInf();
+
+                        LevelSetGradient = new VectorField<SinglePhaseField>(G);
+
+                        return SurfaceStressTensor_IsotropicMode.Curvature_Projected; // return the setting used for the curvature calculation
+                    }
+                case SurfaceStressTensor_IsotropicMode.Curvature_Projected: {
+                        int[] lim;
+                        ProjectTotalCurvature(G, H, Curvature, CC, out lim);
+
+                        if (!config.CurvatureLimiting)
+                            lim = null;
+
+                        if (config.CurvatureLimiting)
+                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+
+                        Curvature.CheckForNanOrInf();
+
+                        LevelSetGradient = new VectorField<SinglePhaseField>(G);
+
+                        return SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                    }
+                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint: {
+                        int[] lim;
+                        ClosestPointTotalCurvature(LsTrk, G, H, Curvature, out lim);
+
+                        if (!config.CurvatureLimiting)
+                            lim = null;
+
+                        if (config.CurvatureLimiting)
+                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+
+                        Curvature.CheckForNanOrInf();
 
 
-            if(surfTenM == SurfaceStressTensor_IsotropicMode.Curvature_Projected) {
+                        LevelSetGradient = null;// new VectorField<SinglePhaseField>(G); 
 
+                        return SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
+                    }
+                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean: {
+                        LaplaceBeltramiFiltered(
+                         LsTrk,
+                         Curvature,
+                         config.FilterCurvatureCycles,
+                         G,
+                         HMForder);
+                        Curvature.CheckForNanOrInf(true, true, true);
 
-                int[] lim;
-                ProjectTotalCurvature(G, H, Curvature, CC, out lim);
-
-                Curvature.CheckForNanOrInf();
-
-
-                //Basis BasisForFiltered = Curvature.Basis;
-                //PatchRecFilteredCurvature(levSet,
-                //    Curvature,
-                //    LsTrk.GetNearFieldMask(config.PatchRecoveryDomWidth),
-                //    config.NoOfPatchRecoverySweeps,
-                //    config.gradOpt,
-                //    config.hessOpt,
-                //    config.useFiltLevSetGrad,
-                //    config.useFiltLevSetHess,
-                //    config.FilterCurvatureCycles,
-                //    config.CurvatureLimiting);
-                //Curvature.CheckForNanOrInf(true, true, true);
-
-                LevelSetGradient = new VectorField<SinglePhaseField>(G); 
-
-                return SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-
+                        LevelSetGradient = null;
+                        return SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
+                    }
             }
             throw new ArgumentOutOfRangeException("unknown AlgorithmClass");
-
         }
 
         private static SinglePhaseField SourceLevelSet(FilterConfiguration config, LevelSetTracker LsTrk,
@@ -288,11 +389,48 @@ namespace BoSSS.Solution.LevelSetTools
             return levSet;
         }
 
+        /// <summary>
+        /// somewhat deprecated, use <see cref="CurvatureAlgorithms.CurvatureDriver(SurfaceStressTensor_IsotropicMode, FilterConfiguration, SinglePhaseField, out VectorField{SinglePhaseField}, LevelSetTracker, int, SinglePhaseField)"/> instead, that also computes the curvature
+        /// </summary>
+        /// <param name="surfTenM"></param>
+        /// <param name="config"></param>
+        /// <param name="LevelSetGradient"></param>
+        /// <param name="LsTrk"></param>
+        /// <param name="DG_LevSet"></param>
+        /// <returns></returns>
+        static public SurfaceStressTensor_IsotropicMode LaplaceBeltramiDriver(
+
+            SurfaceStressTensor_IsotropicMode surfTenM, FilterConfiguration config,
+            out VectorField<SinglePhaseField> LevelSetGradient,
+            LevelSetTracker LsTrk,
+            SinglePhaseField DG_LevSet
+            ){
+
+            var levSet = SourceLevelSet(config, LsTrk, DG_LevSet);
+            CellMask CC = LsTrk.Regions.GetNearFieldMask(config.PatchRecoveryDomWidth);
+
+            // compute gradients, Hessian and apply Filters
+            // =============================================
+
+            SinglePhaseField[] G; // gradient
+            SinglePhaseField[,] H; // Hessian
+            L2PatchRecovery l2pr;
+            Filter(levSet, levSet.Basis, CC, surfTenM, config, out l2pr, out G, out H);
+
+            LevelSetGradient = new VectorField<SinglePhaseField>(G);
+            return surfTenM;
+
+        }
+
+
+
+
         private static void Filter(
             SinglePhaseField LevSet,
             Basis patchRecoveryBasis,
             CellMask CC,
-            SurfaceStressTensor_IsotropicMode surfTenM, FilterConfiguration config,            
+            SurfaceStressTensor_IsotropicMode surfTenM, FilterConfiguration config,
+            out L2PatchRecovery _l2pr,
             out SinglePhaseField[] G,
             out SinglePhaseField[,] H
             )
@@ -310,21 +448,37 @@ namespace BoSSS.Solution.LevelSetTools
                 // determine which vars we have to filter
                 // ======================================
 
-                bool HessReqAtAll = (surfTenM == SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+                bool HessReqAtAll = (surfTenM == SurfaceStressTensor_IsotropicMode.Curvature_Projected || surfTenM == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint);
 
                 bool FiltLevSetHess_Req = config.useFiltLevSetHess && HessReqAtAll;
                 bool FiltLevSetGrad_Req = config.useFiltLevSetGrad || ((config.hessOpt == HessianOption.FiltLevSetGrad) && HessReqAtAll);
                 bool FiltLevSet_Req = (config.gradOpt == GradientOption.FiltLevSet)
-                                        || ((config.hessOpt == HessianOption.FiltLevSetH) && HessReqAtAll);               
+                                        || ((config.hessOpt == HessianOption.FiltLevSetH) && HessReqAtAll);
+
+
+
+                // Set Up Patch Recovery
+                L2PatchRecovery l2pr = null;
+                if(FiltLevSet_Req || FiltLevSetGrad_Req || FiltLevSetHess_Req || config.FilterCurvatureCycles > 0) {
+                    l2pr = new L2PatchRecovery(patchRecoveryBasis, patchRecoveryBasis, CC, true);
+                }
+                _l2pr = l2pr;
+                
 
                 // Compute Filtered LevelSet
-                SinglePhaseField FiltLevSet = FiltLevSet_Req ? new SinglePhaseField(patchRecoveryBasis) : null;               
+                SinglePhaseField FiltLevSet = FiltLevSet_Req ? new SinglePhaseField(patchRecoveryBasis) : null;
+                
+                if (FiltLevSet_Req) {
+                    FiltLevSet.Clear();
+                    FiltLevSet.AccLaidBack(1.0, LevSet);
+                    PatchRecMultipassFilter(FiltLevSet, config.NoOfPatchRecoverySweeps, l2pr);
+                }
 
 
                 // Compute Gradient
                 SinglePhaseField[] LevSetGrad;
                 SinglePhaseField[] FiltLevSetGrad;
-                ComputeGradient(LevSet, CC, config, D, out LevSetGrad, FiltLevSet, FiltLevSetGrad_Req, out FiltLevSetGrad);
+                ComputeGradient(LevSet, CC, config, D, out LevSetGrad, FiltLevSet, FiltLevSetGrad_Req, out FiltLevSetGrad, l2pr);
 
 
 
@@ -332,7 +486,7 @@ namespace BoSSS.Solution.LevelSetTools
                 SinglePhaseField[,] LevSetHess;
                 SinglePhaseField[,] FiltLevSetHess;
                 if (HessReqAtAll) {
-                    ComputeHessian(LevSet, CC, config, out LevSetHess, out FiltLevSetHess, FiltLevSet, LevSetGrad, FiltLevSetGrad);
+                    ComputeHessian(LevSet, CC, config, out LevSetHess, out FiltLevSetHess, FiltLevSet, LevSetGrad, FiltLevSetGrad, l2pr);
                 } else {
                     LevSetHess = null;
                     FiltLevSetHess = null;
@@ -346,7 +500,7 @@ namespace BoSSS.Solution.LevelSetTools
 
         private static void ComputeGradient(SinglePhaseField LevSet, CellMask CC, FilterConfiguration config, int D,
             out SinglePhaseField[] LevSetGrad, SinglePhaseField FiltLevSet, bool FiltLevSetGrad_Req,
-            out SinglePhaseField[] FiltLevSetGrad) {
+            out SinglePhaseField[] FiltLevSetGrad, L2PatchRecovery l2pr) {
             LevSetGrad = new SinglePhaseField[D];
             FiltLevSetGrad = new SinglePhaseField[D];
 
@@ -379,36 +533,18 @@ namespace BoSSS.Solution.LevelSetTools
                 throw new NotImplementedException();
             }
 
-        }
 
-        public static void ComputeHessian(SinglePhaseField LevSet,
-            out SinglePhaseField[,] LevSetHess)
-        {
-            int D = LevSet.GridDat.SpatialDimension;
-            LevSetHess = new SinglePhaseField[D, D];
-
-            CellMask CC = CellMask.GetFullMask(LevSet.GridDat);
-
-            for (int d1 = 0; d1 < D; d1++)
-            {
-                for (int d2 = 0; d2 < D; d2++)
-                {
-                    //LevSetHess[d1, d2].Clear();
-                    LevSetHess[d1, d2] = new SinglePhaseField(LevSet.Basis, string.Format("H({0},{1})", d1, d2));
-                    LevSetHess[d1, d2].ProjectField(1.0,
-                        delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                            var bffr = MultidimensionalArray.Create(Len, result.GetLength(1), D, D);
-                            LevSet.EvaluateHessian(j0, Len, NS, bffr);
-                            result.Set(bffr.ExtractSubArrayShallow(-1, -1, d1, d2));
-                        }, new CellQuadratureScheme(UseDefaultFactories: true, domain: CC));
-                }
+            for (int d = 0; d < D && FiltLevSetGrad_Req; d++) {
+                FiltLevSetGrad[d] = new SinglePhaseField(LevSetGrad[d].Basis, string.Format("~G({0})", d));
+                FiltLevSetGrad[d].AccLaidBack(1.0, LevSetGrad[d]);
+                PatchRecMultipassFilter(FiltLevSetGrad[d], config.NoOfPatchRecoverySweeps, l2pr);
             }
         }
 
-            private static void ComputeHessian(SinglePhaseField LevSet, CellMask CC, FilterConfiguration config,
+        private static void ComputeHessian(SinglePhaseField LevSet, CellMask CC, FilterConfiguration config,
             out SinglePhaseField[,] LevSetHess, out SinglePhaseField[,] FiltLevSetHess, 
             SinglePhaseField FiltLevSet, SinglePhaseField[] LevSetGrad,
-            SinglePhaseField[] FiltLevSetGrad)
+            SinglePhaseField[] FiltLevSetGrad, L2PatchRecovery l2pr)
         {
             int D = LevSet.GridDat.SpatialDimension;
             LevSetHess = new SinglePhaseField[D, D];
@@ -465,14 +601,216 @@ namespace BoSSS.Solution.LevelSetTools
                 default:
                 throw new NotImplementedException();
             }
-        }    
+            
+
+            for (int d1 = 0; d1 < D && config.useFiltLevSetHess; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    FiltLevSetHess[d1, d2] = new SinglePhaseField(FiltLevSetGrad[d1].Basis, string.Format("~H({0},{1})", d1, d2));
+                    FiltLevSetHess[d1, d2].AccLaidBack(1.0, LevSetHess[d1, d2]);
+                    PatchRecMultipassFilter(FiltLevSetHess[d1, d2], config.NoOfPatchRecoverySweeps, l2pr);
+                }
+            }
+        }
+        public static void ComputeHessian(SinglePhaseField LevSet,
+            out SinglePhaseField[,] LevSetHess) {
+            int D = LevSet.GridDat.SpatialDimension;
+            LevSetHess = new SinglePhaseField[D, D];
+
+            CellMask CC = CellMask.GetFullMask(LevSet.GridDat);
+
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    //LevSetHess[d1, d2].Clear();
+                    LevSetHess[d1, d2] = new SinglePhaseField(LevSet.Basis, string.Format("H({0},{1})", d1, d2));
+                    LevSetHess[d1, d2].ProjectField(1.0,
+                        delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                            var bffr = MultidimensionalArray.Create(Len, result.GetLength(1), D, D);
+                            LevSet.EvaluateHessian(j0, Len, NS, bffr);
+                            result.Set(bffr.ExtractSubArrayShallow(-1, -1, d1, d2));
+                        }, new CellQuadratureScheme(UseDefaultFactories: true, domain: CC));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Computes curvature based on the Laplace-Beltrami Ansatz (some would also call this Stokes theorem).
+        /// </summary>
+        static void LaplaceBeltramiFiltered(LevelSetTracker LsTrk, 
+            SinglePhaseField Curvature,
+            int NoOfCurvaturePCsweeps, 
+            SinglePhaseField[] LevSetGradient,
+            int HMForder) {
+            GridData GridDat = LsTrk.GridDat;
+            int D = GridDat.SpatialDimension;
+            Curvature.Clear();
+            var CC = LsTrk.Regions.GetCutCellMask();
+
+            var CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D));
+            var Params = (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D);
+            var DomName = VariableNames.VelocityVector(D);
+
+            var Bs = new Basis(GridDat, 0);
+            var Bss = new Basis[D];
+            Bss.SetAll(Bs);
+            var map = new UnsetteledCoordinateMapping(Bss);
+
+                       
+
+            // \lineint \vec{s} \dl
+            // ============================
+            var IntgrlOf_CurvTimesNormal = new VectorField<SinglePhaseField>(new SinglePhaseField(Bs), new SinglePhaseField(Bs));
+
+            {
+                XDifferentialOperatorMk2 op = new XDifferentialOperatorMk2(DomName, Params, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
+                for(int d = 0; d < D; d++) {
+                    var H = new CurvatureLaplaceBeltrami_BndLine(0, d, true);
+                    op.SurfaceElementOperator_Ls0.EquationComponents[CodName[d]].Add(H);
+                }
+                op.Commit();
+                                
+                //op.ComputeMatrixEx(LsTrk,
+                //    map, LevSetGradient, map,
+                //    default(MsrMatrix), IntgrlOf_CurvTimesNormal.CoordinateVector, true, 0.0,
+                //    false, LsTrk.GetSpeciesId("A"));
+                XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = op.GetMatrixBuilder(LsTrk, map, LevSetGradient, map);
+                mtxBuilder.time = 0.0;
+                mtxBuilder.ComputeAffine(IntgrlOf_CurvTimesNormal.CoordinateVector);
+            }
+
+            // \oint \vec{n} \dS
+            // ==================================
+
+            var IntgrlOf_Normal = new VectorField<SinglePhaseField>(new SinglePhaseField(Bs), new SinglePhaseField(Bs));
+            {
+                XDifferentialOperatorMk2 qr = new XDifferentialOperatorMk2(DomName, new string[] { "Curvature" }, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
+                for(int d = 0; d < D; d++) {
+                    qr.EquationComponents[CodName[d]].Add(new CurvatureInNormalDirectionAlongLevelSet(0, d, D));
+                }
+                qr.Commit();
+                
+                SinglePhaseField fakeCurvature = new SinglePhaseField(Bs);
+                fakeCurvature.AccConstant(1.0);
+                
+                //qr.ComputeMatrixEx(LsTrk,
+                //    map, new DGField[] { fakeCurvature }, map,
+                //    default(MsrMatrix), IntgrlOf_Normal.CoordinateVector, true, 0.0,
+                //    false, LsTrk.GetSpeciesId("A"));
+                XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = qr.GetMatrixBuilder(LsTrk, map, LevSetGradient, map);
+                mtxBuilder.time = 0.0;
+                mtxBuilder.ComputeAffine(IntgrlOf_CurvTimesNormal.CoordinateVector);
+            }
+
+            // compute mean curvature in each cell
+            // ===================================
+
+            double kappaMin = double.MaxValue, kappaMax = double.MinValue; // maximum and minimum curvature over all cells
+            foreach(var jCell in CC.ItemEnum) {
+                double Int_kappaN1 = IntgrlOf_CurvTimesNormal[0].GetMeanValue(jCell);
+                double Int_kappaN2 = IntgrlOf_CurvTimesNormal[1].GetMeanValue(jCell);
+
+                double Int_N1 = IntgrlOf_Normal[0].GetMeanValue(jCell);
+                double Int_N2 = IntgrlOf_Normal[1].GetMeanValue(jCell);
+
+                double kappa;
+                if(Math.Abs(Int_N1) > 1000 * Math.Abs(Int_N2)) {
+                    kappa = Int_kappaN1 / Int_N1;
+                } else if(Math.Abs(Int_N2) > 1000 * Math.Abs(Int_N1)) {
+                    kappa = Int_kappaN2 / Int_N2;
+                } else {
+                    kappa = 0.5 * (Int_kappaN1 / Int_N1 + Int_kappaN2 / Int_N2);
+                }
+
+
+                Curvature.SetMeanValue(jCell, kappa);
+
+                kappaMin = Math.Min(kappaMin, kappa);
+                kappaMax = Math.Max(kappaMax, kappa);
+            }
+
+
+            // finally, do patch-recovery filtering
+            // ====================================
+
+            for(int deg = 1; deg <= 3; deg++) {
+                if(NoOfCurvaturePCsweeps > 0) {
+                    SinglePhaseField CurvatureRed = new SinglePhaseField(new Basis(Curvature.GridDat, deg), "X");
+                    CurvatureRed.AccLaidBack(1.0, Curvature);
+
+                    var l2pr = new L2PatchRecovery(CurvatureRed.Basis, CurvatureRed.Basis, CC, true);
+                    PatchRecMultipassFilter(CurvatureRed, NoOfCurvaturePCsweeps, l2pr);
+
+                    Curvature.Clear();
+                    Curvature.AccLaidBack(1.0, CurvatureRed);
+                }
+            }
+        }
+
+        
+        private static void PatchRecMultipassFilter(SinglePhaseField F, int NoOfSweeps, L2PatchRecovery l2pr, int[] lim = null) {
+
+            SinglePhaseField F_org = F.CloneAs();
+
+
+            if (lim != null) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // This is the CUrvature limiter  --  one of my GREATEST hacks
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                if (NoOfSweeps == 0)
+                    throw new NotSupportedException("curvature limiter cannot be used when curvature filtering is turned off");
+
+
+                for (int pass = 0; pass < 4; pass++) {
+                    //lim.SetAll(F_org.Basis.Polynomials.GetRow(0).Where(p => p.Degree <= deg).Count());
+
+                    int[] thisLim = lim.CloneAs();
+
+                    if (pass > 0) {
+                        int J = F.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                        for (int j = 0; j < J; j++) {
+                            if (thisLim[j] >= 0)
+                                thisLim[j] += pass;
+                        }
+
+                    }
+
+                    l2pr.notchangeunlim = true;
+                    //for(int i = 0; i <= pass && l2pr.notchangeunlim; i++)
+                    //    LimMod(F.GridDat, thisLim, F.Basis.Degree);
+
+
+                    for (int subpass = 0; subpass < 2; subpass++) {
+                        F_org.Clear();
+                        F_org.Acc(1.0, F);
+                        F.Clear();
+                        l2pr.SetLimiter(thisLim);
+                        l2pr.Perform(F, F_org);
+                    }
+
+
+                }//*/
+
+                l2pr.SetLimiter(null);
+                l2pr.notchangeunlim = false;
+            }
+
+
+            {
+                for (int pass = 0; pass < NoOfSweeps; pass++) {
+                    F_org.Clear();
+                    F_org.Acc(1.0, F);
+                    F.Clear();
+                    l2pr.Perform(F, F_org);
+                }
+            }
+        }
 
         
         /// <summary>
         /// Project Curvature From Hessian and Gradient
         /// </summary>
         /// <remarks>
-        /// see for clarification equations 3.6 (2D) and 4.2 (3D)
+        /// see for clarification equations 3.6 (2D) and 4.2 (3D):
         /// Goldman, Ron. “Curvature Formulas for Implicit Curves and Surfaces.”
         /// Computer Aided Geometric Design, Geometric Modelling and Differential Geometry, 22, no. 7 (October 2005): 632–58.
         /// doi:10.1016/j.cagd.2005.06.005
@@ -568,7 +906,7 @@ namespace BoSSS.Solution.LevelSetTools
                         var GradPhi_d = GradPhi.ExtractSubArrayShallow(-1, -1, d);
                         ooNormGrad.Multiply(1.0, GradPhi_d, GradPhi_d, 1.0, "ik", "ik", "ik");
                     }
-                    ooNormGrad.ApplyAll(x => x > 1e-6 ? 1.0 / Math.Sqrt(x) : 0.0); // prohibit the norm to be very small
+                    ooNormGrad.ApplyAll(x => 1.0 / Math.Sqrt(x));
 
                     // laplacian of phi:
                     for (int d = 0; d < D; d++) {
@@ -625,7 +963,7 @@ namespace BoSSS.Solution.LevelSetTools
 
 
                 },
-                (new CellQuadratureScheme(domain: CC)).SaveCompile(GridDat, _GradPhi[0].Basis.Degree * 2 + 2) // if p(Curvature) = 0, what to do?
+                (new CellQuadratureScheme(domain: CC)).SaveCompile(GridDat, Curvature.Basis.Degree * 3)
                     );
 
 
@@ -891,6 +1229,151 @@ namespace BoSSS.Solution.LevelSetTools
 
             }
         }
+
+
+        // should be moved to XNSEUtils ?
+        /*
+        public static void ProjectSurfaceForce(SurfaceStressTensor_IsotropicMode surfaceTensionMode, double sigma, double cellAggTrsh,
+            LevelSetTracker LsTrk, MultiphaseCellAgglomerator Agglom, MassMatrixFactory massMtxFac,
+            VectorField<SinglePhaseField> levSetGradient, SinglePhaseField Curvature,
+            VectorField<SinglePhaseField> surfaceForce) //
+        {
+
+            //var surfaceTensionMode = config.dntParams.surfTensionMode;
+
+            GridData GridDat = LsTrk.GridDat;
+            int D = GridDat.SpatialDimension;
+
+            var codName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D));
+            var parameters = (new string[] { "Curvature", "NX", "NY", "NZ" }).GetSubVector(0, D + 1);
+            var domName = VariableNames.VelocityVector(D);
+
+            surfaceForce.Clear();
+
+
+            var ParamsList = new List<DGField>();
+            var normals = new SinglePhaseField[D];
+
+
+
+            //dummy Operator Matrix
+            var OpMatrix = new MsrMatrix(surfaceForce.Mapping, surfaceForce.Mapping);
+
+            int HMForder = Agglom.CutCellQuadratureOrder;
+            XDifferentialOperatorMk2 xOp = new XDifferentialOperatorMk2(domName, parameters, codName, (A,B,C) => HMForder, null);
+            if(surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected 
+                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean 
+                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint) {
+
+                
+                for (int d = 0; d<D; d++) {
+                    xOp.EquationComponents[codName[d]].Add(new CurvatureInNormalDirectionAlongLevelSet(d, D, sigma));
+                }
+
+            } else if (surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local
+                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux) {
+
+                for (int d = 0; d < D; d++) {
+                    normals[d] = levSetGradient[d];
+                }
+
+                for (int d = 0; d < D; d++) {
+                    var line = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
+                    var surface = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(line);
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(surface);
+                }
+
+            } else {
+                throw new NotImplementedException(surfaceTensionMode.ToString());
+            }
+
+            ParamsList.Add(Curvature);
+            ParamsList.AddRange(normals);
+
+            xOp.Commit();
+
+
+            //xOp.ComputeMatrixEx(LsTrk,
+            //    surfaceForce.Mapping, ParamsList, surfaceForce.Mapping, 
+            //    OpMatrix, surfaceForce.CoordinateVector, true, 0.0, true,
+            //    LsTrk.SpeciesIdS.ToArray());
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = xOp.GetMatrixBuilder(LsTrk, surfaceForce.Mapping, ParamsList, surfaceForce.Mapping);
+            mtxBuilder.time = 0.0;
+            mtxBuilder.MPITtransceive = true;
+            mtxBuilder.ComputeMatrix(OpMatrix, surfaceForce.CoordinateVector);
+
+            //    SpeciesDictionary, momentFittingVariant, cellAggTrsh, out Agglom);
+            //xOp.Evaluate(1.0,1.0,surfaceForce.Mapping, normals ,surfaceForce.Mapping);
+
+            double[] TotalForce = new double[D];
+            int J = GridDat.Cells.NoOfLocalUpdatedCells;
+            for (int j = 0; j < J; j++) {
+                for (int d = 0; d < D; d++) {
+                    TotalForce[d] += surfaceForce[d].GetMeanValue(j);
+                }
+            }
+
+            Console.WriteLine("Total force: ({0}|{1}).", TotalForce[0], TotalForce[1]);
+
+            Agglom.Extrapolate(surfaceForce.Mapping);
+
+
+            // Project Surface Force from Volume Force to Surface Force -> Mutliply with inverse Surface Mass-Matrix
+
+            var CC = LsTrk.Regions.GetCutCellMask();
+            var gDat = LsTrk.GridDat;
+
+
+            // get quadrature rules
+            // ====================
+            XQuadSchemeHelper H = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), HMForder, 1).XQuadSchemeHelper;
+            CellQuadratureScheme cqs = H.GetLevelSetquadScheme(0, CC);
+            ICompositeQuadRule<QuadRule> surfRule = cqs.Compile(gDat, HMForder);
+
+            // Compute Mass matrix and RHS for the 'strange' projection
+            // ========================================================
+            int L = CC.NoOfItemsLocally;
+            VectorField<SinglePhaseField> buffer = new VectorField<SinglePhaseField>(D, surfaceForce[0].Basis, SinglePhaseField.Factory);
+            buffer.Acc(1.0, surfaceForce);
+            var Q = new QuadratureKernels(buffer, L);
+
+            Q.BlockCnt = 0;
+            CellQuadrature.GetQuadrature(
+                new int[] { Q.Nnx + D, Q.Nnx },
+                gDat,
+                surfRule,
+                Q.Evaluate, Q.SaveIntegrationResults_surf).Execute();
+            Debug.Assert(Q.BlockCnt == L);
+
+
+            // solve the non-diagonal mass matrix systems
+            // ==========================================
+
+            int BlkCnt = 0;
+            foreach (int jCell in CC.ItemEnum) {
+                var LocalMassMatrix = Q.MassMatrix.ExtractSubArrayShallow(BlkCnt, -1, -1);
+                var LocalRHS = Q.RHS.ExtractSubArrayShallow(BlkCnt, -1, -1);
+
+                // Die "Massenmatrix" muss nicht unbedingt invbar sein, daher: Least-Squares solve
+                LocalMassMatrix.LeastSquareSolve(LocalRHS);
+
+                for (int d = 0; d < Q.D; d++) {
+                    for (int n = 0; n < Q.Nnx; n++) {
+                        surfaceForce[d].Coordinates[jCell, n] = LocalRHS[n, d];
+                    }
+                }
+
+                BlkCnt++;
+            }
+#if Debug
+            buffer.Acc(-1.0, surfaceForce);
+            double L2Change = buffer.L2Norm();
+            Console.WriteLine("Multiplication with InverseMassMatrix changed SurfaceForce by {0}", L2Change);
+#endif
+        }
+        */
 
         class QuadratureKernels {
             public QuadratureKernels(VectorField<SinglePhaseField> surfaceVectorField, int L) {

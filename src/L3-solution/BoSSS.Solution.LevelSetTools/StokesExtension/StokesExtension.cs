@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
@@ -8,6 +9,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -330,7 +332,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
 
             // plotting for debug reasons
-            //Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
+            //Console.WriteLine("StokesExtension Plotting enabled!");
+            //Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields.Cat(VelocityAtInterface), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
             //timestepNo++;
         }
     }
