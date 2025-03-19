@@ -84,9 +84,9 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         pMultigrid = 61,
 
-		/// <summary>
-		/// A highly experimental variant of Schur complement designed for saddle point problems, <see cref="AdvancedSolvers.SchurPrecond"/>
-		/// </summary>
+		///// <summary>
+		///// A highly experimental variant of Schur complement designed for saddle point problems, <see cref="AdvancedSolvers.SchurPrecond"/>
+		///// </summary>
 		//SchurPrecond = 71,
 
 		/// <summary>
