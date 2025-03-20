@@ -198,6 +198,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
             bool changed = false;
+            ReInit_TimestepIndex++; // increment first
             // after level-set evolution and for initializing non-signed-distance level set fields
             if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
 
@@ -212,9 +213,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
                 //FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, null);
                 changed = true;
+                ReInit_TimestepIndex = 0; // start counting again after reinit
             }
 
-            ReInit_TimestepIndex++;
+            
             return changed;
         }
     }
