@@ -191,7 +191,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
         public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
     }
 
@@ -256,7 +256,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
         public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
 
         public override IList<string> ArgumentOrdering {

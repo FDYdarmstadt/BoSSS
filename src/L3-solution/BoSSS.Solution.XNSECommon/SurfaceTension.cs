@@ -89,7 +89,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -345,7 +345,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
+            return new IEquationComponent[] { this };
         }
 
         public virtual IList<string> ParameterOrdering {
