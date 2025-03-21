@@ -1,7 +1,9 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers;
@@ -278,9 +280,50 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             //RHSdg.SetV(RHS, 1.0);
             //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
 
+            var AggGrid = CoarseningAlgorithms.CreateSequence(ExtenstionSolVec.Mapping.GridDat, -1);
+            var AggBasis = AggregationGridBasis.CreateSequence(AggGrid, ExtenstionSolVec.Mapping.BasisS);
+            var MultigridOperatorConfig = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[1][];
+            MultigridOperatorConfig[0] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig[ExtenstionSolVec.Mapping.Fields.Count];
+            if (this.fullStokes) {
+                for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
+                    if( i == ExtenstionSolVec.Mapping.Fields.Count - 1) {
+                        MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                            mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.IdMass_DropIndefinite,
+                            VarIndex = new int[] { i },
+                            DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                        };
+                    } else {
+                        MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                            mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            VarIndex = new int[] { i },
+                            DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                        };
+                    }                        
+                }
+            } else {
+                for (int i = 0; i < ExtenstionSolVec.Mapping.Fields.Count; i++) {
+                    MultigridOperatorConfig[0][i] = new BoSSS.Solution.AdvancedSolvers.MultigridOperator.ChangeOfBasisConfig() {
+                        mode = BoSSS.Solution.AdvancedSolvers.MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                        VarIndex = new int[] { i },
+                        DegreeS = new int[] { ExtenstionSolVec.Mapping.Fields[i].Basis.Degree }
+                    };
+                }
+            }                
+            MultigridOperator mgOp = new MultigridOperator(AggBasis, ExtenstionSolVec.Mapping, OpMtx, null, MultigridOperatorConfig, GetBulkOperator());
+
+            var Pre_RHS = RHS.CloneAs();
+            var Pre_Sol = ExtenstionSolVec.CloneAs();
+
+            mgOp.TransformRhsInto(RHS, Pre_RHS, true);
+            mgOp.OperatorMatrix.Solve_Direct(Pre_Sol, Pre_RHS);
+            mgOp.TransformSolFrom(ExtenstionSolVec, Pre_Sol);
+
             // should be replaced by something more sophisticated
-            var Residual = RHS.CloneAs();
-            OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
+            //var Residual = RHS.CloneAs();
+            //var cExtenstionSolVec = ExtenstionSolVec.CloneAs();
+            //OpMtx.Solve_Direct(cExtenstionSolVec, RHS);
+
+            //Console.WriteLine("Difference: {0}", ExtenstionSolVec.L2Dist(cExtenstionSolVec));
 
             // Console.WriteLine("StokesExt Vel L2: " + RHS.L2Norm());
 
