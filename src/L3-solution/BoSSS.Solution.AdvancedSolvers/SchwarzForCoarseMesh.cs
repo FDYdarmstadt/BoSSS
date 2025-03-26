@@ -117,7 +117,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public bool EnableOverlapScaling = true;
         }
 
-
+        bool TaskParallelization = false;
 
         Config m_config = new Config();
 
@@ -655,8 +655,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 int LocalLength = cnt;
-                var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, op.OperatorMatrix.MPI_Comm, i0isLocal: true);
-                return partitioning;
+                //var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, op.OperatorMatrix.MPI_Comm, i0isLocal: true);
+				var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, op_comm, i0isLocal: true);
+				return partitioning;
             }
         }
 
@@ -906,7 +907,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //return (iBlock % (MPIsz - 1)) + 1; // we avoid rank 0, because rank 0 is doing the coarse solve
         }
 
+		enum parallelTask {
+			All,
+			Smoother,
+			Coarse
+		}
+
+        parallelTask myTask;
+
+		MPI_Comm my_comm => sub_comm != null ? sub_comm : op_comm; 
+
+        MPI_Comm sub_comm;
+
+        MPI_Comm op_comm => m_op.OperatorMatrix.MPI_Comm;
+
         MultigridOperator m_op;
+
+        public void SplitCommunicator(int NoOfBlocks) {
+
+			if (NoOfBlocks < m_op.Mapping.MpiSize) {
+                TaskParallelization = true;
+                if (m_op.DgMapping.MpiRank < NoOfBlocks) {
+                    myTask = parallelTask.Smoother;
+                    csMPI.Raw.CommSplit(op_comm, 0, m_op.DgMapping.MpiRank, out sub_comm);
+
+                } else {
+                    myTask = parallelTask.Coarse;
+                    csMPI.Raw.CommSplit(op_comm, 1, m_op.DgMapping.MpiRank, out sub_comm);
+                }
+
+            }
+
+            int newRank;
+            csMPI.Raw.Comm_Rank(my_comm, out newRank);
+			Console.WriteLine($"rank-{m_op.DgMapping.MpiRank} old com={m_op.DgMapping.MPI_Comm.m1} -->> rank -{newRank} in new com={my_comm.m1}, assigned as{myTask}");
+        }
 
         public void Init(MultigridOperator op) {
 #if DEBUG
@@ -917,9 +952,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void InitWithTest(MultigridOperator op, bool doTest) {
-            using (new FuncTrace()) {
+            using (var f = new FuncTrace()) {
                 m_op = op;
-
+                f.StdoutOnAllRanks();
                 
                 //
                 int[] SwzBlkLocal = ComputeSchwarzBlockIndexMETIS(op); // index: local cell index; content: Schwarz block index
@@ -939,8 +974,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                
-                SchwarzBlock[] Blocks = GetCellsFromPart(SwzBlkLocal, NoOfBlocks);
+				SchwarzBlock[] Blocks = GetCellsFromPart(SwzBlkLocal, NoOfBlocks);
 
                 // overlap
                 for (int iBlock = 0; iBlock < Blocks.Length; iBlock++)
@@ -964,15 +998,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
-                
-                //  BlockPartitioning(int LocalLength, IEnumerable<long> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) 
-                var RedistAndIndices = GetRedistributionMatrix(op, SchwarzBlocksGlobal);
+
+                // if there are fewer blocks than processors, it will create two communicator
+                SplitCommunicator(NoOfBlocks);
+
+				//  BlockPartitioning(int LocalLength, IEnumerable<long> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) 
+				var RedistAndIndices = GetRedistributionMatrix(op, SchwarzBlocksGlobal);
 
                 // obtain the part of the matrix which should be solved on this processor via multiplication with the redistribution matrix.
                 var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, op.OperatorMatrix);
 
-                // create the local block solvers
-                m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, metisCellsPerBlockGlobal);
+                LocalBlocks.SaveToTextFileSparseDebug($"d_localBlock.txt");
+				RedistAndIndices.Redist.SaveToTextFileSparseDebug($"d_Redist.txt");
+				op.OperatorMatrix.SaveToTextFileSparseDebug($"d_OpMatrix.txt");
+
+				// create the local block solvers
+				m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, metisCellsPerBlockGlobal);
                 m_BlockSizes = RedistAndIndices.RowIndices.Select(IDXs => IDXs?.Count ?? -12345).ToArray();
 
                 m_comm = new CommunicationStuff(this, op.OperatorMatrix._ColPartitioning, RedistAndIndices.ColIndices);
@@ -1415,24 +1456,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        double[][] RHSblocks;
+        double[][] Xblocks;
+        bool IsXandBComitted = false;
+
+		public void CommitInitialXandB<U, V>(U X, V B)
+            where U : IList<double>
+			where V : IList<double> {
+
+			RHSblocks = AllocBlockMem();
+			Xblocks = AllocBlockMem();
+
+			if (X.MPI_L2NormPow2(m_op.OperatorMatrix.MPI_Comm) == 0.0) {
+				m_comm.CommRHStoBlocks(B, RHSblocks);
+			} else {
+				double[] RES = B.ToArray();
+				m_op.OperatorMatrix.SpMV(-1.0, X, 1.0, RES);
+				m_comm.CommRHStoBlocks(RES, RHSblocks);
+			}
+
+            IsXandBComitted = true;
+		}
 
 
-        public void Solve<U, V>(U X, V B)
+		public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> {
             using (new FuncTrace()) {
-                double[][] RHSblocks = AllocBlockMem();
-                double[][] Xblocks = AllocBlockMem();
 
-                if(X.MPI_L2NormPow2(m_op.OperatorMatrix.MPI_Comm) == 0.0) {
-                    m_comm.CommRHStoBlocks(B, RHSblocks);
-                } else {
-                    double[] RES = B.ToArray();
-                    m_op.OperatorMatrix.SpMV(-1.0, X, 1.0, RES);
-                    m_comm.CommRHStoBlocks(RES, RHSblocks);
-                }
+                if (myTask == parallelTask.Coarse)
+                    throw new AccessViolationException("failed to perform task parallelization");
 
-                for(int iBlock = 0; iBlock < m_BlockSolvers.Length; iBlock++) {
+                if (!IsXandBComitted) 
+                    CommitInitialXandB(X, B);
+
+				for (int iBlock = 0; iBlock < m_BlockSolvers.Length; iBlock++) {
                     if (m_BlockSolvers[iBlock] != null) {
                         m_BlockSolvers[iBlock].Solve(Xblocks[iBlock], RHSblocks[iBlock]);
                         if(m_OverlapScaling != null) {
@@ -1445,11 +1503,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                m_comm.AccBlockSol(X, Xblocks);
+				if (!TaskParallelization)
+					m_comm.AccBlockSol(X, Xblocks);
 
-                this.NoIter++;
+				this.NoIter++;
             }
         }
+
+        public void PropagateBackToOpComm<U>(U X)
+			where U : IList<double> {
+				m_comm.AccBlockSol(X, Xblocks);
+		}
 
         public long UsedMemory() {
             long beits = 0;
