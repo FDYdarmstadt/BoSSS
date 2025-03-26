@@ -424,7 +424,48 @@ namespace MPI.Wrappers {
 
 
 #pragma warning disable 649
-        delegate void _MPI_WAITANY(ref int count, [In, Out] MPI_Request[] array_of_requests, out int index, out MPI_Status status, out int ierr);
+		delegate void _MPI_TEST([In, Out] ref MPI_Request request, out bool flag, [Out] out MPI_Status stat, out int ierr);
+		_MPI_TEST MPI_TEST;
+#pragma warning restore 649
+
+		/// <summary>
+		/// Wrapper for MPI_Test.
+		/// </summary>
+		public void Test(ref MPI_Request request, out bool flag, out MPI_Status status) {
+			using (new MPITracer()) {
+				int ierr;
+				MPI_TEST(ref request, out flag, out status, out ierr);
+				MPIException.CheckReturnCode(ierr);
+				FixMPIStatus(ref status);
+			}
+		}
+
+
+#pragma warning disable 649
+		delegate void _MPI_TESTALL(int count, [In, Out] MPI_Request[] requests, out bool flag, [Out] MPI_Status[] stats, out int ierr);
+		_MPI_TESTALL MPI_TESTALL;
+#pragma warning restore 649
+
+		/// <summary>
+		/// Wrapper for MPI_Testall.
+		/// </summary>
+		public void Testall(ref MPI_Request[] requests, out bool flag, out MPI_Status[] statuses) {
+			using (new MPITracer()) {
+				int ierr;
+				int count = requests.Length;
+				statuses = new MPI_Status[count];
+
+				MPI_TESTALL(count, requests, out flag, statuses, out ierr);
+				MPIException.CheckReturnCode(ierr);
+				for (int i = 0; i < count; i++) {
+					FixMPIStatus(ref statuses[i]);
+				}
+			}
+		}
+
+
+#pragma warning disable 649
+		delegate void _MPI_WAITANY(ref int count, [In, Out] MPI_Request[] array_of_requests, out int index, out MPI_Status status, out int ierr);
         _MPI_WAITANY MPI_WAITANY;
 #pragma warning restore 649
 

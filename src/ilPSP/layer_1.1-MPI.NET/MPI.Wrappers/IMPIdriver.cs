@@ -351,18 +351,33 @@ namespace MPI.Wrappers {
         /// </summary>
         void Cancel(ref MPI_Request r);
 
-
         /// <summary>
-        /// Blocks until one of the operations associated with the active
-        /// requests in the array has completed. If more then one operation is
-        /// enabled and can terminate, one is arbitrarily chosen. Returns in
-        /// index the index of that request in the array and returns in status
-        /// the status of the completing communication. (The array is indexed
-        /// from zero in C, and from one in Fortran.) If the request was
-        /// allocated by a nonblocking communication operation, then it is
-        /// deallocated and the request handle is set to MPI_REQUEST_NULL.
+        /// 
         /// </summary>
-        void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status);
+        /// <param name="request"></param>
+        /// <param name="flag"></param>
+        /// <param name="status"></param>
+        void Test(ref MPI_Request request, out bool flag, out MPI_Status status);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="requests"></param>
+		/// <param name="flag"></param>
+		/// <param name="statuses"></param>
+		void Testall(ref MPI_Request[] requests, out bool flag, out MPI_Status[] statuses);
+
+		/// <summary>
+		/// Blocks until one of the operations associated with the active
+		/// requests in the array has completed. If more then one operation is
+		/// enabled and can terminate, one is arbitrarily chosen. Returns in
+		/// index the index of that request in the array and returns in status
+		/// the status of the completing communication. (The array is indexed
+		/// from zero in C, and from one in Fortran.) If the request was
+		/// allocated by a nonblocking communication operation, then it is
+		/// deallocated and the request handle is set to MPI_REQUEST_NULL.
+		/// </summary>
+		void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status);
 
 
         /// <summary>
