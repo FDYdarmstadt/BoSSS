@@ -145,6 +145,10 @@ namespace ZwoLevelSetSolver {
                 for(int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new EquilibriumContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
                     //opFactory.AddEquation(new EquilibriumContactLine1(d, D, config.physParams.betaL, config.physParams.theta_e));
+                    // GNBC
+                    //if(config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
+                    //    opFactory.AddEquation(new NSEimmersedBoundary_GNBC("A", "B", d, D, config.getPhysParams, 1));
+                    //}
                 }
             }
             //*/
