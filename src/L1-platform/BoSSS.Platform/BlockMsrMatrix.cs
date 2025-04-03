@@ -229,9 +229,19 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public MPI_Comm MPI_Comm {
             get {
-                return m_RowPartitioning.MPI_Comm;
+				return m_effectiveComm ?? m_RowPartitioning.MPI_Comm; ; //return m_RowPartitioning.MPI_Comm;
             }
         }
+
+
+
+		private MPI_Comm? m_effectiveComm;
+
+		public MPI_Comm EffectiveMPI_Comm {
+			get { return m_effectiveComm ?? m_RowPartitioning.MPI_Comm; }
+			set { m_effectiveComm = value; }
+		}
+
 
         /// <summary>
         /// <see cref="RowPartitioning"/>;
@@ -815,6 +825,104 @@ namespace ilPSP.LinSolvers {
 #endif
         }
 
+		/// <summary>
+		/// When communication pattern is changed, this method is called
+		/// </summary>
+		/// <param name="myRank"></param>
+		void InitializeExternalBlocks(int myRank) {
+			m_ExternalBlockIndicesByProcessor = new Dictionary<int, HashSet<long>>();
+			m_ExternalBlock = new BitArray(m_RowPartitioning.LocalNoOfBlocks, false);
+
+			//Debug.Assert(iBlk >= part.FirstBlock && iBlk < part.LocalNoOfBlocks + part.FirstBlock);
+			for (int i = 0; i < m_RowPartitioning.LocalNoOfBlocks; i++) {
+                //long globalBlockIndex = m_RowPartitioning.GetBlockIndex(i);
+                long globalBlockIndex = m_RowPartitioning.FirstBlock + i;
+				int ownerProc = m_RowPartitioning.FindProcessForBlock(globalBlockIndex);
+
+				if (ownerProc != myRank) {
+					if (!m_ExternalBlockIndicesByProcessor.ContainsKey(ownerProc)) {
+						m_ExternalBlockIndicesByProcessor[ownerProc] = new HashSet<long>();
+					}
+					m_ExternalBlockIndicesByProcessor[ownerProc].Add(globalBlockIndex);
+					this.m_ExternalBlock[i] |= true;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Update of <see cref="ReceiveLists"/> and <see cref="SendLists"/>
+		/// </summary>
+		public void ChangeCommPattern(MPI_Comm comm) {
+			MPICollectiveWatchDog.Watch(comm);
+
+            if (comm == this.MPI_Comm)
+                UpdateCommPattern(comm);
+
+            m_effectiveComm = comm; 
+			// hint: MPI_Comm_group & MPI_Group_translate_ranks
+
+			// clear old Lists
+			// ---------------
+			int MpiRank;
+			int MpiSize;
+			csMPI.Raw.Comm_Rank(comm, out MpiRank);
+			csMPI.Raw.Comm_Size(comm, out MpiSize);
+
+            InitializeExternalBlocks(MpiRank);
+
+			if (ReceiveLists != null)
+				ReceiveLists.Clear();
+			else
+				ReceiveLists = new Dictionary<int, long[,]>();
+			if (SendLists != null)
+				SendLists.Clear();
+			else
+				SendLists = new Dictionary<int, long[,]>();
+
+			int[] PeerProcs = m_ExternalBlockIndicesByProcessor.Keys.ToArray();
+
+			// build receive lists
+			// -------------------
+
+			foreach (int ProcRank in PeerProcs) {
+				Debug.Assert(ProcRank != MpiRank);
+				long[,] IdxRange = GetExternalIndexRange(ProcRank);
+				ReceiveLists.Add(ProcRank, IdxRange); //] = GetExternalIndexRange(ProcRank);
+			}
+
+			//foreach (var kv in ReceiveLists) {
+			//    int Trnk = kv.Key;
+			//    int NoOf = kv.Value.GetLength(0);
+			//    Console.WriteLine("P{0} from P{1}: #itms {2}", m_RowPartitioning.MpiRank, Trnk, NoOf);
+			//}
+			//if (ReceiveLists.Count == 0)
+			//    Console.WriteLine("P{0}: nothing to receive.", m_RowPartitioning.MpiRank);
+
+
+
+			// MPI exchange
+			// ------------
+
+			IntBufferExchange(comm, ReceiveLists, out SendLists);
+
+
+			// check
+			// -----
+
+#if DEBUG_EXTENDED
+            foreach (long[,] slist in SendLists.Values) {
+                int L = slist.GetLength(0);
+                Debug.Assert(slist.GetLength(1) == 2);
+                for (int l = 0; l < L; l++) {
+                    long i0 = slist[l, 0];
+                    long iE = slist[l, 1];
+                    Debug.Assert(iE - i0 > 0);
+                    Debug.Assert(m_ColPartitioning.IsInLocalRange(i0));
+                    Debug.Assert(m_ColPartitioning.IsInLocalRange(iE - 1));
+                }
+            }
+#endif
+		}
 
         static void IntBufferExchange(MPI_Comm comm, Dictionary<int, long[,]> Sdata, out Dictionary<int, long[,]> Rdata) {
             int MpiRank;
