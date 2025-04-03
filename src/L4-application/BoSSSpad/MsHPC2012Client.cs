@@ -101,15 +101,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         IScheduler GetInstance() {
-            if ( _Scheduler == null ) {
-                _Scheduler = new Scheduler();
+            if ( this._Scheduler == null ) {
+                this._Scheduler = new Scheduler();
                 try {
-                    _Scheduler.Connect(ServerName);
+                    this._Scheduler.Connect(ServerName);
                 } catch ( Exception ex ) {
                     throw new RuntimeException(ex.Message);
                 }
             }
-            return _Scheduler;
+            return this._Scheduler;
         }
         //[NonSerialized]
         //IScheduler m__scheduler;
