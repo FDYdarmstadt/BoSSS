@@ -106,7 +106,8 @@ namespace BoSSS.Application.BoSSSpad {
                 try {
                     this._Scheduler.Connect(ServerName);
                 } catch ( Exception ex ) {
-                    throw new RuntimeException(ex.Message);
+                    Console.WriteLine(ex.Message);
+                    System.Environment.Exit(1);
                 }
             }
             return this._Scheduler;
