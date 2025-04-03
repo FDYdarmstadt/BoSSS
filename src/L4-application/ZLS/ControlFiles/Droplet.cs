@@ -296,10 +296,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double sigma = 0.1; //0.046;
             C.PhysicalParameters.Sigma = sigma;
 
-            C.PhysicalParameters.betaS_A = 0.00001;
-            C.PhysicalParameters.betaS_B = 0.00001;
+            C.PhysicalParameters.betaS_A = 1e-12;
+            C.PhysicalParameters.betaS_B = 1e-12;
 
-            C.PhysicalParameters.betaL = 0.00001;
+            C.PhysicalParameters.betaL = 1e-12;
             C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
             C.PhysicalParameters.IncludeConvection = true;
@@ -474,7 +474,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control OnIBM(int p = 2, int AMRlvl = 2) {
+        public static ZLS_Control OnIBM(int p = 2, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 2;
@@ -538,7 +538,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.Material = new Solid() {
                 Density = 1000 * scale * scale * scale,
                 Lame2 = 5e2 * scale,
-                Viscosity = 1 * scale
+                Viscosity = 1000 * scale
                 //Viscosity = 0 0.05e-4 * scale,
             };
 
@@ -599,9 +599,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             Func<double[], double> PhiFunc = Phi;
 
+            //double Phi(double[] X) {
+            //    //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
+            //    return (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() -  R * R;
+            //}
+            
             double Phi(double[] X) {
                 //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
-                return (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - 4.0 * R * R;
+                return -(X[0] + 3.0 - 1e-5);
             }
 
 
@@ -650,7 +655,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.MaxSolverIterations = 160;
             C.NonLinearSolver.MinSolverIterations = 2;
             //C.Solver_MaxIterations = 50;
-            //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
             C.NonLinearSolver.Globalization = BoSSS.Solution.AdvancedSolvers.Newton.GlobalizationOption.Dogleg;
@@ -666,11 +671,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
-            //C.AMR_startUpSweeps = AMRlvl;
-            //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 6 });
-            //C.AMR_startUpSweeps = 5;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl });
+            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.AMR_startUpSweeps = AMRlvl;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl });
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
             C.AMR_startUpSweeps = AMRlvl;
 
@@ -690,7 +693,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
 
             C.TimesteppingMode = compMode;
-            double dt = 1;
+            double dt = 10.0 * 1e-3;
             //double dt = 5e-3;
             C.dtMax = dt;
             C.dtMin = dt;
