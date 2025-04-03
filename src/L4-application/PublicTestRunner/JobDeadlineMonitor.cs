@@ -9,13 +9,24 @@ namespace PublicTestRunner {
         public string name;
         public double avgSeconds;
         public double dueMargin;
+        public DateTime lastupdate;
+
+        public JobTimeEntry(string name, double avgSeconds) {
+            this.name = name;
+            this.avgSeconds = avgSeconds;
+            var margin = 1 / Math.Log10(avgSeconds + 1);
+            this.dueMargin = margin;
+            this.lastupdate = DateTime.Now;
+        }
     }
+
     internal class JobDeadlineMonitor {
         private string path;
         private bool shouldUpdateTimes;
         private Dictionary<string, JobTimeEntry> overview;
 
         public JobDeadlineMonitor(string path, bool shouldUpdateTimes = false) {
+
             this.path = path;
             this.shouldUpdateTimes = shouldUpdateTimes;
             this.overview = new Dictionary<string, JobTimeEntry>();
@@ -57,8 +68,7 @@ namespace PublicTestRunner {
         }
 
         public void UpdateEntry(string name, double seconds) {
-            var margin = 1 / Math.Log10(seconds + 1);
-            this.overview[name] = new JobTimeEntry { name = name, avgSeconds = seconds, dueMargin = margin };
+            this.overview[name] = new JobTimeEntry(name, seconds);
         }
 
         public double GetAvgTime(Job job) {
