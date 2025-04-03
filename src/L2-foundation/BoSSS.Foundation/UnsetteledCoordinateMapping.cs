@@ -84,7 +84,7 @@ namespace BoSSS.Foundation {
         }
 
         static int ComputeLength(IEnumerable<Basis> _basis) {
-            if (_basis == null || _basis.Count() <= 0)
+            if (_basis == null || _basis.Count() <= 0 || _basis.ElementAt(0).GridDat.iLogicalCells == null)
                 return 0;
             else 
                 return _basis.Sum(b => b.MaximalLength) * _basis.ElementAt(0).GridDat.iLogicalCells.NoOfLocalUpdatedCells;
