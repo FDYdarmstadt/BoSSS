@@ -2,6 +2,7 @@
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -25,7 +26,10 @@ namespace ilPSP {
             string fileName = Path.GetFileName(a.Location);
             var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
             if(allMatch.Length > 1) {
-                throw new ApplicationException("internal error in assembly collection.");
+                for (int i = 0; i < allMatch.Length; i++) { 
+                    Console.Error.WriteLine($"match {i+1}: {allMatch[i].ToString()} found at {allMatch[i].Location}");
+                } 
+                throw new ApplicationException($"internal error in assembly collection. Found {fileName} more than once");
             }
 
             foreach(AssemblyName b in a.GetReferencedAssemblies()) {

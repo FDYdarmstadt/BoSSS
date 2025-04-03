@@ -82,7 +82,6 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
-                case IncompressibleBcType.Dong_OutFlow:
                 //case IncompressibleBcType.Freestream:
                     // Atmospheric outlet/pressure outlet: inhom. Dirichlet
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -100,7 +99,8 @@ namespace BoSSS.Solution.NSECommon {
                     // hom. Neumann b.c.
                     // +++++++++++++++++
                     return Uin[0] * inp.Normal[m_d];
-  
+                case IncompressibleBcType.Dong_OutFlow:
+                    return 0.0;
                 default:
                     throw new NotImplementedException();
             }

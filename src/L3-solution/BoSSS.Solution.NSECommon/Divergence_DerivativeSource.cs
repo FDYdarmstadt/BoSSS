@@ -150,15 +150,13 @@ namespace BoSSS.Solution.NSECommon {
                 throw new ArithmeticException("Tests on channel flow indicate that b.c. " + edgeType + " is ill-posed, fk 25may16.");
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet:
-                case IncompressibleBcType.Dong_OutFlow: 
                 {
                     FluxInCell = 0.0;
                     break;
                 }
                 case IncompressibleBcType.Wall: // wall and inlet are both Dirichlet conditions w.r.t. velocity
                 case IncompressibleBcType.Velocity_Inlet:
-                case IncompressibleBcType.NavierSlip_Linear:
-                {
+                case IncompressibleBcType.NavierSlip_Linear: {
                     double u_j_In = Uin[0];
                     double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
 
@@ -173,6 +171,11 @@ namespace BoSSS.Solution.NSECommon {
                     double u_j_Out = 0.0;// this.bndFunction[inp.EdgeTag](inp.X, inp.time);
                     FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
                     break;
+                }
+                case IncompressibleBcType.Dong_OutFlow: 
+                {
+                        FluxInCell = 0.0;
+                        break;
                 }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");
