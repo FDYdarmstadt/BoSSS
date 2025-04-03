@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Management.Automation;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -102,7 +103,11 @@ namespace BoSSS.Application.BoSSSpad {
         IScheduler GetInstance() {
             if ( _Scheduler == null ) {
                 _Scheduler = new Scheduler();
-                _Scheduler.Connect(ServerName);
+                try {
+                    _Scheduler.Connect(ServerName);
+                } catch ( Exception ex ) {
+                    throw new RuntimeException(ex.Message);
+                }
             }
             return _Scheduler;
         }
