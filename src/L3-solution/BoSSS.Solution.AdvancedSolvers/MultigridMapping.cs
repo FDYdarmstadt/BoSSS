@@ -185,7 +185,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // create basis for this level
                 // ===========================
                 this.AggBasis = __aggGrdB;
-
+                var comm = __ProblemMapping.MPI_Comm;
                 // min/max length
                 // ==============
                 {
@@ -198,8 +198,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Smin += this.AggBasis[ifld].GetMinimalLength(this.m_DgDegree[ifld]);
                         Smax += this.AggBasis[ifld].GetMaximalLength(this.m_DgDegree[ifld]);
                     }
-                    this.MinimalLength = Smin.MPIMin();
-                    this.MaximalLength = Smax.MPIMax();
+                    this.MinimalLength = Smin.MPIMin(comm);
+                    this.MaximalLength = Smax.MPIMax(comm);
                 }
 
                 // offsets
@@ -225,7 +225,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         BlockLen.Add(S);
                     }
-                    this.Partitioning = new Partitioning(LL);
+                    this.Partitioning = new Partitioning(LL, comm);
                     long i0Part = Partitioning.i0;
                     m_i0 = new int[JAGGtot + 1];
                     for (int jag = 0; jag < JAGGloc; jag++) { // loop over local cells
@@ -233,7 +233,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         __i0Tmp[jag] += i0Part; // convert to global index
                     }
                     m_i0[JAGGloc] = LL;
-                    __i0Tmp.MPIExchange(this.AggGrid);
+                    __i0Tmp.MPIExchange(this.AggGrid, comm);
                     
                     // compute global cell i0's in the external range
                     m_i0_ExtGlob = new long[JAGGtot - JAGGloc];
