@@ -105,14 +105,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
                     }
-                    foundACell = jFound.MPIMax() >= 0;
+                    foundACell = jFound.MPIMax(map.MPI_Comm) >= 0;
                     neighborSearchDepth -= 1;
                 }
 
 
                 jFound += (int)map.GridDat.CellPartitioning.i0;
 
-                long jFoundGlob = jFound.MPIMax();
+                long jFoundGlob = jFound.MPIMax(map.MPI_Comm);
                 if(jFoundGlob < 0)
                     throw new ApplicationException("unable to find reference cell.");
                 return jFoundGlob;
@@ -220,7 +220,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 int originRank = BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell); // on this rank, the 'm_ReferenceIndices' are defined
-                m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(originRank);
+                m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(originRank, map.MPI_Comm);
             }
         }
 
@@ -581,7 +581,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 using(new BlockTrace("FinerLevel", tr)) {
 
                     bool bCheck = (this.FinerLevel != null);
-                    bool bCheckGlob = bCheck.MPIOr();
+                    bool bCheckGlob = bCheck.MPIOr(m_comm);
                     if(bCheck != bCheckGlob)
                         throw new ApplicationException("Inconsistent data structure among MPI processes.");
 
@@ -866,6 +866,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         long[] IndexIntoProblemMapping_Global;
 
+		/// <summary>
+		/// THe MPI_communicator of the current operator (based in mapping)
+		/// </summary>
+		MPI_Comm m_comm => BaseGridProblemMapping.MPI_Comm;
 
         private MultigridOperator(MultigridOperator __FinerLevel, IEnumerable<AggregationGridBasis[]> basisES, UnsetteledCoordinateMapping _pm, IEnumerable<ChangeOfBasisConfig[]> cobc) {
             using (new FuncTrace("MultigridOperator-internalCtor")) {
@@ -873,7 +877,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ArgumentException("At least one multigrid level is required.");
                 }
 
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                csMPI.Raw.Barrier(_pm.MPI_Comm);
                 this.BaseGridProblemMapping = _pm;
                 if (cobc.Count() < 1)
                     throw new ArgumentException();
