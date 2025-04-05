@@ -749,7 +749,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        BlockMsrMatrix m_PrologateOperator = null;
+		/// <summary>
+		/// get the restriction operator for the coarse mesh
+		/// </summary>
+		public BlockMsrMatrix GetRestrictionOperator {
+			get { return m_RestrictionOperator; }
+		}
+
+		/// <summary>
+		/// get the prolongation operator from the coarse to the fine mesh
+		/// </summary>
+		public BlockMsrMatrix GetPrologonationOperator {
+			get { return m_PrologateOperator; }
+		}
+
+		BlockMsrMatrix m_PrologateOperator = null;
         BlockMsrMatrix m_RestrictionOperator = null;
 
         /// <summary>
@@ -871,7 +885,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		MPI_Comm m_comm => BaseGridProblemMapping.MPI_Comm;
 
-        private MultigridOperator(MultigridOperator __FinerLevel, IEnumerable<AggregationGridBasis[]> basisES, UnsetteledCoordinateMapping _pm, IEnumerable<ChangeOfBasisConfig[]> cobc) {
+		private MultigridOperator(MultigridOperator __FinerLevel, IEnumerable<AggregationGridBasis[]> basisES, UnsetteledCoordinateMapping _pm, IEnumerable<ChangeOfBasisConfig[]> cobc) {
             using (new FuncTrace("MultigridOperator-internalCtor")) {
                 if (basisES.Count() <= 0) {
                     throw new ArgumentException("At least one multigrid level is required.");
