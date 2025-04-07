@@ -1280,6 +1280,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				int MPIrnk = opCommRank;
 				int[] part;
+				Dictionary<int, int[]> sendList = new Dictionary<int, int[]>();
 				if (MPIrnk == 0) {
 					int ncon = 1;
 					int edgecut = 0;
@@ -1309,15 +1310,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							options,
 							ref edgecut,
 							part);
+
+
+					List<int>[] cellList = Enumerable.Range(0, NoOfParts)
+								   .Select(_ => new List<int>())
+								   .ToArray();
+
+					for (int i = 0; i < J; i++) {
+                        int targetProc = part[i];
+                        var targetList = cellList[targetProc];
+                        targetList.Add(i);
+					}
+
+
+					for (int proc = 1; proc < NoOfParts; proc++) {
+						sendList.Add(proc, cellList[proc].ToArray());
+					}
+					SerialisationMessenger.ExchangeData(sendList, opComm);
+                    return cellList[0].ToArray();
 				} else {
 					part = null;
+					IDictionary<int, int[]> RcvData = SerialisationMessenger.ExchangeData(sendList, opComm);
+                    Debug.Assert(RcvData.Count <= 1); //none or maximum one list
+                    RcvData.TryGetValue(0, out int[] partLoc);
+                    return partLoc;
 				}
 
+
+
+
+				//part.MPIBroadcast(0, opComm);
+				//var partLoc = part.Select((value, index) => new { value, index })
+				//         .Where(x => x.value == opCommRank)
+				//         .Select(x => x.index)
+				//         .ToArray();
+
+
+
 				// scatter back to processors
-				int MPIsz = opCommSize;
-				int[] sendCount = MPIsz.ForLoop(r => MGMapping.AggGrid.CellPartitioning.GetLocalLength(r));
-				var partLoc = part.MPIScatterv(sendCount, 0, opComm);
-				return partLoc;
+				//int MPIsz = opCommSize;
+				//int[] sendCount = MPIsz.ForLoop(r => MGMapping.AggGrid.CellPartitioning.GetLocalLength(r));
+				//var partLoc = part.MPIScatterv(sendCount, 0, opComm);
+				//return partLoc;
 			}
 		}
 
