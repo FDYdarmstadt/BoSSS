@@ -434,7 +434,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            var R = new CoreOrthonormalizationProcedure(this.OpMatrix);
+            var R = new CoreOrthonormalizationProcedureTP(this.OpMatrix);
             R.Alphas.AddRange(this.Alphas);
             R.CancellationTriggered = this.CancellationTriggered;
             R.Diagonal = this.Diagonal?.CloneAs();
@@ -595,6 +595,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// defines the problem matrix
         /// </summary>
         public void Init(IOperatorMappingPair op) {
+            if (opCommRestrictionOperator == null || opCommProlongationOperator == null)
+                throw new ArgumentException("Restriction and prolongation operator not set. Are you sure that the operator is called correctly?");
+
             InitImpl(op);
         }
 
@@ -602,10 +605,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// defines the problem matrix
         /// </summary>
         public void Init(MultigridOperator op) {
+			opCommRestrictionOperator = op.GetRestrictionOperator;
+			opCommProlongationOperator = op.GetPrologonationOperator;
+			opLeftChangeOfBasisMatrix = op.LeftChangeOfBasis;
+			opRightChangeOfBasisMatrix = op.RightChangeOfBasis;
+
+            if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
+                throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
+
             InitImpl(op);
 
         }
 
+		BlockMsrMatrix opCommRestrictionOperator = null;
+		BlockMsrMatrix opCommProlongationOperator = null;
+		BlockMsrMatrix opLeftChangeOfBasisMatrix = null;
+		BlockMsrMatrix opRightChangeOfBasisMatrix = null;
 
         CoreOrthonormalizationProcedureTP ortho;
 
