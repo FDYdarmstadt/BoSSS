@@ -598,7 +598,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (opCommRestrictionOperator == null || opCommProlongationOperator == null)
                 throw new ArgumentException("Restriction and prolongation operator not set. Are you sure that the operator is called correctly?");
 
-            InitImpl(op);
+			InitImpl(op);
         }
 
         /// <summary>
@@ -613,7 +613,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
                 throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-            InitImpl(op);
+			InitImpl(op);
         }
 
         public void CommitCoarseningOperators(BlockMsrMatrix restrictionOperator, BlockMsrMatrix prolongationOperator) {
@@ -622,14 +622,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return;
 			// nothing to do
-        }
+		}
+		// ? a stack of restriction operators for coarse levels ?
 
 		BlockMsrMatrix opCommRestrictionOperator = null;
 		BlockMsrMatrix opCommProlongationOperator = null;
 		BlockMsrMatrix opLeftChangeOfBasisMatrix = null;
 		BlockMsrMatrix opRightChangeOfBasisMatrix = null;
 
-        CoreOrthonormalizationProcedureTP ortho;
+		CoreOrthonormalizationProcedureTP ortho;
 
 		private int? m_NoOfCoarseProcs;
 		private int? m_NoOfSmootherProcs;
@@ -653,7 +654,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 
-        int GetNumberOfCoarseBlocks() {
+		int GetNumberOfCoarseBlocks() {
             return opCommSize / 4;
 		}
 
@@ -678,6 +679,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int NoOfCoarseBlocks = GetNumberOfCoarseBlocks();
                 SplitCommunicator(NoOfCoarseBlocks);
+                CommitCoarseningOperators(opCommRestrictionOperator, opCommProlongationOperator);
+                CreateCoarseOpMatrix();
 
 				// set operator
 				// ============
@@ -737,11 +740,139 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (MgMap is MultigridMapping mapping) {
 
                 var distForSmoother = DistributeMapping(mapping, NoOfSmootherProcs);
-                var distForCoarse = DistributeMapping(mapping, NoOfCoarseProcs);
+                var GlobDOFsindexes = CellIndexToDOFs(mapping, distForSmoother);
+                var ResDist = GetRedistributionMatrix(mapping, GlobDOFsindexes);
+
+                ResDist.Redist.SaveToTextFileSparseDebug("toprakTest");
+
+				var distForCoarse = DistributeMapping(mapping, NoOfCoarseProcs);
             } else {
                 throw new NotImplementedException();
             }
 		}
+
+		(long i0Cell, int lenCell)[] CellIndexToDOFs(MultigridMapping map, int[] localCellIndices) {
+			IGridData g = map.AggGrid;
+			int NoOfCells = localCellIndices.Length;
+			int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+			Debug.Assert(J == NoOfCells); // 
+
+			long j0 = g.CellPartitioning.i0;
+			long[] gIdxExt = g.iParallel.GlobalIndicesExternalCells;
+
+			long[] jGlobal = new long[NoOfCells];
+			long[] i0Cell = new long[NoOfCells];
+			int[] lenCell = new int[NoOfCells];
+
+			for (int i = 0; i < J; i++) {
+                int jCellLoc = i; // localCellIndices[i];
+
+				long jCellGlob;
+				if (jCellLoc < J)
+					jCellGlob = jCellLoc + j0;
+				else
+					jCellGlob = gIdxExt[jCellLoc - J];
+
+				jGlobal[i] = jCellGlob;
+				//Temp[i] = (map.GlobalUniqueIndex(0, jCellLoc, 0), map.GetLength(jCellLoc));
+				i0Cell[i] = map.GetCellI0(jCellLoc);
+				lenCell[i] = map.GetLength(jCellLoc);
+			}
+
+
+			// Sanitize
+
+			// concat all blocks
+			// =================
+			var helperIdx = new List<int>();
+				jGlobal = jGlobal.Cat(jGlobal);
+				for (int i = 0; i < jGlobal.Length; i++)
+					helperIdx.Add(i);
+
+
+
+			// sort and remove duplicates
+			// ==========================
+
+			// Note: duplicates might have been added due to Schwarz block overlap into ghost cells.
+
+			var _hleperIdx = helperIdx.ToArray();
+			Array.Sort(jGlobal, _hleperIdx);
+
+			var finalBlock = new List<(long i0Global, int CellLen)>();
+			for (int i = 0; i < jGlobal.Length; i++) {
+				var idx = _hleperIdx[i];
+				if (finalBlock.Count > 0) {
+					if (jGlobal[i] == jGlobal[i - 1])
+						continue; // duplicate cell found
+					Debug.Assert(i0Cell[idx] >= finalBlock[finalBlock.Count - 1].i0Global + finalBlock[finalBlock.Count - 1].CellLen, "Cell start indices not in strictly ascending order");
+				}
+				if (lenCell[idx] <= 0)
+					continue; // empty cell
+
+				finalBlock.Add((i0Cell[idx], lenCell[idx]));
+
+			}
+
+			return finalBlock.ToArray();
+		}
+
+		private (BlockMsrMatrix Redist, List<long> RowIndices, List<long> ColIndices) GetRedistributionMatrix(MultigridMapping mapping, (long i0Global, int CellLen)[] SchwarzBlocksGlobal) {
+			using (new FuncTrace()) {
+
+				BlockPartitioning TargetPartitioning = GetPartitioning(SchwarzBlocksGlobal);
+				BlockMsrMatrix RedistMatrix = new BlockMsrMatrix(TargetPartitioning, mapping);
+                List<long> RowIndices = new List<long>(); ; 
+                List<long> ColIndices= new List<long>(); ; 
+				{
+					int cnt = 0;
+						if (SchwarzBlocksGlobal != null && SchwarzBlocksGlobal.Length > 0) {
+							int NoCells = SchwarzBlocksGlobal.Length;
+
+							for (int j = 0; j < NoCells; j++) {
+								//int Len = part.lenCell[j];
+								int Len = SchwarzBlocksGlobal[j].CellLen;
+								long i0Row = TargetPartitioning.i0 + cnt;
+								long i0Col = SchwarzBlocksGlobal[j].i0Global;   //part.i0Cell[j];
+
+								RedistMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
+
+								for (int k = 0; k < Len; k++) {
+									RowIndices.Add(i0Row + k);
+									ColIndices.Add(i0Col + k);
+								}
+
+								cnt += Len;
+							}
+						}
+
+
+					
+				}
+
+#if DEBUG
+				{
+						if (RowIndices != null) {
+
+							int L = RowIndices.Count;
+							for (int l = 0; l < L; l++) {
+								if (l > 0) {
+									Debug.Assert(RowIndices[l] > RowIndices[l - 1], "Error, Row indexing is not strictly increasing for some reason.");
+									Debug.Assert(ColIndices[l] > ColIndices[l - 1], "Error, Column indexing is not strictly increasing for some reason.");
+								}
+							}
+
+						}
+
+					
+				}
+#endif
+
+
+				return (RedistMatrix, RowIndices, ColIndices);
+			}
+		}
+
 
 		class SchwarzBlock {
 			public int iOriginRank = -21313; // rank on which the block was assembled.
@@ -1110,150 +1241,150 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 
-		IOperatorMappingPair ReInitImpl(IOperatorMappingPair op, MPI_Comm newComm) {
-            Console.WriteLine($"Op Rank={GetRank(opComm)} and Sub Rank={GetRank(subComm)}");
-            var oldMapping = op.DgMapping;
-            int NoOfBlocks = 2;
-			int[] NewRanks = ComputeSchwarzBlockIndexMETIS((MultigridOperator)m_OpMapPair, 2);
+        //IOperatorMappingPair ReInitImpl(IOperatorMappingPair op, MPI_Comm newComm) {
+        //    Console.WriteLine($"Op Rank={GetRank(opComm)} and Sub Rank={GetRank(subComm)}");
+        //    var oldMapping = op.DgMapping;
+        //    int NoOfBlocks = 2;
+        //    int[] NewRanks = ComputeSchwarzBlockIndexMETIS((MultigridOperator)m_OpMapPair, 2);
 
-			int[] metisCellsPerBlockGlobal;
-			{
-				var metisCellsPerBlockLocal = new int[NoOfBlocks];
-				foreach (int iBlk in NewRanks) {
-					metisCellsPerBlockLocal[iBlk]++;
-				}
+        //    int[] metisCellsPerBlockGlobal;
+        //    {
+        //        var metisCellsPerBlockLocal = new int[NoOfBlocks];
+        //        foreach (int iBlk in NewRanks) {
+        //            metisCellsPerBlockLocal[iBlk]++;
+        //        }
 
-				metisCellsPerBlockGlobal = metisCellsPerBlockLocal.MPISum();
-			}
+        //        metisCellsPerBlockGlobal = metisCellsPerBlockLocal.MPISum();
+        //    }
 
-			op.OperatorMatrix.SaveToTextFileSparseDebug($"i_OpMatrix.txt");
-			op.OperatorMatrix.SaveToTextFileSparse($"i_OpMatrixc.txt");
+        //    op.OperatorMatrix.SaveToTextFileSparseDebug($"i_OpMatrix.txt");
+        //    op.OperatorMatrix.SaveToTextFileSparse($"i_OpMatrixc.txt");
 
-			var Blocks = NoOfBlocks.ForLoop(iBlck => new SchwarzBlock() { iBlock = iBlck });
-			int L = NewRanks.Length;
-			for (int j = 0; j < L; j++) {
-				Blocks[NewRanks[j]].jLocal.Add(j);
-			}
-
-
-			if (oldMapping is MultigridMapping oldMultigridMapping && op is MultigridOperator mg_op) {
-				for (int i = 0; i < Blocks.Length; i++) {
-					Blocks[i].iOwnerProc = GetBlockOwnerRank(i);
-					Blocks[i] = GetBlockPartProperties(Blocks[i], mg_op.Mapping);
-				}
-
-				var SchwarzBlocksGlobal = SanitizeSchwarzBlocks(ExchangeBlocks(Blocks, mg_op), mg_op);
+        //    var Blocks = NoOfBlocks.ForLoop(iBlck => new SchwarzBlock() { iBlock = iBlck });
+        //    int L = NewRanks.Length;
+        //    for (int j = 0; j < L; j++) {
+        //        Blocks[NewRanks[j]].jLocal.Add(j);
+        //    }
 
 
-				var RedistAndIndices = GetRedistributionMatrix(mg_op, SchwarzBlocksGlobal);
-                var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, op.OperatorMatrix);
-				RedistAndIndices.RowIndices.ForEach(d => {
-					if (d != null)
-						d.SaveToTextFileDebugUnsteady("oRedistAndIndices.RowIndices", ".txt");
-				});
-				RedistAndIndices.ColIndices.ForEach(d => {
-					if (d != null)
-						d.SaveToTextFileDebugUnsteady("oRedistAndIndices.ColIndices", ".txt");
-				});
+        //    if (oldMapping is MultigridMapping oldMultigridMapping && op is MultigridOperator mg_op) {
+        //        for (int i = 0; i < Blocks.Length; i++) {
+        //            Blocks[i].iOwnerProc = GetBlockOwnerRank(i);
+        //            Blocks[i] = GetBlockPartProperties(Blocks[i], mg_op.Mapping);
+        //        }
 
-				LocalBlocks.SaveToTextFileSparseDebug($"d_localBlock.txt");
-                LocalBlocks.SaveToTextFileSparse($"d_localBlock.txt");
-				RedistAndIndices.Redist.SaveToTextFileSparseDebug($"d_Redist.txt");
-				RedistAndIndices.Redist.SaveToTextFileSparse($"d_Redist.txt");
-				op.OperatorMatrix.SaveToTextFileSparseDebug($"d_OpMatrix.txt");
-				op.OperatorMatrix.SaveToTextFileSparse($"d_OpMatrixc.txt");
-
-				LocalBlocks.ChangeCommPattern(newComm);
+        //        var SchwarzBlocksGlobal = SanitizeSchwarzBlocks(ExchangeBlocks(Blocks, mg_op), mg_op);
 
 
+        //        var RedistAndIndices = GetRedistributionMatrix(mg_op, SchwarzBlocksGlobal);
+        //        var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, op.OperatorMatrix);
+        //        RedistAndIndices.RowIndices.ForEach(d => {
+        //            if (d != null)
+        //                d.SaveToTextFileDebugUnsteady("oRedistAndIndices.RowIndices", ".txt");
+        //        });
+        //        RedistAndIndices.ColIndices.ForEach(d => {
+        //            if (d != null)
+        //                d.SaveToTextFileDebugUnsteady("oRedistAndIndices.ColIndices", ".txt");
+        //        });
 
-				var m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, metisCellsPerBlockGlobal);
+        //        LocalBlocks.SaveToTextFileSparseDebug($"d_localBlock.txt");
+        //        LocalBlocks.SaveToTextFileSparse($"d_localBlock.txt");
+        //        RedistAndIndices.Redist.SaveToTextFileSparseDebug($"d_Redist.txt");
+        //        RedistAndIndices.Redist.SaveToTextFileSparse($"d_Redist.txt");
+        //        op.OperatorMatrix.SaveToTextFileSparseDebug($"d_OpMatrix.txt");
+        //        op.OperatorMatrix.SaveToTextFileSparse($"d_OpMatrixc.txt");
 
-
-                List<AggregationGridBasis[]> leveledBases = new List<AggregationGridBasis[]>();
-                List<MultigridOperator.ChangeOfBasisConfig[]> leveledConfigs = new List<MultigridOperator.ChangeOfBasisConfig[]>();
-
-                var problemMapping = oldMultigridMapping.ProblemMapping;
-                var basis = oldMultigridMapping.AggBasis;
-                var grid = oldMultigridMapping.AggGrid;
+        //        LocalBlocks.ChangeCommPattern(newComm);
 
 
 
-
-				Debugger.Launch();
-                grid.Grid.RedistributeGrid(NewRanks);
-                var CoordinateMapping = new UnsetteledCoordinateMapping(grid, basis, newComm);
-
-                for (var mo = mg_op; mo != null; mo = mo.CoarserLevel) {
-
-                    leveledBases.Add(mo.Mapping.AggBasis);
-                    leveledConfigs.Add(mo.Config);
-                }
-
-				MultigridOperator newOp = null;
-
-				if (GetRank(opComm) < 2)
-					newOp = new MultigridOperator(leveledBases, CoordinateMapping, m_BlockSolvers[GetRank(opComm)], null, leveledConfigs, null);
-     //           else
-					//newOp = new MultigridOperator(leveledBases, CoordinateMapping, op.OperatorMatrix, null, leveledConfigs, null);
-
-				return newOp;
-            }
-
-            //oldMapping.AggBas
-
-            return null;
-        }
-
-        private (BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices) GetRedistributionMatrix(MultigridOperator op, (long i0Global, int CellLen)[][] SchwarzBlocksGlobal) {
-			using (new FuncTrace()) {
-				int NoOfBlocks = SchwarzBlocksGlobal.Length;
-
-				BlockPartitioning TargetPartitioning = GetPartitioning(SchwarzBlocksGlobal, op);
-				BlockMsrMatrix RedistMatrix = new BlockMsrMatrix(TargetPartitioning, op.OperatorMatrix._RowPartitioning);
-				var RowIndices = new List<long>[NoOfBlocks];
-				var ColIndices = new List<long>[NoOfBlocks];
-				{
-					int cnt = 0;
-					for (int iBlk = 0; iBlk < NoOfBlocks; iBlk++) {
-						var SchwarzBlock_iBlk = SchwarzBlocksGlobal[iBlk];
-						if (SchwarzBlock_iBlk != null && SchwarzBlock_iBlk.Length > 0) {
-
-							int NoCells = SchwarzBlock_iBlk.Length;
-							if (NoCells > 0 && RowIndices[iBlk] == null) {
-								RowIndices[iBlk] = new List<long>();
-								ColIndices[iBlk] = new List<long>();
-							}
-
-							for (int j = 0; j < NoCells; j++) {
-								//int Len = part.lenCell[j];
-								int Len = SchwarzBlock_iBlk[j].CellLen;
-								long i0Row = TargetPartitioning.i0 + cnt;
-								long i0Col = SchwarzBlock_iBlk[j].i0Global;   //part.i0Cell[j];
-
-								RedistMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
-
-								for (int k = 0; k < Len; k++) {
-									RowIndices[iBlk].Add(i0Row + k);
-									ColIndices[iBlk].Add(i0Col + k);
-								}
-
-								cnt += Len;
-							}
-						}
+        //        var m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, metisCellsPerBlockGlobal);
 
 
-					}
-				}
-				return (RedistMatrix, RowIndices, ColIndices);
-			}
-		}
+        //        List<AggregationGridBasis[]> leveledBases = new List<AggregationGridBasis[]>();
+        //        List<MultigridOperator.ChangeOfBasisConfig[]> leveledConfigs = new List<MultigridOperator.ChangeOfBasisConfig[]>();
+
+        //        var problemMapping = oldMultigridMapping.ProblemMapping;
+        //        var basis = oldMultigridMapping.AggBasis;
+        //        var grid = oldMultigridMapping.AggGrid;
+
+
+
+
+        //        Debugger.Launch();
+        //        grid.Grid.RedistributeGrid(NewRanks);
+        //        var CoordinateMapping = new UnsetteledCoordinateMapping(grid, basis, newComm);
+
+        //        for (var mo = mg_op; mo != null; mo = mo.CoarserLevel) {
+
+        //            leveledBases.Add(mo.Mapping.AggBasis);
+        //            leveledConfigs.Add(mo.Config);
+        //        }
+
+        //        MultigridOperator newOp = null;
+
+        //        if (GetRank(opComm) < 2)
+        //            newOp = new MultigridOperator(leveledBases, CoordinateMapping, m_BlockSolvers[GetRank(opComm)], null, leveledConfigs, null);
+        //        //           else
+        //        //newOp = new MultigridOperator(leveledBases, CoordinateMapping, op.OperatorMatrix, null, leveledConfigs, null);
+
+        //        return newOp;
+        //    }
+
+        //    //oldMapping.AggBas
+
+        //    return null;
+        //}
+
+  //      private (BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices) GetRedistributionMatrix(MultigridOperator op, (long i0Global, int CellLen)[][] SchwarzBlocksGlobal) {
+		//	using (new FuncTrace()) {
+		//		int NoOfBlocks = SchwarzBlocksGlobal.Length;
+
+		//		BlockPartitioning TargetPartitioning = GetPartitioning(SchwarzBlocksGlobal, op);
+		//		BlockMsrMatrix RedistMatrix = new BlockMsrMatrix(TargetPartitioning, op.OperatorMatrix._RowPartitioning);
+		//		var RowIndices = new List<long>[NoOfBlocks];
+		//		var ColIndices = new List<long>[NoOfBlocks];
+		//		{
+		//			int cnt = 0;
+		//			for (int iBlk = 0; iBlk < NoOfBlocks; iBlk++) {
+		//				var SchwarzBlock_iBlk = SchwarzBlocksGlobal[iBlk];
+		//				if (SchwarzBlock_iBlk != null && SchwarzBlock_iBlk.Length > 0) {
+
+		//					int NoCells = SchwarzBlock_iBlk.Length;
+		//					if (NoCells > 0 && RowIndices[iBlk] == null) {
+		//						RowIndices[iBlk] = new List<long>();
+		//						ColIndices[iBlk] = new List<long>();
+		//					}
+
+		//					for (int j = 0; j < NoCells; j++) {
+		//						//int Len = part.lenCell[j];
+		//						int Len = SchwarzBlock_iBlk[j].CellLen;
+		//						long i0Row = TargetPartitioning.i0 + cnt;
+		//						long i0Col = SchwarzBlock_iBlk[j].i0Global;   //part.i0Cell[j];
+
+		//						RedistMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
+
+		//						for (int k = 0; k < Len; k++) {
+		//							RowIndices[iBlk].Add(i0Row + k);
+		//							ColIndices[iBlk].Add(i0Col + k);
+		//						}
+
+		//						cnt += Len;
+		//					}
+		//				}
+
+
+		//			}
+		//		}
+		//		return (RedistMatrix, RowIndices, ColIndices);
+		//	}
+		//}
 		int[] GetNoOfSpeciesList(MultigridMapping Map) {
 
 			int J = Map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 			int[] NoOfSpecies = new int[J];
 
-			XdgAggregationBasis xb = (XdgAggregationBasis)(op.Mapping.AggBasis.FirstOrDefault(b => b is XdgAggregationBasis));
+			XdgAggregationBasis xb = (XdgAggregationBasis)(Map.AggBasis.FirstOrDefault(b => b is XdgAggregationBasis));
 
 			if (xb != null) {
 				for (int jCell = 0; jCell < J; jCell++) {
@@ -1262,7 +1393,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			} else {
 				NoOfSpecies.SetAll(1);
 			}
-
+            
 			// MPI gather on rank 0
 			int MPIsz = opCommSize;
 			int[] rcvCount = MPIsz.ForLoop(r => Map.AggGrid.CellPartitioning.GetLocalLength(r));
@@ -1295,7 +1426,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					part = new int[J];
 					Debug.Assert(xadj.Where(idx => idx > adjncy.Length).Count() == 0);
 					Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
-	
+
 					METIS.PARTGRAPHKWAY(
 							ref J, ref ncon,
 							xadj,
@@ -1586,37 +1717,61 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[][] SchwarzBlocksGlobal, MultigridOperator op) {
+		//BlockPartitioning GetPartitioning((long i0Global, int CellLen)[][] SchwarzBlocksGlobal) {
+		//	using (new FuncTrace()) {
+		//		var LnCell = new List<int>();
+		//		var i0Cell = new List<long>();
+
+		//		int cnt = 0;
+
+		//		int NoOfBlocks = SchwarzBlocksGlobal.Length;
+
+		//		for (int iBlk = 0; iBlk < NoOfBlocks; iBlk++) {
+		//			var SchwarzBlock_iBlk = SchwarzBlocksGlobal[iBlk];
+		//			if (SchwarzBlock_iBlk != null && SchwarzBlock_iBlk.Length > 0) {
+
+		//				{
+		//					{// foreach (var part in SchwarzBlock_iBlk) {
+		//						int NoCells = SchwarzBlock_iBlk.Length;// part.jGlobal.Length;
+		//						for (int j = 0; j < NoCells; j++) {
+		//							int Len = SchwarzBlock_iBlk[j].CellLen; // part.lenCell[j];
+
+		//							i0Cell.Add(cnt);
+		//							LnCell.Add(Len);
+		//							cnt += Len;
+		//						}
+		//					}
+		//				}
+		//			}
+		//		}
+
+		//		int LocalLength = cnt;
+
+		//		var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, opComm, i0isLocal: true);
+		//		return partitioning;
+		//	}
+		//}
+
+		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] SchwarzBlock_iBlk) {
 			using (new FuncTrace()) {
 				var LnCell = new List<int>();
 				var i0Cell = new List<long>();
 
 				int cnt = 0;
 
-				int NoOfBlocks = SchwarzBlocksGlobal.Length;
+				if (SchwarzBlock_iBlk != null && SchwarzBlock_iBlk.Length > 0) {
+					int NoCells = SchwarzBlock_iBlk.Length;// part.jGlobal.Length;
+					for (int j = 0; j < NoCells; j++) {
+						int Len = SchwarzBlock_iBlk[j].CellLen; // part.lenCell[j];
 
-				for (int iBlk = 0; iBlk < NoOfBlocks; iBlk++) {
-					var SchwarzBlock_iBlk = SchwarzBlocksGlobal[iBlk];
-					if (SchwarzBlock_iBlk != null && SchwarzBlock_iBlk.Length > 0) {
-
-						{
-							{// foreach (var part in SchwarzBlock_iBlk) {
-								int NoCells = SchwarzBlock_iBlk.Length;// part.jGlobal.Length;
-								for (int j = 0; j < NoCells; j++) {
-									int Len = SchwarzBlock_iBlk[j].CellLen; // part.lenCell[j];
-
-									i0Cell.Add(cnt);
-									LnCell.Add(Len);
-									cnt += Len;
-								}
-							}
-						}
+						i0Cell.Add(cnt);
+						LnCell.Add(Len);
+						cnt += Len;
 					}
 				}
 
 				int LocalLength = cnt;
-
-				var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, op.OperatorMatrix.MPI_Comm, i0isLocal: true);
+				var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, subComm, i0isLocal: true);
 				return partitioning;
 			}
 		}
@@ -1628,7 +1783,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //throw new NotSupportedException("Missing coarse level solver.");
                     tr.Info("OrthonormalizationMultigrid: running without coarse solver.");
                 } else {
-                    if (op is MultigridOperator mgOp) {
+                    if (op is MultigridOperator mgOp) { // the first call
                         if (myConfig.CoarseOnLowerLevel && mgOp.CoarserLevel != null) {
                             this.CoarserLevelSolver.Init(mgOp.CoarserLevel);
                         } else {
