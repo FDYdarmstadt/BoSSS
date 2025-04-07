@@ -614,7 +614,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
             InitImpl(op);
+        }
 
+        public void CommitCoarseningOperators(BlockMsrMatrix restrictionOperator, BlockMsrMatrix prolongationOperator) {
+            if (myTask == parallelTask.Smoother)
+                return;
+
+            return;
+			// nothing to do
         }
 
 		BlockMsrMatrix opCommRestrictionOperator = null;
@@ -623,6 +630,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		BlockMsrMatrix opRightChangeOfBasisMatrix = null;
 
         CoreOrthonormalizationProcedureTP ortho;
+
+		private int? m_NoOfCoarseProcs;
+		private int? m_NoOfSmootherProcs;
+
+		public int NoOfCoarseProcs {
+			get => m_NoOfCoarseProcs ?? throw new InvalidOperationException("Value not yet assigned.");
+			set {
+				if (m_NoOfCoarseProcs.HasValue)
+					throw new InvalidOperationException("Value already assigned and cannot be changed.");
+				m_NoOfCoarseProcs = value;
+			}
+		}
+
+		public int NoOfSmootherProcs {
+			get => m_NoOfSmootherProcs ?? throw new InvalidOperationException("Value not yet assigned.");
+			set {
+				if (m_NoOfSmootherProcs.HasValue)
+					throw new InvalidOperationException("Value already assigned and cannot be changed.");
+				m_NoOfSmootherProcs = value;
+			}
+		}
+
 
         int GetNumberOfCoarseBlocks() {
             return opCommSize / 4;
@@ -685,6 +714,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             }
         }
+
+		ICoordinateMapping MgMap => m_OpMapPair.DgMapping;
+
+
+        void CreateCoarseOpMatrix() {
+			using (var tr = new FuncTrace()) {
+				//if (opCommRestrictionOperator == null || opCommProlongationOperator == null)
+				//	throw new ArgumentException("Restriction and prolongation operator not set. Are you sure that the operator is called correctly?");
+
+                //mapping
+                ChangeCommunicators();
+				// 
+
+
+				// create coarse level
+				// ===================
+				//m_OpMapPair = new OperatorMappingPair(opCommRestrictionOperator, opCommProlongationOperator, opLeftChangeOfBasisMatrix, opRightChangeOfBasisMatrix);
+			}
+		}
+		void ChangeCommunicators() {
+            if (MgMap is MultigridMapping mapping) {
+
+                var distForSmoother = DistributeMapping(mapping, NoOfSmootherProcs);
+                var distForCoarse = DistributeMapping(mapping, NoOfCoarseProcs);
+            } else {
+                throw new NotImplementedException();
+            }
+		}
+
 		class SchwarzBlock {
 			public int iOriginRank = -21313; // rank on which the block was assembled.
 
@@ -1190,9 +1248,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				return (RedistMatrix, RowIndices, ColIndices);
 			}
 		}
-		int[] GetNoOfSpeciesList(MultigridOperator op) {
+		int[] GetNoOfSpeciesList(MultigridMapping Map) {
 
-			int J = op.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+			int J = Map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 			int[] NoOfSpecies = new int[J];
 
 			XdgAggregationBasis xb = (XdgAggregationBasis)(op.Mapping.AggBasis.FirstOrDefault(b => b is XdgAggregationBasis));
@@ -1206,17 +1264,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 
 			// MPI gather on rank 0
-			int MPIsz = op.Mapping.MpiSize;
-			int[] rcvCount = MPIsz.ForLoop(r => op.GridData.CellPartitioning.GetLocalLength(r));
-			return NoOfSpecies.MPIGatherv(rcvCount, 0, op.OperatorMatrix.MPI_Comm);
+			int MPIsz = opCommSize;
+			int[] rcvCount = MPIsz.ForLoop(r => Map.AggGrid.CellPartitioning.GetLocalLength(r));
+			return NoOfSpecies.MPIGatherv(rcvCount, 0, opComm);
 		}
 
-		int[] DistributeDOFs(MultigridOperator op, int NoOfParts) {
+		int[] DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
 			using (new FuncTrace()) {
-				(int[] xadj, int[] adjncy) = GetGridGraphForMetis(op);
-				int[] NoOfSpecies = GetNoOfSpeciesList(op);
+                if (NoOfParts == 1)
+                    return Enumerable.Repeat(0, MGMapping.AggGrid.CellPartitioning.LocalLength).ToArray();
 
-				int MPIrnk = op.Mapping.MpiRank;
+
+				(int[] xadj, int[] adjncy) = GetCurrentAggGridGraphForMetis(MGMapping);
+				int[] NoOfSpecies = GetNoOfSpeciesList(MGMapping);
+
+				int MPIrnk = opCommRank;
 				int[] part;
 				if (MPIrnk == 0) {
 					int ncon = 1;
@@ -1252,25 +1314,163 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				}
 
 				// scatter back to processors
-				int MPIsz = op.Mapping.MpiSize;
-				int[] sendCount = MPIsz.ForLoop(r => op.GridData.CellPartitioning.GetLocalLength(r));
-				var partLoc = part.MPIScatterv(sendCount, 0, op.OperatorMatrix.MPI_Comm);
+				int MPIsz = opCommSize;
+				int[] sendCount = MPIsz.ForLoop(r => MGMapping.AggGrid.CellPartitioning.GetLocalLength(r));
+				var partLoc = part.MPIScatterv(sendCount, 0, opComm);
 				return partLoc;
 			}
+		}
+
+		(int[] xadj, int[] adj) GetCurrentAggGridGraphForMetis(MultigridMapping Map) {
+			using (new FuncTrace()) {
+                var aggGrid = Map.AggGrid;
+				int Jloc = aggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+				int Jglb = checked((int)aggGrid.CellPartitioning.TotalLength);
+				long[] GlidxExt = aggGrid.iParallel.GlobalIndicesExternalCells;
+
+				var comm = opComm;
+				int MPIrnk = opCommRank;
+				int MPIsiz = opCommSize;
+
+				int[][] Neighbors = aggGrid.iLogicalCells.CellNeighbours;
+				int L = Neighbors.Sum(ll => ll.Length);
+				int[] adj = new int[L]; // METIS input; neighbor vertices
+				int[] xadj = new int[Jloc + (MPIrnk == MPIsiz - 1 ? 1 : 0)]; // METIS input: offset into `adj`
+				int cnt = 0;
+				int j0 = checked((int)aggGrid.CellPartitioning.i0);
+				for (int j = 0; j < Jloc; j++) {
+					xadj[j] = cnt;
+					int[] Neighbors_j = Neighbors[j];
+					for (int iN = 0; iN < Neighbors_j.Length; iN++) {
+						int jNeigh = Neighbors_j[iN];
+						if (jNeigh < Jloc) {
+							// local cell
+							adj[cnt] = jNeigh + j0;
+						} else {
+							adj[cnt] = checked((int)GlidxExt[jNeigh - Jloc]);
+						}
+						cnt++;
+					}
+				}
+				Debug.Assert(cnt == L);
+				if (MPIrnk == MPIsiz - 1)
+					xadj[Jloc] = cnt;
+				Debug.Assert(xadj[0] == 0);
+
+				// convert `xadj` to global indices
+				int[] locLengths = L.MPIAllGather(comm);
+				Debug.Assert(locLengths.Length == MPIsiz);
+				int[] xadjOffsets = new int[MPIsiz];
+				for (int i = 1; i < locLengths.Length; i++) {
+					xadjOffsets[i] = xadjOffsets[i - 1] + locLengths[i - 1];
+				}
+				for (int j = 0; j < xadj.Length; j++)
+					xadj[j] += xadjOffsets[MPIrnk];
+
+				// gather `xadj` and `adj` on Rank 0
+				int[] xadjGl;
+				{
+					int[] rcvCount = MPIsiz.ForLoop(r => aggGrid.CellPartitioning.GetLocalLength(r));
+					rcvCount[rcvCount.Length - 1] += 1; // the final length which is added on the last processor
+					xadjGl = xadj.MPIGatherv(rcvCount, 0, comm);
+				}
+
+				int[] adjGl = adj.MPIGatherv(locLengths, 0, comm);
+				if (MPIrnk == 0)
+					Debug.Assert(xadjGl.Last() == adjGl.Length);
+
+				// return
+				return (xadjGl, adjGl);
+			}
+		}
+
+		//int[] DistributeRows(BlockMsrMatrix M, int NoOfParts) {
+		//	using (new FuncTrace()) {
+		//		(int[] xadj, int[] adjncy) = GetCSRforRows(M);
+		//		int[] NoOfSpecies = GetNoOfSpeciesList(M.);
+
+		//		int MPIrnk = op.Mapping.MpiRank;
+		//		int[] part;
+		//		if (MPIrnk == 0) {
+		//			int ncon = 1;
+		//			int edgecut = 0;
+		//			int[] options = new int[METIS.METIS_NOPTIONS];
+		//			METIS.SETDEFAULTOPTIONS(options);
+
+		//			options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
+		//			options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
+		//			options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
+		//			options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
+
+		//			int J = xadj.Length - 1;
+		//			part = new int[J];
+		//			Debug.Assert(xadj.Where(idx => idx > adjncy.Length).Count() == 0);
+		//			Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
+	
+		//			METIS.PARTGRAPHKWAY(
+		//					ref J, ref ncon,
+		//					xadj,
+		//					adjncy.ToArray(),
+		//					NoOfSpecies,
+		//					null,
+		//					null,
+		//					ref NoOfParts,
+		//					null,
+		//					null,
+		//					options,
+		//					ref edgecut,
+		//					part);
+		//		} else {
+		//			part = null;
+		//		}
+
+		//		// scatter back to processors
+		//		int MPIsz = op.Mapping.MpiSize;
+		//		int[] sendCount = MPIsz.ForLoop(r => op.GridData.CellPartitioning.GetLocalLength(r));
+		//		var partLoc = part.MPIScatterv(sendCount, 0, op.OperatorMatrix.MPI_Comm);
+		//		return partLoc;
+		//	}
+		//}
+
+        (int[] xadj, int[] adjncy) GetCSRforRows(BlockMsrMatrix M) {
+			int n = (int)M.NoOfRows; // or M.N if defined that way
+			int[] xadj = new int[n + 1];
+			List<int> adjncyList = new List<int>();
+
+			xadj[0] = 0;
+			for (int i = 0; i < n; i++) {
+                // Assuming M is stored in a row-wise structure.
+                // Get the column indices of nonzero entries for row i.
+                // Exclude the diagonal if desired.
+                long[] NonZeroColumns = null;
+                M.GetOccupiedColumnIndices(i, ref NonZeroColumns);
+				foreach (long col in NonZeroColumns) {
+					if (col != i) // optionally exclude the diagonal
+					{
+						adjncyList.Add((int)col);
+					}
+				}
+				xadj[i + 1] = adjncyList.Count;
+			}
+
+			int[] adjncy = adjncyList.ToArray();
+
+            return (xadj, adjncy);
 		}
 
 		/// <summary>
 		/// Creates a new communicator for the coarse level solver.
 		/// </summary>
 		/// <param name="NoOfCoarseProcs"></param>
-		void SplitCommunicator(int NoOfCoarseProcs) {
+		void SplitCommunicator(int NumberOfCoarseProcs) {
 			//The zero-th rank is the one assigned for fine mesh for the ease of operations
-			int NumberOfSmootherProcs = opCommSize - NoOfCoarseProcs;
+			NoOfCoarseProcs = Math.Max(1, NumberOfCoarseProcs);
+			NoOfSmootherProcs = opCommSize - NoOfCoarseProcs;
 
-            if (NoOfCoarseProcs < 1 || NumberOfSmootherProcs < 1)
-                throw new ArgumentOutOfRangeException($"Number of coarse processors and smoother processors must be greater than 0. Coarse: {NoOfCoarseProcs}, Smoother: {NumberOfSmootherProcs}");
+			if (NoOfCoarseProcs < 1 || NoOfSmootherProcs < 1)
+                throw new ArgumentOutOfRangeException($"Number of coarse processors and smoother processors must be greater than 0. Coarse: {NoOfCoarseProcs}, Smoother: {NoOfSmootherProcs}");
 
-			if (opCommRank < NumberOfSmootherProcs) {
+			if (opCommRank < NoOfSmootherProcs) {
 				myTask = parallelTask.Smoother;
 				csMPI.Raw.CommSplit(opComm, 0, opCommRank, out subComm);
 			} else {
@@ -1283,6 +1483,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if(verbose)
 			    Console.WriteLine($"The proc with worldRank-{worldCommRank} with opRank{opCommRank} is assigned to {subCommRank}of{subCommSize} new com{subComm.m1}");
+
+            CreateMpiRankMappings();
+		}
+
+
+
+        void CreateMpiRankMappings() {
+            // Each process sends its rank as its value.
+            int totalCount = opCommSize; //  number of processes in the communicator
+
+			// Prepare managed buffers.
+			int[] sendBuffer = new int[] { subCommRank }; //workaround for fixed statement
+			CommToSubCommMapping = new int[totalCount];
+
+			// Pin the buffers to obtain their addresses.
+			GCHandle sendHandle = GCHandle.Alloc(sendBuffer, GCHandleType.Pinned);
+			GCHandle recvHandle = GCHandle.Alloc(CommToSubCommMapping, GCHandleType.Pinned);
+
+			IntPtr sendPtr = sendHandle.AddrOfPinnedObject();
+			IntPtr recvPtr = recvHandle.AddrOfPinnedObject();
+
+			// Perform the Allgather call.
+			csMPI.Raw.Allgather(sendPtr, 1, csMPI.Raw._DATATYPE.INT, recvPtr, 1, csMPI.Raw._DATATYPE.INT, opComm);
+
+			// Display gathered values on each process.
+			Console.WriteLine($"Process {opCommRank} gathered:");
+			for (int i = 0; i < totalCount; i++) {
+				Console.WriteLine($"Rank {i}: {CommToSubCommMapping[i]}");
+			}
+            WorldToSubCommMapping = CommToSubCommMapping;// ??
 		}
 
         bool verbose = true;
@@ -1566,26 +1796,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				parallelTask myTask = parallelTask.All;
 				MPI_Comm newComm = m_OpMapPair.DgMapping.MPI_Comm;
 
-				if (PreSmoother is SchwarzForCoarseMesh schwarz) {
-					Console.WriteLine($"Tot number of Schwarz blocks {schwarz.config.NoOfBlocks}");
-					if (schwarz.config.NoOfBlocks < m_OpMapPair.DgMapping.MpiSize) {
-						Console.WriteLine("A possible speed up");
-						Console.WriteLine($"Rank-{m_OpMapPair.DgMapping.MpiRank} old com{m_OpMapPair.DgMapping.MPI_Comm.m1}");
-                        schwarz.CommitInitialXandB(X, B);
+				//if (PreSmoother is SchwarzForCoarseMesh schwarz) {
+				//	Console.WriteLine($"Tot number of Schwarz blocks {schwarz.config.NoOfBlocks}");
+				//	if (schwarz.config.NoOfBlocks < m_OpMapPair.DgMapping.MpiSize) {
+				//		Console.WriteLine("A possible speed up");
+				//		Console.WriteLine($"Rank-{m_OpMapPair.DgMapping.MpiRank} old com{m_OpMapPair.DgMapping.MPI_Comm.m1}");
+    //                    schwarz.CommitInitialXandB(X, B);
                         
-                        if (m_OpMapPair.DgMapping.MpiRank < schwarz.config.NoOfBlocks) {
-                            myTask = parallelTask.Smoother;
-                            csMPI.Raw.CommSplit(m_OpMapPair.DgMapping.MPI_Comm, 0, m_OpMapPair.DgMapping.MpiRank, out newComm);
-                        } else {
-                            myTask = parallelTask.Coarse;
-                            csMPI.Raw.CommSplit(m_OpMapPair.DgMapping.MPI_Comm, 1, m_OpMapPair.DgMapping.MpiRank, out newComm);
-                        }
-                        subComm = newComm;
-						var newOP = ReInitImpl(m_OpMapPair, newComm);
-						Console.WriteLine($"Rank-{m_OpMapPair.DgMapping.MpiRank} new com{newComm.m1}");
+    //                    if (m_OpMapPair.DgMapping.MpiRank < schwarz.config.NoOfBlocks) {
+    //                        myTask = parallelTask.Smoother;
+    //                        csMPI.Raw.CommSplit(m_OpMapPair.DgMapping.MPI_Comm, 0, m_OpMapPair.DgMapping.MpiRank, out newComm);
+    //                    } else {
+    //                        myTask = parallelTask.Coarse;
+    //                        csMPI.Raw.CommSplit(m_OpMapPair.DgMapping.MPI_Comm, 1, m_OpMapPair.DgMapping.MpiRank, out newComm);
+    //                    }
+    //                    subComm = newComm;
+				//		var newOP = ReInitImpl(m_OpMapPair, newComm);
+				//		Console.WriteLine($"Rank-{m_OpMapPair.DgMapping.MpiRank} new com{newComm.m1}");
 
-                    }
-				}
+    //                }
+				//}
 
 				csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1958,11 +2188,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         Stopwatch ThisLevelTime = new Stopwatch();
         Stopwatch CrseLevelTime = new Stopwatch();
 
-        BlockMsrMatrix RestrictionOperator;
+  //      BlockMsrMatrix RestrictionOperator;
 
-		BlockMsrMatrix ProlongationOperator;
-
-        MPI_Comm 
+		//BlockMsrMatrix ProlongationOperator;
 
 		/// <summary>
 		/// ~
