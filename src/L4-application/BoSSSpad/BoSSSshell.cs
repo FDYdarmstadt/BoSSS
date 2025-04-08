@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -1155,6 +1156,7 @@ namespace BoSSS.Application.BoSSSpad {
                 typeof(MathNet.Numerics.Complex32),
                 typeof(CNS.CNSProgram),
                 typeof(XNSE_Solver.XNSE),
+                typeof(DongBoundaryCondition_KovasznayFlow),
                 typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                 typeof(Rheology.Rheology),
                 typeof(XNSERO_Solver.XNSERO),

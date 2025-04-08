@@ -41,6 +41,7 @@ using BoSSS.Foundation;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using ilPSP;
 using Newtonsoft.Json.Linq;
+using BoSSS.Foundation.XDG.OperatorFactory;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -477,6 +478,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool withDissipativePressure;
 
+
         /// <summary>
         /// Block-Precondition for the kinetic-Energy-block
         /// </summary>
@@ -650,6 +652,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public void SetVolumeForce(string species, int d, Func<double[], double, double> g) {
             this.InitialValues_Evaluators_TimeDep[VariableNames.VolumeForce_d(d) + "#" + species] = g;
         }
+
 
         /// <summary>
         /// activates inertia force terms occuring in rotational systems
