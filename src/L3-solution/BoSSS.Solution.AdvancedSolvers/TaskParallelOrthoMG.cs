@@ -48,6 +48,7 @@ using ilPSP.Kraypis;
 using static System.Reflection.Metadata.BlobBuilder;
 using ilPSP.LinSolvers.PARDISO;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -740,8 +741,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (MgMap is MultigridMapping mapping) {
 
                 var distForSmoother = DistributeMapping(mapping, NoOfSmootherProcs);
-                var GlobDOFsindexes = CellIndexToDOFs(mapping, distForSmoother);
-                var ResDist = GetRedistributionMatrix(mapping, GlobDOFsindexes);
+                var GlobDOFidx = CellIndexToDOFs(mapping, distForSmoother);
+                var ResDist = GetRedistributionMatrix(mapping, GlobDOFidx);
 
                 ResDist.Redist.SaveToTextFileSparseDebug("toprakTest");
 
@@ -751,70 +752,64 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 		}
 
-		(long i0Cell, int lenCell)[] CellIndexToDOFs(MultigridMapping map, int[] localCellIndices) {
+		/// <summary>
+		/// Creates the DOF tuples for the local cells and exchange them with the other processors
+		/// </summary>
+		/// <param name="map">current multigrid mapping at this level</param>
+		/// <param name="targetProcs">target processor for each cell (index: local cell index, value: proc rank on opComm)</param>
+		/// <returns>global DOF data distributed w.r.t. <paramref name="targetProcs"/>.</returns>
+		(long i0Cell, int lenCell)[] CellIndexToDOFs(MultigridMapping map, int[] targetProcs) {
 			IGridData g = map.AggGrid;
-			int NoOfCells = localCellIndices.Length;
+			int NoOfCells = targetProcs.Length;
 			int J = g.iLogicalCells.NoOfLocalUpdatedCells;
 			Debug.Assert(J == NoOfCells); // 
 
-			long j0 = g.CellPartitioning.i0;
-			long[] gIdxExt = g.iParallel.GlobalIndicesExternalCells;
+			var myList = new (long i0Cell, int lenCell)[J]; //for cell currently on this proc (may be distributed to another or not)
 
-			long[] jGlobal = new long[NoOfCells];
-			long[] i0Cell = new long[NoOfCells];
-			int[] lenCell = new int[NoOfCells];
-
-			for (int i = 0; i < J; i++) {
-                int jCellLoc = i; // localCellIndices[i];
-
-				long jCellGlob;
-				if (jCellLoc < J)
-					jCellGlob = jCellLoc + j0;
-				else
-					jCellGlob = gIdxExt[jCellLoc - J];
-
-				jGlobal[i] = jCellGlob;
-				//Temp[i] = (map.GlobalUniqueIndex(0, jCellLoc, 0), map.GetLength(jCellLoc));
-				i0Cell[i] = map.GetCellI0(jCellLoc);
-				lenCell[i] = map.GetLength(jCellLoc);
+			// Create matrix entry information from cell indices
+			for (int jCellLoc = 0; jCellLoc < J; jCellLoc++) {
+                myList[jCellLoc] = (map.GetCellI0(jCellLoc), map.GetLength(jCellLoc));
 			}
 
+			//exchange the data with processors depending on the list targetProcs
+			var rcvData = ExchangeDOFData(myList, targetProcs); 
 
-			// Sanitize
+			return rcvData;
+		}
 
-			// concat all blocks
-			// =================
-			var helperIdx = new List<int>();
-				jGlobal = jGlobal.Cat(jGlobal);
-				for (int i = 0; i < jGlobal.Length; i++)
-					helperIdx.Add(i);
-
-
-
-			// sort and remove duplicates
-			// ==========================
-
-			// Note: duplicates might have been added due to Schwarz block overlap into ghost cells.
-
-			var _hleperIdx = helperIdx.ToArray();
-			Array.Sort(jGlobal, _hleperIdx);
-
-			var finalBlock = new List<(long i0Global, int CellLen)>();
-			for (int i = 0; i < jGlobal.Length; i++) {
-				var idx = _hleperIdx[i];
-				if (finalBlock.Count > 0) {
-					if (jGlobal[i] == jGlobal[i - 1])
-						continue; // duplicate cell found
-					Debug.Assert(i0Cell[idx] >= finalBlock[finalBlock.Count - 1].i0Global + finalBlock[finalBlock.Count - 1].CellLen, "Cell start indices not in strictly ascending order");
-				}
-				if (lenCell[idx] <= 0)
-					continue; // empty cell
-
-				finalBlock.Add((i0Cell[idx], lenCell[idx]));
-
+		/// <summary>
+		/// Exchanges the DOF data with the other processors
+		/// </summary>
+		/// <param name="localList">DOF data for the current local cells</param>
+		/// <param name="targetProcs">target processor for each cell (index: local cell index, value: proc rank on opComm)</param>
+		/// <returns>exchanged DOF data with respect to <paramref name="targetProcs"/>.</returns>
+		(long i0Cell, int lenCell)[] ExchangeDOFData((long i0Cell, int lenCell)[] localList, int[] targetProcs) {
+			// Make a list for each processor
+			var myList = new List<(long i0Cell, int lenCell)>();
+			List<(long i0Cell, int lenCell)>[] commBuffers = opCommSize.ForLoop(i => new List<(long i0Cell, int lenCell)>());
+            for (int i = 0; i < targetProcs.Length; i++) {
+                int proc = targetProcs[i];
+                commBuffers[proc].Add(localList[i]);
 			}
 
-			return finalBlock.ToArray();
+			// Create send data
+			Dictionary<int, (long i0Cell, int lenCell)[]> commBuffersGlobal = new Dictionary<int, (long i0Cell, int lenCell)[]>();
+            for (int p = 0; p < opCommSize && p != opCommRank; p++) { //loop over other processsors
+                commBuffersGlobal.Add(p, commBuffers[p].ToArray());
+			}
+
+			// Exchange the data
+			IDictionary<int, (long i0Cell, int lenCell)[]> rcvData = SerialisationMessenger.ExchangeData(commBuffersGlobal);
+			foreach (var data in rcvData) {
+                myList.AddRange(data.Value);
+            }
+
+            myList.AddRange(commBuffers[opCommRank]); //add the indices that is already on the processor and was designated to be on this processor
+			(long i0Cell, int lenCell)[] filteredSorted = myList.Where(x => x.lenCell > 0)
+	                                                            .OrderBy(x => x.i0Cell)
+	                                                            .ToArray();
+
+			return filteredSorted;
 		}
 
 		private (BlockMsrMatrix Redist, List<long> RowIndices, List<long> ColIndices) GetRedistributionMatrix(MultigridMapping mapping, (long i0Global, int CellLen)[] SchwarzBlocksGlobal) {
