@@ -230,23 +230,17 @@ namespace ilPSP.LinSolvers {
         public MPI_Comm MPI_Comm {
             get {
 				return m_effectiveComm ?? m_RowPartitioning.MPI_Comm; ; //return m_RowPartitioning.MPI_Comm;
-            }
+			}
         }
 
 
+		// it is used only for changing the communicator after distribution
+		private MPI_Comm? m_effectiveComm; 
 
-		private MPI_Comm? m_effectiveComm;
-
-		public MPI_Comm EffectiveMPI_Comm {
-			get { return m_effectiveComm ?? m_RowPartitioning.MPI_Comm; }
-			set { m_effectiveComm = value; }
-		}
-
-
-        /// <summary>
-        /// <see cref="RowPartitioning"/>;
-        /// </summary>
-        IBlockPartitioning m_RowPartitioning;
+		/// <summary>
+		/// <see cref="RowPartitioning"/>;
+		/// </summary>
+		IBlockPartitioning m_RowPartitioning;
 
         /// <summary>
         /// distribution of matrix rows over MPI processors
@@ -829,7 +823,7 @@ namespace ilPSP.LinSolvers {
 		/// When communication pattern is changed, this method is called
 		/// </summary>
 		/// <param name="myRank"></param>
-		void InitializeExternalBlocks(int myRank) {
+		void ReInitializeExternalBlocks(int myRank) {
 			m_ExternalBlockIndicesByProcessor = new Dictionary<int, HashSet<long>>();
 			m_ExternalBlock = new BitArray(m_RowPartitioning.LocalNoOfBlocks, false);
 
@@ -837,7 +831,7 @@ namespace ilPSP.LinSolvers {
 			for (int i = 0; i < m_RowPartitioning.LocalNoOfBlocks; i++) {
                 //long globalBlockIndex = m_RowPartitioning.GetBlockIndex(i);
                 long globalBlockIndex = m_RowPartitioning.FirstBlock + i;
-				int ownerProc = m_RowPartitioning.FindProcessForBlock(globalBlockIndex);
+				int ownerProc = m_ColPartitioning.FindProcessForBlock(globalBlockIndex);
 
 				if (ownerProc != myRank) {
 					if (!m_ExternalBlockIndicesByProcessor.ContainsKey(ownerProc)) {
@@ -855,10 +849,12 @@ namespace ilPSP.LinSolvers {
 		public void ChangeCommPattern(MPI_Comm comm) {
 			MPICollectiveWatchDog.Watch(comm);
 
-            if (comm == this.MPI_Comm)
+            if (comm == this.MPI_Comm) { 
                 UpdateCommPattern(comm);
+                return;
+			}
 
-            m_effectiveComm = comm; 
+			m_effectiveComm = comm; 
 			// hint: MPI_Comm_group & MPI_Group_translate_ranks
 
 			// clear old Lists
@@ -868,7 +864,7 @@ namespace ilPSP.LinSolvers {
 			csMPI.Raw.Comm_Rank(comm, out MpiRank);
 			csMPI.Raw.Comm_Size(comm, out MpiSize);
 
-            InitializeExternalBlocks(MpiRank);
+            ReInitializeExternalBlocks(MpiRank);
 
 			if (ReceiveLists != null)
 				ReceiveLists.Clear();
@@ -924,7 +920,7 @@ namespace ilPSP.LinSolvers {
 #endif
 		}
 
-        static void IntBufferExchange(MPI_Comm comm, Dictionary<int, long[,]> Sdata, out Dictionary<int, long[,]> Rdata) {
+		static void IntBufferExchange(MPI_Comm comm, Dictionary<int, long[,]> Sdata, out Dictionary<int, long[,]> Rdata) {
             int MpiRank;
             int MpiSize;
             csMPI.Raw.Comm_Rank(comm, out MpiRank);
@@ -1202,15 +1198,15 @@ namespace ilPSP.LinSolvers {
             return lockObject;
         }
 
-        object GetSetAlloc(bool bAlloc,
-            long i, long j, //                         global row/column index 
-            out long BlkRow, out long BlkCol, //       block row and block column index
+        object GetSetAlloc(bool bAlloc,             // if true: allocate memory for the block
+			long i, long j,                         // global row/column index
+            out long BlkRow, out long BlkCol,       // block row and block column index
             out int rowSblkIdx, out int colSblkIdx, // sub-block row and sub-block column index
-            out int iSblk, out int jSblk, //           row/col index within sub-block, which correspond to i,j
-            out int ISblk, out int JSblk, //           sub-block size
-            out double[] Storage, //                   sub-block memory: where the result should be accumulated
+            out int iSblk, out int jSblk,           // row/col index within sub-block, which correspond to i,j
+            out int ISblk, out int JSblk,           // sub-block size
+            out double[] Storage,                   // sub-block memory: where the result should be accumulated
             out int Offset, out int CI, out int CJ, // offset pointer and i,j cycles into 'Storage'
-            out int MembnkIdx, out int InMembnk //     membank index and index within membank
+            out int MembnkIdx, out int InMembnk     // membank index and index within membank
             ) {
             // default values if not allocated, and no allocation requested (bAlloc == false).
             Storage = null;
@@ -3420,7 +3416,7 @@ namespace ilPSP.LinSolvers {
 #endif
                 // determine MPI communicator
                 // ==========================
-                if(Target.MPI_Comm != this.MPI_Comm && Target.MPI_Comm != csMPI.Raw._COMM.SELF) {
+                if (Target.MPI_Comm != this.MPI_Comm && Target.MPI_Comm != csMPI.Raw._COMM.SELF) {
                     throw new ArgumentException("todo");
                 }
                 MPI_Comm comm = Target.MPI_Comm;
