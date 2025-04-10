@@ -1098,6 +1098,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 #if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p2_Newton_Standard(
             [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1112,9 +1113,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Newton);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p2_Picard_Standard(
-             [Values(0.01)] double AgglomerationTreshold,
+        [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
              [Values(SurfaceStressTensor_IsotropicMode.Curvature_Projected, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
              [Values(true, false)] bool IncludeConvection,
@@ -1126,7 +1129,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 angle, SurfTensionMode, IncludeConvection, CutCellQuadratureType,
                 NonLinearSolverCode.Picard);
         }
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p2_Newton_FullySymmetric(
             [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1141,7 +1146,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Newton);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p2_Picard_FullySymmetric(
              [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1156,7 +1163,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Picard);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p3_Newton_Standard(
             [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1171,7 +1180,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Newton);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p3_Picard_Standard(
              [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1185,7 +1196,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 angle, SurfTensionMode, IncludeConvection, CutCellQuadratureType,
                 NonLinearSolverCode.Picard);
         }
+
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p3_Newton_FullySymmetric(
             [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1200,7 +1214,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Newton);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p3_Picard_FullySymmetric(
              [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1214,7 +1230,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 angle, SurfTensionMode, IncludeConvection, CutCellQuadratureType,
                 NonLinearSolverCode.Picard);
         }
+
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p4_Newton_Standard(
             [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1229,7 +1248,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Newton);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p4_Picard_Standard(
              [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1243,7 +1264,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 angle, SurfTensionMode, IncludeConvection, CutCellQuadratureType,
                 NonLinearSolverCode.Picard);
         }
+
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p4_Newton_FullySymmetric(
             [Values(0.01)] double AgglomerationTreshold,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1258,7 +1282,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Newton);
         }
 
+#if !DEBUG
         [Test]
+#endif
         public static void ChannelTest_p4_Picard_FullySymmetric(
              [Values(0.01)] double AgglomerationTreshold,
              [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
@@ -1273,7 +1299,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 NonLinearSolverCode.Picard);
         }
 
-#endif
+
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>

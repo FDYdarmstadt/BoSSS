@@ -1059,12 +1059,12 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Only for debugging;  can be used to turn all edge integration in spatial operators off.
         /// </summary>
-        public static bool onlyfordebugging_DoEdge = false;
+        public static bool onlyfordebugging_DoEdge = true;
 
         /// <summary>
         /// Only for debugging; can be used to turn all volume integration in spatial operators off.
         /// </summary>
-        public static bool onlyfordebugging_DoVolume = false;
+        public static bool onlyfordebugging_DoVolume = true;
 
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
