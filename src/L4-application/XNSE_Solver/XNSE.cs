@@ -77,9 +77,8 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
             InitMPI();
-            ilPSP.Environment.NumThreads = 1;
+            //ilPSP.Environment.NumThreads = 1;
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p4_Newton_Standard(0.01d, 0.0d, SurfaceStressTensor_IsotropicMode.Curvature_Projected, true, CutCellQuadratureMethod.OneStepGaussAndStokes);
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
 
