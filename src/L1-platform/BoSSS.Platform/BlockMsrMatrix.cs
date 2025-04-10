@@ -2518,6 +2518,112 @@ namespace ilPSP.LinSolvers {
             }
         }
 
+		public bool Equals(BlockMsrMatrix other) {
+			if (other == null)
+				return false;
+
+			// Compare partitioning and symmetry flag
+			if (!object.Equals(this.m_RowPartitioning, other.m_RowPartitioning))
+				return false;
+			if (!object.Equals(this.m_ColPartitioning, other.m_ColPartitioning))
+				return false;
+			if (this.m_AssumeSymmetric != other.m_AssumeSymmetric)
+				return false;
+
+			// Compare rows with external block
+			if (!object.Equals(this.m_RowsWithExternalBlock, other.m_RowsWithExternalBlock))
+				return false;
+
+			// Compare external block indices by processor
+			if (this.m_ExternalBlockIndicesByProcessor.Count != other.m_ExternalBlockIndicesByProcessor.Count)
+				return false;
+			foreach (var kv in this.m_ExternalBlockIndicesByProcessor) {
+				if (!other.m_ExternalBlockIndicesByProcessor.TryGetValue(kv.Key, out HashSet<long> otherSet))
+					return false;
+				if (!kv.Value.SetEquals(otherSet))
+					return false;
+			}
+
+			// Compare block rows
+			if (this.m_BlockRows.Length != other.m_BlockRows.Length)
+				return false;
+			for (int i = 0; i < this.m_BlockRows.Length; i++) {
+				var row1 = this.m_BlockRows[i];
+				var row2 = other.m_BlockRows[i];
+				if (row1 == null && row2 != null || row1 != null && row2 == null)
+					return false;
+				if (row1 != null) {
+					if (row1.Count != row2.Count)
+						return false;
+					foreach (var kv in row1) {
+						if (!row2.TryGetValue(kv.Key, out BlockEntry otherEntry))
+							return false;
+						if (!kv.Value.Equals(otherEntry))
+							return false;
+					}
+				}
+			}
+
+			// Compare memory banks
+			if (this.m_Membanks.Count != other.m_Membanks.Count)
+				return false;
+			for (int i = 0; i < this.m_Membanks.Count; i++) {
+				if (!this.m_Membanks[i].Equals(other.m_Membanks[i]))
+					return false;
+			}
+
+			// Compare communication pattern valid flag
+			if (this.ComPatternValid != other.ComPatternValid)
+				return false;
+
+			// If communication patterns are valid, compare SendLists and ReceiveLists
+			if (this.ComPatternValid) {
+				if ((this.SendLists == null) != (other.SendLists == null))
+					return false;
+				if (this.SendLists != null) {
+					if (this.SendLists.Count != other.SendLists.Count)
+						return false;
+					foreach (var kv in this.SendLists) {
+						if (!other.SendLists.TryGetValue(kv.Key, out long[,] otherArray))
+							return false;
+						if (!CompareArrays(kv.Value, otherArray))
+							return false;
+					}
+				}
+
+				if ((this.ReceiveLists == null) != (other.ReceiveLists == null))
+					return false;
+				if (this.ReceiveLists != null) {
+					if (this.ReceiveLists.Count != other.ReceiveLists.Count)
+						return false;
+					foreach (var kv in this.ReceiveLists) {
+						if (!other.ReceiveLists.TryGetValue(kv.Key, out long[,] otherArray))
+							return false;
+						if (!CompareArrays(kv.Value, otherArray))
+							return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		private bool CompareArrays(long[,] a, long[,] b) {
+			if (a == null && b == null)
+				return true;
+			if (a == null || b == null)
+				return false;
+			if (a.GetLength(0) != b.GetLength(0) || a.GetLength(1) != b.GetLength(1))
+				return false;
+			for (int i = 0; i < a.GetLength(0); i++) {
+				for (int j = 0; j < a.GetLength(1); j++) {
+					if (a[i, j] != b[i, j])
+						return false;
+				}
+			}
+			return true;
+		}
+
         /// <summary>
         /// creates a non-shallow copy of this object
         /// </summary>
