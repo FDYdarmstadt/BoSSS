@@ -1444,7 +1444,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
+        /// Used by <see cref="_GetJacobiOperator(int)"/> to encapsulate the temporal operator
         /// of this operator (because of the ownership, the temporal operator cannot be reused).
         /// </summary>
         class TemporalOperatorContainer : ITemporalOperator {

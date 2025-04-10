@@ -97,12 +97,13 @@ namespace BoSSS.Foundation {
             int D = gridData.SpatialDimension;
             string[] dimensions = new string[] { "x", "y", "z" };
 
-            using(var file = new StreamWriter(filename)) {
+           using(var file = new StreamWriter(filename)) {
                 file.WriteLine(String.Format(
                     "Cell\t{0}\tWeight",
                     dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
 
                 foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
+                    
                     MultidimensionalArray globalNodes = gridData.GlobalNodes.GetValue_EdgeSV(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
                     foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
                         for(int n = 0; n < pair.Rule.NoOfNodes; n++) {

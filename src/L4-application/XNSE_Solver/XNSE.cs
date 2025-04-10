@@ -29,6 +29,7 @@ using System.Reflection;
 using ilPSP.LinSolvers;
 using BoSSS.Solution.Gnuplot;
 using static System.Reflection.Metadata.BlobBuilder;
+using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -75,10 +76,8 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            //InitMPI();
+            InitMPI();
             //ilPSP.Environment.NumThreads = 1;
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p2(0.1d);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p3_Newton_FullySymmetric(0.01d, 0.0d, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false, CutCellQuadratureMethod.Algoim);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
@@ -88,14 +87,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     var p = new XNSE();
                     return p;
                 });
-
-                //Tmeas.Memtrace.Flush();
-                //Tmeas.Memtrace.Close();
             }
             //*/
             ilPSP.LinSolvers.BlockMsrMatrix.PrintPerfStat();
-
-            
         }
     }
 

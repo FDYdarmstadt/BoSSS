@@ -1562,6 +1562,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     
                     success = true;
 
+
+                    //m_CurrentAgglomeration.XDGSpaceMetrics.CutCellMetrics.CellSurface[m_LsTrk.GetSpeciesId("A")].To1DArray().SaveToTextFile("surf-A.txt");
+                    //m_CurrentAgglomeration.XDGSpaceMetrics.CutCellMetrics.CellSurface[m_LsTrk.GetSpeciesId("B")].To1DArray().SaveToTextFile("surf-B.txt");
+
+                  
+
+
 #if DEBUG
                     {
                         
@@ -1608,7 +1615,48 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.CustomValue(0.0, "LevelSet");
                     }
 
-                    if (m_ResLogger != null)
+                    /*
+                    {
+                        var Fields = CurrentStateMapping.Fields.ToArray();
+
+                        int J = this.m_LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                        var cutBitMask = this.m_LsTrk.Regions.GetCutCellMask().GetBitMask();
+                        int NoOfCutCells = this.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally;
+                        MultidimensionalArray Residuals = null, Coordinates = null;
+                        int k  = 0;
+                        for(int j = 0; j < J; j++) {
+                            var resi0_j = ResidualFields[0].Coordinates.GetRow(j);
+                            var coord_j = Fields[0].Coordinates.GetRow(j);
+                            if(!cutBitMask[j]) {
+                                if(resi0_j.L2Norm() > 1.0e-10)
+                                    throw new Exception();
+                                continue;
+                            }
+                            if(j%2 == 0)
+                                continue;
+
+                            if(Residuals == null) {
+                                Residuals = MultidimensionalArray.Create(NoOfCutCells / 2, resi0_j.Length);
+                                Coordinates = MultidimensionalArray.Create(NoOfCutCells / 2, resi0_j.Length);
+                            }
+
+                            Residuals.SetRow(k, resi0_j);
+                            Coordinates.SetRow(k, coord_j);
+                            k++;
+
+                            Console.WriteLine($"j = {j} cut = {cutBitMask[j]}:" + resi0_j.L2Norm());
+                            Console.WriteLine(coord_j.ToConcatString("[", "; ", "]"));
+                            Console.WriteLine(resi0_j.ToConcatString("[", "; ", "]"));
+                        }
+
+                        Residuals.SaveToTextFile("MomXcoord.txt");
+                        Coordinates.SaveToTextFile("VelXcoord.txt");
+                    }
+                    */
+
+
+
+                    if(m_ResLogger != null)
                         m_ResLogger.NextIteration(true);
                 }
 

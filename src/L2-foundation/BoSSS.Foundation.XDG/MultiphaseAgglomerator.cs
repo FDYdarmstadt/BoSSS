@@ -669,6 +669,8 @@ namespace BoSSS.Foundation.XDG {
                 var CompScheme = xqs.GetVolumeQuadScheme(Species).Compile(gdat, this.CutCellQuadratureOrder);
 
                 MultidimensionalArray CenterOfGravity = MultidimensionalArray.Create(JE, D);
+                for(int j = 0; j < JE; j++)
+                    CenterOfGravity.SetRowPt(j, gdat.iGeomCells.GetCenter(j)); // default for empty cut-cells with zero-rules that don't get touched by quadrature
 
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(new int[] { D + 1 }, gdat,
                     CompScheme,
@@ -683,14 +685,12 @@ namespace BoSSS.Foundation.XDG {
                                 CenterOfGravity[i + i0, d] = ResultsOfIntegration[i, d] / ResultsOfIntegration[i, D];
                             }
 
-                            //if(CenterOfGravity.GetRowPt(i0 + i).ContainsNanOrInf())
+                            if(CenterOfGravity.GetRowPt(i0 + i).ContainsNanOrInf())
                                 CenterOfGravity.SetRowPt(i0 + i, gdat.iGeomCells.GetCenter(i + i0));
 
                         }
                     }, cs: CoordinateSystem.Physical).Execute();
 
-                for(int j = 0; j < JE; j++)
-                    CenterOfGravity.SetRowPt(j, gdat.iGeomCells.GetCenter(j));
 
                 CenterOfGravity.Storage.MPIExchange(this.Tracker.GridDat);
 

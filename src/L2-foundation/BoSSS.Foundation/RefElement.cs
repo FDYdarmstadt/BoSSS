@@ -897,6 +897,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
             R.Nodes.LockForever();
 
+            R.OrderOfPrecision = FaceRule.OrderOfPrecision;
+
             return R;
         }
 

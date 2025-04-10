@@ -384,6 +384,51 @@ namespace BoSSS.Foundation.XDG {
                 private set;
             }
 
+            /*
+            static void Diagnosis(UnsetteledCoordinateMapping mapping, double[] resi, double[] resiB4, string suffix) {
+                var ResiFields = mapping.BasisS.Select(b => new XDGField(b as XDGBasis)).ToArray();
+                var ResiVector = new CoordinateVector(ResiFields);
+                var LsTrk = ResiFields[0].Basis.Tracker;
+                ResiVector.SetV(resi);
+                ResiVector.AccV(-1.0, resiB4);
+
+                int J = LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                var cutBitMask = LsTrk.Regions.GetCutCellMask().GetBitMask();
+                int NoOfCutCells = LsTrk.Regions.GetCutCellMask().NoOfItemsLocally;
+
+                MultidimensionalArray Residuals = null;
+                int k = 0;
+                for(int j = 0; j < J; j++) {
+                    var resi0_j = ResiFields[0].Coordinates.GetRow(j);
+                    if(!cutBitMask[j]) {
+                        //if(resi0_j.L2Norm() > 1.0e-10)
+                        //    throw new Exception();
+                        continue;
+                    }
+                    if(j % 2 == 0)
+                        continue;
+
+                    if(Residuals == null) {
+                        Residuals = MultidimensionalArray.Create(NoOfCutCells / 2, resi0_j.Length);
+                    }
+
+                    Residuals.SetRow(k, resi0_j);
+                    k++;
+
+                    //Console.WriteLine($"j = {j} cut = {cutBitMask[j]}:" + resi0_j.L2Norm());
+                    //Console.WriteLine(resi0_j.ToConcatString("[", "; ", "]"));
+                }
+
+
+                Console.WriteLine("--------------------- " + suffix + " ------------  ");
+                Console.WriteLine("          " + Residuals.GetRow(1).L2Dist(Residuals.GetRow(2)) + "\t\t" + Residuals.GetRow(2).L2Dist(Residuals.GetRow(3)));
+
+
+
+
+                Residuals.SaveToTextFile("MomXcoord." + suffix + ".txt");
+            }*/
+
             public void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null) where Tout : IList<double> {
                 if (base.MPITtransceive == true)
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
@@ -428,8 +473,9 @@ namespace BoSSS.Foundation.XDG {
 
                             var SpeciesBuilders = new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval };
 
-                            
+                            int iBuilder = 0;
                             foreach(var SpeciesEval in SpeciesBuilders) {
+                                iBuilder++;
 
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
@@ -442,7 +488,9 @@ namespace BoSSS.Foundation.XDG {
                                     }
 
                                     eval.time = base.time;
+                                    //var bkup = output.ToArray();
                                     eval.Evaluate(alpha, 1.0, vec, null);
+                                    //Diagnosis(this.CodomainMapping, output.ToArray(), bkup, lsTrk.GetSpeciesName(SpeciesId) + "p" + iBuilder);
                                 }
                             }
                         }                        
@@ -655,7 +703,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool onlyfordebugging_RuleDiagnosis = false;
+            static private bool onlyfordebugging_RuleDiagnosis = true;
 
             /// <summary>
             /// ctor

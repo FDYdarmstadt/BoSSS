@@ -199,32 +199,31 @@ namespace BoSSS.Foundation.XDG {
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
-            //Default behaviour: If Species are not divided by Level Set, function should not be called
             Debug.Assert(!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp));
-            //var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(this.m_CutCellSubgrid_InnerEdges);
-
+            
             var innerCutCellEdges = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet).InnerEdgesMask;
-            var boundaryCutCellEdges = ExecutionMask.Intersect(this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubGrid().BoundaryEdgesMask, this.XDGSpaceMetrics.GridDat.BoundaryEdges);
-            var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(ExecutionMask.Union(innerCutCellEdges, boundaryCutCellEdges));
+            var boundaryCutCellEdges = ExecutionMask.Intersect(
+                this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubGrid().BoundaryEdgesMask, 
+                this.XDGSpaceMetrics.GridDat.BoundaryEdges);
+            var allRelevantEdges = ExecutionMask.Intersect(
+                this.m_SpeciesSubgrid_InnerAndDomainEdges[sp],
+                ExecutionMask.Union(innerCutCellEdges, boundaryCutCellEdges));
             allRelevantEdges = allRelevantEdges.ToGeometicalMask();
-            //EdgeMask AggEdges = this.CellAgglomeration != null ? this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges : null;
-            //if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
-            //    allRelevantEdges = allRelevantEdges.Except(AggEdges);
-
+            
             var edgeQrIns = new EdgeQuadratureScheme(
                 scaling: new SurfaceElementEdgeIntegrationMetric(this.XDGSpaceMetrics.LevelSetData[iLevSet]),
-                UseDefaultFactories:false, domain: allRelevantEdges);
+                UseDefaultFactories: false, 
+                domain: allRelevantEdges);
 
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 //for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                 {
                     EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet);
-
                     var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
-
                     edgeQrIns.AddFactory(factory, cutEdges);
                 }
             }
+
             //Handle doubly cut cells
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
@@ -243,6 +242,68 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
             }
+
+            
+            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // Special case handling:
+                // Some  level-set is (more-or-less) exactly on a cell edge;
+                // therefore, we need some stable handling of such cases;
+                // in the respective cells, the level-set surface quadrature will be overwritten
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                IGridData gdat = XDGSpaceMetrics.GridDat;
+                int D = gdat.SpatialDimension;
+                
+
+
+                foreach(var edgeKref in gdat.iGeomEdges.EdgeRefElements) {
+                    int iKrefEdge = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomEdges.EdgeRefElements, edgeKref);
+                    foreach(var Kref in gdat.iGeomCells.RefElements) {
+                        //int iKref = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomCells.RefElements, Kref);
+                        EdgeMask IntegrationDom =
+                            EdgeMask.Intersect(
+                                this.GetCutEdges(Kref, iLevSet),
+                                gdat.iGeomEdges.GetEdges4RefElement(edgeKref));
+
+
+                        EdgeMask modIntegrationDom = IntegrationDom;
+                        CellMask alldoublyCut = null;
+                        for(int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; jLevSet++) {
+                            if(jLevSet != iLevSet) {
+                                CellMask doublyCut = GetDoubleCutCells(iLevSet, jLevSet);
+                                if(alldoublyCut != null) {
+                                    alldoublyCut = alldoublyCut.Union(doublyCut);
+                                } else {
+                                    alldoublyCut = doublyCut;
+                                }
+                                //if(doublyCut.NoOfItemsLocally > 0) {
+                                //    modIntegrationDom = modIntegrationDom.Except(doublyCut);
+                                //}
+                            }
+                        }
+
+                        var mask = LevelSetBoundaryOnEdgeRuleFactory.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKrefEdge);
+                        var bndy_fact = new LevelSetBoundaryOnEdgeRuleFactory(Kref, this.XDGSpaceMetrics.LevelSetData[iLevSet]);
+                        var maxDom = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
+                        if(alldoublyCut != null) {
+                            maxDom = maxDom.Except(alldoublyCut);
+                        }
+                        var fact = new EdgeRuleFromCellBoundaryFactory(
+                            (GridData)gdat,
+                            D > 2,
+                            bndy_fact,
+                            maxDom);
+
+
+                        //edgeQrIns.AddFactoryDomainPair(fact, mask.Intersect(modIntegrationDom));
+                        edgeQrIns.AddFactoryDomainPair(fact, modIntegrationDom);
+                    }
+                }
+            }
+            
+
+
             return edgeQrIns;
         }
 
@@ -290,6 +351,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
+            
             if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Special case handling:
@@ -858,6 +920,7 @@ namespace BoSSS.Foundation.XDG {
                 LevSetQrIns.AddFactoryDomainPair(surfaceFactory, (CellMask)null, fixedOrder);
             }
 
+            
             if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Special case handling:

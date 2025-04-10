@@ -181,7 +181,5 @@ namespace BoSSS.Foundation.Quadrature {
 
             return _R;
         }
-
-
     }
 }

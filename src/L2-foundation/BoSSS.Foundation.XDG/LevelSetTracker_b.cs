@@ -195,7 +195,7 @@ namespace BoSSS.Foundation.XDG {
                 __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold, Tag);
 
             if(AgglomerationAlgorithm.debugging_PlotAgglomeration) {
-                ret.PlotAgglomerationPairs("aggpairs");
+                ret.PlotAgglomerationPairs($"aggpairsRank{this.GridDat.MpiRank}of{this.GridDat.MpiSize}");
 
                 foreach(var spc in Spc) {
                     Console.WriteLine("Agglomeration species " + this.GetSpeciesName(spc) + ": ");
