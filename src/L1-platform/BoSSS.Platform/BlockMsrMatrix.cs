@@ -387,7 +387,6 @@ namespace ilPSP.LinSolvers {
                 Ret.m_AssumeSymmetric = this.m_AssumeSymmetric;
                 Ret.m_RowsWithExternalBlock = this.m_RowsWithExternalBlock;
                 Ret.m_ExternalBlockIndicesByProcessor = this.m_ExternalBlockIndicesByProcessor;
-				Ret.m_ExternalBlockIndicesByRow = this.m_ExternalBlockIndicesByRow;
 				Ret.m_Membanks = this.m_Membanks;
                 Ret.m_BlockRows = this.m_BlockRows;
 
@@ -622,7 +621,6 @@ namespace ilPSP.LinSolvers {
 
                 m_RowsWithExternalBlock = null;
                 m_ExternalBlockIndicesByProcessor = null;
-				m_ExternalBlockIndicesByRow = null;
 				m_Membanks = null;
                 m_BlockRows = null;
                 m_RowPartitioning = null;
@@ -714,13 +712,6 @@ namespace ilPSP.LinSolvers {
 
 		/// <summary>
 		/// List for rows with blocks/entries in the external range of the <see cref="_ColPartitioning"/>.
-		/// - index: local block row.
-		/// - value: global index of the external blocks.
-		/// </summary>
-		Dictionary<int, HashSet<long>> m_ExternalBlockIndicesByRow = new Dictionary<int, HashSet<long>>();
-
-		/// <summary>
-		/// Tracking of external blocks, i.e. blocks outside of the local range of the column partitioning.
 		/// - key: MPI processor rank (within <see cref="MPI_Comm"/>)
 		/// - value: set of block indices which are owned by the respective processor.
 		/// </summary>
@@ -832,27 +823,32 @@ namespace ilPSP.LinSolvers {
 		/// When communication pattern is changed, this method is called
 		/// </summary>
 		/// <param name="myRank"></param>
-		void ReInitializeExternalBlocks(int myRank, IBlockPartitioning newColPart) {
-            var oldExternalBlockIndicesByProcessor = m_ExternalBlockIndicesByProcessor;
-            var oldExternalBlockIndicesByRow = m_ExternalBlockIndicesByRow;
+		void ReInitializeExternalBlockInformation(int myRank, IBlockPartitioning newColPart) {
+            if (newColPart != _RowPartitioning) //this is a restriction for now, technically it is not necessary with a bit of work
+				throw new ArgumentException("newColPart must be the same as _RowPartitioning");
 
-			var newExternalBlockIndicesByProcessor = new Dictionary<int, HashSet<long>>();
+			this.m_ColPartitioning = newColPart.IsMutable ? newColPart.GetImmutableBlockPartitioning() : newColPart;
+
 			m_RowsWithExternalBlock = new BitArray(m_RowPartitioning.LocalNoOfBlocks, false);
+			var oldExternalBlockIndicesByProcessor = m_ExternalBlockIndicesByProcessor;
+			var newExternalBlockIndicesByProcessor = new Dictionary<int, HashSet<long>>();
 
-			//Debug.Assert(iBlk >= part.FirstBlock && iBlk < part.LocalNoOfBlocks + part.FirstBlock);
-			for (int i = 0; i < m_RowPartitioning.LocalNoOfBlocks; i++) {
-                //long globalBlockIndex = m_RowPartitioning.GetBlockIndex(i);
-                long globalBlockIndex = m_RowPartitioning.FirstBlock + i;
-				int ownerProc = newColPart.FindProcessForBlock(globalBlockIndex);
-
+			for (int locBlk = 0; locBlk < m_RowPartitioning.LocalNoOfBlocks; locBlk++) {
+                var blocksOnThisRow = m_BlockRows[locBlk].Keys.ToArray();
+				foreach (var globBlk in blocksOnThisRow) {
+					int ownerProc = newColPart.FindProcessForBlock(globBlk);
 				if (ownerProc != myRank) {
-					if (!m_ExternalBlockIndicesByProcessor.ContainsKey(ownerProc)) {
-						m_ExternalBlockIndicesByProcessor[ownerProc] = new HashSet<long>();
+						// add the processor to the list of processors which own this block
+						if (!newExternalBlockIndicesByProcessor.TryGetValue(ownerProc, out var hashSet)) {
+							hashSet = new HashSet<long>();
+							newExternalBlockIndicesByProcessor[ownerProc] = hashSet;
+						}
+						hashSet.Add(globBlk);
+						this.m_RowsWithExternalBlock[locBlk] |= true;
 					}
-					m_ExternalBlockIndicesByProcessor[ownerProc].Add(globalBlockIndex);
-					this.m_RowsWithExternalBlock[i] |= true;
 				}
 			}
+            m_ExternalBlockIndicesByProcessor = newExternalBlockIndicesByProcessor;
 		}
 
 		/// <summary>
@@ -876,7 +872,7 @@ namespace ilPSP.LinSolvers {
 			csMPI.Raw.Comm_Rank(comm, out MpiRank);
 			csMPI.Raw.Comm_Size(comm, out MpiSize);
 
-            ReInitializeExternalBlocks(MpiRank, newColPart);
+            ReInitializeExternalBlockInformation(MpiRank, newColPart);
 
 			if (ReceiveLists != null)
 				ReceiveLists.Clear();
@@ -1371,15 +1367,7 @@ namespace ilPSP.LinSolvers {
 								this.ComPatternValid &= !BlockIndicesByProcessor.Add(BlkCol);
                                 this.m_RowsWithExternalBlock[iBlkLoc] |= true;
                             }
-							HashSet<long> BlockIndicesByRow;
-							lock (m_ExternalBlockIndicesByRow) {
-								if (!m_ExternalBlockIndicesByRow.TryGetValue(iBlkLoc, out BlockIndicesByRow)) {
-									BlockIndicesByRow = new HashSet<long>();
-									m_ExternalBlockIndicesByRow.Add(iBlkLoc, BlockIndicesByRow);
 								}
-								BlockIndicesByRow.Add(BlkCol);
-							}
-						}
 
                     }
                 } else {
@@ -1516,15 +1504,7 @@ namespace ilPSP.LinSolvers {
                             this.ComPatternValid &= !BlockIndicesByProcessor.Add(jBlock);
                             this.m_RowsWithExternalBlock[iBlockLoc] |= true;
                         }
-						HashSet<long> BlockIndicesByRow;
-						lock (m_ExternalBlockIndicesByRow) {
-							if (!m_ExternalBlockIndicesByRow.TryGetValue(iBlockLoc, out BlockIndicesByRow)) {
-								BlockIndicesByRow = new HashSet<long>();
-								m_ExternalBlockIndicesByRow.Add(iBlockLoc, BlockIndicesByRow);
 							}
-							BlockIndicesByRow.Add(jBlock);
-						}
-					}
 
                 }
             } else {
@@ -2499,10 +2479,6 @@ namespace ilPSP.LinSolvers {
                 foreach(var kv in this.m_ExternalBlockIndicesByProcessor) {
                     Ret.m_ExternalBlockIndicesByProcessor.Add(kv.Key, new HashSet<long>(kv.Value));
                 }
-				Ret.m_ExternalBlockIndicesByRow = new Dictionary<int, HashSet<long>>();
-				foreach (var kv in this.m_ExternalBlockIndicesByRow) {
-					Ret.m_ExternalBlockIndicesByRow.Add(kv.Key, new HashSet<long>(kv.Value));
-				}
 
 				Ret.m_BlockRows = new SortedDictionary<long, BlockEntry>[this.m_BlockRows.Length];
                 for(int iRow = 0; iRow < Ret.m_BlockRows.Length; iRow++) {
@@ -2555,7 +2531,6 @@ namespace ilPSP.LinSolvers {
         public void Clear() {
             m_Membanks.Clear();
             m_ExternalBlockIndicesByProcessor.Clear();
-			m_ExternalBlockIndicesByRow.Clear();
 			Array.Clear(m_BlockRows, 0, m_BlockRows.Length);
             SendLists = new Dictionary<int, long[,]>();
             ReceiveLists = new Dictionary<int, long[,]>();
@@ -3731,6 +3706,19 @@ namespace ilPSP.LinSolvers {
             }
         }
 
+		/// <summary>
+		/// Determines the column indices that have to be sent to other processors.
+		/// </summary>
+		/// <typeparam name="V3"></typeparam>
+		/// <typeparam name="V4"></typeparam>
+		/// <param name="Target"></param>
+		/// <param name="ColumnIndicesSource"></param>
+		/// <param name="ColIndicesTarget"></param>
+		/// <param name="comm"></param>
+		/// <returns> key: MPI processor rank
+		/// value: mapping [this column index] --> [target column index]
+		/// first index: enumeration; second index 0 for this, 1 for target.</returns>
+		/// <exception cref="ArgumentException"></exception>
         private Dictionary<int, long[,]> DetermineExternColumnIndices<V3, V4>(IMutableMatrixEx Target, V3 ColumnIndicesSource, V4 ColIndicesTarget, MPI_Comm comm)
             where V3 : IEnumerable<long>
             where V4 : IEnumerable<long> //
