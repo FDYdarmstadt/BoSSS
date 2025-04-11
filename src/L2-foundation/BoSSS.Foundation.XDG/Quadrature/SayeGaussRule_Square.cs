@@ -268,7 +268,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
 
         protected override QuadRule CreateZeroQuadrule()
         {
-            QuadRule zeroRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
+            QuadRule zeroRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension, false);
             zeroRule.Nodes.LockForever();
             return zeroRule;
         }
