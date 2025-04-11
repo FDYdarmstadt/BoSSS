@@ -837,7 +837,7 @@ namespace ilPSP.LinSolvers {
                 var blocksOnThisRow = m_BlockRows[locBlk].Keys.ToArray();
 				foreach (var globBlk in blocksOnThisRow) {
 					int ownerProc = newColPart.FindProcessForBlock(globBlk);
-				if (ownerProc != myRank) {
+					if (ownerProc != myRank) {
 						// add the processor to the list of processors which own this block
 						if (!newExternalBlockIndicesByProcessor.TryGetValue(ownerProc, out var hashSet)) {
 							hashSet = new HashSet<long>();
@@ -1367,7 +1367,7 @@ namespace ilPSP.LinSolvers {
 								this.ComPatternValid &= !BlockIndicesByProcessor.Add(BlkCol);
                                 this.m_RowsWithExternalBlock[iBlkLoc] |= true;
                             }
-								}
+						}
 
                     }
                 } else {
@@ -1504,7 +1504,7 @@ namespace ilPSP.LinSolvers {
                             this.ComPatternValid &= !BlockIndicesByProcessor.Add(jBlock);
                             this.m_RowsWithExternalBlock[iBlockLoc] |= true;
                         }
-							}
+					}
 
                 }
             } else {
@@ -2624,10 +2624,10 @@ namespace ilPSP.LinSolvers {
 			return true;
 		}
 
-        /// <summary>
-        /// creates a non-shallow copy of this object
-        /// </summary>
-        public object Clone() {
+		/// <summary>
+		/// creates a non-shallow copy of this object
+		/// </summary>
+		public object Clone() {
             return CloneAs();
         }
 
@@ -3813,6 +3813,46 @@ namespace ilPSP.LinSolvers {
         }
 
 		/// <summary>
+		/// Changes the column indices of the matrix according to the provided mapping (source idx, target idx) (global indices).
+		/// </summary>
+		/// <param name="columnMapping"></param>
+		/// <exception cref="ArgumentException"></exception>
+		public void ChangeColumnIndices(IList<(long Source, long Target)> columnMapping) {
+#if DEBUG
+			bool hasDuplicateSource = columnMapping.GroupBy(x => x.Source).Any(g => g.Count() > 1);
+			bool hasDuplicateTarget = columnMapping.GroupBy(x => x.Target).Any(g => g.Count() > 1);
+			bool outOfRange = columnMapping.Any(x => x.Source < 0 || x.Source > _ColPartitioning.TotalLength || x.Target < 0 || x.Target > _ColPartitioning.TotalLength);
+
+			if (hasDuplicateSource || hasDuplicateTarget || outOfRange) {
+				throw new ArgumentException("Something wrong with the columnMapping");
+			}
+#endif
+            var mappingDict = columnMapping.ToDictionary(x => x.Source, x => x.Target);
+			// Iterate over each block row
+			for (int i = 0; i < m_BlockRows.Length; i++) {
+				var blockRow = m_BlockRows[i];
+				var updatedBlockRow = new SortedDictionary<long, BlockEntry>();
+
+				// Iterate over each block entry in the sorted dictionary
+				foreach (var kvp in blockRow) {
+					long oldColIndex = kvp.Key;
+					BlockEntry blockEntry = kvp.Value;
+
+                    if (mappingDict.TryGetValue(oldColIndex, out long newColIndex)) {
+                        updatedBlockRow[newColIndex] = blockEntry;
+						blockEntry.jBlkCol = newColIndex; // Update the block entry with the new column index
+
+					} else {
+                        updatedBlockRow[oldColIndex] = blockEntry;
+                    }
+				}
+
+				// Replace the old block row with the updated one
+				m_BlockRows[i] = updatedBlockRow;
+			}
+		}
+
+		/// <summary>
 		/// Determines the column indices that have to be sent to other processors.
 		/// </summary>
 		/// <typeparam name="V3"></typeparam>
@@ -3825,7 +3865,7 @@ namespace ilPSP.LinSolvers {
 		/// value: mapping [this column index] --> [target column index]
 		/// first index: enumeration; second index 0 for this, 1 for target.</returns>
 		/// <exception cref="ArgumentException"></exception>
-        private Dictionary<int, long[,]> DetermineExternColumnIndices<V3, V4>(IMutableMatrixEx Target, V3 ColumnIndicesSource, V4 ColIndicesTarget, MPI_Comm comm)
+		private Dictionary<int, long[,]> DetermineExternColumnIndices<V3, V4>(IMutableMatrixEx Target, V3 ColumnIndicesSource, V4 ColIndicesTarget, MPI_Comm comm)
             where V3 : IEnumerable<long>
             where V4 : IEnumerable<long> //
         {
