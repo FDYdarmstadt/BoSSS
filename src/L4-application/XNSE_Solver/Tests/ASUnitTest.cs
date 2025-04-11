@@ -1443,9 +1443,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void SphericalHarmonicsPostprocessingTest(
+#if DEBUG
+            [Values(true)] bool OnQuarterDomain,
+            [Values(3)] int MaxLength,
+            [Values(true)] bool RotationalSymmetric
+#else
             [Values(true, false)] bool OnQuarterDomain,
             [Values(3, 5)] int MaxLength,
-            [Values(true, false)] bool RotationalSymmetric) {
+            [Values(true, false)] bool RotationalSymmetric
+#endif
+            ) {
             // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonicsPostprocessingTest()
 
             if(MaxLength == 5 && (OnQuarterDomain || RotationalSymmetric))
