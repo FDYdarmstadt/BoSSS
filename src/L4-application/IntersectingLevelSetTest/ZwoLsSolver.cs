@@ -212,8 +212,10 @@ namespace IntersectingLevelSetTest {
 
         private int QuadOrder {
             get {
-                return this.DEGREE * 2 + Math.Max(Phi0.Basis.Degree,Phi1.Basis.Degree); 
                 // degree of ansatz function + degree of test function + Max level set degree. 
+                int deg = this.DEGREE * 2 + Math.Max(Phi0.Basis.Degree,Phi1.Basis.Degree);
+                deg += 3; // required to make some of the Algoim tests working, which are slightly of.
+                return deg;
             }
         }
 
