@@ -33,16 +33,21 @@ namespace IntersectingLevelSetTest {
             BoSSS.Solution.Application.InitMPI();
         }
 
+
+
+
+
+        /// <summary>
+        /// Test two LS-line in one single cell. For same shape, but two different combinations of line. 
+        ///
+        /// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
+        /// For first time step, the error magnitude is E-15, it's straight horizontal line + curve line. 
+        /// For second time step, the error magnitude is E-3, it's straight vertical line + curve line. Might be something wrong. 
+        ///
+        /// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
+        /// This issue no longer appears. 
+        /// </summary>
         [Test]
-        // Test two LS-line in one single cell. For same shape, but two different combinations of line. 
-
-        // When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
-        // For first time step, the error magnitude is E-15, it's straight horizontal line + curve line. 
-        // For second time step, the error magnitude is E-3, it's straight vertical line + curve line. Might be something wrong. 
-
-        // When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
-        // This issue no longer appears. 
-
         public static void ParabolaTestSaye(
             [Values(3, 4, 5)] int DGdegree) {
             BoSSS.Solution.Application.InitMPI();
@@ -58,22 +63,27 @@ namespace IntersectingLevelSetTest {
             var p = new ZwoLsSolver<TestControl>();
             p.DEGREE = DGdegree;
             p.MomentFittingVariant = CutCellQuadratureMethod.Saye;
-            //C.SuperSampling = 5;
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 5;
             p.Init(C);
             p.RunSolverMode();
         }
 
-		[Test]
-		// Test two LS-line in one single cell. For same shape, but two different combinations of line. 
 
-		// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
-		// For first time step, the error magnitude is E-15, it's straight horizontal line + curve line. 
-		// For second time step, the error magnitude is E-3, it's straight vertical line + curve line. Might be something wrong. 
 
-		// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
-		// This issue no longer appears. 
-		public static void ParabolaTestAlgoim(
-	[Values(3, 4, 5)] int DGdegree) {
+        /// <summary>
+        /// Test two LS-line in one single cell. For same shape, but two different combinations of line. 
+        ///
+        /// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
+        /// For first time step, the error magnitude is E-15, it's straight horizontal line + curve line. 
+        /// For second time step, the error magnitude is E-3, it's straight vertical line + curve line. Might be something wrong. 
+        ///
+        /// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
+        /// This issue no longer appears. 
+        /// </summary>
+        [Test]
+        public static void ParabolaTestAlgoim(
+	        [Values(3, 4, 5)] int DGdegree) {
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
 			Func<double, double, double, double> levelSet0 = (x, y, t) => -(y + (0 + t) * x * x);
@@ -92,16 +102,18 @@ namespace IntersectingLevelSetTest {
 			p.RunSolverMode();
 		}
 
-		[Test]
-        // Test two LS-line in one single cell. 
-        // For one straight horizontal line + the other moving straight line with slope line.
-        // Set NoOfTimesteps = 5;
-
-        // When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
-        // The error magnitude is E-15 for good cases, E-4 for bad cases. 
-
-        // When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
-        // This issue no longer appears. 
+        /// <summary>
+        /// Test two LS-line in one single cell. 
+        /// For one straight horizontal line + the other moving straight line with slope line.
+        /// Set NoOfTimesteps = 5;
+        ///
+        /// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
+        /// The error magnitude is E-15 for good cases, E-4 for bad cases. 
+        /// 
+        /// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
+        /// This issue no longer appears. 
+        /// </summary>
+        [Test]
         public static void TwoStraightTestSaye(
             [Values(3, 4, 5)] int DGdegree) {
             BoSSS.Solution.Application.InitMPI();
@@ -120,17 +132,20 @@ namespace IntersectingLevelSetTest {
             p.RunSolverMode();
         }
 
-		[Test]
-		// Test two LS-line in one single cell. 
-		// For one straight horizontal line + the other moving straight line with slope line.
-		// Set NoOfTimesteps = 5;
 
-		// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
-		// The error magnitude is E-15 for good cases, E-4 for bad cases. 
-
-		// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
-		// This issue no longer appears. 
-		public static void TwoStraightTestAlgoim(
+        /// <summary>
+        /// Test two LS-line in one single cell. 
+        /// For one straight horizontal line + the other moving straight line with slope line.
+        /// Set NoOfTimesteps = 5;
+        ///
+        /// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
+        /// The error magnitude is E-15 for good cases, E-4 for bad cases. 
+        ///
+        /// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
+        /// This issue no longer appears. 
+        /// </summary>
+        [Test]
+        public static void TwoStraightTestAlgoim(
 					[Values(4)] int DGdegree) { //leads to significantly larger errors when =5
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
@@ -148,16 +163,20 @@ namespace IntersectingLevelSetTest {
 			p.RunSolverMode();
 		}
 
-		[Test]
-        // Test two LS-line in 5 x 5 cells.
-        // For one straight horizontal line + curve line.
-        // The largest error might not caused by the central cell, but by the cells around. 
 
-        // When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
-        // The error magnitude is E-15 for good cases, E-7 for bad cases. 
 
-        // When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
-        // This issue no longer appears. 
+        /// <summary>
+        /// Test two LS-line in 5 x 5 cells.
+        /// For one straight horizontal line + curve line.
+        /// The largest error might not caused by the central cell, but by the cells around. 
+        ///
+        /// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
+        /// The error magnitude is E-15 for good cases, E-7 for bad cases. 
+        ///
+        /// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
+        /// This issue no longer appears. 
+        /// </summary>
+        [Test]
         public static void TransformTestSaye(
             [Values(2, 3)] int DGdegree) {
             BoSSS.Solution.Application.InitMPI();
@@ -175,18 +194,22 @@ namespace IntersectingLevelSetTest {
             p.Init(C);
             p.RunSolverMode();
         }
-		
-		[Test]
-		// Test two LS-line in 5 x 5 cells.
-		// For one straight horizontal line + curve line.
-		// The largest error might not caused by the central cell, but by the cells around. 
 
-		// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
-		// The error magnitude is E-15 for good cases, E-7 for bad cases. 
 
-		// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
-		// This issue no longer appears. 
-		public static void TransformTestAlgoim(
+
+        /// <summary>
+        /// Test two LS-line in 5 x 5 cells.
+        /// For one straight horizontal line + curve line.
+        /// The largest error might not caused by the central cell, but by the cells around. 
+        ///
+        /// When u.ProjectField((x, y) => x * x), which means du_dx_Exact.ProjectField((x, y) => 2 * x), and DGdegree = 2: 
+        /// The error magnitude is E-15 for good cases, E-7 for bad cases. 
+        ///
+        /// When u.ProjectField((x, y) => Math.Sin(x) * Math.Cos(y)) 
+        /// This issue no longer appears. 
+        /// </summary>
+        [Test]
+        public static void TransformTestAlgoim(
 		[Values(2, 3)] int DGdegree) {
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
@@ -243,8 +266,10 @@ namespace IntersectingLevelSetTest {
 		//    p.RunSolverMode();
 		//}
 
-		[Test]
-        // This is the 2D Convergence test of two straight line. 
+		/// <summary>
+        /// This is the 2D Convergence test of two straight line. 
+        /// </summary>
+        [Test]
         public static void Convergence2DTestSaye(
             [Values(1)] int DGdegree) {
             BoSSS.Solution.Application.InitMPI();
@@ -300,9 +325,11 @@ namespace IntersectingLevelSetTest {
             Console.WriteLine("Convergence2DTest for DG degree " + DGdegree + " PASSED!");
         }
 
-		// Algoim does not perform well when resolution gets higher
-		// Possibly, the accuracy of level set presentation decreases due to the polynomial interpolation
-		public static void Convergence2DTestAlgoim(
+        /// <summary>
+        /// Algoim does not perform well when resolution gets higher
+        /// Possibly, the accuracy of level set presentation decreases due to the polynomial interpolation
+        /// </summary>
+        public static void Convergence2DTestAlgoim(
 			[Values(1)] int DGdegree) {
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
@@ -357,11 +384,14 @@ namespace IntersectingLevelSetTest {
 			Console.WriteLine("Convergence2DTest for DG degree " + DGdegree + " PASSED!");
 		}
 
-		[Test]
-        // This is the 3D test of two rotating planes in one single cell. 
-        // The errors are quite low, E-15
-        // However, might throw ex: 'Root not found' at timesetp 24.
-        // However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. 
+
+        /// <summary>
+        /// This is the 3D test of two rotating planes in one single cell. 
+        /// The errors are quite low, E-15
+        /// However, might throw ex: 'Root not found' at timesetp 24.
+        /// However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. 
+        /// </summary>
+        [Test]
         public static void Rotation3DTestSaye(
             [Values(2, 3)] int DGdegree) {
             BoSSS.Solution.Application.InitMPI();
@@ -382,13 +412,16 @@ namespace IntersectingLevelSetTest {
             p.RunSolverMode();
         }
 
-		[Test]
-		// This is the 3D test of two rotating planes in one single cell. 
-		// The errors are quite low, E-15
-		// However, might throw ex: 'Root not found' at timesetp 24.
-		// However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. 
-		public static void Translation3DTestAlgoim(
-	[Values(2, 3)] int DGdegree) {
+
+        /// <summary>
+        /// This is the 3D test of two rotating planes in one single cell. 
+        /// The errors are quite low, E-15
+        /// However, might throw ex: 'Root not found' at timesetp 24.
+        /// However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. 
+        /// </summary>
+        [Test]
+        public static void Translation3DTestAlgoim(
+	            [Values(2, 3)] int DGdegree) {
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
 			//Func<double, double, double, double, double> levelSet3D_0 = (x, y, z, t) => (x - 1 * (Math.Tan(t / 90.1 * Math.PI) * y) + t / 90.1 * Math.PI * 0.01 * Math.Sin(t / 90.1 * Math.PI * 10));
@@ -413,11 +446,14 @@ namespace IntersectingLevelSetTest {
 
 
 
-		[Test]
-        // This is the 3D test of a flat horizontal plane + a curved plane in one single cell. 
-        // The errors are quite low, E-15
-        // However, might throw ex: 'Root not found' at timesetp 7.
-        // However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. But the error is not small after timestep 7. 
+
+        /// <summary>
+        /// This is the 3D test of a flat horizontal plane + a curved plane in one single cell. 
+        /// The errors are quite low, E-15
+        /// However, might throw ex: 'Root not found' at timesetp 7.
+        /// However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. But the error is not small after timestep 7. 
+        /// </summary>
+        [Test]
         public static void Transform3DTestSaye(
             [Values(2, 3)] int DGdegree) {
             BoSSS.Solution.Application.InitMPI();
@@ -438,13 +474,16 @@ namespace IntersectingLevelSetTest {
             p.RunSolverMode();
         }
 
-		[Test]
-		// This is the 3D test of a flat horizontal plane + a curved plane in one single cell. 
-		// The errors are quite low, E-15
-		// However, might throw ex: 'Root not found' at timesetp 7.
-		// However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. But the error is not small after timestep 7. 
-		public static void Transform3DTestAlgoim(
-	[Values(2, 3)] int DGdegree) {
+
+        /// </summary>
+        /// This is the 3D test of a flat horizontal plane + a curved plane in one single cell. 
+        /// The errors are quite low, E-15
+        /// However, might throw ex: 'Root not found' at timesetp 7.
+        /// However, if the C.Resolution = 3; calculation will be faster, and throw ex will not happened. But the error is not small after timestep 7. 
+        /// <summary>
+        [Test]
+        public static void Transform3DTestAlgoim(
+        	[Values(2, 3)] int DGdegree) {
 			BoSSS.Solution.Application.InitMPI();
 			//BoSSS.Solution.Application.DeleteOldPlotFiles();
 			Func<double, double, double, double, double> levelSet3D_0 = (x, y, z, t) => (x + 1 * y * y * 10 * Math.Sin(t / 90.1 * Math.PI));

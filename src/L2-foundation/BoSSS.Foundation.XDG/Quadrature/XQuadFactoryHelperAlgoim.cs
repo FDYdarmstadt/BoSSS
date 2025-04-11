@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.XDG {
 
             var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                     algoimFactory.GetCellBoundaryVolumeFactory(),
-                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
 
             return r;
         }
@@ -80,8 +80,8 @@ namespace BoSSS.Foundation.XDG {
 			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
 
 			var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
-		    cellBoundaryFac,
-		    _cutDom);
+		                                                cellBoundaryFac,
+		                                                _cutDom);
 
 			return r;
 		}
@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.XDG {
 
                 return new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
                         LineAndPoint_in2D[levSetIndex].GetPointFactory(),
-                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
             } else {
                 CheckKref(levSetIndex, KrefVol);
                 
@@ -120,7 +120,7 @@ namespace BoSSS.Foundation.XDG {
 
                 var r = new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
                         algoimFactory.GetCellBoundarySurfaceFactory(),
-                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
 
                 return r;
             }
@@ -145,8 +145,8 @@ namespace BoSSS.Foundation.XDG {
 			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
 
 			var r = new EdgeRuleFromCellBoundaryFactory(gdat, gdat.SpatialDimension > 2,
-            cellBoundaryFac,
-			_cutDom);
+                                                        cellBoundaryFac,
+			                                            _cutDom);
 
 			return r;
 		}

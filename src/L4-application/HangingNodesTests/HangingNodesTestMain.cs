@@ -29,8 +29,8 @@ namespace HangingNodesTests {
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
+            int[] phases = new int[] { 2 };
             byte[] setup = new byte[] { 0 };
-            int[] phases = new int[] { 3 };
 
             bool plot = true;
 
@@ -76,7 +76,7 @@ namespace HangingNodesTests {
                         }
 
                         using (var solver = new XNSFE()) {
-                            try {
+                            //try {
                                 solver.Init(C);
                                 solver.RunSolverMode();
                                 if (plot) {
@@ -90,13 +90,13 @@ namespace HangingNodesTests {
                                 CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)C.CutCellQuadratureType));
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                            } catch (Exception e) {
-                                Console.WriteLine(desc + " : failed");
-                                Console.WriteLine(e.Message);
-                                Console.WriteLine(e.StackTrace);
-                                TemperatureRes.Add(-1.0);
-                                MomentumRes.Add(-1.0);
-                            }
+                            //} catch (Exception e) {
+                            //    Console.WriteLine(desc + " : failed");
+                            //    Console.WriteLine(e.Message);
+                            //    Console.WriteLine(e.StackTrace);
+                            //    TemperatureRes.Add(-1.0);
+                            //    MomentumRes.Add(-1.0);
+                            //}
                         }                       
                     }
                 }
@@ -145,11 +145,7 @@ namespace HangingNodesTests {
             RunTest(sizes, setup, 3, ccqm);
         }
 
-        public static void __Test3Phase(CutCellQuadratureMethod ccqm) {
-            double[] sizes = new double[] { 1e0 };
-            byte[] setup = new byte[] { 2 };
-            RunTest(sizes, setup, 3, ccqm);
-        }
+
 
 
         /// <summary>

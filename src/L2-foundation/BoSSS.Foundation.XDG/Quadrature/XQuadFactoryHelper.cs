@@ -139,7 +139,7 @@ namespace BoSSS.Foundation.XDG {
             int D = gdat.SpatialDimension;
             return new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
                 _GetSurfaceElement_BoundaryRuleFactory(levSetIndex, KrefVol),
-                this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
         }
 
         /// <summary>
@@ -257,13 +257,13 @@ namespace BoSSS.Foundation.XDG {
             if (D == 2) {
                 var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                     GetCellFaceFactory(levSetIndex, KrefVol, jmp),
-                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
                 return r;
             } else {
                 if (jmp == JumpTypes.Heaviside) {
                     var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                         GetCellFaceFactory(levSetIndex, KrefVol, JumpTypes.Heaviside),
-                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
                     return r;
                 } else if (jmp == JumpTypes.OneMinusHeaviside) {
 

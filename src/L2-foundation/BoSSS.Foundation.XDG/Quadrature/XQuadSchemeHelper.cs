@@ -285,7 +285,7 @@ namespace BoSSS.Foundation.XDG {
 
                         var mask = LevelSetBoundaryOnEdgeRuleFactory.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKrefEdge);
                         var bndy_fact = new LevelSetBoundaryOnEdgeRuleFactory(Kref, this.XDGSpaceMetrics.LevelSetData[iLevSet]);
-                        var maxDom = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
+                        var maxDom = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
                         if(alldoublyCut != null) {
                             maxDom = maxDom.Except(alldoublyCut);
                         }

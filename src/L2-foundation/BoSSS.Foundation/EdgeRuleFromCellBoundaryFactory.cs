@@ -24,6 +24,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
+using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -36,6 +37,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// constructor
         /// </summary>
         public EdgeRuleFromCellBoundaryFactory(Grid.Classic.GridData g, bool _scaleReq, IQuadRuleFactory<CellBoundaryQuadRule> cellBndQF, CellMask maxDomain) {
+            if(maxDomain.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.", "maxDomain");
+
             m_cellBndQF = cellBndQF;
             grd = g;
             m_maxDomain = maxDomain;
