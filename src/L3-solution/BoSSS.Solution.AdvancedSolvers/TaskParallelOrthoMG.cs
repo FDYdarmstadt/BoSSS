@@ -632,8 +632,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		BlockMsrMatrix opRightChangeOfBasisMatrix = null;
 		BlockMsrMatrix subCommSmootherOpMatrix = null;
 		BlockMsrMatrix subCommCoarseOpMatrix = null;
-		BlockMsrMatrix smootherPermutation = null;
-		BlockMsrMatrix coarsePermutation = null;
+		(BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices) smootherPermutation = (null, null, null);
+		(BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices) coarsePermutation = (null, null, null);
+
+		BlockMsrMatrix smootherPermutationMtx => smootherPermutation.Matrix;
+		BlockMsrMatrix coarsePermutationMtx => coarsePermutation.Matrix;
 
 		List<(long, long)> columnMappingOpToSmoother = new List<(long, long)>(); //cell-based indexes for the mapping from the operator to the smoother matrix (source idx, target idx)
 		List<(long, long)> columnMappingOpToCoarse = new List<(long, long)>();   // cell-based indexes for the mapping from the operator to the coarse matrix (source idx, target idx)
@@ -730,12 +733,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         void CreateCoarseOpMatrix() {
 			using (var tr = new FuncTrace()) {
-				//if (opCommRestrictionOperator == null || opCommProlongationOperator == null)
-				//	throw new ArgumentException("Restriction and prolongation operator not set. Are you sure that the operator is called correctly?");
-
+                //if (opCommRestrictionOperator == null || opCommProlongationOperator == null)
+                //	throw new ArgumentException("Restriction and prolongation operator not set. Are you sure that the operator is called correctly?");
+                CreatePermutationMatrices();
                 //mapping
-                ChangeCommunicators();
-				// 
+                (subCommSmootherOpMatrix, subCommCoarseOpMatrix) = ChangeCommunicators(OpMatrix);
+				
+                // 
 
 
 				// create coarse level
@@ -744,47 +748,71 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		void ChangeCommunicators() {
-            if (MgMap is MultigridMapping mapping) {
+		/// <summary>
+		/// Changes the communicator of <paramref name="Mtx"/> and distributes them to the smoother and coarse communicators
+        /// matrices are the same but permutated so that they are stored only on their communicators
+		/// </summary>
+		/// <param name="Mtx"></param>
+		/// <returns></returns>
+		(BlockMsrMatrix smootherMtx, BlockMsrMatrix coarseMtx) ChangeCommunicators(BlockMsrMatrix Mtx) {
 				//smoother (should be called by all procs in opComm)
-                var (distForSmoother, columnMappingOpToSmoother) = DistributeMapping(mapping, NoOfSmootherProcs, 0);
-				var GlobDOFidx = CellIndexToDOFs(mapping, distForSmoother);
-				var Permutation = GetPermutationMatrix(mapping, GlobDOFidx); //this is technically a permutation matrix
-				var LocalizedMatrix = BlockMsrMatrix.Multiply(Permutation.Matrix, OpMatrix); // transfer matrix to the target procs (changed the position of rows not columns)
+				var LocalizedMatrix = BlockMsrMatrix.Multiply(smootherPermutation.Matrix, Mtx); // transfer matrix to the target procs (changed the position of rows not columns)
 				LocalizedMatrix.ChangeColumnIndices(columnMappingOpToSmoother); //switches column indices with respect to the mapping
 				LocalizedMatrix.ChangeCommPattern(subComm, LocalizedMatrix._RowPartitioning); // calculates new external indices with respec to the new partitioning (still opComm)
-				subCommSmootherOpMatrix = LocalizedMatrix.GetSubMatrix(Permutation.RowIndices, Permutation.RowIndices, subComm); // finally create a new matrix with the new Comm
-				smootherPermutation = Permutation.Matrix;
+			    var smootherMtx = LocalizedMatrix.GetSubMatrix(smootherPermutation.RowIndices, smootherPermutation.RowIndices, subComm); // finally create a new matrix with the new Comm
 
 				// coarse (should be called by all procs in opComm)
-				var (distForCoarse, columnMappingOpToCoarse) = DistributeMapping(mapping, NoOfCoarseProcs, NoOfSmootherProcs); // offset is set according to remaning elements = (0 + NoOfSmootherProcs) 
-				GlobDOFidx = CellIndexToDOFs(mapping, distForCoarse);
-				Permutation = GetPermutationMatrix(mapping, GlobDOFidx); //this is technically a permutation matrix
-				LocalizedMatrix = BlockMsrMatrix.Multiply(Permutation.Matrix, OpMatrix); // transfer matrix to the target procs (changed the position of rows not columns)
+				LocalizedMatrix = BlockMsrMatrix.Multiply(coarsePermutation.Matrix, Mtx); // transfer matrix to the target procs (changed the position of rows not columns)
 				LocalizedMatrix.ChangeColumnIndices(columnMappingOpToCoarse); //switches column indices with respect to the mapping
 				LocalizedMatrix.ChangeCommPattern(subComm, LocalizedMatrix._RowPartitioning); // calculates new external indices with respec to the new partitioning (still opComm)
-				subCommCoarseOpMatrix = LocalizedMatrix.GetSubMatrix(Permutation.RowIndices, Permutation.RowIndices, subComm); // finally create a new matrix with the new Comm
-				coarsePermutation = Permutation.Matrix;
+				var coarseMtx = LocalizedMatrix.GetSubMatrix(coarsePermutation.RowIndices, coarsePermutation.RowIndices, subComm); // finally create a new matrix with the new Comm
 
 #if DEBUG
-				TestMatrices(distForSmoother, GlobDOFidx, mapping, smootherPermutation, subCommSmootherOpMatrix, "s_", verbose);
-				TestMatrices(distForCoarse, GlobDOFidx, mapping, coarsePermutation, subCommCoarseOpMatrix, "c_", verbose);
+				TestMatrices(Mtx, smootherPermutationMtx, smootherMtx, "s_", verbose);
+				TestMatrices(Mtx, coarsePermutationMtx, coarseMtx, "c_", verbose);
 #endif
-			} else {
-                throw new NotImplementedException();
-            }
+                
+            return (smootherMtx, coarseMtx);
 		}
 
-		void TestMatrices(IEnumerable<int> dist, (long i0Cell, int lenCell)[] GlobDOFidx, MultigridMapping mapping, BlockMsrMatrix PermutationMtx, BlockMsrMatrix subMtx, string tag = "t_", bool WriteToFiles = false) {
+
+        void CreatePermutationMatrices() {
+			if (MgMap is MultigridMapping mapping) {
+                //smoother (should be called by all procs in opComm)
+                int[] localDistForSmoother;
+				(localDistForSmoother, columnMappingOpToSmoother) = DistributeMapping(mapping, NoOfSmootherProcs, 0);
+				var GlobDOFidx = CellIndexToDOFs(mapping, localDistForSmoother);
+				smootherPermutation = GetPermutationMatrix(mapping, GlobDOFidx); //this is technically a permutation matrix but also distributes rows such that they are only at the target comm
+
+				// coarse (should be called by all procs in opComm)
+				int[] localDistForCoarse;
+				(localDistForCoarse, columnMappingOpToCoarse) = DistributeMapping(mapping, NoOfCoarseProcs, NoOfSmootherProcs); // offset is set according to remaning elements = (0 + NoOfSmootherProcs) 
+				GlobDOFidx = CellIndexToDOFs(mapping, localDistForCoarse);
+				coarsePermutation = GetPermutationMatrix(mapping, GlobDOFidx); //this is technically a permutation matrix but also distributes rows such that they are only at the target comm
+			} else {
+				throw new NotImplementedException();
+			}
+		}
+
+		/// <summary>
+		/// tests if the permutation matrix is correct with respect to the original matrix and the subComm matrix
+		/// </summary>
+		/// <param name="opCommMtx">a matrix defined on opComm</param>
+		/// <param name="PermutationMtx">permutation matrix to be tested</param>
+		/// <param name="subCommMtx">the subComm version of <paramref name="opCommMtx"/> </param>
+		/// <param name="tag">tag for i/o outputs</param>
+		/// <param name="WriteToFiles">true or false</param>
+		/// <exception cref="Exception"></exception>
+		void TestMatrices(BlockMsrMatrix opCommMtx, BlockMsrMatrix PermutationMtx, BlockMsrMatrix subCommMtx, string tag = "t_", bool WriteToFiles = false) {
 			//Create a test vector
 			Random rnd = new Random(44); //seed is 44
-			var TestVector = new double[mapping.LocalLength];
+			var TestVector = new double[opCommMtx.ColPartition.LocalLength];
 			for (int i = 0; i < TestVector.Length; i++) {
 				TestVector[i] = rnd.NextDouble();
 			}
 
 			// first test SpMV with opCommMatrix
-			var opResult = new double[mapping.LocalLength];
+			var opResult = new double[opCommMtx.ColPartition.LocalLength];
 			OpMatrix.SpMV(1.0, TestVector, 0.0, opResult);
 				
 			// test vector to subComm
@@ -793,7 +821,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			// result at the subComm
 			var subOpResult = new double[PermutationMtx._RowPartitioning.LocalLength];
-			subMtx.SpMV(1.0, TestVectorSub, 0.0, subOpResult);
+			subCommMtx.SpMV(1.0, TestVectorSub, 0.0, subOpResult);
 
 			// map back the subComm result to the opComm
 			var TransposeRedist = PermutationMtx.Transpose();
@@ -801,8 +829,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			TransposeRedist.SpMV(1.0, subOpResult, 0.0, subOpResultBackToOp);
 
 			if (WriteToFiles) {
-				dist.SaveToTextFileDebug($"{tag}distForSmoother.txt");
-				GlobDOFidx.SaveToTextFileDebug($"{tag}GlobDOFidx.txt");
+				//dist.SaveToTextFileDebug($"{tag}localDistForSmoother.txt");
+				//GlobDOFidx.SaveToTextFileDebug($"{tag}GlobDOFidx.txt");
 
 				OpMatrix.SaveToTextFileSparseDebug($"{tag}OpMatrix.txt"); //parallel
 				OpMatrix.SaveToTextFileSparse($"{tag}OpMatrix.txt"); /// combine and write as a single file
@@ -810,8 +838,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				TestVector.SaveToTextFileDebug($"{tag}TestVector", ".txt");
 				opResult.SaveToTextFileDebug($"{tag}opResult", ".txt");
 
-				subMtx.SaveToTextFileSparseDebug($"{tag}localBlock.txt");
-				subMtx.SaveToTextFileSparse($"{tag}localBlock.txt");
+				subCommMtx.SaveToTextFileSparseDebug($"{tag}localBlock.txt");
+				subCommMtx.SaveToTextFileSparse($"{tag}localBlock.txt");
 				
 				PermutationMtx.SaveToTextFileSparseDebug($"{tag}Redist.txt");
 				PermutationMtx.SaveToTextFileSparse($"{tag}Redist.txt");
@@ -845,7 +873,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 myList[jCellLoc] = (map.GetCellI0(jCellLoc), map.GetLength(jCellLoc));
 			}
 
-			myList.SaveToTextFileDebug("t_listLocalOfDOfs");
 			//exchange the data with processors depending on the list targetProcs
 			var rcvData = ExchangeDOFData(myList, targetProcs); 
 
@@ -874,14 +901,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					continue;
 
                 commBuffersGlobal.Add(p, commBuffers[p].ToArray());
-				commBuffers[p].SaveToTextFileDebug($"t_SendListfrom{opCommRank}to{p}", "txt");
+				//commBuffers[p].SaveToTextFileDebug($"t_SendListfrom{opCommRank}to{p}", "txt");
 			}
 
 			// Exchange the data
 			IDictionary<int, (long i0Cell, int lenCell)[]> rcvData = SerialisationMessenger.ExchangeData(commBuffersGlobal);
 			foreach (var data in rcvData) {
                 myList.AddRange(data.Value);
-				data.Value.SaveToTextFileDebug($"t_recListfrom{rcvData.Keys}to{opCommRank}", "txt");
+				//data.Value.SaveToTextFileDebug($"t_recListfrom{rcvData.Keys}to{opCommRank}", "txt");
 			}
 
 			myList.AddRange(commBuffers[opCommRank]); //add the indices that is already on the processor and was designated to be on this processor
@@ -892,6 +919,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return filteredSorted;
 		}
 
+        /// <summary>
+        /// Creates permutation matrix and calculates Row and col indixes of each DOF (not block as in columnMapping)
+        /// </summary>
+        /// <param name="mapping">MG mapping for grid data at the current level</param>
+        /// <param name="globDOFsData">DOFs data with global indices</param>
+        /// <returns></returns>
 		private (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices) GetPermutationMatrix(MultigridMapping mapping, (long i0Global, int CellLen)[] globDOFsData) {
 			using (new FuncTrace()) {
 
@@ -994,7 +1027,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="NoOfParts">Number of target partitions</param>
 		/// <param name="CoreOffset">Offset for MPI ranks</param>
 		/// <returns></returns>
-		(int[] partLoc, IList<(long, long)> columnMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts, int CoreOffset) {
+		(int[] partLoc, List<(long, long)> columnMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts, int CoreOffset) {
 			using (new FuncTrace()) {
 				var columnMapping = new List<(long sourceIdx, long targetIdx)>();
 				int[] partLoc;
@@ -1127,54 +1160,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		//int[] DistributeRows(BlockMsrMatrix M, int NoOfParts) {
-		//	using (new FuncTrace()) {
-		//		(int[] xadj, int[] adjncy) = GetCSRforRows(M);
-		//		int[] NoOfSpecies = GetNoOfSpeciesList(M.);
-
-		//		int MPIrnk = op.Mapping.MpiRank;
-		//		int[] part;
-		//		if (MPIrnk == 0) {
-		//			int ncon = 1;
-		//			int edgecut = 0;
-		//			int[] options = new int[METIS.METIS_NOPTIONS];
-		//			METIS.SETDEFAULTOPTIONS(options);
-
-		//			options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
-		//			options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
-		//			options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
-		//			options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
-
-		//			int J = xadj.Length - 1;
-		//			part = new int[J];
-		//			Debug.Assert(xadj.Where(idx => idx > adjncy.Length).Count() == 0);
-		//			Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
-	
-		//			METIS.PARTGRAPHKWAY(
-		//					ref J, ref ncon,
-		//					xadj,
-		//					adjncy.ToArray(),
-		//					NoOfSpecies,
-		//					null,
-		//					null,
-		//					ref NoOfParts,
-		//					null,
-		//					null,
-		//					options,
-		//					ref edgecut,
-		//					part);
-		//		} else {
-		//			part = null;
-		//		}
-
-		//		// scatter back to processors
-		//		int MPIsz = op.Mapping.MpiSize;
-		//		int[] sendCount = MPIsz.ForLoop(r => op.GridData.CellPartitioning.GetLocalLength(r));
-		//		var partLoc = part.MPIScatterv(sendCount, 0, op.OperatorMatrix.MPI_Comm);
-		//		return partLoc;
-		//	}
-		//}
-
         (int[] xadj, int[] adjncy) GetCSRforRows(BlockMsrMatrix M) {
 			int n = (int)M.NoOfRows; // or M.N if defined that way
 			int[] xadj = new int[n + 1];
@@ -1263,68 +1248,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		int[] WorldToSubCommMapping;
 
         parallelTask myTask = parallelTask.All;
-
-		(int[] xadj, int[] adj) GetGridGraphForMetis(MultigridOperator op) {
-			using (new FuncTrace()) {
-				int Jloc = op.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-				int Jglb = checked((int)op.GridData.CellPartitioning.TotalLength);
-				long[] GlidxExt = op.GridData.iParallel.GlobalIndicesExternalCells;
-
-				var comm = op.OperatorMatrix.MPI_Comm;
-				int MPIrnk = op.OperatorMatrix.RowPartitioning.MpiRank;
-				int MPIsiz = op.OperatorMatrix.RowPartitioning.MpiSize;
-
-				int[][] Neighbors = op.GridData.iLogicalCells.CellNeighbours;
-				int L = Neighbors.Sum(ll => ll.Length);
-				int[] adj = new int[L]; // METIS input; neighbor vertices
-				int[] xadj = new int[Jloc + (MPIrnk == MPIsiz - 1 ? 1 : 0)]; // METIS input: offset into `adj`
-				int cnt = 0;
-				int j0 = checked((int)op.GridData.CellPartitioning.i0);
-				for (int j = 0; j < Jloc; j++) {
-					xadj[j] = cnt;
-					int[] Neighbors_j = Neighbors[j];
-					for (int iN = 0; iN < Neighbors_j.Length; iN++) {
-						int jNeigh = Neighbors_j[iN];
-						if (jNeigh < Jloc) {
-							// local cell
-							adj[cnt] = jNeigh + j0;
-						} else {
-							adj[cnt] = checked((int)GlidxExt[jNeigh - Jloc]);
-						}
-						cnt++;
-					}
-				}
-				Debug.Assert(cnt == L);
-				if (MPIrnk == MPIsiz - 1)
-					xadj[Jloc] = cnt;
-				Debug.Assert(xadj[0] == 0);
-
-				// convert `xadj` to global indices
-				int[] locLengths = L.MPIAllGather(comm);
-				Debug.Assert(locLengths.Length == MPIsiz);
-				int[] xadjOffsets = new int[MPIsiz];
-				for (int i = 1; i < locLengths.Length; i++) {
-					xadjOffsets[i] = xadjOffsets[i - 1] + locLengths[i - 1];
-				}
-				for (int j = 0; j < xadj.Length; j++)
-					xadj[j] += xadjOffsets[MPIrnk];
-
-				// gather `xadj` and `adj` on Rank 0
-				int[] xadjGl;
-				{
-					int[] rcvCount = MPIsiz.ForLoop(r => op.GridData.CellPartitioning.GetLocalLength(r));
-					rcvCount[rcvCount.Length - 1] += 1; // the final length which is added on the last processor
-					xadjGl = xadj.MPIGatherv(rcvCount, 0, comm);
-				}
-
-				int[] adjGl = adj.MPIGatherv(locLengths, 0, comm);
-				if (MPIrnk == 0)
-					Debug.Assert(xadjGl.Last() == adjGl.Length);
-
-				// return
-				return (xadjGl, adjGl);
-			}
-		}
 
 		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs) {
 			using (new FuncTrace()) {
