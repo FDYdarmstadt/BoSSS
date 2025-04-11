@@ -274,7 +274,9 @@ namespace IntersectingLevelSetTest {
             du_dx.Clear();
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
 
-            OperatorMatrix.SaveToTextFile("matrix.txt");
+            //OperatorMatrix.SaveToTextFile("C:\\tmp\\matrixK2.txt");
+            //MassInv.SaveToTextFile("C:\\tmp\\massinvK2.txt");
+            //Mass.SaveToTextFile("C:\\tmp\\massK2.txt");
 
             // compute integrals 
             Integrals integrals = new Integrals();
