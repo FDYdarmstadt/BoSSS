@@ -193,7 +193,13 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
-        private static void CheckPartitioning(int[] part) {
+		/// <summary>
+		/// Checks a grid partitioning (which cell should be on which processor)
+		/// </summary>
+		/// <param name="part">partitioning of local cells index: local cell index, value: owner processor</param>
+		/// <param name="isEmptyProcAllowed">can a processor be empty (for certain situations)</param>
+		/// <exception cref="ApplicationException"></exception>
+		private static void CheckPartitioning(int[] part, bool isEmptyProcAllowed = false) {
             int MpiRank, MpiSize;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MpiRank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSize);
