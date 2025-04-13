@@ -894,25 +894,33 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                             }
 
                                             if(bAny) {
-                                                if(AffineEdge && !metric.AlwaysUsePerNodeScaling) {
+                                                if(AffineEdge) {
                                                     Debug.Assert(object.ReferenceEquals(_R.Storage, EvalResult.Storage));
 
+                                                    // apply basis-transformation `basisScale` for curved cells (a **scalar** per element), only test functions
                                                     _R.Multiply(1.0, _R, basisScale, 0.0, ref mp_imn_imn_Ti,
                                                         pEdge2Cell, pEdge2Cell,
                                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + cr), trfCycle_B: 2, trfPostOffset_B: 0);
                                                     _R.Multiply(1.0, _R, basisScale, 0.0, ref mp_imn_imn_Ti,
                                                         pEdge2Cell, pEdge2Cell,
                                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + cc), trfCycle_B: 2, trfPostOffset_B: 0);
-                                                    _R.Multiply(1.0, _R, sqrtGram, 0.0, ref mp_imn_imn_i);
+
+                                                    if(!metric.AlwaysUsePerNodeScaling) {
+                                                        // apply `sqrtGram` (integration metric **per element**), in-place
+                                                        _R.Multiply(1.0, _R, sqrtGram, 0.0, ref mp_imn_imn_i);
+                                                    } else {
+                                                        // `sqrtGram` (integration metric **per node**) has already been applied 
+                                                        // noop, `_R` already contains values of (integrand * metric)
+                                                    }
 
                                                 } else {
                                                     Debug.Assert(!object.ReferenceEquals(EvalResult.Storage, _Q.Storage));
                                                     Debug.Assert(object.ReferenceEquals(EvalResult.Storage, _R.Storage));
 
-                                                    MultidimensionalArray.MultiplyProgram mp_ibn_iba_Tian = MultidimensionalArray.MultiplyProgram.Compile("ibn", "iba", "T(i)an", true);
-                                                    MultidimensionalArray.MultiplyProgram mp_imn_Tibm_ibn = MultidimensionalArray.MultiplyProgram.Compile("imn", "T(i)bm", "ibn", true);
+                                                    // apply basis-transformation `trafo` for curved cells (**a matrix per element**), test and trial functions
+                                                    // `sqrtGram` (integration metric **per node**) has already been applied
                                                     _Q.Multiply(1.0, _R, ExtractTrafo(trafo, m_owner.m_ColL[delta]), 0.0, ref mp_ibn_iba_Tian,
-                                                        pEdge2Cell, pEdge2Cell,
+                                                    pEdge2Cell, pEdge2Cell,
                                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + cc), trfCycle_B: 2, trfPostOffset_B: -jCellMin);
                                                     _R.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _Q, 0.0, ref mp_imn_Tibm_ibn,
                                                         pEdge2Cell, pEdge2Cell,
@@ -932,7 +940,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             if (bAffineRequired) {
 
                                 for (int cr = 0; cr < 2; cr++) {
-                                    GetRQbufferAffine(Length, EvalResult, cr, AffineEdge && !metric.AlwaysUsePerNodeScaling, MR, ref iRAbuf, ref RAbuf, I0Row, gamma, I0Col, out _R, out _Q);
+                                    GetRQbufferAffine(Length, EvalResult, cr, AffineEdge, MR, ref iRAbuf, ref RAbuf, I0Row, gamma, I0Col, out _R, out _Q);
 
                                     double cF = 0;
                                     bool bAny = false;
@@ -955,18 +963,27 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     }
 
                                     if(bAny) {
-                                        if(AffineEdge && !metric.AlwaysUsePerNodeScaling) {
+                                        if(AffineEdge) {
                                             Debug.Assert(object.ReferenceEquals(EvalResult.Storage, _R.Storage));
 
+                                            // apply basis-transformation `basisScale` for curved cells (a **scalar** per element), only test functions
                                             _R.Multiply(1.0, _R, basisScale, 0.0, ref mp_im_im_Ti,
                                                 pEdge2Cell, pEdge2Cell,
                                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + cr), trfCycle_B: 2, trfPostOffset_B: 0);
-                                            _R.Multiply(1.0, _R, sqrtGram, 0.0, ref mp_im_im_i);
-
+                                           
+                                            if(!metric.AlwaysUsePerNodeScaling) {
+                                                // apply `sqrtGram` (integration metric **per element**), in-place
+                                                _R.Multiply(1.0, _R, sqrtGram, 0.0, ref mp_im_im_i);
+                                            } else {
+                                                // `sqrtGram` (integration metric **per node**) has already been applied 
+                                                // noop, `_R` already contains values of (integrand * metric)
+                                            }
 
                                         } else {
-                                            MultidimensionalArray.MultiplyProgram mp_jn_Tjmn_jm = MultidimensionalArray.MultiplyProgram.Compile("jn", "T(j)mn", "jm", true);
+                                            Debug.Assert(object.ReferenceEquals(EvalResult.Storage, _Q.Storage));
 
+                                            // apply basis-transformation `trafo` for curved cells (a **matrix** per element), only test functions
+                                            // `sqrtGram` (integration metric **per node**) has already been applied 
                                             Debug.Assert(object.ReferenceEquals(EvalResult.Storage, _Q.Storage));
                                             Debug.Assert(!object.ReferenceEquals(EvalResult.Storage, _R.Storage));
                                             _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, ref mp_jn_Tjmn_jm,
@@ -1445,6 +1462,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         
         static MultidimensionalArray.MultiplyProgram mp_kn_k_kn = MultidimensionalArray.MultiplyProgram.Compile("kn", "k", "kn");
         static MultidimensionalArray.MultiplyProgram mp_knd_k_knd = MultidimensionalArray.MultiplyProgram.Compile("knd", "k", "knd");
+
+        static MultidimensionalArray.MultiplyProgram mp_ibn_iba_Tian = MultidimensionalArray.MultiplyProgram.Compile("ibn", "iba", "T(i)an", true);
+        static MultidimensionalArray.MultiplyProgram mp_imn_Tibm_ibn = MultidimensionalArray.MultiplyProgram.Compile("imn", "T(i)bm", "ibn", true);
+
+        static MultidimensionalArray.MultiplyProgram mp_jn_Tjmn_jm = MultidimensionalArray.MultiplyProgram.Compile("jn", "T(j)mn", "jm", true);
 
 
         void TestFunctionRequired(bool[] Req, MultidimensionalArray[, , ,] SumBuf, ref int maxDeg, ref int maxN) {

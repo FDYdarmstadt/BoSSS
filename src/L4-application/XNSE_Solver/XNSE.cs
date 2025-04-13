@@ -76,8 +76,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            InitMPI();
+            //InitMPI();
             //ilPSP.Environment.NumThreads = 1;
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 3, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
