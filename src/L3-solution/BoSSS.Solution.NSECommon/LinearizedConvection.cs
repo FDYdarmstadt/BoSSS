@@ -381,7 +381,7 @@ namespace BoSSS.Solution.NSECommon {
                         double U0 = 1.0;
                         double delta = 1.0 / 20.0;
                         double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
-                        r += 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
 
                         return r;
                     }
@@ -846,10 +846,10 @@ namespace BoSSS.Solution.NSECommon {
                             throw new NotImplementedException();
                         } else {
                             u_d = Uin[argumentIndex];
-                            u1 = inp.Parameters_IN[0];
-                            u2 = inp.Parameters_IN[1];
+                            u1 = Uin[0];
+                            u2 = Uin[1];
                             if (m_SpatialDimension == 3)
-                                u3 = inp.Parameters_IN[2];
+                                u3 = Uin[2];
                         }
 
                         double ndotu = (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
@@ -865,7 +865,7 @@ namespace BoSSS.Solution.NSECommon {
                         double U0 = 1.0;
                         double delta = 1.0 / 20.0;
                         double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
-                        r += 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
 
                         return r;
                     }

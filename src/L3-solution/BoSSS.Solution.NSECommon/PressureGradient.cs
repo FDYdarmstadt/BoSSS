@@ -100,7 +100,7 @@ namespace BoSSS.Solution.NSECommon {
                     // +++++++++++++++++
                     return Uin[0] * inp.Normal[m_d];
                 case IncompressibleBcType.Dong_OutFlow:
-                    return 0.0;
+                    return 0.0; // Uin[0] * inp.Normal[m_d];
                 default:
                     throw new NotImplementedException();
             }

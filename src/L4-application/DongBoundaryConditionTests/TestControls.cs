@@ -47,9 +47,11 @@ namespace BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests {
 
     public static class DongBoundaryConditionTests {
 
-        public static XNSE_Test_Control KovasznayFlow_SteadyState(int k = 3, int Res = 4) {
+        public static XNSE_Test_Control KovasznayFlow_SteadyState(int k = 3, int Res = 8) {
 
             XNSE_Test_Control C = new XNSE_Test_Control();
+
+            bool solveSystem = true;
 
             C.SetDGdegree(k);
 
@@ -62,21 +64,24 @@ namespace BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests {
             C.PhysicalParameters.IncludeConvection = true;
 
             C.GridFunc = delegate {
-                double[] xNodes = GenericBlas.Linspace(-0.5, 0.1, (1 * Res) + 1);
+                double[] xNodes = GenericBlas.Linspace(-0.5, -0.1, (1 * Res) + 1);
                 double[] yNodes = GenericBlas.Linspace(-0.5, 0.5, (2 * Res) + 1);
 
-                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicY: true);
+                bool periodic = true;
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicY: periodic);
 
-                grd.DefineEdgeTags(delegate (double[] X) {
+                string BC = IncompressibleBcType.Dong_OutFlow.ToString();
+
+                grd.DefineEdgeTags(delegate (Vector X) {
                     string ret = null;
-                    if ((X[0] + 0.5).Abs() <= 1e-8)
+                    if ((X.x + 0.5).Abs() <= 1e-8)
                         ret = IncompressibleBcType.Velocity_Inlet.ToString();
-                    if ((X[0] - 0.1).Abs() <= 1e-8)
+                    if ((X.x + 0.1).Abs() <= 1e-8) {
+                        ret = BC;
+                    }
+                    if (!periodic && (X.y.Abs() - 0.5).Abs() <= 1e-8) {
                         ret = IncompressibleBcType.Velocity_Inlet.ToString();
-                    //if ((X[1] + 0.5).Abs() <= 1e-8)
-                    //    ret = IncompressibleBcType.Velocity_Inlet.ToString();
-                    //if ((X[1] - 1.5).Abs() <= 1e-8)
-                    //    ret = IncompressibleBcType.Velocity_Inlet.ToString();
+                    }
                     return ret;
                 });
 
@@ -85,18 +90,19 @@ namespace BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests {
             };
 
             // initial conditions
-            C.AddInitialValue("VelocityX#A", KovasznayFlowSolutions.KovasznayFlow_u);
-            C.AddInitialValue("VelocityY#A", KovasznayFlowSolutions.KovasznayFlow_v);
-            C.AddInitialValue("Pressure#A", KovasznayFlowSolutions.KovasznayFlow_p);
+            if (!solveSystem) {
+                C.SkipSolveAndEvaluateResidual = true;
+
+                C.AddInitialValue("VelocityX#A", KovasznayFlowSolutions.KovasznayFlow_u);
+                C.AddInitialValue("VelocityY#A", KovasznayFlowSolutions.KovasznayFlow_v);
+                C.AddInitialValue("Pressure#A", KovasznayFlowSolutions.KovasznayFlow_p);
+            }
 
             // boundary conditions
             C.AddBoundaryValue(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityX#A", KovasznayFlowSolutions.KovasznayFlow_u);
             C.AddBoundaryValue(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityY#A", KovasznayFlowSolutions.KovasznayFlow_v);
 
-            //C.AddBoundaryValue(IncompressibleBcType.Dong_OutFlow.ToString(), "VelocityX#A", KovasznayFlow_u);
-            //C.AddBoundaryValue(IncompressibleBcType.Dong_OutFlow.ToString(), "VelocityY#A", KovasznayFlow_v);
-
-            C.SkipSolveAndEvaluateResidual = true;
+            C.UseManufacturedComps = true;
 
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             //C.NonLinearSolver.ConvergenceCriterion = 1e-9;

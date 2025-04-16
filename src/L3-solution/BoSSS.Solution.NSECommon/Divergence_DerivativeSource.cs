@@ -174,8 +174,8 @@ namespace BoSSS.Solution.NSECommon {
                 }
                 case IncompressibleBcType.Dong_OutFlow: 
                 {
-                        FluxInCell = 0.0;
-                        break;
+                    FluxInCell = 0.0;
+                    break;
                 }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");

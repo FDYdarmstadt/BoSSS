@@ -716,8 +716,14 @@ namespace BoSSS.Solution.NSECommon {
 
                     break;
                 }
-                case IncompressibleBcType.Dong_OutFlow:
-                    break;
+                case IncompressibleBcType.Dong_OutFlow: {
+                        //for (int d = 0; d < inp.D; d++) {
+                        //    Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d];
+                        //}
+                        //Acc *= base.m_alpha;
+
+                        break;
+                    }
                 default:
                     throw new NotImplementedException();
             }
@@ -1186,9 +1192,14 @@ namespace BoSSS.Solution.NSECommon {
                         Acc *= base.m_alpha;
                         break;
                     }
-                case IncompressibleBcType.Dong_OutFlow:
-                    break;
+                case IncompressibleBcType.Dong_OutFlow: {
+                        for (int i = 0; i < inp.D; i++) {
+                            Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                        }
+                        Acc *= base.m_alpha;
 
+                        break;
+                    }
                 default:
                     throw new NotSupportedException();
             }

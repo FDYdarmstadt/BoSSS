@@ -82,35 +82,44 @@ namespace BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests {
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Flx_InCell = 0.0;
 
+            double nu = m_mu / m_rho;
+            double lambda = (1.0 / (2.0 * nu)) - Math.Sqrt(1.0 / (4.0 * nu.Pow2()) + 4.0 * Math.PI.Pow2());
+
+            double x = inp.X[0];
+            double y = inp.X[1];
+
+            double p = 0.5 * (1.0 - Math.Exp(2 * lambda * x));
+
+            double u = 1.0 - Math.Exp(lambda * x) * Math.Cos(2.0 * Math.PI * y);
+            double v = (lambda / (2.0 * Math.PI)) * Math.Exp(lambda * x) * Math.Sin(2.0 * Math.PI * y);
+
+            //Matrix(2, 2, [[-lambda*exp(lambda*x)*cos(2*pi*y), 2*exp(lambda*x)*pi*sin(2*pi*y)], [1/2*lambda^2*exp(lambda*x)*sin(2*pi*y)/pi, lambda*exp(lambda*x)*cos(2*pi*y)]])
+
+            double u_x = -lambda * Math.Exp(lambda * x) * Math.Cos(2.0 * Math.PI * y);
+            double u_y = 2.0 * Math.Exp(lambda * x) * Math.PI * Math.Sin(2.0 * Math.PI * y);
+
+            double v_x = 0.5 * lambda.Pow2() * Math.Exp(lambda * x) * Math.Sin(2.0 * Math.PI * y) / Math.PI;
+            double v_y = lambda * Math.Exp(lambda * x) * Math.Cos(2.0 * Math.PI * y);
+
+            double[,] GradU = new double[2, 2] { { u_x, u_y }, { v_x, v_y } };
+
+            if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Pressure_Outlet) {
+                // pressure gradient
+                Flx_InCell += -p * inp.Normal[m_d];
+                // viscous terms 
+                for (int d = 0; d < 2; d++) {
+                    Flx_InCell += m_mu * (GradU[m_d, d]) * inp.Normal[d]; // + GradU[d, m_d]) * inp.Normal[d];
+                }
+            }
+
             if (m_BcMap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Dong_OutFlow) {
-
-                double nu = m_mu / m_rho;
-                double lambda = (1.0 / (2.0 * nu)) - Math.Sqrt(1.0 / (4.0 * nu.Pow2()) + 4.0 * Math.PI.Pow2());
-
-                double x = inp.X[0];
-                double y = inp.X[1];
-
-                double p = 0.5 * (1.0 - Math.Exp(2 * lambda * x));
-
-                double u = 1.0 - Math.Exp(lambda * x) * Math.Cos(2.0 * Math.PI * y);
-                double v = (lambda / (2.0 * Math.PI)) * Math.Exp(lambda * x) * Math.Sin(2.0 * Math.PI * y);
-
-                //Matrix(2, 2, [[-lambda*exp(lambda*x)*cos(2*pi*y), 2*exp(lambda*x)*pi*sin(2*pi*y)], [1/2*lambda^2*exp(lambda*x)*sin(2*pi*y)/pi, lambda*exp(lambda*x)*cos(2*pi*y)]])
-
-                double u_x = -lambda * Math.Exp(lambda * x) * Math.Cos(2.0 * Math.PI * y);
-                double u_y = 2.0 * Math.Exp(lambda * x) * Math.PI * Math.Sin(2.0 * Math.PI * y);
-
-                double v_x = 0.5 * lambda.Pow2() * Math.Exp(lambda * x) * Math.Sin(2.0 * Math.PI * y) / Math.PI;
-                double v_y = lambda * Math.Exp(lambda * x) * Math.Cos(2.0 * Math.PI * y);
-
-                double[,] GradU = new double[2, 2] { { u_x, u_y }, { v_x, v_y } };
 
                 // pressure gradient
                 Flx_InCell += -p * inp.Normal[m_d];
 
                 for (int d = 0; d < 2; d++) {
                     // viscous terms 
-                    Flx_InCell += m_mu * (GradU[m_d, d] + GradU[d, m_d]) * inp.Normal[d];
+                    Flx_InCell += m_mu * (GradU[m_d, d]) * inp.Normal[d]; // + GradU[d, m_d]) * inp.Normal[d];
                 }
 
                 // Dong term
@@ -120,7 +129,7 @@ namespace BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests {
                 double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
                 double uAbs2 = u.Pow2() + v.Pow2();
 
-                Flx_InCell += 0.5 * uAbs2 * Sout * inp.Normal[m_d];
+                Flx_InCell -= 0.5 * uAbs2 * Sout * inp.Normal[m_d];
 
             }
 
@@ -151,7 +160,7 @@ namespace BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests {
         }
 
         virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { this };
+            return new IEquationComponent[] { new EdgeFormDifferentiator(this, SpatialDimension) };
         }
 
 
