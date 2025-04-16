@@ -451,6 +451,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool CancellationTriggered;
     }
 
+	// this is designed to hold information getting from the WORLD
 	class TaskParallelMGOperator : IOperatorMappingPair {
 
         public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix RestrictionMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping) { 
@@ -460,27 +461,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			m_Mapping = Mapping;
             (m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(Mapping);
             m_NoOfSpecies = GetNoOfSpeciesList(Mapping);
+			(SmootherCellI0s, SmootherNewCellMapping) = DistributeMapping(Mapping, 3);
+			(CoarseCellI0s, CoarseNewCellMapping) = DistributeMapping(Mapping, 2);
+            CellToDOFdata = CellIndexToDOFs(Mapping);
 		}
+
+		(long i0Cell, int lenCell)[] CellToDOFdata; //global data (all of them) and global indices
+		List<(long, long)> CoarseNewCellMapping; //global data (all of them) and global indices
+		List<(long, long)> SmootherNewCellMapping; //global data (all of them) and global indices
+
+		long[] CoarseCellI0s;
+        long[] SmootherCellI0s;
 
 		public int[] m_xadj;
 		public int[] m_adj;
         int[] m_NoOfSpecies;
 
-        public long celli0;
-        public int localCellLength;
-        public int totalCellLength;
+		//public long celli0;
+		//public int localCellLength;
+		//public int totalCellLength;
 
 		public IOperatorMappingPair FinerLevel;
 		public IOperatorMappingPair CoarserLevel;
-		public BlockMsrMatrix OperatorMatrix => m_OpMtx;
-		public BlockMsrMatrix RestrictionMatrix => m_RstMtx;
-		public BlockMsrMatrix ProlongationMatrix => m_ProlMtx;
 
 		public BlockMsrMatrix m_OpMtx;
 		public BlockMsrMatrix m_RstMtx;
 		public BlockMsrMatrix m_ProlMtx;
-
 		public MultigridMapping m_Mapping;
+
+		public BlockMsrMatrix OperatorMatrix => m_OpMtx;
+		public BlockMsrMatrix RestrictionMatrix => m_RstMtx;
+		public BlockMsrMatrix ProlongationMatrix => m_ProlMtx;
 		public ICoordinateMapping DgMapping => m_Mapping;
 
 		(int[] xadj, int[] adj) GetCurrentAggGridGraphForMetis(MultigridMapping Map) {
@@ -519,7 +530,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					xadj[Jloc] = cnt;
 				Debug.Assert(xadj[0] == 0);
 
-				// convert `xadj` to global indices
+				// convert `m_xadj` to global indices
 				int[] locLengths = L.MPIAllGather(comm);
 				Debug.Assert(locLengths.Length == MPIsiz);
 				int[] xadjOffsets = new int[MPIsiz];
@@ -529,7 +540,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				for (int j = 0; j < xadj.Length; j++)
 					xadj[j] += xadjOffsets[MPIrnk];
 
-				// gather `xadj` and `adj` on Rank 0
+				// gather `m_xadj` and `adj` on Rank 0
 				int[] xadjGl;
 				{
 					int[] rcvCount = MPIsiz.ForLoop(r => aggGrid.CellPartitioning.GetLocalLength(r));
@@ -562,12 +573,87 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 
 			// MPI gather on rank 0
-			int MPIsz = opCommSize;
+			int MPIsz = Map.MpiSize;
 			int[] rcvCount = MPIsz.ForLoop(r => Map.AggGrid.CellPartitioning.GetLocalLength(r));
-			return NoOfSpecies.MPIGatherv(rcvCount, 0, opComm);
+			return NoOfSpecies.MPIGatherv(rcvCount, 0, Map.MPI_Comm);
 		}
 
+		(long[] cellI0s, List<(long, long)> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
+			using (new FuncTrace()) {
+				var columnMapping = new List<(long sourceIdx, long targetIdx)>();
+				if (NoOfParts == 1) {
+					columnMapping = Enumerable.Range(0, (int)MGMapping.AggGrid.CellPartitioning.TotalLength).Select(i => ((long)i, (long)i)).ToList();
+					return (new long[] { 0 }, columnMapping);
+				}
 
+				int MPIrnk = MGMapping.MpiRank;
+				int[] part;
+				if (MPIrnk == 0) { //call metis on only the rank 0 (opComm)
+					int ncon = 1;
+					int edgecut = 0;
+					int[] options = new int[METIS.METIS_NOPTIONS];
+					METIS.SETDEFAULTOPTIONS(options);
+
+					options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
+					options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
+					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
+					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
+
+					int J = m_xadj.Length - 1;
+					part = new int[J];
+					Debug.Assert(m_xadj.Where(idx => idx > m_adj.Length).Count() == 0);
+					Debug.Assert(m_adj.Where(j => j >= J).Count() == 0);
+
+					METIS.PARTGRAPHKWAY(
+							ref J, ref ncon,
+							m_xadj,
+							m_adj.ToArray(),
+							m_NoOfSpecies,
+							null,
+							null,
+							ref NoOfParts,
+							null,
+							null,
+							options,
+							ref edgecut,
+							part);
+				} else {
+					part = null;
+				}
+
+				//broadcast to every processor. (this is necessary to create column mapping)
+				var partGlob = part.MPIBroadcast(0, MGMapping.MPI_Comm);
+
+				int[] i0part = new int[NoOfParts]; //new i0partitioning for each part
+				for (int p = 1; p < NoOfParts; p++)
+					i0part[p] = i0part[p - 1] + partGlob.Where(b => b == p - 1).Count();
+
+                long[] cell_i0s = i0part.Select(i0 => (long)i0).ToArray();
+
+				// create column mapping
+				for (int b = 0; b < partGlob.Length; b++) {
+					int targetRank = partGlob[b];
+					columnMapping.Add((b, i0part[targetRank]));
+					i0part[targetRank]++; //iterate the index for the next cell
+				}
+
+				return (cell_i0s, columnMapping);
+			}
+		}
+
+		(long i0Cell, int lenCell)[] CellIndexToDOFs(MultigridMapping map) {
+			int J = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+			var myList = new (long i0Cell, int lenCell)[J]; //for cell currently on this proc (may be distributed to another or not)
+
+			// Create matrix entry information from cell indices
+			for (int jCellLoc = 0; jCellLoc < J; jCellLoc++) {
+				myList[jCellLoc] = (map.GetCellI0(jCellLoc), map.GetLength(jCellLoc));
+			}
+			var globList = myList.MPIAllGatherO(map.MPI_Comm);
+			var flatGlobArray = globList.SelectMany(x => x).ToArray();
+
+			return flatGlobArray;
+		}
 	}
 
 	/// <summary>
@@ -738,11 +824,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetRestrictionOperator, op.GetPrologonationOperator, op.Mapping);
 			TaskParallelMGOperator finerTP = thisTP;
 
+			op.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_0.txt");
+			op.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_0.txt");
+
+			int level = 0;
 			for (MultigridOperator op_lv = op.CoarserLevel; op_lv != null; op_lv = op_lv.CoarserLevel) {               
                var coarserTP = new TaskParallelMGOperator(op_lv.OperatorMatrix, op_lv.GetRestrictionOperator, op_lv.GetPrologonationOperator, op_lv.Mapping);
+				op_lv.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_{level}.txt");
+				op_lv.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_{level}.txt");
+
+				op_lv.GetPrologonationOperator.SaveToTextFileSparseDebug($"ProlongationMatrix_{level}.txt");
+				op_lv.GetPrologonationOperator.SaveToTextFileSparse($"ProlongationMatrix_{level}.txt");
+
 				finerTP.CoarserLevel = coarserTP;
                 coarserTP.FinerLevel = finerTP;
 				finerTP = coarserTP;
+                level++;
 			}
 			InitImpl(thisTP);
         }
@@ -1276,7 +1373,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					xadj[Jloc] = cnt;
 				Debug.Assert(xadj[0] == 0);
 
-				// convert `xadj` to global indices
+				// convert `m_xadj` to global indices
 				int[] locLengths = L.MPIAllGather(comm);
 				Debug.Assert(locLengths.Length == MPIsiz);
 				int[] xadjOffsets = new int[MPIsiz];
@@ -1286,7 +1383,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				for (int j = 0; j < xadj.Length; j++)
 					xadj[j] += xadjOffsets[MPIrnk];
 
-				// gather `xadj` and `adj` on Rank 0
+				// gather `m_xadj` and `adj` on Rank 0
 				int[] xadjGl;
 				{
 					int[] rcvCount = MPIsiz.ForLoop(r => aggGrid.CellPartitioning.GetLocalLength(r));
