@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             int D = this.SpatialDimension;
 
 
-            var CoEdgesList = new List<CoFaceInfo>();
+            var CoFaceList = new List<CoFaceInfo>();
 
 
 
@@ -74,20 +74,20 @@ namespace BoSSS.Foundation.Grid.RefElements {
                         }
 
 
-                        CoFaceInfo CoEdge;
-                        var L = CoEdgesList.Where(ce => (ce.iVtx[0] == iV0 && ce.iVtx[1] == iV1));
+                        CoFaceInfo CoFace;
+                        var L = CoFaceList.Where(ce => (ce.iVtx[0] == iV0 && ce.iVtx[1] == iV1));
                         if (L.Count() > 0) {
                             Debug.Assert(L.Count() == 1, "Error in algorithm.");
-                            CoEdge = L.First();
-                            Debug.Assert(CoEdge.iFace0 >= 0);
-                            Debug.Assert(CoEdge.iFace1 < 0);
-                            CoEdge.iFace1 = iFace;
+                            CoFace = L.First();
+                            Debug.Assert(CoFace.iFace0 >= 0);
+                            Debug.Assert(CoFace.iFace1 < 0);
+                            CoFace.iFace1 = iFace;
                         } else {
-                            CoEdge = new CoFaceInfo();
-                            CoEdge.Index = CoEdgesList.Count();
-                            CoEdge.iFace0 = iFace;
-                            CoEdge.iVtx = new int[] { iV0, iV1 };
-                            CoEdgesList.Add(CoEdge);
+                            CoFace = new CoFaceInfo();
+                            CoFace.Index = CoFaceList.Count();
+                            CoFace.iFace0 = iFace;
+                            CoFace.iVtx = new int[] { iV0, iV1 };
+                            CoFaceList.Add(CoFace);
                         }
 
 
@@ -95,38 +95,41 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 }
 
 
-            } else if (D==2) {
+            } else if (D == 2) {
                 // 2D: Co-Edges are equivalent to vertices
                 // +++++++++++++++++++++++++++++++++++++++
-
 
                 if (!(this.FaceRefElement.FaceRefElement.NoOfVertices == 1)) {
                     throw new NotSupportedException("don't know what to do.");
                 }
 
-                var iY = this.FaceToVertexIndices;
-                if (iY.GetLength(1) != 2)
+                var face2Vtx = this.FaceToVertexIndices;
+                if (face2Vtx.GetLength(1) != 2)
                     throw new ApplicationException("Don't know what to do.");
+                Debug.Assert(face2Vtx.GetLength(1) == FaceRefElement.NoOfVertices);
 
 
                 for (int iCoFace = 0; iCoFace < this.NoOfVertices; iCoFace++) { // loop over vertices
-                    //                                                             in 2D: vertex == co-edge
-                    var CoEdge = new CoFaceInfo();
-                    CoEdge.Index = iCoFace;
-                    CoEdge.iVtx = new int[] { iCoFace };
+                    //                                                             in 2D: vertex == co-face
+                    var CoFace = new CoFaceInfo();
+                    CoFace.Index = iCoFace;
+                    CoFace.iVtx = new int[] { iCoFace };
 
                     for (int iFace = 0; iFace < this.NoOfFaces; iFace++) {
                         for (int t = 0; t < 2; t++) {
-                            if (iY[iFace, 0] == iCoFace) {
-                                Debug.Assert(CoEdge.iFace1 < 0);
-                                if (CoEdge.iFace0 < 0) {
-                                    CoEdge.iFace0 = iFace;
+                            if (face2Vtx[iFace, t] == iCoFace) {
+                                Debug.Assert(CoFace.iFace1 < 0);
+                                if (CoFace.iFace0 < 0) {
+                                    CoFace.iFace0 = iFace;
                                 } else {
-                                    CoEdge.iFace1 = iFace;
+                                    CoFace.iFace1 = iFace;
                                 }
                             }
                         }
                     }
+
+
+                    CoFaceList.Add(CoFace);
                 }
             } else if (D == 1) {
                 // 1D: No Co-Edges
@@ -139,24 +142,31 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             // Assemble final data structures
             // ==============================
-            {
-                m_CoFaceVerticeIndices = new int[CoEdgesList.Count, D-1];
-                m_CoFaces_FaceIndices = new int[CoEdgesList.Count, 2];
+            if(D == 0) {
+                m_CoFaceVerticeIndices = new int[0, 0];
+                m_CoFacesToFaceIndices = new int[0, 2];
+            } else {
+                Debug.Assert(FaceRefElement.FaceRefElement.NoOfVertices == D - 1);
+                m_CoFaceVerticeIndices = new int[CoFaceList.Count, D - 1];
+                m_CoFacesToFaceIndices = new int[CoFaceList.Count, 2];
 
-                for (int iCoFace = 0; iCoFace < CoEdgesList.Count; iCoFace++) {
-                    var CF = CoEdgesList[iCoFace];
+                for (int iCoFace = 0; iCoFace < CoFaceList.Count; iCoFace++) {
+                    var CF = CoFaceList[iCoFace];
                     Debug.Assert(CF.iVtx.Length == m_CoFaceVerticeIndices.GetLength(1));
 
                     for (int i = 0; i < m_CoFaceVerticeIndices.GetLength(1); i++) {
                         m_CoFaceVerticeIndices[iCoFace, i] = CF.iVtx[i];
                     }
 
+                    if(CF.iFace0 == CF.iFace1)
+                        throw new ApplicationException("error in algorithm");
+
                     if (CF.iFace0 < CF.iFace1) {
-                        m_CoFaces_FaceIndices[iCoFace, 0] = CF.iFace0;
-                        m_CoFaces_FaceIndices[iCoFace, 1] = CF.iFace1;
+                        m_CoFacesToFaceIndices[iCoFace, 0] = CF.iFace0;
+                        m_CoFacesToFaceIndices[iCoFace, 1] = CF.iFace1;
                     } else {
-                        m_CoFaces_FaceIndices[iCoFace, 0] = CF.iFace1;
-                        m_CoFaces_FaceIndices[iCoFace, 1] = CF.iFace0;
+                        m_CoFacesToFaceIndices[iCoFace, 0] = CF.iFace1;
+                        m_CoFacesToFaceIndices[iCoFace, 1] = CF.iFace0;
                     }
                 }
             }
@@ -165,34 +175,136 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
         int[,] m_CoFaceVerticeIndices;
 
-        int[,] m_CoFaces_FaceIndices;
+        int[,] m_CoFacesToFaceIndices;
 
         /// <summary>
-        /// Vertex indices of the co-faces; <br/>
-        /// 1st index: co-face index <em>iCoFace</em>  <br/>
-        /// 2nd index: vertex index of the Co-Face
+        /// Vertex indices of the co-faces;
+        /// - 1st index: co-face index <em>iCoFace</em>
+        /// - 2nd index: vertex index of the Co-Face
         /// </summary>
         public int[,] CoFaceVerticeIndices {
             get {
                 if (m_CoFaceVerticeIndices == null)
                     InitCoFaces();
-                return ((int[,])(m_CoFaceVerticeIndices.Clone()));
+                return m_CoFaceVerticeIndices.CloneAs();
             }
         }
 
         /// <summary>
-        /// For each co-face, the indices of the faces whose geometric intersection forms the <em>iCoFace</em>-th co-face.<br/>
-        /// 1st index: co-face index <em>iCoFace</em>  <br/>
-        /// 2nd index: in {0,1}, corresponds to first and second face.
+        /// For each co-face, the indices of the faces whose geometric intersection forms the <em>iCoFace</em>-th co-face.
+        /// - 1st index: co-face index <em>iCoFace</em> 
+        /// - 2nd index: in {0,1}, corresponds to first and second face.
         /// </summary>
         /// <remarks>
         /// Note that each co-face can be described as the geometric intersection of 2 faces.
         /// </remarks>
-        public int[,] CoFace_FaceIndices {
+        public int[,] CoFaceToFaceIndices {
             get {
-                if (m_CoFaces_FaceIndices == null)
+                if (m_CoFacesToFaceIndices == null)
                     InitCoFaces();
-                return ((int[,])(m_CoFaces_FaceIndices.Clone()));
+                return m_CoFacesToFaceIndices.CloneAs();
+            }
+        }
+
+        int[,] m_CoFaceToFaceFaceIndex;
+
+        /// <summary>
+        /// Correlates with <see cref="CoFaceToFaceIndices"/>:
+        /// For each co-face, the face index of the face reference element which it corresponds to.
+        /// - 1st index: co-face index <em>iCoFace</em> 
+        /// - 2nd index: in {0,1}, corresponds to first and second face.
+        /// </summary>
+        public int[,] CoFaceToFaceFaceIndex {
+            get {
+                
+                double PointSetComparison_OneWay(IMatrix A, IMatrix B) {
+                    double acc = 0;
+                    for(int i = 0; i < A.NoOfRows; i++) {
+                        B.MindistRow(A.GetRow(i), out double Dmin, out _);
+                        acc += Dmin * Dmin;
+                    }
+                    return acc.Sqrt();
+                }
+
+                double PointSetComparison_TwoWay(IMatrix A, IMatrix B) {
+                    double ABdist = PointSetComparison_OneWay(A, B);
+                    double BAdist = PointSetComparison_OneWay(B, A);
+
+                    return Math.Sqrt(ABdist.Pow2() + BAdist.Pow2());
+                }
+
+
+                if(m_CoFaceToFaceFaceIndex == null) {
+                    if(this.SpatialDimension <= 1) {
+                        m_CoFaceToFaceFaceIndex = new int[0, 2];
+                    } else {
+                        var cfvtx = CoFaceVerticeIndices;
+                        var cvf2f = CoFaceToFaceIndices;
+                        int NoOfCoFaces = cfvtx.GetLength(0);
+                        m_CoFaceToFaceFaceIndex = new int[NoOfCoFaces, 2];
+
+                        var CoFaceRefElement = FaceRefElement.FaceRefElement;
+                        Debug.Assert(CoFaceRefElement.NoOfVertices == cfvtx.GetLength(1));
+                       
+
+                        for(int iCoFace = 0; iCoFace < NoOfCoFaces; iCoFace++) {
+
+                            var coFaceVeritices_A = MultidimensionalArray.Create(CoFaceRefElement.NoOfVertices, this.SpatialDimension);
+                            for(int iVtx = 0; iVtx < CoFaceRefElement.NoOfVertices; iVtx++) {
+                                coFaceVeritices_A.SetRowPt(iVtx, this.Vertices.GetRowPt(cfvtx[iCoFace, iVtx]));
+                            }
+
+
+                            for(int iInOt = 0; iInOt < 2; iInOt++) {
+                                int iFace = cvf2f[iCoFace, iInOt];
+
+                                int iFaceFaceFound = -1;
+                                for(int iFaceFace = 0; iFaceFace < FaceRefElement.NoOfFaces; iFaceFace++) {
+
+                                    var coFaceVeritices_B = this.GetFaceTrafo(iFace).Transform(FaceRefElement.GetFaceVertices(iFaceFace));
+                                    var dist = PointSetComparison_TwoWay(coFaceVeritices_A, coFaceVeritices_B);
+                                    if(dist < BLAS.MachineEps.Sqrt()) {
+                                        if(iFaceFaceFound >= 0)
+                                            throw new ApplicationException("error in algorithm (1)");
+                                        iFaceFaceFound = iFaceFace;
+                                    }
+                                }
+
+                                if(iFaceFaceFound < 0)
+                                    throw new ApplicationException("error in algorithm (2)");
+                                m_CoFaceToFaceFaceIndex[iCoFace, iInOt] = iFaceFaceFound;
+
+                            }
+                        }
+
+                        // check:
+                        for(int iCoFace = 0; iCoFace < NoOfCoFaces; iCoFace++) {
+                            int iFace0 = m_CoFacesToFaceIndices[iCoFace, 0];
+                            int iCoFc0 = m_CoFaceToFaceFaceIndex[iCoFace, 0];
+
+                            int iFace1 = m_CoFacesToFaceIndices[iCoFace, 1];
+                            int iCoFc1 = m_CoFaceToFaceFaceIndex[iCoFace, 1];
+
+                            var Vtx0 = this.GetFaceTrafo(iFace0).Transform(FaceRefElement.GetFaceTrafo(iCoFc0).Transform(CoFaceRefElement.Vertices));
+                            var Vtx1 = this.GetFaceTrafo(iFace0).Transform(FaceRefElement.GetFaceTrafo(iCoFc0).Transform(CoFaceRefElement.Vertices));
+                            double err = Vtx0.L2Dist(Vtx1);
+                            if(err > BLAS.MachineEps.Sqrt())
+                                throw new ApplicationException("error in algorithm (3)");
+
+                            var __coFaceVeritices = MultidimensionalArray.Create(CoFaceRefElement.NoOfVertices, this.SpatialDimension);
+                            for(int iVtx = 0; iVtx < CoFaceRefElement.NoOfVertices; iVtx++) {
+                                __coFaceVeritices.SetRowPt(iVtx, this.Vertices.GetRowPt(cfvtx[iCoFace, iVtx]));
+                            }
+
+                            double err2 = PointSetComparison_TwoWay(__coFaceVeritices, Vtx0);
+                            if(err > BLAS.MachineEps.Sqrt())
+                                throw new ApplicationException("error in algorithm (4)");
+
+                        }
+                    }
+                }
+
+                return m_CoFaceToFaceFaceIndex.CloneAs();
             }
         }
 
@@ -201,15 +313,34 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public int NoOfCoFaces {
             get {
-                return CoFace_FaceIndices.GetLength(0);
+                return CoFaceToFaceIndices.GetLength(0);
             }
         }
+
+        /// <summary>
+        /// Transformation from the local coordinate system of the co-face to the local coordinate system for this reference element.
+        /// </summary>
+        virtual public AffineTrafo GetCoFaceTrafo(int CoFaceIndex) {
+            if(this.SpatialDimension < 2)
+                throw new NotSupportedException("Co-Faces exist only for 2D and higher.");
+
+            int iFace = this.CoFaceToFaceIndices[CoFaceIndex, 0];
+            var cf = this.GetFaceTrafo(iFace);
+
+            var cfT = this.FaceRefElement.GetFaceTrafo(CoFaceToFaceFaceIndex[CoFaceIndex, 0]);
+
+            var coT = cf * cfT;
+            return coT;
+        }
+
+
+
 
 
         AffineManifold[] m_FacePlanes;
 
         /// <summary>
-        /// For each face, the affine manifold that represents the plane in which the face is located;<br/>
+        /// For each face, the affine manifold that represents the plane in which the face is located;
         /// </summary>
         /// <param name="iFace">
         /// face index

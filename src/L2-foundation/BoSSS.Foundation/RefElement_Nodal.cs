@@ -170,8 +170,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 int Vert_type = 2; 
 
                 for (int iCoFace = this.NoOfCoFaces - 1; iCoFace >= 0; iCoFace--) { // loop over co-faces
-                    var plane0 = this.GetFacePlane(this.CoFace_FaceIndices[iCoFace, 0]);
-                    var plane1 = this.GetFacePlane(this.CoFace_FaceIndices[iCoFace, 1]);
+                    var plane0 = this.GetFacePlane(this.CoFaceToFaceIndices[iCoFace, 0]);
+                    var plane1 = this.GetFacePlane(this.CoFaceToFaceIndices[iCoFace, 1]);
                     Debug.Assert(plane0.Normal.Dim == D);
                     Debug.Assert(plane1.Normal.Dim == D);
 

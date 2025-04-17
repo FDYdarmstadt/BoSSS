@@ -372,6 +372,11 @@ namespace BoSSS.Foundation.Grid.RefElements {
             return m_FaceTransformation[FaceIndex];
         }
 
+
+      
+
+
+
         /// <summary>
         /// See <see cref="FaceTrafoGramianSqrt"/>
         /// </summary>
@@ -588,7 +593,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         private NodeSet m_FaceCenters;
 
         /// <summary>
-        /// Normal vectors on all faces;<br/>
+        /// Normal vectors on all faces;
         /// - 1st index: face index, in the range of 0 to <see cref="NoOfFaces"/>;
         /// - 2nd index: spatial dimension, in the range of 0 (including) to <see cref="SpatialDimension"/> (excluding)
         /// </summary>
@@ -598,6 +603,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     InitFaceNormals();
                 return m_FaceNormals;
             }
+        }
+
+        /// <summary>
+        /// returns the normal for a specific face, i.e., a row from <see cref="FaceNormals"/>
+        /// </summary>
+        public Vector GetFaceNormal(int iFace) {
+            return FaceNormals.GetRowPt(iFace);
         }
 
         /// <summary>
