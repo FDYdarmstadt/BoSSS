@@ -278,9 +278,9 @@ namespace BoSSS.Application.XNSEC {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  1;
 
             C.InitSignedDistance = false;
 
@@ -575,9 +575,9 @@ namespace BoSSS.Application.XNSEC {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSEC_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  1;
 
             C.InitSignedDistance = false;
 

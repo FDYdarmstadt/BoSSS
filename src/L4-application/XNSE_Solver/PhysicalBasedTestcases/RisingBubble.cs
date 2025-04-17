@@ -237,8 +237,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -498,9 +498,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LS_TrackerWidth = 2;
             C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //C.RefinementLevel = 2;
-            //C.BaseRefinementLevel = 2;
+            ////C.BaseRefinementLevel  2;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
             C.AMR_startUpSweeps = 2;
             C.LS_TrackerWidth = 3;            
@@ -993,8 +993,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  1;
             C.AMR_startUpSweeps = 1;
 
             //C.ReInitOnRestart = true;

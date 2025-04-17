@@ -307,6 +307,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool switchOffPlotting = false;
         */
 
+        /* killed by fk:
+         * this seems to be deprecated code.
 
         /// <summary>
         /// different implementations for the level indicator 
@@ -372,7 +374,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public bool RefineNavierSlipBoundary = false;
-
+        */
 
         /// <summary>
         /// option for clearing the velocities for restart

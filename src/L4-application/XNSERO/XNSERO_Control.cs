@@ -156,7 +156,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public void SetAddaptiveMeshRefinement(int MaxRefinementLevel) {
             if (MaxRefinementLevel != 0) {
                 AdaptiveMeshRefinement = true;
-                RefinementLevel = MaxRefinementLevel;
+                //RefinementLevel = MaxRefinementLevel;
                 AMR_startUpSweeps = MaxRefinementLevel;
                 activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = MaxRefinementLevel });
             }

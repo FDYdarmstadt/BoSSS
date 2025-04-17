@@ -436,8 +436,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.RefinementLevel = 2;
 
             C.InitSignedDistance = false;
