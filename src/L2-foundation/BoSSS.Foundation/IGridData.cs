@@ -916,6 +916,11 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="e">logical edge index</param>
         /// <returns></returns>
         double GetEdgeArea(int e);
+
+        /// <summary>
+        /// Center-of-gravity for the edge
+        /// </summary>
+        Vector GetCenter(int iEdge);
     }
 
 

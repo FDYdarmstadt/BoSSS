@@ -366,7 +366,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     SurfaceRule = new ChunkRulePair<QuadRule>[_mask.NoOfItemsLocally];
                     var grddat = this.LevelSetData.GridDat;
                     int D = grddat.SpatialDimension;
-                    var CoIncFaces =  this.LevelSetData.Region.m_LevSetCoincidingFaces;
+                    var CoIncFaces =  this.LevelSetData.Region.LevSetCoincidingFaces;
                     
                     
                     int IsSpecialCell(int j) {

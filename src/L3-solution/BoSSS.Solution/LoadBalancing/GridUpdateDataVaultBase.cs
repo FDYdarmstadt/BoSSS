@@ -175,6 +175,13 @@ namespace BoSSS.Solution.LoadBalancing {
         }
 
         /// <summary>
+        /// Backup reference for some special edges marker.
+        /// </summary>
+        protected string GetLSlevsetcoincidingcofacesName(int iHistory) {
+            return "LevelSetTracker_LevSetCoincidingCoFaces_at_time_level_" + iHistory + "_somewordstomakeitauniquekey54980272";
+        }
+
+        /// <summary>
         /// Saves the internal state of <see cref="m_OldTracker"/>.
         /// </summary>
         public void BackupTracker (double physTime) {
@@ -199,7 +206,8 @@ namespace BoSSS.Solution.LoadBalancing {
                             this.BackupField(TimeLevel.LevelSets[iLs], GetLSbackupName(iH, iLs));
                         }
                         this.BackupVector(TimeLevel.Regions, GetLSregioncodeName(iH));
-                        this.BackupVector<(int iLevSet, int iFace)[],(int iLevSet, int iFace)[][]>(TimeLevel.LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+                        this.BackupVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(TimeLevel.LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+                        this.BackupVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(TimeLevel.LevSetCoincidingCoFaces, GetLSlevsetcoincidingcofacesName(iH));
 
                         m_LsTrkPrivData.Versions[1 - iH] = TimeLevel.Version;
                         m_LsTrkPrivData.Times[1 - iH] = TimeLevel.time;

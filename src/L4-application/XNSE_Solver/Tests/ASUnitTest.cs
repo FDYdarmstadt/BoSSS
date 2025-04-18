@@ -77,9 +77,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfTensionMode);
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
-            C.SkipSolveAndEvaluateResidual = C.AgglomerationThreshold <= 1e-6;
+            Console.WriteLine("REMOVE THIS SHIT BLEOW VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+            Console.WriteLine("YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
+            C.PlotAgglomeration = true;
+            C.SkipSolveAndEvaluateResidual = true; // C.AgglomerationThreshold <= 1e-6;
             C.PhysicalParameters.Sigma = 1.0;
-          
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+
             XNSESolverTest(Tst, C);
         }
 

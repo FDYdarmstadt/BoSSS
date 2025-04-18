@@ -562,19 +562,19 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
             // Get The Quadrature rule From Intersectingquadrature
             QuadratureRule ruleQ = (default);
             
-            try
-            {
-                //find the quad rule
-                ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes, subdiv);
-            }
-            catch(Exception ex)
-            {
-                throw ex;
-            }
+            //try
+            //{
+            //find the quad rule
+            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes, subdiv);
+            //}
+            //catch(Exception ex)
+            //{
+            //    throw ex;
+            //}
             
 
             // Creates a QuadRule Object <- The One BoSSS uses
-            QuadRule rule = QuadRule.CreateBlank(GetRefElement(), ruleQ.Count, cell.Dimension, true);
+            QuadRule rule = QuadRule.CreateBlank(GetRefElement(), ruleQ.Count, cell.Dimension, false);
             rule.OrderOfPrecision = order;
 
             //transfer from Beck into BoSSS structure

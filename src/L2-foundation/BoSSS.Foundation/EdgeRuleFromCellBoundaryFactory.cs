@@ -33,6 +33,10 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public class EdgeRuleFromCellBoundaryFactory : IQuadRuleFactory<QuadRule> {
 
+        static public bool showme = false;
+
+
+
         /// <summary>
         /// constructor
         /// </summary>
@@ -134,15 +138,8 @@ namespace BoSSS.Foundation.Quadrature {
                     if (!Allow0 && !Allow1) {
                         // fallback onto default rule, if allowed
 
-                        //if (this.m_DefaultRuleFallbackAllowed) {
-                        //    Cells[i] = -1; // by a negative index, we mark that we take the default rule
-                        //    Faces[i] = -1;
-                        //    Ret[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), DefaultRule);
-
-
-                        //} else {
                         throw new ArgumentException("unable to find a cell from which the edge rule can be taken.");
-                        //}
+                        
                     } else {
                         Debug.Assert(Allow0 || Allow1);
 
@@ -205,17 +202,25 @@ namespace BoSSS.Foundation.Quadrature {
             // build rule
             // ==========
             {
-                for (int i = 0; i < NoEdg; i++) { // loop over edges
+                for(int i = 0; i < NoEdg; i++) { // loop over edges
                     //if (MaxDomainMask[Cells[i]] == false)
                     //    Debugger.Break();
+
+                    if(showme && EdgeIndices[i] == 32) {
+                        var __cellBndRule = new CompositeQuadRule<CellBoundaryQuadRule>();
+                        __cellBndRule.chunkRulePairs.AddRange(cellBndRule);
+                        __cellBndRule.SaveToTextFileCell(mask.GridData, "whatsWrong.csv");
+                        (mask as EdgeMask).SaveToTextFile("requestedEdges.csv");
+                        Console.WriteLine("888888888888888888");
+                    }
 
                     //if (Cells[i] >= 0) {
                     var CellBndR = cellBndRule[iChunk[i]].Rule;
                     QuadRule qrEdge = null;
 
-                    if(Faces[i] >= 0) //check if it is conforming or not (negative values: non-conformal)
+                    if(Faces[i] >= 0) { //check if it is conforming or not (negative values: non-conformal)
                         qrEdge = this.CombineQr(null, CellBndR, Faces[i] - 333);
-                    else {                       
+                    } else {                       
                         qrEdge = this.CombineQrNonConformal(null, CellBndR, -Faces[i] - 333, EdgeIndices[i], Cells[i]);                        
                     }
 
@@ -225,6 +230,8 @@ namespace BoSSS.Foundation.Quadrature {
                     //} else {
                     //    Debug.Assert(Ret[i] != null);
                     //}
+                    if(showme)
+                        Console.WriteLine(i + "   " + Ret[i].Rule.Weights.Sum());
                 }
             }
 
@@ -265,7 +272,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if (qrEdge == null) {
                     QuadRule ret = new QuadRule();
                     ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), false);
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), givenRule.Nodes.Reference > 0);
                     ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;
@@ -352,7 +359,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if (qrEdge == null) {
                     QuadRule ret = new QuadRule();
                     ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), false);
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), (givenRule.Nodes.Reference > 0) && (qrEdge.Nodes.Reference > 0));
                     ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;

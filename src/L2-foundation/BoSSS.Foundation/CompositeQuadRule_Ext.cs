@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml;
+using System.Security.Claims;
+using BoSSS.Foundation.Caching;
 
 namespace BoSSS.Foundation {
 
@@ -61,23 +63,58 @@ namespace BoSSS.Foundation {
         /// Saves the location and weight associated with each node in
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
-        public static void SaveToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
+        public static void SaveToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
             int D = gridData.SpatialDimension;
-            string[] dimensions = new string[] { "x", "y", "z" };
 
             using(var file = new StreamWriter(filename)) {
-                file.WriteLine(String.Format(
-                    "Cell\t{0}\tWeight",
-                    dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+                if(writeHeader) {
+                    string[] dimensions = new string[] { "x", "y", "z" };
+                    file.WriteLine(String.Format(
+                        "Cell\t{0}\tWeight",
+                        dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+                }
 
                 foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
                     MultidimensionalArray globalNodes = gridData.GlobalNodes.GetValue_Cell(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
                     foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
+
+                        Vector center = gridData.iGeomCells.GetCenter(cell.Value);
+                        var cellNodes = globalNodes.ExtractSubArrayShallow(cell.Index, -1, -1);
+
+                        int[] node2Face;
+                        if(pair.Rule is CellBoundaryQuadRule cbr) {
+                            node2Face = new int[cbr.NoOfNodes];
+                            int n = 0;
+                            int iFace = 0;
+                            foreach(int NNF in cbr.NumbersOfNodesPerFace) {
+                                for(int nf = 0; nf < NNF; nf++) {
+                                    node2Face[n] = iFace;
+                                    n++;
+                                }
+                                iFace++;
+                            }
+
+                        } else {
+                            node2Face = null;
+                        }
+
+                        var Kref = gridData.iGeomCells.GetRefElement(cell.Value);
+                        int NoOfFaces = Kref.NoOfFaces;
+                        Vector[] offCenter = new Vector[NoOfFaces];
+                        for(int iFce = 0; iFce < NoOfFaces; iFce++) {
+                            offCenter[iFce] = gridData.TransformLocal2Global(Kref.GetFaceNormal(iFce), cell.Value);
+                        }
+
                         for(int n = 0; n < pair.Rule.NoOfNodes; n++) {
                             file.Write(cell.Value);
 
+                            var node = cellNodes.GetRowPt(n);
+
+                            var ToCen = node2Face != null ? offCenter[node2Face[n]] - node : center;
+                            var nodeMod = node + ToCen * 0.1;
+
                             for(int d = 0; d < D; d++) {
-                                file.Write("\t{0}", globalNodes[cell.Index, n, d].ToString("E", NumberFormatInfo.InvariantInfo));
+                                file.Write("\t{0}", nodeMod[d].ToString("E", NumberFormatInfo.InvariantInfo));
                             }
 
                             file.WriteLine("\t{0}", pair.Rule.Weights[n].ToString("E", NumberFormatInfo.InvariantInfo));
@@ -93,24 +130,34 @@ namespace BoSSS.Foundation {
         /// Saves the location and weight associated with each node in
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
-        public static void SaveToTextFileEdge(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
+        public static void SaveToTextFileEdge(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename, bool writeHeader = true) {
             int D = gridData.SpatialDimension;
-            string[] dimensions = new string[] { "x", "y", "z" };
 
-           using(var file = new StreamWriter(filename)) {
-                file.WriteLine(String.Format(
-                    "Cell\t{0}\tWeight",
-                    dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+            using(var file = new StreamWriter(filename)) {
+                if(writeHeader) {
+                    string[] dimensions = new string[] { "x", "y", "z" };
+                    file.WriteLine(String.Format(
+                        "edge\t{0}\tWeight",
+                        dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+                }
 
                 foreach(IChunkRulePair<QuadRule> pair in compositeRule) {
                     
                     MultidimensionalArray globalNodes = gridData.GlobalNodes.GetValue_EdgeSV(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
-                    foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
+                    foreach(var edge in pair.Chunk.Elements.AsSmartEnumerable()) {
+
+                        Vector center = gridData.iGeomEdges.GetCenter(edge.Value);
+                        var edgeNodes = globalNodes.ExtractSubArrayShallow(edge.Index, -1, -1);
+
                         for(int n = 0; n < pair.Rule.NoOfNodes; n++) {
-                            file.Write(cell.Value);
+                            file.Write(edge.Value);
+
+                            Vector node = edgeNodes.GetRowPt(n);
+                            var ToCen = center - node;
+                            var nodeMod = node + ToCen * 0.1;
 
                             for(int d = 0; d < D; d++) {
-                                file.Write("\t{0}", globalNodes[cell.Index, n, d].ToString("E", NumberFormatInfo.InvariantInfo));
+                                file.Write("\t{0}", (nodeMod[d]).ToString("E", NumberFormatInfo.InvariantInfo));
                             }
 
                             file.WriteLine("\t{0}", pair.Rule.Weights[n].ToString("E", NumberFormatInfo.InvariantInfo));

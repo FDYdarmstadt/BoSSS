@@ -11,7 +11,11 @@ using System.Linq;
 
 namespace BoSSS.Foundation.XDG.Quadrature {
 
-
+    /// <summary>
+    /// Generation of quadrature rules for level-sets which coincide with cell faces,
+    /// centrally triggered by
+    /// <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
+    /// </summary>
     class LevelSetOnEdgeRuleFactory : IQuadRuleFactory<QuadRule> {
 
 
@@ -81,7 +85,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
     }
 
 
-
+    /// <summary>
+    /// Generation of quadrature rules for level-sets which coincide with cell faces,
+    /// centrally triggered by
+    /// <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
+    /// </summary>
     class LevelSetBoundaryOnEdgeRuleFactory : IQuadRuleFactory<CellBoundaryQuadRule> {
 
 
@@ -140,10 +148,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     continue;
 
 
-
-               
-
-
                 foreach(var t in CoincidFaces[j]) {
                     if(t.iLevSet == iLevelSet) {
 
@@ -200,6 +204,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
     }
 
 
+    /// <summary>
+    /// Generation of quadrature rules for level-sets which coincide with cell faces,
+    /// centrally triggered by
+    /// <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
+    /// </summary>
     class LevelSetOnEdgeRule {
         GridData grddat;
 
@@ -214,7 +223,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public bool IsSpecialCell(int j) {
-            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData.Region.m_LevSetCoincidingFaces;
+            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData.Region.LevSetCoincidingFaces;
             if (CoIncFaces == null)
                 return false;
             if (CoIncFaces[j] == null)
@@ -229,7 +238,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         int GetSpecialFaceIndex(int j) {
-            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData.Region.m_LevSetCoincidingFaces;
+            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData.Region.LevSetCoincidingFaces;
             foreach (var t in CoIncFaces[j]) {
                 int levelSetIndex = levelSetData.LevelSetIndex;
                 if (t.iLevSet == levelSetIndex)

@@ -209,6 +209,35 @@ namespace BoSSS.Foundation.Grid.RefElements {
         int[,] m_CoFaceToFaceFaceIndex;
 
         /// <summary>
+        /// - 1st index: face-index
+        /// - 2nd index: face-index of the face
+        /// </summary>
+        public int[,] FaceToCoFaceIndices {
+            get {
+                if(m_FaceToCoFaceIndices == null) {
+                    int[,] cf2fi = CoFaceToFaceIndices;
+                    int[,] cf2ff= CoFaceToFaceFaceIndex;
+
+
+                    m_FaceToCoFaceIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfFaces];
+                    for(int iCoFace = 0; iCoFace < this.NoOfCoFaces; iCoFace++) {
+                        for(int iInOt = 0; iInOt < 2; iInOt++) {
+                            int iFace = cf2fi[iCoFace, iInOt];
+                            int iFaceFace = cf2ff[iFace, iInOt];
+
+                            m_FaceToCoFaceIndices[iFace, iFaceFace] = iCoFace;
+                        }
+                    }
+
+                }
+                return m_FaceToCoFaceIndices.CloneAs();
+            }
+        }
+
+        int[,] m_FaceToCoFaceIndices;   
+
+
+        /// <summary>
         /// Correlates with <see cref="CoFaceToFaceIndices"/>:
         /// For each co-face, the face index of the face reference element which it corresponds to.
         /// - 1st index: co-face index <em>iCoFace</em> 

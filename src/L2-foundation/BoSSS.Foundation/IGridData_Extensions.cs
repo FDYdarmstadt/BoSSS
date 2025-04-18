@@ -1134,6 +1134,31 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// Easy-to-use routine (for a single point):
+        /// transform nodes in local coordinate to a global coordinate for cell <paramref name="jCell"/> 
+        /// </summary>
+        /// <param name="g"></param>
+        /// <param name="localNode">
+        /// point in local coordinates
+        /// </param>
+        /// <param name="jCell">
+        /// geometrical cell index
+        /// </param>
+        /// <returns>
+        /// point in global coordinates
+        /// </returns>
+        static public Vector TransformLocal2Global(this IGridData g, Vector localNode, int jCell) {
+            if(localNode.Dim != g.SpatialDimension) {
+                throw new ArgumentException("spatial dimension mismatch");
+            }
+            var localNodesW = MultidimensionalArray.Create(1, localNode.Dim);
+            localNodesW.SetRow(0, localNode);
+            var globalNodesW = g.TransformLocal2Global(localNodesW, jCell);
+            return globalNodesW.GetRowPt(0);
+        }
+
+
+        /// <summary>
         /// <see cref="TransformLocal2Global(IGridData, MultidimensionalArray, int)"/>
         /// </summary>
         static public MultidimensionalArray TransformLocal2Global(this MultidimensionalArray localNodes, IGridData g, int jCell) {

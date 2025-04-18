@@ -287,15 +287,19 @@ namespace BoSSS.Solution.LoadBalancing {
                         ushort[] RegionCode = new ushort[m_newJ];
                         this.RestoreVector(RegionCode, base.GetLSregioncodeName(iH));
 
-                        
-                        (int iLevSet, int iFace)[][] LevSetCoincidingFaces = new (int iLevSet, int iFace)[m_newJ][];
-                        this.RestoreVector<(int iLevSet, int iFace)[],(int iLevSet, int iFace)[][]>(LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+
+                        (int iLevSet, int iFace)[][] __LevSetCoincidingFaces = new (int iLevSet, int iFace)[m_newJ][];
+                        this.RestoreVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(__LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
+
+                        (int iLevSet, int iFace)[][] __LevSetCoincidingCoFaces = new (int iLevSet, int iFace)[m_newJ][];
+                        this.RestoreVector<(int iLevSet, int iFace)[], (int iLevSet, int iFace)[][]>(__LevSetCoincidingCoFaces, GetLSlevsetcoincidingcofacesName(iH));
 
                         m_NewTracker.ReplaceCurrentTimeLevel(
                             new LevelSetTracker.TrackerBackup() {
                                 LevelSets = tmpLS,
                                 Regions = RegionCode,
-                                LevSetCoincidingFaces = LevSetCoincidingFaces, 
+                                LevSetCoincidingFaces = __LevSetCoincidingFaces, 
+                                LevSetCoincidingCoFaces = __LevSetCoincidingCoFaces,
                                 Version = m_LsTrkPrivData.Versions[1 - iH],
                                 time = m_LsTrkPrivData.Times[1 - iH]
                             });

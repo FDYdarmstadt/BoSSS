@@ -1224,21 +1224,35 @@ namespace BoSSS.Foundation.XDG {
             int msk = (0xf << (4 * levSetInd));
             code = (ushort)((code & ~msk) | c);
         }
-        
-             
+
+
 
 
 
         /// <summary>
-        /// Node-set for determination of cut-cells.
+        /// Node-set for determination of cut-cells (general version)
         /// - index: reference element index
         /// </summary>
         /// <remarks>
         /// Structured as follows:
         /// - a set of quadrature nodes on each face
-        /// - nodes slightly exterior to the cell
+        /// - nodes slightly exterior to the cell; 
+        ///   Testing also sightly outside the cell is intended avoid missing a cut cell; this would be worse than a cut cell which is not cut.
         /// </remarks>
         NodeSet[] TestNodes;
+
+        /// <summary>
+        /// Node set for testing if the level-set coincides with a face or edge (<see cref="LevelSetRegions.LevSetCoincidingFaces"/>)
+        /// - index: reference element.
+        /// </summary>
+        NodeSet[] FaceNodes;
+        
+        ///// <summary>
+        ///// Node set for testing if the level-set coincides with a face or edge (<see cref="LevelSetRegions.LevSetCoincidingFaces"/>)
+        ///// - index: reference element.
+        ///// </summary>
+        //NodeSet[] CoFaceNodes;
+
 
         /// <summary>
         /// Quadrature weights 
@@ -1251,12 +1265,20 @@ namespace BoSSS.Foundation.XDG {
         /// - 1st index: reference element index, correlates with 1st index of <see cref="TestNodes"/>
         /// - 2nd index: face index
         /// </summary>
-        int[][] TestNodesPerFace;
+        int[][] NoOfTestNodesPerFace;
+
+        /// <summary>
+        /// Fore each node set in <see cref="TestNodes"/>, their correlation to the element co-faces
+        /// - 1st index: reference element index, correlates with 1st index of <see cref="TestNodes"/>
+        /// - 2nd index: co-face index
+        /// </summary>
+        int[][] NoOfTestNodesPerCoFace;
+
 
         BernsteinTransformator[] m_TestTransformer;
 
         /// <summary>
-        /// Transformator for each level set to transform the legendre coefficients to bernstein coefficients
+        /// Transformator for each level set to transform the Legendre coefficients to Bernstein coefficients
         /// we then use there superior geometric properties to search for cut cells.
         /// here the bernstein coefficients lie on a slight offset of the reference element
         /// </summary>
@@ -1301,15 +1323,19 @@ namespace BoSSS.Foundation.XDG {
 
             if(TestNodes == null) { // only the first time in object lifetime ...
                 TestNodes = new NodeSet[Krefs.Length];
-                TestNodesPerFace = new int[Krefs.Length][];
+                FaceNodes = new NodeSet[Krefs.Length];
+                NoOfTestNodesPerFace = new int[Krefs.Length][];
+                NoOfTestNodesPerCoFace = new int[Krefs.Length][];
                 TestNodes_QuadWeights = new MultidimensionalArray[Krefs.Length];
 
                 for(int iKref = 0; iKref < Krefs.Length; iKref++) {
                     var Kref = Krefs[iKref];
                     int myD = Math.Max(GridDat.Grid.GetRefElement(0).FaceRefElement.SpatialDimension, 1);
                     int NoOfFaces = Kref.NoOfFaces;
-                    TestNodesPerFace[iKref] = new int[NoOfFaces];
-                    
+                    int NoOfCoFaces = Kref.NoOfCoFaces;
+                    NoOfTestNodesPerFace[iKref] = new int[NoOfFaces];
+                    NoOfTestNodesPerCoFace[iKref] = new int[NoOfCoFaces];
+
                     // transformation from face to reference element
                     int TransformFaceNodes(double scaling, int iFace, MultidimensionalArray FaceNodesIn, MultidimensionalArray TstVtxOut, int OffsetIntoTestVtx) {
                         int NN = FaceNodesIn.GetLength(0);
@@ -1328,30 +1354,47 @@ namespace BoSSS.Foundation.XDG {
                     // various sets on faces
                     QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(4, 2); // brute-force rule on face
                     //QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(2, 1); // brute-force rule on face
-                    NodeSet corners = Kref.FaceRefElement.Vertices;
-                    QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree * 2); // Gauss rule on face
+                    NodeSet CornersOfFace = Kref.FaceRefElement.Vertices;
+                    QuadRule GaussRuleOnFace = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree * 2); // Gauss rule on face
+                    Debug.Assert(GaussRuleOnFace.Nodes.GetRowPt(0).Dim == D - 1);
+                    QuadRule GaussRuleOnCoFace = Kref.FaceRefElement.FaceRefElement.GetQuadratureRule(MaxLsDegree * 2); // Gauss rule on co-face
+                    Debug.Assert((GaussRuleOnCoFace.Nodes.GetRowPt(0).Dim == D - 2)
+                        || (D == 2 && GaussRuleOnCoFace.NoOfNodes == 1 && GaussRuleOnCoFace.Nodes.GetLength(1) == 1)); // expecting a point for the co-face
                     //QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree);
-                    TestNodes_QuadWeights[iKref] = GaussRule.Weights;
+                    TestNodes_QuadWeights[iKref] = GaussRuleOnFace.Weights;
 
                     // allocate memory form test node set 
-                    int TotNumberOfNodes = NoOfFaces * (corners.NoOfNodes + GaussRule.NoOfNodes + BruteRule.NoOfNodes);
+                    int TotNumberOfNodes = NoOfFaces * (CornersOfFace.NoOfNodes + GaussRuleOnFace.NoOfNodes + BruteRule.NoOfNodes) +
+                        NoOfCoFaces * GaussRuleOnCoFace.NoOfNodes;
                     NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes, D, true);
                     int offset = 0;
 
 
-                    // step 1: place gauss rules on edges
+                    // step 1: place Gauß rules on faces
                     // ----------------------------------
                     for(int iFace = 0; iFace < NoOfFaces; iFace++) {
-                        int NN = TransformFaceNodes(1.0, iFace, GaussRule.Nodes, TstVtx, offset);
-                        TestNodesPerFace[iKref][iFace] = NN;
+                        int NN = TransformFaceNodes(1.0, iFace, GaussRuleOnFace.Nodes, TstVtx, offset);
+                        NoOfTestNodesPerFace[iKref][iFace] = NN;
                         offset += NN;
                     }
-                                       
+
+                    // step 2: place Gauß rules on co-Faces
+                    // ------------------------------------
+                    for(int iCoface = 0; iCoface < NoOfCoFaces; iCoface++) {
+                        int iFace = Kref.CoFaceToFaceIndices[iCoface, 0];
+                        int NN = TransformFaceNodes(1.0, iFace, 
+                            Kref.FaceRefElement.GetFaceTrafo(Kref.CoFaceToFaceFaceIndex[iCoface, 0]).Transform(GaussRuleOnCoFace.Nodes),
+                            TstVtx, offset);
+                        NoOfTestNodesPerCoFace[iKref][iFace] = NN;
+                        offset += NN;
+                    }
+                                                           
                     
-                    // step 2: Place knots slightly outside the perimeter of the element
-                    // ----------------------------------
+                    // step 3: Place knots slightly outside the perimeter of the element
+                    // (these nodes should avoid missing a cut cell; this would be worse than a cut cell which is not cut)
+                    // -----------------------------------------------------------------------------------------------------
                     for(int iFace = 0; iFace < NoOfFaces; iFace++) {
-                        offset += TransformFaceNodes(1.005, iFace, corners, TstVtx, offset);
+                        offset += TransformFaceNodes(1.005, iFace, CornersOfFace, TstVtx, offset);
                         offset += TransformFaceNodes(1.005, iFace, BruteRule.Nodes, TstVtx, offset);
                     }
 
@@ -1359,6 +1402,11 @@ namespace BoSSS.Foundation.XDG {
                     // ---------------------------------
                     TstVtx.LockForever();
                     TestNodes[iKref] = TstVtx;
+
+
+                    // extract the face nodes
+                    // ----------------------
+                    FaceNodes[iKref] = new NodeSet(Kref, TstVtx.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NoOfTestNodesPerFace[iKref].Sum() + NoOfTestNodesPerCoFace[iKref].Sum() - 1, D - 1 }), true);
                 }
             }
         }
@@ -1449,7 +1497,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// The minimum amount of data required to restore the level-set-tracker state
-        /// after mesh adaptation
+        /// **after mesh adaptation**
         /// </summary>
         public class EssentialTrackerBackup {
             
@@ -1487,30 +1535,39 @@ namespace BoSSS.Foundation.XDG {
             public (int iLevSet, int iFace)[][] LevSetCoincidingFaces;
 
             /// <summary>
+            /// backup of <see cref="LevelSetRegions.m_LevSetCoincidingCoFaces"/>
+            /// </summary>
+            public (int iLevSet, int iCoface)[][] LevSetCoincidingCoFaces;
+
+            /// <summary>
             /// non-shallow cloning
             /// </summary>
             public object Clone() {
-                var clone_LevSetCoincidingFaces = new (int iLevSet, int iFace)[LevSetCoincidingFaces.Length][];
-                for(int j = 0; j < clone_LevSetCoincidingFaces.Length; j++) {
-                    var lscf_j = LevSetCoincidingFaces[j];
-                    if(lscf_j != null) {
-                        clone_LevSetCoincidingFaces[j] = lscf_j.CloneAs();
-                        Debug.Assert(lscf_j.Length <= 0 || !object.ReferenceEquals(lscf_j[0], clone_LevSetCoincidingFaces[j][0]));
-                    }
-                }
 
+                (int iLevSet, int idx)[][] CloneLevSetCoinciding((int iLevSet, int idx)[][] LevSetCoinciding) {
+                    var __clone = new (int iLevSet, int iFace)[LevSetCoinciding.Length][];
+                    for(int j = 0; j < __clone.Length; j++) {
+                        var lscf_j = LevSetCoinciding[j];
+                        if(lscf_j != null) {
+                            __clone[j] = lscf_j.CloneAs();
+                            Debug.Assert(lscf_j.Length <= 0 || !object.ReferenceEquals(lscf_j[0], __clone[j][0]));
+                        }
+                    }
+                    return __clone;
+                }
 
                 return new TrackerBackup() {
                     LevelSets = this.LevelSets.Select(ls => ls.CloneAs()).ToArray(),
                     Version = this.Version,
                     time = this.time,
                     Regions = this.Regions.CloneAs(),
-                    LevSetCoincidingFaces = clone_LevSetCoincidingFaces
+                    LevSetCoincidingFaces = CloneLevSetCoinciding(LevSetCoincidingFaces),
+                    LevSetCoincidingCoFaces = CloneLevSetCoinciding(LevSetCoincidingCoFaces)
                 };
             }
         }
 
-        
+
         /// <summary>
         /// Backup of the internal state of the level-set tracker for a certain history stack index (<paramref name="iHistory"/>).
         /// Not the entire state is backed up (cell masks, cut-cell quadrature rules, mass matrices, ..., are lost),
@@ -1522,21 +1579,28 @@ namespace BoSSS.Foundation.XDG {
         /// </returns>
         public TrackerBackup BackupTimeLevel(int iHistory) {
             int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
-            
+
             ushort[] RegionClone = new ushort[Jup];
             Array.Copy(this.RegionsHistory[iHistory].RegionsCode, 0, RegionClone, 0, Jup);
 
-            var LSCF = this.RegionsHistory[iHistory].m_LevSetCoincidingFaces;
-            (int iLevSet, int iFace)[][] _LevSetCoincidingFaces;
-            _LevSetCoincidingFaces = new (int iLevSet, int iFace)[Jup][];
-            if(LSCF != null) {
-                for(int j = 0; j < Jup; j++) {
-                    if (_LevSetCoincidingFaces[j] != null)
-                        _LevSetCoincidingFaces[j] = LSCF[j].CloneAs();
-                    else
-                        _LevSetCoincidingFaces[j] = null;
+
+            (int iLevSet, int idx)[][] CloneLevSetCoinciding((int iLevSet, int idx)[][] LSCF) {
+                var _LevSetCoinciding = new (int iLevSet, int idx)[Jup][];
+                if(LSCF != null) {
+                    for(int j = 0; j < Jup; j++) {
+                        if(_LevSetCoinciding[j] != null)
+                            _LevSetCoinciding[j] = LSCF[j].CloneAs();
+                        else
+                            _LevSetCoinciding[j] = null;
+                    }
                 }
+                return _LevSetCoinciding;
             }
+
+            (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = CloneLevSetCoinciding(this.RegionsHistory[iHistory].m_LevSetCoincidingFaces);
+            (int iLevSet, int iFace)[][] _LevSetCoincidingCoFaces = CloneLevSetCoinciding(this.RegionsHistory[iHistory].m_LevSetCoincidingCoFaces);
+
+
 
             int NoOfLevelSets = this.NoOfLevelSets;
             LevelSet[] LevSetClones = new LevelSet[NoOfLevelSets];
@@ -1548,6 +1612,7 @@ namespace BoSSS.Foundation.XDG {
             return new TrackerBackup() {
                 LevelSets = LevSetClones,
                 LevSetCoincidingFaces = _LevSetCoincidingFaces,
+                LevSetCoincidingCoFaces = _LevSetCoincidingCoFaces,
                 Regions = RegionClone,
                 Version = this.RegionsHistory[iHistory].Version,
                 time = this.RegionsHistory[iHistory].Time
@@ -1615,6 +1680,7 @@ namespace BoSSS.Foundation.XDG {
             SinglePhaseField[] LevSet = fullBackup.LevelSets;
             ushort[] RegionCode = fullBackup.Regions;
             (int iLevSet, int iFace)[][] LevSetCoincidingFaces = fullBackup.LevSetCoincidingFaces;
+            (int iLevSet, int iCoFace)[][] LevSetCoincidingCoFaces = fullBackup.LevSetCoincidingCoFaces;
             int VersionCounter = fullBackup.Version;
             double time = fullBackup.time;
 
@@ -1654,6 +1720,12 @@ namespace BoSSS.Foundation.XDG {
                 Array.Copy(LevSetCoincidingFaces, 0, this.Regions.m_LevSetCoincidingFaces, 0, RegionCode.Length);
             } else {
                 this.Regions.m_LevSetCoincidingFaces = null;
+            }
+            if(LevSetCoincidingCoFaces.Any(e => e != null && e.Length > 0)) {
+                this.Regions.m_LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[RegionCode.Length][];
+                Array.Copy(LevSetCoincidingCoFaces, 0, this.Regions.m_LevSetCoincidingCoFaces, 0, RegionCode.Length);
+            } else {
+                this.Regions.m_LevSetCoincidingCoFaces = null;
             }
             this.Regions.Version = VersionCounter;
             this.m_VersionCnt = VersionCounter;
@@ -1721,8 +1793,7 @@ namespace BoSSS.Foundation.XDG {
         public void UpdateTracker(double PhysTime, int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
             using (var tr = new FuncTrace()) {
                 ilPSP.MPICollectiveWatchDog.Watch();
-               
-
+                
                 if (this.NearRegionWidth <= 0 && incremental == true) {
                     throw new NotSupportedException("Incremental update requires a near-region width of at least 1.");
                 }
@@ -1767,14 +1838,15 @@ namespace BoSSS.Foundation.XDG {
                 BitArray[] LevSetNeg;
                 ushort[,] VertexMarkerExternal;
                 (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = null;
+                (int iLevSet, int iCoFace)[][] _LevSetCoincidingCoFaces = null;
 
-                
+
 
 
                 // init & first time calls
                 // =======================
                 #region UpdateTracker_INIT
-                using (new BlockTrace("INIT", tr)) {
+                using(new BlockTrace("INIT", tr)) {
 
                     // init memory
                     // -----------
@@ -1784,6 +1856,7 @@ namespace BoSSS.Foundation.XDG {
                     Regions.InvalidateCaches();
                     LevSetRegionsUnsigned = new ushort[JA];
                     Regions.m_LevSetCoincidingFaces = null;
+                    Regions.m_LevSetCoincidingCoFaces = null;
 
                     // necessary to avoid a 'LevelSetCFLException' on the first
                     // call to this method
@@ -1852,6 +1925,9 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
+             
+
+
                     //Environment.ParallelFor(
                     var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
                     foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
@@ -1863,11 +1939,115 @@ namespace BoSSS.Foundation.XDG {
                         var Kref = Krefs[iKref];
                         int noOfFaces = Kref.NoOfFaces;
                         int NoOfNodes = TestNodes[iKref].NoOfNodes;
-                        int[] _TestNodesPerFace = this.TestNodesPerFace[iKref];
+                        int noOfCoFaces = Kref.NoOfCoFaces;
+                        int[] _TestNodesPerFace = this.NoOfTestNodesPerFace[iKref];
+                        int[] _TestNodesPerCoFace = this.NoOfTestNodesPerCoFace[iKref];
+                        int noOfFaceNodes = _TestNodesPerFace.Sum();
+                        int noOfCoFaceNodes = _TestNodesPerCoFace.Sum();
                         var quadWeights = TestNodes_QuadWeights[iKref];
+                        int[,] Face2Coface = Kref.FaceToCoFaceIndices;
 
                         // loop over level sets ...
-                        for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
+                        for(int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
+
+                            (bool retPos, bool retNeg) DetectCoincidingFace(MultidimensionalArray levSetVal, int jCell) {
+                                bool Pos = false;
+                                bool Neg = false;
+
+                                // loop over nodes on edges/faces...
+                                int nodeIndex = 0;
+                                for(int e = 0; e < noOfFaces; e++) {
+                                    bool PosEdge = false;
+                                    bool NegEdge = false;
+
+                                    double quadResult = 0.0;
+                                    for(int k = 0; k < _TestNodesPerFace[e]; k++) {
+                                        double v = levSetVal[jCell - j, nodeIndex];
+
+                                        if(v < 0) {
+                                            NegEdge = true;
+                                        } else if(v > 0) {
+                                            PosEdge = true;
+                                        }
+                                        // [Toprak] why v*v not only v?
+                                        quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
+
+                                        nodeIndex++;
+                                    }
+
+                                    Pos |= PosEdge;
+                                    Neg |= NegEdge;
+
+                                    // detect an edge which coincides with the zero-level-set
+                                    if(quadResult < eps) {
+                                        if(_LevSetCoincidingFaces == null)
+                                            _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
+                                        if(_LevSetCoincidingCoFaces == null)
+                                            _LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[J][];
+
+                                        (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jCell]);
+
+                                        // if the level-set coincides with a face, it also coincides with the co-face
+                                        for(int z = 0; z < Face2Coface.GetLength(1); z++) {
+                                            int iCoFace = Face2Coface[e, z];
+
+                                            if(_LevSetCoincidingCoFaces[jCell] == null || !_LevSetCoincidingCoFaces[jCell].Any(tt => tt.iLevSet == levSetind && tt.iCoFace == iCoFace)) {
+                                                (levSetind, iCoFace).AddToArray(ref _LevSetCoincidingCoFaces[jCell]);
+                                            }
+                                        }
+
+
+                                    }
+
+                                } // end of edges loop
+
+                                return (Pos, Neg);
+                            }
+
+                            (bool retPos, bool retNeg) DetectCoincidingCoFace(MultidimensionalArray levSetVal, int jCell) {
+                                bool Pos = false;
+                                bool Neg = false;
+
+                                // loop over nodes on edges/faces...
+                                int nodeIndex = noOfFaceNodes;
+                                for(int c = 0; c < noOfCoFaces; c++) {
+                                    bool PosEdge = false;
+                                    bool NegEdge = false;
+
+                                    double quadResult = 0.0;
+                                    for(int k = 0; k < _TestNodesPerCoFace[c]; k++) {
+                                        double v = levSetVal[jCell - j, nodeIndex];
+
+                                        if(v < 0) {
+                                            NegEdge = true;
+                                        } else if(v > 0) {
+                                            PosEdge = true;
+                                        }
+                                        quadResult += v * v; // weight might not even be necessary to test only for positivity
+
+                                        nodeIndex++;
+                                    }
+
+                                    Pos |= PosEdge;
+                                    Neg |= NegEdge;
+
+                                    // detect an edge which coincides with the zero-level-set
+                                    if(quadResult < eps) {
+                                        if(_LevSetCoincidingCoFaces == null)
+                                            _LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[J][];
+
+                                        if(_LevSetCoincidingCoFaces[jCell] == null || !_LevSetCoincidingCoFaces[jCell].Any(tt => tt.iLevSet == levSetind && tt.iCoFace == c)) {
+                                            (levSetind, c).AddToArray(ref _LevSetCoincidingCoFaces[jCell]);
+                                        }
+                                    }
+
+                                } // end of edges loop
+
+                                return (Pos, Neg);
+                            }
+
+                            
+
                             var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
 
 
@@ -1876,52 +2056,21 @@ namespace BoSSS.Foundation.XDG {
                                 // Use the accelerated Bernstein cut cell finding technique for dg levelsets
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 var data = this.m_DataHistories[levSetind].Current;
-                                NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1}), false); // only use edge nodes
-                                MultidimensionalArray levSetVal = data.GetLevSetValues(EdgeNodes, j, VecLen);
+                                MultidimensionalArray levSetVal = data.GetLevSetValues(FaceNodes[iKref], j, VecLen);
 
                                 // loop over all cells in this chunk
                                 for (int jj = j; jj < j + VecLen; jj++) {
                                     double[] modalVals = ls.Coordinates.GetRow(jj);
                                     var TransformerEdges = this.TestTransformerEdges[levSetind];
-                                    bool Pos = false;
-                                    bool Neg = false;
 
-                                    
-                                    #region edges  
-                                    // loop over nodes on edges...
-                                    int nodeIndex = 0;
-                                    for (int e = 0; e < noOfFaces; e++) {
-                                        bool PosEdge = false;
-                                        bool NegEdge = false;
+                                    // check faces:
+                                    var (Pos, Neg) = DetectCoincidingFace(levSetVal, jj);
+                                    // check co-faces
+                                    var (_Pos, _Neg) = DetectCoincidingCoFace(levSetVal, jj);
+                                    Pos |= _Pos;
+                                    Neg |= _Neg;
 
-                                        double quadResult = 0.0;
-                                        for (int k = 0; k < _TestNodesPerFace[e]; k++) {
-                                            double v = levSetVal[jj - j, nodeIndex];
 
-                                            if (v < 0) {
-                                                NegEdge = true;
-                                            } else if (v > 0) {
-                                                PosEdge = true;
-                                            }
-                                            // [Toprak] why v*v not only v?
-                                            quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
-
-                                            nodeIndex++;
-                                        }
-
-                                        Pos |= PosEdge;
-                                        Neg |= NegEdge;
-
-                                        // detect an edge which coincides with the zero-level-set
-                                        if (quadResult < eps) {
-                                            if (_LevSetCoincidingFaces == null)
-                                                _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
-                                            (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jj]);
-                                        }
-
-                                    } // end of edges loop
-                                    #endregion
-                                    
 
                                     /* Seems to be not robust enough... using the "old" procedure for now
                                     // loop over nodes on edges...
@@ -1971,22 +2120,22 @@ namespace BoSSS.Foundation.XDG {
                                     Neg |= Min < 0;
 
                                     // either clear sign change or all zeros
-                                    if (Pos && Neg || (!Pos && !Neg)) {
+                                    if(Pos && Neg || (!Pos && !Neg)) {
                                         // cell jj is cut by level set
                                         // code cell:
 
-                                        
+
                                         EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
                                         TempCutCellsBitmask[jj] = true;
                                     }
 
                                     // detect purely negative cells
-                                    if (Max < 0.0) {
-                                            LevSetNeg[levSetind][jj] = true;
+                                    if(Max < 0.0) {
+                                        LevSetNeg[levSetind][jj] = true;
                                     } else {
                                         LevSetNeg[levSetind][jj] = false;
                                     }
-                                    
+
                                 }
                             } else {
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1999,43 +2148,16 @@ namespace BoSSS.Foundation.XDG {
                                 MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
 
                                 for (int jj = 0; jj < VecLen; jj++) {
-                                    bool Pos = false;
-                                    bool Neg = false;
-
-                                    // loop over nodes on edges...
-                                    int nodeIndex = 0;
-                                    for (int e = 0; e < noOfFaces; e++) {
-                                        bool PosEdge = false;
-                                        bool NegEdge = false;
-
-                                        double quadResult = 0.0;
-                                        for (int k = 0; k < _TestNodesPerFace[e]; k++) {
-                                            double v = levSetVal[jj, nodeIndex];
-
-                                            if (v < 0) {
-                                                NegEdge = true;
-                                            } else if (v > 0) {
-                                                PosEdge = true;
-                                            }
-
-                                            quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
-
-                                            nodeIndex++;
-                                        }
-
-                                        Pos |= PosEdge;
-                                        Neg |= NegEdge;
-
-                                        // detect an edge which coincides with the zero-level-set
-                                        if (quadResult < eps) {
-                                            if (_LevSetCoincidingFaces == null)
-                                                _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
-                                            (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[j + jj]);
-                                        }
-
-                                    } // end of edges loop
+                                    
+                                    // check faces:
+                                    var (Pos, Neg) = DetectCoincidingFace(levSetVal, jj);
+                                    // check co-faces
+                                    var (_Pos, _Neg) = DetectCoincidingCoFace(levSetVal, jj);
+                                    Pos |= _Pos;
+                                    Neg |= _Neg;
 
                                     // loop over remaining Nodes...
+                                    int nodeIndex = noOfFaceNodes + noOfCoFaceNodes;
                                     for (; nodeIndex < NoOfNodes; nodeIndex++) {
                                         double v = levSetVal[jj, nodeIndex];
 
@@ -2071,10 +2193,12 @@ namespace BoSSS.Foundation.XDG {
                         j += VecLen;
 
                     }
-                    
 
-                    if (_LevSetCoincidingFaces != null)
+
+                    if(_LevSetCoincidingFaces != null)
                         Regions.m_LevSetCoincidingFaces = _LevSetCoincidingFaces;
+                    if(_LevSetCoincidingCoFaces != null)
+                        Regions.m_LevSetCoincidingCoFaces = _LevSetCoincidingCoFaces;
                 }
 
                 //test.AddVector()
@@ -2391,6 +2515,8 @@ namespace BoSSS.Foundation.XDG {
 
 
             }
+
+            
         }
 
       
@@ -2415,7 +2541,7 @@ namespace BoSSS.Foundation.XDG {
             this.m_SpeciesId2Index = null;
             this.TestNodes = null;
             this.TestNodes_QuadWeights = null;
-            this.TestNodesPerFace = null;
+            this.NoOfTestNodesPerFace = null;
             this.m_LevelSets = null;
         }
 
