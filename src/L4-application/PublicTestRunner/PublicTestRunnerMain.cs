@@ -1049,6 +1049,7 @@ namespace PublicTestRunner {
                             for(int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
                                 var s = jj.job.Status;
+                                var runtime = jj.job.LatestDeployment.RunTime; ;
 
                                 {
                                     string resultArg = "--result=";
@@ -1125,6 +1126,9 @@ namespace PublicTestRunner {
                                                 }
 
                                                 if (DetectSlowBenchmark(profilings, out _))
+                                                    reallyDelete = false;
+
+                                                if(runtime > new TimeSpan(hours: 1, minutes: 0, seconds: 0))
                                                     reallyDelete = false;
 
                                             } catch (Exception ioe) {
