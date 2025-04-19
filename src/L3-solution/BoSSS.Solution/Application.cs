@@ -3082,8 +3082,16 @@ namespace BoSSS.Solution {
                 Tracer.Current.UpdateTime();
 
                 if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
+
+                    string suffix;
+                    if(this.CurrentSessionInfo.ID == Guid.Empty)
+                        suffix = $".nosession.{DateTime.Now.ToString("MMMdd_HHmmss")}";
+                    else
+                        suffix = "";
+
+
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin{suffix}")) {
                             var str = OnlineProfiling.Serialize();
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 stw.Write(str);
@@ -3096,7 +3104,7 @@ namespace BoSSS.Solution {
                     }
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_summary{suffix}")) {
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 OnlineProfiling.WriteProfilingReport(stw);
                                 stw.Flush();
