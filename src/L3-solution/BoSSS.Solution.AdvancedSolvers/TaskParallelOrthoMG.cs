@@ -454,17 +454,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	// this is designed to hold information getting from the WORLD
 	class TaskParallelMGOperator : IOperatorMappingPair {
 
-        public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix RestrictionMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping) { 
+        public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix RestrictionMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int size = 0) { 
             m_OpMtx = OperatorMatrix;
 			m_RstMtx = RestrictionMatrix;
 			m_ProlMtx = ProlongationMatrix;
 			m_Mapping = Mapping;
-            (m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(Mapping);
+			totSize = size == 0 ? m_OpMtx.RowPartitioning.MpiSize : size;
+			smootherSize = Math.Max(1, totSize / 4);
+			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(Mapping);
             m_NoOfSpecies = GetNoOfSpeciesList(Mapping);
-			(SmootherCellI0s, SmootherNewCellMapping) = DistributeMapping(Mapping, 3);
-			(CoarseCellI0s, CoarseNewCellMapping) = DistributeMapping(Mapping, 2);
+			(SmootherCellI0s, SmootherNewCellMapping) = DistributeMapping(Mapping, smootherSize);
+			(CoarseCellI0s, CoarseNewCellMapping) = DistributeMapping(Mapping, coarseSize);
             CellToDOFdata = CellIndexToDOFs(Mapping);
 		}
+
+        public int totSize; 
+        public int smootherSize;
+        public int coarseSize => totSize - smootherSize;
 
 		(long i0Cell, int lenCell)[] CellToDOFdata; //global data (all of them) and global indices
 		List<(long, long)> CoarseNewCellMapping; //global data (all of them) and global indices
@@ -649,7 +655,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			for (int jCellLoc = 0; jCellLoc < J; jCellLoc++) {
 				myList[jCellLoc] = (map.GetCellI0(jCellLoc), map.GetLength(jCellLoc));
 			}
-			var globList = myList.MPIAllGatherO(map.MPI_Comm);
+			(long i0Cell, int lenCell)[][] globList = myList.MPIAllGatherO(map.MPI_Comm);
 			var flatGlobArray = globList.SelectMany(x => x).ToArray();
 
 			return flatGlobArray;
@@ -792,10 +798,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public BlockMsrMatrix OpMatrix => m_OpMapPair.OperatorMatrix;
 
-        /// <summary>
-        /// passed in <see cref="InitImpl"/>
-        /// </summary>
-        IOperatorMappingPair m_OpMapPair;
+        TaskParallelMGOperator OpMapping => m_OpMapPair as TaskParallelMGOperator;
+
+		/// <summary>
+		/// passed in <see cref="InitImpl"/>
+		/// </summary>
+		IOperatorMappingPair m_OpMapPair;
 
 
         /// <summary>
@@ -821,15 +829,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetRestrictionOperator, op.GetPrologonationOperator, op.Mapping);
+			int WorldSize = op.Mapping.MpiSize;
+			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetRestrictionOperator, op.GetPrologonationOperator, op.Mapping, WorldSize);
 			TaskParallelMGOperator finerTP = thisTP;
 
 			op.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_0.txt");
 			op.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_0.txt");
+			int level = 1;
 
-			int level = 0;
-			for (MultigridOperator op_lv = op.CoarserLevel; op_lv != null; op_lv = op_lv.CoarserLevel) {               
-               var coarserTP = new TaskParallelMGOperator(op_lv.OperatorMatrix, op_lv.GetRestrictionOperator, op_lv.GetPrologonationOperator, op_lv.Mapping);
+			for (MultigridOperator op_lv = op.CoarserLevel; op_lv != null; op_lv = op_lv.CoarserLevel) {
+				var coarserTP = new TaskParallelMGOperator(null, null, op_lv.GetPrologonationOperator, op_lv.Mapping, WorldSize - level);
 				op_lv.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_{level}.txt");
 				op_lv.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_{level}.txt");
 
@@ -839,7 +848,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				finerTP.CoarserLevel = coarserTP;
                 coarserTP.FinerLevel = finerTP;
 				finerTP = coarserTP;
-                level++;
+				level++;
+
 			}
 			InitImpl(thisTP);
         }
@@ -928,7 +938,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ortho = new CoreOrthonormalizationProcedureTP(Mtx);
 
                 int NoOfCoarseBlocks = GetNumberOfCoarseBlocks();
-                SplitCommunicator(NoOfCoarseBlocks);
+				//The zero-th rank is the one assigned for fine mesh for the ease of operations
+				NoOfCoarseProcs = op.coarseSize;
+				NoOfSmootherProcs = op.smootherSize;
+				SplitCommunicator(NoOfCoarseProcs);
 				PermutateOpMatrix();
 				//CommitCoarseningOperators(opCommRestrictionOperator, opCommProlongationOperator);
 
@@ -1312,8 +1325,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							options,
 							ref edgecut,
 							part);
-					if (CoreOffset != 0)
-						part = part.Select(i => i + CoreOffset).ToArray();
 				} else {
 					part = null;
 				}
@@ -1431,9 +1442,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		/// <param name="NoOfCoarseProcs"></param>
 		void SplitCommunicator(int NumberOfCoarseProcs) {
-			//The zero-th rank is the one assigned for fine mesh for the ease of operations
-			NoOfCoarseProcs = Math.Max(1, NumberOfCoarseProcs);
-			NoOfSmootherProcs = opCommSize - NoOfCoarseProcs;
+
 
 			if (NoOfCoarseProcs < 1 || NoOfSmootherProcs < 1)
                 throw new ArgumentOutOfRangeException($"Number of coarse processors and smoother processors must be greater than 0. Coarse: {NoOfCoarseProcs}, Smoother: {NoOfSmootherProcs}");
@@ -1514,6 +1523,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
+        private void PermutateCoarserOperators() {
+
+			subCommCoarseOpMatrix = ChangeCommunicators(OpMatrix, coarsePermutation, columnMappingOpToCoarse, "c_");
+            int lvl = 1;
+			for (var op_lv = OpMapping.CoarserLevel as TaskParallelMGOperator; op_lv != null; op_lv = op_lv.CoarserLevel as TaskParallelMGOperator) {
+                var OpCommunicatorCoarseOpMtx = op_lv.OperatorMatrix;
+                var OpCommunicatorCoarseProlMtx = op_lv.ProlongationMatrix;
+
+
+				OpCommunicatorCoarseOpMtx = ChangeCommunicators(OpCommunicatorCoarseOpMtx, coarsePermutation, columnMappingOpToCoarse, $"c_lvl{lvl}");
+				OpCommunicatorCoarseProlMtx = ChangeCommunicators(OpCommunicatorCoarseProlMtx, coarsePermutation, columnMappingOpToCoarse, $"c_lvl{lvl}");
+
+			}
+		}
+
 		private void InitCoarse() {
             using (var tr = new FuncTrace()) {
                 var op = this.m_OpMapPair;
@@ -1521,7 +1545,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //throw new NotSupportedException("Missing coarse level solver.");
                     tr.Info("OrthonormalizationMultigrid: running without coarse solver.");
                 } else {
-                    if (op is TaskParallelMGOperator mgOp) { 
+                    PermutateCoarserOperators();
+					if (op is TaskParallelMGOperator mgOp) { 
                         if (mgOp.CoarserLevel != null && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
 							ssCoarse.Init(mgOp.CoarserLevel);
                         }
