@@ -1163,12 +1163,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             /// <summary>
-            /// Handling of special cases, when the level-set coincides with a cell face;
-            /// It can be null, if there is no such face in the entire mesh;
-            /// - 1st index: local cell index
-            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
-            /// - entry: if null, there is no face on the cell which coincides with any level-set 
-            /// - contains tuples, which level-set coincides with which face (if any)
+            /// <see cref="LevSetCoincidingFaces"/>
             /// </summary>
             internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
 
@@ -1196,19 +1191,14 @@ namespace BoSSS.Foundation.XDG {
 
 
             /// <summary>
-            /// Handling of special cases, when the level-set coincides with a cell co-face (e.g., in 2D it passes through a corner, in 3D through a co-face);
-            /// It can be null, if there is no such co-face in the entire mesh;
-            /// - 1st index: local cell index
-            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding co-face, so there can be 
-            /// - entry: if null, there is no face on the cell which coincides with any level-set 
-            /// - contains tuples, which level-set coincides with which co-face (if any)
+            /// <see cref="LevSetCoincidingCoFaces"/>>
             /// </summary>
             internal (int iLevSet, int iCoFace)[][] m_LevSetCoincidingCoFaces;
 
             /// <summary>
             /// Handling of special cases, when the level-set coincides with a cell co-face (e.g., in 2D it passes through a corner, in 3D through a co-face);
             /// It can be null, if there is no such co-face in the entire mesh;
-            /// - 1st index: local cell index
+            /// - 1st index: local geometric cell index
             /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding co-face, so there can be 
             /// - entry: if null, there is no face on the cell which coincides with any level-set 
             /// - contains tuples, which level-set coincides with which co-face (if any)

@@ -2377,9 +2377,11 @@ namespace BoSSS.Solution {
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
-                        if( i <= i0.MajorNumber + 1 || (DateTime.Now - lastLogWrite > new TimeSpan(0, 5, 0))) { // prevent writing the log to often
-                            this.ProfilingLog();
-                            lastLogWrite = DateTime.Now;
+                        if( i <= i0.MajorNumber + 1) { // prevent writing the log to often
+                            if(DateTime.Now - lastLogWrite > new TimeSpan(0, 10, 0)) {
+                                this.ProfilingLog();
+                                lastLogWrite = DateTime.Now;
+                            }
                         }
                         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
@@ -2495,10 +2497,10 @@ namespace BoSSS.Solution {
                 if ((timeStepInt + sb) % SavePeriod == 0 || (!runNextLoop && sb == 0)) {
                     tsi = SaveToDatabase(timeStepInt, physTime);
                     //Console.WriteLine($"timestep: {tsi} saved");
-                    this.ProfilingLog();
                     break;
                 }
             }
+            this.ProfilingLog();
 
 
             if (this.RollingSave) {

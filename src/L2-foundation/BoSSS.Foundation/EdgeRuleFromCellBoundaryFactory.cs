@@ -32,10 +32,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// converts a cell boundary quadrature rule into an edge quadrature rule
     /// </summary>
     public class EdgeRuleFromCellBoundaryFactory : IQuadRuleFactory<QuadRule> {
-
-        static public bool showme = false;
-
-
+                
 
         /// <summary>
         /// constructor
@@ -203,16 +200,7 @@ namespace BoSSS.Foundation.Quadrature {
             // ==========
             {
                 for(int i = 0; i < NoEdg; i++) { // loop over edges
-                    //if (MaxDomainMask[Cells[i]] == false)
-                    //    Debugger.Break();
-
-                    if(showme && EdgeIndices[i] == 32) {
-                        var __cellBndRule = new CompositeQuadRule<CellBoundaryQuadRule>();
-                        __cellBndRule.chunkRulePairs.AddRange(cellBndRule);
-                        __cellBndRule.SaveToTextFileCell(mask.GridData, "whatsWrong.csv");
-                        (mask as EdgeMask).SaveToTextFile("requestedEdges.csv");
-                        Console.WriteLine("888888888888888888");
-                    }
+                    
 
                     //if (Cells[i] >= 0) {
                     var CellBndR = cellBndRule[iChunk[i]].Rule;
@@ -230,8 +218,6 @@ namespace BoSSS.Foundation.Quadrature {
                     //} else {
                     //    Debug.Assert(Ret[i] != null);
                     //}
-                    if(showme)
-                        Console.WriteLine(i + "   " + Ret[i].Rule.Weights.Sum());
                 }
             }
 

@@ -834,9 +834,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     //if(GridData.MpiRank == 1)
                                     //    Debugger.Launch();
-                                    EdgeRuleFromCellBoundaryFactory.showme = false;
                                     var coEdgRule = SurfaceElement_Edge.Compile(GridData, quadOrder);
-                                    EdgeRuleFromCellBoundaryFactory.showme = false;
                                     var coVolRole = SurfaceElement_volume.Compile(GridData, quadOrder);
 
                                     string suffix = $"{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}-MPI{this.GridData.MpiRank}of{this.GridData.MpiSize}";

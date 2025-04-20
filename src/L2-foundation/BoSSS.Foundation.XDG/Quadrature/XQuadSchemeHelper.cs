@@ -171,10 +171,11 @@ namespace BoSSS.Foundation.XDG {
         /// reference element <paramref name="Kref"/>.
         /// </summary>
         private EdgeMask GetCutEdges(RefElement Kref, int iLevSet) {
-            int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref);
+            int iKref = this.XDGSpaceMetrics.GridDat.iGeomCells.RefElements.IndexOf(Kref);
             return m_CutEdges[iKref, iLevSet];
         }
 
+        /*
         /// <summary>
         /// all edges of cells which are cut by level set #<paramref name="iLevSet"/> and which belong to a cell with
         /// reference element <paramref name="Kref"/>.
@@ -183,6 +184,7 @@ namespace BoSSS.Foundation.XDG {
             int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref, (a, b) => object.ReferenceEquals(a, b));
             return m_HMFEdgesDomain[iKref, iLevSet];
         }
+        */
 
         /// <summary>
         /// initialized by the constructor to avoid MPI-deadlocks;
@@ -196,6 +198,15 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         private EdgeMask m_CutCellSubgrid_InnerEdges;
 
+
+        /// <summary>
+        /// Edge quadrature for the surface elements, i.e., a $D-2$ dimensional integral.
+        /// For each cut background-cell $ K_j $, the surface element is $ K_j \cap \mathfrak{I} $ and its boundaries is  $ \partial K_j \cap \mathfrak{I} $; 
+        /// Therefore, one need to integrate over the line integrals:
+        /// \[
+        ///    \int_{\partial K_j \cap \mathfrak{I} } \ldots \mathrm{dl} .
+        /// \]
+        /// </summary>
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
@@ -224,26 +235,6 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            //Handle doubly cut cells
-            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
-                    if (iLevSet != jLevSet) {
-                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
-                            CellMask doublyCutCells = this.GetDoubleCutCells(iLevSet, jLevSet);
-                            EdgeMask dCCEdges = doublyCutCells.AllEdges();
-                            var doublyCut = dCCEdges.Intersect(allRelevantEdges);
-                            if (doublyCut.Count() > 0) {
-                                var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
-                                var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, jmpJ, Kref, backupFactory);
-                                edgeQrIns.AddFactory(factory, doublyCut);
-                            }
-                        }
-                    }
-                }
-            }
-
-            
             if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Special case handling:
@@ -254,11 +245,23 @@ namespace BoSSS.Foundation.XDG {
 
                 IGridData gdat = XDGSpaceMetrics.GridDat;
                 int D = gdat.SpatialDimension;
-                
+
 
 
                 foreach(var edgeKref in gdat.iGeomEdges.EdgeRefElements) {
                     int iKrefEdge = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomEdges.EdgeRefElements, edgeKref);
+
+                    //var CutArea = this.XDGSpaceMetrics.CutCellMetrics.CutEdgeAreas[sp];
+
+                    var allSignCodes = XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(sp);
+
+
+                    //EdgeMask IntegrationDom = SurfaceElementBounaryFactoryForCoincidingEdges.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKrefEdge);
+                    //var fact = new SurfaceElementBounaryFactoryForCoincidingEdges(edgeKref, )
+                    //edgeQrIns.AddFactoryDomainPair(fact, IntegrationDom);
+
+
+                    
                     foreach(var Kref in gdat.iGeomCells.RefElements) {
                         //int iKref = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomCells.RefElements, Kref);
                         EdgeMask IntegrationDom =
@@ -299,19 +302,45 @@ namespace BoSSS.Foundation.XDG {
                         //edgeQrIns.AddFactoryDomainPair(fact, mask.Intersect(modIntegrationDom));
                         edgeQrIns.AddFactoryDomainPair(fact, modIntegrationDom);
                     }
+                    
                 }
             }
-            
 
+
+
+
+
+            //Handle doubly cut cells
+            foreach(var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+                    if (iLevSet != jLevSet) {
+                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
+                            CellMask doublyCutCells = this.GetDoubleCutCells(iLevSet, jLevSet);
+                            EdgeMask dCCEdges = doublyCutCells.AllEdges();
+                            var doublyCut = dCCEdges.Intersect(allRelevantEdges);
+                            if (doublyCut.Count() > 0) {
+                                var jmpJ = IdentifyWingA(jLevSet, sp);
+                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                                var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, jmpJ, Kref, backupFactory);
+                                edgeQrIns.AddFactory(factory, doublyCut);
+                            }
+                        }
+                    }
+                }
+            }
+
+            
+          
 
             return edgeQrIns;
         }
 
         /// <summary>
-        /// Interior quadrature for the surface elements, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
-        /// \f[
+        /// Volume quadrature for the surface elements, i.e., a $D-1$ dimensional integral.
+        /// For each cut background-cell $ K_j $, the surface element is $ K_j \cap \mathfrak{I} $; 
+        /// \[
         ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
-        /// \f]
+        /// \]
         /// </summary>
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
