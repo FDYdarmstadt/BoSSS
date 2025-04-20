@@ -251,7 +251,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         /// <summary>
-        /// conversion (<paramref name="jCellGeom"/>,<paramref name="iFace"/>) to grid edges
+        /// conversion (<paramref name="jCellGeom"/>,<paramref name="iCoFace"/>) to grid edges
         /// </summary>
         static IEnumerable<int> GeometricalCellCoFace2Edges(IGridData gdat, int jCellGeom, int iCoFace) {
 
