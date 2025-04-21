@@ -854,15 +854,18 @@ namespace ilPSP.LinSolvers {
 		/// <summary>
 		/// Update of <see cref="ReceiveLists"/> and <see cref="SendLists"/>
 		/// </summary>
-		public void ChangeCommPattern(MPI_Comm comm, IBlockPartitioning newColPart) {
+		public void ChangeColumnPartitioning(IBlockPartitioning newColPart) {
+            MPI_Comm comm = newColPart.MPI_Comm;
 			MPICollectiveWatchDog.Watch(comm);
-
-            if (comm == this.MPI_Comm) { 
-                UpdateCommPattern(comm);
+            if (newColPart == _ColPartitioning)
                 return;
-			}
 
-			m_effectiveComm = comm; 
+			m_ColPartitioning = newColPart.IsMutable ? newColPart.GetImmutableBlockPartitioning() : newColPart;
+
+			if (comm != this.MPI_Comm)  //this is a restriction for now, technically it is not necessary with a bit of work
+				throw new NotSupportedException("Something is odd, old and new partioning must be on the same communicator. Use ChangeMPICommForColumns method after this");
+			
+
 			// hint: MPI_Comm_group & MPI_Group_translate_ranks
 
 			// clear old Lists
@@ -873,45 +876,46 @@ namespace ilPSP.LinSolvers {
 			csMPI.Raw.Comm_Size(comm, out MpiSize);
 
             ReInitializeExternalBlockInformation(MpiRank, newColPart);
+            //UpdateCommPattern(newColPart.MPI_Comm);
 
-			if (ReceiveLists != null)
-				ReceiveLists.Clear();
-			else
-				ReceiveLists = new Dictionary<int, long[,]>();
-			if (SendLists != null)
-				SendLists.Clear();
-			else
-				SendLists = new Dictionary<int, long[,]>();
+            if (ReceiveLists != null)
+                ReceiveLists.Clear();
+            else
+                ReceiveLists = new Dictionary<int, long[,]>();
+            if (SendLists != null)
+                SendLists.Clear();
+            else
+                SendLists = new Dictionary<int, long[,]>();
 
-			int[] PeerProcs = m_ExternalBlockIndicesByProcessor.Keys.ToArray();
+            int[] PeerProcs = m_ExternalBlockIndicesByProcessor.Keys.ToArray();
 
-			// build receive lists
-			// -------------------
+            // build receive lists
+            // -------------------
 
-			foreach (int ProcRank in PeerProcs) {
-				Debug.Assert(ProcRank != MpiRank);
-				long[,] IdxRange = GetExternalIndexRange(ProcRank);
-				ReceiveLists.Add(ProcRank, IdxRange); //] = GetExternalIndexRange(ProcRank);
-			}
+            foreach (int ProcRank in PeerProcs) {
+                Debug.Assert(ProcRank != MpiRank);
+                long[,] IdxRange = GetExternalIndexRange(ProcRank);
+                ReceiveLists.Add(ProcRank, IdxRange); //] = GetExternalIndexRange(ProcRank);
+            }
 
-			//foreach (var kv in ReceiveLists) {
-			//    int Trnk = kv.Key;
-			//    int NoOf = kv.Value.GetLength(0);
-			//    Console.WriteLine("P{0} from P{1}: #itms {2}", m_RowPartitioning.MpiRank, Trnk, NoOf);
-			//}
-			//if (ReceiveLists.Count == 0)
-			//    Console.WriteLine("P{0}: nothing to receive.", m_RowPartitioning.MpiRank);
-
-
-
-			// MPI exchange
-			// ------------
-
-			IntBufferExchange(comm, ReceiveLists, out SendLists);
+            //foreach (var kv in ReceiveLists) {
+            //    int Trnk = kv.Key;
+            //    int NoOf = kv.Value.GetLength(0);
+            //    Console.WriteLine("P{0} from P{1}: #itms {2}", m_RowPartitioning.MpiRank, Trnk, NoOf);
+            //}
+            //if (ReceiveLists.Count == 0)
+            //    Console.WriteLine("P{0}: nothing to receive.", m_RowPartitioning.MpiRank);
 
 
-			// check
-			// -----
+
+            // MPI exchange
+            // ------------
+
+            IntBufferExchange(comm, ReceiveLists, out SendLists);
+
+
+            // check
+            // -----
 
 #if DEBUG_EXTENDED
             foreach (long[,] slist in SendLists.Values) {
@@ -926,6 +930,49 @@ namespace ilPSP.LinSolvers {
                 }
             }
 #endif
+        }
+
+		/// <summary>
+		/// change the MPI communicator for this matrix w.r.t. new communicator and column partitioning.
+ 		/// This only changes the lists for the columns, the row partitioning is not changed.
+		/// Before using this method, the row partitioning must be changed to the new one.
+		/// </summary>
+		/// <param name="CommToSubCommMapping">new ranks, index: old rank; value: new rank</param>
+		/// <param name="comm"></param>
+		public void ChangeMPICommForColumns(int[] CommToSubCommMapping, IBlockPartitioning newColPart) {
+            var comm = newColPart.MPI_Comm;
+			if (comm == this.MPI_Comm)
+				return;
+
+			if ( newColPart.MPI_Comm != comm) {
+                throw new Exception("new col part should have the same communicator");
+			}
+
+			int oldMPIrank = m_RowPartitioning.MpiRank;
+            int newMPIrank;
+			csMPI.Raw.Comm_Rank(comm, out newMPIrank);
+            
+            Debug.Assert(CommToSubCommMapping[oldMPIrank] == newMPIrank);
+
+			// change old MPI ranks to new MPI ranks
+			// ---------------
+			m_ExternalBlockIndicesByProcessor = m_ExternalBlockIndicesByProcessor.ToDictionary(
+			                                    kvp => CommToSubCommMapping[kvp.Key],
+			                                    kvp => kvp.Value);
+
+			ReceiveLists = ReceiveLists.ToDictionary(
+												kvp => CommToSubCommMapping[kvp.Key],
+												kvp => kvp.Value);
+
+			SendLists = SendLists.ToDictionary(
+												kvp => CommToSubCommMapping[kvp.Key],
+												kvp => kvp.Value);
+
+			m_effectiveComm = comm;
+
+            m_ColPartitioning = newColPart.IsMutable ? newColPart.GetImmutableBlockPartitioning() : newColPart;
+
+			UpdateCommPattern(comm);
 		}
 
 		static void IntBufferExchange(MPI_Comm comm, Dictionary<int, long[,]> Sdata, out Dictionary<int, long[,]> Rdata) {
