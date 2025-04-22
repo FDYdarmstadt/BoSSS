@@ -455,7 +455,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	class TaskParallelMGOperator : IOperatorMappingPair {
 
 		/// <summary>
-		/// Constructor (responsible for all world to sub communicators)
+		/// Constructor (responsible for world to sub communicators)
+		/// should be defined on world communicator and then will be used on sub communicators with the solver
 		/// </summary>
 		/// <param name="OperatorMatrix"></param>
 		/// <param name="RestrictionMatrix"></param>
@@ -467,6 +468,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			m_RstMtx = RestrictionMatrix;
 			m_ProlMtx = ProlongationMatrix;
 			m_Mapping = Mapping;
+
+            if (Mapping.MPI_Comm != csMPI.Raw._COMM.WORLD)
+				throw new ArgumentException("The mg mapping must be defined on the WORLD communicator.");
+
 			totSize = size == 0 ? m_OpMtx.RowPartitioning.MpiSize : size;
 			smootherSize = Math.Max(1, totSize / 4);
 			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(Mapping);
@@ -475,7 +480,132 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			(CoarseCellI0s, CoarseNewCellMapping) = DistributeMapping(Mapping, coarseSize);
             CellToDOFdata = CellIndexToDOFs(Mapping);
 		}
-        public int level => FinerLevel is TaskParallelMGOperator fine ? fine.level + 1 : 0;
+
+        void GetWorldToSubDistribution() {
+			var worldToSmootherBlocks = GetLocalDistribution(CellToDOFdata, SmootherNewCellMapping, SmootherCellI0s, worldMPIOffset, smootherSize);
+			var worldToCoarseBlocks = GetLocalDistribution(CellToDOFdata, CoarseNewCellMapping, SmootherCellI0s, worldMPIOffset + smootherSize, coarseSize);
+
+			var coarsePermutation = GetPermutationMatrix(OperatorMatrix._RowPartitioning, worldToCoarseBlocks);
+			var smootherPermutation = GetPermutationMatrix(OperatorMatrix._RowPartitioning, worldToSmootherBlocks);
+		}
+
+		/// <summary>
+		/// Creates permutation matrix and calculates Row and col indixes of each DOF (not block as in cellColumnMapping)
+		/// </summary>
+		/// <param name="mapping">MG mapping for grid data at the current level</param>
+		/// <param name="globDOFsData">DOFs data with global indices</param>
+		/// <returns></returns>
+		private (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMatrix) GetPermutationMatrix(IBlockPartitioning mapping, (long i0Global, int CellLen)[] globDOFsData) {
+			using (new FuncTrace()) {
+
+				BlockPartitioning TargetPartitioning = GetPartitioning(globDOFsData, mapping.MPI_Comm);
+				BlockMsrMatrix PermutationMatrix = new BlockMsrMatrix(TargetPartitioning, mapping);
+				List<long> RowIndices = new List<long>();
+				List<long> ColIndices = new List<long>();
+				{
+					int cnt = 0;
+					if (globDOFsData != null && globDOFsData.Length > 0) {
+						int NoCells = globDOFsData.Length;
+
+						for (int j = 0; j < NoCells; j++) {
+							//int Len = part.lenCell[j];
+							int Len = globDOFsData[j].CellLen;
+							long i0Row = TargetPartitioning.i0 + cnt;
+							long i0Col = globDOFsData[j].i0Global;   //part.i0Cell[j];
+
+							PermutationMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
+
+							for (int k = 0; k < Len; k++) {
+								RowIndices.Add(i0Row + k);
+								ColIndices.Add(i0Col + k);
+								//columnMappingOpToSmoother.Add((i0Col + k, i0Row + k));
+							}
+
+							cnt += Len;
+						}
+					}
+				}
+
+#if DEBUG
+				{
+					if (RowIndices != null) {
+
+						int L = RowIndices.Count;
+						for (int l = 0; l < L; l++) {
+							if (l > 0) {
+								Debug.Assert(RowIndices[l] > RowIndices[l - 1], "Error, Row indexing is not strictly increasing for some reason.");
+								Debug.Assert(ColIndices[l] > ColIndices[l - 1], "Error, Column indexing is not strictly increasing for some reason.");
+							}
+						}
+
+					}
+
+
+				}
+#endif
+				var TransposeMtx = PermutationMatrix.Transpose();
+
+				return (PermutationMatrix, RowIndices, ColIndices, TransposeMtx);
+			}
+		}
+
+		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
+			using (new FuncTrace()) {
+				var LnCell = new List<int>();
+				var i0Cell = new List<long>();
+
+				int cnt = 0;
+
+				if (DOFs != null && DOFs.Length > 0) {
+					int NoCells = DOFs.Length;// part.jGlobal.Length;
+					for (int j = 0; j < NoCells; j++) {
+						int Len = DOFs[j].CellLen; // part.lenCell[j];
+
+						i0Cell.Add(cnt);
+						LnCell.Add(Len);
+						cnt += Len;
+					}
+				}
+
+				int LocalLength = cnt;
+				var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, comm, i0isLocal: true);
+				return partitioning;
+			}
+		}
+
+
+		int worldMPIOffset => worldCommSize - totSize; //the offset of this operator matrix in the world communicator, the mpi rank of the first processor in this level
+
+		public int worldCommRank => m_Mapping.MpiRank;
+		public int worldCommSize=> m_Mapping.MpiSize;
+
+
+		(long i0Cell, int lenCell)[] GetLocalDistribution((long i0Cell, int lenCell)[] globalDOFs, List<(long Source, long Target)> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
+			int newRank = worldCommRank - procOffset;
+			if (newRank < 0 || newRank >= procSize)
+				return new (long i0Cell, int lenCell)[0];
+
+			var ret = new List<(long i0Cell, int lenCell)>();
+			var newBlocki0 = (int)targeti0s[newRank];
+			var newBlockiE = (int)targeti0s[newRank + 1];
+
+			// if cell is designated to be on this processor, add it to the list
+			for (long iCell = 0; iCell < cellColumnMapping.Count; iCell++) {
+				var iTargetCell = cellColumnMapping[(int)iCell].Target; //designated cell index
+				var iSourceCell = cellColumnMapping[(int)iCell].Source;
+
+				if (iTargetCell >= newBlocki0 && iTargetCell < newBlockiE) { // if designated cell index falls into the range of this processor
+					var sourceBlock = globalDOFs[iSourceCell]; // get the current block index (source)
+					ret.Add(sourceBlock);
+				}
+			}
+			ret.Sort((x, y) => x.i0Cell.CompareTo(y.i0Cell)); // sort the list according to the cell index
+			Debug.Assert(newBlockiE - newBlocki0 == ret.Count);
+			return ret.ToArray();
+		}
+
+
+		public int level => FinerLevel is TaskParallelMGOperator fine ? fine.level + 1 : 0;
         public int totSize; 
         public int smootherSize;
         public int coarseSize => totSize - smootherSize;
@@ -1554,8 +1684,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			    Console.WriteLine($"The proc with worldRank-{worldCommRank} with opRank{opCommRank} is assigned to {subCommRank}of{subCommSize} new com{subComm.m1}");
 
             CreateMpiRankMappings();
-			CreatePermutationMatrices1();
-
 			CreatePermutationMatrices();
 		}
 
