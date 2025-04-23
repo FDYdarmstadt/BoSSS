@@ -345,7 +345,7 @@ namespace BoSSS.Foundation.Quadrature {
                 if (qrEdge == null) {
                     QuadRule ret = new QuadRule();
                     ret.OrderOfPrecision = int.MaxValue - 1;
-                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), (givenRule.Nodes.Reference > 0) && (qrEdge.Nodes.Reference > 0));
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1), (givenRule.Nodes.Reference > 0));
                     ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
                     // (rules with zero nodes may cause problems at various places.)
                     return ret;

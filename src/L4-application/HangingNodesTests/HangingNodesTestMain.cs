@@ -25,7 +25,8 @@ namespace HangingNodesTests {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
-            ilPSP.Environment.NumThreads = 1;
+            //ilPSP.Environment.NumThreads = 1;
+            //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
