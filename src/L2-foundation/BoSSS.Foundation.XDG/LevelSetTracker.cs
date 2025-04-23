@@ -1377,6 +1377,7 @@ namespace BoSSS.Foundation.XDG {
                         NoOfTestNodesPerFace[iKref][iFace] = NN;
                         offset += NN;
                     }
+                    Debug.Assert(NoOfTestNodesPerFace[iKref].Any(k => k <= 0) == false);
 
                     // step 2: place Gauß rules on co-Faces
                     // ------------------------------------
@@ -1385,10 +1386,10 @@ namespace BoSSS.Foundation.XDG {
                         int NN = TransformFaceNodes(1.0, iFace, 
                             Kref.FaceRefElement.GetFaceTrafo(Kref.CoFaceToFaceFaceIndex[iCoface, 0]).Transform(GaussRuleOnCoFace.Nodes),
                             TstVtx, offset);
-                        NoOfTestNodesPerCoFace[iKref][iFace] = NN;
+                        NoOfTestNodesPerCoFace[iKref][iCoface] = NN;
                         offset += NN;
                     }
-                                                           
+                    Debug.Assert(NoOfTestNodesPerCoFace[iKref].Any(k => k <= 0) == false);                                      
                     
                     // step 3: Place knots slightly outside the perimeter of the element
                     // (these nodes should avoid missing a cut cell; this would be worse than a cut cell which is not cut)

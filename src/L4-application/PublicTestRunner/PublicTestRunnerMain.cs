@@ -1206,7 +1206,7 @@ namespace PublicTestRunner {
                     returnCode -= 1;
                 }
 
-
+                /*
                 Console.WriteLine("--- Performance Benchmarks -------------------------------------------------------------------------");
                 foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
 
@@ -1215,6 +1215,7 @@ namespace PublicTestRunner {
                         Console.WriteLine($"{jj.job.Name} : Online profiling: {BenchmarkSummary}");
                     }
                 }
+                */
 
                 Console.WriteLine("--- Test Results -----------------------------------------------------------------------------------");
 

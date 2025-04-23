@@ -1581,8 +1581,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         checkResidual.SetV(checkAffine, -1.0);
                         checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
 
-                        Console.WriteLine("Norm of evaluated residual: " + base.Residuals.MPI_L2Norm());
-                        Console.WriteLine("Norm of reference residual: " + checkResidual.MPI_L2Norm());
+                        tr.Info("Norm of evaluated residual: " + base.Residuals.MPI_L2Norm() + "; " +
+                                "Norm of reference residual: " + checkResidual.MPI_L2Norm());
 
 
                         double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();

@@ -264,11 +264,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
             var Kref = gdat.iGeomCells.GetRefElement(jCellGeom);
             int face0 = Kref.CoFaceToFaceIndices[iCoFace, 0];
-            int face1 = Kref.CoFaceToFaceIndices[iCoFace, 0];
+            int face1 = Kref.CoFaceToFaceIndices[iCoFace, 1];
 
 
 
-            return GeometricalCellFace2Edges(gdat, jCellGeom, face0).SetUnion(GeometricalCellFace2Edges(gdat, jCellGeom, face0));
+            return GeometricalCellFace2Edges(gdat, jCellGeom, face0).SetUnion(GeometricalCellFace2Edges(gdat, jCellGeom, face1));
         }
 
 
@@ -291,7 +291,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             BitArray bitMask = new BitArray(E);
 
             for(int j = 0; j < J; j++) {
-                if(CoincidFaces[j] != null) {
+                if(CoincidFaces != null && CoincidFaces[j] != null) {
                     foreach(var t in CoincidFaces[j]) {
                         if(t.iLevSet == iLevelSet) {
 
@@ -306,7 +306,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     }
                 }
 
-                if(CoincidCoFcs[j] != null) {
+                if(CoincidCoFcs != null && CoincidCoFcs[j] != null) {
                     foreach(var t in CoincidCoFcs[j]) {
                         if(t.iLevSet == iLevelSet) {
                             foreach(var e in GeometricalCellCoFace2Edges(gdat, j, t.iCoFace)) {
@@ -326,7 +326,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
 
 
-        public SurfaceElementBounaryFactoryForCoincidingEdges(RefElement _RefElement, LevelSetTracker.LevelSetData[] __levelSetDataS, LevelSetSignCode[] __allSignCodes, int __iLevSet) {
+        public SurfaceElementBounaryFactoryForCoincidingEdges(RefElement _RefElement, LevelSetTracker.LevelSetData[] __levelSetDataS, LevelSetSignCode[] __allSignCodes, int __iLevSet, (int iLevSet, int iFace)[][] __LevSetCoincidingFaces, (int iLevSet, int iFace)[][] __LevSetCoincidingCoFaces) {
             RefElement = _RefElement;
             if(Array.IndexOf(__levelSetDataS[0].GridDat.iGeomEdges.EdgeRefElements, this.RefElement) < 0) {
                 throw new ArgumentException($"{_RefElement} is not an edge reference element of the grid.");
@@ -334,21 +334,18 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             m_LevelSetDataS = __levelSetDataS;
             m_allSignCodes = __allSignCodes;
             m_iLevSet = __iLevSet;
+            LevSetCoincidingFaces = __LevSetCoincidingFaces;
+            LevSetCoincidingCoFaces = __LevSetCoincidingCoFaces;
         }
 
         public RefElement RefElement {
             get;
             private set;
         }
-#pragma warning disable 169,649
+
         readonly LevelSetTracker.LevelSetData[] m_LevelSetDataS;
         readonly LevelSetSignCode[] m_allSignCodes;
         readonly int m_iLevSet;
-
-        /// <summary>
-        /// <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingFaces"/>
-        /// </summary>
-        readonly (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
 
         /// <summary>
         /// <see cref="LevelSetTracker.LevelSetRegions.LevSetCoincidingCoFaces"/>
@@ -366,7 +363,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             if(!(mask is EdgeMask edgeMask)) {
                 throw new ArgumentException("expecting an edge mask");
             }
-            if(!(mask.MaskType != MaskType.Geometrical)) {
+            if(mask.MaskType != MaskType.Geometrical) {
                 throw new ArgumentException("expecting an geometrical mask");
             }
             var gdat = mask.GridData;
@@ -377,11 +374,16 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             emptyFaceRule.OrderOfPrecision = order;
             emptyFaceRule.Nodes.LockForever();
 
+            var edgeTest = RefElement.GetQuadratureRule(order);
+
+
             int[,] Edge2Cell = gdat.iGeomEdges.CellIndices;
             int J = gdat.iGeomCells.NoOfLocalUpdatedCells;
             byte[,] Edge2Face = gdat.iGeomEdges.FaceIndices;
 
             int[][,] CoFaceToFace = gdat.iGeomCells.RefElements.Select(Kref => Kref.CoFaceToFaceIndices).ToArray();
+
+            int NoOfLevSets = m_LevelSetDataS.Length; 
 
 
             var compRule = new ChunkRulePair<QuadRule>[mask.NoOfItemsLocally];
@@ -392,15 +394,18 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     throw new ArgumentException("mask violates the element");
 
                 bool bFound = false;
-                for(int inOt = 0; inOt < 2; inOt++) {
+                for(int inOt = 0; inOt < 2; inOt++) { // loop over both cells bound to edge `iEdge`
                     if(bFound)
                         continue;
                     int jCell = Edge2Cell[iEdge, inOt];
                     if(jCell < 0)
                         continue;
-                    int iCellFace = Edge2Face[jCell, inOt];
+                    if(jCell >= J)
+                        continue;
+                    if(!gdat.iGeomEdges.IsEdgeConformal(iEdge, inOt))
+                        continue;
 
-
+                    int iCellFace = Edge2Face[iEdge, inOt];
 
                     if(this.LevSetCoincidingFaces != null && this.LevSetCoincidingFaces[jCell] != null) {
                         if(this.LevSetCoincidingFaces[jCell].Any(tt => (tt.iLevSet == this.m_iLevSet && tt.iFace == iCellFace))) {
@@ -422,21 +427,114 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                                 // different level-set
                                 continue;
 
+                            int iCoFace = tt.iCoFace;
+
                             int[,] cf2f = CoFaceToFace[gdat.iGeomCells.GetRefElementIndex(jCell)];
 
-                            if(iCellFace != cf2f[iCellFace, 0] && iCellFace != cf2f[iCellFace, 1])
+                            int inOtCoface = -1;
+                            if(iCellFace == cf2f[iCoFace, 0]) {
+                                inOtCoface = 0;
+                            } else if(iCellFace == cf2f[iCoFace, 1]) {
+                                inOtCoface = 1;
+                            } else {
                                 // some face that we are not interested in
                                 continue;
+                            }
+
+
+                            // we have a edge that is NOT coinciding with the level-set,
+                            // but an entire co-edge coincides with the level-set.
+                            // Now, the question is, whether the quad-rule should be full or empty 
+
+                            var KrefVol = gdat.iGeomCells.GetRefElement(jCell);
+                            Debug.Assert(KrefVol.FaceRefElement == this.RefElement);
+
+                            int TrafoIdx = gdat.iGeomEdges.Edge2CellTrafoIndex[iEdge, inOt];
+                            var Edge2CellTrafo = gdat.iGeomEdges.Edge2CellTrafos[TrafoIdx];
+                            var cellTest = new NodeSet(KrefVol, Edge2CellTrafo.Transform(edgeTest.Nodes), false);
+                            cellTest.LockForever();
+
+#if DEBUG
+                            Vector FaceCenter = gdat.TransformLocal2Global(KrefVol.GetFaceCenter(iCellFace).GetRowPt(0), jCell);
+                            Vector EdgeCenter = gdat.iGeomEdges.GetCenter(iEdge);
+                            Debug.Assert(EdgeCenter.Dist(FaceCenter) < gdat.iGeomCells.h_min[jCell] * 1.0e-8, $"Some mismatch in face versus edge center ({FaceCenter} vs. {EdgeCenter})");
+#endif
 
 
 
+                            var LevelSetValues = MultidimensionalArray.Create(NoOfLevSets, cellTest.NoOfNodes);
+                            for(int iLevSet = 0; iLevSet < NoOfLevSets; iLevSet++) {
+                                LevelSetValues.ExtractSubArrayShallow(iLevSet, -1).Set(
+                                    this.m_LevelSetDataS[iLevSet].GetLevSetValues(cellTest, jCell, 1).ExtractSubArrayShallow(0, -1)
+                                    );
+                            }
+
+                            //var codes = new LevelSetSignCode[NoOfLevSets];
+                            bool completelyEmty = true, completelyFull = true;
+                            for(int k = 0; k < NoOfLevSets; k++) {
+                                var code = LevelSetSignCode.ComputeLevelSetBytecode(LevelSetValues.GetColumn(k));
+                                bool nonvoid = Array.IndexOf(this.m_allSignCodes, code) >= 0;
+                                
+                                completelyFull &= nonvoid;
+                                completelyEmty &= (!nonvoid);
+                            }
+
+                            if(completelyFull == completelyEmty)
+                                throw new ArithmeticException("cannot decide");
+
+                            if(completelyEmty) {
+                                bFound = true;
+                                compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), emptyFaceRule);
+                                break;
+                            } else if(completelyFull) {
+                                bFound = true;
+
+                                int iFaceOfEdge = KrefVol.CoFaceToFaceFaceIndex[iCoFace, inOtCoface];
+//#if DEBUG
+//                                Vector A = this.RefElement.FaceCenters.GetRowPt(iFaceOfEdge);
+
+//#endif
+
+
+                                
+                                //var __Trafo = this.RefElement.GetFaceTrafo(iFace);
+                                double scale = this.RefElement.FaceTrafoGramianSqrt[iFaceOfEdge];
+                                //var fullRule = new NodeSet(this.RefElement, __Trafo.Transform(fulCoFaceRule.Nodes), false);
+                                //fullRule.LockForever();
+
+                                var volNodes = KrefVol.GetCoFaceTrafo(iCoFace).Transform(fulCoFaceRule.Nodes);
+                                var fullRule2 = new NodeSet(this.RefElement, Edge2CellTrafo.TransformInverse(volNodes), false);
+                                fullRule2.LockForever();
+
+                                // if the `volNodes` are really in the plane defined by edge `iEdge`, the `Edge2CellTrafo` (which reduces the spatial dimension by 1) is still an identity
+                                Debug.Assert(volNodes.L2Dist(Edge2CellTrafo.Transform(fullRule2)) < 1.0e-8, "Nodes probably not on the right edge.");
+
+
+
+                                var __weights = fulCoFaceRule.Weights.CloneAs();
+                                __weights.Scale(scale);
+
+
+                                compRule[cnt] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(iEdge), 
+                                    new QuadRule() {
+                                        Nodes = fullRule2,
+                                        Weights = __weights,
+                                        OrderOfPrecision = fulCoFaceRule.OrderOfPrecision
+                                    }
+                                    );
+                                break;
+                            } else {
+                                throw new ArithmeticException("should never reach this point");
+                            }
                         }
 
                     }
 
                 }
 
-
+                if(bFound == false) {
+                    throw new ArithmeticException("Unable to create quadrature role for edge " + iEdge + ".");
+                }
             }
 
 

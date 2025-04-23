@@ -502,7 +502,7 @@ namespace ilPSP {
                         else
                             listdiffs = "";
                         if (eqalAff == false) {
-                            tr.Error("Mismatch in CPU affinity! " + listdiffs);
+                            tr.Error("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
                         tr.Info("Win32 reports same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
                         ReservedCPUs = _ReservedCPUs;

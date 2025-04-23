@@ -235,7 +235,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null) {
+            if(this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces != null || this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingCoFaces != null) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Special case handling:
                 // Some  level-set is (more-or-less) exactly on a cell edge;
@@ -251,17 +251,21 @@ namespace BoSSS.Foundation.XDG {
                 foreach(var edgeKref in gdat.iGeomEdges.EdgeRefElements) {
                     int iKrefEdge = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomEdges.EdgeRefElements, edgeKref);
 
-                    //var CutArea = this.XDGSpaceMetrics.CutCellMetrics.CutEdgeAreas[sp];
-
-                    var allSignCodes = XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(sp);
-
-
-                    //EdgeMask IntegrationDom = SurfaceElementBounaryFactoryForCoincidingEdges.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKrefEdge);
-                    //var fact = new SurfaceElementBounaryFactoryForCoincidingEdges(edgeKref, )
-                    //edgeQrIns.AddFactoryDomainPair(fact, IntegrationDom);
-
-
                     
+                    EdgeMask IntegrationDom = SurfaceElementBounaryFactoryForCoincidingEdges.ComputeMask(XDGSpaceMetrics.Tracker, iLevSet, iKrefEdge);
+                    Debug.Assert(IntegrationDom.MaskType == MaskType.Geometrical);
+                    var fact = new SurfaceElementBounaryFactoryForCoincidingEdges(
+                        edgeKref,
+                        XDGSpaceMetrics.Tracker.DataHistories.Select(hi => hi.Current).ToArray(),
+                        XDGSpaceMetrics.Tracker.GetLevelSetSignCodes(sp),
+                        iLevSet,
+                        this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingFaces,
+                        this.XDGSpaceMetrics.Tracker.Regions.LevSetCoincidingCoFaces
+                        );
+                    edgeQrIns.AddFactoryDomainPair(fact, IntegrationDom);
+
+
+                    /*
                     foreach(var Kref in gdat.iGeomCells.RefElements) {
                         //int iKref = Array.IndexOf(XDGSpaceMetrics.GridDat.iGeomCells.RefElements, Kref);
                         EdgeMask IntegrationDom =
@@ -301,7 +305,7 @@ namespace BoSSS.Foundation.XDG {
 
                         //edgeQrIns.AddFactoryDomainPair(fact, mask.Intersect(modIntegrationDom));
                         edgeQrIns.AddFactoryDomainPair(fact, modIntegrationDom);
-                    }
+                    } */
                     
                 }
             }
