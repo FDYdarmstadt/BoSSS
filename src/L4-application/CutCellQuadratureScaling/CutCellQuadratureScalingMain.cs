@@ -612,7 +612,7 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
                     if(this.CutCellQuadratureOrder <= 4) {
                         return 5e-2;
                     } else if(this.CutCellQuadratureOrder <= 6) {
-                        return 5e-5;
+                        return 1e-4;
                     } else if(this.CutCellQuadratureOrder <= 7) {
                         return 5e-5;
                     } else if(this.CutCellQuadratureOrder <= 8) {

@@ -185,7 +185,7 @@ namespace CutCellQuadrature {
                 app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
                 app.RunSolverMode();
-                app.ProfilingLog();
+                app.ProfilingLog(true);
             }
 
             foreach (var testCase in testCases) {
@@ -195,7 +195,7 @@ namespace CutCellQuadrature {
                 app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
                 app.RunSolverMode();
-                app.ProfilingLog();
+                app.ProfilingLog(true);
             }
 
             FinalizeMPI();

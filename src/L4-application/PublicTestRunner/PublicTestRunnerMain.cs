@@ -1104,7 +1104,7 @@ namespace PublicTestRunner {
                                                 File.Copy(orig, dest, true);
                                             }
                                         } catch(IOException ioe) {
-                                            Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                                            Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message + "(" + ioe.StackTrace + ")");
                                             returnCode--;
                                         }
                                     }
@@ -1132,7 +1132,7 @@ namespace PublicTestRunner {
                                                     reallyDelete = false;
 
                                             } catch (Exception ioe) {
-                                                Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                                                Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message + "(" + ioe.StackTrace + ")");
                                             }
                                         }
                                     }
@@ -1144,7 +1144,7 @@ namespace PublicTestRunner {
                                                 try {
                                                     Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
                                                 } catch (Exception e) {
-                                                    Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                                                    Console.Error.WriteLine($"{e.GetType().Name}: {e.Message} ({e.StackTrace})");
                                                 }
                                             }
                                         }
@@ -1270,7 +1270,7 @@ namespace PublicTestRunner {
                             if (osString == null)
                                 osString = "NIX";
                         } catch (Exception e) {
-                            Console.WriteLine(e);
+                            Console.WriteLine(e + "(" + e.StackTrace + ")");
                             osString = "NIX";
                         }
                         resTable[os].Add(osString);
@@ -1620,7 +1620,7 @@ namespace PublicTestRunner {
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[0];// { "" };
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
 
             string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
@@ -2019,7 +2019,7 @@ namespace PublicTestRunner {
                     size = 0;
                 }
 
-                Console.WriteLine("Got some exception: " + e);
+                Console.WriteLine("Got some exception: " + e + "(" + e.StackTrace + ")");
 
                 using (var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + "." + rank + "of" + size + ".txt")) {
                     stw.WriteLine("Got some exception: " + e);

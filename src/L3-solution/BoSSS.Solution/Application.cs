@@ -2369,20 +2369,14 @@ namespace BoSSS.Solution {
 
                     bool gridChanged;
 
-                    var lastLogWrite = DateTime.Now;
-
+                    
                     for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
                         gridChanged = this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
-                        if( i <= i0.MajorNumber + 1) { // prevent writing the log to often
-                            if(DateTime.Now - lastLogWrite > new TimeSpan(0, 10, 0)) {
-                                this.ProfilingLog();
-                                lastLogWrite = DateTime.Now;
-                            }
-                        }
+                        this.ProfilingLog(i <= i0.MajorNumber + 1);
                         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
@@ -3069,14 +3063,33 @@ namespace BoSSS.Solution {
             private set; 
         }
 
+        DateTime? ProfilingLog_lastLogWrite = null;
+
+
         /// <summary>
         /// writes the profiling report 
         /// </summary>
-        protected virtual void ProfilingLog() {
+        protected virtual void ProfilingLog(bool force = false) {
             using (new FuncTrace()) {
                 if (OnlineProfiling == null)
                     //OnlineProfiling = new OnlineProfiling(this.Control);
                     return; // for some reason (i.e., because only Dispose was called()) not initialized yet
+
+                if(force == false) {
+                    if(ProfilingLog_lastLogWrite == null) {
+                        // must write
+                        ProfilingLog_lastLogWrite = DateTime.Now;
+                    } else {
+                        if(DateTime.Now - ProfilingLog_lastLogWrite > new TimeSpan(0, 5, 0)) {
+                            ProfilingLog_lastLogWrite = DateTime.Now;
+                        } else {
+                            return; // can skip writing
+                        }
+
+                    }
+                }
+
+
                 ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 OnlineProfiling.AppEndTime = DateTime.Now;
                 
@@ -3322,7 +3335,7 @@ namespace BoSSS.Solution {
 
                         app.ByeInt();
                         app.Bye();
-                        app.ProfilingLog();
+                        app.ProfilingLog(true);
 #if DEBUG
                     }
 #else
@@ -3563,7 +3576,7 @@ namespace BoSSS.Solution {
                 try {
                     ByeInt();
                     Bye();
-                    ProfilingLog();
+                    ProfilingLog(true);
 
                     foreach( var l in PostprocessingModules) {
                         l.Dispose();
