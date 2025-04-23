@@ -220,14 +220,18 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
 
                     m_FaceToCoFaceIndices = new int[this.NoOfFaces, this.FaceRefElement.NoOfFaces];
+                    m_FaceToCoFaceIndices.SetAll(-1);
                     for(int iCoFace = 0; iCoFace < this.NoOfCoFaces; iCoFace++) {
                         for(int iInOt = 0; iInOt < 2; iInOt++) {
                             int iFace = cf2fi[iCoFace, iInOt];
-                            int iFaceFace = cf2ff[iFace, iInOt];
+                            int iFaceFace = cf2ff[iCoFace, iInOt];
 
                             m_FaceToCoFaceIndices[iFace, iFaceFace] = iCoFace;
                         }
                     }
+
+                    if(m_FaceToCoFaceIndices.Reshape(false).Any(i => i < 0))
+                        throw new Exception("internal error");
 
                 }
                 return m_FaceToCoFaceIndices.CloneAs();

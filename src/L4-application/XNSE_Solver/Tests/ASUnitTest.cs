@@ -1354,13 +1354,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ViscosityMode vmode = ViscosityMode.Standard;
             var CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
-            double angle = 1.0471975511965976d;
-            //             1.0471975511965976d
-            //double angle = 0.0;
+            //double angle = 1.0471975511965976d;
+            double angle = 0.0;
             var Tst = new ChannelTest(angle, false);
 
             var C = TstObj2CtrlObj(Tst, 4, AgglomerationTreshold, vmode, CutCellQuadratureType,
-                SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
+                SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local,
                 nonlinsolver: nonlinsolver,
                 GridResolution: 2);
             C.ImmediatePlotPeriod = 1;
