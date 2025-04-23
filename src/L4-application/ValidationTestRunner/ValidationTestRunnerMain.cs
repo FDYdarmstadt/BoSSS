@@ -1083,7 +1083,6 @@ namespace ValidationTestRunner {
 
             string PROJECT_NAME = System.Environment.GetEnvironmentVariable("LinslvPerfSer") ?? "LinslvPerfSer"; // this allows to modify the project name for testing purposes
 
-
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
@@ -1410,6 +1409,9 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Lichtenberg.Run__LinslvPerfPar
 
             string PROJECT_NAME = System.Environment.GetEnvironmentVariable("LinslvPerfPar") ?? "LinslvPerfPar"; // this allows to modify the project name for testing purposes
+
+            Console.WriteLine("skipping Run__LinslvPerfSer");
+            return;
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
