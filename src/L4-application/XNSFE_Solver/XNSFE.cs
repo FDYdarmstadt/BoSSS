@@ -54,57 +54,6 @@ namespace BoSSS.Application.XNSFE_Solver {
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
 
-            /*
-            InitMPI(args);
-            DeleteOldPlotFiles();
-
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 4);
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 5);
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 6);
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 7);
-
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 3, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 4, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 5, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 6, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 7, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 8, 5);
-
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 90.0);
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 90.0);
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 80.0);
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 80.0);
-
-            //Tests.StaticDropletTest.StaticDropletScalingTest(2);
-            //Tests.StaticDropletTest.StaticDropletConvergenceTest(4, true, 0.0, 80.0);
-
-            //{
-            //    var C = Tests.StaticDropletTest.EvaporatigDropletTestControl(4, 4, true, 0.1, true, 1.0, 80.0);
-            //    //var C = StaticWedgeTestControl(deg, res, true, 0.1, evap, ls, theta);
-            //    C.SkipSolveAndEvaluateResidual = false;
-            //    C.ImmediatePlotPeriod = 1;
-            //    C.SuperSampling = 2;
-
-            //    using (var solver = new XNSFE()) {
-            //        solver.Init(C);
-            //        solver.RunSolverMode();
-            //    }
-            //}
-
-            FinalizeMPI();
-            System.Environment.Exit(-111);
-            */
-
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //Tests.ParameterizedLevelSetTest_Elemental.Test();
-            //Tests.ParameterizedLevelSet_Translation.Test();
-            //Tests.ASUnitTest.ParameterizedLevelSetTest_Translation();
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.TransientEvaporationTest(0.0, 3, 0.1, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected, NonLinearSolverCode.Newton, Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2);
-            //System.Environment.Exit(111);
-
-
 
             XNSFE._Main(args, false, delegate () {
                 var p = new XNSFE();
@@ -451,7 +400,6 @@ namespace BoSSS.Application.XNSFE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-
             //if (Control.InitialValues_EvaluatorsVec.TryGetValue("Temperature#B", out var scalarFunctionTimeDep) && this.Control.SkipSolveAndEvaluateResidual) {
             //    ScalarFunction T_ex = null;
             //    T_ex = scalarFunctionTimeDep.SetTime(phystime);
@@ -596,7 +544,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             double safety = 5;
             return 1 / safety * Math.Sqrt((C.PhysicalParameters.rho_A + C.PhysicalParameters.rho_B) * Math.Pow(h / (p + 1), 3) / (2 * Math.PI * Math.Abs(C.PhysicalParameters.Sigma)));
         }
-
+        /*
         private void PlotAdditionalFields(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             #region additional fields
 
@@ -1056,6 +1004,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             base.PlotCurrentState(physTime, timestepNo, superSampling);
         }
+        */
 
         /// <summary>
         /// automatized analysis of condition number 

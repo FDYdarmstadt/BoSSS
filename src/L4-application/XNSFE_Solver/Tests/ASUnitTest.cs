@@ -496,8 +496,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             ClearInitialValues(Tst, C);
 
-            //C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             // fk, 24apr25: seems to run more reliable when using sequential solver
+            //C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); // original config from Rieckmann
             C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             (C.LinearSolver as DirectSolver.Config).EnforceSquential = true;
 
