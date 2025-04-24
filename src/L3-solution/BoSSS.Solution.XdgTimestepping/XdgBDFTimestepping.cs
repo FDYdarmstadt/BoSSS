@@ -1557,10 +1557,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
                     Debug.Assert(System == null);
 
+                   
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
-                    
+
+                   
+
                     success = true;
+
 
 
                     //m_CurrentAgglomeration.XDGSpaceMetrics.CutCellMetrics.CellSurface[m_LsTrk.GetSpeciesId("A")].To1DArray().SaveToTextFile("surf-A.txt");
