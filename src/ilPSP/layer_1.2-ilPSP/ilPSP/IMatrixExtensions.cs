@@ -591,6 +591,26 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// The Frobenius-Norm (l2-norm over all entries) of a matrix;
+        /// </summary>
+        static public double FrobeniusNorm(this IMatrix b) {
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+
+            double acc = 0;
+            for(int i = 0; i < m_NoOfRows; i++) {
+
+                for(int j = 0; j < m_NoOfCols; j++) {
+                    acc += b[i, j].Pow2();
+                }
+
+            }
+
+            return acc.Sqrt();
+        }
+
+
+        /// <summary>
         /// detects NAN's and INF's 
         /// </summary>
         /// <param name="TestNaN">turn NAN detection on/off</param>
