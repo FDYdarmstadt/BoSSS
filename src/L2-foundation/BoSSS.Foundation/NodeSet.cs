@@ -41,13 +41,15 @@ namespace BoSSS.Foundation {
         static object syncRoot = new Object();
         static int RefCounter = 123;
 
+        public static int NoOfNodeSets = 0;
+
         /// <summary>
         /// Constructor: initializes this node set as a (non-shallow) clone of the array <paramref name="nds"/>.
         /// </summary>
         public NodeSet(RefElement r, MultidimensionalArray nds, bool useCaching)
             : base(2) //
         {
-        
+
             if(nds.Dimension != 2)
                 throw new ArgumentException("Expecting 2D-array. 1st dim.: node index, 2nd dim.: spatial direction.");
             if(nds.GetLength(1) > 3)
@@ -55,6 +57,25 @@ namespace BoSSS.Foundation {
             base.Allocate(nds.Lengths);
             base.Set(nds);
             base.LockForever();
+            ConstructorCommon(r, useCaching);
+        }
+
+        /// <summary>
+        /// Constructor: initializes this node set as a (non-shallow) clone of the array <paramref name="nds"/>.
+        /// </summary>
+        public NodeSet(RefElement r, double[,] nds, bool useCaching)
+            : base(2) //
+        {
+
+            if(nds.GetLength(1) > 3)
+                throw new ArgumentException("Spatial dimension is expected to be lower or equal to 3.");
+            base.Allocate(nds.GetLength(0), nds.GetLength(1));
+            base.Set2DArray(nds);
+            base.LockForever();
+            ConstructorCommon(r, useCaching);
+        }
+
+        private void ConstructorCommon(RefElement r, bool useCaching) {
             this.RefElement = r;
             lock(syncRoot) {
                 if(useCaching) {
@@ -66,31 +87,7 @@ namespace BoSSS.Foundation {
                     this.Reference = 0;
                 }
             }
-        }
-
-        /// <summary>
-        /// Constructor: initializes this node set as a (non-shallow) clone of the array <paramref name="nds"/>.
-        /// </summary>
-        public NodeSet(RefElement r, double[,] nds, bool useCaching)
-            : base(2) //
-        {
-
-            if (nds.GetLength(1) > 3)
-                throw new ArgumentException("Spatial dimension is expected to be lower or equal to 3.");
-            base.Allocate(nds.GetLength(0), nds.GetLength(1));
-            base.Set2DArray(nds);
-            base.LockForever();
-            this.RefElement = r;
-            lock (syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            NoOfNodeSets++;
         }
 
         /// <summary>
@@ -105,17 +102,7 @@ namespace BoSSS.Foundation {
             base.Allocate(1, point.Length);
             base.ExtractSubArrayShallow(0, -1).SetVector(point);
             base.LockForever();
-            this.RefElement = r;
-            lock(syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            ConstructorCommon(r, useCaching);
         }
 
         /// <summary>
@@ -130,17 +117,7 @@ namespace BoSSS.Foundation {
             base.Allocate(1, point.Dim);
             base.ExtractSubArrayShallow(0, -1).SetVector(point);
             base.LockForever();
-            this.RefElement = r;
-            lock(syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            ConstructorCommon(r, useCaching);
         }
 
 
@@ -153,17 +130,7 @@ namespace BoSSS.Foundation {
             : base(2) //
         {
             base.Allocate(NoOfNodes, D);
-            this.RefElement = r;
-            lock(syncRoot) {
-                if(useCaching) {
-                    this.Reference = RefCounter;
-                    if(RefCounter >= int.MaxValue)
-                        throw new ApplicationException("NodeSet ref-counter overflow.");
-                    RefCounter++;
-                } else {
-                    this.Reference = 0;
-                }
-            }
+            ConstructorCommon(r, useCaching);
         }
 
 
