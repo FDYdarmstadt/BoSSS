@@ -29,7 +29,7 @@ namespace BoSSS.Application.XNSFE_Solver {
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
-    /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
+    /// - Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
     /// </summary>
     public class XNSFE : XNSFE<XNSFE_Control> {
 
@@ -39,6 +39,9 @@ namespace BoSSS.Application.XNSFE_Solver {
         static void Main(string[] args) {
             //InitMPI(args);
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye,  NonLinearSolverCode.Newton, double.PositiveInfinity, 0.143d, 1.2d);
+            //Assert.IsTrue(false, "remove me");
+
             //using (var solver = new XNSFE()) {
             //    solver.Init(ThermalSlip_HardcodedControls.HeatedWall_3PhaseDemo(true));
             //    solver.RunSolverMode();

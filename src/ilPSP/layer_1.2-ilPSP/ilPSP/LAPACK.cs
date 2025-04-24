@@ -58,6 +58,8 @@ namespace ilPSP.Utils {
             _F77_LAPACK = seq_F77_LAPACK;
         }
 
+
+
         static LAPACK() {
             seq_F77_LAPACK = new LAPACK(Parallelism.SEQ);
             omp_F77_LAPACK = new LAPACK(Parallelism.OMP);

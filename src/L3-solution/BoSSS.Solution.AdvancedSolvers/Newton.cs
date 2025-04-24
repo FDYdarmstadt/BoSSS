@@ -653,7 +653,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Option: use 'external' solver
                     // +++++++++++++++++++++++++++++
 
-                    using (var solver = this.PrecondConfig.CreateInstance(CurrentLin)) {
+                    
+                    using(var solver = this.PrecondConfig.CreateInstance(CurrentLin)) {
 
                         step.ClearEntries();
                         solver.ResetStat();
@@ -671,6 +672,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
                         //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
                         solver.Solve(step, CurRes);
+                        
+                        //this.CurrentLin.OperatorMatrix.Solve_Direct(step, CurRes);
+                        
+                        
                         step.ScaleV(-1);
                     }
                 } else {
@@ -687,10 +692,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     OldSolClone = null;
                 }
 
-                //var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
-                //var DgStep = CurrentLin.ProlongateSolToDg(step, "Step_");
-                //DGField pressure = SolutionVec.Mapping.Fields[2];
-                //Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
+                
+
+                /*
+                if(ilPSP.Environment.NumThreads == 0) {
+                    CurSol.SaveToTextFile($"sol{itc}.txt");
+                    CurRes.SaveToTextFile($"res{itc}.txt");
+                    step.SaveToTextFile($"stp{itc}.txt");
+                    CurrentLin.OperatorMatrix.ToMsrMatrix().SaveToFile($"mtx{itc}.bin");
+                } else {
+                    var __CurSol = VectorIO.LoadFromTextFile($"sol{itc}.txt");
+                    var __CurRes = VectorIO.LoadFromTextFile($"res{itc}.txt");
+                    var __step = VectorIO.LoadFromTextFile($"stp{itc}.txt");
+
+                    var _CurrentLin = CurrentLin.OperatorMatrix.ToMsrMatrix();
+                    var __CurrentLin = MsrMatrix.LoadFromFile($"mtx{itc}.bin", _CurrentLin.MPI_Comm, _CurrentLin.RowPartitioning, _CurrentLin.ColPartition);
+                    MsrMatrix err = _CurrentLin.CloneAs();
+                    err.Acc(-1, __CurrentLin);
+
+
+                    Console.WriteLine($"--------------- {itc} sol  : " + CurSol.L2Distance(__CurSol));
+                    Console.WriteLine($"--------------- {itc} res  : " + CurRes.L2Distance(__CurRes));
+                    Console.WriteLine($"--------------- {itc} stp  : " + step.L2Distance(__step));
+                    Console.WriteLine($"--------------- {itc} lin  : " + err.InfNorm());
+
+
+
+                }
+                */
+
 
                 tr.Info("Using Globalization: " + Globalization);
                 switch (Globalization) {
