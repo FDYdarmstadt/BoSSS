@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.XDG {
         /// within a given context
         /// </param>
         /// <returns>a <see cref="TraceDGField"/>-instance</returns>
-        public static TraceDGField Factory(Basis __Basis, String __Identification) {
+        public static new TraceDGField Factory(Basis __Basis, String __Identification) {
             return new TraceDGField((TraceDGBasis)__Basis, __Identification);
         }
 
@@ -74,16 +74,16 @@ namespace BoSSS.Foundation.XDG {
             : base(basis, Identification) {
             m_TraceBasis = basis;
 
-            // allocate memory
+            // allocate memory // For the moment, just use a MultidimensionalArray.
             // ---------------
 
-            int J = this.GridDat.iLogicalCells.Count;
-            m_Coordinates = new FieldStorage(J, m_TraceBasis.MinimalLength, m_TraceBasis.MaximalLength);
-            m_Coordinates.BeginResize(m_TraceBasis.MaximalLength);
-            for (int j = 0; j < J; j++) {
-                m_Coordinates.Resize(j, m_TraceBasis.GetLength(j));
-            }
-            m_Coordinates.FinishResize();
+            //int J = this.GridDat.iLogicalCells.Count;
+            //m_Coordinates = new FieldStorage(J, m_TraceBasis.MinimalLength, m_TraceBasis.MaximalLength);
+            //m_Coordinates.BeginResize(m_TraceBasis.MaximalLength);
+            //for (int j = 0; j < J; j++) {
+            //    m_Coordinates.Resize(j, m_TraceBasis.GetLength(j));
+            //}
+            //m_Coordinates.FinishResize();
             //m_TrackerVersionCnt = m_CCBasis.Tracker.VersionCnt;
 
 
@@ -157,7 +157,7 @@ namespace BoSSS.Foundation.XDG {
                         int No = Math.Min(Nj, Na);
 
                         for (int n = 0; n < No; n++) {
-                            m_Coordinates[j, n] += mult * _aCoordinates[j, n];
+                            this.Coordinates[j, n] += mult * _aCoordinates[j, n];
                         }
                     }
 
@@ -218,20 +218,21 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        
 
-        void AutoExtrapolate(SubGrid oldSpeciesSubGrid) {
-            LevelSetTracker LsTrk = m_TraceBasis.Tracker;
-            CellMask allNearMask = m_TraceBasis.Tracker.Regions.GetNearFieldMask(m_TraceBasis.Tracker.NearRegionWidth);
-            
-            
-            CellMask ExtrapolateTo = allNearMask.Intersect(LsTrk.Regions.GetSpeciesMask(Id));
-            CellMask ExtrapolateFrom = oldSpeciesSubGrid.VolumeMask;
+        // I am not sure if we still need it in future moving interface case
+        //void AutoExtrapolate(SubGrid oldSpeciesSubGrid)
+        //{
+        //    LevelSetTracker LsTrk = m_TraceBasis.Tracker;
+        //    CellMask allNearMask = m_TraceBasis.Tracker.Regions.GetNearFieldMask(m_TraceBasis.Tracker.NearRegionWidth);
 
-            this.CellExtrapolation(ExtrapolateTo, ExtrapolateFrom);
-        }
 
-     
+        //    CellMask ExtrapolateTo = allNearMask.Intersect(LsTrk.Regions.GetSpeciesMask(Id));
+        //    CellMask ExtrapolateFrom = oldSpeciesSubGrid.VolumeMask;
+
+        //    this.CellExtrapolation(ExtrapolateTo, ExtrapolateFrom);
+        //}
+
+
         /*
 
         int[] m_MPISendBufSize;
@@ -483,51 +484,51 @@ namespace BoSSS.Foundation.XDG {
 
             // update MPI buffer size
             // ======================
-            int size = this.GridDat.CellPartitioning.MpiSize;
-            if (size > 1) {
-                if (m_MPIRecvBufSize == null)
-                    m_MPIRecvBufSize = new int[size];
-                if (m_MPISendBufSize == null)
-                    m_MPISendBufSize = new int[size];
+            //int size = this.GridDat.CellPartitioning.MpiSize;
+            //if (size > 1) {
+            //    if (m_MPIRecvBufSize == null)
+            //        m_MPIRecvBufSize = new int[size];
+            //    if (m_MPISendBufSize == null)
+            //        m_MPISendBufSize = new int[size];
 
-                for (int p = 0; p < size; p++) {
-                    // send list
-                    {
-                        int[] senditems = this.GridDat.iParallel.SendCommLists[p];
-                        if (senditems != null) {
-                            int L = senditems.Length;
+            //    for (int p = 0; p < size; p++) {
+            //        // send list
+            //        {
+            //            int[] senditems = this.GridDat.iParallel.SendCommLists[p];
+            //            if (senditems != null) {
+            //                int L = senditems.Length;
 
-                            int sz = 0;
-                            for (int l = 0; l < L; l++)
-                                sz += m_TraceBasis.GetLength(senditems[l]);
-                            m_MPISendBufSize[p] = sz;
-                        } else {
-                            m_MPISendBufSize[p] = int.MinValue;
-                        }
-                    }
+            //                int sz = 0;
+            //                for (int l = 0; l < L; l++)
+            //                    sz += m_TraceBasis.GetLength(senditems[l]);
+            //                m_MPISendBufSize[p] = sz;
+            //            } else {
+            //                m_MPISendBufSize[p] = int.MinValue;
+            //            }
+            //        }
 
-                    // receive list
-                    {
-                        int L = this.GridDat.iParallel.RcvCommListsNoOfItems[p];
-                        if (L > 0) {
-                            int j0 = this.GridDat.iParallel.RcvCommListsInsertIndex[p];
-                            L += j0;
-                            int sz = 0;
-                            for (int j = j0; j < L; j++) {
-                                sz += m_TraceBasis.GetLength(j);
-                            }
-                            m_MPIRecvBufSize[p] = sz;
-                        } else {
-                            m_MPIRecvBufSize[p] = int.MinValue;
-                        }
-                    }
-                }
-            }
+            //        // receive list
+            //        {
+            //            int L = this.GridDat.iParallel.RcvCommListsNoOfItems[p];
+            //            if (L > 0) {
+            //                int j0 = this.GridDat.iParallel.RcvCommListsInsertIndex[p];
+            //                L += j0;
+            //                int sz = 0;
+            //                for (int j = j0; j < L; j++) {
+            //                    sz += m_TraceBasis.GetLength(j);
+            //                }
+            //                m_MPIRecvBufSize[p] = sz;
+            //            } else {
+            //                m_MPIRecvBufSize[p] = int.MinValue;
+            //            }
+            //        }
+            //    }
+            //}
 
             // do Extrapolation, if necessary
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
-                AutoExtrapolate(trk.RegionsHistory[0].GetNearFieldSubgrid(trk.NearRegionWidth));
-            }
+            //if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
+            //    AutoExtrapolate(trk.RegionsHistory[0].GetNearFieldSubgrid(trk.NearRegionWidth));
+            //}
         }
 
         #endregion
