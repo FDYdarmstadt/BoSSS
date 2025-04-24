@@ -3065,6 +3065,8 @@ namespace BoSSS.Solution {
 
         DateTime? ProfilingLog_lastLogWrite = null;
 
+        string ProfilingLog_suffix = null;
+
 
         /// <summary>
         /// writes the profiling report 
@@ -3098,15 +3100,16 @@ namespace BoSSS.Solution {
 
                 if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
 
-                    string suffix;
-                    if(this.CurrentSessionInfo.ID == Guid.Empty)
-                        suffix = $".nosession.{DateTime.Now.ToString("MMMdd_HHmmss")}";
-                    else
-                        suffix = "";
+                    if(ProfilingLog_suffix == null) {
+                        if(this.CurrentSessionInfo.ID == Guid.Empty)
+                            ProfilingLog_suffix = $"{DateTime.Now.ToString("MMMdd_HHmmss")}";
+                        else
+                            ProfilingLog_suffix = "";
+                    }
 
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin{suffix}")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin{ProfilingLog_suffix}")) {
                             var str = OnlineProfiling.Serialize();
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 stw.Write(str);
@@ -3119,7 +3122,7 @@ namespace BoSSS.Solution {
                     }
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_summary{suffix}")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_summary{ProfilingLog_suffix}")) {
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 OnlineProfiling.WriteProfilingReport(stw);
                                 stw.Flush();
