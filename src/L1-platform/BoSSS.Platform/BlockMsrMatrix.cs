@@ -824,8 +824,8 @@ namespace ilPSP.LinSolvers {
 		/// </summary>
 		/// <param name="myRank"></param>
 		void ReInitializeExternalBlockInformation(int myRank, IBlockPartitioning newColPart) {
-            if (newColPart != _RowPartitioning) //this is a restriction for now, technically it is not necessary with a bit of work
-				throw new ArgumentException("newColPart must be the same as _RowPartitioning");
+            //if (newColPart != _RowPartitioning) //this is a restriction for now, technically it is not necessary with a bit of work
+				//throw new ArgumentException("newColPart must be the same as _RowPartitioning");
 
 			this.m_ColPartitioning = newColPart.IsMutable ? newColPart.GetImmutableBlockPartitioning() : newColPart;
 
@@ -852,6 +852,40 @@ namespace ilPSP.LinSolvers {
 		}
 
 		/// <summary>
+		/// change the partitioning of the matrix. (still same communicator)
+		/// </summary>
+		/// <param name="newRowPart"></param>
+		/// <param name="newColPart"></param>
+		/// <param name="newRowBlockIndices"></param>
+		/// <param name="newColBlockIndices"></param>
+		/// <returns></returns>
+		public BlockMsrMatrix ChangePartitioning(IBlockPartitioning newRowPart, IBlockPartitioning newColPart = null, IList<(long Source, long Target)> newRowBlockIndices = null, IList<(long Source, long Target)> newColBlockIndices = null) {
+            if (newColPart == null) newColPart = newRowPart;
+
+			var ret = ChangeRowPartitioning(newRowPart, newRowBlockIndices);
+			if (newColBlockIndices != null) ChangeColumnIndices(newColBlockIndices);
+			ret.ChangeColumnPartitioning(newColPart);
+
+            return ret;
+		}
+
+		/// <summary>
+		/// Craete a new mattrix with the target row partitioning
+		/// </summary>
+		/// <param name="newRowPart"></param>
+		/// <returns></returns>
+		public BlockMsrMatrix ChangeRowPartitioning(IBlockPartitioning newRowPart, IList<(long Source, long Target)> newBlockIndices = null) {
+			var ret = this.Transpose();
+
+            if (newBlockIndices != null)
+                ChangeColumnIndices(newBlockIndices);
+			
+			ret.ChangeColumnPartitioning(newRowPart);
+			ret = ret.Transpose();
+            return ret;
+		}
+
+		/// <summary>
 		/// Update of <see cref="ReceiveLists"/> and <see cref="SendLists"/>
 		/// </summary>
 		public void ChangeColumnPartitioning(IBlockPartitioning newColPart) {
@@ -859,8 +893,6 @@ namespace ilPSP.LinSolvers {
 			MPICollectiveWatchDog.Watch(comm);
             if (newColPart == _ColPartitioning)
                 return;
-
-			m_ColPartitioning = newColPart.IsMutable ? newColPart.GetImmutableBlockPartitioning() : newColPart;
 
 			if (comm != this.MPI_Comm)  //this is a restriction for now, technically it is not necessary with a bit of work
 				throw new NotSupportedException("Something is odd, old and new partioning must be on the same communicator. Use ChangeMPICommForColumns method after this");
