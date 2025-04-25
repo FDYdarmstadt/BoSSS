@@ -15,6 +15,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Control;
 using ilPSP.Tracing;
 using System.Diagnostics;
+using BoSSS.Platform;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     
@@ -537,7 +538,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             var parameterFields = Timestepping.Parameters;
 
             var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-            for(int iVar = 0; iVar < parameterFields.Count(); iVar++) {
+
+            for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
                 if(!parameterFields[iVar].GridDat.IsAlive())
                     throw new ApplicationException("Trying to work on field with invalidated grid object.");
                 if(!object.ReferenceEquals(parameterFields[iVar].GridDat, this.GridData))

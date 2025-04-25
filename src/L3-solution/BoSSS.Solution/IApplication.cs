@@ -151,7 +151,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Visualization option for stencil condition number <see cref="CalculateStencilConditionNumbers"/>
         /// </summary>
-        public bool PlotStencilConditionNumbers = false;
+        public bool PlotStencilConditionNumbers = true;
 
         /// <summary>
         /// Global condition number using MATLAB: very expensive, much more than actual solution of the system.

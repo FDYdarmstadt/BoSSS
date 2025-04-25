@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
     /// <summary>
-    /// 
+    /// Solver control object for incompressible multi-phase solver.
     /// </summary>
     [DataContract]
     [Serializable]
@@ -591,6 +591,13 @@ namespace BoSSS.Application.XNSE_Solver {
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
         */
+
+        /// <summary>
+        /// Exact solution, electric potential, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionElectricPotential;
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
