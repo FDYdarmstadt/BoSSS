@@ -541,7 +541,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Generates a quadrature rule factory for integrating over a surface.
-        /// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
+        /// The surface is defined by two conditions: <paramref name="levSetIndex0"/> = 0 and on side <paramref name="jmp1"/> of <paramref name="levSetIndex1"/>
         /// </summary>
         public override IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {

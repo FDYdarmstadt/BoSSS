@@ -78,8 +78,9 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray globalNodes = gridData.GlobalNodes.GetValue_Cell(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
                     foreach(var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
 
-                        Vector center = gridData.iGeomCells.GetCenter(cell.Value);
                         var cellNodes = globalNodes.ExtractSubArrayShallow(cell.Index, -1, -1);
+                        /*
+                        Vector center = gridData.iGeomCells.GetCenter(cell.Value);
 
                         int[] node2Face;
                         if(pair.Rule is CellBoundaryQuadRule cbr) {
@@ -104,14 +105,16 @@ namespace BoSSS.Foundation {
                         for(int iFce = 0; iFce < NoOfFaces; iFce++) {
                             offCenter[iFce] = gridData.TransformLocal2Global(Kref.GetFaceNormal(iFce), cell.Value);
                         }
+                        */
 
                         for(int n = 0; n < pair.Rule.NoOfNodes; n++) {
                             file.Write(cell.Value);
 
                             var node = cellNodes.GetRowPt(n);
 
-                            var ToCen = node2Face != null ? offCenter[node2Face[n]] - node : center;
-                            var nodeMod = node + ToCen * 0.1;
+                            //var ToCen = node2Face != null ? offCenter[node2Face[n]] - node : center;
+                            //var nodeMod = node + ToCen * 0.1;
+                            var nodeMod = node;
 
                             for(int d = 0; d < D; d++) {
                                 file.Write("\t{0}", nodeMod[d].ToString("E", NumberFormatInfo.InvariantInfo));
@@ -146,15 +149,16 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray globalNodes = gridData.GlobalNodes.GetValue_EdgeSV(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
                     foreach(var edge in pair.Chunk.Elements.AsSmartEnumerable()) {
 
-                        Vector center = gridData.iGeomEdges.GetCenter(edge.Value);
+                        //Vector center = gridData.iGeomEdges.GetCenter(edge.Value);
                         var edgeNodes = globalNodes.ExtractSubArrayShallow(edge.Index, -1, -1);
 
                         for(int n = 0; n < pair.Rule.NoOfNodes; n++) {
                             file.Write(edge.Value);
 
                             Vector node = edgeNodes.GetRowPt(n);
-                            var ToCen = center - node;
-                            var nodeMod = node + ToCen * 0.1;
+                            //var ToCen = center - node;
+                            //var nodeMod = node + ToCen * 0.1;
+                            var nodeMod = node;
 
                             for(int d = 0; d < D; d++) {
                                 file.Write("\t{0}", (nodeMod[d]).ToString("E", NumberFormatInfo.InvariantInfo));

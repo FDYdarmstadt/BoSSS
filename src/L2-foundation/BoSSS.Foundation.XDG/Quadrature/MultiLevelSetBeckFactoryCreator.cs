@@ -120,7 +120,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
             LevelSetCombination lscomb = new LevelSetCombination(id,
                 (LevelSet)levelSets[levSetIndex0].LevelSet,
                 (LevelSet)levelSets[levSetIndex1].LevelSet);
-            return new BeckQuadratureFactory(backupFactory, new BeckEdgeScheme(levelSets, lscomb,false), levelSets,id);
+            return new BeckQuadratureFactory(backupFactory, new BeckEdgeScheme(levelSets, lscomb, false), levelSets,id);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -138,7 +138,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
                 (LevelSet) levelSets[levSetIndex0].LevelSet,
                 (LevelSet) levelSets[levSetIndex1].LevelSet);
             lscomb.sign0 = 0;
-            return new BeckQuadratureFactory(backupFactory, new BeckSurfaceScheme(levelSets, lscomb, false), levelSets,id0);
+            return new BeckQuadratureFactory(backupFactory, new BeckSurfaceScheme(levelSets, lscomb, true), levelSets,id0);
         }
 
         public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory)
@@ -152,7 +152,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
             };
             LevelSetCombination lscomb = FindPhi(id);
 
-            return new BeckQuadratureFactory(backupFactory, new BeckVolumeScheme(levelSets, lscomb, false),levelSets,id);
+            //Console.WriteLine("warn: testcode");
+            return new BeckQuadratureFactory(backupFactory, new BeckVolumeScheme(levelSets, lscomb, true),levelSets,id);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -514,7 +515,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
             this.isGlobalMode = isGlobalMode;
             if(isGlobalMode) {
                 // only deactivate if you know what you are doing
-                throw new NotSupportedException("Since quadrature rule metrics have been moved to the `IIntegrationMetric` interface, setting `isGlobalMode` to true is not advised.");
+                //throw new NotSupportedException("Since quadrature rule metrics have been moved to the `IIntegrationMetric` interface, setting `isGlobalMode` to true is not advised.");
+                //Console.Error.WriteLine("Since quadrature rule metrics have been moved to the `IIntegrationMetric` interface, setting `isGlobalMode` to true is not advised.");
             }
 
             this.lscomb = lscomb;
@@ -867,7 +869,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
             var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
             var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
             for(int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++) {
-                //rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
                 rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
             }
         }
@@ -1027,10 +1028,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
         public override void ScaleWeights(QuadRule rule, int j) {
             var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
             var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+
+            // note: added by Florian, to be able to use the `isGlobalMode == true`-mode 
+            // in the configuration `isGlobalMode == false`, the generation of the rule is much slower and requires many more level-set evaluations
+            var othermetrics0 = base.data[0].GetLevelSetNormalReferenceToPhysicalMetrics(rule.Nodes, j, 1); // the 0-th level-set is always the one we are integrating over
+            
             for(int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++) {
-                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight] * othermetrics0[0, iWeight];
             }
         }
+        //public override QuadRule GetQuadRule(int j, int order) {
+        //    var rule = base.GetQuadRule(j, order);
+        //    if(rule.NoOfNodes > 0) {
+        //        Console.Write("");
+        //    }
+        //    return rule;
+        //}
     }
 
     internal class BeckZeroScheme : BeckBaseScheme
@@ -1412,12 +1425,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
 
         public static NodeSet NSFromTensor(Tensor1 x, LevelSet m_levelSet)
         {
-            //transform into multarray
-            MultidimensionalArray GlobIn = MultidimensionalArray.Create(1, x.M);
-            for (int i = 0; i < x.M; i++)
-            {
-                GlobIn[0, i] = x[i];
-            }
+            ////transform into multarray
+            //MultidimensionalArray GlobIn = MultidimensionalArray.Create(1, x.M);
+            //for (int i = 0; i < x.M; i++)
+            //{
+            //    GlobIn[0, i] = x[i];
+            //}
 
             //output array for local coordinates
             //var LocOut = MultidimensionalArray.Create(1, 1, GlobIn.Lengths[1]);
@@ -1428,20 +1441,32 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
 
 
             //gives the NodeSet using the local Coords
+            RefElement kRef; 
             if(x.M == m_levelSet.Basis.GridDat.SpatialDimension)
             {
-                return new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], GlobIn, true);
+                //return new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], GlobIn, true);
+                kRef = m_levelSet.GridDat.iGeomCells.RefElements[0];
 
             }
             else if(x.M == m_levelSet.Basis.GridDat.SpatialDimension-1)
             {
-                return new NodeSet(m_levelSet.GridDat.iGeomEdges.EdgeRefElements[0], GlobIn, true);
-
+                //return new NodeSet(m_levelSet.GridDat.iGeomEdges.EdgeRefElements[0], GlobIn, true);
+                kRef = m_levelSet.GridDat.iGeomEdges.EdgeRefElements[0];
             }
             else
             {
-                return new NodeSet(Grid.RefElements.Point.Instance, GlobIn, true);
+                //return new NodeSet(Grid.RefElements.Point.Instance, GlobIn, true);
+                kRef = Grid.RefElements.Point.Instance;
             }
+
+            //transform into multarray
+            var GlobIn = new NodeSet(kRef, 1, x.M, false);
+            for(int i = 0; i < x.M; i++) {
+                GlobIn[0, i] = x[i];
+            }
+            GlobIn.LockForever();
+            return GlobIn;
+
         }
         public static NodeSet NSFromGlobalTensor(Tensor1 x, LevelSet m_levelSet, int j)
         {
@@ -1460,7 +1485,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Beck
             m_levelSet.GridDat.TransformGlobal2Local(GlobIn, LocOut, j, 1, 0);
 
             //gives the NodeSet using the local Coords
-            var NS = new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], LocOut.ExtractSubArrayShallow(0, -1, -1), true);
+            var NS = new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], LocOut.ExtractSubArrayShallow(0, -1, -1), false);
 
             return NS;
         }

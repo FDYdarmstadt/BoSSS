@@ -41,8 +41,7 @@ namespace BoSSS.Foundation {
         static object syncRoot = new Object();
         static int RefCounter = 123;
 
-        public static int NoOfNodeSets = 0;
-
+       
         /// <summary>
         /// Constructor: initializes this node set as a (non-shallow) clone of the array <paramref name="nds"/>.
         /// </summary>
@@ -87,7 +86,6 @@ namespace BoSSS.Foundation {
                     this.Reference = 0;
                 }
             }
-            NoOfNodeSets++;
         }
 
         /// <summary>
