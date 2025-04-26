@@ -207,7 +207,9 @@ namespace PublicTestRunner {
             DirectoryInfo repoRoot;
             try {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                repoRoot = dir.Parent.Parent.Parent.Parent.Parent.Parent;
+                repoRoot = dir?.Parent?.Parent?.Parent?.Parent?.Parent?.Parent;
+                if(repoRoot == null)
+                    return null;
 
                 var src = repoRoot.GetDirectories("src").SingleOrDefault();
                 var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
