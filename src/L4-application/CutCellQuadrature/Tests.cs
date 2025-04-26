@@ -501,9 +501,14 @@ namespace CutCellQuadrature {
         /// </summary>
         [Test] // note: very inconsistent run times: sometimes about 10 minutes, sometimes more than 5 hours
         static public void Test2DVolumePRefinementStructuredAlgoim() {
-            int[] orders = Enumerable.Range(1, 25).ToArray(); 
 
+#if DEBUG
+            int[] orders = Enumerable.Range(1, 9).ToArray();
+            GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Ultra };
+#else
+            int[] orders = Enumerable.Range(1, 25).ToArray();
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Ultra, GridSizes.Mega, GridSizes.Giga };
+#endif
 
             for (int i = 0; i < sizes.Length; i++) {
                 Console.WriteLine($"Ellipse p-convergence for {sizes[i]}");
