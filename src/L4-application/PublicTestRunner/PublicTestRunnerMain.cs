@@ -332,7 +332,6 @@ namespace PublicTestRunner {
             return R.ToArray();
         }
 
-
         static string[] LocateFile(string PartialPath) {
             DirectoryInfo repoRoot = TestTypeProvider.GetRepositoryBaseDir();
             if (repoRoot == null)
