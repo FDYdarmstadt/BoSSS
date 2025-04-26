@@ -203,7 +203,6 @@ namespace ilPSP {
             }
         }
 
-
         static bool OpenMPdisabled = false;
         static int backup_MaxNumOpenMPthreads = -1;
 
