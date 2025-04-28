@@ -52,12 +52,13 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
-        const int measBase = 1000000;
+        const int measBase = 50000000;
 
-        static List<long> PrimeSearch(long start, int inc) {
+        static List<long> PrimeSearch(long start, int inc, int ith) {
             var foundPrimes = new List<long>();
             var LastTime = DateTime.Now;
             int counter = 0;
+            double peakPerf = 0;
             for(long i = start; i < int.MaxValue; i += inc) {
 
                 if(i % 2 == 0)
@@ -68,9 +69,16 @@ namespace BoSSS.Application.SipPoisson {
                         counter = 0;
                         var now = DateTime.Now;
                         var duration = (now - LastTime).TotalSeconds;
-                        double testsPerSec = measBase / duration;
+                        LastTime = now;
 
-                        Console.WriteLine($" .. Megatests per sec: {testsPerSec*1e-6}");
+                        double testsPerSec = measBase / duration;
+                        peakPerf = Math.Max(peakPerf, testsPerSec);
+
+                        if(testsPerSec < 1e-6 || testsPerSec < peakPerf*0.01) {
+                            Console.Error.WriteLine($" PERFORMANCE WARNING: th{ith}: Megatests per sec: {testsPerSec*1e-6:0.###e-00}; \tfound {foundPrimes.Count} prime numbers");
+                        }
+
+                        Console.WriteLine($" .. th{ith}: Megatests per sec: {testsPerSec*1e-6:0.###e-00}; \tfound {foundPrimes.Count} prime numbers");
                     }
 
                     if(i % t == 0)
@@ -91,8 +99,12 @@ namespace BoSSS.Application.SipPoisson {
             //Debugger.Launch();
             InitMPI(args);
 
-            PrimeSearch(3, 2);
-            
+            ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
+               delegate(int ithread, int i0, int iE) {
+                    PrimeSearch(3 + ithread*2, 3, ithread);
+               }
+            );
+
 
 
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
