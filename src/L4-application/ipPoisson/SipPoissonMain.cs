@@ -52,6 +52,35 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+        const int measBase = 1000000;
+
+        static List<long> PrimeSearch(long start, int inc) {
+            var foundPrimes = new List<long>();
+            var LastTime = DateTime.Now;
+            int counter = 0;
+            for(long i = start; i < int.MaxValue; i += inc) {
+
+                if(i % 2 == 0)
+                    continue;
+                for(long t = 3; t < i; t += 2) {
+                    counter++;
+                    if(counter >= measBase) {
+                        counter = 0;
+                        var now = DateTime.Now;
+                        var duration = (now - LastTime).TotalSeconds;
+                        double testsPerSec = measBase / duration;
+
+                        Console.WriteLine($" .. Megatests per sec: {testsPerSec*1e-6}");
+                    }
+
+                    if(i % t == 0)
+                        continue;
+                }
+                foundPrimes.Add(i);
+            }
+            return foundPrimes;
+        }
+
 
         
         /// <summary>
@@ -60,7 +89,12 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //Debugger.Launch();
-            //InitMPI(args, num_threads:1);
+            InitMPI(args);
+
+            PrimeSearch(3, 2);
+            
+
+
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
 
             _Main(args, false, delegate () {
