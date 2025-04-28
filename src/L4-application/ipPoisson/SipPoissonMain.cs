@@ -52,9 +52,10 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
-        const int measBase = 50000000;
 
         static List<long> PrimeSearch(long start, int inc, int ith) {
+            const int measBase = 50000000;
+
             var foundPrimes = new List<long>();
             var LastTime = DateTime.Now;
             int counter = 0;
@@ -74,11 +75,11 @@ namespace BoSSS.Application.SipPoisson {
                         double testsPerSec = measBase / duration;
                         peakPerf = Math.Max(peakPerf, testsPerSec);
 
-                        if(testsPerSec < 1e-6 || testsPerSec < peakPerf*0.01) {
-                            Console.Error.WriteLine($" PERFORMANCE WARNING: th{ith}: Megatests per sec: {testsPerSec*1e-6:0.###e-00}; \tfound {foundPrimes.Count} prime numbers");
+                        if(testsPerSec < 1e-6 || testsPerSec < peakPerf * 0.01) {
+                            Console.Error.WriteLine($" PERFORMANCE WARNING: th{ith}: Megatests per sec: {testsPerSec * 1e-6:0.###e-00}; \tfound {foundPrimes.Count} prime numbers");
                         }
 
-                        Console.WriteLine($" .. th{ith}: Megatests per sec: {testsPerSec*1e-6:0.###e-00}; \tfound {foundPrimes.Count} prime numbers");
+                        Console.WriteLine($" .. th{ith}: Megatests per sec: {testsPerSec * 1e-6:0.###e-00}; \tfound {foundPrimes.Count} prime numbers");
                     }
 
                     if(i % t == 0)
@@ -90,7 +91,44 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-        
+        static void MatrixMult(int ith) {
+            const int measBase = 10;
+
+            var A = MultidimensionalArray.Create(1000, 1000);
+            var B = MultidimensionalArray.Create(1000, 1000);
+            //var M = MultidimensionalArray.Create(1000,1000);
+
+            var LastTime = DateTime.Now;
+            int counter = 0;
+            double peakPerf = 0;
+            for(long i = 0; i < int.MaxValue; i += 1) {
+                counter++;
+                A.Storage.FillRandom();
+                B.Storage.FillRandom();
+                var M = A.GEMM(B);
+                A = M;
+
+                if(counter >= measBase) {
+                    counter = 0;
+                    var now = DateTime.Now;
+                    var duration = (now - LastTime).TotalSeconds;
+                    LastTime = now;
+
+                    double testsPerSec = measBase / duration;
+                    peakPerf = Math.Max(peakPerf, testsPerSec);
+
+                    if(testsPerSec < 9 || testsPerSec < peakPerf * 0.01) {
+                        Console.Error.WriteLine($" PERFORMANCE WARNING: th{ith}: Megamuls per sec: {testsPerSec * 1:0.###e-00}");
+                    }
+
+                    Console.WriteLine($" .. th{ith}: Megamuls per sec: {testsPerSec:0.###e-00}");
+                }
+            }
+
+        }
+
+
+
         /// <summary>
         /// Main routine
         /// </summary>
@@ -100,8 +138,9 @@ namespace BoSSS.Application.SipPoisson {
             InitMPI(args);
 
             ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
-               delegate(int ithread, int i0, int iE) {
-                    PrimeSearch(3 + ithread*2, 3, ithread);
+               delegate (int ithread, int i0, int iE) {
+                   //PrimeSearch(3 + ithread * 2, 3, ithread);
+                   MatrixMult(ithread);
                }
             );
 
@@ -111,12 +150,12 @@ namespace BoSSS.Application.SipPoisson {
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
-                
+
                 return p;
             });
         }
 
-       
+
 
 #pragma warning disable 649
         /// <summary>
@@ -137,7 +176,7 @@ namespace BoSSS.Application.SipPoisson {
         [InstantiateFromControlFile("RHS", "T", IOListOption.ControlFileDetermined)]
         protected SinglePhaseField RHS;
 
-        
+
 #pragma warning restore 649
 
         /// <summary>
@@ -174,7 +213,7 @@ namespace BoSSS.Application.SipPoisson {
             // mg coloring
             int iLevel = 0;
             this.MGColoring.Clear();
-            foreach (var MgL in this.MultigridSequence) {
+            foreach(var MgL in this.MultigridSequence) {
                 SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
                 Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
                 this.MGColoring.Add(c);
@@ -223,7 +262,7 @@ namespace BoSSS.Application.SipPoisson {
         public Type EnsureReference = typeof(ForeignGridValue);
 
 
-       
+
 
         /// <summary>
         /// Sets the multigrid coloring
@@ -241,7 +280,7 @@ namespace BoSSS.Application.SipPoisson {
             */
             base.SetInitial(t);
 
-            
+
 
             //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
@@ -269,16 +308,16 @@ namespace BoSSS.Application.SipPoisson {
                 LapaceIp.Commit();
             }
         }
-     
+
 
         /// <summary>
         /// control of mesh adaptation
         /// </summary>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            if (this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
+            if(this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
 
                 // compute error against fine solution
-                if (Control.ExactSolution_provided) {
+                if(Control.ExactSolution_provided) {
                     //Error.Clear();
                     //Error.AccLaidBack(1.0, T);
 
@@ -305,10 +344,10 @@ namespace BoSSS.Application.SipPoisson {
 
                 double maxSoFar = 0;
                 int jMax = -1;
-                for (int j = 0; j < oldJ; j++) {
+                for(int j = 0; j < oldJ; j++) {
                     double CellNorm = Error.Coordinates.GetRow(j).L2NormPow2();
 
-                    if (CellNorm > maxSoFar) {
+                    if(CellNorm > maxSoFar) {
                         jMax = j;
                         maxSoFar = CellNorm;
                     }
@@ -326,17 +365,17 @@ namespace BoSSS.Application.SipPoisson {
                     //    return CurrentLevel + 1;
                     //else
                     //    return CurrentLevel;
-                    if (j == jMax)
+                    if(j == jMax)
                         return CurrentLevel + 1;
                     else
                         return CurrentLevel;
                 }
 
-                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData,null);
+                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
                 bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
+                if(AnyChange) {
                     int[] glb = (new int[] {
                         CellsToRefineList.Count,
                         Coarsening.Sum(L => L.Length),
@@ -352,7 +391,7 @@ namespace BoSSS.Application.SipPoisson {
                 // Update Grid
                 // ===========
 
-                if (AnyChange) {
+                if(AnyChange) {
 
 
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
@@ -376,7 +415,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Single run of the solver
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
 
                 int L = 1000;
                 double[] a = new double[L];
@@ -387,7 +426,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-                if (Control.ExactSolution_provided) {
+                if(Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
 
@@ -395,9 +434,9 @@ namespace BoSSS.Application.SipPoisson {
                     RHS.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
                 }
 
-                if (Control.AdaptiveMeshRefinement == false) {
+                if(Control.AdaptiveMeshRefinement == false) {
                     base.NoOfTimesteps = -1;
-                    if (TimestepNo > 1)
+                    if(TimestepNo > 1)
                         throw new ApplicationException("steady-state-equation.");
                     base.TerminationKey = true;
                 }
@@ -473,7 +512,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-                if (base.Control.ExactSolution_provided) {
+                if(base.Control.ExactSolution_provided) {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);
                     Error.AccLaidBack(-1.0, T);
@@ -519,7 +558,7 @@ namespace BoSSS.Application.SipPoisson {
                 int NoOfLevels = this.MultigridSequence.Length;
                 var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
 
-                for (int iLevel = 0; iLevel < NoOfLevels; iLevel++) {
+                for(int iLevel = 0; iLevel < NoOfLevels; iLevel++) {
 
                     config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
                         new MultigridOperator.ChangeOfBasisConfig() {
@@ -542,8 +581,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override void Bye() {
             object SolL2err;
-            if (this.QueryHandler != null) {
-                if (this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
+            if(this.QueryHandler != null) {
+                if(this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
                     Console.WriteLine("Value of Query 'SolL2err' " + SolL2err.ToString());
                 } else {
                     Console.WriteLine("query 'SolL2err' not found.");
@@ -554,9 +593,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        override public IDictionary<string,double> OperatorAnalysis(OperatorAnalysisConfig config) {
+        override public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
             using(new FuncTrace()) {
-                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, config, this.MgConfig); 
+                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, config, this.MgConfig);
             }
         }
 
@@ -565,9 +604,9 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
             string caseStr = "";
-            if (base.Control.Paramstudy_CaseIdentification != null) {
+            if(base.Control.Paramstudy_CaseIdentification != null) {
                 var pstudy_case = base.Control.Paramstudy_CaseIdentification.FirstOrDefault(tt => tt.Item1 == "pstudy_case");
-                if (pstudy_case != null) {
+                if(pstudy_case != null) {
                     caseStr = "." + pstudy_case.Item2;
                 }
             }
@@ -579,7 +618,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-       
+
     }
 
     /// <summary>
@@ -620,15 +659,15 @@ namespace BoSSS.Application.SipPoisson {
 
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
             BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
-            switch (edgeType) {
+            switch(edgeType) {
                 case BoundaryType.Dirichlet:
-                    return true;
+                return true;
 
                 case BoundaryType.Neumann:
-                    return false;
+                return false;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
         }
     }
@@ -656,7 +695,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
-            if(!object.ReferenceEquals(m_rhsSourceField,Parameters[0])) {
+            if(!object.ReferenceEquals(m_rhsSourceField, Parameters[0])) {
                 Parameters[0].Clear();
                 Parameters[0].Acc(1.0, m_rhsSourceField);
             }
