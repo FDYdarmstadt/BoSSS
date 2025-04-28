@@ -52,7 +52,7 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
-
+        /*
         static List<long> PrimeSearch(long start, int inc, int ith) {
             const int measBase = 50000000;
 
@@ -101,6 +101,7 @@ namespace BoSSS.Application.SipPoisson {
             var LastTime = DateTime.Now;
             int counter = 0;
             double peakPerf = 0;
+            int failCount = 0;
             for(long i = 0; i < int.MaxValue; i += 1) {
                 counter++;
                 A.Storage.FillRandom();
@@ -114,11 +115,16 @@ namespace BoSSS.Application.SipPoisson {
                     var duration = (now - LastTime).TotalSeconds;
                     LastTime = now;
 
+
+
                     double testsPerSec = measBase / duration;
                     peakPerf = Math.Max(peakPerf, testsPerSec);
 
                     if(testsPerSec < 2 || testsPerSec < peakPerf * 0.01) {
                         Console.Error.WriteLine($" PERFORMANCE WARNING: th{ith}: Megamuls per sec: {testsPerSec * 1:0.###e-00}");
+                        failCount++;
+                        if(failCount > 10)
+                            System.Environment.Exit(-1234);
                     }
 
                     Console.WriteLine($" .. th{ith}: Megamuls per sec: {testsPerSec:0.###e-00}");
@@ -126,7 +132,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
         }
-
+        */
 
 
         /// <summary>
@@ -136,13 +142,46 @@ namespace BoSSS.Application.SipPoisson {
         static void Main(string[] args) {
             //Debugger.Launch();
             InitMPI(args);
+            //ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
+            //   delegate (int ithread, int i0, int iE) {
+            //       //PrimeSearch(3 + ithread * 2, 3, ithread);
+            //       MatrixMult(ithread);
+            //   }
+            //);
+            
+            double peakPerf = 0;
+            int failCount = 0;
+            for(int i = 0; i < 10; i++) {
+                var LastTime = DateTime.Now;
+                using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+                    var ctrl = SipHardcodedControl.TestCartesian2(13, 3, LinearSolverCode.direct_pardiso, 5);
+                    ctrl.TracingNamespaces = "*";
+                    p.Init(ctrl);
+                    p.RunSolverMode();
+                }
 
-            ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
-               delegate (int ithread, int i0, int iE) {
-                   //PrimeSearch(3 + ithread * 2, 3, ithread);
-                   MatrixMult(ithread);
-               }
-            );
+                {
+                    const double myTime = 1.238e-02;
+
+                    var now = DateTime.Now;
+                    var duration = (now - LastTime).TotalSeconds;
+                    LastTime = now;
+
+                    double testsPerSec = 1.0 / duration;
+                    peakPerf = Math.Max(peakPerf, testsPerSec);
+
+                    if(testsPerSec < myTime*0.1 || testsPerSec < peakPerf * 0.01) {
+                        Console.Error.WriteLine($" PERFORMANCE WARNING: Poisson solves per sec: {testsPerSec * 1:0.###e-00}");
+                        failCount++;
+                        if(failCount > 10)
+                            System.Environment.Exit(-1234);
+                    }
+
+                    Console.WriteLine($" ..  Poisson solves per sec: {testsPerSec:0.###e-00}");
+                }
+            }
+            csMPI.Raw.mpiFinalize();
+
 
 
 
@@ -153,6 +192,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 return p;
             });
+
         }
 
 

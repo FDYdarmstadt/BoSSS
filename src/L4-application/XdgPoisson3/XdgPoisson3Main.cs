@@ -59,9 +59,42 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            //InitMPI(args);
-            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(4, 0.6, CutCellQuadratureMethod.Saye);
-            //throw new Exception("remove me");
+            InitMPI(args);
+            double peakPerf = 0;
+            int failCount = 0;
+            for(int i = 0; i < 1000; i++) {
+                var LastTime = DateTime.Now;
+                using(var p = new XdgPoisson3Main()) {
+                    var ctrl = BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(5, 16);
+                    ctrl.TracingNamespaces = "*";
+                    p.Init(ctrl);
+                    p.RunSolverMode();
+                }
+
+                {
+                    //const double myTime = 1.238e-02;
+                    const double myTime = 3.673e-03;
+
+                    var now = DateTime.Now;
+                    var duration = (now - LastTime).TotalSeconds;
+                    LastTime = now;
+
+                    double testsPerSec = 1.0 / duration;
+                    peakPerf = Math.Max(peakPerf, testsPerSec);
+
+                    if(testsPerSec < myTime*10 || testsPerSec < peakPerf * 0.01) {
+                        Console.Error.WriteLine($" PERFORMANCE WARNING: Poisson solves per sec: {testsPerSec * 1:0.###e-00}");
+                        failCount++;
+                        if(failCount > 3)
+                            System.Environment.Exit(-1234);
+                    }
+
+                    Console.WriteLine($" ..  Poisson solves per sec: {testsPerSec:0.###e-00}");
+                }
+            }
+            csMPI.Raw.mpiFinalize();
+
+
             //BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
             //    return new XdgPoisson3Main();
             //});
