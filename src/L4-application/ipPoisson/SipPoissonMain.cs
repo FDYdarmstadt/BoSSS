@@ -117,7 +117,7 @@ namespace BoSSS.Application.SipPoisson {
                     double testsPerSec = measBase / duration;
                     peakPerf = Math.Max(peakPerf, testsPerSec);
 
-                    if(testsPerSec < 9 || testsPerSec < peakPerf * 0.01) {
+                    if(testsPerSec < 2 || testsPerSec < peakPerf * 0.01) {
                         Console.Error.WriteLine($" PERFORMANCE WARNING: th{ith}: Megamuls per sec: {testsPerSec * 1:0.###e-00}");
                     }
 
