@@ -460,7 +460,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
 	// this is designed to hold information getting from the WORLD
-	class TaskParallelMGOperator : IOperatorMappingPair {
+	public class TaskParallelMGOperator : IOperatorMappingPair {
 
 		/// <summary>
 		/// Constructor (responsible for world to sub communicators)
@@ -524,7 +524,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		int[] thisLevelWorldRankings => Enumerable.Range(worldMPIOffset, NoOfThisProcs).ToArray();
 		int[] smoothLevelWorldRankings => Enumerable.Range(worldMPIOffset, NoOfSmootherProcs).ToArray();
 		int[] coarseLevelWorldRankings => Enumerable.Range(worldMPIOffset + NoOfSmootherProcs, NoOfCoarseProcs).ToArray();
-		//int[] CommToSubCommMapping;
+		//int[] ThisCommToSubCommMapping;
 
 		public MPI_Comm currentComm => m_MultigridMapping.MPI_Comm;
 
@@ -556,28 +556,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			SmootherTargetPartitioning = GetPartitioning(localBlocksForSmoother, currentComm);
 			CoarseTargetPartitioning = GetPartitioning(localBlocksForCoarse, currentComm);
 			
-			//old_OpMtx = m_OpMtx.CloneAs();
-			//old_ProlMtx = m_ProlMtx?.CloneAs();
-
-			m_OpMtx = ChangeOpPartitioning(SmootherTargetPartitioning, SmootherNewCellMapping, "Op"); //this level of solving is only for smoother so op should partitioned for smoother
+			m_OpMtx = ChangeOpPartitioning(ThisTargetPartitioning, ThisNewCellMapping, "Op"); //this level of 
+			m_OpMtx_smoother = ChangeOpPartitioning(SmootherTargetPartitioning, SmootherNewCellMapping, "OpS"); //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
 			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, ThisNewCellMapping, FinerLevelCoarsePartitiong, FinerLevelCoarseCellMapping, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
-
 		}
 
 		BlockMsrMatrix ChangeOpPartitioning(IBlockPartitioning targetPartitioning, IList<(long Source, long Target)> newBlockIndices = null, string tag = "Op") {
-			m_OpMtx.SaveToTextFileSparseDebug($"{tag}_oldOp_lvl{level}.txt");
-			m_OpMtx.SaveToTextFileSparse($"{tag}_oldOp_lvl{level}.txt");
-
+			if (verbose) { 
+			m_OpMtx.SaveToTextFileSparseDebug($"lvl{level}_{tag}_oldOp.txt");
+			m_OpMtx.SaveToTextFileSparse($"lvl{level}_{tag}_oldOp.txt");
+			}
 			BlockMsrMatrix ret;
 
 			if (m_OpMtx.RowPartitioning == targetPartitioning && m_OpMtx.ColPartition == targetPartitioning && newBlockIndices == null) //this can happen at the first level of tp
-				ret = m_OpMtx;
+				ret = m_OpMtx.CloneAs();
 			else
-				ret = m_OpMtx.ChangePartitioning(targetPartitioning, targetPartitioning, newBlockIndices, newBlockIndices);
+				ret = m_OpMtx.CloneAs().ChangePartitioning(targetPartitioning, targetPartitioning, newBlockIndices, newBlockIndices);
 
-
-			ret.SaveToTextFileSparseDebug($"{tag}_newOP_lvl{level}.txt");
-			ret.SaveToTextFileSparse($"{tag}_newOp_lvl{level}.txt");
+			if (verbose) {
+				ret.SaveToTextFileSparseDebug($"lvl{level}_{tag}_newOp.txt");
+				ret.SaveToTextFileSparse($"lvl{level}_{tag}_newOp.txt");
+			}
 
 			return ret;
 		}
@@ -586,15 +585,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (m_ProlMtx == null)
 				return null;
 
-			m_ProlMtx.SaveToTextFileSparse($"{tag}_oldPro_lvl{level}.txt");
-			m_ProlMtx.SaveToTextFileSparseDebug($"{tag}_oldPro_lvl{level}.txt");
-
+			if (verbose) {
+				m_ProlMtx.SaveToTextFileSparse($"lvl{level}_{tag}_oldPro.txt");
+				m_ProlMtx.SaveToTextFileSparseDebug($"lvl{level}_{tag}_oldPro.txt");
+			}
 			var ret = m_ProlMtx.ChangePartitioning(finerPartitioning, thisPartitioning, finerNewBlockIndices, thisNewBlockIndices);
 
-			ret.SaveToTextFileSparse($"{tag}_newPro_lvl{level}.txt");
-			ret.SaveToTextFileSparseDebug($"{tag}_newPro_lvl{level}.txt");
+			if (verbose) { 
+			ret.SaveToTextFileSparse($"lvl{level}_{tag}_newPro.txt");
+			ret.SaveToTextFileSparseDebug($"lvl{level}_{tag}_newPro.txt");
+			}
+
 			return ret;
 		}
+
+		bool verbose = true;
 
 		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
@@ -670,6 +675,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public TaskParallelMGOperator CoarserLevel;
 
 		public BlockMsrMatrix m_OpMtx;
+		public BlockMsrMatrix m_OpMtx_smoother;
 		public BlockMsrMatrix m_ProlMtx;
 		public MultigridMapping m_MultigridMapping;
 
@@ -764,7 +770,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return NoOfSpecies.MPIGatherv(rcvCount, 0, Map.MPI_Comm);
 		}
 
-		(long[] cellI0s, List<(long source, long target)> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
+		public (long[] cellI0s, List<(long source, long target)> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
 			using (new FuncTrace()) {
 				var columnMapping = new List<(long sourceIdx, long targetIdx)>();
 				if (NoOfParts == 1) {
@@ -841,62 +847,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return flatGlobArray;
 		}
 
-		private (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMatrix) GetPermutationMatrix(IBlockPartitioning mapping, (long i0Global, int CellLen)[] globDOFsData) {
-			using (new FuncTrace()) {
-
-				BlockPartitioning TargetPartitioning = GetPartitioning(globDOFsData, currentComm);
-				BlockMsrMatrix PermutationMatrix = new BlockMsrMatrix(TargetPartitioning, mapping);
-				List<long> RowIndices = new List<long>();
-				List<long> ColIndices = new List<long>();
-				{
-					int cnt = 0;
-					if (globDOFsData != null && globDOFsData.Length > 0) {
-						int NoCells = globDOFsData.Length;
-
-						for (int j = 0; j < NoCells; j++) {
-							//int Len = part.lenCell[j];
-							int Len = globDOFsData[j].CellLen;
-							long i0Row = TargetPartitioning.i0 + cnt;
-							long i0Col = globDOFsData[j].i0Global;   //part.i0Cell[j];
-
-							PermutationMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
-
-							for (int k = 0; k < Len; k++) {
-								RowIndices.Add(i0Row + k);
-								ColIndices.Add(i0Col + k);
-								//columnMappingWorldToSmoother.Add((i0Col + k, i0Row + k));
-							}
-
-							cnt += Len;
-						}
-					}
-
-
-
-				}
-
-#if DEBUG
-				{
-					if (RowIndices != null) {
-
-						int L = RowIndices.Count;
-						for (int l = 0; l < L; l++) {
-							if (l > 0) {
-								Debug.Assert(RowIndices[l] > RowIndices[l - 1], "Error, Row indexing is not strictly increasing for some reason.");
-								Debug.Assert(ColIndices[l] > ColIndices[l - 1], "Error, Column indexing is not strictly increasing for some reason.");
-							}
-						}
-
-					}
-
-
-				}
-#endif
-				var TransposeMtx = PermutationMatrix.Transpose();
-
-				return (PermutationMatrix, RowIndices, ColIndices, TransposeMtx);
-			}
-		}
 	}
 
 	/// <summary>
@@ -1029,12 +979,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        /// <summary>
-        /// The matrix at this level.
-        /// </summary>
-        public BlockMsrMatrix OpMatrix => m_OpMapPair.OperatorMatrix;
+		/// <summary>
+		/// The matrix at this level.
+		/// </summary>
+		public BlockMsrMatrix OpMatrix => thisCommOpMatrix; // m_OpMapPair.OperatorMatrix;
+		public BlockMsrMatrix WorldCommOpMatrix => m_OpMapPair.OperatorMatrix;
 
-        TaskParallelMGOperator TpMapping => m_OpMapPair as TaskParallelMGOperator;
+		TaskParallelMGOperator TpMapping => m_OpMapPair as TaskParallelMGOperator;
 
 		/// <summary>
 		/// passed in <see cref="InitImpl"/>
@@ -1091,18 +1042,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				level++;
 			}
 			InitImpl(thisTP);
-        }
+			csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+		}
 
 		BlockMsrMatrix ChangeCommunicator(BlockMsrMatrix mtx, (long i0Global, int CellLen)[] localBlocks, MPI_Comm comm, int[] MPIRankMapping ) {
 			if (mtx == null)
 				return null;
-
-			//List<long>  ColIndices = new List<long>();
-			//foreach (var block in localBlocks)
-			//	for (long i = 0; i < block.CellLen; i++)
-			//		ColIndices.Add(block.i0Global + i);
-
-			////mtx._ColPartitioning.FirstBlock
 
 			var newColPartition = GetPartitioning(localBlocks, comm);
 			mtx.ChangeMPICommForColumns(MPIRankMapping, newColPartition); // changes the communicator to the new one (subComm)
@@ -1130,7 +1075,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		//BlockMsrMatrix subCommRestrictionOperator = null;
 		//BlockMsrMatrix subCommProlongationOperator = null;
-
+		BlockMsrMatrix thisCommOpMatrix = null;
 		BlockMsrMatrix subCommSmootherOpMatrix = null;
 		BlockMsrMatrix subCommCoarseOpMatrix = null;
 
@@ -1209,13 +1154,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //if (!Mtx.ColPartition.EqualsPartition(MgMap))
                 //    throw new ArgumentException("Column partitioning mismatch.");
 
-                ortho = new CoreOrthonormalizationProcedureTP(Mtx);
 
 				NoOfCoarseProcs = op.NoOfCoarseProcs;
 				NoOfSmootherProcs = op.NoOfSmootherProcs;
 				SplitCommunicator(NoOfCoarseProcs);
 				//PermutateOpMatrixFromScratch();
 				MigrateFromWorldToSubComms();
+				ortho = new CoreOrthonormalizationProcedureTP(OpMatrix);
 				CreatePermutationMatrices();
 
 				//CommitCoarseningOperators(opCommRestrictionOperator, worldCommProlongationOperator);
@@ -1279,8 +1224,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		void PermutateOpMatrixFromScratch() {
 			using (var tr = new FuncTrace()) {
-				subCommSmootherOpMatrix = ChangeDistributionAndCommunicators(smootherBlocks, OpMatrix, smootherPermutation, columnMappingWorldToSmoother, true, $"s_lvl{TpLevel}");
-				subCommCoarseOpMatrix = ChangeDistributionAndCommunicators(coarseBlocks, OpMatrix, coarsePermutation, columnMappingWorldToCoarse, true, $"c_lvl{TpLevel}");
+				subCommSmootherOpMatrix = ChangeDistributionAndCommunicators(smootherBlocks, WorldCommOpMatrix, smootherPermutation, columnMappingWorldToSmoother, true, $"s_lvl{TpLevel}");
+				subCommCoarseOpMatrix = ChangeDistributionAndCommunicators(coarseBlocks, WorldCommOpMatrix, coarsePermutation, columnMappingWorldToCoarse, true, $"c_lvl{TpLevel}");
 			}
 		}
 
@@ -1294,7 +1239,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		void MigrateFromWorldToSubComms() {
 			using (var tr = new FuncTrace()) {
-				subCommSmootherOpMatrix = ChangeCommunicator(OpMatrix.CloneAs(), TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
+				thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix.CloneAs(), TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
+
+				subCommSmootherOpMatrix = ChangeCommunicator(TpMapping.m_OpMtx_smoother.CloneAs(), TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
 				thisCommProlongationOperator = ChangeCommunicator(worldCommProlongationOperator, TpMapping.localBlocksForThisLevel, thisComm, thisCommMap);
 				thisCommRestrictionOperator = thisCommProlongationOperator?.Transpose();
 
@@ -1302,10 +1249,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// However, this is not the case here. The MG operator is dedicated for world level communications and key informations.
 				// This then must be done by this level solver here for the coarser solver.
 				// So each level solver gets data already restricted and then return without prolongating.
-				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, 
-					TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
+				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 				subCommToCoarseRestrictionOperator = subCommFromCoarseProlongationOperator?.Transpose();
-
 
 				if (verbose) {
 					subCommSmootherOpMatrix.SaveToTextFileSparseDebug($"o_smoothOp_{TpLevel}.txt");
@@ -1355,7 +1300,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			LocalizedMatrix.ChangeColumnIndices(columnMapping); //switches column indices with respect to the mapping
 			LocalizedMatrix.ChangeColumnPartitioning(LocalizedMatrix._RowPartitioning); // calculates new external indices with respec to the new partitioning (still opComm)
 			var newColMapping = GetPartitioning(localBlocks, subComm);
-			LocalizedMatrix.ChangeMPICommForColumns(CommToSubCommMapping, newColMapping); // changes the communicator to the new one (subComm)
+			LocalizedMatrix.ChangeMPICommForColumns(ThisCommToSubCommMapping, newColMapping); // changes the communicator to the new one (subComm)
 			var permutatedMatrix = LocalizedMatrix.GetSubMatrix(permutation.RowIndices, permutation.RowIndices, subComm); // finally create a new matrix with the new Comm
 #if DEBUG
 			if (test)
@@ -1387,10 +1332,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			smootherBlocks = GetLocalDistribution(TpMapping.CellToDOFdata, colMapThisToSmoother, TpMapping.SmootherCellI0s, 0, NoOfSmootherProcs);
 			Console.WriteLine("I was here");
 			csMPI.Raw.Barrier(thisComm);
-			smootherPermutation = GetPermutationMatrix(thisPartitioning, smootherBlocks); //this is technically a permutation matrix but also distributes 
+			smootherPermutation = GetPermutationMatrix(thisPartitioningInThisComm, smootherBlocks); //this is technically a permutation matrix but also distributes 
 
 			coarseBlocks = GetLocalDistribution(TpMapping.CellToDOFdata, colMapThisToCoarse, TpMapping.CoarseCellI0s, NoOfSmootherProcs, NoOfCoarseProcs);
-			coarsePermutation = GetPermutationMatrix(thisPartitioning, coarseBlocks);
+			coarsePermutation = GetPermutationMatrix(thisPartitioningInThisComm, coarseBlocks);
 		}
 
   //      List<(long source, long target)> columnMappingOpToSmootherOld;
@@ -1600,17 +1545,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
             CreateMpiRankMappings();
 		}
 
-        void CreateMpiRankMappings() {
-            // Each process sends its rank as its value.
-            int totalCount = thisCommsize; //  number of processes in the communicator
+
+		/// <summary>
+		/// ?we do not really need this as MPI_Split reorders new communicators w.r.t. old ranks
+		/// </summary>
+		void CreateMpiRankMappings() {
+			// Each process sends its rank as its value.
+			Debug.Assert(thisCommsize == TpMapping.NoOfThisProcs);
+
+			int totalCount = thisCommsize; //  number of processes in the communicator
 
 			// Prepare managed buffers.
 			int[] sendBuffer = new int[] { subCommRank }; //workaround for fixed statement
-			CommToSubCommMapping = new int[totalCount];
+			ThisCommToSubCommMapping = new int[totalCount];
 
 			// Pin the buffers to obtain their addresses.
 			GCHandle sendHandle = GCHandle.Alloc(sendBuffer, GCHandleType.Pinned);
-			GCHandle recvHandle = GCHandle.Alloc(CommToSubCommMapping, GCHandleType.Pinned);
+			GCHandle recvHandle = GCHandle.Alloc(ThisCommToSubCommMapping, GCHandleType.Pinned);
 
 			IntPtr sendPtr = sendHandle.AddrOfPinnedObject();
 			IntPtr recvPtr = recvHandle.AddrOfPinnedObject();
@@ -1621,21 +1572,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			// Display gathered values on each process.
 			Console.WriteLine($"Process {thisCommRank} gathered:");
 			for (int i = 0; i < totalCount; i++) {
-				Console.WriteLine($"Rank {i}: {CommToSubCommMapping[i]}");
+				Console.WriteLine($"Rank {i}: {ThisCommToSubCommMapping[i]}");
 			}
+
+			var CommToSubCommMappingD = new int[totalCount];
+			var WorldToSubCommMappingD = new int[TpMapping.worldCommSize];
+			for (int i = 0; i < totalCount; i++) {
+				CommToSubCommMappingD[i] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
+				WorldToSubCommMappingD[i + TpMapping.worldMPIOffset] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
+			}
+
 			WorldToSubCommMapping = new int[TpMapping.worldCommSize];
 			WorldToSubCommMapping.SetAll(-1);
-			WorldToSubCommMapping.SetSubVector(CommToSubCommMapping, TpMapping.worldMPIOffset, TpMapping.NoOfThisProcs);
-			//WorldToSubCommMapping = CommToSubCommMapping;// ??
+			WorldToSubCommMapping = new int[TpMapping.worldCommSize];
+			WorldToSubCommMapping.SetAll(-1); // keep empty ranks -1 to see if an error comes out, as the default value (0) might cause some unvisible bugs
+			WorldToSubCommMapping.SetSubVector(ThisCommToSubCommMapping, TpMapping.worldMPIOffset, TpMapping.NoOfThisProcs);
+
+			Debug.Assert(WorldToSubCommMappingD.SequenceEqual(WorldToSubCommMapping));
+
+			WorldToThisCommMapping = Enumerable.Range(0, TpMapping.worldCommSize).Select(i => i < TpMapping.worldMPIOffset ? -1 : i - TpMapping.worldMPIOffset).ToArray();
+			//WorldToSubCommMapping = ThisCommToSubCommMapping;// ??
 		}
 
-        bool verbose = true;
+		bool verbose = true;
 
-        int[] CommToSubCommMapping;
+        int[] ThisCommToSubCommMapping;
 
 		int[] WorldToSubCommMapping;
+		int[] WorldToThisCommMapping;
 
-        TpTaskType myTask = TpTaskType.All;
+		TpTaskType myTask = TpTaskType.All;
 
 		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
@@ -1662,8 +1628,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 		
         private void InitiateCoarsestSolver() {
+			if (CoarserLevelSolver is PARDISOSolver PARSolver) {
+				var CoarserTpMapping = (TpMapping.CoarserLevel as TaskParallelMGOperator);
+				subCommCoarseOpMatrix = ChangeCommunicator(CoarserTpMapping.OperatorMatrix.CloneAs(), CoarserTpMapping.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
+				PARSolver.DefineMatrix(subCommCoarseOpMatrix);
+			}
+			csMPI.Raw.Barrier(thisComm);
 			// for the final coarse level solver (probabaly direct solver), we need to actually change the communicator of its matrix
-			throw new NotImplementedException("Not yet implemented.");
+			//throw new NotImplementedException("Not yet implemented.");
 		}
 
 		private void InitCoarse() {
@@ -1813,43 +1785,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] ResCoarse;
                 int Lc;
                 if (this.CoarserLevelSolver != null && myConfig.CoarseOnLowerLevel) {
-                    Lc = ((MultigridOperator)m_OpMapPair).CoarserLevel.Mapping.LocalLength;
+                    Lc = subCommFromCoarseProlongationOperator._ColPartitioning.LocalLength;
                     ResCoarse = new double[Lc];
                 } else {
                     Lc = -1;
                     ResCoarse = null;
                 }
-
-				//TpTaskType myTask = TpTaskType.All;
-				//MPI_Comm newComm = m_OpMapPair.DgMapping.MPI_Comm;
-
-				//if (PreSmoother is SchwarzForCoarseMesh schwarz) {
-				//	Console.WriteLine($"Tot number of Schwarz blocks {schwarz.config.NoOfBlocks}");
-				//	if (schwarz.config.NoOfBlocks < m_OpMapPair.DgMapping.MpiSize) {
-				//		Console.WriteLine("A possible speed up");
-				//		Console.WriteLine($"Rank-{m_OpMapPair.DgMapping.MpiRank} old com{m_OpMapPair.DgMapping.MPI_Comm.m1}");
-    //                    schwarz.CommitInitialXandB(X, partGlob);
-                        
-    //                    if (m_OpMapPair.DgMapping.MpiRank < schwarz.config.NoOfBlocks) {
-    //                        myTask = TpTaskType.Smoother;
-    //                        csMPI.Raw.CommSplit(m_OpMapPair.DgMapping.MPI_Comm, 0, m_OpMapPair.DgMapping.MpiRank, out newComm);
-    //                    } else {
-    //                        myTask = TpTaskType.Coarse;
-    //                        csMPI.Raw.CommSplit(m_OpMapPair.DgMapping.MPI_Comm, 1, m_OpMapPair.DgMapping.MpiRank, out newComm);
-    //                    }
-    //                    subComm = newComm;
-				//		var newOP = ReInitImpl(m_OpMapPair, newComm);
-				//		Console.WriteLine($"Rank-{m_OpMapPair.DgMapping.MpiRank} new com{newComm.m1}");
-
-    //                }
-				//}
-
 				csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
+				//double[] thisLevelRes = PermutateVector(X, smootherPermutation);
+
 				bool done = false;
-				int SmootherGroupLeader = 0;
-				int CoarseGroupLeader = m_OpMapPair.DgMapping.MpiSize - 1;
-                done.MPIAnd(subComm);
+				int SmootherGroupLeader = 0; 
+				int CoarseGroupLeader = NoOfCoarseProcs + NoOfSmootherProcs - 1;
+                done.MPIAnd(thisComm);
+
+
 				double[] Sol0 = X.CloneAs();
                 double[] Res0 = new double[L];
                 Residual(Res0, Sol0, B);
@@ -1859,11 +1810,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double normB = ortho.Norm(B);
                     double normX = ortho.Norm(X);
                     f.Error($" **** Residual is 0.0: |X| = {normB}; |partGlob| = {normB}; |Res0| = {ortho.Norm(Res0)}");
-
-
                 }
 
-                int iLevel = ((m_OpMapPair as MultigridOperator)?.LevelIndex ?? -1);
+                int iLevel = TpLevel;
 
                 void WriteDebug(int iter, double res, string text) {
                     if (iLevel >= 0)
@@ -1874,7 +1823,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double iter0_resNorm = ortho.Norm(Res0);
                 double resNorm = iter0_resNorm;
-                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
+                //this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
                                 
                 // clear history of coarse solvers
                 ortho.Clear();
