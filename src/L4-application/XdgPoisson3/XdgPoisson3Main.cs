@@ -62,9 +62,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             //InitMPI(args);
             //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(4, 0.6, CutCellQuadratureMethod.Saye);
             //throw new Exception("remove me");
-            //BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
-            //    return new XdgPoisson3Main();
-            //});
+            BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
+                return new XdgPoisson3Main();
+            });
         }
 
 #pragma warning disable 649
