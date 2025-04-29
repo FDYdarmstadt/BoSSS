@@ -148,7 +148,7 @@ namespace BoSSS.Application.SipPoisson {
             Console.WriteLine($"Value from CCP_AFFINITY : {CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("[", ", " , "]") }");
             Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
 
-/*
+
             ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
                 delegate (int ithread, int i0, int iE) {
                     Console.WriteLine($" --- thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
@@ -160,7 +160,7 @@ namespace BoSSS.Application.SipPoisson {
                    //MatrixMult(ithread);
                 }
             );
-*/
+
             ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
                 delegate (int ithread, int i0, int iE) {
                     CPUAffinity.SetCurrentThreadAffinity(new int[] { initialAffinity[ithread]});
