@@ -1367,7 +1367,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		(long i0Cell, int lenCell)[] smootherBlocks;
 		(long i0Cell, int lenCell)[] coarseBlocks;
 
-		IBlockPartitioning thisPartitioning => thisCommProlongationOperator == null ? OpMatrix._RowPartitioning : thisCommProlongationOperator._RowPartitioning;
+		IBlockPartitioning thisPartitioningInThisComm => thisCommProlongationOperator == null ? TpMapping.ThisTargetPartitioning : thisCommProlongationOperator._RowPartitioning; // if this instance is for the finest level without prolongation operator, then we can use the this Partitioning at the world level. If not, get the this partitioning from the prolongation operator (comm operator has changed).
+
 		/// <summary>
 		/// Permutation matrices from thisComm to subComms (to disribute vectors)
 		/// </summary>
