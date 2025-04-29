@@ -299,17 +299,28 @@ namespace BoSSS.Solution {
                 SinglePhaseField[] fld = new SinglePhaseField[D];
                 XDGField[] xfld = new XDGField[D];
                 DGField[] _fld = new DGField[D];
+                TraceDGField[] tfld = new TraceDGField[D];
                 for (int d = 0; d < D; d++) {
 
-                    if (ComponentType == typeof(SinglePhaseField)) {
+                    if (ComponentType == typeof(SinglePhaseField))
+                    {
                         fld[d] = new SinglePhaseField(new Basis(ctx, Deg[d]), iName[d]);
                         _fld[d] = fld[d];
 
-                    } else if (ComponentType == typeof(XDGField)) {
+                    }
+                    else if (ComponentType == typeof(XDGField))
+                    {
                         xfld[d] = new XDGField(new XDGBasis(lstrk, Deg[d]), iName[d]);
                         _fld[d] = xfld[d];
                         fld = null;
-                    } else {
+                    }
+                    else if (ComponentType == typeof(TraceDGField))
+                    {
+                        tfld[d] = new TraceDGField(new TraceDGBasis(lstrk, Deg[d]), iName[d]);
+                        _fld[d] = tfld[d];
+                        fld = null;
+                        xfld = null;
+                    }else {
                         throw new NotSupportedException("unknown type.");
                     }
                     RegisteredFields.Add(_fld[d]);
@@ -317,8 +328,16 @@ namespace BoSSS.Solution {
 
                 // create instance: Vector-Field container
                 var ci = VectorType.GetConstructor(new Type[] { ComponentType.MakeArrayType() });
-                member_value = ci.Invoke(new object[] { (fld != null) ? ((object)fld) : ((object)xfld) });
+                //member_value = ci.Invoke(new object[] { (fld != null) ? ((object)fld) : ((object)xfld) });
                 //member_value = ci.Invoke( new object[] { ((object)fld)  });
+                if (tfld != null)
+                {
+                    member_value = ci.Invoke( new object[] { ((object)tfld)  });
+                }
+                else
+                {
+                    member_value = ci.Invoke(new object[] { (fld != null) ? ((object)fld) : ((object)xfld) });
+                }
 
                 // io
                 for (int d = 0; d < D; d++)
@@ -347,6 +366,8 @@ namespace BoSSS.Solution {
                     fld = new LevelSet(b, iName);
                 else if (ComponentType == typeof(XDGField))
                     fld = new XDGField(new XDGBasis(lstrk, Deg), iName);
+                else if (ComponentType == typeof(TraceDGField))
+                    fld = new TraceDGField(new TraceDGBasis(lstrk, Deg), iName);
                 else
                     throw new NotImplementedException();
 
