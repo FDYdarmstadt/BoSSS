@@ -52,7 +52,7 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
-        /*
+        
         static List<long> PrimeSearch(long start, int inc, int ith) {
             const int measBase = 50000000;
 
@@ -90,7 +90,7 @@ namespace BoSSS.Application.SipPoisson {
             return foundPrimes;
         }
 
-
+        /*
         static void MatrixMult(int ith) {
             const int measBase = 10;
 
@@ -141,27 +141,49 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //Debugger.Launch();
+            Console.WriteLine($"Current process affinity: {Process.GetCurrentProcess().ProcessorAffinity:x}");
+            int[] initialAffinity = CPUAffinity.GetCurrentThreadAffinity().ToArray();
+            Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
             InitMPI(args);
-            //ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
-            //   delegate (int ithread, int i0, int iE) {
-            //       //PrimeSearch(3 + ithread * 2, 3, ithread);
-            //       MatrixMult(ithread);
-            //   }
-            //);
+            Console.WriteLine($"Value from CCP_AFFINITY : {CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("[", ", " , "]") }");
+            Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+
+/*
+            ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
+                delegate (int ithread, int i0, int iE) {
+                    Console.WriteLine($" --- thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+                    CPUAffinity.SetCurrentThreadAffinity(new int[] { initialAffinity[ithread]});
+                    //CPUAffinityWindows.SetCurrentThreadIdealProcessor((uint) initialAffinity[ithread]);
+                    Console.WriteLine($" *** thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+                    
+                   //PrimeSearch(3 + ithread * 2, 3, ithread);
+                   //MatrixMult(ithread);
+                }
+            );
+*/
+            ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
+                delegate (int ithread, int i0, int iE) {
+                    CPUAffinity.SetCurrentThreadAffinity(new int[] { initialAffinity[ithread]});
+                    Console.WriteLine($" ### thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+                    
+                    PrimeSearch(3 + ithread * 2, 3, ithread);
+                   //MatrixMult(ithread);
+                }
+            );
             
             double peakPerf = 0;
             int failCount = 0;
             for(int i = 0; i < 10; i++) {
                 var LastTime = DateTime.Now;
                 using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
-                    var ctrl = SipHardcodedControl.TestCartesian2(13, 3, LinearSolverCode.direct_pardiso, 5);
+                    var ctrl = SipHardcodedControl.TestCartesian2(11, 3, LinearSolverCode.direct_pardiso, 5);
                     ctrl.TracingNamespaces = "*";
                     p.Init(ctrl);
                     p.RunSolverMode();
                 }
 
                 {
-                    const double myTime = 1.238e-02;
+                    const double myTime = 2.987e-03;
 
                     var now = DateTime.Now;
                     var duration = (now - LastTime).TotalSeconds;

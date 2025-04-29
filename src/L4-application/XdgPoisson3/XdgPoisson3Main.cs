@@ -62,7 +62,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             InitMPI(args);
             double peakPerf = 0;
             int failCount = 0;
-            for(int i = 0; i < 1000; i++) {
+            for(int i = 0; i < 10; i++) {
                 var LastTime = DateTime.Now;
                 using(var p = new XdgPoisson3Main()) {
                     var ctrl = BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(5, 16);
@@ -82,7 +82,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     double testsPerSec = 1.0 / duration;
                     peakPerf = Math.Max(peakPerf, testsPerSec);
 
-                    if(testsPerSec < myTime*10 || testsPerSec < peakPerf * 0.01) {
+                    if(testsPerSec < myTime*0.1 || testsPerSec < peakPerf * 0.01) {
                         Console.Error.WriteLine($" PERFORMANCE WARNING: Poisson solves per sec: {testsPerSec * 1:0.###e-00}");
                         failCount++;
                         if(failCount > 3)

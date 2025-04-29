@@ -478,7 +478,7 @@ namespace ilPSP {
                 // OpenMP configuration
                 // ===========================
                 if(ReservedCPUsInitially == null)
-                    ReservedCPUsInitially = CPUAffinity.GetAffinity().ToList().AsReadOnly();
+                    ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
                 IEnumerable<int> ReservedCPUs = ReservedCPUsInitially.ToArray();
 
                 //if(ReservedCPUs.Count() == 1) {
@@ -579,7 +579,7 @@ namespace ilPSP {
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 SetOMPbinding();
-                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetAffinity().ToConcatString("[", ",", "]"));
+                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
                 OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 
                
@@ -629,7 +629,7 @@ namespace ilPSP {
 
                     if (DisableOpenMP_becauseIsSlow) {
                         DisableOpenMP();
-                        CPUAffinity.SetAffinity(DedicatedCPUsForThisRank);
+                        CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank);
                     } else {
                         if(last_OpenMPcpuIdx.SetEquals(OpenMPcpuIdx) == false) {
                             last_OpenMPcpuIdx = OpenMPcpuIdx;

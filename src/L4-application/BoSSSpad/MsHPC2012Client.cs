@@ -715,7 +715,7 @@ namespace BoSSS.Application.BoSSSpad {
             string JobName = myJob.Name;
 
             int MPISz = myJob.NumberOfMPIProcs;
-
+            int NoOfThreads = myJob.NumberOfThreads;
 
             //job modify 190848 /numcores:1 - 1
             int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
@@ -727,8 +727,10 @@ namespace BoSSS.Application.BoSSSpad {
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                str.Write($"mpiexec -n {MPISz} ");
-                //str.Write($"mpiexec ");
+                str.Write($"mpiexec -al 0 -n {MPISz} ");
+                ////str.Write($"mpiexec ");
+                //if(MPISz > 1)
+                //    throw new Exception("mpiexec deactivated");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);
