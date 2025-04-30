@@ -59,6 +59,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
+/*
             InitMPI(args);
             double peakPerf = 0;
             int failCount = 0;
@@ -93,11 +94,14 @@ namespace BoSSS.Application.XdgPoisson3 {
                 }
             }
             csMPI.Raw.mpiFinalize();
+*/
+            //InitMPI(args);
+            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(4, 0.6, CutCellQuadratureMethod.Saye);
+            //throw new Exception("remove me");
+            BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
+                return new XdgPoisson3Main();
+            });
 
-
-            //BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
-            //    return new XdgPoisson3Main();
-            //});
         }
 
 #pragma warning disable 649

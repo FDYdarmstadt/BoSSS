@@ -52,6 +52,7 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+
         /*
         static List<long> PrimeSearch(long start, int inc, int ith) {
             const int measBase = 50000000;
@@ -132,7 +133,9 @@ namespace BoSSS.Application.SipPoisson {
             }
 
         }
+
         */
+
 
 
         /// <summary>
@@ -141,13 +144,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //Debugger.Launch();
+
+            /*
             InitMPI(args);
-            //ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
-            //   delegate (int ithread, int i0, int iE) {
-            //       //PrimeSearch(3 + ithread * 2, 3, ithread);
-            //       MatrixMult(ithread);
-            //   }
-            //);
             
             double peakPerf = 0;
             int failCount = 0;
@@ -181,11 +180,8 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
             csMPI.Raw.mpiFinalize();
+            */
 
-
-
-
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
