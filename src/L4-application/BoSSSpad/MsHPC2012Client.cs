@@ -718,9 +718,9 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             //job modify 190848 /numcores:1 - 1
-            int CoresPerProcess = MPISz * myJob.NumberOfThreads + MPISz * this.NumOfServiceCoresPerMPIprocess;
-            if(CoresPerProcess % 2  == 0)
-                CoresPerProcess++;
+            int CoresPerProcess = myJob.NumberOfThreads + this.NumOfServiceCoresPerMPIprocess;
+            if(CoresPerProcess % 2  != 0) 
+                CoresPerProcess++; // avoid odd numbers
             int NumberOfCores = MPISz * CoresPerProcess;
 
 
