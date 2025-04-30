@@ -232,7 +232,7 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
-
+        /*
         /// <summary>
         /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
         /// </summary>
@@ -245,14 +245,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
+        */
 
 
         /// <summary>
-        /// Additional number of cores which are allocated for 'service';
-        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// Additional number of cores which are allocated for each MPI rank for 'service', e.g., background threads, IO, garbage collection, etc.;
         /// </summary>
         [DataMember]
-        public int NumOfServiceCoresPerMPIprocess = 0;
+        public int NumOfServiceCoresPerMPIprocess = 1;
 
        
         /// <summary>
@@ -718,9 +718,13 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
-            
-            
+            int CoresPerProcess = MPISz * myJob.NumberOfThreads + MPISz * this.NumOfServiceCoresPerMPIprocess;
+            if(CoresPerProcess % 2  == 0)
+                CoresPerProcess++;
+            int NumberOfCores = MPISz * CoresPerProcess;
+
+
+
             bool SingleNode = this.SingleNode;
             var Priority = this.DefaultJobPriority;
             string user = this.Username;
