@@ -737,11 +737,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				{
 					int[] rcvCount = MPIsiz.ForLoop(r => aggGrid.CellPartitioning.GetLocalLength(r));
 					rcvCount[rcvCount.Length - 1] += 1; // the final length which is added on the last processor
-					xadjGl = xadj.MPIGatherv(rcvCount, 0, comm);
+					xadjGl = xadj.MPIGatherv(rcvCount, worldMPIOffset, comm); // store at the first responsible processor of this level
 				}
 
-				int[] adjGl = adj.MPIGatherv(locLengths, 0, comm);
-				if (MPIrnk == 0)
+				int[] adjGl = adj.MPIGatherv(locLengths, worldMPIOffset, comm); // store at the first responsible processor of this level
+				if (MPIrnk == worldMPIOffset)
 					Debug.Assert(xadjGl.Last() == adjGl.Length);
 
 				// return
@@ -780,7 +780,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				int MPIrnk = MGMapping.MpiRank;
 				int[] part;
-				if (MPIrnk == 0) { //call metis on only the rank 0 (opComm)
+				if (MPIrnk == worldMPIOffset) { //call metis on only the rank 0 (opComm)
 					int ncon = 1;
 					int edgecut = 0;
 					int[] options = new int[METIS.METIS_NOPTIONS];
@@ -814,7 +814,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				}
 
 				//broadcast to every processor. (this is necessary to create column mapping)
-				var partGlob = part.MPIBroadcast(0, MGMapping.MPI_Comm);
+				var partGlob = part.MPIBroadcast(worldMPIOffset, MGMapping.MPI_Comm);
 
 				int[] i0part = new int[NoOfParts+1]; //new i0partitioning for each part
 				for (int p = 1; p < NoOfParts+1; p++)
