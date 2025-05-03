@@ -277,7 +277,7 @@ namespace MPI.Wrappers {
             // -----------------------------------------------------
             // 2nd phase: gather data 
             // -----------------------------------------------------
-            byte[] rcvBuffer = buffer.MPIAllGatherv(Sizes);
+            byte[] rcvBuffer = buffer.MPIAllGatherv(Sizes, comm);
 
             // -----------------------------------------------------
             // 3rd phase: de-serialize
@@ -1499,10 +1499,17 @@ namespace MPI.Wrappers {
             return send.Byte_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
 
-        /// <summary>
-        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
-        /// </summary>
-        static private byte[] Byte_MPIAllGatherv(this byte[] send, int[] m_recvcounts, MPI_Comm comm) {
+		/// <summary>
+		/// Gathers all byte[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+		/// </summary>
+		static public byte[] MPIAllGatherv(this byte[] send, int[] recvcounts, MPI_Comm comm) {
+			return send.Byte_MPIAllGatherv(recvcounts, comm);
+		}
+
+		/// <summary>
+		/// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+		/// </summary>
+		static private byte[] Byte_MPIAllGatherv(this byte[] send, int[] m_recvcounts, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             int rcs = m_recvcounts.Sum();
             if (rcs == 0)
