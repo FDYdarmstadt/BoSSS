@@ -1431,7 +1431,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				throw new ArgumentException("Mismatch in length of coarse grid vector (input).", "IN_coarse");
 
 			double[] OUT_fine = new double[subCommFromCoarseProlongationOperator.RowPartitioning.LocalLength];
-			this.subCommToCoarseRestrictionOperator.SpMV(1.0, IN_coarse, 0.0, OUT_fine);
+			this.subCommFromCoarseProlongationOperator.SpMV(1.0, IN_coarse, 0.0, OUT_fine);
 
 			//if (this.LeftChangeOfBasis != null) {
 			//	double[] LB = new double[OUT_coarse.Count];
@@ -1881,14 +1881,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				if (TpMapping.CoarserLevel == null)
 					throw new NotSupportedException("Unexpected null CoarserLevel.");
 
-				if (CoarserLevelSolver is TaskParallelOrthoMG ssCoarse) { 
+				if (CoarserLevelSolver is TaskParallelOrthoMG ssCoarse) {
 					ssCoarse.FinerLevelCoarseComm = myTask != TpTaskType.Smoother ? subComm : csMPI.Raw._COMM.NULL;
 					ssCoarse.FinerLevelCoarseCommRank = myTask != TpTaskType.Smoother ? subCommRank : -1;
 					ssCoarse.FinerLevelCoarseCommMap = myTask != TpTaskType.Smoother ? FinerLevelCoarseCommMap : null;
 
 					ssCoarse.Init(TpMapping.CoarserLevel);
-				} else
-					InitiateCoarsestSolver();
+				} else {
+					if (myTask != TpTaskType.Smoother)
+						InitiateCoarsestSolver();
+				}
 			}
 		}
 
