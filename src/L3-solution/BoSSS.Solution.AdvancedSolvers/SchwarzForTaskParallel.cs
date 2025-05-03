@@ -188,92 +188,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_OverlapScaling = null;
         }
 
-        (int[] xadj, int[] adj) GetGridGraphForMetis(MultigridOperator op) {
-            using (new FuncTrace()) {
-                int Jloc = op.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int Jglb = checked((int)op.GridData.CellPartitioning.TotalLength);
-                long[] GlidxExt = op.GridData.iParallel.GlobalIndicesExternalCells;
-
-                var comm = op.OperatorMatrix.MPI_Comm;
-                int MPIrnk = op.OperatorMatrix.RowPartitioning.MpiRank;
-                int MPIsiz = op.OperatorMatrix.RowPartitioning.MpiSize;
-
-                int[][] Neighbors = op.GridData.iLogicalCells.CellNeighbours;
-                int L = Neighbors.Sum(ll => ll.Length);
-                int[] adj = new int[L]; // METIS input; neighbor vertices
-                int[] xadj = new int[Jloc + (MPIrnk == MPIsiz - 1 ? 1 : 0)]; // METIS input: offset into `adj`
-                int cnt = 0;
-                int j0 = checked((int)op.GridData.CellPartitioning.i0);
-                for (int j = 0; j < Jloc; j++) {
-                    xadj[j] = cnt;
-                    int[] Neighbors_j = Neighbors[j];
-                    for (int iN = 0; iN < Neighbors_j.Length; iN++) {
-                        int jNeigh = Neighbors_j[iN];
-                        if (jNeigh < Jloc) {
-                            // local cell
-                            adj[cnt] = jNeigh + j0;
-                        } else {
-                            adj[cnt] = checked((int)GlidxExt[jNeigh - Jloc]);
-                        }
-                        cnt++;
-                    }
-                }
-                Debug.Assert(cnt == L);
-                if (MPIrnk == MPIsiz - 1)
-                    xadj[Jloc] = cnt;
-                Debug.Assert(xadj[0] == 0);
-
-                // convert `xadj` to global indices
-                int[] locLengths = L.MPIAllGather(comm);
-                Debug.Assert(locLengths.Length == MPIsiz);
-                int[] xadjOffsets = new int[MPIsiz];
-                for (int i = 1; i < locLengths.Length; i++) {
-                    xadjOffsets[i] = xadjOffsets[i - 1] + locLengths[i - 1];
-                }
-                for (int j = 0; j < xadj.Length; j++)
-                    xadj[j] += xadjOffsets[MPIrnk];
-
-                // gather `xadj` and `adj` on Rank 0
-                int[] xadjGl;
-                {
-                    int[] rcvCount = MPIsiz.ForLoop(r => op.GridData.CellPartitioning.GetLocalLength(r));
-                    rcvCount[rcvCount.Length - 1] += 1; // the final length which is added on the last processor
-                    xadjGl = xadj.MPIGatherv(rcvCount, 0, comm);
-                }
-
-                int[] adjGl = adj.MPIGatherv(locLengths, 0, comm);
-                if (MPIrnk == 0)
-                    Debug.Assert(xadjGl.Last() == adjGl.Length);
-
-                // return
-                return (xadjGl, adjGl);
-            }
-        }
-
-        int[] GetNoOfSpeciesList(MultigridOperator op) {
-
-            int J = op.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-            int[] NoOfSpecies = new int[J];
-
-            XdgAggregationBasis xb = (XdgAggregationBasis)(op.Mapping.AggBasis.FirstOrDefault(b => b is XdgAggregationBasis));
-
-            if (xb != null) {
-                for (int jCell = 0; jCell < J; jCell++) {
-                    NoOfSpecies[jCell] = xb.GetNoOfSpecies(jCell);
-                }
-            } else {
-                NoOfSpecies.SetAll(1);
-            }
-
-            // MPI gather on rank 0
-            int MPIsz = op.Mapping.MpiSize;
-            int[] rcvCount = MPIsz.ForLoop(r => op.GridData.CellPartitioning.GetLocalLength(r));
-            return NoOfSpecies.MPIGatherv(rcvCount, 0, op.OperatorMatrix.MPI_Comm);
-        }
-
-        //int thisCommRank;
-        //int thisCommSize;
-
 		/// <summary>
 		/// Uses METIS to assign a Schwarz block index to each cell on this processor.
 		/// Note that the Schwarz block index is **not** the MPI rank, since the number of Schwarz blocks here is typically different than the MPI size
@@ -284,66 +198,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// - content: for cell `j`, the global (among all MPI processors) Schwarz block index to which this cell belongs
 		/// Note: at first, all processors have all blocks, although the block might be empty on the respective processor.
 		/// </returns>
-		int[] ComputeSchwarzBlockIndexMETIS(TaskParallelMGOperator op) {
-			using (new FuncTrace()) {
-				(int[] xadj, int[] adjncy) =  (op.m_xadj, op.m_adj);
-                int[] NoOfSpecies = op.m_NoOfSpecies;
 
-				int MPIrnk = op.m_MultigridMapping.MpiRank;
-				int[] part;
-				int leaderRank = op.worldMPIOffset; //instead of doing this at the 0 for each mg level, 
-				if (MPIrnk == leaderRank) {
-					int ncon = 1;
-					int edgecut = 0;
-					int[] options = new int[METIS.METIS_NOPTIONS];
-					METIS.SETDEFAULTOPTIONS(options);
-
-					options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
-					options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
-					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
-					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
-
-					int J = xadj.Length - 1;
-					part = new int[J];
-					Debug.Assert(xadj.Where(idx => idx > adjncy.Length).Count() == 0);
-					Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
-
-					int NoOfParts = this.config.NoOfBlocks;
-
-					METIS.PARTGRAPHKWAY(
-							ref J, ref ncon,
-							xadj,
-							adjncy.ToArray(),
-							NoOfSpecies,
-							null,
-							null,
-							ref NoOfParts,
-							null,
-							null,
-							options,
-							ref edgecut,
-							part);
-				} else {
-					part = null;
-				}
-
-				// scatter back to processors
-				int MPIsz = op.m_MultigridMapping.MpiSize;
-				int[] sendCount = MPIsz.ForLoop(r => op.m_MultigridMapping.GridData.CellPartitioning.GetLocalLength(r));
-				var partLoc = part.MPIScatterv(sendCount, 0, op.OperatorMatrix.MPI_Comm);
-				return partLoc;
-			}
-		}
-
-
-		long[] ComputeSchwarzBlockIndexMETISGlobal(TaskParallelMGOperator op) {
+		long[] ComputeSchwarzBlockIndexMETISGlobal(StandAloneOperatorMappingPairWithGridData op) {
 			using (new FuncTrace()) {
 				(int[] xadj, int[] adjncy) = (op.m_xadj, op.m_adj);
 				int[] NoOfSpecies = op.m_NoOfSpecies;
 
-				int MPIrnk = op.m_MultigridMapping.MpiRank;
 				int[] part;
-				if (MPIrnk == 0) {
+				if (thisCommRank == 0) {
 					int ncon = 1;
 					int edgecut = 0;
 					int[] options = new int[METIS.METIS_NOPTIONS];
@@ -404,8 +266,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return neighbors;
 		}
 
-		void EnlargeSchwarzBlock(TaskParallelMGOperator op, SchwarzBlock block) {
-            MultigridMapping Mapping = op.m_MultigridMapping;
+		void EnlargeSchwarzBlock(StandAloneOperatorMappingPairWithGridData op, SchwarzBlock block) {
+            var Mapping = op.DgMapping;
 			using (var tr = new FuncTrace()) {
 
 				var blockCells = block.jGlobal.ToList();
@@ -438,7 +300,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					}
 
 				} else {
-					tr.Info("Running Schwarz TP without overlap (at level " + m_op.level + ")");
+					tr.Info("Running Schwarz TP without overlap (at level not known )");
 				}
 
 				Debug.Assert(blockCells.Distinct().Count() == blockCells.Count, "Duplicate cells in Schwarz block");
@@ -509,13 +371,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return block;
         }
 
-
-        SchwarzBlock[][] ExchangeBlocks(SchwarzBlock[] localPartsOfBlocks, MultigridMapping Mapping) {
+        SchwarzBlock[][] ExchangeBlocks(SchwarzBlock[] localPartsOfBlocks) {
             using (new FuncTrace()) {
                 Debug.Assert(localPartsOfBlocks.Length == m_config.NoOfBlocks);
                 int NoOfBlocks = localPartsOfBlocks.Length;
-                int MyRank = Mapping.MpiRank;
-                int MPIsize = Mapping.MpiSize;
+                int MyRank = thisCommRank;
+                int MPIsize = thisCommSize;
 
                 List<SchwarzBlock>[] ret = NoOfBlocks.ForLoop(iBlk => new List<SchwarzBlock>());
                 foreach (var b in localPartsOfBlocks) {
@@ -584,7 +445,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        (long i0Global, int CellLen)[][] SanitizeSchwarzBlocks(SchwarzBlock[][] SchwarzBlocksGlobal, MultigridMapping Mapping) {
+        (long i0Global, int CellLen)[][] SanitizeSchwarzBlocks(SchwarzBlock[][] SchwarzBlocksGlobal) {
             using (new FuncTrace()) {
                 int NoOfBlocks = SchwarzBlocksGlobal.Length;
                 Debug.Assert(NoOfBlocks == config.NoOfBlocks);
@@ -604,11 +465,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             if (i > 0)
                                 Debug.Assert(SchwarzBlock_iBlk[i - 1].iOriginRank < SchwarzBlock_iBlk[i].iOriginRank);
                             Debug.Assert(SchwarzBlock_iBlk[i].iOriginRank >= 0);
-                            Debug.Assert(SchwarzBlock_iBlk[i].iOriginRank < Mapping.MpiSize);
+                            Debug.Assert(SchwarzBlock_iBlk[i].iOriginRank < thisCommSize);
                         }
 #endif
 
-                        if (OwnerProcess == Mapping.MpiRank) {
+                        if (OwnerProcess == thisCommRank) {
 
                             // concat all blocks
                             // =================
@@ -694,7 +555,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 int LocalLength = cnt;
-                //var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, op.OperatorMatrix.MPI_Comm, i0isLocal: true);
                 var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, op_comm, i0isLocal: true);
                 return partitioning;
             }
@@ -712,13 +572,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///   - 1st index: Schwarz block index `i`; the respective list at `i` is only non-null, if block `i` is beeing owned by the current process
         ///   - 2nd index: Enumeration of matrix rows
         /// </returns>
-        private (BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices) GetRedistributionMatrix(TaskParallelMGOperator op, (long i0Global, int CellLen)[][] SchwarzBlocksGlobal) {
+        private (BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices) GetRedistributionMatrix(StandAloneOperatorMappingPairWithGridData op, (long i0Global, int CellLen)[][] SchwarzBlocksGlobal) {
             using (new FuncTrace()) {
                 int NoOfBlocks = SchwarzBlocksGlobal.Length;
                 Debug.Assert(NoOfBlocks == m_config.NoOfBlocks);
 
                 BlockPartitioning TargetPartitioning = GetPartitioning(SchwarzBlocksGlobal);
-                BlockMsrMatrix RedistMatrix = new BlockMsrMatrix(TargetPartitioning, op.OperatorMatrix._RowPartitioning);
+                BlockMsrMatrix RedistMatrix = new BlockMsrMatrix(TargetPartitioning, OpMtx._RowPartitioning);
                 var RowIndices = new List<long>[NoOfBlocks];
                 var ColIndices = new List<long>[NoOfBlocks];
                 {
@@ -941,29 +801,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         int GetBlockOwnerRank(int iBlock) {
-            int MPIsz = m_op.NoOfSmootherProcs;
-            return ((iBlock % MPIsz) + m_op.worldMPIOffset);
+            Debug.Assert(thisCommSize == m_op.OperatorMatrix._RowPartitioning.MpiSize);
+            return (iBlock % thisCommSize);
             //return (iBlock % (MPIsz - 1)) + 1; // we avoid rank 0, because rank 0 is doing the coarse solve
         }
 
+		StandAloneOperatorMappingPairWithGridData m_op;
+		BlockMsrMatrix OpMtx => m_op.OperatorMatrix;
+        ICoordinateMapping Mapping => m_op.DgMapping;
+        
+		MPI_Comm op_comm => Mapping.MPI_Comm;
 
-        //parallelTask myTask;
+		public int thisCommRank => Mapping.MpiRank;
+		public int thisCommSize => Mapping.MpiSize;
 
-        //MPI_Comm my_comm => sub_comm != null ? sub_comm : op_comm;
-
-        //MPI_Comm sub_comm;
-
-        MPI_Comm op_comm => m_op.OperatorMatrix.MPI_Comm;
-
-        TaskParallelMGOperator m_op;
-
-        MultigridMapping m_worldLevelMGMaping => m_op.m_MultigridMapping;
-
-        public void Init(MultigridOperator op) { 
-            throw new NotSupportedException("Use Init(TaskParallelMGOperator op) instead.");
+		public void Init(MultigridOperator op) {
+			throw new NotSupportedException("Use Init(StandAloneOperatorMappingPairWithGridData op) instead.");
 		}
 
-		public void Init(TaskParallelMGOperator op) {
+
+		public void Init(StandAloneOperatorMappingPairWithGridData op) {
 #if DEBUG
             InitWithTest(op, true);
 #else
@@ -971,74 +828,68 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
-
 		/// <summary>
 		/// this step can be performed on world communicator how ever, it should return results on smoother operator communicator
 		/// </summary>
 		/// <param name="op"></param>
 		/// <param name="doTest"></param>
 		/// <exception cref="ApplicationException"></exception>
-		public void InitWithTest(TaskParallelMGOperator op, bool doTest) {
+		public void InitWithTest(StandAloneOperatorMappingPairWithGridData op, bool doTest) {
             //Debugger.Launch();
             using (var f = new FuncTrace()) {
                 m_op = op;
-				MultigridMapping m_worldLevelMGMaping = op.m_MultigridMapping;
                 var locBlocks = CalculateBlocks(op);
-                var locDOFs = SanitizeSchwarzBlocks(locBlocks, m_worldLevelMGMaping);
-
+                var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 				var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
-                RedistAndIndices.RowIndices.ForEach(d => {
-                    if (d != null)
-                        d.SaveToTextFileDebugUnsteady("sRedistAndIndices.RowIndices", ".txt");
-                });
-                RedistAndIndices.ColIndices.ForEach(d => {
-                    if (d != null)
-                        d.SaveToTextFileDebugUnsteady("sRedistAndIndices.ColIndices", ".txt");
-                });
-
 
                 // obtain the part of the matrix which should be solved on this processor via multiplication with the redistribution matrix.
-                var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, op.OperatorMatrix);
-
-                LocalBlocks.SaveToTextFileSparseDebug($"d_localBlock.txt");
-                RedistAndIndices.Redist.SaveToTextFileSparseDebug($"d_Redist.txt");
-                op.OperatorMatrix.SaveToTextFileSparseDebug($"d_OpMatrix.txt");
-                //Debugger.Launch();
+                var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, OpMtx);
 
                 // create the local block solvers
                 m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, new int[] { });
                 m_BlockSizes = RedistAndIndices.RowIndices.Select(IDXs => IDXs?.Count ?? -12345).ToArray();
 
-                m_comm = new CommunicationStuff(this, op.OperatorMatrix._ColPartitioning, RedistAndIndices.ColIndices);
+                m_comm = new CommunicationStuff(this, OpMtx._ColPartitioning, RedistAndIndices.ColIndices);
 
                 if (doTest)
                     TestCommunication(RedistAndIndices.Redist);
 
                 if (config.EnableOverlapScaling && config.Overlap > 0) {
-                    int L = m_worldLevelMGMaping.LocalLength;
-                    double[] temp = new double[L];
-                    temp.SetAll(1.0);
+                    CalculateScaling();
 
-                    double[][] fwd = AllocBlockMem();
-                    m_comm.CommRHStoBlocks(temp, fwd);
-                    temp.Clear();
-                    m_comm.AccBlockSol(temp, fwd);
-
-                    for (int l = 0; l < L; l++)
-                        temp[l] = 1.0 / temp[l];
-
-                    //temp.SaveToTextFile("OverlapScaling.txt");
-
-                    m_comm.CommRHStoBlocks(temp, fwd);
-                    m_OverlapScaling = fwd;
-                }
+				}
             }
         }
 
-		SchwarzBlock[][] CalculateBlocks(TaskParallelMGOperator op) {
-			int MPIrnk = op.m_MultigridMapping.MpiRank;
+		/// <summary>
+		/// Calculates the scaling for the overlap region.
+		/// </summary>
+		void CalculateScaling() {
+			int L = Mapping.LocalLength;
+			double[] temp = new double[L];
+			temp.SetAll(1.0);
 
+			double[][] fwd = AllocBlockMem();
+			m_comm.CommRHStoBlocks(temp, fwd);
+			temp.Clear();
+			m_comm.AccBlockSol(temp, fwd);
 
+			for (int l = 0; l < L; l++)
+				temp[l] = 1.0 / temp[l];
+
+			//temp.SaveToTextFile("OverlapScaling.txt");
+
+			m_comm.CommRHStoBlocks(temp, fwd);
+			m_OverlapScaling = fwd;
+		}
+
+		/// <summary>
+		/// Calculates the Schwarz blocks for the given operator
+		/// </summary>
+		/// <param name="op"></param>
+		/// <returns></returns>
+		SchwarzBlock[][] CalculateBlocks(StandAloneOperatorMappingPairWithGridData op) {
+			int MPIrnk = thisCommRank;
 			var cellToBlock = ComputeSchwarzBlockIndexMETISGlobal(op);
 
 			SchwarzBlock[] Blocks = new SchwarzBlock[this.config.NoOfBlocks];
@@ -1072,12 +923,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				}
 
 			}
-			var locBlocks = ExchangeBlocks(Blocks, op.m_MultigridMapping);
+			var locBlocks = ExchangeBlocks(Blocks);
 
 			return locBlocks;
 		}
 
-		void CalculateBlockCellToDOFdata(TaskParallelMGOperator op, SchwarzBlock Block) {
+		/// <summary>
+		/// Filters/calculates the matrix data for the given block.
+		/// </summary>
+		/// <param name="op"></param>
+		/// <param name="Block"></param>
+		void CalculateBlockCellToDOFdata(StandAloneOperatorMappingPairWithGridData op, SchwarzBlock Block) {
 			var blockCells = Block.jGlobal;
             Block.i0Cell = new long[blockCells.Length];
             Block.lenCell = new int[blockCells.Length];
@@ -1092,14 +948,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         double[][] m_OverlapScaling = null;
 
-        private void TestCommunication(BlockMsrMatrix Redist) {
+		/// <summary>
+		/// Test the communication of the redistribution matrix.
+		/// </summary>
+		/// <param name="Redist"></param>
+		/// <exception cref="ApplicationException"></exception>
+		private void TestCommunication(BlockMsrMatrix Redist) {
             using (new FuncTrace()) {
                 int NoOfBlocks = this.m_BlockSolvers.Length;
 
                 // create test data
                 int LL = m_op.OperatorMatrix.RowPartitioning.LocalLength;
                 double[] Origin = new double[LL];
-                Origin.FillRandom(seed: m_op.DgMapping.MpiRank);
+                Origin.FillRandom(seed: thisCommRank);
+
 
                 // communicate data forward and backward using the Redistribution matrix:
                 double[] Dist = new double[Redist.RowPartitioning.LocalLength];
@@ -1116,7 +978,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for (int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
                     distCommCat = distCommCat.Cat(distComm[iBlock] ?? new double[0]);
                 }
-                double fwdErr = distCommCat.MPI_L2DistPow2(Dist);
+                double fwdErr = distCommCat.MPI_L2DistPow2(Dist,op_comm);
                 Console.WriteLine("Forward communication difference = " + fwdErr);
                 if (fwdErr != 0)
                     throw new ApplicationException("Forward communication error; err = " + fwdErr);
@@ -1133,8 +995,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-
-        double[][] AllocBlockMem() {
+		/// <summary>
+		/// Allocates the memory for the blocks.
+		/// </summary>
+		/// <returns></returns>
+		double[][] AllocBlockMem() {
             return m_BlockSizes.Select(sz => sz > 0 ? new double[sz] : null).ToArray();
         }
 
@@ -1525,9 +1390,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> {
             using (new FuncTrace()) {
-
-                //if (myTask == parallelTask.Coarse)
-                //    throw new AccessViolationException("failed to perform task parallelization");
 
                 if (!IsXandBComitted)
                     CommitInitialXandB(X, B);
