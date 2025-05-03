@@ -52,6 +52,8 @@ using Newtonsoft.Json.Linq;
 using System.Reflection.Emit;
 using System.Drawing;
 using NUnit.Framework.Internal;
+using BoSSS.Foundation.IO;
+using System.ComponentModel.Design;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -463,6 +465,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	public class TaskParallelMGOperator : IOperatorMappingPair {
 
 		/// <summary>
+		/// An ad-hoc information storing class for World-Level MG operator
 		/// Constructor (responsible for world to sub communicators)
 		/// should be defined on world communicator and then will be used on sub communicators with the solver
 		/// Basically this defines the operator matrix and the prolongation matrix and transfers them to the responsible processors without changing the communicator
@@ -849,6 +852,189 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 	}
 
+	public class StandAloneOperatorMappingPairWithGridData : IOperatorMappingPair {
+		BlockMsrMatrix m_OpMtx;
+		PseudoCoordinateMapping m_Mapping;
+		public int[] m_xadj;
+		public int[] m_adj;
+		public int[] m_NoOfSpecies;
+		public (long i0Cell, int lenCell)[] CellToDOFdata;
+
+		/// <summary>
+		/// ctor for the stand alone DG operator mapping pair
+		/// Assumption: block indices are equilavent to cell indices
+		/// </summary>
+		/// <param name="OperatorMtx"></param>
+		/// <param name="cellIndexMapping">old cell indicis to new cell indices for grid data (cells often get re-distributed) </param>
+		/// <param name="xadj"></param>
+		/// <param name="adj"></param>
+		/// <param name="NoOfSpecies">a weight information</param>
+		public StandAloneOperatorMappingPairWithGridData(BlockMsrMatrix OperatorMtx, List<(long source, long target)> cellIndexMapping, int[] xadj, int[] adj, int[] NoOfSpecies) {
+			m_OpMtx = OperatorMtx;
+
+			Debug.Assert(cellIndexMapping.Count == OperatorMtx._RowPartitioning.TotalNoOfBlocks);
+			m_Mapping = new PseudoCoordinateMapping(OperatorMtx._RowPartitioning);
+			// if the master/leader proc, get the grid/csr data and convert to the new cell indices
+			if (OperatorMtx._RowPartitioning.MpiRank == 0) {
+				m_xadj = new int[xadj.Length];
+				m_adj = new int[adj.Length];
+				m_NoOfSpecies = new int[NoOfSpecies.Length];
+				RemapCSRAndSpieces(xadj, adj, NoOfSpecies, cellIndexMapping, out m_xadj, out m_adj, out m_NoOfSpecies);
+			}
+
+			CellToDOFdata = CellIndexToDOFs(m_Mapping);
+		}
+
+		/// <summary>
+		/// A very ad-hoc and ugly way to deal with DOF data
+		/// </summary>
+		/// <param name="map"></param>
+		/// <returns></returns>
+		(long i0Cell, int lenCell)[] CellIndexToDOFs(IBlockPartitioning map) {
+			int J = map.LocalNoOfBlocks;
+			var myList = new (long i0Cell, int lenCell)[J]; //for cell currently on this proc (may be distributed to another or not)
+
+			// Create matrix entry information from cell indices
+			for (int jCellLoc = 0; jCellLoc < J; jCellLoc++) {
+				myList[jCellLoc] = (map.GetBlockI0(jCellLoc), map.GetBlockLen(jCellLoc));
+			}
+			(long i0Cell, int lenCell)[][] globList = myList.MPIAllGatherO(map.MPI_Comm);
+			var flatGlobArray = globList.SelectMany(x => x).ToArray();
+
+			return flatGlobArray;
+		}
+
+		/// <summary>
+		/// Remaps the CSR and values of the matrix to the new cell indices
+		/// </summary>
+		/// <param name="xadj"></param>
+		/// <param name="adj"></param>
+		/// <param name="NoOfSpecies"></param>
+		/// <param name="cellIndexMapping"></param>
+		/// <param name="newXadj"></param>
+		/// <param name="newAdj"></param>
+		/// <param name="newNoOfSpecies"></param>
+		void RemapCSRAndSpieces(	int[] xadj, int[] adj, int[] NoOfSpecies,
+								List<(long source, long target)> cellIndexMapping,
+								out int[] newXadj, 	out int[] newAdj, out int[] newNoOfSpecies) {
+			int N = xadj.Length - 1;
+			// ensure mapping size matches
+			Debug.Assert(cellIndexMapping.Count == N, "cellIndexMapping must cover every row");
+
+			// 1) build old→new permutation array
+			var perm = new int[N];
+			foreach (var (src, tgt) in cellIndexMapping) {
+				Debug.Assert(src >= 0 && src < N, $"src {src} out of range");
+				Debug.Assert(tgt >= 0 && tgt < N, $"tgt {tgt} out of range");
+				perm[src] = (int)tgt;
+			}
+
+#if DEBUG
+			// ensure perm is a true permutation
+			var seen = new bool[N];
+			for (int i = 0; i < N; i++) {
+				Debug.Assert(!seen[perm[i]], $"duplicate target {perm[i]}");
+				seen[perm[i]] = true;
+			}
+#endif
+
+			// 2) invert it: newRow→oldRow
+			var invPerm = new int[N];
+			for (int oldRow = 0; oldRow < N; oldRow++) {
+				invPerm[perm[oldRow]] = oldRow;
+			}
+
+#if DEBUG
+			// sanity‐check invertibility
+			for (int i = 0; i < N; i++) {
+				Debug.Assert(invPerm[perm[i]] == i, "invPerm not inverse of perm");
+			}
+#endif
+			// 3) rebuild CSR
+			var adjList = new List<int>(adj.Length);
+			newXadj = new int[N + 1];
+			for (int newRow = 0; newRow < N; newRow++) {
+				newXadj[newRow] = adjList.Count;
+				int oldRow = invPerm[newRow];
+				Debug.Assert(oldRow >= 0 && oldRow < N, "oldRow out of range");
+				for (int k = xadj[oldRow]; k < xadj[oldRow + 1]; k++) {
+					int oldNb = adj[k];
+					Debug.Assert(oldNb >= 0 && oldNb < N, $"neighbor {oldNb} out of range");
+					adjList.Add(perm[oldNb]);
+				}
+			}
+			newXadj[N] = adjList.Count;
+			Debug.Assert(newXadj[0] == 0);
+			Debug.Assert(newXadj[N] == adj.Length, "total edges count changed");
+			newAdj = adjList.ToArray();
+			Debug.Assert(newAdj.Length == adj.Length);
+
+			// 4) remap NoOfSpecies
+			newNoOfSpecies = new int[N];
+			foreach (var (src, tgt) in cellIndexMapping) {
+				newNoOfSpecies[tgt] = NoOfSpecies[src];
+			}
+			Debug.Assert(newNoOfSpecies.Length == N);
+		}
+
+		public BlockMsrMatrix OperatorMatrix => m_OpMtx;
+
+		public ICoordinateMapping DgMapping => m_Mapping;
+
+		class PseudoCoordinateMapping : BlockPartitioning, ICoordinateMapping {
+
+			public PseudoCoordinateMapping(IBlockPartitioning blockPartitioning) : base(blockPartitioning) {
+				// this is used for the stand alone MG solver
+			}	
+
+			public int NoOfVariables => throw new NotImplementedException();
+
+			public int[] DgDegree => throw new NotImplementedException();
+
+			public int NoOfExternalCells => throw new NotImplementedException();
+
+			public int SpatialDimension => throw new NotImplementedException();
+
+			public int NoOfLocalUpdatedCells => throw new NotImplementedException();
+
+			public int LocalCellCount => throw new NotImplementedException();
+
+			public SpeciesId[] UsedSpecies => throw new NotImplementedException();
+
+			public int GetLength(int jLoc) {
+				throw new NotImplementedException();
+			}
+
+			public int GetNoOfSpecies(int jCell) {
+				throw new NotImplementedException();
+			}
+
+			public int GetSpeciesIndex(int jCell, SpeciesId SId) {
+				throw new NotImplementedException();
+			}
+
+			public long GlobalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
+				throw new NotImplementedException();
+			}
+
+			public long GlobalUniqueIndex(int ifld, int jCell, int n) {
+				throw new NotImplementedException();
+			}
+
+			public bool IsXDGvariable(int iVar) {
+				throw new NotImplementedException();
+			}
+
+			public int LocalUniqueIndex(int ifld, int jCell, int iSpec, int n) {
+				throw new NotImplementedException();
+			}
+
+			public int LocalUniqueIndex(int ifld, int jCell, int n) {
+				throw new NotImplementedException();
+			}
+		}
+	}
+
 	/// <summary>
 	/// A recursive multigrid method, where the convergence (i.e. non-divergence) of each mesh level is guaranteed by an
 	/// orthonormalization approach, similar to flexible GMRES, 
@@ -1138,14 +1324,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			using (var tr = new FuncTrace()) {
                 if (object.ReferenceEquals(op, m_OpMapPair))
                     return; // already initialized
-				else if (FinerLevelCoarseComm == csMPI.Raw._COMM.NULL) 
-					return; // this init called by the smoother of the finer, which is not needed.
+
 				else
                     this.Dispose();
 
+				csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+
+				if (FinerLevelCoarseComm == csMPI.Raw._COMM.NULL)
+					return; // this init called by the smoother of the finer, which is not needed. // it can be still needed for smoother
+
+
 				this.m_OpMapPair = op;
                 var Mtx = op.OperatorMatrix;
-
 
 				var MgMap = op.DgMapping;
 
@@ -1170,31 +1361,53 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				// initiate coarser level
 				// ======================
+				if (TpLevel == 0)
+					csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 				InitCoarse();
-
-				// init smoother
-				// =============
-				if (PreSmoother != null) {
-					if (PreSmoother is ISubsystemSolver ssPreSmother) {
-						ssPreSmother.Init(op);
-					} else {
-
-						//throw new NotSupportedException($"Unable to initialize pre-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
-					}
-
+				if (TpLevel == 0) {
+					csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+					double[] a = new double[] { worldCommRank };
+					a = a.MPIMax(csMPI.Raw._COMM.WORLD);
 				}
 
-				if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother)) {
-					//PostSmoother.Init(op);
-					if (PostSmoother is ISubsystemSolver ssPostSmother) {
-						ssPostSmother.Init(op);
-					} else {
-						//throw new NotSupportedException($"Unable to initialize post-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
-					}
-				}
+
 
 			}
         }
+
+		void InitSmoothers(TaskParallelMGOperator op) {
+			var SmootherOpMappingPairOnSubComm = new StandAloneOperatorMappingPairWithGridData(subCommSmootherOpMatrix, columnMappingWorldToSmoother, TpMapping.m_xadj, TpMapping.m_adj, TpMapping.m_NoOfSpecies);
+
+			// init smoother
+			// =============
+			if (PreSmoother != null) {
+				if (PreSmoother is SchwarzForTaskParallel schwarzTp) {
+					schwarzTp.subCommSmootherOpMatrix = subCommSmootherOpMatrix;
+					schwarzTp.thisCommRank = subCommRank;
+					schwarzTp.thisCommSize = subCommSize;
+					schwarzTp.Init(SmootherOpMappingPairOnSubComm);
+				} else if (PreSmoother is ISubsystemSolver ssPreSmother) {
+					ssPreSmother.Init(SmootherOpMappingPairOnSubComm);
+				} else {
+					throw new NotSupportedException($"Unable to initialize pre-smoother if it is not a {typeof(ISubsystemSolver)} and until multigrid operator is designed to work on sub communicators, this won't work");
+				}
+			}
+
+			// init post smoother
+			// =============
+			if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother)) {
+				if (PostSmoother is SchwarzForTaskParallel schwarzTp) {
+					schwarzTp.subCommSmootherOpMatrix = subCommSmootherOpMatrix;
+					schwarzTp.thisCommRank = subCommRank;
+					schwarzTp.thisCommSize = subCommSize;
+					schwarzTp.Init(SmootherOpMappingPairOnSubComm);
+				} else if (PostSmoother is ISubsystemSolver ssPostSmother) {
+					ssPostSmother.Init(SmootherOpMappingPairOnSubComm);
+				} else {
+					throw new NotSupportedException($"Unable to initialize pre-smoother if it is not a {typeof(ISubsystemSolver)} and until multigrid operator is designed to work on sub communicators, this won't work");
+				}
+			}
+		}
 
 		//public void Restrict<T1, T2>(T1 IN_fine, T2 OUT_coarse)
 		//		where T1 : IList<double>
@@ -1577,6 +1790,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			var CommToSubCommMappingD = new int[totalCount];
 			var WorldToSubCommMappingD = new int[TpMapping.worldCommSize];
+			WorldToSubCommMappingD.SetAll(-1);
 			for (int i = 0; i < totalCount; i++) {
 				CommToSubCommMappingD[i] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
 				WorldToSubCommMappingD[i + TpMapping.worldMPIOffset] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
@@ -1633,7 +1847,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				subCommCoarseOpMatrix = ChangeCommunicator(CoarserTpMapping.OperatorMatrix.CloneAs(), CoarserTpMapping.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 				PARSolver.DefineMatrix(subCommCoarseOpMatrix);
 			}
-			csMPI.Raw.Barrier(thisComm);
+			//csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 			// for the final coarse level solver (probabaly direct solver), we need to actually change the communicator of its matrix
 			//throw new NotImplementedException("Not yet implemented.");
 		}
@@ -1843,9 +2057,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 				WriteDebug(0, resNorm, $"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}");
 
-                double[] XforSub, BforSub;
+				if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+					InitSmoothers(TpMapping);
+				}
 
-                if (myTask == TpTaskType.Coarse) { 
+				double[] XforSub, BforSub;
+
+				if (myTask == TpTaskType.Coarse) { 
 					XforSub = PermutateVector(X, coarsePermutation);
 					BforSub = PermutateVector(B, coarsePermutation);
 				} else if (myTask == TpTaskType.Smoother) { 
@@ -1874,6 +2092,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					// pre-smoother
 					// ------------
 					if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+
 						VerivyCurrentResidual(XforSub, BforSub, Res, iIter);
 						double[] PreCorr = new double[L];
 
@@ -1885,7 +2104,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 								IntPtr ptr = (IntPtr)pSignal;
 								csMPI.Raw.Irecv(ptr, 1,
 												csMPI.Raw._DATATYPE.BYTE,
-												CoarseGroupLeader, 0,
+												CoarseGroupLeader, 22,
 												m_OpMapPair.DgMapping.MPI_Comm, out req);
 
 							}
@@ -1948,7 +2167,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							unsafe {
 								byte* pSignal = &completionSignal;
 								IntPtr ptr = (IntPtr)pSignal;
-								csMPI.Raw.Send(ptr, 1, csMPI.Raw._DATATYPE.BYTE, SmootherGroupLeader, 0, m_OpMapPair.DgMapping.MPI_Comm);
+								csMPI.Raw.Send(ptr, 1, csMPI.Raw._DATATYPE.BYTE, SmootherGroupLeader, 22, m_OpMapPair.DgMapping.MPI_Comm);
 							}
 							Console.WriteLine("Sent signal");
 						} else {
