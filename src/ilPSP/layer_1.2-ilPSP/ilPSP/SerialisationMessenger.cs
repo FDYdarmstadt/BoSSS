@@ -281,7 +281,7 @@ namespace ilPSP.Utils {
             TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
         };
         
-        bool m_UseJson = false;
+        bool m_UseJson = true;
 
         /// <summary>
         /// Whether to use a JSON formatter or the binary formatter
@@ -765,7 +765,7 @@ namespace ilPSP.Utils {
         /// values: some object <em>q</em>
         /// </returns>
         /// <param name="__UseJSON"></param>
-        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm, bool __UseJSON = false) {
+        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm, bool __UseJSON = true) {
             using (var sms = new SerialisationMessenger(comm)) {
                 sms.UseJson = __UseJSON;
                 //if (PoorManDebugger != null) {

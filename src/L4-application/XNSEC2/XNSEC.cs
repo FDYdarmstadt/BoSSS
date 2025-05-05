@@ -34,7 +34,9 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            //InitMPI();
+            InitMPI();
+            ilPSP.Environment.NumThreads = 2;
+            BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
             //BoSSS.Application.XNSEC.NUnitTest.ManufacturedSolutionLowMachCombustionTest();
             //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
 
