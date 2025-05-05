@@ -1,4 +1,4 @@
-rmdir .\Output /S /Q
+rmdir .\Output /S /Q#
 rmdir .\bin /S /Q
 rmdir .\doc /S /Q
 dotnet publish ..\src\L4-application\PublicTestRunner\PublicTestRunner.csproj --configuration=Release --output .\bin\Release\net8.0
