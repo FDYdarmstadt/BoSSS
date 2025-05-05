@@ -38,8 +38,8 @@ namespace BoSSS.Solution {
         public class AMRonBoundary : AMRLevelIndicator {
 
             
-            private byte[] m_EdgeTags;
-            
+            private byte[] m_EdgeTags;//from private to public. by xye
+
             public AMRonBoundary(params byte[] EdgeTags) {
                 m_EdgeTags = EdgeTags;
             }
@@ -147,7 +147,7 @@ namespace BoSSS.Solution {
         [Serializable]
         public class AMRInBoundingBox : AMRLevelIndicator {
 
-            public BoundingBox bb; //from private to public. by xye
+            private BoundingBox bb; //from private to public. by xye
             public AMRInBoundingBox(BoundingBox _bb) {
                 bb = _bb;
             }
