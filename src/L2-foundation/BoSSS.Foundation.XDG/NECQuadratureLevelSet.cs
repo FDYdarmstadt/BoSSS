@@ -152,8 +152,7 @@ namespace BoSSS.Foundation.XDG {
                  context,
                  domAndRule) //
         {
-            MPICollectiveWatchDog.Watch();
-
+            
             // -----------------------------------
             // set members / check ctor parameters
             // -----------------------------------

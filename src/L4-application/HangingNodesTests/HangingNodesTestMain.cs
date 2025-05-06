@@ -12,6 +12,8 @@ using BoSSS.Foundation;
 using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Solution.Tecplot;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace HangingNodesTests {
 
@@ -22,18 +24,82 @@ namespace HangingNodesTests {
     [TestFixture]    
     public class HangingNodesTestMain {
         static void Main(string[] args) {
+            
+            /*
+            CellAgglomerator.AgglomerationPair p = new CellAgglomerator.AgglomerationPair() {
+                AgglomerationLevel = 1,
+                fracTarget = 0.2,
+                jCellSource = 3,
+                jCellTarget = 4,
+                OwnerRank4Source = 5,
+                OwnerRank4Target = 6,
+                posTarget = new Vector(0.7, 0.8)
+            };
+
+            JsonSerializer jsonFormatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Include,
+                TypeNameHandling = TypeNameHandling.All,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
+            };
+
+            string __buffer;
+            using(var ms = new StringWriter()) {
+                using(var wrt = new JsonTextWriter(ms)) {
+                    jsonFormatter.Serialize(wrt, p);
+                    __buffer = ms.ToString();
+                }
+            }
+
+            Console.WriteLine(__buffer);
+
+            using(var ms = new StringReader(__buffer)) {
+                using(var rdr = new JsonTextReader(ms)) {
+                    var p2 = jsonFormatter.Deserialize<CellAgglomerator.AgglomerationPair>(rdr);
+                    Console.WriteLine(p2.posTarget);
+                }
+
+            }
+
+
+
+
+            byte[] buffer;
+            using(var ms = new MemoryStream()) {
+                using(var wrt = new BsonDataWriter(ms)) {
+                    jsonFormatter.Serialize(wrt, p);
+                    buffer = ms.GetBuffer();
+                }
+            }
+
+            using(var ms = new MemoryStream(buffer)) {
+                ms.Position = 0;
+                using(var rdr = new BsonDataReader(ms)) {
+                    var p2 = jsonFormatter.Deserialize(rdr);
+                    Console.WriteLine(p2.GetType());
+                }
+
+            }
+
+            //*/
+
+
+
+
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
             //ilPSP.Environment.NumThreads = 1;
             //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
+            //Assert.IsFalse(true, "remove me");
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
-            int[] phases = new int[] { 2 };
+            int[] phases = new int[] { 3 };
             byte[] setup = new byte[] { 0 };
-
-            bool plot = true;
+            //bool plot = true;
+            var ccmS = new CutCellQuadratureMethod[] { CutCellQuadratureMethod.Saye };
 
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
@@ -55,8 +121,14 @@ namespace HangingNodesTests {
                 Console.WriteLine(";");
             }
 
+            Debugger.Launch();
+            foreach(var ccm in ccmS) {
+                foreach(int phase in phases) {
+                    RunTest(sizes, setup, phase, ccm);
+                }
+            }
 
-
+            /*
             List<double> TemperatureRes = new List<double>();
             List<double> MomentumRes = new List<double>();
             List<string> Description = new List<string>();
@@ -112,7 +184,7 @@ namespace HangingNodesTests {
 
             Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
             Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
-
+            */
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

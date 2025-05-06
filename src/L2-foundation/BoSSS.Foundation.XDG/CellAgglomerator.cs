@@ -1003,6 +1003,7 @@ namespace BoSSS.Foundation.XDG {
 
                     }
                 }
+                MPICollectiveWatchDog.Watch(37461287);
             }
             AggPairsDirectedToThisRank = AggPairsDirectedToThisRank.Distinct().ToList();
             return InterProcessAgglomeration;

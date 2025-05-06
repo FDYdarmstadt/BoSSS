@@ -35,6 +35,7 @@ namespace ilPSP {
     [Serializable] 
     [StructLayout(LayoutKind.Sequential)]
     [DataContract]
+    [JsonConverter(typeof(Vector.VectorConverter))]
     public struct Vector : IList<double> {
 
         /// <summary>
@@ -161,6 +162,8 @@ namespace ilPSP {
         /// <summary>
         /// Dummy entry/reserved; enforces the entire structure to be 256 bit in size.
         /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
         public int Dummy_256bitAlign;
 
         /// <summary>
@@ -187,6 +190,8 @@ namespace ilPSP {
         /// </summary>
         /// <param name="i">either 0 (x-component) or 1 (y-component)</param>
         /// <returns></returns>
+        [IgnoreDataMember]
+        [JsonIgnore]
         public double this[int i] {
             //[MethodImpl(MethodImplOptions.AggressiveInlining)]
             set {
@@ -610,7 +615,7 @@ namespace ilPSP {
         public override string ToString() {
             switch(this.Dim) {
                 case 0:
-                return "nüll";
+                return "Zero";
                 case 1:
                 return ("(" + x + ")");
                 case 2:
@@ -1071,8 +1076,11 @@ namespace ilPSP {
             public override void WriteJson(JsonWriter writer, Vector value, JsonSerializer serializer) {
                 // Create a JObject and write the x and y properties
                 var jObject = new JObject();
+                //if(value.Dim == 0)
+                //    throw new NotSupportedException("un-initialized vector");
                 jObject["Dim"] = value.Dim;
-                jObject["x"] = value.x;
+                if(value.Dim > 0)
+                    jObject["x"] = value.x;
                 if (value.Dim > 1)
                     jObject["y"] = value.y;
                 if (value.Dim > 2)
@@ -1089,15 +1097,21 @@ namespace ilPSP {
 
                 // Deserialize x and y from JObject
                 var Dim = jObject["Dim"].Value<int>();
+                if(Dim == 0) {
+                    //throw new NotSupportedException("vector of dimension 0?");
+                    var ret0 = new Vector(0.0);
+                    ret0.Dim = 0;
+                    return ret0;
+                } else {
+                    var ret = new Vector(Dim);
+                    ret.x = jObject["x"].Value<double>();
+                    if(Dim > 1)
+                        ret.y = jObject["y"].Value<double>();
+                    if(Dim > 2)
+                        ret.z = jObject["z"].Value<double>();
 
-                var ret = new Vector(Dim);
-                ret.x = jObject["x"].Value<double>();
-                if (Dim > 1)
-                    ret.y = jObject["y"].Value<double>();
-                if (Dim > 2)
-                    ret.z = jObject["z"].Value<double>();
-
-                return ret;
+                    return ret;
+                }
             }
         }
     }

@@ -633,6 +633,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             using(var ft = new FuncTrace()) {
+                MPICollectiveWatchDog.Watch(635278);
                 // compute operator
                 Debug.Assert(OpAffine.L2Norm() == 0.0);
 
