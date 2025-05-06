@@ -565,11 +565,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			SmootherNewCellMapping.SaveToTextFileDebug($"lvl{level}_SmootherNewCellMapping", ".txt");
 			CoarseNewCellMapping.SaveToTextFileDebug($"lvl{level}_CoarseNewCellMapping", ".txt");
 
-			if (level == 1)
-				Debugger.Launch();
-
-			m_OpMtx = ChangeOpPartitioning(ThisTargetPartitioning, ThisNewCellMapping, "Op"); //this level of 
+			//Debugger.Launch();
 			m_OpMtx_smoother = ChangeOpPartitioning(SmootherTargetPartitioning, SmootherNewCellMapping, "OpSmooth"); //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
+			m_OpMtx = ChangeOpPartitioning(ThisTargetPartitioning, ThisNewCellMapping, "Op"); //this level of 
 			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, ThisNewCellMapping, FinerLevelCoarsePartitiong, FinerLevelCoarseCellMapping, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
 		}
 
@@ -1215,7 +1213,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			this.FinerLevelCoarseComm = csMPI.Raw._COMM.WORLD;
 			this.FinerLevelCoarseCommRank = op.Mapping.MpiRank;
-
+			Debugger.Launch();
 			int WorldSize = op.Mapping.MpiSize;
 			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetPrologonationOperator, op.Mapping, WorldSize);
 			TaskParallelMGOperator finerTP = thisTP;
@@ -1223,6 +1221,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				op.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_0.txt");
 				op.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_0.txt");
 			}
+
 
 			int level = 1;
 			for (MultigridOperator op_lv = op.CoarserLevel; op_lv != null; op_lv = op_lv.CoarserLevel) {
@@ -1367,7 +1366,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				ortho = new CoreOrthonormalizationProcedureTP(OpMatrix);
 				CreatePermutationMatrices();
 
-				//TestMatrices(OpMatrix, smootherPermutationMtx, subCommSmootherOpMatrix, $"test_lvl{TpLevel}_s",true);
+				TestMatrices(OpMatrix, smootherPermutationMtx, subCommSmootherOpMatrix, $"test_lvl{TpLevel}_s",true);
 
 
 				// set operator
@@ -1490,22 +1489,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 				subCommToCoarseRestrictionOperator = subCommFromCoarseProlongationOperator?.Transpose();
 
-				if (verbose) {
-					thisCommOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_thisOp.txt");
-					thisCommOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_o_thisOp.txt");
-					subCommSmootherOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_smoothOp.txt");
-					subCommSmootherOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_o_smoothOp.txt");
-					thisCommProlongationOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_thisProl.txt");
-					thisCommProlongationOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_thisProl.txt");
-					thisCommRestrictionOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_thisRest.txt");
-					thisCommRestrictionOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_thisRest.txt");
-					subCommFromCoarseProlongationOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_subProl.txt");
-					subCommFromCoarseProlongationOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_subProl.txt");
-					subCommToCoarseRestrictionOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_subRest.txt");
-					subCommToCoarseRestrictionOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_subRest.txt");
-					//tests the old distribution done from world all to world this procs in the TaskParallelMGOperator, not this level to smoother or 
-					//TestMatrices(TpMapping.old_OpMtx, smootherPermutation.Matrix, OpMatrix, "test_", verbose); 
-				}
+				//if (false) {
+				//	thisCommOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_thisOp.txt");
+				//	thisCommOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_o_thisOp.txt");
+				//	subCommSmootherOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_smoothOp.txt");
+				//	subCommSmootherOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_o_smoothOp.txt");
+				//	thisCommProlongationOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_thisProl.txt");
+				//	thisCommProlongationOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_thisProl.txt");
+				//	thisCommRestrictionOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_thisRest.txt");
+				//	thisCommRestrictionOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_thisRest.txt");
+				//	subCommFromCoarseProlongationOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_subProl.txt");
+				//	subCommFromCoarseProlongationOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_subProl.txt");
+				//	subCommToCoarseRestrictionOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_subRest.txt");
+				//	subCommToCoarseRestrictionOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_subRest.txt");
+				//	//tests the old distribution done from world all to world this procs in the TaskParallelMGOperator, not this level to smoother or 
+				//	//TestMatrices(TpMapping.old_OpMtx, smootherPermutation.Matrix, OpMatrix, "test_", verbose); 
+				//}
 			}
 		}
 
@@ -1573,15 +1572,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				.Select(x => (x.target, worldToCoarseDict[x.source]))
 				.ToList();
 
-
+			colMapThisToSmoother.SaveToTextFileDebug($"lvl_{TpLevel}_colMapThisToSmoother.txt");
 			colMapThisToCoarse.SaveToTextFileDebug($"lvl_{TpLevel}_colMapThisToCoarse.txt");
 
 			var ThisglobalDOFs = CellIndexToDOFs(thisPartitioningInThisComm);
 
-
 			smootherBlocks = GetLocalDistribution(ThisglobalDOFs, colMapThisToSmoother, TpMapping.SmootherCellI0s, 0, NoOfSmootherProcs);
-			Console.WriteLine("I was here");
-			csMPI.Raw.Barrier(thisComm);
 			smootherPermutation = GetPermutationMatrix(thisPartitioningInThisComm, smootherBlocks); //this is technically a permutation matrix but also distributes 
 
 			coarseBlocks = GetLocalDistribution(ThisglobalDOFs, colMapThisToCoarse, TpMapping.CoarseCellI0s, NoOfSmootherProcs, NoOfCoarseProcs);
@@ -2142,7 +2138,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					InitSmoothers(TpMapping);
 				}
 
-
+				if (TpLevel == 1) {
+					Debugger.Launch();
+					Console.WriteLine($"Smoother: {myTask} on level {iLevel} with rank {thisCommRank} and size {thisCommsize}");
+				}
 				PerformIterations(X, B, Res, Res0, XforSub, BforSub, ResforSub);
 
 
