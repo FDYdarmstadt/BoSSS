@@ -25,67 +25,7 @@ namespace HangingNodesTests {
     public class HangingNodesTestMain {
         static void Main(string[] args) {
             
-            /*
-            CellAgglomerator.AgglomerationPair p = new CellAgglomerator.AgglomerationPair() {
-                AgglomerationLevel = 1,
-                fracTarget = 0.2,
-                jCellSource = 3,
-                jCellTarget = 4,
-                OwnerRank4Source = 5,
-                OwnerRank4Target = 6,
-                posTarget = new Vector(0.7, 0.8)
-            };
-
-            JsonSerializer jsonFormatter = new JsonSerializer() {
-                NullValueHandling = NullValueHandling.Include,
-                TypeNameHandling = TypeNameHandling.All,
-                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-                TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
-            };
-
-            string __buffer;
-            using(var ms = new StringWriter()) {
-                using(var wrt = new JsonTextWriter(ms)) {
-                    jsonFormatter.Serialize(wrt, p);
-                    __buffer = ms.ToString();
-                }
-            }
-
-            Console.WriteLine(__buffer);
-
-            using(var ms = new StringReader(__buffer)) {
-                using(var rdr = new JsonTextReader(ms)) {
-                    var p2 = jsonFormatter.Deserialize<CellAgglomerator.AgglomerationPair>(rdr);
-                    Console.WriteLine(p2.posTarget);
-                }
-
-            }
-
-
-
-
-            byte[] buffer;
-            using(var ms = new MemoryStream()) {
-                using(var wrt = new BsonDataWriter(ms)) {
-                    jsonFormatter.Serialize(wrt, p);
-                    buffer = ms.GetBuffer();
-                }
-            }
-
-            using(var ms = new MemoryStream(buffer)) {
-                ms.Position = 0;
-                using(var rdr = new BsonDataReader(ms)) {
-                    var p2 = jsonFormatter.Deserialize(rdr);
-                    Console.WriteLine(p2.GetType());
-                }
-
-            }
-
-            //*/
-
-
-
+    
 
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
@@ -121,70 +61,12 @@ namespace HangingNodesTests {
                 Console.WriteLine(";");
             }
 
-            Debugger.Launch();
             foreach(var ccm in ccmS) {
                 foreach(int phase in phases) {
                     RunTest(sizes, setup, phase, ccm);
                 }
             }
 
-            /*
-            List<double> TemperatureRes = new List<double>();
-            List<double> MomentumRes = new List<double>();
-            List<string> Description = new List<string>();
-
-            foreach (double size in sizes) {
-                foreach(int phase in phases) {
-                    foreach(byte s in setup) {
-                        string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs : {3}", size, phase, s, procs);
-                        Description.Add(desc);
-                        var C = HangingNodesTests.Control.TestSkeleton(size);
-                        HangingNodesTests.Control.SetAMR(C, size, s);
-                        HangingNodesTests.Control.SetLevelSet(C, size, phase);
-                        HangingNodesTests.Control.SetParallel(C, procs == 2 ? -procs : procs);
-
-                        if (plot) {
-                            C.ImmediatePlotPeriod = 1;
-                            C.SuperSampling = 3;                            
-                        }
-
-                        using (var solver = new XNSFE()) {
-                            //try {
-                                solver.Init(C);
-                                solver.RunSolverMode();
-                                if (plot) {
-                                    var MultiphaseAgglomerator = solver.LsTrk.GetAgglomerator(solver.LsTrk.SpeciesIdS.ToArray(), solver.QuadOrder(), C.AgglomerationThreshold);    
-                                    foreach(var spc in solver.LsTrk.SpeciesIdS) {
-                                        string spcName = solver.LsTrk.GetSpeciesName(spc);
-                                        var speciesAgglomerator = MultiphaseAgglomerator.GetAgglomerator(spc);
-                                        speciesAgglomerator.PlotAgglomerationPairs($"agglomerationPairs-{spcName}-MPI{rank}.txt", null, true);
-                                    }
-                                }
-                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)C.CutCellQuadratureType));
-                                MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
-                                TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                            //} catch (Exception e) {
-                            //    Console.WriteLine(desc + " : failed");
-                            //    Console.WriteLine(e.Message);
-                            //    Console.WriteLine(e.StackTrace);
-                            //    TemperatureRes.Add(-1.0);
-                            //    MomentumRes.Add(-1.0);
-                            //}
-                        }                       
-                    }
-                }
-            }
-
-            Console.WriteLine("Finished Hanging Nodes Test.");
-            Console.WriteLine();
-            Console.WriteLine("Results:");
-            for(int i = 0; i < Description.Count; i++) {
-                Console.WriteLine(Description[i] + " : MomRes : {0}, TempRes : {1}", MomentumRes[i], TemperatureRes[i]);
-            }
-
-            Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
-            Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
-            */
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
