@@ -19,7 +19,6 @@ namespace AdvancedSolverTests {
 
 
         public static void Main() {
-            Debugger.Launch();
             BoSSS.Solution.Application.InitMPI();
             Test();
             BoSSS.Solution.Application.FinalizeMPI();
