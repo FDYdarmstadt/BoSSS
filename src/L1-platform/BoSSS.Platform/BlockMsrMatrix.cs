@@ -863,7 +863,7 @@ namespace ilPSP.LinSolvers {
             if (newColPart == null) newColPart = newRowPart;
 
 			var ret = ChangeRowPartitioning(newRowPart, newRowBlockIndices);
-			if (newColBlockIndices != null) ChangeColumnIndices(newColBlockIndices);
+			if (newColBlockIndices != null) ret.ChangeColumnIndices(newColBlockIndices);
 			ret.ChangeColumnPartitioning(newColPart);
 
             return ret;
@@ -878,11 +878,11 @@ namespace ilPSP.LinSolvers {
 			var ret = this.Transpose();
 
             if (newBlockIndices != null)
-                ChangeColumnIndices(newBlockIndices);
-			
+                ret.ChangeColumnIndices(newBlockIndices);
+
 			ret.ChangeColumnPartitioning(newRowPart);
-			ret = ret.Transpose();
-            return ret;
+			var ret2 = ret.Transpose();
+			return ret2;
 		}
 
 		/// <summary>
@@ -3911,7 +3911,12 @@ namespace ilPSP.LinSolvers {
 				throw new ArgumentException("Something wrong with the columnMapping");
 			}
 #endif
+            this.ComPatternValid = false;
+
+
             var mappingDict = columnMapping.ToDictionary(x => x.Source, x => x.Target);
+			//Console.WriteLine($"rank-${this.RowPartitioning.MpiRank} old cols: " + string.Join(", ", m_BlockRows[0]?.Keys));
+
 			// Iterate over each block row
 			for (int i = 0; i < m_BlockRows.Length; i++) {
 				var blockRow = m_BlockRows[i];
@@ -3923,6 +3928,11 @@ namespace ilPSP.LinSolvers {
 					BlockEntry blockEntry = kvp.Value;
 
                     if (mappingDict.TryGetValue(oldColIndex, out long newColIndex)) {
+
+      //                  if(!this.m_ColPartitioning.IsLocalBlock(oldColIndex)) {
+      //                      Console.Error.WriteLine($"rank-${this.RowPartitioning.MpiRank} Error: oldColIndex {oldColIndex} is not a local block.");
+						//}
+
                         updatedBlockRow[newColIndex] = blockEntry;
 						blockEntry.jBlkCol = newColIndex; // Update the block entry with the new column index
 
@@ -3934,7 +3944,31 @@ namespace ilPSP.LinSolvers {
 				// Replace the old block row with the updated one
 				m_BlockRows[i] = updatedBlockRow;
 			}
+			//Console.WriteLine($"rank-${this.RowPartitioning.MpiRank} old cols: " + string.Join(", ", m_BlockRows[0]?.Keys));
 		}
+
+		public void ChangeColumnIndexWithMapping(long globalRow, long globalCol, Func<long, long> surjectiveMapping) {
+			// Step 1: Translate the global column index to block and subblock indices
+			TranslateIndex(globalCol, _ColPartitioning, true, out long blockCol, out int subblockCol, out long blockStart, out int localCol,
+						   out int blockType, out int subblockIndex, out int subblockStart, out int subblockSize, out int numSubblocks, out _);
+
+			// Step 2: Apply the surjective mapping to get the new column index
+			long newGlobalCol = surjectiveMapping(globalCol);
+
+			// Step 3: Translate the new global column index to block and subblock indices
+			TranslateIndex(newGlobalCol, _ColPartitioning, true, out long newBlockCol, out int newSubblockCol, out long newBlockStart, out int newLocalCol,
+						   out int newBlockType, out int newSubblockIndex, out int newSubblockStart, out int newSubblockSize, out int newNumSubblocks, out _);
+
+			// Step 4: Update the column index in the block structure
+			if (m_BlockRows[blockCol].TryGetValue(blockCol, out BlockEntry blockEntry)) {
+				blockEntry.jBlkCol = newBlockCol; // Update the block column index
+				blockEntry.MembnkIdx[subblockIndex, subblockCol] = newSubblockCol; // Update the subblock column index
+			} else {
+				throw new InvalidOperationException($"Block at column {blockCol} not found.");
+			}
+		}
+
+
 
 		/// <summary>
 		/// Determines the column indices that have to be sent to other processors.
