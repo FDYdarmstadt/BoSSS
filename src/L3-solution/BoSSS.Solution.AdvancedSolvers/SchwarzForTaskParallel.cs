@@ -643,7 +643,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        PARDISOSolver[] GetBlockSolvers(BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices, int[] metisCellsPerBlockGlobal) {
+        PARDISOSolver[] GetBlockSolvers(BlockMsrMatrix Redistributed, List<long>[] RowIndices, List<long>[] ColIndices, int[] metisCellsPerBlockGlobal) {
             Debug.Assert(RowIndices.Length == ColIndices.Length);
             int NoOfBlocks = RowIndices.Length;
             Debug.Assert(NoOfBlocks == m_config.NoOfBlocks);
@@ -652,7 +652,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             {
                 // verify that each block is owned by exactly one process.
                 int[] local_OwnedByProc = RowIndices.Select(ary => ary != null ? 1 : 0).ToArray();
-                int[] OwnedByProc = local_OwnedByProc.MPISum(Redist.MPI_Comm);
+                int[] OwnedByProc = local_OwnedByProc.MPISum(Redistributed.MPI_Comm);
                 for (int i = 0; i < OwnedByProc.Length; i++) {
                     if (!(OwnedByProc[i] == 1 || metisCellsPerBlockGlobal[i] == 0)) {
                         throw new ApplicationException($"Block {i} is owned by {OwnedByProc[i]} process(es); (expecting that each block is owned by exactly one processor, if not initially empty).");
@@ -671,7 +671,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (RowIndices[iBlock].Count <= 0)
                         throw new ArgumentException("empty blocks are not allowed");
 
-                    var blockPart = Redist._RowPartitioning.GetSubBlocking(RowIndices[iBlock], csMPI.Raw._COMM.SELF, -1);
+                    var blockPart = Redistributed._RowPartitioning.GetSubBlocking(RowIndices[iBlock], csMPI.Raw._COMM.SELF, -1);
 #if DEBUG
                     Debug.Assert(blockPart.MpiSize == 1);
                     Debug.Assert(blockPart.MpiRank == 0);
@@ -696,32 +696,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Debug.Assert(ColIndices_iBlock[i - 1] < ColIndices_iBlock[i], "column indices must be strictly increasing");
                             Debug.Assert(RowIndices[iBlock][i - 1] < RowIndices[iBlock][i], "row indices must be strictly increasing");
                         }
-                        if (ColIndices_iBlock[firstLocal] < Redist._ColPartitioning.i0)
+                        if (ColIndices_iBlock[firstLocal] < Redistributed._ColPartitioning.i0)
                             firstLocal++;
-                        if (ColIndices_iBlock[lastLocal] < Redist._ColPartitioning.iE)
+                        if (ColIndices_iBlock[lastLocal] < Redistributed._ColPartitioning.iE)
                             lastLocal++;
                     }
 
                     if (lastLocal > 0)
-                        Debug.Assert(ColIndices_iBlock[lastLocal - 1] < Redist._ColPartitioning.iE);
+                        Debug.Assert(ColIndices_iBlock[lastLocal - 1] < Redistributed._ColPartitioning.iE);
                     if (lastLocal < L)
-                        Debug.Assert(ColIndices_iBlock[lastLocal] >= Redist._ColPartitioning.iE);
+                        Debug.Assert(ColIndices_iBlock[lastLocal] >= Redistributed._ColPartitioning.iE);
                     if (firstLocal < L)
-                        Debug.Assert(ColIndices_iBlock[firstLocal] >= Redist._ColPartitioning.i0);
+                        Debug.Assert(ColIndices_iBlock[firstLocal] >= Redistributed._ColPartitioning.i0);
                     if (firstLocal > 0)
-                        Debug.Assert(ColIndices_iBlock[firstLocal - 1] < Redist._ColPartitioning.i0);
+                        Debug.Assert(ColIndices_iBlock[firstLocal - 1] < Redistributed._ColPartitioning.i0);
 
 
 
 
 
                     var Mtx_iBlk = new BlockMsrMatrix(blockPart);
-                    Redist.AccSubMatrixTo(1.0, Mtx_iBlk, RowIndices[iBlock], default(long[]),
+					Redistributed.AccSubMatrixTo(1.0, Mtx_iBlk, RowIndices[iBlock], default(long[]),
                         ColIndices_iBlock.GetSubVector(firstLocal, lastLocal - firstLocal), (lastLocal - firstLocal).ForLoop(i => (long)i + firstLocal),
                         ColIndices_iBlock.GetSubVector(0, firstLocal).Cat(ColIndices_iBlock.GetSubVector(lastLocal, L - lastLocal)), firstLocal.ForLoop(i => (long)i).Cat((L - lastLocal).ForLoop(i => (long)i + lastLocal))
                         );
 
-                    Mtx_iBlk.SaveToTextFileSparseDebug($"MtxLocBlock{Mapping.TotalNoOfBlocks}_{iBlock}");
+                    Mtx_iBlk.SaveToTextFileSparseDebug($"MtxLocBlock{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
 
 					var slv_iBlk = new PARDISOSolver() {
                         CacheFactorization = true,
@@ -843,9 +843,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public void InitWithTest(StandAloneOperatorMappingPairWithGridData op, bool doTest) {
             //Debugger.Launch();
 
-            this.config.NoOfBlocks = 1;
-			this.config.EnableOverlapScaling = false;
-            this.config.Overlap = 0;
+   //         this.config.NoOfBlocks = 1;
+			//this.config.EnableOverlapScaling = false;
+   //         this.config.Overlap = 0;
 
 			using (var f = new FuncTrace()) {
 
@@ -854,7 +854,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 				var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
 
-                RedistAndIndices.Redist.SaveToTextFileSparse("RedistSz" + op.DgMapping.TotalNoOfBlocks);
+                RedistAndIndices.Redist.SaveToTextFileSparse("RedistSz" + op.DgMapping.TotalNoOfBlocks + ".txt");
 
 				for (int i = 0; i < RedistAndIndices.ColIndices.Length; i++) {
 					RedistAndIndices.RowIndices[i].SaveToTextFileDebug($"RowIndicesSz{op.DgMapping.TotalNoOfBlocks}_{i}", ".txt");
@@ -864,6 +864,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// obtain the part of the matrix which should be solved on this processor via multiplication with the redistribution matrix.
 				var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, OpMtx);
 
+				LocalBlocks.SaveToTextFileSparse("LocalBlockTogetherSz" + op.DgMapping.TotalNoOfBlocks + ".txt");
 
 				// create the local block solvers
 				m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, new int[] { });
@@ -1405,8 +1406,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
             IsXandBComitted = true;
         }
 
+        public void TestConvergence<U, V>(U X, V B)
+			where U : IList<double>
+			where V : IList<double> {
+            double[] XFull = X.ToArray().CloneAs();
+			double[] BFull = B.ToArray().CloneAs();
 
-        public void Solve<U, V>(U X, V B)
+			double[] XBlock= X.ToArray().CloneAs();
+			double[] BBlock = B.ToArray().CloneAs();
+
+
+			var FullSolver = new PARDISOSolver();
+			FullSolver.DefineMatrix(m_op.OperatorMatrix);
+            FullSolver.Solve(XFull, BFull);
+            double[] diff = new double[XFull.Length];
+
+			for (int k = 0; k < 100; k++) { 
+                this.Solve(XBlock, BBlock);
+                diff.Clear();
+                diff.AccV(1.0, XFull);
+				diff.AccV(-1.0, XBlock);
+				Console.WriteLine(k + "X Norm: " + diff.MPI_L2NormPow2(m_op.OperatorMatrix.MPI_Comm));
+			}
+
+			Debug.Assert(X.MPI_L2NormPow2(m_op.OperatorMatrix.MPI_Comm) < Math.Pow(10,-2), "Schwarz method does not converge well");
+		}
+
+
+		public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> {
             using (new FuncTrace()) {
@@ -1417,9 +1444,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for (int iBlock = 0; iBlock < m_BlockSolvers.Length; iBlock++) {
                     if (m_BlockSolvers[iBlock] != null) {
                         m_BlockSolvers[iBlock].Solve(Xblocks[iBlock], RHSblocks[iBlock]);
-                        if (m_OverlapScaling != null) {
+                        Xblocks[iBlock].SaveToTextFileDebug($"XblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+						RHSblocks[iBlock].SaveToTextFileDebug($"RHSblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+
+						if (m_OverlapScaling != null) {
                             var scale = m_OverlapScaling[iBlock];
-                            var Xb = Xblocks[iBlock];
+							scale.SaveToTextFileDebug($"scaleSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+
+							var Xb = Xblocks[iBlock];
                             int L = scale.Length;
                             for (int l = 0; l < L; l++)
                                 Xb[l] *= scale[l];
@@ -1430,7 +1462,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (!TaskParallelization)
                     m_comm.AccBlockSol(X, Xblocks);
 
-                this.NoIter++;
+                IsXandBComitted = false;
+
+
+				this.NoIter++;
             }
         }
 
