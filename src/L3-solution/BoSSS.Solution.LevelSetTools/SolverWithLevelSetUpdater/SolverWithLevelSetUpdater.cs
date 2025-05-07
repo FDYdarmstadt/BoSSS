@@ -690,7 +690,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             }
             AgglomerationAlgorithm.Katastrophenplot = KatastrophenPlot;
-            AgglomerationAlgorithm.PlotAgglomeration = control.PlotAgglomeration;
+            AgglomerationAlgorithm.debugging_PlotAgglomeration = control.PlotAgglomeration;
             MultiphaseCellAgglomerator.PlotAgglomeration = control.PlotAgglomeration;
 
             base.Init(control);

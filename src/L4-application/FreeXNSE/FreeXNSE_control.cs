@@ -24,7 +24,7 @@ namespace FreeXNSE {
         /// </summary>
         public FreeXNSE_Control(bool equal) {
 
-            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             //shift of Solver Information
             base.NoOfMultigridLevels = 1;
             base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver
@@ -267,7 +267,7 @@ namespace FreeXNSE {
 
         public abstract bool equals(Forcing other);
 
-        public bool Equals(object obj) {
+        public override bool Equals(object obj) {
 
             var other = obj as Forcing;
             if(other == null)
@@ -295,7 +295,7 @@ namespace FreeXNSE {
         [DataMember]
         public bool FailOnSolverFail = true;
 
-        public bool Equals(object obj) {
+        public override bool Equals(object obj) {
             var other = obj as SolverSettings;
             if(other == null)
                 return false;
@@ -557,7 +557,7 @@ namespace FreeXNSE {
             set;
         }
 
-        public bool Equals(object obj) {
+        public override bool Equals(object obj) {
             var other = obj as ActiveTerms;
             if(other == null)
                 return false;

@@ -203,7 +203,6 @@ namespace ilPSP {
             }
         }
 
-
         static bool OpenMPdisabled = false;
         static int backup_MaxNumOpenMPthreads = -1;
 
@@ -502,7 +501,7 @@ namespace ilPSP {
                         else
                             listdiffs = "";
                         if (eqalAff == false) {
-                            tr.Error("Mismatch in CPU affinity! " + listdiffs);
+                            tr.Error("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
                         tr.Info("Win32 reports same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
                         ReservedCPUs = _ReservedCPUs;
@@ -592,16 +591,15 @@ namespace ilPSP {
         static Random rnd = new Random();
 
         private static void SetOMPbinding() {
-            
-            using (var tr = new FuncTrace("SetOMPbinding")) {
+            //using (var tr = new FuncTrace("SetOMPbinding")) // to much overhead
+            {
                 //tr.InfoToConsole = true;
                 if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // In these cases, we might just let the OpenMP threads float
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    //tr.Info($"Floating OpenMP configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
-
+                    
                     // just hope that dynamic thread will avoid the deadlocks.
                     MKLservice.SetNumThreads(Math.Min(MaxNumOpenMPthreads, NumThreads));
                     MKLservice.Dynamic = true;
@@ -613,27 +611,19 @@ namespace ilPSP {
 
                     if (L > Nt) {
 
-                        int skip = rnd.Next(0, L - Nt + 1);
+                        int skip = 0; // rnd.Next(0, L - Nt + 1);
                         if (skip + Nt > L) {
                             throw new ApplicationException("skipping done wrong");
                         }
 
-
                         OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(DedicatedCPUsForThisRank.Skip(skip).Take(Math.Min(NumThreads, MaxNumOpenMPthreads))).ToArray();
-
-
-
                     } else {
                         OpenMPcpuIdx = CPUAffinity.ToOpenMpCPUindices(DedicatedCPUsForThisRank).ToArray();
                     }
 
-                    //OpenMPcpuIdx = new[] { 0, 2, 4, 6, 8, 10, 12, 14 }; 
-                    //OpenMPcpuIdx = new[] { 0, 1, 2, 3, 4, 5, 6, 7 };
-
-                    //tr.Info($"Binding to CPUs {OpenMPcpuIdx.ToConcatString("[", ",", "]")} configuration ({DedicatedCPUsForThisRank?.ToConcatString("[", ",", "]") ?? "NULL"}, MpiRnkOwnsEntireComputer = {MpiRnkOwnsEntireComputer})");
-
                     if(OMPbindingStrategy == null) {
-                        OMPbindingStrategy = OnlinePerformanceMeasurement.FindBestOMPstrategy(OpenMPcpuIdx, out DisableOpenMP_becauseIsSlow);
+                        //OMPbindingStrategy = OnlinePerformanceMeasurement.FindBestOMPstrategy(OpenMPcpuIdx, out DisableOpenMP_becauseIsSlow);
+                        OMPbindingStrategy = ilPSP.OMPbindingStrategy.CloneFromMain;
                         OnlinePerformanceMeasurement.Log.OMPbindingStrategy = OMPbindingStrategy.Value;
                     }
 
@@ -641,12 +631,17 @@ namespace ilPSP {
                         DisableOpenMP();
                         CPUAffinity.SetAffinity(DedicatedCPUsForThisRank);
                     } else {
-                        MKLservice.BindOMPthreads(OpenMPcpuIdx, OMPbindingStrategy.Value);
+                        if(last_OpenMPcpuIdx.SetEquals(OpenMPcpuIdx) == false) {
+                            last_OpenMPcpuIdx = OpenMPcpuIdx;
+                            MKLservice.BindOMPthreads(OpenMPcpuIdx, OMPbindingStrategy.Value);
+                        }
                     }
                 }
             } 
             
         }
+
+        static int[] last_OpenMPcpuIdx; 
 
         static OMPbindingStrategy? OMPbindingStrategy;
         static bool DisableOpenMP_becauseIsSlow = false;

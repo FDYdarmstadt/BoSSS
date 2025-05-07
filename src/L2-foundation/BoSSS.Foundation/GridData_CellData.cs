@@ -508,9 +508,12 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// An inverse length scale (dimension is one-over-length, resp. area over volume)
             /// for each cell <em>j</em> this is
-            /// \f[ 
-            /// c_j = frac{Area(\partial K_j \\ \partial \Omega) \cdot 0.5 + Area(\partial K_j \cap \partial \Omega)}{Volume(K_j)},
-            /// \f]
+            ///  \[
+            ///  c_j = \frac{\textrm{Area}
+            ///        (\partial K_j \setminus \partial \Omega) \cdot 0.5 + \textrm{Area
+            ///    }
+            ///    (\partial K_j \cap \partial \Omega)} {\textrm{ Volume} (K_j)}
+            /// \]
             /// where \f$ K_j \f$ is the cell an
             /// \f$ \Omega \f$ is the whole computational
             /// domain.
@@ -903,6 +906,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 internal set;
             }
 
+            /*
+
             /// <summary>
             /// Finds all edges for a specific face of a cell
             /// </summary>
@@ -951,7 +956,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 return Ret;
             }
 
-
+            */
 
             /// <summary>
             /// Since each cell is already elementary (i.e. it maps to one reference element)

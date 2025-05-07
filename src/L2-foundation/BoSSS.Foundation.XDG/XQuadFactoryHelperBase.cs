@@ -10,69 +10,72 @@ using System.Data;
 using System.Text;
 
 namespace BoSSS.Foundation.XDG {
-    abstract public class XQuadFactoryHelperBase {
+
+    /// <summary>
+    /// Different variants of the moment-fitting procedure for the creation
+    /// of the surface and volume quadrature rules.
+    /// </summary>
+    public enum CutCellQuadratureMethod {
 
         /// <summary>
-        /// Different variants of the moment-fitting procedure for the creation
-        /// of the surface and volume quadrature rules.
+        /// The original hierarchical moment fitting method published in 2013 which uses a two-step 
+        /// procedure: The surface rules are created first and then used to
+        /// create the volume rules
         /// </summary>
-        public enum MomentFittingVariants {
+        Classic,
 
-            /// <summary>
-            /// The original method published in 2013 which uses a two-step
-            /// procedure: The surface rules are created first and then used to
-            /// create the volume rules
-            /// </summary>
-            Classic,
+        /// <summary>
+        /// One-step variant proposed by Florian (see XNSE paper, submitted
+        /// 2015). Surface and volume rules are created using a single
+        /// moment-fitting by additionally enforcing Gauss' theorem on the
+        /// discrete level.
+        /// </summary>
+        OneStepGauss,
 
-            /// <summary>
-            /// One-step variant proposed by Florian (see XNSE paper, submitted
-            /// 2015). Surface and volume rules are created using a single
-            /// moment-fitting by additionally enforcing Gauss' theorem on the
-            /// discrete level.
-            /// </summary>
-            OneStepGauss,
+        /// <summary>
+        /// Same as <see cref="OneStepGauss"/>, but additionally enforces
+        /// Stokes' theorem on a discrete level.
+        /// </summary>
+        OneStepGaussAndStokes,
 
-            /// <summary>
-            /// Same as <see cref="OneStepGauss"/>, but additionally enforces
-            /// Stokes' theorem on a discrete level.
-            /// </summary>
-            OneStepGaussAndStokes,
+        /// <summary>
+        /// Two step-procedure: using Stokes theorem to create surface rules, 
+        /// and the Gauss theorem to create Volume rules.
+        /// </summary>
+        TwoStepStokesAndGauss,
 
-            /// <summary>
-            /// Two step-procedure: using Stokes theorem to create surface rules, 
-            /// and the Gauss theorem to create Volume rules.
-            /// </summary>
-            TwoStepStokesAndGauss,
+        /// <summary>
+        /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
+        /// </summary>
+        ExactCircle,
 
-            /// <summary>
-            /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
-            /// </summary>
-            ExactCircle,
+        /// <summary>
+        /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
+        /// obtained throug recursive subdivision, as described in 
+        /// (Saye 2015)
+        /// </summary>
+        /// <remarks>
+        /// High-Order Quadrature Methods for Implicitly Defined Surfaces and Volumes in Hyperrectangles,
+        /// R. Saye, SIAM Journal on Scientific Computing, 2015
+        /// </remarks>
+        Saye,
 
-            /// <summary>
-            /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
-            /// obtained throug recursive subdivision, as described in 
-            /// (Saye 2015)
-            /// </summary>
-            /// <remarks>
-            /// High-Order Quadrature Methods for Implicitly Defined Surfaces and Volumes in Hyperrectangles,
-            /// R. Saye, SIAM Journal on Scientific Computing, 2015
-            /// </remarks>
-            Saye,
+        /// <summary>
+        /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
+        /// obtained through recursive subdivision, as described in 
+        /// (Saye 2022)
+        /// </summary>
+        Algoim,
+    }
 
-            /// <summary>
-            /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
-            /// obtained through recursive subdivision, as described in 
-            /// (Saye 2022)
-            /// </summary>
-            Algoim,
-        }
+    abstract public class XQuadFactoryHelperBase {
+
+        
 
         /// <summary>
         /// Used type of the HMF.
         /// </summary>
-        public MomentFittingVariants CutCellQuadratureType {
+        public CutCellQuadratureMethod CutCellQuadratureType {
             get;
             protected set;
         }

@@ -301,6 +301,7 @@ namespace ilPSP {
             using (var tr = new FuncTrace("MeasureAcceleration")) {
                 //tr.InfoToConsole = false; 
                 if (Environment.OpenMPenabled == false || Environment.NumThreads <= 1) {
+                    tr.Info($"NOT performing benchmark, because: Environment.OpenMPenabled == {Environment.OpenMPenabled} OR Environment.NumThreads == {Environment.NumThreads}");
                     return -1;
                 }
 

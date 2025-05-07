@@ -390,7 +390,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
 
             var gridDat = (GridData)this.SolverMainOverride.GridData;
-            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
+            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0, 1);
 
             CellQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
                 ContactLineVolumeScheme.Compile(LsTrk.GridDat, 0),

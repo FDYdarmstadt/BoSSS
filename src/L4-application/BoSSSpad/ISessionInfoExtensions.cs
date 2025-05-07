@@ -1621,7 +1621,7 @@ namespace BoSSS.Foundation.IO {
                 var phi = session.Timesteps.First().Fields.ElementAt(0);
                 var LevSet = new LevelSet(phi.Basis, "LevelSet");
                 LevSet.Acc(1.0, phi);
-                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, LevSet);
                 int numCC = LsTrk.Regions.GetCutCellMask().Count();
                 cellCount += numCC;
             }

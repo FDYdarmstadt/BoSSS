@@ -50,10 +50,10 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         //[Test]
         public static void LevelSetAdvectionTest2D_fwd(
-               [Values(2, 3, 4)] int LSdegree,
-               [Values(0, 1, 2)] int AMRlevel,
-               [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
-               [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(0, 1, 2)] int AMRlevel,
+            [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
             LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, false);
         }
 
@@ -62,30 +62,29 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         //[Test]
         public static void LevelSetAdvectionTest2D_reverse(
-           [Values(2, 3, 4)] int LSdegree,
-           [Values(0, 1, 2)] int AMRlevel,
-           [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
-           [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(0, 1, 2)] int AMRlevel,
+            [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
             LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, true);
         }
 
         public static void LevelSetAdvectionTest2D(
-
-    [Values(2, 3, 4)] int LSdegree,
-    [Values(0, 1, 2)] int AMRlevel,
-    [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
-    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling,
-    [Values(false, true)] bool reversed) {
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(0, 1, 2)] int AMRlevel,
+            [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling,
+            [Values(false, true)] bool reversed) {
             int gridResolution;
-            switch (LSdegree) {
+            switch(LSdegree) {
                 case 2: gridResolution = 3; break;
                 case 3: gridResolution = 2; break;
                 //case 4: gridResolution = 1; break;
                 default:
-                    gridResolution = 1; break;
+                gridResolution = 1; break;
             }
 
-            if (LSdegree == 4 && AMRlevel > 0 && levelSetEvolution == LevelSetEvolution.StokesExtension)
+            if(LSdegree == 4 && AMRlevel > 0 && levelSetEvolution == LevelSetEvolution.StokesExtension)
                 return;
 
             var Tst = new LevelSetAdvectionTestXNSEC(2, LSdegree, reversed);

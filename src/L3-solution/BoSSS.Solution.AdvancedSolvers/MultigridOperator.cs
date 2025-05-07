@@ -564,8 +564,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup()
-        BlockMsrMatrix m_RawMassMatrix = null;
+        public BlockMsrMatrix m_RawOperatorMatrix = null; // forgotten after Setup() public
+		BlockMsrMatrix m_RawMassMatrix = null;
 
         bool setupdone = false;
 
@@ -1366,6 +1366,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if(this.LeftChangeOfBasis != null) {
                 this.LeftChangeOfBasis.SpMV(1.0, uc, 0.0, v_OUT);
+                //this.LeftChangeOfBasis.ToMsrMatrix().SpMVpara(1.0, uc, 0.0, v_OUT);
             } else {
                 v_OUT.SetV(uc);
             }

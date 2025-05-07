@@ -394,9 +394,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
-        /// constructor for one level-set, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[], ILevelSet)"/>
+        /// constructor for one level-set, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[], ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet, string interfaceName, ContinuityProjectionOption continuityMode) {
@@ -425,9 +425,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// Constructor for two level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,], ILevelSet, ILevelSet)"/>
+        /// Constructor for two level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,], ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1,
@@ -463,9 +463,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// Constructor for three level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,,], ILevelSet, ILevelSet, ILevelSet)"/>
+        /// Constructor for three level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,,], ILevelSet, ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,,] _SpeciesTable, 
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2,
@@ -498,9 +498,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// constructor for four level sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,,,], ILevelSet, ILevelSet, ILevelSet, ILevelSet)"/>
+        /// constructor for four level sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,,,], ILevelSet, ILevelSet, ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,,,] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3,

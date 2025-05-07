@@ -21,12 +21,59 @@ using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+
+namespace BoSSS.Solution {
+
+    public static class GridUpdate_Drivers {
+
+
+        /// <summary>
+        /// Easy-to-use driver routine: 
+        /// Transfers a DG field from an old mesh to a new, adapted mesh.
+        /// </summary>
+        /// <param name="targetField">
+        /// Output, DG field on the new mesh
+        /// </param>
+        /// <param name="sourceField">
+        /// Input, DG field on the old mesh
+        /// </param>
+        /// <param name="gridCorrelation">
+        /// connection between the old and the new mesh,
+        /// returned by <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>
+        /// </param>
+        public static void InitFormOldMesh(this DGField targetField, DGField sourceField, GridCorrelation gridCorrelation) {
+            if(targetField.GetType() != sourceField.GetType()) {
+                throw new ArgumentException($"DG fields must be of the same type, but source is {sourceField.GetType()}, target is {targetField.GetType()}");
+            }
+            GridData newGridData = targetField.GridDat as GridData;
+            if(newGridData == null)
+                throw new NotSupportedException();
+
+
+            var oldTrk = (sourceField as XDGField)?.Basis.Tracker ?? null;
+            var gudv = new BoSSS.Solution.LoadBalancing.GridUpdateDataVault_Adapt(sourceField.GridDat, oldTrk);
+
+
+            gridCorrelation.ComputeDataRedist(newGridData);
+
+            gudv.BackupField(sourceField, "onlyField");
+
+            gudv.Resort(gridCorrelation, targetField.GridDat as GridData);
+
+            gudv.RestoreDGField(targetField, "onlyField");
+        }
+
+
+    }
+}
 
 namespace BoSSS.Solution.LoadBalancing {
 

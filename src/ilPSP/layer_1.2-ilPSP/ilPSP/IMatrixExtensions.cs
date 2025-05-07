@@ -283,14 +283,14 @@ namespace ilPSP {
 
 
         /// <summary>
-        /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// Finds those row <paramref name="iDmin"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
         /// </summary>
         /// <param name="mda">some matrix</param>
         /// <param name="Row">some row</param>
-        /// <param name="Dmax">minimum L2 distance over all rows</param>
-        /// <param name="iDmax">index of minimum L2-distance row</param>
+        /// <param name="Dmin">minimum L2 distance between <paramref name="Row"/> against all other rows in <paramref name="mda"/></param>
+        /// <param name="iDmin">index of minimum L2-distance row</param>
         /// <returns></returns>
-        static public void MindistRow(this IMatrix mda, double[] Row, out double Dmax, out int iDmax) {
+        static public void MindistRow(this IMatrix mda, double[] Row, out double Dmin, out int iDmin) {
             if(Row.Length != mda.NoOfCols)
                 throw new ArgumentException();
 
@@ -298,23 +298,23 @@ namespace ilPSP {
             int N = mda.NoOfCols;
             int M = mda.NoOfRows;
 
-            Dmax = double.MaxValue;
-            iDmax = int.MinValue;
+            Dmin = double.MaxValue;
+            iDmin = int.MinValue;
 
             for(int i = 0; i < M; i++) {
-                double dist = 0.0;
+                double dist = 0.0; // distance between `Row` and `mda[j,:]`, computed in below
                 for(int j = 0; j < N; j++) {
                     double a = Row[j] - mda[i, j];
                     dist += a * a;
                 }
 
-                if(Dmax > dist) {
-                    Dmax = dist;
-                    iDmax = i;
+                if(Dmin > dist) {
+                    Dmin = dist;
+                    iDmin = i;
                 }
             }
 
-            Dmax = Math.Sqrt(Dmax);
+            Dmin = Math.Sqrt(Dmin);
         }
         
         /// <summary>
@@ -332,14 +332,14 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// Finds those row <paramref name="iDmin"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
         /// </summary>
         /// <param name="mda">some matrix</param>
         /// <param name="Row">some row</param>
-        /// <param name="Dmax">minimum L2 distance over all rows</param>
-        /// <param name="iDmax">index of minimum L2-distance row</param>
+        /// <param name="Dmin">minimum L2 distance between <paramref name="Row"/> against all other rows in <paramref name="mda"/></param>
+        /// <param name="iDmin">index of minimum L2-distance row</param>
         /// <returns></returns>
-        static public void MindistRow(this IMatrix mda, Vector Row, out double Dmax, out int iDmax) {
+        static public void MindistRow(this IMatrix mda, Vector Row, out double Dmin, out int iDmin) {
             if(Row.Dim != mda.NoOfCols)
                 throw new ArgumentException();
 
@@ -347,23 +347,23 @@ namespace ilPSP {
             int N = mda.NoOfCols;
             int M = mda.NoOfRows;
 
-            Dmax = double.MaxValue;
-            iDmax = int.MinValue;
+            Dmin = double.MaxValue;
+            iDmin = int.MinValue;
 
             for(int i = 0; i < M; i++) {
-                double dist = 0.0;
+                double dist = 0.0; // distance between `Row` and `mda[j,:]`, computed in below
                 for(int j = 0; j < N; j++) {
                     double a = Row[j] - mda[i, j];
                     dist += a * a;
                 }
 
-                if(Dmax > dist) {
-                    Dmax = dist;
-                    iDmax = i;
+                if(Dmin > dist) {
+                    Dmin = dist;
+                    iDmin = i;
                 }
             }
 
-            Dmax = Math.Sqrt(Dmax);
+            Dmin = Math.Sqrt(Dmin);
         }
         
         /// <summary>
@@ -390,7 +390,7 @@ namespace ilPSP {
 
             double Dmax = double.MaxValue;
 
-            for(int i = 0; i < M; i++) {
+            for(int i = 0; i < M; i++) { 
 
                 for(int k = i + 1; k < M; k++) {
 
@@ -589,6 +589,26 @@ namespace ilPSP {
 
             return norm;
         }
+
+        /// <summary>
+        /// The Frobenius-Norm (l2-norm over all entries) of a matrix;
+        /// </summary>
+        static public double FrobeniusNorm(this IMatrix b) {
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+
+            double acc = 0;
+            for(int i = 0; i < m_NoOfRows; i++) {
+
+                for(int j = 0; j < m_NoOfCols; j++) {
+                    acc += b[i, j].Pow2();
+                }
+
+            }
+
+            return acc.Sqrt();
+        }
+
 
         /// <summary>
         /// detects NAN's and INF's 

@@ -116,6 +116,11 @@ namespace ilPSP.Connectors.Matlab {
         }
 
         /// <summary>
+        /// Optional: directory, where temporary Matlab files are placed; if empty, a default location is selected.
+        /// </summary>
+        static public string AltTempDir { get; set; }
+
+        /// <summary>
         /// Static ctor.
         /// </summary>
         static BatchmodeConnector() {
@@ -167,7 +172,7 @@ namespace ilPSP.Connectors.Matlab {
 
                         bool Exists = false;
                         do {
-                            var tempPath = Path.GetTempPath();
+                            var tempPath = AltTempDir.IsEmptyOrWhite() ? Path.GetTempPath() : AltTempDir;
                             var tempDir = Guid.NewGuid().ToString(); // GUIDs should be unlikely to create collisions
                             WorkingDirectory = new DirectoryInfo(Path.Combine(tempPath, tempDir));
                             try {

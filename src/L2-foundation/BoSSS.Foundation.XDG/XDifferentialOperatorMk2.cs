@@ -451,6 +451,11 @@ namespace BoSSS.Foundation.XDG {
             public double this[int i] {
                 get {
                     int idx = fr.Frame2Full_Loc(i);
+                    // note: the index here might be negative, if the species is not present in the current cell.
+                    // this might cause an exception with certain operations that normally should just work, e.g. 'ToArray()'
+                    // however, we want to keep the exception, because it is a hint that some multi-phase operator tries to write to non-existing species
+
+                    
                     return m_Full[idx];
                 }
                 set {
@@ -1439,7 +1444,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
+        /// Used by <see cref="_GetJacobiOperator(int)"/> to encapsulate the temporal operator
         /// of this operator (because of the ownership, the temporal operator cannot be reused).
         /// </summary>
         class TemporalOperatorContainer : ITemporalOperator {
@@ -1656,7 +1661,7 @@ namespace BoSSS.Foundation.XDG {
         }
         
         CellQuadratureScheme DefaultContactLineCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            var volScheme = SchemeHelper.GetContactLineQuadScheme(spc, 0);
+            var volScheme = SchemeHelper.GetContactLineQuadScheme(spc, 0, 1);
             return volScheme;
         }
 

@@ -11,7 +11,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     public class SayeGaussComboRuleFactory {
         ISayeGaussComboRule comboRule;
         List<ChunkRulePair<QuadRule>>[] rulez;

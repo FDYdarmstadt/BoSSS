@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -8,6 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CutCellQuadratureScaling\CutCellQuadratureScaling.csproj" />
     <ProjectReference Include="..\StokesHelical_Ak\StokesHelical_Ak.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
@@ -22,6 +23,7 @@
     <ProjectReference Include="..\CDG_Projection_MPI\CDG_Projection_MPI.csproj" />
     <ProjectReference Include="..\CNS\CNS.csproj" />
     <ProjectReference Include="..\CNS_MPITests\CNS_MPITests.csproj" />
+    <ProjectReference Include="..\CutCellQuadratureScaling\CutCellQuadratureScaling.csproj" />
     <ProjectReference Include="..\CutCellQuadrature\CutCellQuadrature.csproj" />
     <ProjectReference Include="..\DatabaseTests\DatabaseTests.csproj" />
     <ProjectReference Include="..\DerivativeTest\DerivativeTest.csproj" />

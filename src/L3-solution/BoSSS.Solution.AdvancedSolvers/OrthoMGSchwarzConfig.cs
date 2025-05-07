@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
@@ -26,7 +25,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// force to use the <see cref="SchwarzForCoarseMesh"/> implementation
         /// </summary>
-        CoarseMesh = 2,
+        CoarseMesh = 1,
 
 
         /// <summary>

@@ -296,7 +296,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XRheology_Control.RefinementStrategy.CurvatureRefined;
             C.RefinementLevel = 3;
-            C.BaseRefinementLevel = 3;
+            //C.BaseRefinementLevel  3;
 
             #endregion
 

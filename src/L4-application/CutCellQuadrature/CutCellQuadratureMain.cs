@@ -39,6 +39,8 @@ using System.Runtime.InteropServices;
 using ilPSP.Utils;
 using static ilPSP.Utils.UnsafeAlgoim;
 using System.Xml;
+using BoSSS.Foundation.XDG.Quadrature.Saye;
+using BoSSS.Foundation.XDG.Quadrature.Algoim;
 
 namespace CutCellQuadrature {
 
@@ -65,7 +67,7 @@ namespace CutCellQuadrature {
         Algoim
     }
 
-    public partial class Program : Application {
+    public partial class CutCellQuadratureMain : Application {
 
         private static ITestCase[] testCases = new ITestCase[] {
             //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
@@ -176,41 +178,46 @@ namespace CutCellQuadrature {
         static void Main(string[] args) {
             InitMPI(args);
 
-
-
             foreach (var testCase in testCases) {
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.m_mode = Modes.Algoim;
                 app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
                 app.RunSolverMode();
-                app.ProfilingLog();
+                app.ProfilingLog(true);
             }
 
             foreach (var testCase in testCases) {
 
-                Program app = new Program(testCase);
+                CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);
                 app.m_mode = Modes.SayeGaussRules;
                 app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
                 app.RunSolverMode();
-                app.ProfilingLog();
+                app.ProfilingLog(true);
             }
 
             FinalizeMPI();
         }
 
-        public Program(ITestCase testCase) {
+        public CutCellQuadratureMain(ITestCase testCase) {
             this.testCase = testCase;
         }
 
-        public Program() {
+        public CutCellQuadratureMain() {
         }
 
         private ILevelSet levelSet;
 
-        private LevelSetTracker levelSetTracker;
+        private LevelSetTracker levelSetTracker {
+            get {
+                return base.LsTrk;
+            }
+            set {
+                base.LsTrk = value;
+            }
+        }
 
         private XDGField XDGField;
 
@@ -230,7 +237,7 @@ namespace CutCellQuadrature {
         protected override void CreateFields() {
             levelSet = testCase.GetLevelSet((BoSSS.Foundation.Grid.Classic.GridData)GridData);
             levelSetTracker = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)GridData, 
-                XQuadFactoryHelper.MomentFittingVariants.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
+                CutCellQuadratureMethod.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
                 1, new string[] { "A", "B" }, levelSet);
 
             XDGField = new XDGField(
@@ -1007,7 +1014,9 @@ namespace CutCellQuadrature {
             using (new FuncTrace()) {
                 ScalarFieldQuadrature quadrature;
                 CellQuadratureScheme quadInstr = new CellQuadratureScheme(
-                    factory, cutCellGrid.VolumeMask);
+                    scaling: (testCase is ISurfaceTestCase) ? new LevelSetIntegrationMetric(this.levelSetTracker.DataHistories[0].Current) : new CellIntegrationMetric(),
+                    factory: factory, 
+                    domain: cutCellGrid.VolumeMask);
                 if (testCase is ISurfaceTestCase) {
                     quadrature = new ScalarFieldQuadrature(GridData, SinglePhaseField, quadInstr, order);
                 } else {

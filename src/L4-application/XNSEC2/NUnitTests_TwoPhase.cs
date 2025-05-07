@@ -49,14 +49,14 @@ namespace BoSSS.Application.XNSEC {
             [Values(1)] int deg,
             [Values(0.0, 0.1)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode
 #else
             [Values(2)] int spatialDimension,
             [Values(1, 2, 3, 4)] int deg,
             [Values(0.0, 0.1)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode
 #endif
             ) {
@@ -77,7 +77,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(2)] int spatialDimension,
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.Curvature_Projected, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local)] SurfaceStressTensor_IsotropicMode SurfTensionMode,
             [Values(true, false)] bool performsolve
             ) {
@@ -95,7 +95,7 @@ namespace BoSSS.Application.XNSEC {
                 ASScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.FullySymmetric, deg, CutCellQuadratureType, SurfTensionMode);
         }
 
-        private static void ASScalingTest(IXNSECTest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton) {
+        private static void ASScalingTest(IXNSECTest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, CutCellQuadratureMethod CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton) {
 #if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
 
@@ -114,7 +114,7 @@ namespace BoSSS.Application.XNSEC {
 
 
 
-        private static void ASScalingTest(IXNSECTest_Heat Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton) {
+        private static void ASScalingTest(IXNSECTest_Heat Tst, int[] ResolutionS, ViscosityMode vmode, int deg, CutCellQuadratureMethod CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton) {
 //#if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
 
@@ -141,13 +141,13 @@ namespace BoSSS.Application.XNSEC {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
 #else
             [Values(2, 3, 4)] int deg,
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(0.0, 60.0 * Math.PI / 180.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType
 #endif
             ) {
             BoSSS.Solution.Application.InitMPI();
@@ -171,7 +171,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(false)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm
             ) {
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
@@ -201,7 +201,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
             [Values(false, true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
             [Values(false, true)] bool differentFluids,
             [Values(false, true)] bool TopBC_PressureOutlet,
@@ -235,7 +235,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(2)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(false, true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
             [Values(true)] bool differentFluids,
             [Values(false, true)] bool RightBC_PressureOutlet
@@ -259,7 +259,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
             [Values(false, true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
             [Values(false, true)] bool differentFluids,
                         [Values(false, true)] bool RightBC_PressureOutlet
@@ -288,7 +288,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(3)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm) {
 
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
@@ -312,7 +312,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm
             ) {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
@@ -335,7 +335,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm
             ) {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
@@ -369,7 +369,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(0.0, 0.1)] double U2,
             [Values(ViscosityMode.Standard)] ViscosityMode vmode,
             [Values(true, false)] bool periodicity,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver
             ) {
             var Tst = new TranspiratingChannelTestXNSEC(U2, periodicity);

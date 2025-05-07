@@ -59,12 +59,49 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// App entry point 
         /// </summary>
         static void Main(string[] args) {
-            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
-            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6);
+/*
+            InitMPI(args);
+            double peakPerf = 0;
+            int failCount = 0;
+            for(int i = 0; i < 1000; i++) {
+                var LastTime = DateTime.Now;
+                using(var p = new XdgPoisson3Main()) {
+                    var ctrl = BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(5, 16);
+                    ctrl.TracingNamespaces = "*";
+                    p.Init(ctrl);
+                    p.RunSolverMode();
+                }
+
+                {
+                    //const double myTime = 1.238e-02;
+                    const double myTime = 3.673e-03;
+
+                    var now = DateTime.Now;
+                    var duration = (now - LastTime).TotalSeconds;
+                    LastTime = now;
+
+                    double testsPerSec = 1.0 / duration;
+                    peakPerf = Math.Max(peakPerf, testsPerSec);
+
+                    if(testsPerSec < myTime*10 || testsPerSec < peakPerf * 0.01) {
+                        Console.Error.WriteLine($" PERFORMANCE WARNING: Poisson solves per sec: {testsPerSec * 1:0.###e-00}");
+                        failCount++;
+                        if(failCount > 3)
+                            System.Environment.Exit(-1234);
+                    }
+
+                    Console.WriteLine($" ..  Poisson solves per sec: {testsPerSec:0.###e-00}");
+                }
+            }
+            csMPI.Raw.mpiFinalize();
+*/
+            //InitMPI(args);
+            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(4, 0.6, CutCellQuadratureMethod.Saye);
             //throw new Exception("remove me");
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
             });
+
         }
 
 #pragma warning disable 649
@@ -116,7 +153,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         protected override void SetInitial(double t) {
             //this will suppress exception prompts
-            //Workaround to prevent distrubance while executing batchclient
+            //Workaround to prevent disturbance while executing batchclient
             if (this.Control.SuppressExceptionPrompt) {
                 AppDomain currentDomain = AppDomain.CurrentDomain;
                 //currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
@@ -161,6 +198,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             double penalty_multiplyer = base.Control.penalty_multiplyer;
 
             int order = this.u.Basis.Degree * 2;
+            
 
             double MU_A = this.Control.MU_A;
             double MU_B = this.Control.MU_B;
@@ -225,6 +263,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     }
                 }
 
+                
                 double L2_ERR_HMF_A = this.u.GetSpeciesShadowField("A").LxError(this.Control.InitialValues_Evaluators["uEx#A"].Vectorize(), null, A_rule).Sqrt();
                 double L2_ERR_HMF_B = this.u.GetSpeciesShadowField("B").LxError(this.Control.InitialValues_Evaluators["uEx#B"].Vectorize(), null, B_rule).Sqrt();
                 double L2_ERR_HMF = (L2_ERR_HMF_A.Pow2() + L2_ERR_HMF_B.Pow2()).Sqrt();
@@ -234,9 +273,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
                 Console.WriteLine("Error norm (standard):       " + L2_ERR);
-                Console.WriteLine("Error norm (HMF, Species A): " + L2_ERR_HMF_A);
-                Console.WriteLine("Error norm (HMF, Species B): " + L2_ERR_HMF_B);
-                Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
+                Console.WriteLine($"Error norm ({this.LsTrk.CutCellQuadratureType}, Species A): " + L2_ERR_HMF_A);
+                Console.WriteLine($"Error norm ({this.LsTrk.CutCellQuadratureType}, Species B): " + L2_ERR_HMF_B);
+                Console.WriteLine($"Error norm ({this.LsTrk.CutCellQuadratureType}):            " + L2_ERR_HMF);
             }
 
 #if TEST

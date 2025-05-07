@@ -388,7 +388,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 CellMask emptyCells = new CellMask(LevelSetData.GridDat, voidCellsArray, MaskType.Geometrical);
                 foreach (int cell in emptyCells.ItemEnum) {
-                    QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                    QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
                     emptyRule.Nodes.LockForever();
                     result.Add(new ChunkRulePair<QuadRule>(
                         Chunk.GetSingleElementChunk(cell), emptyRule));
@@ -913,15 +913,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <summary>
             /// Constructor
             /// </summary>
-            /// <param name="owner"></param>
-            /// <param name="surfaceRuleFactory"></param>
-            /// <param name="mask"></param>
             public LambdaLevelSetSurfaceQuadrature(
                 LevelSetVolumeQuadRuleFactory owner, IQuadRuleFactory<QuadRule> surfaceRuleFactory, CellMask mask)
                 : base(
                     new int[] { owner.GetNumberOfLambdas(owner.lambdaBasis.MaxAbsoluteDegree) },
                     owner.LevelSetData.GridDat,
-                    new CellQuadratureScheme(surfaceRuleFactory, mask).Compile(owner.LevelSetData.GridDat, owner.lambdaBasis.MaxAbsoluteDegree),
+                    new CellQuadratureScheme(null,surfaceRuleFactory, mask).Compile(owner.LevelSetData.GridDat, owner.lambdaBasis.MaxAbsoluteDegree),
                     CoordinateSystem.Reference) //
             {
                 this.owner = owner;
@@ -976,8 +973,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 int NoOfNodes = QuadNodes.NoOfNodes;
                 
                 MultidimensionalArray levelSetNormals = owner.LevelSetData.GetLevelSetReferenceNormals(QuadNodes, i0, Length);
-                MultidimensionalArray metrics = owner.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(
-                    QuadNodes, i0, Length);
+                //MultidimensionalArray metrics = owner.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(
+                //    QuadNodes, i0, Length);
 
                 for (int i = 0; i < Length; i++) {
                     MultidimensionalArray lambdaValues = owner.EvaluateLambdas(i0 + i, QuadNodes);
@@ -988,7 +985,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 EvalResult[i, j, k] += lambdaValues[j, k, d] * levelSetNormals[i, j, d];
                             }
 
-                            EvalResult[i, j, k] *= metrics[i, j];
+                            //EvalResult[i, j, k] *= metrics[i, j];
                         }
                     }
                 }

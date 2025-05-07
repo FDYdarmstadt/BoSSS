@@ -80,7 +80,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The kind of HMF which is be used for computing cell volumes.
         /// </summary>
-        public XQuadFactoryHelper.MomentFittingVariants HMFvariant {
+        public CutCellQuadratureMethod HMFvariant {
             get {
                 return NonAgglomeratedMetrics.HMFvariant;
             }
@@ -669,21 +669,28 @@ namespace BoSSS.Foundation.XDG {
                 var CompScheme = xqs.GetVolumeQuadScheme(Species).Compile(gdat, this.CutCellQuadratureOrder);
 
                 MultidimensionalArray CenterOfGravity = MultidimensionalArray.Create(JE, D);
+                for(int j = 0; j < JE; j++)
+                    CenterOfGravity.SetRowPt(j, gdat.iGeomCells.GetCenter(j)); // default for empty cut-cells with zero-rules that don't get touched by quadrature
 
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(new int[] { D + 1 }, gdat,
                     CompScheme,
                     delegate (int i0, int Length, QuadRule rule, MultidimensionalArray EvalResult) { // Del_Evaluate
                         var globNodes = gdat.GlobalNodes.GetValue_Cell(rule.Nodes, i0, Length);
-                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).Set(globNodes);
-                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, D }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).SetAll(1.0);
+                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).Set(globNodes); // location X
+                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, D }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).SetAll(1.0); // cell volume
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                         for (int i = 0; i < Length; i++) {
                             for (int d = 0; d < D; d++) {
                                 CenterOfGravity[i + i0, d] = ResultsOfIntegration[i, d] / ResultsOfIntegration[i, D];
                             }
+
+                            if(CenterOfGravity.GetRowPt(i0 + i).ContainsNanOrInf())
+                                CenterOfGravity.SetRowPt(i0 + i, gdat.iGeomCells.GetCenter(i + i0));
+
                         }
                     }, cs: CoordinateSystem.Physical).Execute();
+
 
                 CenterOfGravity.Storage.MPIExchange(this.Tracker.GridDat);
 

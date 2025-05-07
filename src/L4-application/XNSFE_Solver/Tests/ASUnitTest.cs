@@ -47,6 +47,8 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.LevelSetTools.ParameterizedLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using ilPSP.LinSolvers.PARDISO;
+using BoSSS.Solution.AdvancedSolvers;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -80,7 +82,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                     vmode: vmode,
                     GridResolution: Res,
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
-                    CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.Saye);
+                    CutCellQuadratureType: CutCellQuadratureMethod.Saye);
                 C.SkipSolveAndEvaluateResidual = true;
 
                 C.InitSignedDistance = false;
@@ -184,7 +186,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             double AgglomerationTreshold = 0.1;
 
             var Tst = new ParameterizedLevelSetTest();
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, 16);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, 16);
 
             C.ProjectName = "XNSFE_ParamLevelSetTestInCapillary";
             string jobName = C.ProjectName;
@@ -238,7 +240,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                     vmode: vmode,
                     GridResolution: GridResolutionS[i],
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
-                    CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.Saye);
+                    CutCellQuadratureType: CutCellQuadratureMethod.Saye);
             }
 
             XNSFESolverConvergenceTest(Tst, CS, true, new double[] { deg, deg, deg - 1, deg }); // be **very** generous with the expected slopes
@@ -260,7 +262,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                     vmode: vmode,
                     GridResolution: GridResolutionS[i],
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
-                    CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.Saye);
+                    CutCellQuadratureType: CutCellQuadratureMethod.Saye);
                 CS[i].SkipSolveAndEvaluateResidual = true;
             }
 
@@ -275,7 +277,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(3)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
 
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
@@ -296,7 +298,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
 
@@ -315,7 +317,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver) // evaporation currently only implemented with use of newton solver
             {
@@ -335,7 +337,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
             [Values(3)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
             [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) // evaporation currently only implemented with use of newton solver
@@ -367,7 +369,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver) // evaporation currently only implemented with use of newton solver
             {
@@ -395,7 +397,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver,
             [Values(1.0, double.PositiveInfinity)] double slipI,
             [Values(0.143)] double viscosityratio,
@@ -405,7 +407,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
             [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
             [Values(1.0, 0.143)] double viscosityratio,
@@ -469,7 +471,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver,
             [Values(1.0, double.PositiveInfinity)] double slipI,
             [Values(0.143)] double viscosityratio,
@@ -479,7 +481,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
             [Values(0.0, 1.0, double.PositiveInfinity)] double slipI,
             [Values(1.0, 0.143)] double viscosityratio,
@@ -494,7 +496,10 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             ClearInitialValues(Tst, C);
 
-            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
+            // fk, 24apr25: seems to run more reliable when using sequential solver
+            //C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); // original config from Rieckmann
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            (C.LinearSolver as DirectSolver.Config).EnforceSquential = true;
 
             XNSFESolverTest(Tst, C);
         }
@@ -516,7 +521,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             [Values(0.0)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
             [Values(0.0)] double angle,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(CutCellQuadratureMethod.Saye)] CutCellQuadratureMethod CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver,
             [Values(1.0)] double slipI,
             [Values(1.21)] double viscosityratio,
@@ -544,7 +549,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                     vmode: vmode,
                     GridResolution: Res,
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
-                    CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.Saye);
+                    CutCellQuadratureType: CutCellQuadratureMethod.Saye);
 
                 if(setup == 0) {
                     C.IncludeRecoilPressure = false; // disable recoil, the exact coded solution is not analytical for that case, so the residuals wont be close to zero.
@@ -823,7 +828,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         }
 
         static AS_XHeat_Control TstObj2CtrlObj(IXHeatTest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            CutCellQuadratureMethod CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1) {
             AS_XHeat_Control C = new AS_XHeat_Control();
@@ -937,7 +942,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         }
 
         static AS_XNSFE_Control TstObj2CtrlObj(IXNSFETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            CutCellQuadratureMethod CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton,
             LevelSetHandling lsHandling = LevelSetHandling.LieSplitting) {

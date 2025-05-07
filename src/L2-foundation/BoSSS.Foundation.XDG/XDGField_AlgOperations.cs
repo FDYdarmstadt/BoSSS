@@ -43,7 +43,9 @@ namespace BoSSS.Foundation.XDG {
         /// Projects a function onto an XDG Field, only on some prescribed species
         /// </summary>
         /// <param name="alpha"></param>
-        /// <param name="f"></param>
+        /// <param name="f">
+        /// A function $ (\vector{x}, U, \texttt{jcell}) \mapsto f $
+        /// </param>
         /// <param name="speciesToEvaluateIDs"></param>
         /// <param name="U"></param>
         virtual public void ProjectFunctionXDG(double alpha, Func<Vector, double[], int, double> f,  IList<SpeciesId> speciesToEvaluateIDs, params XDGField[] U) {

@@ -31,10 +31,7 @@ using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
-    //public static class Arsch {
-    //    static public bool ShutTheFuckUp = false;
-    //}
-
+   
     /// <summary>
     /// edge quadrature of nonlinear equation components
     /// </summary>
@@ -374,21 +371,20 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
 
-
             /// <summary>
             /// 
             /// </summary>
-            public void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
+            public void EvaluateEx(int i0, int Length, QuadRule QR, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
                 NodeSet NodesUntransformed = QR.Nodes;
                 IGridData grid = m_owner.GridDat;
                 int D = grid.SpatialDimension;
                 int NoOfEquations = m_owner.m_CodomainBasisS.Length;
                 int NoOfNodes = NodesUntransformed.NoOfNodes;
-                bool isAffine = grid.iGeomCells.IsCellAffineLinear(i0);
+                bool isAffineCell = grid.iGeomCells.IsCellAffineLinear(i0);
                 int[] geom2log = grid.iGeomCells.GeomCell2LogicalCell;
 #if DEBUG
                 for (int i = 1; i < Length; i++) {
-                    Debug.Assert(grid.iGeomCells.IsCellAffineLinear(i + i0) == isAffine);
+                    Debug.Assert(grid.iGeomCells.IsCellAffineLinear(i + i0) == isAffineCell);
 
                     if (geom2log == null) {
                         for (int e = 0; e < m_owner.m_CodomainBasisS.Length; e++) {
@@ -698,43 +694,47 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 this.Flux_Trafo.Start();
 
-                MultidimensionalArray InverseJacobi = null, JacobiDet = null;
+                MultidimensionalArray InverseJacobi = null, IntegralMetricVals = null;
                 for (int e = 0; e < NoOfEquations; e++) {
                     Debug.Assert((m_FluxValues[e] != null) == (m_FluxValuesTrf[e] != null));
 
                     if (m_FluxValues[e] != null) {
                         if (InverseJacobi == null) {
-                            if (isAffine) {
+                            if (isAffineCell) {
                                 InverseJacobi = grid.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, D - 1, D - 1 });
                             } else {
                                 InverseJacobi = grid.InverseJacobian.GetValue_Cell(QR.Nodes, i0, Length);
-                                //InverseJacobi = MultidimensionalArray.Create(Length, NoOfNodes, D, D);
                             }
                         }
 
-                        if (JacobiDet == null && !isAffine)
-                            JacobiDet = grid.JacobianDeterminat.GetValue_Cell(QR.Nodes, i0, Length);
+                        if (IntegralMetricVals == null && (!isAffineCell || metric.AlwaysUsePerNodeScaling))
+                            IntegralMetricVals = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
 
-                        if (isAffine) {
+                        if (isAffineCell) {
                             m_FluxValuesTrf[e].Multiply(1.0, m_FluxValues[e], InverseJacobi, 0.0, "jke", "jkd", "jed");
                             // for affine-linear cells the multiplication with Jacobi determinant is done AFTER quadrature, since it is constant per cell.
+                            // except if:
+                            if(metric.AlwaysUsePerNodeScaling)
+                                m_FluxValuesTrf[e].Multiply(1.0, m_FluxValuesTrf[e], IntegralMetricVals, 0.0, "jke", "jke", "jk");
                         } else {
                             m_FluxValuesTrf[e].Multiply(1.0, m_FluxValues[e], InverseJacobi, 0.0, "jke", "jkd", "jked");
-                            m_FluxValuesTrf[e].Multiply(1.0, m_FluxValuesTrf[e], JacobiDet, 0.0, "jke", "jke", "jk"); // apply scaling with Jacobi determinant, for integral transformation
+                            m_FluxValuesTrf[e].Multiply(1.0, m_FluxValuesTrf[e], IntegralMetricVals, 0.0, "jke", "jke", "jk"); // apply scaling with Jacobi determinant, for integral transformation
                         }
                     }
 
                     if (m_SourceValues[e] != null) {
 
-                        if (JacobiDet == null && !isAffine)
-                            JacobiDet = grid.JacobianDeterminat.GetValue_Cell(QR.Nodes, i0, Length);
-                        //JacobiDet = MultidimensionalArray.Create(Length, NoOfNodes);
-
+                        if(IntegralMetricVals == null && (!isAffineCell || metric.AlwaysUsePerNodeScaling))
+                            IntegralMetricVals = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
+                        
                         // apply scaling with Jacobi determinant, for integral transformation
-                        if (isAffine) {
+                        if (isAffineCell) {
                             // nop: for affine-linear cells the multiplication with Jacobi determinant is done AFTER quadrature, since it is constant per cell.
+                            // except if:
+                            if(metric.AlwaysUsePerNodeScaling)
+                                m_SourceValues[e].Multiply(1.0, m_SourceValues[e], IntegralMetricVals, 0.0, "jk", "jk", "jk");
                         } else {
-                            m_SourceValues[e].Multiply(1.0, m_SourceValues[e], JacobiDet, 0.0, "jk", "jk", "jk");
+                            m_SourceValues[e].Multiply(1.0, m_SourceValues[e], IntegralMetricVals, 0.0, "jk", "jk", "jk");
                         }
                     }
                 }
@@ -774,13 +774,20 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 MultidimensionalArray OrthoTrf = null; // to transform back to ONB on physical space...
                 int iBufOrthoTrf;
-                if (isAffine) {
-                    OrthoTrf = TempBuffer.GetTempMultidimensionalarray(out iBufOrthoTrf, Length);
-                    OrthoTrf.Multiply(1.0,
-                        grid.iGeomCells.JacobiDet.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
-                        grid.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
-                        0.0,
-                        "j", "j", "j");
+                if(isAffineCell) {
+                    if(!metric.AlwaysUsePerNodeScaling) {
+
+                        OrthoTrf = TempBuffer.GetTempMultidimensionalarray(out iBufOrthoTrf, Length);
+                        OrthoTrf.Multiply(1.0,
+                            //grid.iGeomCells.JacobiDet.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
+                            metric.GetScalingsForLinearElements(grid, QR, i0, Length),
+                            grid.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 }),
+                            0.0,
+                            "j", "j", "j");
+                    } else {
+                        OrthoTrf = grid.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                        iBufOrthoTrf = int.MinValue;
+                    }
                 } else {
                     int MaxDegree = Math.Max(m_owner.m_MaxCodBasis != null ? m_owner.m_MaxCodBasis.Degree : 0, m_owner.m_MaxCodBasis_Gradient != null ? m_owner.m_MaxCodBasis_Gradient.Degree : 0);
                     OrthoTrf = grid.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(i0, Length, MaxDegree);
@@ -812,6 +819,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             testFuncGrad_e = m_TestFuncGradWeighted.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { NoOfNodes - 1, N - 1, D - 1 });
 
                         QuadResult_e.Multiply(1.0, Fluxes_e, testFuncGrad_e, 0.0, "jn", "jke", "kne");
+                    } else {
+                        QuadResult_e.Clear();
                     }
 
                     // sources
@@ -835,13 +844,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     // ---------------------
                     MultidimensionalArray trfQuadResult_e = QuadResult.ExtractSubArrayShallow(new int[] { 0, N0 }, new int[] { Length - 1, N0 + N - 1 });
 
-                    if (isAffine) {
+                    if (isAffineCell) {
                         trfQuadResult_e.Multiply(1.0, OrthoTrf, QuadResult_e, 0.0, "jn", "j", "jn");
 
                     } else {
                         MultidimensionalArray _OrthoTrf;
                         if (OrthoTrf.GetLength(1) == N)
-                            _OrthoTrf = OrthoTrf;
+                            _OrthoTrf = OrthoTrf; // test function degree for equation e is already the maximum -> no need to extract
                         else
                             _OrthoTrf = OrthoTrf.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, N - 1, N - 1 });
 
@@ -855,7 +864,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     N0 += N;
                 }
 
-                if (isAffine)
+                if (isAffineCell && iBufOrthoTrf > 0)
                     TempBuffer.FreeTempBuffer(iBufOrthoTrf);
 
                 this.Loops.Stop();
@@ -897,8 +906,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         ThreadLocalsVol[] m_ThreadLocals;
 
 
-        void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
-            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
+        void EvaluateEx(int i0, int Length, QuadRule qr, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
+            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, metric, QuadResult, iThread, NumThreads);
         }
 
 

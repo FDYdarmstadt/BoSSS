@@ -517,9 +517,52 @@ namespace ilPSP.Utils {
         /// <param name="y">concatenated array for the level set values at nodes (its length = multiplication of lengths)</param>
         /// <returns></returns>
         public static QuadScheme GetSurfaceQuadratureRules(int dim, int p, int q, int[] lengths, double[] x, double[] y) {
+            QuadSchemeUnmanaged retC;
+            QuadScheme ret;
+            if(dim > 1) {
+                retC = m_Algoim.getUnmanagedSurfaceScheme(dim, p, q, lengths, x, y);
+                ret = new QuadScheme(retC);
 
-            QuadSchemeUnmanaged retC = m_Algoim.getUnmanagedSurfaceScheme(dim, p, q, lengths, x, y);
-            QuadScheme ret = new QuadScheme(retC);
+            } else if(dim == 1) {
+                //Create a fake plane with repeating the same elements
+                dim = 2; //upgrade dimension
+                double[] pseudoPoints = new double[3] { -1.0, 0.0, 1.0 }; //3 points should suffice, = x 
+                int[] pseudoLengths = { lengths[0], pseudoPoints.Length };
+
+                double[] pseudoX = new double[pseudoLengths[0] + pseudoLengths[1]];
+                Array.Copy(x, pseudoX, pseudoLengths[0]);
+                Array.Copy(pseudoPoints, 0, pseudoX, pseudoLengths[0], pseudoLengths[1]);
+
+                double[] pseudoY = new double[pseudoLengths[0] * pseudoLengths[1]];
+                for(int i = 0; i < pseudoLengths[1]; i++) { 
+                    Array.Copy(y, 0, pseudoY, i * pseudoLengths[0], pseudoLengths[0]);
+                }
+
+                // call for pseudo plane
+                retC = m_Algoim.getUnmanagedSurfaceScheme(dim, p, q, pseudoLengths, pseudoX, pseudoY);
+                var retPseudo = new QuadScheme(retC); 
+
+                if (retPseudo.length > 0) { // if not empty
+                    Debug.Assert(Math.Abs(retPseudo.weights.Sum() - 2) < 1e-6); //single point quadrature rule should have a weight=2
+                     Debug.Assert(
+                             retPseudo.nodes.Where((_, index) => index % 2 == 0).All(n => Math.Abs(n - retPseudo.nodes[0]) < 1e-6),
+                              "All non-pseudo nodes should be identical.");
+
+                    // Create a new quadscheme for the real case (1D)
+                    ret = new QuadScheme {
+                            dimension = dim - 1,
+                            length = 1,
+                            weights = new[] { 1.0 }, //all should be same except the pseudo axis
+                            nodes = new[] { retPseudo.nodes[0] } //use the first as all should be same except the pseudo axis
+                        };
+                } else {
+                    retPseudo.dimension = dim - 1;
+                    ret = retPseudo;
+                }
+            } else {
+                throw new ArgumentOutOfRangeException("Surface quadrules should be at least 1-dimensional");
+            }
+
             retC.FreeMemory();
             return ret;
         }
@@ -581,8 +624,8 @@ namespace ilPSP.Utils {
 		/// </summary>
 		/// <param name="dim">dimension of space</param>
 		/// <param name="dim">dimension of space</param>
-		/// <param name="p1">degree of level set 1 (will be used for Berstein pol. interpolation)</param>
-		/// <param name="p2">degree of level set 2 (will be used for Berstein pol. interpolation)</param>
+		/// <param name="p1">degree of level set 1 (will be used for Bernstein pol. interpolation)</param>
+		/// <param name="p2">degree of level set 2 (will be used for Bernstein pol. interpolation)</param>
 		/// <param name="q">quadrature order</param>
 		/// <param name="lengths1">array for the lengths in each axis for level set 1</param>
 		/// <param name="lengths2">array for the lengths in each axis for level set 2</param>

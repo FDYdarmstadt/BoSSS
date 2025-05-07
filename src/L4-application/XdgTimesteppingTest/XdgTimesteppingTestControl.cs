@@ -60,7 +60,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// </summary>
         public XdgTimesteppingTestControl() {
             NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
         }
 
 
@@ -155,7 +155,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         
         /// <summary>
-        /// If <see cref="HMF"/>==<see cref="XQuadFactoryHelper.MomentFittingVariants.ExactCircle"/>, this is the 
+        /// If <see cref="HMF"/>==<see cref="CutCellQuadratureMethod.ExactCircle"/>, this is the 
         /// radius in dependence of time.
         /// </summary>
         public Func<double, double> CircleRadius;

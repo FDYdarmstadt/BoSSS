@@ -231,7 +231,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
 
                     MultidimensionalArray normals = EvaluateRefNormalsOnEdge(this.LevelSetData, cell, optimizedRule, e);
-                    MultidimensionalArray metrics = GetMetricTermsOnEdge(this.LevelSetData, levelSetIndex, optimizedRule, cell, e);
+                    //MultidimensionalArray metrics = GetMetricTermsOnEdge(this.LevelSetData, levelSetIndex, optimizedRule, cell, e);
 
                     //lh = tracker.GridDat.NSC.LockNodeSetFamily(tracker.GridDat.NSC.CreateContainer(
                     //    optimizedRule.Nodes.ExtractSubArrayShallow(
@@ -269,7 +269,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int edge = Math.Abs(LevelSetData.GridDat.Cells.Cells2Edges[cell][e]) - 1;
                     double maxWeight = 0.0;
                     for (int i = 0; i < noOfNodesOnEdge; i++) {
-                        optimizedRule.Weights[noOfProcessedNodes + i] = rhs[i] / metrics[i];
+                        optimizedRule.Weights[noOfProcessedNodes + i] = rhs[i];// / metrics[i];
                         //optimizedRule.Weights[noOfProcessedNodes + i] = rhs[i];
                         maxWeight = Math.Max(optimizedRule.Weights[noOfProcessedNodes + i].Abs(), maxWeight);
                     }
@@ -379,6 +379,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return normals;
         }
 
+        /*
         public static MultidimensionalArray GetMetricTermsOnEdge(LevelSetTracker.LevelSetData LevelSetData, int levSetIndex, CellBoundaryQuadRule rule, int cell, int localEdge) {
             if (rule.NumbersOfNodesPerFace[localEdge] == 0) {
                 return null;
@@ -410,7 +411,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             return result;
         }
-
+        */
         private static void CopyNodes(CellBoundaryQuadRule source, CellBoundaryQuadRule target, int localEdge) {
             Debug.Assert(
                 source.NumbersOfNodesPerFace[localEdge] == target.NumbersOfNodesPerFace[localEdge],
@@ -623,10 +624,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         Results[e, k] = ResultsOfIntegration[0, e, k];
                     }
                 }
-            }
-
-            protected override MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
-                throw new NotSupportedException("special treatment for this class");
             }
         }
     }

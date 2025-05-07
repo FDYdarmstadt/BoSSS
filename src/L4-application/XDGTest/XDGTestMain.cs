@@ -125,7 +125,7 @@ namespace BoSSS.Application.XDGTest {
 
         protected override void CreateFields() {
             this.LevSet = new LevelSet(new Basis(this.GridData, Control.FieldOptions["Phi"].Degree), "Phi");
-            this.LsTrk = new LevelSetTracker((GridData) this.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
+            this.LsTrk = new LevelSetTracker((GridData) this.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, LevSet);
             Pressure = new XDGField(new XDGBasis(this.LsTrk, Control.FieldOptions["Pressure"].Degree), "Pressure");
             IOFields.Add(this.LevSet);
             IOFields.Add(this.Pressure);

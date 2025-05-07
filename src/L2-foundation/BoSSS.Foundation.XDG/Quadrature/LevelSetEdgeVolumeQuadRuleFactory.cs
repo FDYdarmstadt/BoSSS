@@ -714,10 +714,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <summary>
             /// Constructor
             /// </summary>
-            /// <param name="owner"></param>
-            /// <param name="edgeRuleFactory"></param>
-            /// <param name="maxLambdaDegree"></param>
-            /// <param name="mask"></param>
             public LambdaEdgeBoundaryQuadrature(
                 LevelSetEdgeVolumeQuadRuleFactory owner,
                 IQuadRuleFactory<CellEdgeBoundaryQuadRule> edgeRuleFactory,
@@ -748,15 +744,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             
-            /// <summary>
-            /// Not implemented.
-            /// </summary>
-            /// <param name="i0"></param>
-            /// <param name="L"></param>
-            /// <returns></returns>
-            protected override MultidimensionalArray GetScalingsForLinearElements(int i0, int L) {
-                throw new NotSupportedException("special treatment for this class");
-            }
 
             /// <summary>
             /// For each face $` E $`  of each cell in
@@ -939,8 +926,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     for (int e = 0; e < NoOfFaces; e++) { // loop over faces...
                         MultidimensionalArray levelSetNormals =
                             LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, jCell, CurrentRule, e);
-                        MultidimensionalArray metrics = LevelSetEdgeSurfaceQuadRuleFactory.GetMetricTermsOnEdge(
-                            this.owner.LevelSetData, this.owner.levelSetIndex, CurrentRule, jCell, e);
+                        //MultidimensionalArray metrics = LevelSetEdgeSurfaceQuadRuleFactory.GetMetricTermsOnEdge(
+                        //    this.owner.LevelSetData, this.owner.levelSetIndex, CurrentRule, jCell, e);
 
                         for (int j = 0; j < CurrentRule.NumbersOfNodesPerFace[e]; j++) {
                             nodeIndex++;
@@ -950,7 +937,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     EvalResult[i, nodeIndex, k] += lambdaValues[nodeIndex, k, d] * levelSetNormals[j, d];
                                 }
 
-                                EvalResult[i, nodeIndex, k] *= metrics[j];
+                                //EvalResult[i, nodeIndex, k] *= metrics[j];
                             }
                         }
                     }

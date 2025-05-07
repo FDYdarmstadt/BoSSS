@@ -582,6 +582,7 @@ namespace BoSSS.Application.BoSSSpad {
         public IDictionary<string, string> EnvironmentVars {
             get {
                 m_EnvironmentVars["OMP_NUM_THREADS"] = this.m_NumberOfThreads.ToString();
+                m_EnvironmentVars["DOTNET_gcServer"] = "1";
                 return m_EnvironmentVars;
             }
         }
@@ -1226,7 +1227,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        int m_NumberOfThreads = 4;
+        int m_NumberOfThreads = 1;
 
         /// <summary>
         /// Number of threads for each MPI rank

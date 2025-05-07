@@ -232,7 +232,7 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
-
+        /*
         /// <summary>
         /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
         /// </summary>
@@ -245,14 +245,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
+        */
 
 
         /// <summary>
-        /// Additional number of cores which are allocated for 'service';
-        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// Additional number of cores which are allocated for each MPI rank for 'service', e.g., background threads, IO, garbage collection, etc.;
         /// </summary>
         [DataMember]
-        public int NumOfServiceCoresPerMPIprocess = 0;
+        public int NumOfServiceCoresPerMPIprocess = 1;
 
        
         /// <summary>
@@ -642,6 +642,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// 
         /// </summary>
+        [DataMember]
+        public bool UseNodeExclusive = false;
+
+        /// <summary>
+        /// 
+        /// </summary>
         private (int id, JobState state)[] _ListJobs() {
 
 
@@ -712,16 +718,21 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
-            
-            
+            int CoresPerProcess = myJob.NumberOfThreads + this.NumOfServiceCoresPerMPIprocess;
+            if(CoresPerProcess % 2  != 0) 
+                CoresPerProcess++; // avoid odd numbers
+            int NumberOfCores = MPISz * CoresPerProcess;
+
+
+
             bool SingleNode = this.SingleNode;
             var Priority = this.DefaultJobPriority;
             string user = this.Username;
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                str.Write($"mpiexec -n {MPISz} ");
+                if(MPISz > 1)
+                    str.Write($"mpiexec -n {MPISz} ");
                 //str.Write($"mpiexec ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
@@ -741,7 +752,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-            bool exclusive = false;
+            bool exclusive = this.UseNodeExclusive;
 
 
             using (var stw = new StringWriter()) {
