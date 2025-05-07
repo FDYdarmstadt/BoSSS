@@ -2073,6 +2073,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+		void WriteDebug(int iter, double res, string text) {
+			int iLevel = TpLevel;
+			if (iLevel >= 0)
+				Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
+
+			return;
+		}
 
 		/// <summary>
 		/// the multigrid iterations for a linear problem
@@ -2111,12 +2118,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int iLevel = TpLevel;
 
-                void WriteDebug(int iter, double res, string text) {
-                    if (iLevel >= 0)
-					    Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
-					
-                    return;
-                }
 
                 double iter0_resNorm = ortho.Norm(Res0);
                 double resNorm = iter0_resNorm;
@@ -2140,7 +2141,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				//int LforSub = XforSub.Length;
 
-				int iIter;
+				//int iIter;
 				//           for (iIter = 1; bIterate; iIter++) {
 				//               WriteDebug(iIter, resNorm, "initial start");
 				//csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -2408,9 +2409,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				//               IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
 
 				//           } // end of solver iterations
-				iIter = 0;
-						   IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
-				WriteDebug(iIter, resNorm, "final");
+				//iIter = 0;
+				//IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
+
 
 
 				// solution copy
@@ -2547,44 +2548,49 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					CoarseCorreectionOnSub = ApplyCoarseGridCorrection(ResforSub);
 				}
 				var CoarseCorrection = PermutateVectorBack(CoarseCorreectionOnSub, coarsePermutation);
-				//resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
-				Console.WriteLine($"Coarse-correction is applied successfully. Residual norm: {resNorm}");
+				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarsemooth" + TpLevel);
 
-
+				WriteDebug(iIter, resNorm, "Coarse-correction ");
 
 				double[] PreCorrSub = new double[smootherPermutationMtx._RowPartitioning.LocalLength];
-				// Pre-smoother
-				if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-					int LSub = XforSub.Length;
-					double[] XGuess = new double[LSub];
-					PreCorrSub = ApplyPreSmoother(XGuess, ResforSub);
+				double[] PreCorr = new double[] { };
 
 
-					
+				for (int k =1; k < 10; k++) { 
+					// Pre-smoother
+					if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+						int LSub = XforSub.Length;
+						double[] XGuess = PreCorrSub;// new double[LSub];
+						PreCorrSub = ApplyPreSmoother(XGuess, ResforSub);
+					}
 				}
-				
-				var PreCorr = PermutateVectorBack(PreCorrSub, smootherPermutation);
+
+				PreCorr = PermutateVectorBack(PreCorrSub, smootherPermutation);
 				PreCorr.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testPreCorr", ".txt");
+
+
 
 				var testSmootherSolSanity = new double[PreCorr.Length];
 
 
 
-				OpMatrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_ThisIp.txt");
-				OpMatrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_ThisIp.txt");
+				//OpMatrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_ThisIp.txt");
+				//OpMatrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_ThisIp.txt");
 
 
 
-				Res.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testRes", ".txt");
+				//Res.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testRes", ".txt");
 
-				Residual(testSmootherSolSanity, PreCorr, Res);
+				//Residual(testSmootherSolSanity, PreCorr, Res);
 
-				testSmootherSolSanity.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testSmootherSolSanity", ".txt");
+				//testSmootherSolSanity.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testSmootherSolSanity", ".txt");
 
 
 				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
+				WriteDebug(iIter, resNorm, "Tp-presmooth ");
+
 				// Log the result
-				Console.WriteLine($"Pre-smoother is applied successfully. Residual norm: {resNorm}");
+				//Console.WriteLine($"Pre-smoother is applied successfully. Residual norm: {resNorm}");
 
 
 
@@ -2597,14 +2603,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 				// Iteration callback
-				IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);
+				//IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);
 			}
+			WriteDebug(iIter, resNorm, "final of this level");
 		}
 
 		private double[] ApplyPreSmoother(double[] X, double[] B) {
 			using (var trace = new FuncTrace()) {
 				int LSub = X.Length;
-
+				
+				//if (PreSmoother is SchwarzForTaskParallel swTp)
+				//	swTp.TestConvergence(X, B);
 
 				// Apply the pre-smoother
 				PreSmoother?.Solve(X, B); // Pre-smoother modifies PreCorr based on Res
