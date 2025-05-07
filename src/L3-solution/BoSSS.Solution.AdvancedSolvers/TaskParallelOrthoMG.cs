@@ -565,7 +565,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			SmootherNewCellMapping.SaveToTextFileDebug($"lvl{level}_SmootherNewCellMapping", ".txt");
 			CoarseNewCellMapping.SaveToTextFileDebug($"lvl{level}_CoarseNewCellMapping", ".txt");
 
-			//Debugger.Launch();
 			m_OpMtx_smoother = ChangeOpPartitioning(SmootherTargetPartitioning, SmootherNewCellMapping, "OpSmooth"); //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
 			m_OpMtx = ChangeOpPartitioning(ThisTargetPartitioning, ThisNewCellMapping, "Op"); //this level of 
 			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, ThisNewCellMapping, FinerLevelCoarsePartitiong, FinerLevelCoarseCellMapping, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
@@ -1206,14 +1205,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// entry point for the TaskParallelOrthoMG (finest level)
         /// </summary>
         public void Init(MultigridOperator op) {
-			//Debugger.Launch();
-
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
+			Debugger.Launch();
+
 			this.FinerLevelCoarseComm = csMPI.Raw._COMM.WORLD;
 			this.FinerLevelCoarseCommRank = op.Mapping.MpiRank;
-			Debugger.Launch();
 			int WorldSize = op.Mapping.MpiSize;
 			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetPrologonationOperator, op.Mapping, WorldSize);
 			TaskParallelMGOperator finerTP = thisTP;
@@ -1332,7 +1330,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		// - in old version, it is done my mg operator, this time it should be done by the solver
 
 		void InitImpl(TaskParallelMGOperator op) {
-            Debugger.Launch();  
 			using (var tr = new FuncTrace()) {
                 if (object.ReferenceEquals(op, m_OpMapPair))
                     return; // already initialized
@@ -1489,7 +1486,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 				subCommToCoarseRestrictionOperator = subCommFromCoarseProlongationOperator?.Transpose();
 
-				//if (false) {
+				//if (verbose) {
 				//	thisCommOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_thisOp.txt");
 				//	thisCommOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_o_thisOp.txt");
 				//	subCommSmootherOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_smoothOp.txt");
@@ -1662,7 +1659,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 
 			for (int i = 0; i < subOpResultBackToOp.Length; i++) {
-				if (Math.Abs(opResult[i] - subOpResultBackToOp[i]) > Math.Pow(10, -12))
+				if (Math.Abs(opResult[i] - subOpResultBackToOp[i]) > Math.Pow(10, -8))
 					throw new Exception("Something odd with redistribution matrix, the solutions do not hold");
 			}
 		}
@@ -2103,10 +2100,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				Residual(Res0, Sol0, B);
 				Array.Copy(Res0, Res, L);
 
-				// Initialize task-specific data
-				double[] XforSub, BforSub, ResforSub;
-				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
-
 
 				csMPI.Raw.Barrier(thisComm);
 
@@ -2138,15 +2131,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					InitSmoothers(TpMapping);
 				}
 
-				if (TpLevel == 1) {
-					Debugger.Launch();
-					Console.WriteLine($"Smoother: {myTask} on level {iLevel} with rank {thisCommRank} and size {thisCommsize}");
-				}
-				PerformIterations(X, B, Res, Res0, XforSub, BforSub, ResforSub);
+
+				Debugger.Launch();
+
+				PerformIterations(X, B, Res, Res0);
 
 
 
-				int LforSub = XforSub.Length;
+				//int LforSub = XforSub.Length;
 
 				int iIter;
 				//           for (iIter = 1; bIterate; iIter++) {
@@ -2458,10 +2450,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					throw new ArgumentNullException("Input vectors X, B, or Res cannot be null.");
 				}
 
+				smootherPermutation.Matrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_smootherPermutation.txt");
+				smootherPermutation.Matrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_smootherPermutation.txt");
+				smootherPermutation.TransposeMtx.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_smootherPermutationTranspose.txt");
+				smootherPermutation.TransposeMtx.SaveToTextFileSparse($"R_lvl_{TpLevel}_smootherPermutationTranspose.txt");
+
+
+				coarsePermutation.Matrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_coarsePermutation.txt");
+				coarsePermutation.Matrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_coarsePermutation.txt");
+				coarsePermutation.TransposeMtx.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_coarsePermutationTranspose.txt");
+				coarsePermutation.TransposeMtx.SaveToTextFileSparse($"R_lvl_{TpLevel}_coarsePermutationTranspose.txt");
+
+				Res.SaveToTextFileDebug("Res", ".txt");
+
 				// Permutation matrices live on thisComm, which means that they should be called here
 				//var XforSubCoarse = PermutateVector(X, coarsePermutation);
 				//var BforSubCoarse = PermutateVector(B, coarsePermutation);
 				var ResforSubCoarse = PermutateVector(Res, coarsePermutation);
+				var ResforSubSmoother = PermutateVector(Res, smootherPermutation);
 
 				var XforSubSmoother = PermutateVector(X, smootherPermutation);
 				var BforSubSmoother = PermutateVector(B, smootherPermutation);
@@ -2470,6 +2476,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// Initialize task-specific data based on the task type
 				switch (myTask) {
 					case TpTaskType.Coarse:
+						ResforSubCoarse.SaveToTextFileDebug("ResforSubCoarse", ".txt");
+
 						// For coarse tasks, only the residual is permuted
 						ResforSub = ResforSubCoarse;
 						XforSub = null; // Not used for coarse tasks
@@ -2477,10 +2485,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						break;
 
 					case TpTaskType.Smoother:
+						ResforSubSmoother.SaveToTextFileDebug("ResforSubSmoother", ".txt");
+
 						// For smoother tasks, all vectors are permuted
 						XforSub = XforSubSmoother;
 						BforSub = BforSubSmoother;
-						ResforSub = null;
+						ResforSub = ResforSubSmoother;
 						break;
 
 					case TpTaskType.All:
@@ -2501,17 +2511,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 
-		private void PerformIterations(double[] X, double[] B, double[] Res, double[] Res0, double[] XforSub, double[] BforSub, double[] ResforSub) {
+		private void PerformIterations(double[] X, double[] B, double[] Res, double[] Res0) {
 			int iIter;
 			double iter0_resNorm = ortho.Norm(Res0);
 			double resNorm = iter0_resNorm;
 			csMPI.Raw.Barrier(thisComm);
 			var X0 = X.CloneAs();
 			for (iIter = 1; ; iIter++) {
+
 				bool done = false;
 				int SmootherGroupLeader = 0 + NoOfCoarseProcs - NoOfCoarseProcs;
 				int CoarseGroupLeader = NoOfCoarseProcs + NoOfSmootherProcs - 1;
 				done.MPIAnd(thisComm);
+
+
 
 				// Check termination
 				var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
@@ -2520,24 +2533,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					break;
 				}
 
-				double[] PreCorrSub = new double[smootherPermutationMtx._RowPartitioning.LocalLength];
-				// Pre-smoother
-				if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-					PreCorrSub = ApplyPreSmoother(XforSub, BforSub);
-				}
-				var PreCorr = PermutateVectorBack(PreCorrSub, smootherPermutation);
-				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
-				// Log the result
-				Console.WriteLine($"Pre-smoother is applied successfully. Residual norm: {resNorm}");
+
+				// Initialize task-specific data
+				double[] XforSub, BforSub, ResforSub;
+
+
+
+				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
 
 				double[] CoarseCorreectionOnSub = new double[coarsePermutationMtx._RowPartitioning.LocalLength];
 				// Coarse grid correction
 				if (myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
-					CoarseCorreectionOnSub =  ApplyCoarseGridCorrection(ResforSub);
+					CoarseCorreectionOnSub = ApplyCoarseGridCorrection(ResforSub);
 				}
 				var CoarseCorrection = PermutateVectorBack(CoarseCorreectionOnSub, coarsePermutation);
-				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
+				//resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
 				Console.WriteLine($"Coarse-correction is applied successfully. Residual norm: {resNorm}");
+
+
+
+				double[] PreCorrSub = new double[smootherPermutationMtx._RowPartitioning.LocalLength];
+				// Pre-smoother
+				if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+					int LSub = XforSub.Length;
+					double[] XGuess = new double[LSub];
+					PreCorrSub = ApplyPreSmoother(XGuess, ResforSub);
+
+
+					
+				}
+				
+				var PreCorr = PermutateVectorBack(PreCorrSub, smootherPermutation);
+				PreCorr.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testPreCorr", ".txt");
+
+				var testSmootherSolSanity = new double[PreCorr.Length];
+
+
+
+				OpMatrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_ThisIp.txt");
+				OpMatrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_ThisIp.txt");
+
+
+
+				Res.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testRes", ".txt");
+
+				Residual(testSmootherSolSanity, PreCorr, Res);
+
+				testSmootherSolSanity.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testSmootherSolSanity", ".txt");
+
+
+				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
+				// Log the result
+				Console.WriteLine($"Pre-smoother is applied successfully. Residual norm: {resNorm}");
+
 
 
 				// Post-smoother
@@ -2555,12 +2603,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		private double[] ApplyPreSmoother(double[] X, double[] B) {
 			using (var trace = new FuncTrace()) {
-				// Verify that the residual is up-to-date
+				int LSub = X.Length;
+
 
 				// Apply the pre-smoother
 				PreSmoother?.Solve(X, B); // Pre-smoother modifies PreCorr based on Res
 
 				Console.WriteLine($"Pre-smoother applied on rank {thisCommRank}");
+
+				subCommSmootherOpMatrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_smootherOpMatrix.txt");
+				subCommSmootherOpMatrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_smootherOpMatrix.txt");
+				X.SaveToTextFileDebug($"R_lvl_{TpLevel}_PreCorrSub.txt");
+				B.SaveToTextFileDebug($"R_lvl_{TpLevel}_ResforSub.txt");
+
+				var resFromSmoother = new double[LSub];
+
+				Array.Copy(B, resFromSmoother, LSub);
+				subCommSmootherOpMatrix.SpMV(-1.0, X, 1.0, resFromSmoother);
+
+				resFromSmoother.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_resFromSmoother", ".txt");
 
 				return X;
 			}

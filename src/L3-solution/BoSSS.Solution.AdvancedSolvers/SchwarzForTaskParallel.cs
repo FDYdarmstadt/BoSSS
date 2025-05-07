@@ -206,6 +206,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				int[] part;
 				if (thisCommRank == 0) {
+					int NoOfParts = this.config.NoOfBlocks;
+					int J = xadj.Length - 1;
+
+                    if (NoOfParts == 1)
+                        return new long[J];
+
 					int ncon = 1;
 					int edgecut = 0;
 					int[] options = new int[METIS.METIS_NOPTIONS];
@@ -216,12 +222,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
 					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
 
-					int J = xadj.Length - 1;
 					part = new int[J];
 					Debug.Assert(xadj.Where(idx => idx > adjncy.Length).Count() == 0);
 					Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
 
-					int NoOfParts = this.config.NoOfBlocks;
+
 
 					METIS.PARTGRAPHKWAY(
 							ref J, ref ncon,
@@ -716,8 +721,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         ColIndices_iBlock.GetSubVector(0, firstLocal).Cat(ColIndices_iBlock.GetSubVector(lastLocal, L - lastLocal)), firstLocal.ForLoop(i => (long)i).Cat((L - lastLocal).ForLoop(i => (long)i + lastLocal))
                         );
 
+                    Mtx_iBlk.SaveToTextFileSparseDebug($"MtxLocBlock{Mapping.TotalNoOfBlocks}_{iBlock}");
 
-                    var slv_iBlk = new PARDISOSolver() {
+					var slv_iBlk = new PARDISOSolver() {
                         CacheFactorization = true,
                         UseDoublePrecision = false,
                         Parallelism = Parallelism.SEQ // hugely important!
@@ -836,17 +842,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <exception cref="ApplicationException"></exception>
 		public void InitWithTest(StandAloneOperatorMappingPairWithGridData op, bool doTest) {
             //Debugger.Launch();
-            using (var f = new FuncTrace()) {
+
+            this.config.NoOfBlocks = 1;
+			this.config.EnableOverlapScaling = false;
+            this.config.Overlap = 0;
+
+			using (var f = new FuncTrace()) {
+
                 m_op = op;
                 var locBlocks = CalculateBlocks(op);
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 				var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
 
-                // obtain the part of the matrix which should be solved on this processor via multiplication with the redistribution matrix.
-                var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, OpMtx);
+                RedistAndIndices.Redist.SaveToTextFileSparse("RedistSz" + op.DgMapping.TotalNoOfBlocks);
 
-                // create the local block solvers
-                m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, new int[] { });
+				for (int i = 0; i < RedistAndIndices.ColIndices.Length; i++) {
+					RedistAndIndices.RowIndices[i].SaveToTextFileDebug($"RowIndicesSz{op.DgMapping.TotalNoOfBlocks}_{i}", ".txt");
+					RedistAndIndices.ColIndices[i].SaveToTextFileDebug($"ColIndicesdistSz{op.DgMapping.TotalNoOfBlocks}_{i}", ".txt");
+				}
+
+				// obtain the part of the matrix which should be solved on this processor via multiplication with the redistribution matrix.
+				var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, OpMtx);
+
+
+				// create the local block solvers
+				m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, new int[] { });
                 m_BlockSizes = RedistAndIndices.RowIndices.Select(IDXs => IDXs?.Count ?? -12345).ToArray();
 
                 m_comm = new CommunicationStuff(this, OpMtx._ColPartitioning, RedistAndIndices.ColIndices);
