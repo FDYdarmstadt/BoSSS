@@ -231,6 +231,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 base.Rules = sign ? o.m_LineMeasurePos : o.m_LineMeasureNeg;
                 int D = o.LevelSetData.GridDat.SpatialDimension;
                 this.empty = CellBoundaryQuadRule.CreateEmpty(o.m_RefElement, 1, D, o.referenceLineSegments.Length);
+                this.empty.OrderOfPrecision = int.MaxValue;
                 this.empty.Nodes.LockForever();
             }
 
@@ -277,6 +278,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (D != 2)
                     throw new NotSupportedException("the point measure is only supported in 2D");
                 this.empty = CellBoundaryQuadRule.CreateEmpty(o.m_RefElement, 1, D, o.referenceLineSegments.Length);
+                empty.OrderOfPrecision = int.MaxValue;
                 this.empty.Nodes.LockForever();
             }
 
@@ -632,7 +634,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 // this should avoid some special-case handling for empty rules
                                 emptyrule.NumbersOfNodesPerFace[0] = 1;
                                 emptyrule.Nodes.LockForever();
-
+                                emptyrule.OrderOfPrecision = int.MaxValue;
                                 LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
 
                                 if(PositiveSegment)
@@ -843,7 +845,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // this should avoid some special-case handling for empty rules
                             emptyrule.NumbersOfNodesPerFace[0] = 1;
                             emptyrule.Nodes.LockForever();
-
+                            emptyrule.OrderOfPrecision = order;
                             PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
                         }
                         else  

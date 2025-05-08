@@ -292,6 +292,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                     }
                 }
                 quadRule.Nodes.LockForever();
+                quadRule.OrderOfPrecision = RequestedOrder;
 
                 //// In order to calculate surface and volume needs in the same loop, there is a "hack", in which surface nodes multiplied their transformation coefficients but divided by determinants for volume.
                 //if (useMetrics)
@@ -345,8 +346,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
 
                 // If the surface quadrature rule is empty.
                 if (qs.lengthVol + qs.lengthSurf < 1) {
-                    quadRules[0] = CreateEmptyQuadRule();
-                    quadRules[1] = CreateEmptyQuadRule();
+                    quadRules[0] = CreateEmptyQuadRule(); quadRules[0].OrderOfPrecision = RequestedOrder;
+                    quadRules[1] = CreateEmptyQuadRule(); quadRules[1].OrderOfPrecision = RequestedOrder;
                     return quadRules;
                 }
 
@@ -361,7 +362,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                 }
                 quadRuleSurf.Nodes.LockForever();
                 quadRules[0] = quadRuleSurf;
-                
+                quadRules[0].OrderOfPrecision = RequestedOrder;
+
                 // Create volume quadrature rule and copy from the scheme
                 QuadRule quadRuleVol = QuadRule.CreateBlank(RefElement, qs.lengthVol, qs.dimension);
                 for (int row = qs.lengthSurf, rowVol=0; rowVol < qs.lengthVol; rowVol++,row++) { //lengthSurf+lengthVol = total length
@@ -373,6 +375,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                 }
                 quadRuleVol.Nodes.LockForever();
                 quadRules[1] = quadRuleVol;
+                quadRules[1].OrderOfPrecision = RequestedOrder;
 
                 //// Apply metrics if required (applied only to surface rule)
                 //ApplyMetrics(quadRuleSurf, qs, jCell);
@@ -471,6 +474,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                     subarrayPointer += subNumberOfNodes;
                 }
                 combinedRule.Nodes.LockForever();
+                combinedRule.OrderOfPrecision = rules.Select(r => r.OrderOfPrecision).Min();
                 return combinedRule;
             }
 
@@ -559,6 +563,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                 if (qs.length < 1) {
                     CellBoundaryQuadRule quadRuleEmpty = CellBoundaryQuadRule.CreateEmpty(RefElement, 1, spaceDim, RefElement.NoOfFaces);
                     quadRuleEmpty.Nodes.LockForever();
+                    quadRuleEmpty.OrderOfPrecision = RequestedOrder;
                     return quadRuleEmpty;
                 }
 
@@ -572,12 +577,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                         quadRuleOnEdge.Nodes[row, d] = qs.nodes[ind];
                     }
                 }
-
+                
 				// Algoim returns an edge based rule, it must be converted to a CellBoundaryQuadRule (cell based coordinates)
 				CellBoundaryQuadRule quadRule = CellBoundaryQuadRule.CreateEmpty(RefElement, qs.length, spaceDim, RefElement.NoOfFaces);
                 quadRule.Weights = quadRuleOnEdge.Weights;
                 RefElement.TransformFaceCoordinates(faceIndex, quadRuleOnEdge.Nodes, quadRule.Nodes); // to transform edge rule back to cell coordinates (since we are creating CellBoundaryQuadRule, cell based rule)
 				quadRule.Nodes.LockForever();
+                quadRule.OrderOfPrecision = RequestedOrder;
 
                 //if(useMetrics) {
                 //    var metrics = lsData.GetLevelSetNormalReferenceToPhysicalMetrics(quadRule.Nodes, jCell, 1);

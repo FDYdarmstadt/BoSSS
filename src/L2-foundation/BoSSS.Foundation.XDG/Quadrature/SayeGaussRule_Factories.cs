@@ -173,6 +173,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     try {
                         var sayeRule = rule.Evaluate(cell);
                         ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
+                        sayePair.Rule.OrderOfPrecision = order;
                         result.Add(sayePair);
                     } catch(Exception e) {
                         var vector = mask.GridData.iGeomCells.GetCenter(cell);
@@ -223,6 +224,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                 foreach(int cell in chunk.Elements) {
                     CellBoundaryQuadRule sayeRule = rule.EvaluateEdges(cell);
                     ChunkRulePair<CellBoundaryQuadRule> sayePair = new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
+                    sayePair.Rule.OrderOfPrecision = order;
                     result.Add(sayePair);
                 }
             }

@@ -88,7 +88,7 @@ namespace BoSSS.Foundation.Quadrature {
             var Edg2Cel = this.grd.iGeomEdges.CellIndices;
             var Edg2Fac = this.grd.iGeomEdges.FaceIndices;
             int J = this.grd.Cells.NoOfLocalUpdatedCells;
-            QuadRule DefaultRule = this.RefElement.GetQuadratureRule(order); ;
+            QuadRule DefaultRule = this.RefElement.GetQuadratureRule(order);
 
             int myIKrfeEdge = this.grd.Edges.EdgeRefElements.IndexOf(this.RefElement, (a, b) => object.ReferenceEquals(a, b));
             if (myIKrfeEdge < 0)
@@ -180,6 +180,15 @@ namespace BoSSS.Foundation.Quadrature {
 
 
             IChunkRulePair<CellBoundaryQuadRule>[] cellBndRule = this.m_cellBndQF.GetQuadRuleSet(CellMask, order).ToArray();
+#if DEBUG
+            foreach(var rule in cellBndRule) {
+                if(rule.Rule.OrderOfPrecision < order) {
+                    cellBndRule = this.m_cellBndQF.GetQuadRuleSet(CellMask, order).ToArray();
+                    throw new Exception();
+                }
+            }
+#endif
+
             int[] jCell2PairIdx = new int[J];
             for (int i = 0; i < cellBndRule.Length; i++) {
                 var chk = cellBndRule[i].Chunk; // cell chunk

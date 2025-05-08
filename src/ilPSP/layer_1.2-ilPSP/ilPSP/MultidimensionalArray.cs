@@ -691,9 +691,9 @@ namespace ilPSP {
                     int li = rEnd[i] - rStart[i] + 1;
 
                     if(rStart[i] < 0 || rStart[i] >= GetLength(i))
-                        throw new IndexOutOfRangeException("subarray start range out of range for dimension " + i);
+                        throw new IndexOutOfRangeException("subarray start range out of range for dimension " + i + " (got " + rStart[i] + ", length is " + GetLength(i) + ")");
                     if(rEnd[i] >= GetLength(i))
-                        throw new IndexOutOfRangeException("subarray end range out of range for dimension " + i);
+                        throw new IndexOutOfRangeException("subarray end range out of range for dimension " + i + " (got " + rEnd[i] + ", length is " + GetLength(i) + ")");
 
                     if(li > 0)
                         dims++;
