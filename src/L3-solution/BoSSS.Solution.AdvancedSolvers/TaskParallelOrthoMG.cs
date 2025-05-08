@@ -54,6 +54,7 @@ using System.Drawing;
 using NUnit.Framework.Internal;
 using BoSSS.Foundation.IO;
 using System.ComponentModel.Design;
+using System.Security.Policy;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -2126,8 +2127,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // clear history of coarse solvers
                 ortho.Clear();
 
-
-
 				if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
 					InitSmoothers(TpMapping);
 				}
@@ -2136,283 +2135,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				Debugger.Launch();
 
 				PerformIterations(X, B, Res, Res0);
-
-
-
-				//int LforSub = XforSub.Length;
-
-				//int iIter;
-				//           for (iIter = 1; bIterate; iIter++) {
-				//               WriteDebug(iIter, resNorm, "initial start");
-				//csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-				//var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-				//               if (!termState.bNotTerminate) {
-				//                   Converged = termState.bSuccess;
-				//                   break;
-				//               } else {
-
-				//               }
-
-
-				//// pre-smoother
-				//// ------------
-				//if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-
-				//	VerivyCurrentResidual(XforSub, BforSub, Res, iIter);
-				//	double[] PreCorr = new double[L];
-
-				//	if (thisCommRank == SmootherGroupLeader) {
-				//		byte completionSignal = 0;
-				//		MPI_Request req;
-				//		unsafe {
-				//			byte* pSignal = &completionSignal;
-				//			IntPtr ptr = (IntPtr)pSignal;
-				//			csMPI.Raw.Irecv(ptr, 1,
-				//							csMPI.Raw._DATATYPE.BYTE,
-				//							CoarseGroupLeader, 22,
-				//							thisComm, out req);
-
-				//		}
-				//		int k = 1;
-				//		while (!done) {
-				//			PreSmoother.Solve(PreCorr, Res); // Vorglättung
-				//			Thread.Sleep(1000);
-				//			Console.WriteLine($"{k}-second waiting for completionSignal={completionSignal}");
-				//			csMPI.Raw.Test(ref req, out done, out MPI_Status status);
-				//			done.MPIOr(subComm);
-				//			k++;
-				//		}
-				//		Console.WriteLine($"waited {k}-second for completionSignal={completionSignal}");
-
-				//	} else {
-				//		while (!done) {
-				//			PreSmoother.Solve(PreCorr, Res); // Vorglättung
-				//			Thread.Sleep(1000);
-				//			done.MPIOr(subComm);
-				//		}
-
-				//	}
-
-				//                   if (PreSmoother is SchwarzForCoarseMesh schwarz2) { 
-				//		schwarz2.PropagateBackToOpComm(PreCorr);
-				//	}
-				//	// orthonormalization and residual minimization
-				//	resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel);
-
-				//	WriteDebug(iIter, resNorm, " pre-smoother applied");
-
-				//	//SpecAnalysisSample(iIter, X, "ortho1");
-				//	var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-				//	if (!termState2.bNotTerminate) {
-				//		Converged = termState2.bSuccess;
-				//		break;
-				//	}
-
-				//}
-
-
-
-
-
-				//               // coarse grid correction
-				//               // ----------------------
-				//               if (myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
-
-				//	if (thisCommRank == CoarseGroupLeader) {
-				//		Console.WriteLine("Waiting for 20 seconds...");
-				//		Thread.Sleep(20000);  // 20 seconds delay
-				//		Console.WriteLine("Done waiting.");
-
-				//		//while (!done) {
-				//		//	Thread.Sleep(1000);
-				//		//	done.MPIOr(newComm);
-				//		//}
-
-				//		byte completionSignal = 1;
-				//		unsafe {
-				//			byte* pSignal = &completionSignal;
-				//			IntPtr ptr = (IntPtr)pSignal;
-				//			csMPI.Raw.Send(ptr, 1, csMPI.Raw._DATATYPE.BYTE, SmootherGroupLeader, 22, thisComm);
-				//		}
-				//		Console.WriteLine("Sent signal");
-				//	} else {
-				//		Thread.Sleep(19000);
-				//		done = true;
-
-				//	}
-				//	Thread.Sleep(2000000);
-
-				//	CrseLevelTime.Start();
-				//                   // Test: Residual on this level / already computed by 'MinimizeResidual' above
-				//                   VerivyCurrentResidual(X, B, Res, iIter);
-
-				//                   double resNorm_b4Coarse = resNorm;
-				//                   for (int i = 0; i < myConfig.m_omega; i++) {
-				//                       if (this.CoarserLevelSolver != null) {
-
-				//                           double[] vl = new double[L];
-				//                           if (myConfig.CoarseOnLowerLevel) {
-
-				//                               var _MgOperator = m_OpMapPair as MultigridOperator;
-
-				//                               // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-				//                               // coarse grid solver defined on COARSER MESH LEVEL:
-				//                               // this solver must perform restriction and prolongation
-				//                               // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-				//                               using (new BlockTrace("Restriction", f)) {
-				//                                   // restriction of residual
-				//                                   _MgOperator.CoarserLevel.Restrict(Res, ResCoarse);
-				//                               }
-				//                               // Berechnung der Grobgitterkorrektur
-				//                               double[] vlc = new double[Lc];
-				//                               this.CoarserLevelSolver.Solve(vlc, ResCoarse);
-				//                               using (new BlockTrace("Prolongation", f)) {
-				//                                   // Prolongation der Grobgitterkorrektur
-				//                                   _MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
-				//                               }
-
-				//                           } else {
-				//                               // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-				//                               // coarse grid solver defined on the SAME MESH LEVEL:
-				//                               // performs (probably) its own restriction/prolongation
-				//                               // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-				//                               // Berechnung der Grobgitterkorrektur
-				//                               this.CoarserLevelSolver.Solve(vl, Res);
-				//                           }
-
-				//                           // orthonormalization and residual minimization
-				//                           if (vl.ContainsNanOrInf().MPIOr() && CoarseArithmeticExceptionCount < 20) {
-				//                               CoarseArithmeticExceptionCount++;
-				//                               Console.WriteLine("Coarse solver failed " + CoarseArithmeticExceptionCount);
-				//                               if (CoarseArithmeticExceptionCount == 1) {
-				//                                   BlockMsrMatrix coarseMtx = myConfig.CoarseOnLowerLevel ? (m_OpMapPair as MultigridOperator).CoarserLevel.OperatorMatrix : m_OpMapPair.OperatorMatrix;
-				//                                   coarseMtx.SaveToTextFileSparse("FailedCoarseMatrix.txt");
-				//                               }
-				//                               vl = null;
-				//                               this.CoarserLevelSolver.Dispose();
-				//                               this.InitCoarse();
-				//                           } else {
-				//                               resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, "coarsecorL" + iLevel);
-				//                           }
-
-				//                       }
-				//                   } // end of coarse-solver loop
-				//                   WriteDebug(iIter, resNorm, "coarse-solver applied");
-
-				//                   var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-				//                   if (!termState3.bNotTerminate) {
-				//                       Converged = termState3.bSuccess;
-				//                       break;
-				//                   }
-				//                   CrseLevelTime.Stop();                       
-				//}
-
-				//               if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-
-				//                   // post-smoother
-				//                   // -------------
-				//                   if (PostSmoother != null || AdditionalPostSmoothers != null) {
-				//                       bool termPost = false;
-
-
-
-				//                       for (int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // Test: Residual on this level / already computed by 'MinimizeResidual' above
-
-				//                           ISolverSmootherTemplate _PostSmoother = allSmooters[iPostSmooter];// g % allSmooters.Length];
-				//                           if (iPostSmooter > 0)
-				//                               InitAdditionalPostSmooters();
-				//                           VerivyCurrentResidual(X, B, Res, iIter); // 
-				//                           double[] PostCorr = new double[L];
-
-				//                           bool fail = false;
-				//                           try {
-				//                               _PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
-				//                           } catch (ArithmeticException ae) {
-				//                               f.Error($"Smoother fail on Rank {m_OpMapPair.DgMapping.MpiRank}: " + ae.ToString());
-				//                               fail = true;
-				//                           }
-				//                           fail = fail.MPIOr();
-
-				//                           if ((PostCorr.ContainsNanOrInf() || fail).MPIOr()) {
-				//                               PostSmootherArithmeticExceptionCount++;
-				//                               Console.Error.WriteLine("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g + " for " + PostSmootherArithmeticExceptionCount + "-th time.");
-
-				//                               if (Res.ContainsNanOrInf()) {
-				//                                   Console.WriteLine("... so does RHS");
-				//                                   throw new ArithmeticException("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g + " RHS already corrupted.");
-				//                               } else
-				//                                   Console.WriteLine("... although RHS is regular");
-
-				//                               //var viz = new MGViz(m_OpMapPair as MultigridOperator);
-				//                               //var __RHS = viz.ProlongateRhsToDg(Res, "RES");
-				//                               //var __SOL = viz.ProlongateRhsToDg(PostCorr, "SOL");
-				//                               //Tecplot.Tecplot.PlotFields(__SOL.Cat(__RHS), "iilufail", 0.0, 0);
-				//                               //
-
-				//                               if (PostSmootherArithmeticExceptionCount < 20) {
-				//                                   PostCorr = null;
-				//                                   _PostSmoother.Dispose();
-				//                                   if (PostSmoother is ISubsystemSolver ssPostSmother) {
-				//                                       ssPostSmother.Init(this.m_OpMapPair);
-				//                                   } else {
-				//                                       if (this.m_OpMapPair is MultigridOperator mgOp) {
-				//                                           PostSmoother.Init(mgOp);
-				//                                       } else {
-				//                                           throw new NotSupportedException($"Unable to initialize post-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
-				//                                       }
-				//                                   }
-				//                               } else {
-				//                                   throw new ArithmeticException("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g);
-				//                               }
-
-				//                           } else {
-				//                               resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" + iLevel + "-sw" + g);
-				//                               WriteDebug(iIter, resNorm, "post-smoother applied");
-
-
-
-				//                               var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-				//                               if (!termState4.bNotTerminate) {
-				//                                   Converged = termState4.bSuccess;
-				//                                   termPost = true;
-				//                                   break;
-				//                               }
-
-				//                               if (ortho.CancellationTriggered) {
-				//                                   //skipPreSmoothInFollowingIters = true; // most of the time, the pre-smoother does nothing different than the post-smoother; So, if we cancel post-smoothing there is no need to do pre-smoothing in the next loop.
-
-				//                                   iPostSmooter++;
-				//                                   if (iPostSmooter >= allSmooters.Length)
-				//                                       iPostSmooter = 0;
-
-
-
-
-				//                                   break;
-				//                               }
-				//                           }
-				//                       }
-
-
-				//                       if (termPost)
-				//                           break;
-
-				//                   } // end of post-smoother loop
-				//               }
-
-
-				//               // iteration callback
-				//               // ------------------
-				//               this.ThisLevelIterations++;
-				//               IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
-
-				//           } // end of solver iterations
-				//iIter = 0;
-				//IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
-
-
 
 				// solution copy
 				// =============
@@ -2519,14 +2241,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			csMPI.Raw.Barrier(thisComm);
 			var X0 = X.CloneAs();
 			for (iIter = 1; ; iIter++) {
-
-				bool done = false;
-				int SmootherGroupLeader = 0 + NoOfCoarseProcs - NoOfCoarseProcs;
-				int CoarseGroupLeader = NoOfCoarseProcs + NoOfSmootherProcs - 1;
-				done.MPIAnd(thisComm);
-
-
-
 				// Check termination
 				var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
 				if (!termState.bNotTerminate) {
@@ -2534,14 +2248,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					break;
 				}
 
-
 				// Initialize task-specific data
 				double[] XforSub, BforSub, ResforSub;
-
-
-
 				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
 
+				// Start signaling
+				ListenSignal(iIter);
+				bool done = CheckSignal();
+
+				if (myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
+					int k = 0;
+					SendSignal(true, iIter);
+					done = CheckSignal();
+					while (!done) {
+						Console.WriteLine($"{k}-Coarse Waiting for signal on rank {thisCommRank} from {ThisSmootherGroupLeader} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
+						Thread.Sleep(1000);
+						k++;
+						done = CheckSignal();
+					}
+				}
+
+
+				if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+					Thread.Sleep(10000);
+					SendSignal(true, iIter);
+					int k = 0;
+					done = CheckSignal();
+					while (!done) {
+						Console.WriteLine($"{k}-Smoother Waiting for signal on rank {thisCommRank} from {ThisCoarseGroupLeader} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
+						Thread.Sleep(1000);
+						k++;
+						done = CheckSignal();
+					}
+				}
+
+
+
+				// Coarse Grid
 				double[] CoarseCorreectionOnSub = new double[coarsePermutationMtx._RowPartitioning.LocalLength];
 				// Coarse grid correction
 				if (myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
@@ -2549,13 +2292,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				}
 				var CoarseCorrection = PermutateVectorBack(CoarseCorreectionOnSub, coarsePermutation);
 				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarsemooth" + TpLevel);
-
 				WriteDebug(iIter, resNorm, "Coarse-correction ");
 
+				// smoother
 				double[] PreCorrSub = new double[smootherPermutationMtx._RowPartitioning.LocalLength];
 				double[] PreCorr = new double[] { };
-
-
 				for (int k =1; k < 10; k++) { 
 					// Pre-smoother
 					if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
@@ -2565,32 +2306,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					}
 				}
 
-				PreCorr = PermutateVectorBack(PreCorrSub, smootherPermutation);
-				PreCorr.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testPreCorr", ".txt");
-
-
-
-				var testSmootherSolSanity = new double[PreCorr.Length];
-
-
-
-				//OpMatrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_ThisIp.txt");
-				//OpMatrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_ThisIp.txt");
-
-
-
-				//Res.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testRes", ".txt");
-
-				//Residual(testSmootherSolSanity, PreCorr, Res);
-
-				//testSmootherSolSanity.SaveToTextFileDebugUnsteady($"R_lvl_{TpLevel}_testSmootherSolSanity", ".txt");
-
-
 				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
 				WriteDebug(iIter, resNorm, "Tp-presmooth ");
-
-				// Log the result
-				//Console.WriteLine($"Pre-smoother is applied successfully. Residual norm: {resNorm}");
 
 
 
@@ -2606,6 +2323,65 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				//IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);
 			}
 			WriteDebug(iIter, resNorm, "final of this level");
+		}
+
+		int ThisSmootherGroupLeader => 0;
+		int ThisCoarseGroupLeader => NoOfCoarseProcs + NoOfSmootherProcs - 1;
+
+		const int signalTag = 22;
+
+		MPI_Request RecvRequest;
+		bool IsEndSignalSent = false;
+
+		static readonly byte[] _signalBuffer = { 1 };
+		static readonly GCHandle _signalHandle = GCHandle.Alloc(_signalBuffer, GCHandleType.Pinned);
+		static readonly IntPtr _signalPtr = _signalHandle.AddrOfPinnedObject();
+		static readonly byte[] _recvBuffer = new byte[1];
+		static readonly GCHandle _recvHandle = GCHandle.Alloc(_recvBuffer, GCHandleType.Pinned);
+		static readonly IntPtr _recvPtr = _recvHandle.AddrOfPinnedObject();
+
+		int GetTargetRankForSignal() {
+			if (thisCommRank == ThisSmootherGroupLeader) {
+				return ThisCoarseGroupLeader;
+			} else if (thisCommRank == ThisCoarseGroupLeader) {
+				return ThisSmootherGroupLeader;
+			} else {
+				return -1;
+			}
+		}
+
+		void SendSignal(bool InitiateSignal, int Iter) {
+			if (!InitiateSignal && IsEndSignalSent) return;
+
+			int targetRank = GetTargetRankForSignal();
+			if (targetRank < 0) return;
+
+			csMPI.Raw.Isend(_signalPtr, 1,	csMPI.Raw._DATATYPE.BYTE, targetRank, signalTag + Iter, thisComm, out MPI_Request req);
+			Console.WriteLine($"Sent signal from {thisCommRank} to {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
+
+			IsEndSignalSent = true;
+			return;
+		}
+
+		void ListenSignal(int Iter) {
+			int targetRank = GetTargetRankForSignal();
+			if (targetRank < 0) return;
+
+			csMPI.Raw.Irecv(_recvPtr, 1, csMPI.Raw._DATATYPE.BYTE, targetRank, signalTag + Iter, thisComm, out RecvRequest);
+
+			byte completionSignal = _recvBuffer[0];
+			if (completionSignal == 1)
+				Console.WriteLine($"Got signal on rank {thisCommRank} from {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
+		}
+
+		bool CheckSignal() {
+			bool done = false;
+			int targetRank = GetTargetRankForSignal();
+			if (targetRank > -1)  csMPI.Raw.Test(ref RecvRequest, out done, out MPI_Status status);
+
+			done.MPIOr(subComm);
+
+			return done;
 		}
 
 		private double[] ApplyPreSmoother(double[] X, double[] B) {
