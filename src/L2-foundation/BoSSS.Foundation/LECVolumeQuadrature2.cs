@@ -1068,8 +1068,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                         cF = 1.0;
                                     }
 
-                                    I0Col += m_owner.m_ColL[delta];
-
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _R.Storage));
                                     if((isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
 
@@ -1091,6 +1089,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                         _R.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _Q, 0.0, "jmn", "jbm", "jbn"); // multiply from left with trafo^T
                                     }
                                 }
+                                I0Col += m_owner.m_ColL[delta];
                             }
 
                         }
@@ -1108,8 +1107,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     _R.Multiply(1.0, m_Trf_GradVSumBuffer[gamma, 0], GradV_XquadWgt[gamma], cF, "im", "ika", "kma");
                                 }
 
-                                I0Col += 1;
-
                                 if((isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _R.Storage));
                                     _R.Multiply(1.0, trafo, _R, 0.0, "im", "i", "im");
@@ -1118,6 +1115,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, "im", "imn", "in");
                                 }
                             }
+                            I0Col += 1;
                         }
 
                         I0Row += m_owner.m_RowL[gamma];

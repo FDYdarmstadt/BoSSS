@@ -24,12 +24,9 @@ namespace HangingNodesTests {
     [TestFixture]    
     public class HangingNodesTestMain {
         static void Main(string[] args) {
-            
-    
-
             // mpiexec -n 2 dotnet HangingNodesTests.dll
-            Console.WriteLine("Starting Hanging Nodes Test!");
-            BoSSS.Solution.Application.InitMPI();
+            //Console.WriteLine("Starting Hanging Nodes Test!");
+            //BoSSS.Solution.Application.InitMPI();
             //ilPSP.Environment.NumThreads = 1;
             //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
             //Assert.IsFalse(true, "remove me");

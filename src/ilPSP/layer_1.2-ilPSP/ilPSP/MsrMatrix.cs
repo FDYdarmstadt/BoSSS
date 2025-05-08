@@ -285,10 +285,6 @@ namespace ilPSP.LinSolvers {
                     using(var wrt = new BsonDataWriter(fs)) {
                         jsonFormatter.Serialize(wrt, container);
                     }
-                 
-                    // finalize
-                    fs.Flush();
-                    fs.Close();
                 }
             } else {
                 sms.SetCommPath(0);

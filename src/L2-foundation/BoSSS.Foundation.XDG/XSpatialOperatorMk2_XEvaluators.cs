@@ -34,6 +34,7 @@ using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 using static BoSSS.Foundation.DifferentialOperator;
 using BoSSS.Foundation.Quadrature.NonLin;
 using BoSSS.Foundation.Quadrature.Linear;
+using System.Transactions;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -243,13 +244,13 @@ namespace BoSSS.Foundation.XDG {
                                             throw new NotSupportedException();
                                         builder.ComputeAffine(vec);
                                     } else {
-                                        
-
-
                                         builder.ComputeMatrix(_mtx, vec, alpha);
-
-                                       
                                     }
+
+                                    //var comp = VectorIO.LoadFromTextFile($"C:\\tmp\\affine{ibuilder}-{SpeciesId.cntnt}.txt");
+                                    //double dist = comp.L2Distance(AffineOffset);
+                                    //Console.WriteLine($"affine{ibuilder}-{SpeciesId.cntnt} dist: {dist:0.#####e00}");
+
                                 }
 
                             }
