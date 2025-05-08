@@ -1056,8 +1056,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 // clear affine part
                 double[] OpAffine = new double[CurrentStateMapping.LocalLength];
-
-
                 
                 // assemble matrix & affine part
                 Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
