@@ -501,7 +501,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             string ctrlfileContent = File.ReadAllText(path_obj);
 
-            var ctrl = AppControl.Deserialize(ctrlfileContent);
+            var ctrl = (XNSE_Control)AppControl.Deserialize(ctrlfileContent).CloneAs(); ;
 
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
@@ -511,12 +511,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6_DebugRun";
 
-            return (XNSE_Control)ctrl;
+            return ctrl;
 
         }
 
         /// <summary>
-        /// cases for testing on jenkins - not to be changed!!!
+        /// cases for testing on jenkins
         /// DropletReboundGauthier_8x12x8AMR1_k2_ReI4_restart3 - 4x4 multicore simulation
         /// </summary>
         /// <returns></returns>
@@ -531,29 +531,29 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             string ctrlfileContent = File.ReadAllText(path_obj);
 
-            var ctrl = AppControl.Deserialize(ctrlfileContent);
+            var ctrl = (XNSE_Control)AppControl.Deserialize(ctrlfileContent).CloneAs(); ;
 
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
 
             ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
-            ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
+            ctrl.ReInitTimestepIndex = RestartTimestep;
             ctrl.NoOfTimesteps = numTimeSteps;
 
-            ((XNSE_Control)ctrl).Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            ctrl.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
             ctrl.DbPath = _DbPath;
             ctrl.savetodb = false;
 
             ctrl.SessionName = "DropletReboundGauthier_8x12x8AMR1_k2_ReI4_restart4";
 
-            return (XNSE_Control)ctrl;
+            return ctrl;
 
         }
 
 
         /// <summary>
-        /// cases for testing on jenkins - not to be changed!!!
+        /// cases for testing on jenkins
         /// DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart5 - 4x4 multicore simulation
         /// </summary>
         /// <returns></returns>
@@ -568,28 +568,28 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             string ctrlfileContent = File.ReadAllText(path_obj);
 
-            var ctrl = AppControl.Deserialize(ctrlfileContent);
+            var ctrl = (XNSE_Control)AppControl.Deserialize(ctrlfileContent).CloneAs(); ;
 
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
 
             ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
-            ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
+            ctrl.ReInitTimestepIndex = RestartTimestep;
             ctrl.NoOfTimesteps = numTimeSteps;
 
-            ((XNSE_Control)ctrl).Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            ctrl.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
             ctrl.DbPath = _DbPath;
             ctrl.savetodb = false;
 
             ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6";
 
-            return (XNSE_Control)ctrl;
+            return ctrl;
 
         }
 
         /// <summary>
-        /// cases for testing on jenkins - not to be changed!!!
+        /// cases for testing on jenkins
         /// case 1: DropletReboundGauthier_8x8x8AMR0_k3_ReI4_restart1 - single core simulation
         /// case 2: DropletReboundGauthier_8x8x8AMR0_k3_ReI4_2cores_restart1 - 2 core simulation
         /// </summary>
@@ -600,15 +600,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             Guid rstID;
             int RestartTimestep;
+            string RestartName;
             switch (caseNum) {
                 case 1: {
                         rstID = new Guid("57e8f3ff-209a-4b66-bfcc-049279c44627");   // single core simulation
                         RestartTimestep = 66;
+                        RestartName = "DropletReboundGauthier_8x8x8AMR0_k3_ReI4_restart2_DongBC";
                         break;
                     }
                 case 2: {
                         rstID = new Guid("1a8cfde2-27a6-4c58-b4ed-0607a243731a");   // 2 core simulation
                         RestartTimestep = 77;
+                        RestartName = "DropletReboundGauthier_8x8x8AMR0_k3_ReI4_2cores_restart2";
                         break;
                     }
                 default: {
@@ -621,23 +624,29 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             string ctrlfileContent = File.ReadAllText(path_obj);
 
-            var ctrl = AppControl.Deserialize(ctrlfileContent);
+            var ctrl = (XNSE_Control)AppControl.Deserialize(ctrlfileContent).CloneAs();
 
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
 
             ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
-            ((XNSE_Control)ctrl).ReInitTimestepIndex = 0;
+            ctrl.ReInitTimestepIndex = RestartTimestep;
             ctrl.NoOfTimesteps = numTimeSteps;
 
-            ((XNSE_Control)ctrl).Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            ctrl.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+
+            ctrl.NonLinearSolver.Globalization = Newton.GlobalizationOption.LineSearch;
+
+            ctrl.ChangeBoundaryCondition("pressure_outlet_top", "Dong_OutFlow_top");
+            ctrl.ChangeBoundaryCondition("pressure_outlet_front", "Dong_OutFlow_front");
+            ctrl.ChangeBoundaryCondition("pressure_outlet_downstream", "Dong_OutFlow_downstream");
 
             ctrl.DbPath = _DbPath;
             ctrl.savetodb = false;
 
-            ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR0_k3_ReI4_restart2";
+            ctrl.SessionName = RestartName;
 
-            return (XNSE_Control)ctrl;
+            return ctrl;
 
         }
 
