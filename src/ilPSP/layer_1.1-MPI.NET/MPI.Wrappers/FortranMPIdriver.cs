@@ -759,7 +759,27 @@ namespace MPI.Wrappers {
         }
 
 #pragma warning disable 649
-        delegate void _MPI_ISSEND(IntPtr buf, ref int count, ref MPI_Datatype datatype,
+		delegate void _MPI_ISEND(IntPtr buf, ref int count,	ref MPI_Datatype datatype, ref int dest, 
+                                ref int tag, ref MPI_Comm comm, out MPI_Request request, out int ierr);
+		_MPI_ISEND MPI_ISEND;
+#pragma warning restore 649
+
+		/// <summary>
+		/// Standard non-blocking send (eager or rendezvous protocol).
+		/// Completes locally once the buffer may be reused; no guarantee
+		/// that the receiver has posted a matching receive.
+		/// </summary>
+		public void Isend(
+			IntPtr buf, int count,	MPI_Datatype datatype,	int dest,
+			int tag,MPI_Comm comm,	out MPI_Request request) {
+			int ierr;
+			MPI_ISEND(buf, ref count, ref datatype, ref dest, ref tag, ref comm, out request, out ierr);
+			MPIException.CheckReturnCode(ierr);
+		}
+
+
+#pragma warning disable 649
+		delegate void _MPI_ISSEND(IntPtr buf, ref int count, ref MPI_Datatype datatype,
                                   ref int dest, ref int tag,
                                   ref MPI_Comm comm,
                                   out MPI_Request request, out int ierr);
