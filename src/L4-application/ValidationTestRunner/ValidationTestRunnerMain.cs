@@ -689,6 +689,34 @@ namespace ValidationTestRunner {
         }
 
 
+
+        /// <summary>
+        /// Linear solver performance:
+        /// - Steady-State XDG Stokes problem (water droplet in air)
+        /// - one MPI core
+        /// </summary>
+        [NUnitFileToCopyHack(
+            "examples/DropletImpact/DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb",
+            "examples/DropletImpact/DongBC_SteadyStateConvStudy_KovasznayFlow_PostProcessing.ipynb")]
+        [Test]
+        static public void Run__KovasznayFlow_DongBC() {
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "KovasznayFlow_ConvStudy",
+                $"KovasznayFlow_ConvStudy*",
+                "delete_KovasznayFlow_ConvStudy",
+                new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1));
+
+            //ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb");
+
+            ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow_PostProcessing.ipynb");
+        }
+
+
+
         /*
         /// <summary>
         /// Linear solver performance:
