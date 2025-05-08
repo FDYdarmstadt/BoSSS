@@ -184,7 +184,7 @@ namespace BoSSS.Foundation.Quadrature {
             foreach(var rule in cellBndRule) {
                 if(rule.Rule.OrderOfPrecision < order) {
                     cellBndRule = this.m_cellBndQF.GetQuadRuleSet(CellMask, order).ToArray();
-                    throw new Exception();
+                    throw new ArithmeticException($"Requested quadrature rule of degree {order}, but rule reports order {rule.Rule.OrderOfPrecision}.");
                 }
             }
 #endif

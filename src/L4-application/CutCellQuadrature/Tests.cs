@@ -198,7 +198,7 @@ namespace CutCellQuadrature {
         /// Test case from https://doi.org/10.1016/j.jcp.2021.110720
         /// </summary>
         [Test]
-        public void Test2DSurfaceConvergenceStructuredAlgoim() {
+        static public void Test2DSurfaceConvergenceStructuredAlgoim() {
             int[] orders = Enumerable.Range(1, 10).ToArray();
 
             GridSizes[] sizes = new GridSizes[] { GridSizes.Single, GridSizes.Tiny, GridSizes.Small, GridSizes.Normal, GridSizes.Large };
@@ -283,7 +283,7 @@ namespace CutCellQuadrature {
         }
 
         [Test]
-        public void Test2DVolumeHighOrderRobustnessStructured() {
+        static public void Test2DVolumeHighOrderRobustnessStructured() {
             ITestCase testCase = new MinGibou1EllipseArea(GridSizes.Tiny, GridTypes.Structured);
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 

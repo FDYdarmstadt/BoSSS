@@ -259,6 +259,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
 
+                
+
                 cachedRules[order] = result.ToArray();
 
 
@@ -554,6 +556,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 // (happens e.g. if level set is tangent)
                                 QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
                                 emptyRule.Nodes.LockForever();
+                                emptyRule.OrderOfPrecision = int.MaxValue;
                                 optimizedRules[i] = emptyRule;
                                 continue;
                             }
@@ -654,6 +657,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     // All integrals are zero => cell not really cut
                     // (happens e.g. if level set is tangent)
                     QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
+                    emptyRule.OrderOfPrecision = int.MaxValue;
                     emptyRule.Nodes.LockForever();
                     return emptyRule;
                 }

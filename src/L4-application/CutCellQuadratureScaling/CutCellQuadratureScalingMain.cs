@@ -31,8 +31,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
 
-            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(6, CutCellQuadratureMethod.OneStepGauss);
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(3, CutCellQuadratureMethod.Classic);
+            BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2Dvs3D(3, CutCellQuadratureMethod.Classic);
+            // BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(3, CutCellQuadratureMethod.Classic);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D(order, quadratureType);
             //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_3D(order, quadratureType);
 

@@ -293,6 +293,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
                     for(int q=0; q<quadRules.Length; q++) { 
 						if (ret[q] == null) 
 							ret[q] = new List<ChunkRulePair<TQuadRule>>();
+                        quadRules[q].OrderOfPrecision = RequestedOrder;
 					    ret[q].Add(new ChunkRulePair<TQuadRule>(Chunk.GetSingleElementChunk(cell), quadRules[q]));
 					}
 				}

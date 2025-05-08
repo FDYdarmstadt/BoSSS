@@ -390,6 +390,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 foreach (int cell in emptyCells.ItemEnum) {
                     QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, RefElement.SpatialDimension);
                     emptyRule.Nodes.LockForever();
+                    emptyRule.OrderOfPrecision = int.MaxValue;
                     result.Add(new ChunkRulePair<QuadRule>(
                         Chunk.GetSingleElementChunk(cell), emptyRule));
                 }

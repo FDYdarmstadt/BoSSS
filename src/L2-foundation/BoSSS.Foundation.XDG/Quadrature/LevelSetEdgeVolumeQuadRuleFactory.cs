@@ -476,6 +476,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             cell,
                             max));
                     }
+                    optimizedRules[iSubGrid].OrderOfPrecision = order;
                 }
 
                 return optimizedRules;

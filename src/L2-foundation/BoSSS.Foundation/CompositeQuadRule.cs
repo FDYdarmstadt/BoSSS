@@ -152,8 +152,8 @@ namespace BoSSS.Foundation.Quadrature {
                     foreach(var rule in ruleSet) {
                         if(rule.Rule.OrderOfPrecision < order) {
                             ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
-                            throw new Exception();
-                        }
+                            throw new ArithmeticException($"Requested quadrature rule of degree {order}, but rule reports order {rule.Rule.OrderOfPrecision}.");
+                        }                       
                     }
                 }
 

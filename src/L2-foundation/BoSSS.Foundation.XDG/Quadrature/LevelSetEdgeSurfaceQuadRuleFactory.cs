@@ -200,6 +200,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     optimizedRule.Weights.Length,
                     LevelSetData.GridDat.SpatialDimension,
                     true);
+                optimizedRule.OrderOfPrecision = order;
                 //optimizedRule.Nodes.LockForever();
 
                 if (optimizedRule.NoOfNodes == 0) {

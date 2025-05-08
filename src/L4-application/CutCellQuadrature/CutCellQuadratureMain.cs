@@ -177,7 +177,7 @@ namespace CutCellQuadrature {
 
         static void Main(string[] args) {
             InitMPI(args);
-
+            
             foreach (var testCase in testCases) {
 
                 CutCellQuadratureMain app = new CutCellQuadratureMain(testCase);

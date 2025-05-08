@@ -402,6 +402,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Algoim {
             private QuadRule CreateEmptyQuadRule() {
                 QuadRule quadRuleEmpty = QuadRule.CreateBlank(RefElement, 1, spaceDim);
                 quadRuleEmpty.Nodes.LockForever();
+                quadRuleEmpty.OrderOfPrecision = int.MaxValue;
                 return quadRuleEmpty;
             }
 
