@@ -53,7 +53,7 @@ namespace BoSSS.Application.SipPoisson {
     public class SipPoissonMain : Application<SipControl> {
 
 
-    
+
 
         static List<long> PrimeSearch(long start, int inc, int ith) {
             const int measBase = 50000000;
@@ -92,7 +92,7 @@ namespace BoSSS.Application.SipPoisson {
             return foundPrimes;
         }
 
-        
+
         static void MatrixMult(int ith) {
             const int measBase = 10;
 
@@ -135,7 +135,7 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
-        
+
 
 
 
@@ -147,21 +147,19 @@ namespace BoSSS.Application.SipPoisson {
             //Debugger.Launch();
             Console.WriteLine($"Current process affinity: {Process.GetCurrentProcess().ProcessorAffinity:x}");
             int[] initialAffinity = CPUAffinity.GetCurrentThreadAffinity().ToArray();
-            Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+            Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", ", "]")}");
             InitMPI(args);
-            
-            Console.WriteLine($"Value from CCP_AFFINITY : {CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("[", ", " , "]") }");
-            Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+
+            Console.WriteLine($"Value from CCP_AFFINITY : {CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("[", ", ", "]")}");
+            Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", ", "]")}");
 
             int MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
-            //int[] cpus = initialAffinity.GetSubVector(MPIrank*4 + 1, 3);
-            int[] cpus = initialAffinity.GetSubVector(5, ilPSP.Environment.NumThreads);
-            Console.Error.WriteLine($"Rank {MPIrank} desires CPUS: {cpus.ToConcatString("[", ", " , "]")}");
+            int[] cpus = initialAffinity.GetSubVector(MPIrank * 4 + 1, 3);
+            Console.Error.WriteLine($"Rank {MPIrank} desires CPUS: {cpus.ToConcatString("[", ", ", "]")}");
 
-            /*
-                        ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
+            ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
                             delegate (int ithread, int i0, int iE) {
-                                Console.WriteLine($" ### thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+                                Console.WriteLine($" ### thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", ", "]")}");
                                 CPUAffinity.SetCurrentThreadAffinity(cpus[ithread]);
                                 //CPUAffinityWindows.SetCurrentThreadIdealProcessor((uint) cpus[ithread]);
 
@@ -169,17 +167,17 @@ namespace BoSSS.Application.SipPoisson {
                                 //PrimeSearch(3 + ithread * 2, 3, ithread);
 
                             }
-                        );*/
+            );
 
             //PrimeSearch(3 + 0 * 2, 3, 0);
 
 
             ilPSP.Environment.EnableOpenMP();
-            MKLservice.SetNumThreads(8);
+            MKLservice.SetNumThreads(cpus.Length);
             MKLservice.BindOMPthreads_1To1(cpus);
             MatrixMult(0);
 
-            
+
             /*
             InitMPI(args);
 
