@@ -45,9 +45,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [Serializable]
         public class Config : ISolverFactory {
 
-            public string Name => "Additive Schwarz Preconditioner for Coarse Meshes";
+            public string Name => "Additive Schwarz Preconditioner for TaskParallel";
 
-            public string Shortname => "AddSwzCrs";
+            public string Shortname => "AddSwzTP";
 
             public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
                 var R = new SchwarzForTaskParallel();
@@ -117,8 +117,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public bool EnableOverlapScaling = true;
         }
-
-        bool TaskParallelization = false;
 
         Config m_config = new Config();
 
@@ -721,7 +719,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         ColIndices_iBlock.GetSubVector(0, firstLocal).Cat(ColIndices_iBlock.GetSubVector(lastLocal, L - lastLocal)), firstLocal.ForLoop(i => (long)i).Cat((L - lastLocal).ForLoop(i => (long)i + lastLocal))
                         );
 
-                    Mtx_iBlk.SaveToTextFileSparseDebug($"MtxLocBlock{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+                    if (verbose)
+                        Mtx_iBlk.SaveToTextFileSparseDebug($"MtxLocBlock{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
 
 					var slv_iBlk = new PARDISOSolver() {
                         CacheFactorization = true,
@@ -834,6 +833,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
+
+        bool verbose = false;
+
 		/// <summary>
 		/// this step can be performed on world communicator how ever, it should return results on smoother operator communicator
 		/// </summary>
@@ -841,30 +843,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="doTest"></param>
 		/// <exception cref="ApplicationException"></exception>
 		public void InitWithTest(StandAloneOperatorMappingPairWithGridData op, bool doTest) {
-            //Debugger.Launch();
-
-   //         this.config.NoOfBlocks = 1;
-			//this.config.EnableOverlapScaling = false;
-   //         this.config.Overlap = 0;
-
-			using (var f = new FuncTrace()) {
+  			using (var f = new FuncTrace()) {
 
                 m_op = op;
                 var locBlocks = CalculateBlocks(op);
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 				var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
 
-                RedistAndIndices.Redist.SaveToTextFileSparse("RedistSz" + op.DgMapping.TotalNoOfBlocks + ".txt");
-
-				for (int i = 0; i < RedistAndIndices.ColIndices.Length; i++) {
-					RedistAndIndices.RowIndices[i].SaveToTextFileDebug($"RowIndicesSz{op.DgMapping.TotalNoOfBlocks}_{i}", ".txt");
-					RedistAndIndices.ColIndices[i].SaveToTextFileDebug($"ColIndicesdistSz{op.DgMapping.TotalNoOfBlocks}_{i}", ".txt");
-				}
-
 				// obtain the part of the matrix which should be solved on this processor via multiplication with the redistribution matrix.
 				var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, OpMtx);
-
-				LocalBlocks.SaveToTextFileSparse("LocalBlockTogetherSz" + op.DgMapping.TotalNoOfBlocks + ".txt");
 
 				// create the local block solvers
 				m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, new int[] { });
@@ -875,11 +862,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (doTest)
                     TestCommunication(RedistAndIndices.Redist);
 
-                if (config.EnableOverlapScaling && config.Overlap > 0) {
+                if (config.EnableOverlapScaling && config.Overlap > 0) 
                     CalculateScaling();
 
+				if (verbose) {
+					RedistAndIndices.Redist.SaveToTextFileSparse("RedistSz" + op.DgMapping.TotalNoOfBlocks + ".txt");
+					for (int i = 0; i < RedistAndIndices.ColIndices.Length; i++) {
+						RedistAndIndices.RowIndices[i].SaveToTextFileDebug($"RowIndicesSz{op.DgMapping.TotalNoOfBlocks}_{i}", ".txt");
+						RedistAndIndices.ColIndices[i].SaveToTextFileDebug($"ColIndicesdistSz{op.DgMapping.TotalNoOfBlocks}_{i}", ".txt");
+					}
+					LocalBlocks.SaveToTextFileSparse("LocalBlockTogetherSz" + op.DgMapping.TotalNoOfBlocks + ".txt");
 				}
-            }
+			}
         }
 
 		/// <summary>
@@ -905,13 +899,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		/// <summary>
-		/// Calculates the Schwarz blocks for the given operator
+		/// Calculates the Schwarz blocks for the given operator 
+        /// [ToprakToDo]: ad-hoc distribution of dofs to blocks. Can be improved for better scaling between procs.
 		/// </summary>
 		/// <param name="op"></param>
 		/// <returns></returns>
 		SchwarzBlock[][] CalculateBlocks(StandAloneOperatorMappingPairWithGridData op) {
 			int MPIrnk = thisCommRank;
-			var cellToBlock = ComputeSchwarzBlockIndexMETISGlobal(op);
+			var cellToBlock = ComputeSchwarzBlockIndexMETISGlobal(op); //each cell to target block index
 
 			SchwarzBlock[] Blocks = new SchwarzBlock[this.config.NoOfBlocks];
 			for (int iBlck = 0; iBlck < this.config.NoOfBlocks; iBlck++) {
@@ -942,15 +937,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					EnlargeSchwarzBlock(op, Blocks[iBlock]);
 					CalculateBlockCellToDOFdata(op, Blocks[iBlock]);
 				}
-
 			}
-			var locBlocks = ExchangeBlocks(Blocks);
 
+			var locBlocks = ExchangeBlocks(Blocks);
 			return locBlocks;
 		}
 
 		/// <summary>
 		/// Filters/calculates the matrix data for the given block.
+		/// [ToprakToDo]: ad-hoc distribution of dofs to blocks. Can be improved for better scaling between procs. 
 		/// </summary>
 		/// <param name="op"></param>
 		/// <param name="Block"></param>
@@ -1000,7 +995,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     distCommCat = distCommCat.Cat(distComm[iBlock] ?? new double[0]);
                 }
                 double fwdErr = distCommCat.MPI_L2DistPow2(Dist,op_comm);
-                Console.WriteLine("Forward communication difference = " + fwdErr);
                 if (fwdErr != 0)
                     throw new ApplicationException("Forward communication error; err = " + fwdErr);
 
@@ -1010,7 +1004,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_comm.AccBlockSol(backComm, distComm);
 
                 double bckErr = Back.MPI_L2DistPow2(backComm, m_op.OperatorMatrix.MPI_Comm);
-                Console.WriteLine("Backward communication difference = " + bckErr);
                 if (bckErr != 0)
                     throw new ApplicationException("Backward communication error; err = " + bckErr);
             }
@@ -1386,9 +1379,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         double[][] RHSblocks;
         double[][] Xblocks;
-        bool IsXandBComitted = false;
 
-        public void CommitInitialXandB<U, V>(U X, V B)
+        void CommitInitialXandB<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> {
 
@@ -1403,10 +1395,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_comm.CommRHStoBlocks(RES, RHSblocks);
             }
 
-            IsXandBComitted = true;
         }
 
-        public void TestConvergence<U, V>(U X, V B)
+
+		/// <summary>
+		/// A special case to test the convergence of the Schwarz method.
+		/// </summary>
+		/// <typeparam name="U"></typeparam>
+		/// <typeparam name="V"></typeparam>
+		/// <param name="X"></param>
+		/// <param name="B"></param>
+		public void TestConvergence<U, V>(U X, V B)
 			where U : IList<double>
 			where V : IList<double> {
             double[] XFull = X.ToArray().CloneAs();
@@ -1438,18 +1437,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> {
             using (new FuncTrace()) {
 
-                if (!IsXandBComitted)
-                    CommitInitialXandB(X, B);
+                CommitInitialXandB(X, B);
 
                 for (int iBlock = 0; iBlock < m_BlockSolvers.Length; iBlock++) {
                     if (m_BlockSolvers[iBlock] != null) {
                         m_BlockSolvers[iBlock].Solve(Xblocks[iBlock], RHSblocks[iBlock]);
-                        Xblocks[iBlock].SaveToTextFileDebug($"XblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
-						RHSblocks[iBlock].SaveToTextFileDebug($"RHSblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+      //                  Xblocks[iBlock].SaveToTextFileDebug($"XblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+						//RHSblocks[iBlock].SaveToTextFileDebug($"RHSblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
 
 						if (m_OverlapScaling != null) {
                             var scale = m_OverlapScaling[iBlock];
-							scale.SaveToTextFileDebug($"scaleSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+							//scale.SaveToTextFileDebug($"scaleSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
 
 							var Xb = Xblocks[iBlock];
                             int L = scale.Length;
@@ -1459,19 +1457,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                if (!TaskParallelization)
-                    m_comm.AccBlockSol(X, Xblocks);
-
-                IsXandBComitted = false;
-
+                m_comm.AccBlockSol(X, Xblocks);
 
 				this.NoIter++;
             }
-        }
-
-        public void PropagateBackToOpComm<U>(U X)
-            where U : IList<double> {
-            m_comm.AccBlockSol(X, Xblocks);
         }
 
         public long UsedMemory() {
