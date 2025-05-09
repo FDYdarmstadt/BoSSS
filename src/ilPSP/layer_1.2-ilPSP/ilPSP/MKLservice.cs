@@ -3,6 +3,7 @@ using MPI.Wrappers.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -116,6 +117,8 @@ namespace ilPSP {
 
 
         public static void BindOMPthreads_1To1(int[] CPUindices) {
+            CPUindices = CPUAffinity.ToOpenMpCPUindices(CPUindices).ToArray();
+
             int ret;
             int NumCpus = CPUindices.Length;
             unsafe {
