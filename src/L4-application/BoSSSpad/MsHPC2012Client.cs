@@ -232,7 +232,7 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
-
+        /*
         /// <summary>
         /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
         /// </summary>
@@ -245,14 +245,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
+        */
 
 
         /// <summary>
-        /// Additional number of cores which are allocated for 'service';
-        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// Additional number of cores which are allocated for each MPI rank for 'service', e.g., background threads, IO, garbage collection, etc.;
         /// </summary>
         [DataMember]
-        public int NumOfServiceCoresPerMPIprocess = 0;
+        public int NumOfServiceCoresPerMPIprocess = 1;
 
        
         /// <summary>
@@ -718,19 +718,22 @@ namespace BoSSS.Application.BoSSSpad {
             int NoOfThreads = myJob.NumberOfThreads;
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
-            
-            
+            int CoresPerProcess = MPISz * myJob.NumberOfThreads + MPISz * this.NumOfServiceCoresPerMPIprocess;
+            if(CoresPerProcess % 2  == 0)
+                CoresPerProcess++;
+            int NumberOfCores = MPISz * CoresPerProcess;
+
+
+
             bool SingleNode = this.SingleNode;
             var Priority = this.DefaultJobPriority;
             string user = this.Username;
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                str.Write($"mpiexec -al 0 -n {MPISz} ");
-                ////str.Write($"mpiexec ");
-                //if(MPISz > 1)
-                //    throw new Exception("mpiexec deactivated");
+                if(MPISz > 1)
+                    str.Write($"mpiexec -al 0 -n {MPISz} ");
+                    //str.Write($"mpiexec -n {MPISz} ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);

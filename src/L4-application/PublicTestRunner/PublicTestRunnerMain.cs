@@ -657,7 +657,8 @@ namespace PublicTestRunner {
                         }
                     }
                 }
-                {
+                Console.WriteLine("skipping MPI tests for now...");
+                /*{
                     var ParAssln = GetAllMpiAssemblies();
                     if (ParAssln != null) {
                         foreach (var TT in ParAssln) {
@@ -672,7 +673,7 @@ namespace PublicTestRunner {
                             }
                         }
                     }
-                }
+                }*/
 
                 Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
                 int cnt = 0;

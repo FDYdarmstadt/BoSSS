@@ -52,7 +52,9 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
-        
+
+    
+
         static List<long> PrimeSearch(long start, int inc, int ith) {
             const int measBase = 50000000;
 
@@ -90,7 +92,7 @@ namespace BoSSS.Application.SipPoisson {
             return foundPrimes;
         }
 
-        /*
+        
         static void MatrixMult(int ith) {
             const int measBase = 10;
 
@@ -132,7 +134,9 @@ namespace BoSSS.Application.SipPoisson {
             }
 
         }
-        */
+
+        
+
 
 
         /// <summary>
@@ -145,6 +149,7 @@ namespace BoSSS.Application.SipPoisson {
             int[] initialAffinity = CPUAffinity.GetCurrentThreadAffinity().ToArray();
             Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
             InitMPI(args);
+            
             Console.WriteLine($"Value from CCP_AFFINITY : {CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("[", ", " , "]") }");
             Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
 
@@ -170,6 +175,11 @@ namespace BoSSS.Application.SipPoisson {
                    //MatrixMult(ithread);
                 }
             );
+
+            
+            /*
+            InitMPI(args);
+
             
             double peakPerf = 0;
             int failCount = 0;
@@ -203,11 +213,8 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
             csMPI.Raw.mpiFinalize();
+            */
 
-
-
-
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();

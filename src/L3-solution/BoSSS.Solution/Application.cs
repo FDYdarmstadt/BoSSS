@@ -193,6 +193,7 @@ namespace BoSSS.Solution {
 
                     ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor)System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
                     ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+                    ilPSP.Connectors.Matlab.BatchmodeConnector.AltTempDir = o.TempDir;
 
                 } catch (Exception e) {
                     var errStr = $"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}";
