@@ -793,6 +793,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					return (new long[] { 0, (int)MGMapping.AggGrid.CellPartitioning.TotalLength }, columnMapping);
 				}
 
+				if (NoOfParts == worldCommSize) {
+					columnMapping = Enumerable.Range(0, (int)MGMapping.AggGrid.CellPartitioning.TotalLength).Select(i => ((long)i, (long)i)).ToList();
+					return (MGMapping.AggGrid.CellPartitioning.GetOffsetArray(), columnMapping);
+				}
+
 				int MPIrnk = MGMapping.MpiRank;
 				int[] part;
 				if (MPIrnk == worldMPIOffset) { //call metis on only the rank 0 (opComm)
