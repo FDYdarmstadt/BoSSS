@@ -1147,7 +1147,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// 
             /// </summary>
             override public string Name {
-                get { return "OrthonormalizationMultigrid"; }
+                get { return "TaskParallelOrthoMG"; }
             }
 
             /// <summary>
@@ -2493,8 +2493,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public long MemoryOfSmoother() {
             long Memory = 0;
-            if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
-                Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
+            if (this.CoarserLevelSolver is TaskParallelOrthoMG)
+                Memory += (this.CoarserLevelSolver as TaskParallelOrthoMG).MemoryOfSmoother();
             if (PreSmoother != null) Memory += PreSmoother.UsedMemory();
             if (PostSmoother != null) Memory += PostSmoother.UsedMemory();
             return Memory;
@@ -2502,8 +2502,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public long MemoryOfMultigrid() {
             long Memory = 0;
-            if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
-                Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfMultigrid();
+            if (this.CoarserLevelSolver is TaskParallelOrthoMG)
+                Memory += (this.CoarserLevelSolver as TaskParallelOrthoMG).MemoryOfMultigrid();
 
             Memory += ortho?.GetMemUsage() ?? 0;
             return Memory;
@@ -2511,8 +2511,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Dispose() {
             //if (m_MTracker != null) m_MTracker.Dispose();
-            if (m_verbose && m_OpMapPair != null && m_OpMapPair is MultigridOperator _mgop) {
-                int lv = _mgop.LevelIndex;
+            if (m_verbose && m_OpMapPair != null && m_OpMapPair is TaskParallelMGOperator _mgop) {
+                int lv = _mgop.level;
                 Console.WriteLine($"OrthoMG lv {lv} - total memory: {UsedMemory() / (1024 * 1024)} MB");
                 Console.WriteLine($"OrthoMG lv {lv} - internal memory: {MemoryOfMultigrid() / (1024 * 1024)} MB");
                 Console.WriteLine($"OrthoMG lv {lv} - smoother memory: {MemoryOfSmoother() / (1024 * 1024)} MB");

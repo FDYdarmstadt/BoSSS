@@ -1476,7 +1476,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public long UsedMemory() {
             long beits = 0;
-            if (m_BlockSolvers == null) {
+            if (m_BlockSolvers != null) {
                 beits += m_BlockSolvers.Sum(pardiso => pardiso?.UsedMemory() ?? 0);
             }
 
