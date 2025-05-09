@@ -471,11 +471,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// An ad-hoc information storing class for World-Level MG operator
 		/// Constructor (responsible for world to sub communicators)
 		/// should be defined on world communicator and then will be used on sub communicators with the solver
-		/// Basically this defines the operator matrix and the prolongation matrix and transfers them to the responsible processors without changing the communicator
+		/// Basically this defines the operator matrix and the prolongation matrix 
+		/// and transfers them to the responsible processors without changing the communicator
 		/// Technically each level is responsible for the prolongation matrix to the finer level and the operator matrix of the current level
 		/// Every level works with three different communicators: level from finer level (coarse comm of the finer), 
 		/// and the smoother and the coarse for this level (still on World but the processors are designated)
-		/// In each level first processors are are for the smoother and the rest is for the coarse,
+		/// In each level first processors are for the smoother and the rest is for the coarse,
 		/// leading that 0-th rank is always the smoother with the finest and last rank is for the coarse on the coarsest level
 		/// This can be called from the main program or from a finer level of another solver, so the finest level might have or not a prolongation op.
 		/// </summary>
@@ -484,15 +485,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="ProlongationMatrix"></param>
 		/// <param name="Mapping"></param>
 		/// <param name="size"></param>
-		public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int size = 0, IOperatorMappingPair finerLevel = null) { 
+		/// <param name="finerLevel"></param>
+		/// <param name="IsThisForDirectSolver"></param>
+		public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int size = 0, IOperatorMappingPair finerLevel = null, bool IsThereACoarserSolver = true) { 
             m_OpMtx = OperatorMatrix;
 			m_ProlMtx = ProlongationMatrix;
 			m_MultigridMapping = Mapping;
-			NoOfThisProcs = size == 0 ? m_OpMtx.RowPartitioning.MpiSize : size;
+			NoOfThisProcs = size == 0 ? finerLevel.OperatorMatrix.RowPartitioning.MpiSize : size;
+			m_IsThereCoarserLevel = IsThereACoarserSolver;
 			FinerLevel = finerLevel;
 			CheckMPICorrectness();
 
-			NoOfSmootherProcs = Math.Max(1, NoOfThisProcs / 4);
+			NoOfCoarseProcs = Math.Max(1, Math.Min(3 * NoOfThisProcs / 4, NoOfThisProcs - 1));
+
 			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(m_MultigridMapping);
             m_NoOfSpecies = GetNoOfSpeciesList(m_MultigridMapping);
 			(ThisCellI0s, ThisNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfThisProcs);
@@ -521,9 +526,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (m_MultigridMapping.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new ArgumentException("The mg mapping must be defined on the WORLD communicator.");
 
-			//if (!thisLevelWorldRankings.Contains(worldCommRank))
-			//	//throw new ArgumentOutOfRangeException($"The world rank {worldCommRank} is not in the range of this level. The range is {thisLevelWorldRankings[0]}-{thisLevelWorldRankings[thisLevelWorldRankings.Length - 1]}." +
-			//		$" The smoothers are {smoothLevelWorldRankings[0]}-{smoothLevelWorldRankings[smoothLevelWorldRankings.Length - 1]} and the coarse are {coarseLevelWorldRankings[0]}-{coarseLevelWorldRankings[coarseLevelWorldRankings.Length - 1]}.");
+			if (NoOfThisProcs < 1)
+				throw new ArgumentException("The number of processors must be equal or greater than 1.");
+
+			if (FinerLevel != null)
+				if (FinerLevel is TaskParallelMGOperator TpFine) {
+					if (TpFine.NoOfCoarseProcs != NoOfThisProcs)
+						throw new Exception("Inconsistent no of processors in the nested initialization");
+
+					if ((TpFine.NoOfSmootherProcs + TpFine.worldMPIOffset) != worldMPIOffset)
+						throw new Exception("Inconsistent no of processors resulting incorrect world offset");
+				} else {
+					if (FinerLevel.OperatorMatrix.RowPartitioning.MpiSize != NoOfThisProcs)
+						throw new Exception("Inconsistent no of processors in the nested initialization");
+		}
+
 		}
 
 
@@ -666,8 +683,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		public int level => FinerLevel is TaskParallelMGOperator fine ? fine.level + 1 : 0;
         public int NoOfThisProcs; 
-        public int NoOfSmootherProcs;
-        public int NoOfCoarseProcs => NoOfThisProcs - NoOfSmootherProcs;
+        public int NoOfSmootherProcs => NoOfThisProcs - NoOfCoarseProcs;
+        public int NoOfCoarseProcs;
+		bool m_IsThereCoarserLevel;
 
 		public (long i0Cell, int lenCell)[] CellToDOFdata; //global data (all of them) and global indices
 		public List<(long source, long target)> ThisNewCellMapping; //global data (all of them) and global indices
@@ -1239,7 +1257,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					op_lv.GetPrologonationOperator.SaveToTextFileSparse($"ProlongationMatrix_{level}.txt");
 				}
 
-				var coarserTP = new TaskParallelMGOperator(op_lv.OperatorMatrix, op_lv.GetPrologonationOperator.CloneAs(), op_lv.Mapping, WorldSize - level, finerTP);
+				var coarserTP = new TaskParallelMGOperator(op_lv.OperatorMatrix, op_lv.GetPrologonationOperator.CloneAs(), op_lv.Mapping, finerTP.NoOfCoarseProcs, finerTP, op_lv.CoarserLevel != null);
 
 				finerTP.CoarserLevel = coarserTP;
                 //coarserTP.FinerLevel = finerTP;
