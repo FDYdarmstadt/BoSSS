@@ -67,7 +67,7 @@ namespace ilPSP {
             //be forgiving on multiple calls
             mpiInitialized = false;
             string ret = "";
-            if (m_BootStrapDone == true) {
+            if(m_BootStrapDone == true) {
                 return ret;
             }
 
@@ -78,25 +78,25 @@ namespace ilPSP {
             Console.SetOut(StdOut);
             StdErr = new DuplicatingTextWriter(new StreamWriter(Console.OpenStandardError()), 1, false);
             Console.SetError(StdErr);
-            
+
 
             //Console.WriteLine("bootstrapping necessary.");
-            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+            if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                 // ++++++++++
                 // MS windows 
                 // ++++++++++
 
-                
+
                 // error
                 // =====
 
-                if (nativeDir == null || !nativeDir.Exists)
+                if(nativeDir == null || !nativeDir.Exists)
                     throw new ApplicationException("unable to do native library bootstrapping: missing directory 'x86' or 'amd64'");
 
 
                 // set location for native ilPSP libraries
                 // =======================================
-                
+
                 // search for the right Dll's (either 64 or 32 Bit)
                 SetDllDirectory(nativeDir.FullName);
                 MPI.Wrappers.Utils.DynLibLoader.PrimaryLibrarySearchPath = nativeDir.FullName;
@@ -104,21 +104,21 @@ namespace ilPSP {
 
                 m_BootStrapDone = true;
 
-            } else if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
-               
+            } else if(System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
 
-                if (nativeDir == null || !nativeDir.Exists)
-                    throw new ApplicationException ("unable to do native library bootstrapping: missing directory 'x86' or 'amd64-openmpi'");
+
+                if(nativeDir == null || !nativeDir.Exists)
+                    throw new ApplicationException("unable to do native library bootstrapping: missing directory 'x86' or 'amd64-openmpi'");
 
 
                 // set location for native ilPSP libraries
                 // =======================================
                 // append the directory to LD_LIBRARY_PATH
-                var ld_library_path = System.Environment.GetEnvironmentVariable ("LD_LIBRARY_PATH");
-                if (ld_library_path.IsEmptyOrWhite ())
+                var ld_library_path = System.Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
+                if(ld_library_path.IsEmptyOrWhite())
                     ld_library_path = "";
                 ld_library_path = nativeDir.FullName + ":" + ld_library_path;
-                System.Environment.SetEnvironmentVariable ("LD_LIBRARY_PATH", ld_library_path);
+                System.Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", ld_library_path);
                 MPI.Wrappers.Utils.DynLibLoader.PrimaryLibrarySearchPath = nativeDir.FullName;
 
 
@@ -132,12 +132,12 @@ namespace ilPSP {
 
             // MPI init
             // ========
-            if (!csMPI.Raw.Initialized()) {
+            if(!csMPI.Raw.Initialized()) {
                 csMPI.Raw.Init(CommandLineArgs);
                 mpiInitialized = true;
             }
 
-            
+
 
             // init MPI enviroment
             // ===================
@@ -189,9 +189,9 @@ namespace ilPSP {
         /// The maximum number of OpenMP threads on the entire computer (aka. Symmetric Multi Processing Node, SMP Node), among all MPI Ranks;
         /// This is important if, e.g. in parallel PARDISO solves, the matrix is gathered on one MPI rank and all other Ranks pause;
         /// </summary>
-        public static int MaxNumOpenMPthreads { 
-            get; 
-            private set; 
+        public static int MaxNumOpenMPthreads {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace ilPSP {
         /// </summary>
         public static void EnableOpenMP() {
             if(DisableOpenMP_becauseIsSlow)
-                return; 
+                return;
 
             if(OpenMPdisabled) {
                 MaxNumOpenMPthreads = backup_MaxNumOpenMPthreads;
@@ -238,7 +238,7 @@ namespace ilPSP {
 
 
         public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body, bool enablePar = false) {
-            if (InParallelSection) {
+            if(InParallelSection) {
                 throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
             }
 
@@ -257,7 +257,7 @@ namespace ilPSP {
                 LAPACK.ActivateSEQ();
 
                 return Parallel.For(fromInclusive, toExclusive, options, body);
-            } finally { 
+            } finally {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
@@ -266,8 +266,8 @@ namespace ilPSP {
         }
 
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = true) {
-            if (InParallelSection == true) {
-                for (int i = fromInclusive; i < toExclusive; i++) {
+            if(InParallelSection == true) {
+                for(int i = fromInclusive; i < toExclusive; i++) {
                     body(i);
                 }
             } else {
@@ -297,7 +297,7 @@ namespace ilPSP {
         }
 
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
-            if (InParallelSection == true) {
+            if(InParallelSection == true) {
                 body(fromInclusive, toExclusive);
             } else {
 
@@ -317,8 +317,8 @@ namespace ilPSP {
 
                     void _body(int ithread) {
                         int L = toExclusive - fromInclusive;
-                        int i0 = (L*ithread)/__Numthreads;
-                        int iE = (L*(ithread+1))/__Numthreads;
+                        int i0 = (L * ithread) / __Numthreads;
+                        int iE = (L * (ithread + 1)) / __Numthreads;
 
                         body(i0, iE);
                     }
@@ -335,7 +335,7 @@ namespace ilPSP {
         }
 
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int, int> body, bool enablePar = true) {
-            if (InParallelSection == true) {
+            if(InParallelSection == true) {
                 body(0, fromInclusive, toExclusive);
             } else {
 
@@ -355,8 +355,8 @@ namespace ilPSP {
 
                     void _body(int ithread) {
                         int L = toExclusive - fromInclusive;
-                        int i0 = (L*ithread)/__Numthreads;
-                        int iE = (L*(ithread+1))/__Numthreads;
+                        int i0 = (L * ithread) / __Numthreads;
+                        int iE = (L * (ithread + 1)) / __Numthreads;
 
                         body(ithread, i0, iE);
                     }
@@ -374,7 +374,7 @@ namespace ilPSP {
 
 
         public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
-            if (InParallelSection) {
+            if(InParallelSection) {
                 throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
             }
 
@@ -399,14 +399,14 @@ namespace ilPSP {
                 SetOMPbinding();
             }
         }
-
+/*
         /// <summary>
         /// before we start messing with OpenMP affinity
         /// </summary>
         static System.Collections.Generic.IReadOnlyList<int> ReservedCPUsInitially = null;
 
         static IEnumerable<int> DedicatedCPUsForThisRank = null;
-
+*/
         static IEnumerable<int> ReservedCPUsOnSMP = null;
 
         public static bool MpiJobOwnsEntireComputer => ReservedCPUsOnSMP.Count() == CPUAffinity.TotalNumberOfCPUs;
@@ -415,70 +415,80 @@ namespace ilPSP {
 
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
-            using (var tr = new FuncTrace()) {
-                //tr.InfoToConsole = true;
+            using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 //tr.StdoutOnAllRanks();
 
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
                 tr.Info($"Number of CPUs in system: {CPUAffinity.TotalNumberOfCPUs}");
-                
+
                 // ===========================
                 // Determine Number of Threads
                 // ===========================
 
 
-                if (NumThreadsOverride != null) {
+                if(NumThreadsOverride != null) {
                     tr.Info("API override of number of threads: " + NumThreadsOverride.Value + " (ignoring OMP_NUM_THREADS, etc.)");
                     NumThreads = NumThreadsOverride.Value;
                 } else {
-                    if (LookAtEnvVar) {
-                        int? omp_num_threads = null;
+                    int? omp_num_threads = null;
+                    if(LookAtEnvVar) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // // try to infer number of threads from envvar OMP_NUM_THREADS
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         try {
                             string _omp_num_treads = System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS");
-                            if (_omp_num_treads != null) {
+                            if(_omp_num_treads != null) {
                                 omp_num_threads = Int32.Parse(_omp_num_treads);
                                 tr.Info("OMP_NUM_THREADS = " + omp_num_threads);
                             } else {
                                 tr.Info("not defined: OMP_NUM_THREADS");
                             }
-                        } catch (Exception e) {
+                        } catch(Exception e) {
                             tr.Error("Exception parsing OMP_NUM_THREADS: " + e);
                         }
-
-                        if (omp_num_threads != null) {
-                            NumThreads = omp_num_threads.Value;
-                        } else {
-
-                            int MPIranksOnNode = int.MaxValue;
-                            for (int iSMP = 0; iSMP < MPIEnv.NoOfSMPs; iSMP++) {
-                                MPIranksOnNode = Math.Min(MPIranksOnNode, MPIEnv.MPIProcessesPerSMP(iSMP));
-                            }
-
-                            int num_procs_tot = System.Environment.ProcessorCount;
-                            int num_procs = Math.Max(1, num_procs_tot - 2); // leave some cores for the system.
-                            int num_procs_per_smp = Math.Max(1, num_procs / MPIranksOnNode);
-                            tr.Info($"Failed to determine user wish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2 for BoSSS ({num_procs} total, {num_procs_per_smp} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
-
-                            NumThreads = num_procs_per_smp;
-
-                        }
-                    } else {
-                        tr.Info($"Using default value for number of threads ({NumThreads})");
                     }
-                }
+
+                    if(omp_num_threads != null) {
+                        NumThreads = omp_num_threads.Value;
+                    } else {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // nothing defined, so use everything on the computer
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                        int MPIranksOnNode = int.MaxValue;
+                        for(int iSMP = 0; iSMP < MPIEnv.NoOfSMPs; iSMP++) {
+                            MPIranksOnNode = Math.Min(MPIranksOnNode, MPIEnv.MPIProcessesPerSMP(iSMP));
+                        }
+
+                        int num_procs_tot = System.Environment.ProcessorCount;
+                        int num_procs = Math.Max(1, num_procs_tot - 2); // leave some cores for the system.
+                        int num_procs_per_smp = Math.Max(1, num_procs / MPIranksOnNode);
+                        tr.Info($"Failed to determine user wish for number of threads; trying to use all! System reports {num_procs_tot} CPUs, will use all but 2 for BoSSS ({num_procs} total, {num_procs_per_smp} per MPI rank, MPI ranks on current node is {MPIranksOnNode}).");
+
+                        NumThreads = num_procs_per_smp;
+
+                    }
+                } 
+
+                MKLservice.SetNumThreads(NumThreads);
+                
+                //else {
+                //    tr.Info($"Using default value for number of threads ({NumThreads})");
+                //}
+
 
                 tr.Info("Finally, setting number of OpenMP and Parallel Task Library threads to " + NumThreads);
-
-                if (NumThreads <= 0)
+/*
+                if(NumThreads <= 0)
                     throw new NotSupportedException($"Number of threads must be at least 1; set to {NumThreads}");
-
-
                 // ===========================
                 // OpenMP configuration
                 // ===========================
                 if(ReservedCPUsInitially == null)
-                    ReservedCPUsInitially = CPUAffinity.GetAffinity().ToList().AsReadOnly();
+                    ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
                 IEnumerable<int> ReservedCPUs = ReservedCPUsInitially.ToArray();
 
                 //if(ReservedCPUs.Count() == 1) {
@@ -486,8 +496,8 @@ namespace ilPSP {
                 //ReservedCPUs = CPUAffinity.GetAffinity();
                 //ReservedCPUs = CPUAffinity.GetAffinity().ToConcatString("[", ", ", "]")
                 //}
-                if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
-                    if (System.Environment.GetEnvironmentVariable("CCP_AFFINITY").IsNonEmpty()) {
+                if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                    if(System.Environment.GetEnvironmentVariable("CCP_AFFINITY").IsNonEmpty()) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Running on MS HPC Cluster, which defines the `CCP_AFFINITY` variable
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -496,11 +506,11 @@ namespace ilPSP {
                         var _ReservedCPUs = CPUAffinityWindows.Decode_CCP_AFFINITY();
                         bool eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
                         string listdiffs;
-                        if (!eqalAff)
+                        if(!eqalAff)
                             listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ",", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ",", "]") + ")";
                         else
                             listdiffs = "";
-                        if (eqalAff == false) {
+                        if(eqalAff == false) {
                             tr.Error("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
                         tr.Info("Win32 reports same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
@@ -512,16 +522,16 @@ namespace ilPSP {
                 tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
-                if (disjoint == true && allequal == true) {
+                if(disjoint == true && allequal == true) {
                     throw new ApplicationException("Error in algorithm.");
                 }
 
-                
+
 
                 tr.Info($"MpiJobOwnsEntireComputer = {MpiJobOwnsEntireComputer}, RnkJobOwnsEntireComputer = {MpiRnkOwnsEntireComputer}");
 
-                if (allequal) {
-                    if (ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
+                if(allequal) {
+                    if(ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Sufficient CPUs to give each MPI rank `NumThreads` CPUs
                         //
@@ -532,12 +542,12 @@ namespace ilPSP {
 
                         int MaxSkip = ReservedCPUsOnSMP.Count() - NumThreads * MPIEnv.ProcessesOnMySMP;
                         int skip;
-                        if (MaxSkip.MPIMax() > 0) {
+                        if(MaxSkip.MPIMax() > 0) {
                             //
                             // If we have more CPUs than requested, still do some shifting, to prevent using the same CPU over and over
                             //
 
-                            if (MPIEnv.ProcessRankOnSMP == 0) {
+                            if(MPIEnv.ProcessRankOnSMP == 0) {
                                 MaxSkip = rnd.Next(0, MaxSkip + 1);
                             } else {
                                 MaxSkip = -1;
@@ -555,10 +565,10 @@ namespace ilPSP {
                         MaxNumOpenMPthreads = Math.Min(ReservedCPUsOnSMP.Count(), MPIEnv.ProcessesOnMySMP * NumThreads);
                     }
 
-                } else if (disjoint) {
+                } else if(disjoint) {
 
                     DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
-                    if (DedicatedCPUsForThisRank.Count() < NumThreads) {
+                    if(DedicatedCPUsForThisRank.Count() < NumThreads) {
                         tr.Error($"R{MPIEnv.MPI_Rank}: Insufficient number of CPUs: NumThreads = {NumThreads}, but got affinity to {DedicatedCPUsForThisRank.ToConcatString("[", ",", "]")}");
                     }
 
@@ -574,25 +584,25 @@ namespace ilPSP {
                 } else {
                     tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
                 }
-                
-               
+
+
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 SetOMPbinding();
-                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetAffinity().ToConcatString("[", ",", "]"));
+                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
                 OnlinePerformanceMeasurement.ExecuteBenchmarks();
-                
-               
-            }
+*/
 
-            //System.Environment.Exit(-99);
+            }
         }
 
         static Random rnd = new Random();
 
         private static void SetOMPbinding() {
             //using (var tr = new FuncTrace("SetOMPbinding")) // to much overhead
-            {
+
+            return;
+            /*{
                 //tr.InfoToConsole = true;
                 if (DedicatedCPUsForThisRank == null || MpiRnkOwnsEntireComputer) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -629,7 +639,7 @@ namespace ilPSP {
 
                     if (DisableOpenMP_becauseIsSlow) {
                         DisableOpenMP();
-                        CPUAffinity.SetAffinity(DedicatedCPUsForThisRank);
+                        CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank);
                     } else {
                         if(last_OpenMPcpuIdx.SetEquals(OpenMPcpuIdx) == false) {
                             last_OpenMPcpuIdx = OpenMPcpuIdx;
@@ -637,15 +647,15 @@ namespace ilPSP {
                         }
                     }
                 }
-            } 
-            
+            }*/
+
         }
 
-        static int[] last_OpenMPcpuIdx; 
+        //static int[] last_OpenMPcpuIdx; 
 
-        static OMPbindingStrategy? OMPbindingStrategy;
+        //static OMPbindingStrategy? OMPbindingStrategy;
         static bool DisableOpenMP_becauseIsSlow = false;
-   
+
         /// <summary>
         /// true, if the code currently runs in multi-threaded; then, further spawning into sub-threads should not occur.
         /// </summary>
@@ -685,7 +695,7 @@ namespace ilPSP {
             bool exists;
             try {
                 exists = File.Exists(fi.FullName);
-            } catch (IOException) {
+            } catch(IOException) {
                 exists = true;
             }
             return exists;
@@ -740,7 +750,7 @@ namespace ilPSP {
             try {
                 File.Copy(sourceFileName, destFileName, true);
                 //Console.WriteLine("Copy: " + sourceFileName + " -> " + destFileName);
-            } catch (Exception e) {
+            } catch(Exception e) {
                 Console.WriteLine("WARNING: Unable to copy to: '"
                     + destFileName + "': " + e.GetType().Name + " says:'" + e.Message + "'");
             }

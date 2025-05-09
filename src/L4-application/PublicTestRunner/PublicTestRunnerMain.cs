@@ -1640,7 +1640,7 @@ namespace PublicTestRunner {
                     tele.WriteLine(start.ToFileTimeUtc());
                     tele.WriteLine(CPUAffinityWindows.TotalNumberOfCPUs + " " + CPUAffinityWindows.NumberOfCPUsPerGroup);
                     tele.WriteLine(CCP_AFFINITY);
-                    tele.WriteLine(CPUAffinityWindows.GetAffinity().ToConcatString("", ", ", ""));
+                    tele.WriteLine(CPUAffinityWindows.GetCurrentThreadAffinity().ToConcatString("", ", ", ""));
                     tele.WriteLine(CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("", ", ", ""));
                     tele.WriteLine(start);
 
@@ -1803,7 +1803,7 @@ namespace PublicTestRunner {
                         tele.WriteLine(duration.TotalSeconds);
                         tele.WriteLine(CPUAffinityWindows.TotalNumberOfCPUs + " " + CPUAffinityWindows.NumberOfCPUsPerGroup);
                         tele.WriteLine(CCP_AFFINITY);
-                        tele.WriteLine(CPUAffinityWindows.GetAffinity().ToConcatString("", ", ", ""));
+                        tele.WriteLine(CPUAffinityWindows.GetCurrentThreadAffinity().ToConcatString("", ", ", ""));
                         tele.WriteLine(CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("", ", ", ""));
                         tele.WriteLine(duration);
                         tele.WriteLine(start);
