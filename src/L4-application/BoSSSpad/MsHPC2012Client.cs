@@ -732,7 +732,7 @@ namespace BoSSS.Application.BoSSSpad {
             string CommandLine;
             using (var str = new StringWriter()) {
                 if(MPISz > 1)
-                    str.Write($"mpiexec -al 0 -n {MPISz} ");
+                    str.Write($"mpiexec -al 1 -n {MPISz} ");
                     //str.Write($"mpiexec -n {MPISz} ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");

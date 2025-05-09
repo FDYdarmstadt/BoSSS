@@ -153,28 +153,30 @@ namespace BoSSS.Application.SipPoisson {
             Console.WriteLine($"Value from CCP_AFFINITY : {CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("[", ", " , "]") }");
             Console.WriteLine($"Main thread affinity    : {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
 
+            int MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
+            //int[] cpus = initialAffinity.GetSubVector(MPIrank*4 + 1, 3);
+            int[] cpus = initialAffinity.GetSubVector(5, ilPSP.Environment.NumThreads);
+            Console.Error.WriteLine($"Rank {MPIrank} desires CPUS: {cpus.ToConcatString("[", ", " , "]")}");
 
+/*
             ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
                 delegate (int ithread, int i0, int iE) {
-                    Console.WriteLine($" --- thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
-                    CPUAffinity.SetCurrentThreadAffinity(new int[] { initialAffinity[ithread]});
-                    //CPUAffinityWindows.SetCurrentThreadIdealProcessor((uint) initialAffinity[ithread]);
-                    Console.WriteLine($" *** thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
-                    
-                   //PrimeSearch(3 + ithread * 2, 3, ithread);
-                   //MatrixMult(ithread);
-                }
-            );
-
-            ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
-                delegate (int ithread, int i0, int iE) {
-                    CPUAffinity.SetCurrentThreadAffinity(new int[] { initialAffinity[ithread]});
                     Console.WriteLine($" ### thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+                    CPUAffinity.SetCurrentThreadAffinity(cpus[ithread]);
+                    //CPUAffinityWindows.SetCurrentThreadIdealProcessor((uint) cpus[ithread]);
+
+
+                    //PrimeSearch(3 + ithread * 2, 3, ithread);
                     
-                    PrimeSearch(3 + ithread * 2, 3, ithread);
-                   //MatrixMult(ithread);
                 }
-            );
+            );*/
+
+            //PrimeSearch(3 + 0 * 2, 3, 0);
+            
+            
+            //MKLservice.BindOMPthreads_1To1(cpus);
+            MKLservice.SetNumThreads(16);
+            MatrixMult(0);
 
             
             /*

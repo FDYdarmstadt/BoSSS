@@ -40,8 +40,17 @@ namespace ilPSP.Utils {
             return ret;
         }
 
+
         /// <summary>
-        /// Returns the list of CPU's to which the current process is assigned to;
+        /// Sets the list of CPU's to which the current process is assigned to;
+        /// Driver which calls either the respective Linux or Windows API functions.
+        /// </summary>
+        public static void SetCurrentThreadAffinity(params int[] __CPUlist) {
+            SetCurrentThreadAffinity((IEnumerable<int>) __CPUlist);
+        }
+
+        /// <summary>
+        /// Sets the list of CPU's to which the current process is assigned to;
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
         public static void SetCurrentThreadAffinity(IEnumerable<int> CPUlist) {
