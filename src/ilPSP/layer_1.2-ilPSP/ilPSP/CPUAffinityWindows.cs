@@ -193,7 +193,7 @@ namespace ilPSP.Utils {
                     affinities[iAff].Mask = (UIntPtr)((ulong)1 << iCPUgrp);
                 }
 
-                Console.Error.WriteLine($"Number of groups {NumberOfGroups}, affinity0 0x{affinities[0].Mask:x}");
+                //Console.Error.WriteLine($"Number of groups {NumberOfGroups}, affinity0 0x{affinities[0].Mask:x}");
 
 
 

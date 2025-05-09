@@ -2352,7 +2352,7 @@ namespace BoSSS.Solution {
                 // Main/outmost time-stepping loop
                 // (in steady-state: only one iteration)
                 // =================================================================================
-                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                //ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 {
 
 
@@ -2967,7 +2967,6 @@ namespace BoSSS.Solution {
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
                 if (Control == null
                     || !Control.DynamicLoadBalancing_On
                     || (     TimeStepNo % Control.DynamicLoadBalancing_Period != 0 
@@ -2976,12 +2975,9 @@ namespace BoSSS.Solution {
                     || MPISize <= 1) {
                     return null;
                 }
-
                 
                 if (m_Balancer == null) {
                     m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators, this);
-
-                    
                 }
 
                 return m_Balancer.GetNewPartitioning(
@@ -3098,7 +3094,7 @@ namespace BoSSS.Solution {
                 }
 
 
-                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                //ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 OnlineProfiling.AppEndTime = DateTime.Now;
                 
                 OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);

@@ -93,8 +93,6 @@ namespace BoSSS.Application.ipViscosity {
         static void Main(string[] args) {
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
-            ilPSP.Environment.InitThreading(true, 1);
-            //BoSSS.Application.ipViscosity._Test.ConsistencyTest(Terms.T1, 0);
             BoSSS.Application.ipViscosity._Test.ConsistencyTest(Terms.T1, 1);
             csMPI.Raw.mpiFinalize();
             return;

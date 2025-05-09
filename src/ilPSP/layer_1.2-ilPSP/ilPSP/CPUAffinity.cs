@@ -86,7 +86,7 @@ namespace ilPSP.Utils {
         /// Deals with a special kink of handing CPU indices to Intel OpenMP on Windows:
         /// - On Windows, E.g. a system with 96 CPUs is organized into two groups of 48 CPUs.
         /// - Normally, the CPUs in the first group are 0 to 47, second group is 48 to 95, etc.
-        /// - OpenMP, however, starts each group at a multiple of 64: fist group is 0 to 47, second is 64 to 111, ...
+        /// - OpenMP, however, starts each group at a multiple of 64: first group is 0 to 47, second is 64 to 111, ...
         /// On other systems, there is nothing to do.
         /// </summary>
         public static IEnumerable<int> ToOpenMpCPUindices(IEnumerable<int> cpuList) {

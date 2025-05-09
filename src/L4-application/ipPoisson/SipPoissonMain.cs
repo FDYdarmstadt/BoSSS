@@ -53,7 +53,7 @@ namespace BoSSS.Application.SipPoisson {
     public class SipPoissonMain : Application<SipControl> {
 
 
-
+        /*
 
         static List<long> PrimeSearch(long start, int inc, int ith) {
             const int measBase = 50000000;
@@ -135,7 +135,7 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
-
+        */
 
 
 
@@ -144,6 +144,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            /*
+
             //Debugger.Launch();
             Console.WriteLine($"Current process affinity: {Process.GetCurrentProcess().ProcessorAffinity:x}");
             int[] initialAffinity = CPUAffinity.GetCurrentThreadAffinity().ToArray();
@@ -175,7 +177,7 @@ namespace BoSSS.Application.SipPoisson {
             ilPSP.Environment.EnableOpenMP();
             MKLservice.SetNumThreads(cpus.Length);
             MKLservice.BindOMPthreads_1To1(cpus);
-            MatrixMult(0);
+            //MatrixMult(0);
 
 
             /*
@@ -294,38 +296,6 @@ namespace BoSSS.Application.SipPoisson {
             Console.WriteLine("Available multi-grid levels: " + this.MGColoring.Count);
         }
 
-        /*
-        unsafe static void my_dgemm(int TRANSA, int TRANSB,
-                                        int M, int N, int K,
-                                        double ALPHA,
-                                        double* A, int LDA,
-                                        double* B, int LDB,
-                                        double BETA,
-                                        double* C, int LDC) {
-            for(int m = 0; m < M; m++) {
-                for(int n = 0; n < N; n++) {
-                    double acc = 0;
-                    for(int k = 0; k < K; k++) {
-                        acc += A[m * K + k] * B[k * N + n];
-                    }
-                    C[m * N + n] = BETA * C[m * N + n] + ALPHA * acc;
-                }
-            }
-
-        }
-        */
-
-
-        /*
-#if !DEBUG
-        static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
-            Exception e = (Exception)args.ExceptionObject;
-            Console.WriteLine("MyHandler caught : " + e.Message);
-            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
-            System.Environment.Exit(-1234);
-        }
-#endif
-*/
         /// <summary>
         /// Ensures availability of <see cref="BoSSS.Solution.Statistic.ForeignGridValue"/>
         /// </summary>

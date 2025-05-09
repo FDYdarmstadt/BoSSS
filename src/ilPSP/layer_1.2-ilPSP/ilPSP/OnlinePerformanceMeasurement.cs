@@ -77,7 +77,7 @@ namespace ilPSP {
             ExeCount++;
                 
             using (var tr = new FuncTrace("ExecuteBenchmarks")) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 foreach (var b in AllBenchmarks) {
                     if (Log.BenchResults == null)
                         Log.BenchResults = new Dictionary<string, List<double>>();
