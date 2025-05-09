@@ -471,8 +471,9 @@ namespace ilPSP {
                         NumThreads = num_procs_per_smp;
 
                     }
-                } 
+                }
 
+                MaxNumOpenMPthreads = NumThreads;
                 MKLservice.SetNumThreads(NumThreads);
                 
                 //else {

@@ -158,24 +158,25 @@ namespace BoSSS.Application.SipPoisson {
             int[] cpus = initialAffinity.GetSubVector(5, ilPSP.Environment.NumThreads);
             Console.Error.WriteLine($"Rank {MPIrank} desires CPUS: {cpus.ToConcatString("[", ", " , "]")}");
 
-/*
-            ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
-                delegate (int ithread, int i0, int iE) {
-                    Console.WriteLine($" ### thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
-                    CPUAffinity.SetCurrentThreadAffinity(cpus[ithread]);
-                    //CPUAffinityWindows.SetCurrentThreadIdealProcessor((uint) cpus[ithread]);
+            /*
+                        ilPSP.Environment.ParallelFor(0, ilPSP.Environment.NumThreads,
+                            delegate (int ithread, int i0, int iE) {
+                                Console.WriteLine($" ### thread {ithread} affinity: {CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ", " , "]")}");
+                                CPUAffinity.SetCurrentThreadAffinity(cpus[ithread]);
+                                //CPUAffinityWindows.SetCurrentThreadIdealProcessor((uint) cpus[ithread]);
 
 
-                    //PrimeSearch(3 + ithread * 2, 3, ithread);
-                    
-                }
-            );*/
+                                //PrimeSearch(3 + ithread * 2, 3, ithread);
+
+                            }
+                        );*/
 
             //PrimeSearch(3 + 0 * 2, 3, 0);
-            
-            
-            //MKLservice.BindOMPthreads_1To1(cpus);
-            MKLservice.SetNumThreads(16);
+
+
+            ilPSP.Environment.EnableOpenMP();
+            MKLservice.SetNumThreads(8);
+            MKLservice.BindOMPthreads_1To1(cpus);
             MatrixMult(0);
 
             
