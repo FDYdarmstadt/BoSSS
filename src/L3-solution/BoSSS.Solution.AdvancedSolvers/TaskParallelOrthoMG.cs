@@ -1879,40 +1879,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 		/// <summary>
-		/// ?we do not really need this as MPI_Split reorders new communicators w.r.t. old ranks
+		/// Creates mapings between MPIRanks on different communicators.
+		/// Notice that MPI_Split reorders new communicators w.r.t. old ranks, so this is a basic operation
 		/// </summary>
 		void CreateMpiRankMappings() {
-			// Each process sends its rank as its value.
 			Debug.Assert(thisCommsize == TpMapping.NoOfThisProcs);
-
 			int totalCount = thisCommsize; //  number of processes in the communicator
 
-			// Prepare managed buffers.
-			int[] sendBuffer = new int[] { subCommRank }; //workaround for fixed statement
 			ThisCommToSubCommMapping = new int[totalCount];
-
-			// Pin the buffers to obtain their addresses.
-			GCHandle sendHandle = GCHandle.Alloc(sendBuffer, GCHandleType.Pinned);
-			GCHandle recvHandle = GCHandle.Alloc(ThisCommToSubCommMapping, GCHandleType.Pinned);
-
-			IntPtr sendPtr = sendHandle.AddrOfPinnedObject();
-			IntPtr recvPtr = recvHandle.AddrOfPinnedObject();
-
-			// Perform the Allgather call.
-			csMPI.Raw.Allgather(sendPtr, 1, csMPI.Raw._DATATYPE.INT, recvPtr, 1, csMPI.Raw._DATATYPE.INT, thisComm);
-
-			// Display gathered values on each process.
-			Console.WriteLine($"Process {thisCommRank} gathered:");
+			WorldToSubCommMapping = new int[TpMapping.worldCommSize];
+			WorldToSubCommMapping.SetAll(-1);
 			for (int i = 0; i < totalCount; i++) {
-				Console.WriteLine($"Rank {i}: {ThisCommToSubCommMapping[i]}");
+				ThisCommToSubCommMapping[i] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
+				WorldToSubCommMapping[i + TpMapping.worldMPIOffset] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
 			}
 
-			var CommToSubCommMappingD = new int[totalCount];
-			var WorldToSubCommMappingD = new int[TpMapping.worldCommSize];
-			WorldToSubCommMappingD.SetAll(-1);
-			for (int i = 0; i < totalCount; i++) {
-				CommToSubCommMappingD[i] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
-				WorldToSubCommMappingD[i + TpMapping.worldMPIOffset] = i < TpMapping.NoOfSmootherProcs ? i : i - TpMapping.NoOfSmootherProcs;
+			WorldToThisCommMapping = Enumerable.Range(0, TpMapping.worldCommSize).
+				Select(i => i < TpMapping.worldMPIOffset ? -1 : i - TpMapping.worldMPIOffset).ToArray();
 			}
 
 			WorldToSubCommMapping = new int[TpMapping.worldCommSize];
