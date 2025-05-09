@@ -31,11 +31,11 @@
     <PackageReference Include="log4net" Version="2.0.15" />
     <PackageReference Include="System.Security.Permissions" Version="5.0.0" />
   </ItemGroup>
-  <ItemGroup>
+  <!--ItemGroup>
     <Reference Include="System.Configuration.ConfigurationManager">
       <HintPath>..\..\..\..\libs\system.configuration.configurationmanager.4.5.0\lib\netstandard2.0\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>
-  </ItemGroup>
+  </ItemGroup-->
   <ItemGroup>
     <ProjectReference Include="..\..\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
   </ItemGroup>

@@ -2373,11 +2373,16 @@ namespace BoSSS.Solution {
                     
                     for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
+                        MPICollectiveWatchDog.Watch(token: -5672 + i);
                         gridChanged = this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        MPICollectiveWatchDog.Watch(token: -42345 + i);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        MPICollectiveWatchDog.Watch(token: -8643 + i);
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
+                        MPICollectiveWatchDog.Watch(token: -123 + i);
                         this.ProfilingLog(i <= i0.MajorNumber + 1);
+                        MPICollectiveWatchDog.Watch(token: -9 + i);
                         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();

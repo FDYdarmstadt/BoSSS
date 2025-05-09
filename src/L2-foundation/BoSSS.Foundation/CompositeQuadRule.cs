@@ -149,6 +149,12 @@ namespace BoSSS.Foundation.Quadrature {
                 IEnumerable<IChunkRulePair<TQuadRule>> ruleSet;
                 using(new BlockTrace("Rule_Compilation_" + ruleFactory.GetType().Name, tr)) {
                     ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
+                    foreach(var rule in ruleSet) {
+                        if(rule.Rule.OrderOfPrecision < order) {
+                            ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
+                            throw new ArithmeticException($"Requested quadrature rule of degree {order}, but rule reports order {rule.Rule.OrderOfPrecision}.");
+                        }                       
+                    }
                 }
 
                 var nodes = new List<NodeSet>();

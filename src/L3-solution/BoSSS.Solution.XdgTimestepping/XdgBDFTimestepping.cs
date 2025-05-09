@@ -1056,8 +1056,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 // clear affine part
                 double[] OpAffine = new double[CurrentStateMapping.LocalLength];
-
-
                 
                 // assemble matrix & affine part
                 Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
@@ -1561,24 +1559,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.Residuals.Clear();
                     base.Residuals.SetV(Affine, -1.0);
 
-                   
-
+                    
                     success = true;
-
-
-
-                    //m_CurrentAgglomeration.XDGSpaceMetrics.CutCellMetrics.CellSurface[m_LsTrk.GetSpeciesId("A")].To1DArray().SaveToTextFile("surf-A.txt");
-                    //m_CurrentAgglomeration.XDGSpaceMetrics.CutCellMetrics.CellSurface[m_LsTrk.GetSpeciesId("B")].To1DArray().SaveToTextFile("surf-B.txt");
-
-                  
-
+                    //DifferentialOperator.onlyfordebugging_DoVolume = true;
+                    //DifferentialOperator.onlyfordebugging_DoEdge = true;
 
 #if DEBUG
                     {
-                        
-                        //DifferentialOperator.onlyfordebugging_DoVolume = true;
-                        //DifferentialOperator.onlyfordebugging_DoEdge = true;
-
                         this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
 
                         double[] checkResidual = new double[checkAffine.Length];

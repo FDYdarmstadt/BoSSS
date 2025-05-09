@@ -722,6 +722,7 @@ namespace BoSSS.Foundation.Quadrature {
                 int NoOfNodes = m_CurrentRule.Nodes.GetLength(0);
                 long lItemSize = ((long)m_TotalNoOfIntegralsPerItem) * ((long)NoOfNodes);
                 if (lItemSize >= int.MaxValue) {
+                    m_CurrentRule.Nodes.SaveToTextFile("qr-" + m_CurrentRule.NoOfNodes + ".txt");
                     throw new OverflowException($"Too many integral evaluations per cell/edge! Number of quadrature nodes: {NoOfNodes}; Number of integrals: {m_TotalNoOfIntegralsPerItem}; Total number of evaluations is {lItemSize}, this exceeds the supported maximum (int.MaxValue).");
                 }
                 int ItemSize = m_TotalNoOfIntegralsPerItem * NoOfNodes;

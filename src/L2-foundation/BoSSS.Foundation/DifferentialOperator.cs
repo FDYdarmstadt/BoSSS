@@ -1821,7 +1821,6 @@ namespace BoSSS.Foundation {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-
                             bt.IntermediateReportOfChildCalls = true;
                         }
 
@@ -1838,7 +1837,6 @@ namespace BoSSS.Foundation {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-
                             bt.IntermediateReportOfChildCalls = true;
                         }
                     }

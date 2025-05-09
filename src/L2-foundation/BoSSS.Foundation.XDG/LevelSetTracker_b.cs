@@ -42,6 +42,7 @@ namespace BoSSS.Foundation.XDG {
         XQuadFactoryHelperBase GetXQuadFactoryHelper(CutCellQuadratureMethod variant, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
 
+           
             if(variant == CutCellQuadratureMethod.Algoim) {
                 if(!dict.ContainsKey(variant)) {
                     dict[variant] = new XQuadFactoryHelperAlgoim(
@@ -123,6 +124,7 @@ namespace BoSSS.Foundation.XDG {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
+            
             var _Spc = Spc.ToArray();
 #if TEST
             MPICollectiveWatchDog.WatchAtRelease();

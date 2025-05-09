@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             var Tangents = TempBuffer.GetTempMultidimensionalarray(out int iTangentsBuf, 2*K, D);
 
             for(int i = 0; i < L; i++) {
-                int jCell0 = E2C[iEdge + 1, 0];
+                int jCell0 = E2C[iEdge + i, 0];
                 int iFace = E2F[iEdge + i, 0];
                 var Kref = gridData.iGeomCells.GetRefElement(jCell0);
 

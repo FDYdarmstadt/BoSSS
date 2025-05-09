@@ -649,7 +649,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                 NodeSet qrNodes = qr.Nodes;
                 int NoOfNodes = qr.NoOfNodes;
-                bool AffineCell;
+                bool isAffineLinearCell;
                 var _GridDat = m_owner.m_GridDat;
                 int D = _GridDat.SpatialDimension;
                 bool bLinearRequired = LinearRequired;
@@ -659,7 +659,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 int DELTA = m_owner.DELTA;
                 {
 
-                    AffineCell = _GridDat.iGeomCells.IsCellAffineLinear(i0);
+                    isAffineLinearCell = _GridDat.iGeomCells.IsCellAffineLinear(i0);
 
 #if DEBUG
                     int iKref = _GridDat.iGeomCells.GetRefElementIndex(i0);
@@ -668,7 +668,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     for (int j = 0; j < Length; j++) {
                         int jCell = j + i0;
                         Debug.Assert(_GridDat.iGeomCells.GetRefElementIndex(jCell) == iKref);
-                        Debug.Assert(_GridDat.iGeomCells.IsCellAffineLinear(jCell) == AffineCell);
+                        Debug.Assert(_GridDat.iGeomCells.IsCellAffineLinear(jCell) == isAffineLinearCell);
 
                         for (int gamma = 0; gamma < GAMMA; gamma++)
                             Debug.Assert(m_owner.m_RowL[gamma] == m_owner.m_Vfunctions[gamma].GetLength(geom2log != null ? geom2log[jCell] : jCell));
@@ -799,7 +799,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 if (MustLock)
                     Monitor.Enter(this.m_owner);
 
-                //lock(m_owner) { 
                 { 
                     VolumFormParams vfp = default;
                     vfp.j0 = i0;
@@ -825,19 +824,19 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 // transform forms/fluxes
                 // ======================
                 #region FLUX_TRAFO
-                MultidimensionalArray nonStdMetric = null;
                 this.FluxTrafo.Start();
+                MultidimensionalArray nonStdMetric = null;
                 {
                     MultidimensionalArray invJac; // inverse Jacobi matrix -- transformation of gradients between reference and physical space
 
-                    if(AffineCell) {
+                    if(isAffineLinearCell) {
                         invJac = JacobiRequired ? _GridDat.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, D - 1, D - 1 }) : null;
                     } else {
                         invJac = JacobiRequired ? _GridDat.InverseJacobian.GetValue_Cell(qrNodes, i0, Length) : null;
                     }
 
                     MultidimensionalArray JacDet; // integral transformation metric between reference and physical cell
-                    if(AffineCell && !metric.AlwaysUsePerNodeScaling) {
+                    if(isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) {
                         JacDet = null; // for affine-linear cells, this is constant per cell, so it can be applied after quadrature sum (see below)
                         if(metric is CellIntegrationMetric) {
                             // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -853,6 +852,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             // JacDet[jCell] * basisScale_jcell * basisScale_jcell == 1
                             // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                            
 
 #if DEBUG
                             JacDet = metric.GetScalingsForLinearElements(_GridDat, qr, i0, Length);
@@ -891,13 +891,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                 // UXV components 
                                 if (m_UxVSumBuffer[gamma, delta] != null) {
                                     Debug.Assert(object.ReferenceEquals(m_Trf_UxVSumBuffer[gamma, delta], m_UxVSumBuffer[gamma, delta]));
-                                    if (!AffineCell || metric.AlwaysUsePerNodeScaling)
+                                    if (!isAffineLinearCell || metric.AlwaysUsePerNodeScaling)
                                         m_Trf_UxVSumBuffer[gamma, delta].Multiply(1.0, JacDet, m_Trf_UxVSumBuffer[gamma, delta], 0.0, "jk", "jk", "jk");
                                 }
 
                                 // GradUxGradV components
                                 if (m_GradUxGradVSumBuffer[gamma, delta] != null) {
-                                    MultidimensionalArray.MultiplyProgram mp_prog1 = (AffineCell ? mp_ikae_iad_ikde : mp_ikae_ikad_ikde);
+                                    MultidimensionalArray.MultiplyProgram mp_prog1 = (isAffineLinearCell ? mp_ikae_iad_ikde : mp_ikae_ikad_ikde);
                                     m_Trf_GradUxGradVSumBuffer[gamma, delta].Multiply(1.0, invJac, m_GradUxGradVSumBuffer[gamma, delta], 0.0, ref mp_prog1);
 
                                     // swap the buffers for the second transform ...
@@ -905,10 +905,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     m_GradUxGradVSumBuffer[gamma, delta] = m_Trf_GradUxGradVSumBuffer[gamma, delta];
                                     m_Trf_GradUxGradVSumBuffer[gamma, delta] = tmp;
 
-                                    MultidimensionalArray.MultiplyProgram mp_prog2 = (AffineCell ? mp_ikab_ikae_ibe : mp_ikab_ikae_ikbe);
+                                    MultidimensionalArray.MultiplyProgram mp_prog2 = (isAffineLinearCell ? mp_ikab_ikae_ibe : mp_ikab_ikae_ikbe);
                                     m_Trf_GradUxGradVSumBuffer[gamma, delta].Multiply(1.0, m_GradUxGradVSumBuffer[gamma, delta], invJac, 0.0, ref mp_prog2);
 
-                                    if (!AffineCell || metric.AlwaysUsePerNodeScaling)
+                                    if (!isAffineLinearCell || metric.AlwaysUsePerNodeScaling)
                                         m_Trf_GradUxGradVSumBuffer[gamma, delta].Multiply(1.0, JacDet, m_Trf_GradUxGradVSumBuffer[gamma, delta], 0.0, "jked", "jk", "jked");
 
 
@@ -916,17 +916,17 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                                 // GradUxV components
                                 if (m_GradUxVSumBuffer[gamma, delta] != null) {
-                                    MultidimensionalArray.MultiplyProgram mp_prog = (AffineCell ? mp_ikb_ikd_ibd : mp_ikb_ikd_ikbd);
+                                    MultidimensionalArray.MultiplyProgram mp_prog = (isAffineLinearCell ? mp_ikb_ikd_ibd : mp_ikb_ikd_ikbd);
                                     m_Trf_GradUxVSumBuffer[gamma, delta].Multiply(1.0, m_GradUxVSumBuffer[gamma, delta], invJac, 0.0, ref mp_prog);
-                                    if (!AffineCell || metric.AlwaysUsePerNodeScaling)
+                                    if (!isAffineLinearCell || metric.AlwaysUsePerNodeScaling)
                                         m_Trf_GradUxVSumBuffer[gamma, delta].Multiply(1.0, JacDet, m_Trf_GradUxVSumBuffer[gamma, delta], 0.0, "jkd", "jk", "jkd");
                                 }
 
                                 // UxGradV components
                                 if (m_UxGradVSumBuffer[gamma, delta] != null) {
-                                    MultidimensionalArray.MultiplyProgram mp_prog = (AffineCell ? mp_ika_iad_ikd : mp_ika_ikad_ikd);
+                                    MultidimensionalArray.MultiplyProgram mp_prog = (isAffineLinearCell ? mp_ika_iad_ikd : mp_ika_ikad_ikd);
                                     m_Trf_UxGradVSumBuffer[gamma, delta].Multiply(1.0, invJac, m_UxGradVSumBuffer[gamma, delta], 0.0, ref mp_prog);
-                                    if (!AffineCell || metric.AlwaysUsePerNodeScaling)
+                                    if (!isAffineLinearCell || metric.AlwaysUsePerNodeScaling)
                                         m_Trf_UxGradVSumBuffer[gamma, delta].Multiply(1.0, JacDet, m_Trf_UxGradVSumBuffer[gamma, delta], 0.0, "jkd", "jk", "jkd");
                                 }
                             }
@@ -939,16 +939,16 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             // v components
                             if (m_VSumBuffer[gamma, 0] != null) {
                                 Debug.Assert(object.ReferenceEquals(m_Trf_VSumBuffer[gamma, 0], m_VSumBuffer[gamma, 0]));
-                                if (!AffineCell || metric.AlwaysUsePerNodeScaling)
+                                if (!isAffineLinearCell || metric.AlwaysUsePerNodeScaling)
                                     m_Trf_VSumBuffer[gamma, 0].Multiply(1.0, JacDet, m_Trf_VSumBuffer[gamma, 0], 0.0, "jk", "jk", "jk");
                             }
 
                             // Gradv components
                             if (m_GradVSumBuffer[gamma, 0] != null) {
-                                MultidimensionalArray.MultiplyProgram mp_prog = (AffineCell ? mp_ika_iad_ikd : mp_ika_ikad_ikd);
+                                MultidimensionalArray.MultiplyProgram mp_prog = (isAffineLinearCell ? mp_ika_iad_ikd : mp_ika_ikad_ikd);
                                 m_Trf_GradVSumBuffer[gamma, 0].Multiply(1.0, invJac, m_GradVSumBuffer[gamma, 0], 0.0, ref mp_prog);
 
-                                if (!AffineCell || metric.AlwaysUsePerNodeScaling)
+                                if (!isAffineLinearCell || metric.AlwaysUsePerNodeScaling)
                                     m_Trf_GradVSumBuffer[gamma, 0].Multiply(1.0, JacDet, m_Trf_GradVSumBuffer[gamma, 0], 0.0, "jkd", "jk", "jkd");
                             }
                         }
@@ -969,7 +969,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 {
                     int iBufZ3 = 0, iBufZ4 = 0, iTrafoBuf = 0, iTrafo2Buf = 0, iQlBuf = 0, iQaBuf = 0;
                     MultidimensionalArray Z3 = null, Z4 = null, _Z, trafo = null, trafo2 = null, _R, _Q, Qa = null, Ql = null;
-                    if((AffineCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
+                    if((isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
 
 
                         if(nonStdMetric == null) {
@@ -1032,50 +1032,44 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         int I0Col = 0;
 
                         if (bLinearRequired) {
-                            for (int delta = 0; delta < DELTA; delta++) { // loop over domain variables ...
-                                GetQRbufferLinear(Length, QuadResult, AffineCell && !metric.AlwaysUsePerNodeScaling, MR, NR, ref iQlBuf, ref Ql, I0Row, gamma, I0Col, delta, out _R, out _Q);
-
-                                double cF = 0.0;
-                                bool bAny = false;
-
-                                if (m_UxVSumBuffer[gamma, delta] != null) {
-                                    GetZbuffer(Length, NoOfNodes, -1, NZ3, ref iBufZ3, ref Z3, out _Z, m_owner.m_ColL[delta]);
-
-                                    _Z.Multiply(1.0, m_Trf_UxVSumBuffer[gamma, delta], U[delta], 0.0, "ikn", "ik", "kn");
-                                    _R.Multiply(1.0, V_XquadWgt[gamma], _Z, cF, "imn", "km", "ikn");
-                                    cF = 1.0;
-                                    bAny = true;
-                                }
-                                if (m_GradUxGradVSumBuffer[gamma, delta] != null) {
-                                    GetZbuffer(Length, NoOfNodes, D, NZ4, ref iBufZ4, ref Z4, out _Z, m_owner.m_ColL[delta]);
-
-                                    _Z.Multiply(1.0, m_Trf_GradUxGradVSumBuffer[gamma, delta], GradU[delta], 0.0, "ikna", "ikab", "knb");
-                                    _R.Multiply(1.0, GradV_XquadWgt[gamma], _Z, cF, "imn", "kma", "ikna");
-                                    cF = 1.0;
-                                    bAny = true;
-                                }
-                                if (m_GradUxVSumBuffer[gamma, delta] != null) {
-                                    GetZbuffer(Length, NoOfNodes, -1, NZ3, ref iBufZ3, ref Z3, out _Z, m_owner.m_ColL[delta]);
-
-                                    _Z.Multiply(1.0, m_Trf_GradUxVSumBuffer[gamma, delta], GradU[delta], 0.0, "ikn", "ikb", "knb");
-                                    _R.Multiply(1.0, V_XquadWgt[gamma], _Z, cF, "imn", "km", "ikn");
-                                    cF = 1.0;
-                                    bAny = true;
-                                }
-                                if (m_UxGradVSumBuffer[gamma, delta] != null) {
-                                    GetZbuffer(Length, NoOfNodes, -1, NZ3, ref iBufZ3, ref Z3, out _Z, m_owner.m_RowL[gamma]);
-
-                                    _Z.Multiply(1.0, m_Trf_UxGradVSumBuffer[gamma, delta], GradV_XquadWgt[gamma], 0.0, "ikm", "ika", "kma");
-                                    _R.Multiply(1.0, U[delta], _Z, cF, "imn", "kn", "ikm");
-                                    cF = 1.0;
-                                    bAny = true;
-                                }
-
-                                I0Col += m_owner.m_ColL[delta];
-
+                            for(int delta = 0; delta < DELTA; delta++) { // loop over domain variables ...
+                                bool bAny = (m_UxVSumBuffer[gamma, delta] != null) || (m_GradUxGradVSumBuffer[gamma, delta] != null) || (m_GradUxVSumBuffer[gamma, delta] != null) || (m_UxGradVSumBuffer[gamma, delta] != null);
                                 if(bAny) {
+                                    GetQRbufferLinear(Length, QuadResult, isAffineLinearCell && !metric.AlwaysUsePerNodeScaling, MR, NR, ref iQlBuf, ref Ql, I0Row, gamma, I0Col, delta, out _R, out _Q);
+
+                                    double cF = 0.0;
+
+                                    if(m_UxVSumBuffer[gamma, delta] != null) {
+                                        GetZbuffer(Length, NoOfNodes, -1, NZ3, ref iBufZ3, ref Z3, out _Z, m_owner.m_ColL[delta]);
+
+                                        _Z.Multiply(1.0, m_Trf_UxVSumBuffer[gamma, delta], U[delta], 0.0, "ikn", "ik", "kn");
+                                        _R.Multiply(1.0, V_XquadWgt[gamma], _Z, cF, "imn", "km", "ikn");
+                                        cF = 1.0;
+                                    }
+                                    if(m_GradUxGradVSumBuffer[gamma, delta] != null) {
+                                        GetZbuffer(Length, NoOfNodes, D, NZ4, ref iBufZ4, ref Z4, out _Z, m_owner.m_ColL[delta]);
+
+                                        _Z.Multiply(1.0, m_Trf_GradUxGradVSumBuffer[gamma, delta], GradU[delta], 0.0, "ikna", "ikab", "knb");
+                                        _R.Multiply(1.0, GradV_XquadWgt[gamma], _Z, cF, "imn", "kma", "ikna");
+                                        cF = 1.0;
+                                    }
+                                    if(m_GradUxVSumBuffer[gamma, delta] != null) {
+                                        GetZbuffer(Length, NoOfNodes, -1, NZ3, ref iBufZ3, ref Z3, out _Z, m_owner.m_ColL[delta]);
+
+                                        _Z.Multiply(1.0, m_Trf_GradUxVSumBuffer[gamma, delta], GradU[delta], 0.0, "ikn", "ikb", "knb");
+                                        _R.Multiply(1.0, V_XquadWgt[gamma], _Z, cF, "imn", "km", "ikn");
+                                        cF = 1.0;
+                                    }
+                                    if(m_UxGradVSumBuffer[gamma, delta] != null) {
+                                        GetZbuffer(Length, NoOfNodes, -1, NZ3, ref iBufZ3, ref Z3, out _Z, m_owner.m_RowL[gamma]);
+
+                                        _Z.Multiply(1.0, m_Trf_UxGradVSumBuffer[gamma, delta], GradV_XquadWgt[gamma], 0.0, "ikm", "ika", "kma");
+                                        _R.Multiply(1.0, U[delta], _Z, cF, "imn", "kn", "ikm");
+                                        cF = 1.0;
+                                    }
+
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _R.Storage));
-                                    if((AffineCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
+                                    if((isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
 
 
                                         if(nonStdMetric != null) {
@@ -1095,28 +1089,25 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                         _R.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _Q, 0.0, "jmn", "jbm", "jbn"); // multiply from left with trafo^T
                                     }
                                 }
+                                I0Col += m_owner.m_ColL[delta];
                             }
 
                         }
-                        if (bAffineRequired) {
-                            GetRQbufferAffine(Length, QuadResult, AffineCell && !metric.AlwaysUsePerNodeScaling, MR, ref iQaBuf, ref Qa, I0Row, gamma, I0Col, out _R, out _Q);
-                            double cF = 0.0;
-                            bool bAny = false;
-
-                            if (m_VSumBuffer[gamma, 0] != null) {
-                                _R.Multiply(1.0, m_Trf_VSumBuffer[gamma, 0], V_XquadWgt[gamma], cF, "im", "ik", "km");
-                                cF = 1.0;
-                                bAny = true;
-                            }
-                            if (m_GradVSumBuffer[gamma, 0] != null) {
-                                _R.Multiply(1.0, m_Trf_GradVSumBuffer[gamma, 0], GradV_XquadWgt[gamma], cF, "im", "ika", "kma");
-                                bAny = true;
-                            }
-
-                            I0Col += 1;
-
+                        if(bAffineRequired) {
+                            bool bAny = (m_VSumBuffer[gamma, 0] != null) || (m_GradVSumBuffer[gamma, 0] != null);
                             if(bAny) {
-                                if((AffineCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
+                                GetRQbufferAffine(Length, QuadResult, isAffineLinearCell && !metric.AlwaysUsePerNodeScaling, MR, ref iQaBuf, ref Qa, I0Row, gamma, I0Col, out _R, out _Q);
+                                double cF = 0.0;
+
+                                if(m_VSumBuffer[gamma, 0] != null) {
+                                    _R.Multiply(1.0, m_Trf_VSumBuffer[gamma, 0], V_XquadWgt[gamma], cF, "im", "ik", "km");
+                                    cF = 1.0;
+                                }
+                                if(m_GradVSumBuffer[gamma, 0] != null) {
+                                    _R.Multiply(1.0, m_Trf_GradVSumBuffer[gamma, 0], GradV_XquadWgt[gamma], cF, "im", "ika", "kma");
+                                }
+
+                                if((isAffineLinearCell && !metric.AlwaysUsePerNodeScaling) || (nonStdMetric != null)) {
                                     Debug.Assert(object.ReferenceEquals(QuadResult.Storage, _R.Storage));
                                     _R.Multiply(1.0, trafo, _R, 0.0, "im", "i", "im");
                                 } else {
@@ -1124,6 +1115,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                     _Q.Multiply(1.0, ExtractTrafo(trafo, m_owner.m_RowL[gamma]), _R, 0.0, "im", "imn", "in");
                                 }
                             }
+                            I0Col += 1;
                         }
 
                         I0Row += m_owner.m_RowL[gamma];

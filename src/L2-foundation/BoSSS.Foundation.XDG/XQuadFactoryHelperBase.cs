@@ -22,7 +22,7 @@ namespace BoSSS.Foundation.XDG {
         /// procedure: The surface rules are created first and then used to
         /// create the volume rules
         /// </summary>
-        Classic,
+        Classic = 0,
 
         /// <summary>
         /// One-step variant proposed by Florian (see XNSE paper, submitted
@@ -30,24 +30,24 @@ namespace BoSSS.Foundation.XDG {
         /// moment-fitting by additionally enforcing Gauss' theorem on the
         /// discrete level.
         /// </summary>
-        OneStepGauss,
+        OneStepGauss = 1,
 
         /// <summary>
         /// Same as <see cref="OneStepGauss"/>, but additionally enforces
         /// Stokes' theorem on a discrete level.
         /// </summary>
-        OneStepGaussAndStokes,
+        OneStepGaussAndStokes = 2,
 
         /// <summary>
         /// Two step-procedure: using Stokes theorem to create surface rules, 
         /// and the Gauss theorem to create Volume rules.
         /// </summary>
-        TwoStepStokesAndGauss,
+        TwoStepStokesAndGauss = 3,
 
         /// <summary>
         /// Only for debugging purpose, see <see cref="ExactCircleLevelSetIntegration"/>, <see cref="ExactCircleLevelSetIntegration.RADIUS"/>
         /// </summary>
-        ExactCircle,
+        ExactCircle = 4,
 
         /// <summary>
         /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
@@ -58,14 +58,14 @@ namespace BoSSS.Foundation.XDG {
         /// High-Order Quadrature Methods for Implicitly Defined Surfaces and Volumes in Hyperrectangles,
         /// R. Saye, SIAM Journal on Scientific Computing, 2015
         /// </remarks>
-        Saye,
+        Saye = 5,
 
         /// <summary>
         /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
         /// obtained through recursive subdivision, as described in 
         /// (Saye 2022)
         /// </summary>
-        Algoim,
+        Algoim = 6,
     }
 
     abstract public class XQuadFactoryHelperBase {

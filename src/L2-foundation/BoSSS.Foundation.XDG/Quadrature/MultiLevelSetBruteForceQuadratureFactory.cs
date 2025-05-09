@@ -357,12 +357,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                                 // add to List and jump to next chunk
                                 ChunkRulePair<QuadRule> pairSpecial = new ChunkRulePair<QuadRule>(singleChunk, specialRule);
+                                pairSpecial.Rule.OrderOfPrecision = order;
                                 rule.Add(pairSpecial);
                                 continue;
                             }
                         }
                     }
                     ChunkRulePair<QuadRule> pair = new ChunkRulePair<QuadRule>(singleChunk, scheme.GetQuadRule(i));
+                    pair.Rule.OrderOfPrecision = order;
                     rule.Add(pair);
                 }
             }

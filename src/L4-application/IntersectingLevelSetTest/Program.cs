@@ -4,9 +4,10 @@ namespace IntersectingLevelSetTest {
     class Program {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
+            //IntersectingLevelSetTest.AllUpTest.ParabolaTestAlgoim(3);
             //AllUpTest.AllUp(2, CutCellQuadratureMethod.Saye);
             //AllUpTest.LocalTestWithPlotting(2, CutCellQuadratureMethod.Saye);
-            
+
             //AllUpTest.ParabolaTestAlgoim(3);
             AllUpTest.ParabolaTestSaye(3);
             //AllUpTest.TwoStraightTest(3);

@@ -12,6 +12,8 @@ using BoSSS.Foundation;
 using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Solution.Tecplot;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace HangingNodesTests {
 
@@ -23,17 +25,18 @@ namespace HangingNodesTests {
     public class HangingNodesTestMain {
         static void Main(string[] args) {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
-            Console.WriteLine("Starting Hanging Nodes Test!");
-            BoSSS.Solution.Application.InitMPI();
+            //Console.WriteLine("Starting Hanging Nodes Test!");
+            //BoSSS.Solution.Application.InitMPI();
             //ilPSP.Environment.NumThreads = 1;
             //HangingNodesTests.HangingNodesTestMain.Test3Phase(CutCellQuadratureMethod.Saye);
+            //Assert.IsFalse(true, "remove me");
 
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
-            int[] phases = new int[] { 2 };
+            int[] phases = new int[] { 3 };
             byte[] setup = new byte[] { 0 };
-
-            bool plot = true;
+            //bool plot = true;
+            var ccmS = new CutCellQuadratureMethod[] { CutCellQuadratureMethod.Saye };
 
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
@@ -55,63 +58,11 @@ namespace HangingNodesTests {
                 Console.WriteLine(";");
             }
 
-
-
-            List<double> TemperatureRes = new List<double>();
-            List<double> MomentumRes = new List<double>();
-            List<string> Description = new List<string>();
-
-            foreach (double size in sizes) {
+            foreach(var ccm in ccmS) {
                 foreach(int phase in phases) {
-                    foreach(byte s in setup) {
-                        string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs : {3}", size, phase, s, procs);
-                        Description.Add(desc);
-                        var C = HangingNodesTests.Control.TestSkeleton(size);
-                        HangingNodesTests.Control.SetAMR(C, size, s);
-                        HangingNodesTests.Control.SetLevelSet(C, size, phase);
-                        HangingNodesTests.Control.SetParallel(C, procs == 2 ? -procs : procs);
-
-                        if (plot) {
-                            C.ImmediatePlotPeriod = 1;
-                            C.SuperSampling = 3;                            
-                        }
-
-                        using (var solver = new XNSFE()) {
-                            //try {
-                                solver.Init(C);
-                                solver.RunSolverMode();
-                                if (plot) {
-                                    var MultiphaseAgglomerator = solver.LsTrk.GetAgglomerator(solver.LsTrk.SpeciesIdS.ToArray(), solver.QuadOrder(), C.AgglomerationThreshold);    
-                                    foreach(var spc in solver.LsTrk.SpeciesIdS) {
-                                        string spcName = solver.LsTrk.GetSpeciesName(spc);
-                                        var speciesAgglomerator = MultiphaseAgglomerator.GetAgglomerator(spc);
-                                        speciesAgglomerator.PlotAgglomerationPairs($"agglomerationPairs-{spcName}-MPI{rank}.txt", null, true);
-                                    }
-                                }
-                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s + "ccqm" + ((int)C.CutCellQuadratureType));
-                                MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
-                                TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                            //} catch (Exception e) {
-                            //    Console.WriteLine(desc + " : failed");
-                            //    Console.WriteLine(e.Message);
-                            //    Console.WriteLine(e.StackTrace);
-                            //    TemperatureRes.Add(-1.0);
-                            //    MomentumRes.Add(-1.0);
-                            //}
-                        }                       
-                    }
+                    RunTest(sizes, setup, phase, ccm);
                 }
             }
-
-            Console.WriteLine("Finished Hanging Nodes Test.");
-            Console.WriteLine();
-            Console.WriteLine("Results:");
-            for(int i = 0; i < Description.Count; i++) {
-                Console.WriteLine(Description[i] + " : MomRes : {0}, TempRes : {1}", MomentumRes[i], TemperatureRes[i]);
-            }
-
-            Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
-            Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
