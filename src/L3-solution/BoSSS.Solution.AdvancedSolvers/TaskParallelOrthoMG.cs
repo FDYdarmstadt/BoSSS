@@ -485,7 +485,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="Mapping"></param>
 		/// <param name="size"></param>
 		/// <param name="finerLevel"></param>
-		/// <param name="IsThisForDirectSolver"></param>
+		/// <param name="IsThereACoarserSolver"></param>
 		public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int size = 0, IOperatorMappingPair finerLevel = null, bool IsThereACoarserSolver = true) { 
             m_OpMtx = OperatorMatrix;
 			m_ProlMtx = ProlongationMatrix;
@@ -522,10 +522,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		void CheckMPICorrectness() {
 			Console.WriteLine($"TaskParallelMGOperator: {m_MultigridMapping.MPI_Comm.m1} rank {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} with {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} and {NoOfThisProcs} size and {myTask}");
 			if (m_MultigridMapping.MPI_Comm != csMPI.Raw._COMM.WORLD)
-				throw new ArgumentException("The mg mapping must be defined on the WORLD communicator.");
+				throw new Exception("The mg mapping must be defined on the WORLD communicator.");
 
 			if (NoOfThisProcs < 1)
-				throw new ArgumentException("The number of processors must be equal or greater than 1.");
+				throw new Exception("The number of processors must be equal or greater than 1.");
+
+			if (NoOfThisProcs < 2 && m_IsThereCoarserLevel)
+				throw new Exception("Not enough number of processors left for the coarser level.");
+
+			if (NoOfSmootherProcs < 1 && !m_IsThereCoarserLevel)
+				throw new Exception("The number of processors for the smoother must be greater than 0. " +
+					"Only allowed if this level is direct solver (i.e., this level is the coarsest level)");
 
 			if (FinerLevel != null)
 				if (FinerLevel is TaskParallelMGOperator TpFine) {
@@ -903,6 +910,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="xadj"></param>
 		/// <param name="adj"></param>
 		/// <param name="NoOfSpecies">a weight information</param>
+		/// <param name="GridDataOn"> if true, the grid data is used to create the mapping</param>
 		public StandAloneOperatorMappingPairWithGridData(BlockMsrMatrix OperatorMtx, List<(long source, long target)> cellIndexMapping, int[] xadj, int[] adj, int[] NoOfSpecies, bool GridDataOn = true) {
 			m_OpMtx = OperatorMtx;
 
@@ -1226,6 +1234,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				throw new NotImplementedException("TaskParallelOrthoMG: Init(IOperatorMappingPair) not implemented yet");
         }
 
+		/// <summary>
+		/// When smoother or coarse operations are done before than each other, this option enables that they sweep until the other one is done
+		/// When enabled, it possibly increases the convergence speed, but becomes run-time dependant.
+		/// So, not deterministic anymore and different runs may give different iteration numbers and results.
+		/// </summary>
+		bool AdvancedParallism = true;
+
         /// <summary>
         /// entry point for the TaskParallelOrthoMG (finest level)
         /// </summary>
@@ -1360,7 +1375,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				NoOfCoarseProcs = op.NoOfCoarseProcs;
 				NoOfSmootherProcs = op.NoOfSmootherProcs;
-				SplitCommunicator(NoOfCoarseProcs);
+				SplitCommunicator();
 
 				// set operator
 				// ============
@@ -1534,11 +1549,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		/// <summary>
-		/// Changes the communicator of <paramref name="Mtx"/> w.r.t. <paramref name="permutation"/> and distributes them to communicator of <paramref name="subComm"/>
-		/// matrices are the same but permutated so that they are stored only on their communicators
+		/// ChangeDistributionAndCommunicators with matrix multiplication on rows
 		/// </summary>
+		/// <param name="localBlocks"></param>
 		/// <param name="Mtx"></param>
 		/// <param name="permutation"></param>
+		/// <param name="columnMapping"></param>
+		/// <param name="test"></param>
+		/// <param name="tag"></param>
 		/// <returns></returns>
 		BlockMsrMatrix ChangeDistributionAndCommunicators((long i0Global, int CellLen)[] localBlocks, BlockMsrMatrix Mtx, (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMtx) permutation, IList<(long Source, long Target)> columnMapping, bool test = true, string tag = "d_") {
 			//smoother (should be called by all procs in opComm)
@@ -1651,7 +1669,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				//GlobDOFidx.SaveToTextFileDebug($"{tag}GlobDOFidx.txt");
 
 				opCommMtx.SaveToTextFileSparseDebug($"{tag}OpMatrix.txt"); //parallel
-				opCommMtx.SaveToTextFileSparse($"{tag}OpMatrix.txt"); /// combine and write as a single file
+				opCommMtx.SaveToTextFileSparse($"{tag}OpMatrix.txt"); // combine and write as a single file
 
 				TestVector.SaveToTextFileDebug($"{tag}TestVector", ".txt");
 				opResult.SaveToTextFileDebug($"{tag}opResult", ".txt");
@@ -1675,9 +1693,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// tests if the permutation matrix is correct with respect to the original matrix and the subComm matrix
 		/// </summary>
-		/// <param name="opCommMtx">a matrix defined on opComm</param>
 		/// <param name="PermutationMtx">permutation matrix to be tested</param>
-		/// <param name="subCommMtx">the subComm version of <paramref name="opCommMtx"/> </param>
 		/// <param name="tag">tag for i/o outputs</param>
 		/// <param name="WriteToFiles">true or false</param>
 		/// <exception cref="Exception"></exception>
@@ -1837,8 +1853,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// Creates a new communicator for the coarse level solver.
 		/// </summary>
-		/// <param name="NoOfCoarseProcs"></param>
-		void SplitCommunicator(int NumberOfCoarseProcs) {
+		void SplitCommunicator() {
 			if (NoOfCoarseProcs < 1 || NoOfSmootherProcs < 1)
                 throw new ArgumentOutOfRangeException($"Number of coarse processors and smoother processors must be greater than 0. Coarse: {NoOfCoarseProcs}, Smoother: {NoOfSmootherProcs}");
 
@@ -2091,7 +2106,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 
                 // clear history of coarse solvers
                 ortho.Clear();
-				Debugger.Launch();
+				//Debugger.Launch();
 
 				PerformIterations(X, B, Res, Res0);
 
@@ -2145,11 +2160,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				Res.SaveToTextFileDebug("Res", ".txt");
 				}
 				// Permutation matrices live on thisComm, which means that they should be called here
-				//var XforSubCoarse = PermutateVector(X, coarsePermutation);
+				var XforSubCoarse = PermutateVector(X, coarsePermutation);
 				//var BforSubCoarse = PermutateVector(B, coarsePermutation);
 				var ResforSubCoarse = PermutateVector(Res, coarsePermutation);
 
-				//var XforSubSmoother = PermutateVector(X, smootherPermutation);
+				var XforSubSmoother = PermutateVector(X, smootherPermutation);
 				//var BforSubSmoother = PermutateVector(B, smootherPermutation);
 				var ResforSubSmoother = PermutateVector(Res, smootherPermutation);
 
@@ -2157,7 +2172,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				switch (myTask) {
 					case TpTaskType.Coarse:
 						// For coarse tasks, only the residual is permuted
-						XforSub = null; // Not used for coarse tasks
+						XforSub = null;
 						BforSub = null; // Not used for coarse tasks
 						ResforSub = ResforSubCoarse;
 						break;
@@ -2205,10 +2220,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				double[] XforSub, BforSub, ResforSub;
 				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
 
-				// Initiate sub comm level variables
+				// Initiate sub comm level variables (must be initiated on this Comm level to be able permutate them back)
 				double[] CoarseCorrectionOnSub = new double[coarsePermutationMtx._RowPartitioning.LocalLength];
-				double[] PreCorrSub = new double[smootherPermutationMtx._RowPartitioning.LocalLength];
-				double[] PreCorr = new double[] { };
+				double[] SmootherCorrOnSub = new double[smootherPermutationMtx._RowPartitioning.LocalLength];
 
 				// Start signaling
 				ListenSignal(iIter);
@@ -2218,20 +2232,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				{ 
 					// Coarse grid correction
 					if (myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
-						CoarseCorrectionOnSub = ApplyCoarseGridCorrection(ResforSub);
-						int k = 0;
-						SendSignal(true, iIter);
-						done = CheckSignal();
-						while (!done) {
-							k++;
-							done = CheckSignal();
-						}
+						double[] XGuess = CoarseCorrectionOnSub;
+						CoarseCorrectionOnSub = ApplyCoarseGridCorrection(XGuess, ResforSub, iIter);
 					}
 
 					// smoother
 					if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-						double[] XGuess = PreCorrSub;
-						PreCorrSub = ApplyPreSmoother(XGuess, ResforSub, iIter);
+						double[] XGuess = SmootherCorrOnSub;
+						SmootherCorrOnSub = ApplyPreSmoother(XGuess, ResforSub, iIter);
 					}
 				}
 
@@ -2239,7 +2247,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarsemooth" + TpLevel);
 				WriteDebug(iIter, resNorm, "Coarse-correction ");
 
-				PreCorr = PermutateVectorBack(PreCorrSub, smootherPermutation);
+				var PreCorr = PermutateVectorBack(SmootherCorrOnSub, smootherPermutation);
 				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
 				WriteDebug(iIter, resNorm, "Tp-presmooth ");
 
@@ -2279,6 +2287,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		void SendSignal(bool InitiateSignal, int Iter) {
+			if (!AdvancedParallism) return;
 			if (!InitiateSignal && IsEndSignalSent) return;
 
 			int targetRank = GetTargetRankForSignal();
@@ -2292,6 +2301,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		void ListenSignal(int Iter) {
+			if (!AdvancedParallism) return;
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank < 0) return;
 
@@ -2303,6 +2313,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		bool CheckSignal() {
+			if (!AdvancedParallism) return true; //if not enabled, bypass this feature by returning true
 			bool done = false;
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank > -1)  csMPI.Raw.Test(ref RecvRequest, out done, out MPI_Status status);
@@ -2315,25 +2326,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			using (var trace = new FuncTrace()) {
 				// Apply the pre-smoother
 				PreSmoother?.Solve(X, B); 
-				SendSignal(true, iIter);
 
-				bool done = CheckSignal();
-				int k = 0;
-				while (!done) { //until the coarse solver is done
-					PreSmoother?.Solve(X, B); // Pre-smoother modifies PreCorr based on Res
-					k++;
-					done = CheckSignal();
-				}
-
-				Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+				if (AdvancedParallism) {
+					SendSignal(true, iIter);
+					bool done = CheckSignal();
+					int k = 0;
+					while (!done) { //until the coarse solver is done
+						PreSmoother?.Solve(X, B); // Pre-smoother modifies PreCorr based on Res
+						k++;
+						done = CheckSignal();
+					}
+					Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
 					$"iteration={iIter} - Smoother cycled {k}-times while waiting the coarse solver");
+				}
 
 				return X;
 			}
 		}
 
 
-		private double[] ApplyCoarseGridCorrection (double[] Res) {
+		private double[] ApplyCoarseGridCorrection (double[] X, double[] B, int iIter) {
 			using (var trace = new FuncTrace()) {
 				if (CoarserLevelSolver == null) {
 					throw new InvalidOperationException("Coarse level solver is not initialized.");
@@ -2343,14 +2355,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				CrseLevelTime.Start();
 
 				// Restrict the residual to the coarse grid
-				double[] ResCoarse = Restrict(Res);
+				double[] ResCoarse = Restrict(B);
+				double[] XCoarse = Restrict(X);
 
 				// Solve the coarse grid problem
-				double[] CoarseCorrection = new double[ResCoarse.Length];
-				CoarserLevelSolver.Solve(CoarseCorrection, ResCoarse);
+				CoarserLevelSolver.Solve(XCoarse, ResCoarse);
+
+				if (AdvancedParallism) {
+					SendSignal(true, iIter);
+
+					if (CoarserLevelSolver is TaskParallelOrthoMG TpCoarse) {
+						int k = 0;
+						bool done = CheckSignal();
+						while (!done) {
+							CoarserLevelSolver.Solve(XCoarse, ResCoarse);
+							k++;
+							done = CheckSignal();
+						}
+
+						Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+						$"iteration={iIter} - Coarse cycled {k}-times while waiting the coarse solver");
+					}
+				}
 
 				// Prolongate the correction back to the fine grid
-				double[] FineCorrection = Prolongate(CoarseCorrection);
+				double[] FineCorrection = Prolongate(XCoarse);
 
 				// Stop timing for coarse grid correction
 				CrseLevelTime.Stop();
@@ -2396,6 +2425,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         Stopwatch ThisLevelTime = new Stopwatch();
         Stopwatch CrseLevelTime = new Stopwatch();
+		Stopwatch SmthLevelTime = new Stopwatch();
 
 		/// <summary>
 		/// ~
