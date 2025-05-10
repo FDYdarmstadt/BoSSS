@@ -239,6 +239,7 @@ namespace BoSSS.Solution {
         public void WriteProfilingReport(TextWriter wrt) {
             var R = RootCall;
 
+            
             WriteProfilingHeader(wrt);
 
             //if (ilPSP.Environment.OpenMPenabled) {
