@@ -258,7 +258,7 @@ namespace BoSSS.Solution {
             if(this.OnlinePerformanceLog != null) {
                 this.OnlinePerformanceLog.WriteStatistics(wrt);
             } else {
-                wrt.WriteLine("not-executed")
+                wrt.WriteLine("not-executed");
             }
 
 
