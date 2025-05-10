@@ -355,6 +355,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int jCell = Perm[i]; // pick next cell
 
                 int[] Neighbourship_jCell = ag.GetCellNeighboursViaEdges(jCell, OmmitPeriodic: true).Select(ttt => ttt.jCellLoc).ToArray();
+                //int[] Neighbourship_jCell = Neighbourship[jCell];
 
                 Debug.Assert(Neighbourship_jCell.Contains(jCell) == false);
                 if (!UsedCellMarker[jCell]) { // if the cell is not already agglomerated to another cell
