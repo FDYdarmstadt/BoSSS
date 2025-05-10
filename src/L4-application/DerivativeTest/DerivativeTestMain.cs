@@ -203,12 +203,15 @@ namespace BoSSS.Application.DerivativeTest {
         static void Main(string[] args) {
 
             BoSSS.Solution.Application.InitMPI(args);
+            ilPSP.Environment.NumThreads = 1;
+            
+
 
             // Build-In Grids
             // ==============
 
             
-            for (int i = 14; i <= 14; i++) {
+            for (int i = 12; i <= 12; i++) {
                 BoSSS.Solution.Application._Main(args, true, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;

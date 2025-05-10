@@ -735,6 +735,7 @@ namespace BoSSS.Foundation.Grid {
             //if (OmmitPeriodic && g.iLogicalEdges.EdgeToParts != null)
             //    throw new NotImplementedException("todo"); // problem: edge tags have geometric index.
 
+
             bool isPeriodic(int iEdge) {
                 if(g.iLogicalEdges.EdgeToParts == null || g.iLogicalEdges.EdgeToParts[iEdge] == null)
                     return __EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG;
@@ -746,6 +747,7 @@ namespace BoSSS.Foundation.Grid {
 
                 return false;
             }
+            
 
 
 
@@ -756,7 +758,16 @@ namespace BoSSS.Foundation.Grid {
                 Debug.Assert(jCell == __Edges[iEdge, iOther == 1 ? 0 : 1]);
 
                 int jCellOut = __Edges[iEdge, iOther];
-                if (jCellOut >= 0 && (OmmitPeriodic && isPeriodic(iEdge) == false)) {
+
+                //bool cond1 = (jCellOut >= 0 && (!OmmitPeriodic || __EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG));
+                //bool cond2 = jCellOut >= 0 && (!OmmitPeriodic || !isPeriodic(iEdge));
+                //if(cond1 != cond2) {
+                //    throw new Exception();
+                //}
+
+
+                //if (jCellOut >= 0 && (!OmmitPeriodic || __EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG)) {
+                if (jCellOut >= 0 && (!OmmitPeriodic || !isPeriodic(iEdge))) {
                     ret.Add((jCellOut, iEdge, iOther));
                 }
             }
