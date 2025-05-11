@@ -822,7 +822,8 @@ namespace ilPSP.LinSolvers {
 		/// <summary>
 		/// When communication pattern is changed, this method is called
 		/// </summary>
-		/// <param name="myRank"></param>
+		/// <param name="myRank">Current rank (might be different than in newColPart)</param>
+		/// <param name="newColPart"></param>
 		void ReInitializeExternalBlockInformation(int myRank, IBlockPartitioning newColPart) {
             //if (newColPart != _RowPartitioning) //this is a restriction for now, technically it is not necessary with a bit of work
 				//throw new ArgumentException("newColPart must be the same as _RowPartitioning");
@@ -873,6 +874,7 @@ namespace ilPSP.LinSolvers {
 		/// Craete a new mattrix with the target row partitioning
 		/// </summary>
 		/// <param name="newRowPart"></param>
+		/// <param name="newBlockIndices"></param>
 		/// <returns></returns>
 		public BlockMsrMatrix ChangeRowPartitioning(IBlockPartitioning newRowPart, IList<(long Source, long Target)> newBlockIndices = null) {
 			var ret = this.Transpose();
@@ -966,11 +968,11 @@ namespace ilPSP.LinSolvers {
 
 		/// <summary>
 		/// change the MPI communicator for this matrix w.r.t. new communicator and column partitioning.
- 		/// This only changes the lists for the columns, the row partitioning is not changed.
+		/// This only changes the lists for the columns, the row partitioning is not changed.
 		/// Before using this method, the row partitioning must be changed to the new one.
 		/// </summary>
 		/// <param name="CommToSubCommMapping">new ranks, index: old rank; value: new rank</param>
-		/// <param name="comm"></param>
+		/// <param name="newColPart"> Column partitioning for the new communicator.</param> 
 		public void ChangeMPICommForColumns(int[] CommToSubCommMapping, IBlockPartitioning newColPart) {
             var comm = newColPart.MPI_Comm;
 			if (comm == this.MPI_Comm)

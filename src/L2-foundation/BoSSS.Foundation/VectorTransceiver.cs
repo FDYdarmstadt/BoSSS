@@ -61,13 +61,15 @@ namespace BoSSS.Foundation.Comm {
         }
 
 
-        /// <summary>
-        /// ctor.
-        /// </summary>
-        /// <param name="master"></param>
-        /// <param name="vector">a vector of length J*<paramref name="ItemsPerCell"/>, where J is the number of local cells (including ghost)</param>
-        /// <param name="ItemsPerCell">the number of items that should be transmitted/received per cell</param>
-        public VectorTransceiver(IGridData master, T vector, int ItemsPerCell, MPI_Comm comm) {
+		/// <summary>
+		/// ctor.
+		/// </summary>
+		/// <param name="master"></param>
+		/// <param name="vector">a vector of length J*<paramref name="ItemsPerCell"/>, where J is the number of local cells (including ghost)</param>
+		/// <param name="ItemsPerCell">the number of items that should be transmitted/received per cell</param>
+		/// <param name="comm"></param>
+		/// <exception cref="ArgumentException"></exception>
+		public VectorTransceiver(IGridData master, T vector, int ItemsPerCell, MPI_Comm comm) {
             CheckItemTypeRecursive(typeof(V));
 
             int J = master.iLogicalCells.Count;
@@ -426,6 +428,7 @@ namespace BoSSS.Foundation.Comm {
 		/// <typeparam name="Titm"></typeparam>
 		/// <param name="vector"></param>
 		/// <param name="master"></param>
+		/// <param name="comm"></param>
 		static public void MPIExchangeWithComm<Tlst, Titm>(this Tlst vector, IGridData master, MPI_Comm comm)
 			where Tlst : IList<Titm>
 			where Titm : struct {
@@ -450,6 +453,8 @@ namespace BoSSS.Foundation.Comm {
 		/// </summary>
 		/// <param name="b"></param>
 		/// <param name="GridData"></param>
+		/// <param name="comm"></param>
+		/// <exception cref="ArgumentException"></exception>
 		static public void MPIExchange(this BitArray b, IGridData GridData, MPI_Comm comm) {
 
             if (b.Length != GridData.iLogicalCells.Count) {
