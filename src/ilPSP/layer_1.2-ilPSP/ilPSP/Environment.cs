@@ -439,7 +439,8 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = false;
+                tr.InfoToConsole = true;
+                StdoutOnlyOnRank0 = false;
                 //tr.StdoutOnAllRanks();
 
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
@@ -487,6 +488,7 @@ namespace ilPSP {
                         }
 
                         int num_procs_tot = System.Environment.ProcessorCount;
+                        tr.Info($"System reports {num_procs_tot} CPUs, {MPIranksOnNode} MPI ranks on current node.");
                         int num_procs = Math.Max(1, num_procs_tot - 2); // leave some cores for the system.
                         int num_procs_per_process = Math.Max(1, num_procs / MPIranksOnNode);
                         if(num_procs_per_process > 1 && num_procs_per_process % 2 != 0)
@@ -550,7 +552,7 @@ namespace ilPSP {
                 if(disjoint == true && allequal == true) {
                     throw new ApplicationException("Error in algorithm.");
                 }
-
+                tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs for this MPI rank: {ReservedCPUs.ToConcatString("[", ",", "]")}, on entire SMP: {ReservedCPUsOnSMP.ToConcatString("[", ",", "]")}, disjount CPU affinities? {disjoint}");
 
 
                 tr.Info($"MpiJobOwnsEntireComputer = {MpiJobOwnsEntireComputer}, RnkJobOwnsEntireComputer = {MpiRnkOwnsEntireComputer}");
