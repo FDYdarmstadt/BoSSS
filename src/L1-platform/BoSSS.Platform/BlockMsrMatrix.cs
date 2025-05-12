@@ -835,19 +835,20 @@ namespace ilPSP.LinSolvers {
 			var newExternalBlockIndicesByProcessor = new Dictionary<int, HashSet<long>>();
 
 			for (int locBlk = 0; locBlk < m_RowPartitioning.LocalNoOfBlocks; locBlk++) {
-                var blocksOnThisRow = m_BlockRows[locBlk].Keys.ToArray();
-				foreach (var globBlk in blocksOnThisRow) {
-					int ownerProc = newColPart.FindProcessForBlock(globBlk);
-					if (ownerProc != myRank) {
-						// add the processor to the list of processors which own this block
-						if (!newExternalBlockIndicesByProcessor.TryGetValue(ownerProc, out var hashSet)) {
-							hashSet = new HashSet<long>();
-							newExternalBlockIndicesByProcessor[ownerProc] = hashSet;
-						}
-						hashSet.Add(globBlk);
-						this.m_RowsWithExternalBlock[locBlk] |= true;
-					}
-				}
+                var blocksOnThisRow = m_BlockRows[locBlk]?.Keys.ToArray();
+                if (blocksOnThisRow != null)
+				    foreach (var globBlk in blocksOnThisRow) {
+					    int ownerProc = newColPart.FindProcessForBlock(globBlk);
+					    if (ownerProc != myRank) {
+						    // add the processor to the list of processors which own this block
+						    if (!newExternalBlockIndicesByProcessor.TryGetValue(ownerProc, out var hashSet)) {
+							    hashSet = new HashSet<long>();
+							    newExternalBlockIndicesByProcessor[ownerProc] = hashSet;
+						    }
+						    hashSet.Add(globBlk);
+						    this.m_RowsWithExternalBlock[locBlk] |= true;
+					    }
+				    }
 			}
             m_ExternalBlockIndicesByProcessor = newExternalBlockIndicesByProcessor;
 		}
@@ -3907,7 +3908,8 @@ namespace ilPSP.LinSolvers {
 #if DEBUG
 			bool hasDuplicateSource = columnMapping.GroupBy(x => x.Source).Any(g => g.Count() > 1);
 			bool hasDuplicateTarget = columnMapping.GroupBy(x => x.Target).Any(g => g.Count() > 1);
-			bool outOfRange = columnMapping.Any(x => x.Source < 0 || x.Source > _ColPartitioning.TotalLength || x.Target < 0 || x.Target > _ColPartitioning.TotalLength);
+			//bool outOfRange = columnMapping.Any(x => x.Source < 0 || x.Source > _ColPartitioning.TotalLength || x.Target < 0 || x.Target > _ColPartitioning.TotalLength);
+			bool outOfRange = columnMapping.Any(x => x.Source < 0 || x.Target < 0 || x.Target > _ColPartitioning.TotalLength);
 
 			if (hasDuplicateSource || hasDuplicateTarget || outOfRange) {
 				throw new ArgumentException("Something wrong with the columnMapping");
@@ -3922,6 +3924,9 @@ namespace ilPSP.LinSolvers {
 			// Iterate over each block row
 			for (int i = 0; i < m_BlockRows.Length; i++) {
 				var blockRow = m_BlockRows[i];
+                if (blockRow is null)
+                    continue;
+
 				var updatedBlockRow = new SortedDictionary<long, BlockEntry>();
 
 				// Iterate over each block entry in the sorted dictionary
