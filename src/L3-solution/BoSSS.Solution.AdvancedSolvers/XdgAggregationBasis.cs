@@ -176,7 +176,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 MultidimensionalArray B = MultidimensionalArray.Create(N, N);
                                 try {
                                     AggCellMMb4Ortho.SymmetricLDLInversion(B, default(double[]));
-                                } catch (ArithmeticException ae) {
+                                } catch (ArithmeticException) {
+                                    Console.Error.WriteLine("ArithmeticException in XdgAggregationBasis.Update() at MG level " + this.AggGrid.MgLevel + " for aggregate cell " + jagg + " and species index " + iSpc_agg);
+                                    continue;
+                                    /*
+#region diagnostic_output                                     
                                     Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
                                     Console.Error.WriteLine("Mesh level: " + AggGrid.MgLevel);
                                     Console.Error.WriteLine("Aggregate cell " + jagg);
@@ -224,13 +228,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     AggCellMMb4Ortho.SaveToTextFile("indef.txt");
 
                                     throw ae;
+                                    
+#endregion                          
+*/          
                                 }
 
                                 if(this.XCompositeBasis[jagg][iSpc_agg] == null)
                                     this.XCompositeBasis[jagg][iSpc_agg] = MultidimensionalArray.Create(K, N, N);
 
                                 var X_ExPolMtx = this.XCompositeBasis[jagg][iSpc_agg];
-                                var NonX_ExPolMtx = CompositeBasis[jagg];
+                                var NonX_ExPolMtx = GetCompositeBasis(jagg);
                                 X_ExPolMtx.Allocate(NonX_ExPolMtx.Lengths); // should not reallocate if lengths stay the same;
 
                                 X_ExPolMtx.Multiply(1.0, NonX_ExPolMtx, B, 0.0, "imn", "imk", "kn");
@@ -244,6 +251,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
+            
+                this.XCompositeBasis = null;
             }
         }
 

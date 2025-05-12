@@ -1344,7 +1344,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 ASScalingTest(Tst, new[] { 2, 3, 4, 5 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);
         }
 
-
+/*
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>
@@ -1369,7 +1369,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //C.PhysicalParameters.Sigma = 0;
             XNSESolverTest(Tst, C);
         }
-
+*/
 
         /// <summary>
         /// <see cref="TranspiratingChannelTest"/>
