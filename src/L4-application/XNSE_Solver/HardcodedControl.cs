@@ -6779,12 +6779,18 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control RotatingPopcorn() {
-            var C = RotatingTiltedXRigid(1, 32, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            var C = RotatingTiltedXRigid(1, 4, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
             C.PlotAgglomeration = true;
             C.NoOfTimesteps = 10;
             var config = new OperatorAnalysisConfig();
-            config.CalculateMassMatrix = true;
-            C.PostprocessingModules.Add(new Logging.CondLogger(config));
+			C.LinearSolver = new OrthoMGSchwarzConfig() {
+				ConvergenceCriterion = 1e-9,
+				CoarseKickIn = 50,
+				TargetBlockSize = 50,
+				SchwarzImplementation = SchwarzImplementation.CoarseMesh
+			};
+			config.CalculateMassMatrix = true;
+            //C.PostprocessingModules.Add(new Logging.CondLogger(config));
             return C;
         }
 

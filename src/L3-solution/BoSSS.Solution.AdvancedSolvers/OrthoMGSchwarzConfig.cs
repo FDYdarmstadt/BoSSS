@@ -240,17 +240,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         GlobalNoOfBlocks = LocalNoOfBlocks.MPISum();
                         tr.Info($"per-process blocking Schwarz, number of blocks blocking is " + (LocalNoOfBlocks.MPIAllGather().ToConcatString("[", "-", "]")) + ", sum = " + GlobalNoOfBlocks);
-                        var r = new Schwarz() {
-                            FixedNoOfIterations = 1,
-                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                NoOfPartsOnCurrentProcess = LocalNoOfBlocks
-                            },
-                            //ActivateCachingOfBlockMatrix = SmootherCaching,
+						//var r = new Schwarz() {
+						//    FixedNoOfIterations = 1,
+						//    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+						//        NoOfPartsOnCurrentProcess = LocalNoOfBlocks
+						//    },
+						//    //ActivateCachingOfBlockMatrix = SmootherCaching,
 
-                        };
-                        r.config.EnableOverlapScaling = true;
+						//};
+						var r = new SchwarzForTaskParallel();
+						r.config.EnableOverlapScaling = true;
                         r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
-                        r.config.UsePMGinBlocks = this.UsepTG;
+                        //r.config.UsePMGinBlocks = this.UsepTG;
                         //*/
 
                         return (r, LocalNoOfBlocks, GlobalNoOfBlocks);
@@ -284,9 +285,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         
                         tr.Info($"using coarse-mesh-Schwarz, GlobalNoOfBlocks = {GlobalNoOfBlocks}");
 
-                        var r = new SchwarzForCoarseMesh();
-                        r.config.NoOfBlocks = GlobalNoOfBlocks;
-                        r.config.EnableOverlapScaling = true;
+                        var r = new SchwarzForTaskParallel(); //  new SchwarzForCoarseMesh();
+						r.config.EnableOverlapScaling = true;
+						r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+						r.config.NoOfBlocks = GlobalNoOfBlocks;
                         return (r, -1, GlobalNoOfBlocks);
                     } else  {
                         tr.Info("Failing to reduce **global** number of blocks (" + GlobalNoOfBlocks + ") wrt. previous level (" + FinerLevelGlobalBlocks + ").");
@@ -444,11 +446,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
 
-                        var _levelSolver4 = new OrthonormalizationMultigrid() {
-                            PreSmoother = smoother1,
-                            PostSmoother = smoother1
-                        };
-                        _levelSolver4.config.m_omega = 1; // v-cycle
+                        //var _levelSolver4 = new OrthonormalizationMultigrid() {
+                        //    PreSmoother = smoother1,
+                        //    PostSmoother = smoother1
+                        //};
+						var _levelSolver4 = new TaskParallelOrthoMG() {
+							PreSmoother = smoother1,
+							PostSmoother = smoother1
+						};
+						_levelSolver4.config.m_omega = 1; // v-cycle
                         //_levelSolver4.config.m_omega = 2; // w-cycle
                         _levelSolver4.config.SkipPreSmoother = this.SkipPreSmoother;
                         _levelSolver4.config.NonSerialPreSmoother = this.NonSerialPreSmoother;
@@ -509,7 +515,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (iLevel > 0) {
                         if (SolverChain[iLevel - 1] is OrthonormalizationMultigrid omg_fine)
                             omg_fine.CoarserLevelSolver = levelSolver;
-                        else if (SolverChain[iLevel - 1] is GenericRestriction rest)
+						else if (SolverChain[iLevel - 1] is TaskParallelOrthoMG TPfine)
+							TPfine.CoarserLevelSolver = levelSolver;
+						else if (SolverChain[iLevel - 1] is GenericRestriction rest)
                             rest.CoarserLevelSolver = levelSolver;
                     }
 
