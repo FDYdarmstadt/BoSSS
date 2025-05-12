@@ -680,7 +680,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return ret;
 		}
 
-		bool verbose = true;
+		bool verbose = false;
 
 		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
@@ -722,8 +722,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				if (iTargetCell >= newBlocki0 && iTargetCell < newBlockiE) { // if designated cell index falls into the range of this processor
 					var sourceBlock = globalDOFs[iSourceCell]; // get the current block index (source)
-					if (sourceBlock.lenCell > 0) //check if it is non-empty
-						ret.Add(sourceBlock);
+					ret.Add(sourceBlock);
 				}
 			}
 			//ret.Sort((x, y) => x.i0Cell.CompareTo(y.i0Cell)); // sort the list according to the cell index
@@ -1283,7 +1282,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		/// <summary>
 		/// When smoother or coarse operations are done before than each other, this option enables that they sweep until the other one is done
-		/// When enabled, it possibly increases the convergence speed, but becomes run-time dependent.
+		/// When enabled, it possibly increases the convergence speed, but becomes run-time dependant.
 		/// So, not deterministic anymore and different runs may give different iteration numbers and results.
 		/// </summary>
 		bool AdvancedParallism = true;
@@ -1295,7 +1294,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-			Debugger.Launch();
+			//Debugger.Launch();
 
 			this.FinerLevelCoarseComm = csMPI.Raw._COMM.WORLD;
 			this.FinerLevelCoarseCommRank = op.Mapping.MpiRank;
@@ -1792,8 +1791,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				if (iTargetCell >= newBlocki0 && iTargetCell < newBlockiE) { // if designated cell index falls into the range of this processor
 					var sourceBlock = globalDOFs[iSourceCell]; // get the current block index (source)
-					if (sourceBlock.lenCell > 0) //check if it is non-empty
-						ret.Add(sourceBlock);
+					ret.Add(sourceBlock);
 				}
 			}
 			//ret.Sort((x, y) => x.i0Cell.CompareTo(y.i0Cell)); // sort the list according to the cell index
