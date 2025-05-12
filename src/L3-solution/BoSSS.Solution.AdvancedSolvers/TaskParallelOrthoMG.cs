@@ -507,12 +507,51 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			(SmootherCellI0s, SmootherNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfSmootherProcs);
 			(CoarseCellI0s, CoarseNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfCoarseProcs);
             CellToDOFdata = CellIndexToDOFs(m_MultigridMapping);
+			SanitizeEmptyBlocks();
 			CalculateWorldToSubDistribution();
 
 			// To Do:
 			// 1. Check if the change of basis is correct
 			// 2. Check if the prolongation matrix is correct
 			// 3. Check if the operator matrix is correct (write a test function)
+		}
+
+
+		void SanitizeEmptyBlocks() {
+			int NoOfCellWithEmpty = CellToDOFdata.Length;
+			int NoOfEmptyCells = CellToDOFdata.Where(c => c.lenCell < 1).Count();
+
+			for (int i = 0; i < CellToDOFdata.Length; i++) {
+				var length = CellToDOFdata[i].lenCell;
+				if (length == 0) {
+					ThisNewCellMapping.RemoveAll(e => e.source == i);
+					SmootherNewCellMapping.RemoveAll(e => e.source == i);
+					CoarseNewCellMapping.RemoveAll(e => e.source == i);
+				}
+			}
+
+			// Step 1: Extract unique targets and sort them
+			var uniqueTargets = ThisNewCellMapping.Select(x => x.target).Distinct().OrderBy(t => t).ToList();
+			// Step 2: Create a mapping from old to new target IDs
+			var targetReindex = uniqueTargets
+				.Select((oldTarget, newIndex) => new { oldTarget, newIndex })
+				.ToDictionary(x => x.oldTarget, x => (long)x.newIndex);
+
+			if (NoOfEmptyCells > 0) {
+				ThisNewCellMapping = GetUniqueIndexMapping(ThisNewCellMapping);
+				SmootherNewCellMapping = GetUniqueIndexMapping(SmootherNewCellMapping);
+				CoarseNewCellMapping = GetUniqueIndexMapping(CoarseNewCellMapping);
+			}
+		}
+
+		List<(long source, long target)> GetUniqueIndexMapping(List<(long source, long target)> mapping) {
+			var uniqueTargets = mapping.Select(x => x.target).Distinct().OrderBy(t => t).ToList();
+
+			Dictionary<long, long> targetReindex = uniqueTargets
+					.Select((oldTarget, newIndex) => new { oldTarget, newIndex })
+					.ToDictionary(x => x.oldTarget, x => (long)x.newIndex);
+
+			return mapping.Select(e => (e.source, targetReindex[e.target])).ToList();
 		}
 
 		public IBlockPartitioning DefaultPartition => m_MultigridMapping;
