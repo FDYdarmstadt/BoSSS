@@ -662,7 +662,6 @@ namespace BoSSS.Application.MultigridTest {
             // Restriction & prolongation together with orthonormalization
             // -----------------------------------------------------------
 
-
             for (var mgop = xt.XdgMultigridOp.CoarserLevel; mgop != null; mgop = mgop.CoarserLevel) {
                 Assert.GreaterOrEqual(mgop.LevelIndex, 1);
 
