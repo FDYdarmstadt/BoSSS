@@ -347,14 +347,15 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             List<int> NeighCandidates = new List<int>();
 
             // loop over aggregated cells of parent grid...
-            //int[][] Neighbourship = ag.iLogicalCells.CellNeighbours;
+            int[][] Neighbourship = ag.iLogicalCells.CellNeighbours;
             
            
 
             for (int i = 0; i < Jloc; i++) {
                 int jCell = Perm[i]; // pick next cell
 
-                int[] Neighbourship_jCell = ag.GetCellNeighboursViaEdges(jCell, OmmitPeriodic: true).Select(ttt => ttt.jCellLoc).ToArray();
+                //int[] Neighbourship_jCell = ag.GetCellNeighboursViaEdges(jCell, OmmitPeriodic: true).Select(ttt => ttt.jCellLoc).ToArray();
+                int[] Neighbourship_jCell = Neighbourship[jCell];
 
                 Debug.Assert(Neighbourship_jCell.Contains(jCell) == false);
                 if (!UsedCellMarker[jCell]) { // if the cell is not already agglomerated to another cell

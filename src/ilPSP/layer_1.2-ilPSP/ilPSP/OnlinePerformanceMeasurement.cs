@@ -34,7 +34,15 @@ namespace ilPSP {
 
 
         public void WriteStatistics(TextWriter tw) {
+            if(BenchResults == null) {
+                tw.WriteLine("no benchmark results available");
+                return;
+            }
             foreach(var br in BenchResults) {
+                if(br.Key == null || br.Value == null) {
+                    tw.WriteLine("null result");
+                }
+
                 tw.Write(br.Key);
                 tw.Write(": ");
                 double[] res = br.Value.Where(x => x > 0).ToArray();
