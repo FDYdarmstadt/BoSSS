@@ -654,10 +654,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					int NoCells = DOFs.Length;// part.jGlobal.Length;
 					for (int j = 0; j < NoCells; j++) {
 						int Len = DOFs[j].CellLen; // part.lenCell[j];
+						if (Len > 0) {
+							i0Cell.Add(cnt);
+							LnCell.Add(Len);
+							cnt += Len;
+						} else {
+							if (j > 0) {
+								i0Cell.Add(i0Cell[j - 1]);
+							} else {
+								i0Cell.Add(0);
+							}
 
-						i0Cell.Add(cnt);
-						LnCell.Add(Len);
-						cnt += Len;
+							LnCell.Add(Len);
+							cnt += Len;
+						}
 					}
 				}
 
@@ -1255,7 +1265,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-			//Debugger.Launch();
+			Debugger.Launch();
 
 			this.FinerLevelCoarseComm = csMPI.Raw._COMM.WORLD;
 			this.FinerLevelCoarseCommRank = op.Mapping.MpiRank;
