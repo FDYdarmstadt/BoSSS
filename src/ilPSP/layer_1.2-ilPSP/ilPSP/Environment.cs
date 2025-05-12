@@ -423,6 +423,30 @@ namespace ilPSP {
             }
         }
 
+
+        /// <summary>
+        /// Turns of Multithread-Parallelizatin in a certain subsection
+        /// </summary>
+        public class SerialSection : IDisposable {
+            
+            int numThreadsBackup;
+
+            
+            public SerialSection() {
+                if(InParallelSection) {
+                    throw new ApplicationException("already in parallel section");
+                }
+                numThreadsBackup = NumThreads;
+                NumThreads = 1;
+            }
+
+            public void Dispose() {
+                NumThreads = numThreadsBackup;
+            }
+        }
+
+
+
         /// <summary>
         /// before we start messing with OpenMP affinity
         /// </summary>

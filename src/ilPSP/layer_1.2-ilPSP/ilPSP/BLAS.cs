@@ -920,7 +920,6 @@ namespace ilPSP.Utils {
                     throw new ArgumentOutOfRangeException("length of 'acc_index' and 'b_index' must match.");
 
                 int N = acc_index.Count;
-                //var dir = new ConcurrentDictionary<int, List<int>>();
                 ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
                     for(int i = i0; i < iE; i++) 
                         acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
@@ -928,14 +927,12 @@ namespace ilPSP.Utils {
 
                 //for (int i = 0; i < N; i++) {
                 //    acc[acc_index[i] + acc_index_shift] += alpha*b[b_index[i] + b_index_shift];
-                //}
-
             } else if( acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
                 ilPSP.Environment.ParallelFor(0, N, delegate (int i0, int iE) {
-                    for (int i = i0; i < iE; i++)
-                        acc[acc_index[i] + acc_index_shift] += alpha*b[i + b_index_shift];
+                    for(int i = i0; i < iE; i++)
+                        acc[acc_index[i] + acc_index_shift] += alpha * b[i + b_index_shift];
                 });
             } else if (acc_index == null && b_index != null) {
 

@@ -2858,8 +2858,6 @@ namespace ilPSP.LinSolvers {
                             RowMul,
                             (double[] _) => { },
                             enablePar: false);
-
-
                         }
                 }
                 SpMV_local.Stop();
