@@ -60,12 +60,6 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
-	enum TpTaskType {
-		All,
-		Smoother,
-		Coarse
-	}
-
 	/// <summary>
 	/// 
 	/// </summary>
@@ -464,7 +458,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool CancellationTriggered;
     }
 
-	// this is designed to hold information getting from the WORLD
+
+	/// <summary>
+	/// Helper class designed to hold information getting from the WORLD.
+	/// It distributes all the necessary information to the responsible processors on the world communicator.
+	/// Later on, they can be easily copied/transferred to the sub communicators.
+	/// </summary>
 	public class TaskParallelMGOperator : IOperatorMappingPair {
 
 		/// <summary>
@@ -511,18 +510,62 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			CalculateWorldToSubDistribution();
 		}
 
+		public IOperatorMappingPair FinerLevel;
+		bool m_IsThereCoarserLevel; //this must be know at the constructor time,
+									//as it checks the number of processors for the coarser level (if false, no need for sub smoother level)
+		public TaskParallelMGOperator CoarserLevel; // can be attaached later on
+		public BlockMsrMatrix m_OpMtx;
+		public BlockMsrMatrix m_OpMtx_smoother;
+		public BlockMsrMatrix m_ProlMtx;
+		public MultigridMapping m_MultigridMapping;
+		public BlockMsrMatrix m_LeftChangeOfBasis;
+		public BlockMsrMatrix m_RightChangeOfBasis;
+		public int Level => FinerLevel is TaskParallelMGOperator fine ? fine.Level + 1 : 0; //level for this type of solver not overall level
+																							//if this is attached to some finer level
+		public int NoOfThisProcs;
+		public int NoOfSmootherProcs => NoOfThisProcs - NoOfCoarseProcs;
+		public int NoOfCoarseProcs;
 
+		public IBlockPartitioning ThisTargetPartitioning;               // this level partitioning on the world communicator
+		public IBlockPartitioning CoarseTargetPartitioning;             // partitioning for coarse solver on the world communicator
+                                                                        // (this is equal to this level partitioning of the coarser level)
+		public IBlockPartitioning SmootherTargetPartitioning;           // partitioning for smoother on the world communicator
+		internal (long i0Cell, int lenCell)[] localBlocksForThisLevel;  //block data from the original matrix on the world communicator
+		internal (long i0Cell, int lenCell)[] localBlocksForSmoother;   //block data from the original matrix on the world communicator
+		internal (long i0Cell, int lenCell)[] localBlocksForCoarse;     //block data from the original matrix on the world communicator
 
-		public IBlockPartitioning ThisTargetPartitioning;
-		public IBlockPartitioning CoarseTargetPartitioning;
-		public IBlockPartitioning SmootherTargetPartitioning;
-		internal (long i0Cell, int lenCell)[] localBlocksForThisLevel;
-		internal (long i0Cell, int lenCell)[] localBlocksForSmoother;
-		internal (long i0Cell, int lenCell)[] localBlocksForCoarse;
+		public List<(long source, long target)> ThisNewCellMapping;     //global data (all of them) and global indices
+		public List<(long source, long target)> CoarseNewCellMapping;   //global data (all of them) and global indices
+		public List<(long source, long target)> SmootherNewCellMapping; //global data (all of them) and global indices
 
+		public long[] ThisCellI0s;     //stores the global indices of starting cell indices of the processors for this level (length = NoOfThisProcs + 1)
+		public long[] CoarseCellI0s;   //stores the global indices of starting cell indices of the processors for this level (length = NoOfCoarseProcs + 1)
+		public long[] SmootherCellI0s; //stores the global indices of starting cell indices of the processors for this level (length = NoOfSmootherProcs + 1)
+
+		// the following three arrays are used for the metis distribution
+		// and stored only on the processor with rank=worldOffset (will be the master on the subcommunicator)
+		public int[] m_xadj;
+		public int[] m_adj;
+		public int[] m_NoOfSpecies; 
+
+		// properties for the necessary information
 		public IBlockPartitioning FinerLevelCoarsePartitiong => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseTargetPartitioning : null;
 		public (long i0Cell, int lenCell)[] FinerLevelCoarseBlocks => FinerLevel is TaskParallelMGOperator fine ? fine.localBlocksForCoarse : null;
-		public IList<(long Source, long Target)> FinerLevelCoarseCellMapping => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseNewCellMapping : null;
+
+		public MPI_Comm currentComm => m_MultigridMapping.MPI_Comm;
+
+		/// <summary>
+		/// the offset of this operator matrix in the world communicator, the mpi rank of the first processor in this level
+		/// </summary>
+		public int worldMPIOffset => worldCommSize - NoOfThisProcs; 
+		public int worldCommRank => m_MultigridMapping.MpiRank;
+		public int worldCommSize => m_MultigridMapping.MpiSize;
+		public BlockMsrMatrix OperatorMatrix => m_OpMtx;
+		public BlockMsrMatrix ProlongationMatrix => m_ProlMtx;
+		public ICoordinateMapping DgMapping => m_MultigridMapping;
+
+
+		bool verbose = true;
 
 		void CheckMPICorrectness() {
 			Console.WriteLine($"TaskParallelMGOperator: {m_MultigridMapping.MPI_Comm.m1} rank {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} with {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} and {NoOfThisProcs}");
@@ -552,15 +595,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				}
 
 		}
-
-		public MPI_Comm currentComm => m_MultigridMapping.MPI_Comm;
-
-		/// <summary>
-		/// the offset of this operator matrix in the world communicator, the mpi rank of the first processor in this level
-		/// </summary>
-		public int worldMPIOffset => worldCommSize - NoOfThisProcs; 
-		public int worldCommRank => m_MultigridMapping.MpiRank;
-		public int worldCommSize => m_MultigridMapping.MpiSize;
 
 		void CalculateWorldToSubDistribution() {
 			localBlocksForThisLevel = GetLocalDistribution(ThisNewCellMapping, ThisCellI0s, worldMPIOffset, NoOfThisProcs);
@@ -633,7 +667,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return ret;
 		}
 
-		bool verbose = true;
 
 		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
@@ -650,7 +683,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							i0Cell.Add(cnt);
 							LnCell.Add(Len);
 							cnt += Len;
-						} else {
+						} else { //keep block information to be consistent with global indices but assign them zero length and some suitable i0
 							if (j > 0) {
 								i0Cell.Add(i0Cell[j - 1]);
 							} else {
@@ -721,46 +754,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 
-		public int Level => FinerLevel is TaskParallelMGOperator fine ? fine.Level + 1 : 0;
-        public int NoOfThisProcs; 
-        public int NoOfSmootherProcs => NoOfThisProcs - NoOfCoarseProcs;
-        public int NoOfCoarseProcs;
-		bool m_IsThereCoarserLevel;
-
-		public (long i0Cell, int lenCell)[] CellToDOFdata; //global data (all of them) and global indices
-		public List<(long source, long target)> ThisNewCellMapping; //global data (all of them) and global indices
-		public List<(long source, long target)> CoarseNewCellMapping; //global data (all of them) and global indices
-		public List<(long source, long target)> SmootherNewCellMapping; //global data (all of them) and global indices
-
-		public long[] ThisCellI0s;
-		public long[] CoarseCellI0s;
-        public long[] SmootherCellI0s;
-
-		public int[] m_xadj;
-		public int[] m_adj;
-        public int[] m_NoOfSpecies;
-
-		//public long celli0;
-		//public int localCellLength;
-		//public int totalCellLength;
-
-		public IOperatorMappingPair FinerLevel;
-		public TaskParallelMGOperator CoarserLevel;
-
-		public BlockMsrMatrix m_OpMtx;
-		public BlockMsrMatrix m_OpMtx_smoother;
-		public BlockMsrMatrix m_ProlMtx;
-		public MultigridMapping m_MultigridMapping;
-		public BlockMsrMatrix m_LeftChangeOfBasis;
-		public BlockMsrMatrix m_RightChangeOfBasis;
-
-
-		//public BlockMsrMatrix old_OpMtx;
-		//public BlockMsrMatrix old_ProlMtx;
-
-		public BlockMsrMatrix OperatorMatrix => m_OpMtx;
-		public BlockMsrMatrix ProlongationMatrix => m_ProlMtx;
-		public ICoordinateMapping DgMapping => m_MultigridMapping;
 
 		(int[] xadj, int[] adj) GetCurrentAggGridGraphForMetis(MultigridMapping Map) {
 			using (new FuncTrace()) {
@@ -916,20 +909,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				return (cell_i0s, columnMapping);
 			}
-		}
-
-		(long i0Cell, int lenCell)[] CellIndexToDOFs(MultigridMapping map) {
-			int J = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-			var myList = new (long i0Cell, int lenCell)[J]; //for cell currently on this proc (may be distributed to another or not)
-
-			// Create matrix entry information from cell indices
-			for (int jCellLoc = 0; jCellLoc < J; jCellLoc++) {
-				myList[jCellLoc] = (map.GetCellI0(jCellLoc), map.GetLength(jCellLoc));
-			}
-			(long i0Cell, int lenCell)[][] globList = myList.MPIAllGatherO(map.MPI_Comm);
-			var flatGlobArray = globList.SelectMany(x => x).ToArray();
-
-			return flatGlobArray;
 		}
 
 	}
@@ -1151,25 +1130,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 	}
 
 	/// <summary>
-	/// A recursive multigrid method, where the convergence (i.e. non-divergence) of each mesh level is guaranteed by an
-	/// orthonormalization approach, similar to flexible GMRES, 
-	/// as described in:
-	///   BoSSS: A package for multigrid extended discontinuous Galerkin methods; Kummer, Florian; Weber, Jens; Smuda, Martin; Computers &amp; Mathematics with Applications 81
-	///   see https://www.sciencedirect.com/science/article/abs/pii/S0898122120301917?via%3Dihub
-	///   see also https://tubiblio.ulb.tu-darmstadt.de/121465/
-	///   
-	/// One instance of this class represents only one level of the multigrid method; coarser 
-	/// levels must be added by configuring the <see cref="OrthonormalizationMultigrid.CoarserLevelSolver"/> member.
+	/// Task parallel (additive) variant of the <see cref="OrthonormalizationMultigrid"/>. 
+	/// The coarse solver and smoothers are defined on different MPI communicators.
+	/// Therefore, they are independent of each other.
+	/// Useful when one wants to utilize large number of processors as smoothers are not idle while waiting for the coarse correction.
+	/// They will be working on their own communicators and loop until coarse correction is done.
+	/// This is first implementation, there is a large room for improvement here.
 	/// </summary>
-	/// <remarks>
-	/// Residual minimization through orthonormalization (ORTHOMIN) is first described in:
-	///  Vinsome, P.K.W.: 
-	///  Orthomin, an Iterative Method for Solving Sparse Sets of Simultaneous Linear Equations,
-	///  SPE Symposium on Numerical Simulation of Reservoir Performance, 
-	///  doi: 10.2118/5729-MS, Los Angeles, California, 1976
-	/// </remarks>    
 	public class TaskParallelOrthoMG : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination, ISubsystemSolver {
 
+		enum TpTaskType {
+			All,
+			Smoother,
+			Coarse
+		}
 
 		/// <summary>
 		/// Individual configuration of <see cref="TaskParallelOrthoMG"/>
@@ -2034,7 +2008,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							i0Cell.Add(cnt);
 							LnCell.Add(Len);
 							cnt += Len;
-						} else {
+						} else { //keep block information to be consistent with global indices but assign them zero length and some suitable i0
 							if (j > 0) {
 								i0Cell.Add(i0Cell[j - 1]);
 							} else {
