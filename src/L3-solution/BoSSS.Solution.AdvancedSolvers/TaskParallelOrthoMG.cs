@@ -516,7 +516,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		public IBlockPartitioning DefaultPartition => m_MultigridMapping;
-		public IBlockPartitioning FinerLevelCoarsePartitiong => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseTargetPartitioning : DefaultPartition;
+		public IBlockPartitioning FinerLevelCoarsePartitiong => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseTargetPartitioning : null;
+		public (long i0Cell, int lenCell)[] FinerLevelCoarseBlocks => FinerLevel is TaskParallelMGOperator fine ? fine.localBlocksForCoarse : null;
+
 		public IList<(long Source, long Target)> FinerLevelCoarseCellMapping => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseNewCellMapping : null;
 
 		public IBlockPartitioning ThisTargetPartitioning;
@@ -589,31 +591,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 
 			if (m_IsThereCoarserLevel)
-				m_OpMtx_smoother = ChangeThisLevelPartitioning(m_OpMtx, SmootherTargetPartitioning, SmootherNewCellMapping, "OpSmooth"); //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
-			m_OpMtx = ChangeThisLevelPartitioning(m_OpMtx, ThisTargetPartitioning, ThisNewCellMapping, "Op"); //this level of 
-			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, ThisNewCellMapping, FinerLevelCoarsePartitiong, FinerLevelCoarseCellMapping, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
+				m_OpMtx_smoother = ChangeThisLevelPartitioning(m_OpMtx, SmootherTargetPartitioning, localBlocksForSmoother, "OpSmooth"); //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
+			m_OpMtx = ChangeThisLevelPartitioning(m_OpMtx, ThisTargetPartitioning, localBlocksForThisLevel, "Op"); //this level of 
+			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelCoarsePartitiong, FinerLevelCoarseBlocks, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
 
 			if (m_LeftChangeOfBasis != null)
-				m_LeftChangeOfBasis = ChangeThisLevelPartitioning(m_LeftChangeOfBasis, ThisTargetPartitioning, ThisNewCellMapping, "LeftCofB"); 
+				m_LeftChangeOfBasis = ChangeThisLevelPartitioning(m_LeftChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "LeftCofB"); 
 
 			if (m_RightChangeOfBasis != null)
-				m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, ThisNewCellMapping, "RightCofB"); 
+				m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB"); 
 		}
 
 		public BlockMsrMatrix or_OpMtx;
 		public BlockMsrMatrix or_ProlMtx;
 
-		BlockMsrMatrix ChangeThisLevelPartitioning(BlockMsrMatrix Mtx, IBlockPartitioning targetPartitioning, IList<(long Source, long Target)> newBlockIndices = null, string tag = "Op") {
+		BlockMsrMatrix ChangeThisLevelPartitioning(BlockMsrMatrix Mtx, IBlockPartitioning targetPartitioning, (long i0Cell, int lenCell)[] blockData = null, string tag = "Op") {
 			if (verbose) {
 				Mtx.SaveToTextFileSparseDebug($"lvl{level}_{tag}_oldOp.txt");
 				Mtx.SaveToTextFileSparse($"lvl{level}_{tag}_oldOp.txt");
 			}
 			BlockMsrMatrix ret;
 
-			if (Mtx.RowPartitioning == targetPartitioning && Mtx.ColPartition == targetPartitioning && newBlockIndices == null) //this can happen at the first level of tp
+			if (Mtx.RowPartitioning == targetPartitioning && Mtx.ColPartition == targetPartitioning && blockData == null) //this can happen at the first level of tp
 				ret = Mtx.CloneAs();
 			else
-				ret = Mtx.CloneAs().ChangePartitioning(targetPartitioning, targetPartitioning, newBlockIndices, newBlockIndices);
+				ret = Mtx.CloneAs().ChangePartitioning(targetPartitioning, blockData, targetPartitioning, blockData);
 
 			if (verbose) {
 				ret.SaveToTextFileSparseDebug($"lvl{level}_{tag}_newOp.txt");
@@ -623,7 +625,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return ret;
 		}
 
-		BlockMsrMatrix ChangeProlPartitioning(IBlockPartitioning thisPartitioning, IList<(long Source, long Target)> thisNewBlockIndices, IBlockPartitioning finerPartitioning, IList<(long Source, long Target)> finerNewBlockIndices, string tag = "c") {
+		BlockMsrMatrix ChangeProlPartitioning(IBlockPartitioning thisPartitioning, (long i0Cell, int lenCell)[] thisBlockData, IBlockPartitioning finerPartitioning, (long i0Cell, int lenCell)[] finerBlockData, string tag = "c") {
 			if (m_ProlMtx == null)
 				return null;
 
@@ -631,17 +633,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				m_ProlMtx.SaveToTextFileSparse($"lvl{level}_{tag}_oldPro.txt");
 				m_ProlMtx.SaveToTextFileSparseDebug($"lvl{level}_{tag}_oldPro.txt");
 			}
-			var ret = m_ProlMtx.ChangePartitioning(finerPartitioning, thisPartitioning, finerNewBlockIndices, thisNewBlockIndices);
 
-			if (verbose) { 
-			ret.SaveToTextFileSparse($"lvl{level}_{tag}_newPro.txt");
-			ret.SaveToTextFileSparseDebug($"lvl{level}_{tag}_newPro.txt");
+			BlockMsrMatrix ret;
+			if (finerPartitioning is null)
+				ret = m_ProlMtx.ChangeColumnPartitioning2(thisPartitioning, thisBlockData);
+			else
+				ret = m_ProlMtx.ChangePartitioning(finerPartitioning, finerBlockData, thisPartitioning, thisBlockData);
+
+
+			if (verbose) {
+				ret.SaveToTextFileSparse($"lvl{level}_{tag}_newPro.txt");
+				ret.SaveToTextFileSparseDebug($"lvl{level}_{tag}_newPro.txt");
 			}
 
 			return ret;
 		}
 
-		bool verbose = false;
+		bool verbose = true;
 
 		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
@@ -1307,15 +1315,39 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (mtx == null)
 				return null;
 
+			// Row partitioning must be already in the desired form, otherwise, this is not only changing communicator but distributing the matrix
+
+			// Get the local row block information
+			var RowlocalBlocks = GetLocalBlocks(mtx._RowPartitioning); 
+			var newRowPartition = GetPartitioning(RowlocalBlocks, comm);
+
+			// Get the local column block information
 			var newColPartition = GetPartitioning(localBlocks, comm);
 			mtx.ChangeMPICommForColumns(MPIRankMapping, newColPartition); // changes the communicator to the new one (subComm)
 
 			List<long> ColIndices = Enumerable.Range((int)mtx._ColPartitioning.i0, mtx._ColPartitioning.LocalLength).Select(i => (long)i).ToList();
 			List<long> RowIndices = Enumerable.Range( (int)mtx._RowPartitioning.i0 , mtx._RowPartitioning.LocalLength).Select(i => (long)i).ToList();
 
-			return mtx.GetSubMatrix(RowIndices, ColIndices, comm); // finally create a new matrix with the new Comm
+
+			long[] Tlist1 = default(long[]);
+			long[] Tlist2 = default(long[]);
+
+			var ret = new BlockMsrMatrix(newRowPartition, newColPartition);
+			mtx.AccSubMatrixTo(1.0, ret, RowIndices, Tlist1, ColIndices, Tlist2);
+
+			return ret; // finally create a new matrix with the new Comm
 		}
 
+
+		(long i0Global, int CellLen)[] GetLocalBlocks(IBlockPartitioning part) { 
+			int J = part.LocalNoOfBlocks;
+			var ret = new (long i0Global, int CellLen)[J];
+			long i0Block = part.FirstBlock;
+			for (int b = 0; b < J; b++)
+				ret[b] = (part.GetBlockI0(i0Block + b), part.GetBlockLen(i0Block+b));
+
+			return ret;
+		}
 
 		//BlockMsrMatrix opCommRestrictionOperator = null;
 		BlockMsrMatrix worldCommProlongationOperator => TpMapping.ProlongationMatrix;
@@ -1620,7 +1652,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				colMapThisToCoarse.SaveToTextFileDebug($"lvl_{TpLevel}_colMapThisToCoarse.txt");
 			}
 
-			var ThisglobalDOFs = CellIndexToDOFs(thisPartitioningInThisComm);
+			var ThisglobalDOFsOld = CellIndexToDOFs(thisPartitioningInThisComm);
+
+			var ThisglobalDOFs = CellIndexToDOFs2(thisPartitioningInThisComm, TpMapping.localBlocksForThisLevel);
 
 			smootherBlocks = GetLocalDistribution(ThisglobalDOFs, colMapThisToSmoother, TpMapping.SmootherCellI0s, 0, NoOfSmootherProcs);
 			smootherPermutation = GetPermutationMatrix(thisPartitioningInThisComm, smootherBlocks); //this is technically a permutation matrix but also distributes 
@@ -1643,6 +1677,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				long jCellGlob = map.FirstBlock + jCellLoc;
 				myList[jCellLoc] = (map.GetBlockI0(jCellGlob), map.GetBlockLen(jCellGlob));
 			}
+			(long i0Cell, int lenCell)[][] globList = myList.MPIAllGatherO(map.MPI_Comm);
+			var flatGlobArray = globList.SelectMany(x => x).ToArray();
+
+			return flatGlobArray;
+		}
+
+		(long i0Cell, int lenCell)[] CellIndexToDOFs2(IBlockPartitioning map, (long i0Cell, int lenCell)[] worldLevelOriginalBlocks) {
+			int B = worldLevelOriginalBlocks.Length;
+			var myList = new (long i0Cell, int lenCell)[worldLevelOriginalBlocks.Length]; //for cell currently on this proc 
+
+			long cnt = map.GetBlockI0(map.FirstBlock);
+			for (int b = 0; b < B; b++) {
+				var block = worldLevelOriginalBlocks[b];
+				var updatedBlock = (cnt, block.lenCell);
+				myList[b] = updatedBlock;
+				cnt += block.lenCell;
+
+			}
+
 			(long i0Cell, int lenCell)[][] globList = myList.MPIAllGatherO(map.MPI_Comm);
 			var flatGlobArray = globList.SelectMany(x => x).ToArray();
 
@@ -1917,7 +1970,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				Select(i => i < TpMapping.worldMPIOffset ? -1 : i - TpMapping.worldMPIOffset).ToArray();
 		}
 
-		bool verbose = false;
+		bool verbose = true;
 
 
 
@@ -1935,9 +1988,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					for (int j = 0; j < NoCells; j++) {
 						int Len = DOFs[j].CellLen; // part.lenCell[j];
 
-						i0Cell.Add(cnt);
-						LnCell.Add(Len);
-						cnt += Len;
+						if (Len > 0) {
+							i0Cell.Add(cnt);
+							LnCell.Add(Len);
+							cnt += Len;
+						} else {
+							if (j > 0) {
+								i0Cell.Add(i0Cell[j - 1]);
+							} else {
+								i0Cell.Add(0);
+							}
+
+							LnCell.Add(Len);
+							cnt += Len;
+						}
 					}
 				}
 
