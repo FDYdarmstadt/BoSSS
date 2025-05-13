@@ -116,7 +116,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // nothing to do.
                         // +++++++++++++++++++++++++++++++++++++++++++++++
 
-                        this.XCompositeBasis[jagg] = null;
+                        if(this.XCompositeBasis != null) // TEST CODE
+                            this.XCompositeBasis[jagg] = null;
                     } else {
                         // the cut-cell may require some special treatment
                         // +++++++++++++++++++++++++++++++++++++++++++++++
@@ -153,6 +154,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
 //#endif
 
+                            if(this.XCompositeBasis == null) // TEST CODE
+                                this.XCompositeBasis = new MultidimensionalArray[base.AggGrid.iLogicalCells.NoOfLocalUpdatedCells][]; // TEST CODE
                             if(this.XCompositeBasis[jagg] == null || (this.XCompositeBasis[jagg].Length != NoOfSpc_jagg))
                                 this.XCompositeBasis[jagg] = new MultidimensionalArray[NoOfSpc_jagg];
 
@@ -175,11 +178,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // ---------------------------
                                 MultidimensionalArray B = MultidimensionalArray.Create(N, N);
                                 try {
-                                    AggCellMMb4Ortho.SymmetricLDLInversion(B, default(double[]));
-                                } catch (ArithmeticException ae) {
-#region diagnostic_output                                    
-                                    int[] parts = (AggGrid.iLogicalCells?.AggregateCellToParts[jagg]) ?? new int[0];
-
+                                    AggCellMMb4Ortho.SymmetricLDLInversion(B, default(double[]));                                
+                                } catch (ArithmeticException) {
+                                    Console.Error.WriteLine("ArithmeticException in XdgAggregationBasis.Update() at MG level " + this.AggGrid.MgLevel + " for aggregate cell " + jagg + " and species index " + iSpc_agg);
+                                    continue;
+                                    /*
+#region diagnostic_output                                     
                                     Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
                                     Console.Error.WriteLine("Mesh level: " + AggGrid.MgLevel);
                                     Console.Error.WriteLine("Aggregate cell " + jagg);
@@ -188,6 +192,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                                              + ", No of non-void cells: " + sim.GetRow(iSpc_agg).Where(idx => idx >= 0).Count() + ".");
                                                              //+ ", Volume fractions: " + sim.GetRow(iSpc_agg).Where(idx => idx >= 0)  +  ".");
 
+                                    int[] parts = (AggGrid.iLogicalCells?.AggregateCellToParts[jagg]) ?? new int[0];
                                     Console.Error.WriteLine("Aggregate Cell: " + parts.ToConcatString("{", ",", "}"));
                                     var LevSet0 = LsTrk.LevelSets[0] as LevelSet;
                                     var Marker = new SinglePhaseField(new Basis(LevSet0.GridDat, 0), "marker");
@@ -229,8 +234,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                     AggCellMMb4Ortho.SaveToTextFile("indef.txt");
 
-                                    throw ae;
-#endregion                                    
+                                    throw ae;                             
+#endregion                          
+*/          
                                 }
 
                                 if(this.XCompositeBasis[jagg][iSpc_agg] == null)
@@ -251,6 +257,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
+            
+                this.XCompositeBasis = null;
             }
         }
 
@@ -523,6 +531,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        /// <summary>
+        /// Prolongates/injects a vector from 
+        /// the aggregated grid (<see cref="AggregationGridBasis.AggGrid"/>)
+        /// to the full grid.
+        /// </summary>
+        /// <param name="FullGridVector">output; DG coordinates w.r.t. <see cref="XDGBasis"/></param>
+        /// <param name="AggGridVector">input; DG coordinates on the aggregate mesh, length is <see cref="LocalDim"/></param>
         public override void ProlongateToFullGrid<T, V>(T FullGridVector, V AggGridVector) {
 
             var fullMapping = new UnsetteledCoordinateMapping(this.XDGBasis);
