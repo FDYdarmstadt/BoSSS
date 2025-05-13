@@ -877,6 +877,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				//broadcast to every processor. (this is necessary to create column mapping)
 				var partGlob = part.MPIBroadcast(worldMPIOffset, MGMapping.MPI_Comm);
 
+				for (int p = 0; p < NoOfParts; p++)
+					if (!partGlob.Contains(p))
+						throw new Exception("There are empty blocks with TaskParallelOrthoMG. Either you are using too many processors such that there is not enough DOFs left for a processor or something odd is happening");
+
 				int[] i0part = new int[NoOfParts+1]; //new i0partitioning for each part
 				for (int p = 1; p < NoOfParts+1; p++)
 					i0part[p] = i0part[p - 1] + partGlob.Where(b => b == p - 1).Count();
