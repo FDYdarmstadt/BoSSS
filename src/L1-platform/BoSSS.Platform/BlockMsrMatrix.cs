@@ -857,32 +857,33 @@ namespace ilPSP.LinSolvers {
 		/// change the partitioning of the matrix. (still same communicator)
 		/// </summary>
 		/// <param name="newRowPart"></param>
+		/// <param name="OriginalLocBlockToDOFdataForRow"></param>
 		/// <param name="newColPart"></param>
-		/// <param name="newRowBlockIndices"></param>
-		/// <param name="newColBlockIndices"></param>
+		/// <param name="OriginalLocBlockToDOFdataForCol"></param>
 		/// <returns></returns>
-		public BlockMsrMatrix ChangePartitioning(IBlockPartitioning newRowPart, IBlockPartitioning newColPart = null, IList<(long Source, long Target)> newRowBlockIndices = null, IList<(long Source, long Target)> newColBlockIndices = null) {
-            if (newColPart == null) newColPart = newRowPart;
+		public BlockMsrMatrix ChangePartitioning(IBlockPartitioning newRowPart, (long i0Cell, int lenCell)[] OriginalLocBlockToDOFdataForRow, IBlockPartitioning newColPart = null, (long i0Cell, int lenCell)[] OriginalLocBlockToDOFdataForCol = null) {
+            if (newColPart is null) newColPart = newRowPart;
+            if (OriginalLocBlockToDOFdataForCol is null) OriginalLocBlockToDOFdataForCol = OriginalLocBlockToDOFdataForRow;
 
-			var ret = ChangeRowPartitioning(newRowPart, newRowBlockIndices);
+			var ret = ChangeRowPartitioning2(newRowPart, OriginalLocBlockToDOFdataForRow);
 			//if (newColBlockIndices != null) ret.ChangeColumnIndices(newColBlockIndices);
-			var ret2 = ChangeColumnPartitioning2(newColPart, newColBlockIndices);
+			var ret2 = ret.ChangeColumnPartitioning2(newColPart, OriginalLocBlockToDOFdataForCol);
 
             return ret2;
 		}
 
-		/// <summary>
-		/// Craete a new mattrix with the target row partitioning
-		/// </summary>
-		/// <param name="newRowPart"></param>
-		/// <param name="newBlockIndices"></param>
-		/// <returns></returns>
-		public BlockMsrMatrix ChangeRowPartitioning(IBlockPartitioning newRowPart, IList<(long Source, long Target)> newBlockIndices = null) {
-			var ret = this.Transpose();
-			var ret2 = ChangeColumnPartitioning2(newRowPart, newBlockIndices);
-			var ret3 = ret.Transpose();
-			return ret3;
-		}
+		///// <summary>
+		///// Craete a new mattrix with the target row partitioning
+		///// </summary>
+		///// <param name="newRowPart"></param>
+		///// <param name="newBlockIndices"></param>
+		///// <returns></returns>
+		//public BlockMsrMatrix ChangeRowPartitioning(IBlockPartitioning newRowPart, IList<(long Source, long Target)> newBlockIndices = null, (long i0Cell, int lenCell)[] CellToDOFdata = null) {
+		//	var ret = this.Transpose();
+		//	var ret2 = ChangeColumnPartitioning2(newRowPart, newBlockIndices, CellToDOFdata);
+		//	var ret3 = ret.Transpose();
+		//	return ret3;
+		//}
 
 		/// <summary>
 		/// Update of <see cref="ReceiveLists"/> and <see cref="SendLists"/>
@@ -3950,105 +3951,12 @@ namespace ilPSP.LinSolvers {
 			//Console.WriteLine($"rank-${this.RowPartitioning.MpiRank} old cols: " + string.Join(", ", m_BlockRows[0]?.Keys));
 		}
 
-		public BlockMsrMatrix ChangeColumnPartitioning2(IBlockPartitioning NewColPart, IList<(long Source, long Target)> columnMapping) {
-#if DEBUG
-			bool hasDuplicateSource = columnMapping.GroupBy(x => x.Source).Any(g => g.Count() > 1);
-			bool hasDuplicateTarget = columnMapping.GroupBy(x => x.Target).Any(g => g.Count() > 1);
-			//bool outOfRange = columnMapping.Any(x => x.Source < 0 || x.Source > _ColPartitioning.TotalLength || x.Target < 0 || x.Target > _ColPartitioning.TotalLength);
-			bool outOfRange = columnMapping.Any(x => x.Source < 0 || x.Target < 0 || x.Target > _ColPartitioning.TotalLength);
-
-			if (hasDuplicateSource || hasDuplicateTarget || outOfRange) {
-				throw new ArgumentException("Something wrong with the columnMapping");
-			}
-#endif
-			this.ComPatternValid = false;
-
-			Dictionary<long, long> mappingDict = columnMapping.ToDictionary(x => x.Source, x => x.Target);
-
-            using (new FuncTrace()) {
-                //throw new NotImplementedException();
-                BlockMsrMatrix Ret = new BlockMsrMatrix(this._RowPartitioning, NewColPart);
-
-                Debug.Assert(this.m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
-                int LocalNoOfBlocks = _RowPartitioning.LocalNoOfBlocks;
-                long FirstBlock = _RowPartitioning.FirstBlock;
-
-                // local transpose
-                // ===============
-
-                Dictionary<int, List<Tuple<long, long, MultidimensionalArray>>> ExchangeData = new Dictionary<int, List<Tuple<long, long, MultidimensionalArray>>>();
-
-                MultidimensionalArray temp = null;
-                for (int iBlockRowLoc = 0; iBlockRowLoc < LocalNoOfBlocks; iBlockRowLoc++) {
-                    long iBlockRow = FirstBlock + iBlockRowLoc;
-                    long i0 = _RowPartitioning.GetBlockI0(iBlockRow);
-                    int I = _RowPartitioning.GetBlockLen(iBlockRow);
-                    var Row = m_BlockRows[iBlockRowLoc];
-                    if (Row != null && I > 0) {
-                        foreach (var kv in Row) {
-                            long jBlkCol = kv.Key;
-                            BlockEntry BE = kv.Value;
-                            Debug.Assert(BE.jBlkCol == jBlkCol);
-                            int J;
-                            long j0;
-                            if (m_ColPartitioning.IsLocalBlock(jBlkCol)) {
-                                J = _ColPartitioning.GetBlockLen(jBlkCol);
-                                j0 = _ColPartitioning.GetBlockI0(jBlkCol);
-                            } else {
-                                GetExternalSubblockIndices(m_ColPartitioning, jBlkCol, out j0, out long _J);
-                                J = checked((int)(_J - j0));
-                            }
-                            if (J > 0) {
-
-                                if (temp == null || temp.GetLength(0) != I || temp.GetLength(1) != J) {
-                                    temp = MultidimensionalArray.Create(I, J);
-                                }
-
-
-                                this.ReadBlock(i0, j0, temp);
-
-                                long jTargetBlkCol = mappingDict[jBlkCol];
-                                long jTarget0;
-                                if (NewColPart.IsLocalBlock(jTargetBlkCol)) {
-                                    jTarget0 = NewColPart.GetBlockI0(jTargetBlkCol);
-                                } else {
-                                    GetExternalSubblockIndices(NewColPart, jTargetBlkCol, out jTarget0, out long _J);
-                                }
-                                Ret.AccBlock(i0, jTarget0, 1.0, temp);
-                            }
-                        }
-                    }
-                }
-
-
-                // return
-                // ======
-                return Ret;
-            }
+		public BlockMsrMatrix ChangeColumnPartitioning2(IBlockPartitioning NewColPart, (long i0Cell, int lenCell)[] BlockDOFsData) {
+            var ret = this.Transpose();
+            var ret2 = ret.ChangeRowPartitioning2(NewColPart, BlockDOFsData);
+            var ret3 = ret2.Transpose();
+            return ret3;
 		}
-
-		public void ChangeColumnIndexWithMapping(long globalRow, long globalCol, Func<long, long> surjectiveMapping) {
-			// Step 1: Translate the global column index to block and subblock indices
-			TranslateIndex(globalCol, _ColPartitioning, true, out long blockCol, out int subblockCol, out long blockStart, out int localCol,
-						   out int blockType, out int subblockIndex, out int subblockStart, out int subblockSize, out int numSubblocks, out _);
-
-			// Step 2: Apply the surjective mapping to get the new column index
-			long newGlobalCol = surjectiveMapping(globalCol);
-
-			// Step 3: Translate the new global column index to block and subblock indices
-			TranslateIndex(newGlobalCol, _ColPartitioning, true, out long newBlockCol, out int newSubblockCol, out long newBlockStart, out int newLocalCol,
-						   out int newBlockType, out int newSubblockIndex, out int newSubblockStart, out int newSubblockSize, out int newNumSubblocks, out _);
-
-			// Step 4: Update the column index in the block structure
-			if (m_BlockRows[blockCol].TryGetValue(blockCol, out BlockEntry blockEntry)) {
-				blockEntry.jBlkCol = newBlockCol; // Update the block column index
-				blockEntry.MembnkIdx[subblockIndex, subblockCol] = newSubblockCol; // Update the subblock column index
-			} else {
-				throw new InvalidOperationException($"Block at column {blockCol} not found.");
-			}
-		}
-
-
 
 		/// <summary>
 		/// Determines the column indices that have to be sent to other processors.
@@ -4303,110 +4211,47 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-		public BlockMsrMatrix ChangeRowPartitioning2(IBlockPartitioning newRowPart, Dictionary<long, long> newRowBlockIndices = null) {
-			//var ret = ChangeRowPartitioning(newRowPart, newRowBlockIndices);
-			//if (newColBlockIndices != null) ret.ChangeColumnIndices(newColBlockIndices);
-			//ret.ChangeColumnPartitioning(newColPart);
 
+		/// <summary>
+		/// Ad-hoc approach to change the row partitioning of a matrix. (instead of multiplication one should be able retrive data directly)
+		/// </summary>
+		/// <param name="newRowPart"></param>
+		/// <param name="locDOFsData"></param>
+		/// <returns></returns>
+		public BlockMsrMatrix ChangeRowPartitioning2(IBlockPartitioning newRowPart, (long i0Cell, int lenCell)[] locDOFsData) {
+            using (new FuncTrace()) {
+                BlockMsrMatrix PermutationMatrix = new BlockMsrMatrix(newRowPart, _RowPartitioning);
+				{
+					int cnt = 0;
+					if (locDOFsData != null && locDOFsData.Length > 0) {
+						int NoCells = locDOFsData.Length;
 
-			using (new FuncTrace()) {
-				BlockMsrMatrix Ret = new BlockMsrMatrix(newRowPart, _ColPartitioning);
+						for (int j = 0; j < NoCells; j++) {
+							//int Len = part.lenCell[j];
+							int Len = locDOFsData[j].lenCell;
+							long i0Row = newRowPart.i0 + cnt;
+							long i0Col = locDOFsData[j].i0Cell; 
 
-				Debug.Assert(this.m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
-				int LocalNoOfBlocks = _RowPartitioning.LocalNoOfBlocks;
-				long FirstBlock = _RowPartitioning.FirstBlock;
+							PermutationMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
 
-				// local transpose
-				// ===============
-
-
-				Dictionary<int, List<Tuple<long, long, MultidimensionalArray>>> ExchangeData = new Dictionary<int, List<Tuple<long, long, MultidimensionalArray>>>();
-
-				MultidimensionalArray temp = null;
-				for (int iBlockRowLoc = 0; iBlockRowLoc < LocalNoOfBlocks; iBlockRowLoc++) {
-					long iBlockRow = FirstBlock + iBlockRowLoc;
-					long i0 = _RowPartitioning.GetBlockI0(iBlockRow); //source i0
-					int I = _RowPartitioning.GetBlockLen(iBlockRow);
-					long targetBlkRow = newRowBlockIndices[iBlockRow]; //target block row
-					long targetI0 = newRowPart.GetBlockI0(targetBlkRow); //target i0
-					var Row = m_BlockRows[iBlockRowLoc];
-					if (Row != null && I > 0) {
-						foreach (var kv in Row) {
-							long jBlkCol = kv.Key;
-							BlockEntry BE = kv.Value;
-							Debug.Assert(BE.jBlkCol == jBlkCol);
-							int J;
-							long j0;
-							if (m_ColPartitioning.IsLocalBlock(jBlkCol)) {
-								J = _ColPartitioning.GetBlockLen(jBlkCol);
-								j0 = _ColPartitioning.GetBlockI0(jBlkCol);
-							} else {
-								GetExternalSubblockIndices(m_ColPartitioning, jBlkCol, out j0, out long _J);
-								J = checked((int)(_J - j0));
-							}
-
-							if (J > 0) {
-
-								if (temp == null || temp.GetLength(0) != I || temp.GetLength(1) != J) {
-									temp = MultidimensionalArray.Create(I, J);
-								}
-
-
-								this.ReadBlock(i0, j0, temp);
-
-
-
-								if (newRowPart.IsLocalBlock(targetBlkRow)) {
-									Ret.AccBlock(targetI0, j0, 1.0, temp);
-								} else {
-									int TargProc = newRowPart.FindProcessForBlock(targetBlkRow);
-									List<Tuple<long, long, MultidimensionalArray>> ExchangeData_TargProc;
-									if (!ExchangeData.TryGetValue(TargProc, out ExchangeData_TargProc)) {
-										ExchangeData_TargProc = new List<Tuple<long, long, MultidimensionalArray>>();
-										ExchangeData.Add(TargProc, ExchangeData_TargProc);
-									}
-
-									Debug.Assert(newRowPart.FindProcess(targetI0) == TargProc);
-									Debug.Assert(newRowPart.FindProcess(targetI0 + I - 1) == TargProc);
-									ExchangeData_TargProc.Add(new Tuple<long, long, MultidimensionalArray>(targetI0, j0, temp));
-									temp = null;
-								}
-							}
+							cnt += Len;
 						}
 					}
 				}
 
-				// exchange
-				// ========
-				var RcvData = SerialisationMessenger.ExchangeData(ExchangeData, this.MPI_Comm);
-
-				// received part
-				// =============
-
-				foreach (var vl in RcvData.Values) {
-					foreach (var t in vl) {
-						long i0 = t.Item1;
-						long j0 = t.Item2;
-						MultidimensionalArray data = t.Item3;
-						Ret.AccBlock(i0, j0, 1.0, data);
-					}
-				}
-
-				// return
-				// ======
-				return Ret;
+                return BlockMsrMatrix.Multiply(PermutationMatrix, this);
 
 			}
-		}
+        }
 
-		/// <summary>
-		/// Computes the deviation of this matrix from symmetry
-		/// </summary>
-		/// <returns>
-		/// The accumulated sum of the differences between corresponding
-		/// off-diagonal entries.
-		/// </returns>
-		public double SymmetryDeviation() {
+        /// <summary>
+        /// Computes the deviation of this matrix from symmetry
+        /// </summary>
+        /// <returns>
+        /// The accumulated sum of the differences between corresponding
+        /// off-diagonal entries.
+        /// </returns>
+        public double SymmetryDeviation() {
             var MT = this.Transpose();
             MT.Acc(-1.0, this);
             double sd = MT.InfNorm();
