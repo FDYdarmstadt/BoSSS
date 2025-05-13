@@ -515,18 +515,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			// 3. Check if the operator matrix is correct (write a test function)
 		}
 
-		public IBlockPartitioning DefaultPartition => m_MultigridMapping;
-		public IBlockPartitioning FinerLevelCoarsePartitiong => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseTargetPartitioning : null;
-		public (long i0Cell, int lenCell)[] FinerLevelCoarseBlocks => FinerLevel is TaskParallelMGOperator fine ? fine.localBlocksForCoarse : null;
 
-		public IList<(long Source, long Target)> FinerLevelCoarseCellMapping => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseNewCellMapping : null;
 
 		public IBlockPartitioning ThisTargetPartitioning;
 		public IBlockPartitioning CoarseTargetPartitioning;
 		public IBlockPartitioning SmootherTargetPartitioning;
+		internal (long i0Cell, int lenCell)[] localBlocksForThisLevel;
+		internal (long i0Cell, int lenCell)[] localBlocksForSmoother;
+		internal (long i0Cell, int lenCell)[] localBlocksForCoarse;
+
+		public IBlockPartitioning FinerLevelCoarsePartitiong => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseTargetPartitioning : null;
+		public (long i0Cell, int lenCell)[] FinerLevelCoarseBlocks => FinerLevel is TaskParallelMGOperator fine ? fine.localBlocksForCoarse : null;
+		public IList<(long Source, long Target)> FinerLevelCoarseCellMapping => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseNewCellMapping : null;
 
 		void CheckMPICorrectness() {
-			Console.WriteLine($"TaskParallelMGOperator: {m_MultigridMapping.MPI_Comm.m1} rank {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} with {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} and {NoOfThisProcs} size and {myTask}");
+			Console.WriteLine($"TaskParallelMGOperator: {m_MultigridMapping.MPI_Comm.m1} rank {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} with {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} and {NoOfThisProcs}");
 			if (m_MultigridMapping.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("The mg mapping must be defined on the WORLD communicator.");
 
@@ -556,38 +559,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		public MPI_Comm currentComm => m_MultigridMapping.MPI_Comm;
 
-		public int worldMPIOffset => worldCommSize - NoOfThisProcs; //the offset of this operator matrix in the world communicator, the mpi rank of the first processor in this level
-
+		/// <summary>
+		/// the offset of this operator matrix in the world communicator, the mpi rank of the first processor in this level
+		/// </summary>
+		public int worldMPIOffset => worldCommSize - NoOfThisProcs; 
 		public int worldCommRank => m_MultigridMapping.MpiRank;
 		public int worldCommSize => m_MultigridMapping.MpiSize;
-		//public MPI_Comm thisComm => FinerLevel == null ? m_MultigridMapping.MPI_Comm : FinerLevel is TaskParallelMGOperator fine ? fine.subComm : FinerLevel.DgMapping.MPI_Comm;
-		//public int thisCommRank => FinerLevel is TaskParallelMGOperator fine ? fine.subCommRank : FinerLevel.DgMapping.MpiRank;
-		//public MPI_Comm subComm;
-		//int subCommRank;
-		//int subCommSize;
-
-
-		TpTaskType myTask = TpTaskType.All; // this is used to determine the task of the current processor (smoother or coarse) in the sub communicator	
-
-		internal (long i0Cell, int lenCell)[] localBlocksForThisLevel;
-		internal (long i0Cell, int lenCell)[] localBlocksForSmoother;
-		internal (long i0Cell, int lenCell)[] localBlocksForCoarse;
 
 		void CalculateWorldToSubDistribution() {
-			localBlocksForThisLevel = GetLocalDistribution(CellToDOFdata, ThisNewCellMapping, ThisCellI0s, worldMPIOffset, NoOfThisProcs);
-			localBlocksForSmoother = GetLocalDistribution(CellToDOFdata, SmootherNewCellMapping, SmootherCellI0s, worldMPIOffset, NoOfSmootherProcs);
-			localBlocksForCoarse = GetLocalDistribution(CellToDOFdata, CoarseNewCellMapping, CoarseCellI0s, worldMPIOffset + NoOfSmootherProcs, NoOfCoarseProcs);
+			localBlocksForThisLevel = GetLocalDistribution(ThisNewCellMapping, ThisCellI0s, worldMPIOffset, NoOfThisProcs);
+			localBlocksForSmoother = GetLocalDistribution(SmootherNewCellMapping, SmootherCellI0s, worldMPIOffset, NoOfSmootherProcs);
+			localBlocksForCoarse = GetLocalDistribution(CoarseNewCellMapping, CoarseCellI0s, worldMPIOffset + NoOfSmootherProcs, NoOfCoarseProcs);
 
 			ThisTargetPartitioning = GetPartitioning(localBlocksForThisLevel, currentComm);
 			SmootherTargetPartitioning = GetPartitioning(localBlocksForSmoother, currentComm);
 			CoarseTargetPartitioning = GetPartitioning(localBlocksForCoarse, currentComm);
 
 			if (verbose) {
-				or_OpMtx = OperatorMatrix.CloneAs();
-				or_ProlMtx = ProlongationMatrix?.CloneAs();
-				ThisNewCellMapping.SaveToTextFileDebug($"lvl{level}_thisNewMapping", ".txt");
-				SmootherNewCellMapping.SaveToTextFileDebug($"lvl{level}_SmootherNewCellMapping", ".txt");
-				CoarseNewCellMapping.SaveToTextFileDebug($"lvl{level}_CoarseNewCellMapping", ".txt");
+				ThisNewCellMapping.SaveToTextFileDebug($"lvl{Level}_thisNewMapping", ".txt");
+				SmootherNewCellMapping.SaveToTextFileDebug($"lvl{Level}_SmootherNewCellMapping", ".txt");
+				CoarseNewCellMapping.SaveToTextFileDebug($"lvl{Level}_CoarseNewCellMapping", ".txt");
 			}
 
 			if (m_IsThereCoarserLevel)
@@ -602,13 +593,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB"); 
 		}
 
-		public BlockMsrMatrix or_OpMtx;
-		public BlockMsrMatrix or_ProlMtx;
-
 		BlockMsrMatrix ChangeThisLevelPartitioning(BlockMsrMatrix Mtx, IBlockPartitioning targetPartitioning, (long i0Cell, int lenCell)[] blockData = null, string tag = "Op") {
 			if (verbose) {
-				Mtx.SaveToTextFileSparseDebug($"lvl{level}_{tag}_oldOp.txt");
-				Mtx.SaveToTextFileSparse($"lvl{level}_{tag}_oldOp.txt");
+				Mtx.SaveToTextFileSparseDebug($"lvl{Level}_{tag}_oldOp.txt");
+				Mtx.SaveToTextFileSparse($"lvl{Level}_{tag}_oldOp.txt");
 			}
 			BlockMsrMatrix ret;
 
@@ -618,8 +606,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				ret = Mtx.CloneAs().ChangePartitioning(targetPartitioning, blockData, targetPartitioning, blockData);
 
 			if (verbose) {
-				ret.SaveToTextFileSparseDebug($"lvl{level}_{tag}_newOp.txt");
-				ret.SaveToTextFileSparse($"lvl{level}_{tag}_newOp.txt");
+				ret.SaveToTextFileSparseDebug($"lvl{Level}_{tag}_newOp.txt");
+				ret.SaveToTextFileSparse($"lvl{Level}_{tag}_newOp.txt");
 			}
 
 			return ret;
@@ -630,8 +618,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				return null;
 
 			if (verbose) {
-				m_ProlMtx.SaveToTextFileSparse($"lvl{level}_{tag}_oldPro.txt");
-				m_ProlMtx.SaveToTextFileSparseDebug($"lvl{level}_{tag}_oldPro.txt");
+				m_ProlMtx.SaveToTextFileSparse($"lvl{Level}_{tag}_oldPro.txt");
+				m_ProlMtx.SaveToTextFileSparseDebug($"lvl{Level}_{tag}_oldPro.txt");
 			}
 
 			BlockMsrMatrix ret;
@@ -642,8 +630,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 			if (verbose) {
-				ret.SaveToTextFileSparse($"lvl{level}_{tag}_newPro.txt");
-				ret.SaveToTextFileSparseDebug($"lvl{level}_{tag}_newPro.txt");
+				ret.SaveToTextFileSparse($"lvl{Level}_{tag}_newPro.txt");
+				ret.SaveToTextFileSparseDebug($"lvl{Level}_{tag}_newPro.txt");
 			}
 
 			return ret;
@@ -685,31 +673,59 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		(long i0Cell, int lenCell)[] GetLocalDistribution((long i0Cell, int lenCell)[] globalDOFs, List<(long Source, long Target)> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
-			int newRank = worldCommRank - procOffset;
-			if (newRank < 0 || newRank >= procSize)
-				return new (long i0Cell, int lenCell)[0];
-
-			var ret = new List<(long i0Cell, int lenCell)>();
-			var newBlocki0 = (int)targeti0s[newRank];
-			var newBlockiE = (int)targeti0s[newRank + 1];
-
-			// if cell is designated to be on this processor, add it to the list
-			for (long iCell = 0; iCell < cellColumnMapping.Count; iCell++) {
-				var iTargetCell = cellColumnMapping[(int)iCell].Target; //designated cell index
-				var iSourceCell = cellColumnMapping[(int)iCell].Source;
-
-				if (iTargetCell >= newBlocki0 && iTargetCell < newBlockiE) { // if designated cell index falls into the range of this processor
-					var sourceBlock = globalDOFs[iSourceCell]; // get the current block index (source)
-					ret.Add(sourceBlock);
-				}
+		[StructLayout(LayoutKind.Sequential)]
+		internal struct BlockInfo {
+			public long iBlock;
+			public long i0Cell;
+			public int lenCell;
+			internal BlockInfo(long iBlock, long i0Cell, int lenCell) {
+				this.iBlock = iBlock;
+				this.i0Cell = i0Cell;
+				this.lenCell = lenCell;
 			}
-			//ret.Sort((x, y) => x.i0Cell.CompareTo(y.i0Cell)); // sort the list according to the cell index
-			Debug.Assert(newBlockiE - newBlocki0 == ret.Count);
-			return ret.ToArray();
 		}
 
-		public int level => FinerLevel is TaskParallelMGOperator fine ? fine.level + 1 : 0;
+		(long i0Cell, int lenCell)[] GetLocalDistribution(List<(long Source, long Target)> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
+			Dictionary<long, long> cellColumnDict = cellColumnMapping.ToDictionary(pair => pair.Source, pair => pair.Target);
+
+			int B = m_MultigridMapping.LocalNoOfBlocks;
+
+			List<BlockInfo> thisProcBlocks = new List<BlockInfo>();
+			Dictionary<int, List<BlockInfo>> sendList = new Dictionary<int, List<BlockInfo>>();
+
+			for (int b = 0; b < B; b++) { //loop for each block, and prepare necessary lists
+				long iBlock = m_MultigridMapping.FirstBlock + b;
+				long iTargetBlock = cellColumnDict[iBlock];
+				int localRank = Array.BinarySearch(targeti0s, iTargetBlock) is var p && p >= 0 ? p : (~p) - 1;  // this is the rank of the target block in the target partitioning
+				int TargetRank = procOffset + localRank; // added offset since we are still on world processor
+
+				Debug.Assert(TargetRank >= procOffset && TargetRank < procOffset + procSize);
+
+				BlockInfo block = new BlockInfo(iTargetBlock, m_MultigridMapping.GetBlockI0(iBlock), m_MultigridMapping.GetBlockLen(iBlock));
+
+				if (TargetRank == worldCommRank) { 
+					thisProcBlocks.Add(block);
+				} else { //if the target block is another processor, add it to the send list
+					if (!sendList.TryGetValue(TargetRank, out var list))
+						sendList[TargetRank] = list = new List<BlockInfo>();
+					list.Add(block);
+				}
+			}
+
+			var sendArray = sendList.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToArray());
+			IDictionary<int, BlockInfo[]> data = ArrayMessenger<BlockInfo>.ExchangeData(sendArray);
+
+			foreach (var message in data) {
+				Debug.Assert(message.Key != worldCommRank);
+				thisProcBlocks.AddRange(message.Value);
+			}
+
+			thisProcBlocks.Sort((x, y) => x.iBlock.CompareTo(y.iBlock));
+			return thisProcBlocks.Select(b => (b.i0Cell, b.lenCell)).ToArray();
+		}
+
+
+		public int Level => FinerLevel is TaskParallelMGOperator fine ? fine.Level + 1 : 0;
         public int NoOfThisProcs; 
         public int NoOfSmootherProcs => NoOfThisProcs - NoOfCoarseProcs;
         public int NoOfCoarseProcs;
@@ -1529,7 +1545,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		int TpLevel => TpMapping.level;
+		int TpLevel => TpMapping.Level;
 
 		/// <summary>
 		/// Changes the communicators fo the operator matrix (to smoother subComm) and the prolongation operator (to this levelComm - to the coarse subComm of the finer level)
@@ -2591,7 +2607,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Dispose() {
             //if (m_MTracker != null) m_MTracker.Dispose();
             if (m_verbose && m_OpMapPair != null && m_OpMapPair is TaskParallelMGOperator _mgop) {
-                int lv = _mgop.level;
+                int lv = _mgop.Level;
                 Console.WriteLine($"OrthoMG lv {lv} - total memory: {UsedMemory() / (1024 * 1024)} MB");
                 Console.WriteLine($"OrthoMG lv {lv} - internal memory: {MemoryOfMultigrid() / (1024 * 1024)} MB");
                 Console.WriteLine($"OrthoMG lv {lv} - smoother memory: {MemoryOfSmoother() / (1024 * 1024)} MB");
