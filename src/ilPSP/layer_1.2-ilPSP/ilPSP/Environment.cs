@@ -233,7 +233,7 @@ namespace ilPSP {
 
             BLAS.ActivateOMP();
             LAPACK.ActivateOMP();
-            SetOMPbinding();
+            PinOMPthreads();
         }
 
 
@@ -261,7 +261,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                SetOMPbinding();
+                PinOMPthreads();
             }
         }
 
@@ -291,7 +291,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    SetOMPbinding();
+                    PinOMPthreads();
                 }
             }
         }
@@ -330,7 +330,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    SetOMPbinding();
+                    PinOMPthreads();
                 }
             }
         }
@@ -387,7 +387,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    SetOMPbinding();
+                    PinOMPthreads();
                 }
             }
         }
@@ -419,7 +419,7 @@ namespace ilPSP {
                 InParallelSection = false;
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
-                SetOMPbinding();
+                PinOMPthreads();
             }
         }
 
@@ -633,6 +633,7 @@ namespace ilPSP {
                     // just hope for the best
                     MKLservice.Dynamic = true;
                     MKLservice.SetNumThreads(NumThreads);
+                    tr.Warning("Reserved CPUs for all ranks are neither equal nor disjoint; some CPUs are owned by multiple ranks, some are exclusive; Pinning will be disabled.");
                 }
                 if(NumThreads > DedicatedCPUsForThisRank.Count()) {
                     NumThreads = Math.Max(1, DedicatedCPUsForThisRank.Count());
@@ -647,15 +648,15 @@ namespace ilPSP {
                     tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
                 }
 
-                PerformOMPthreadPinning = MPIEnv.MPI_Size > 1;
-                PerformTPLthreadPinning = MPIEnv.MPI_Size > 1;
+                PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
+                PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
 
                 tr.Info($"R{MPIEnv.MPI_Rank}: TPL thread pinning: {PerformTPLthreadPinning}, OMP thread pinning: {PerformOMPthreadPinning}");
 
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 PinTPLThreads();
-                SetOMPbinding();
+                PinOMPthreads();
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
             }
         }
@@ -663,12 +664,10 @@ namespace ilPSP {
         static bool PerformOMPthreadPinning = false;
 
 
-        private static void SetOMPbinding() {
+        private static void PinOMPthreads() {
             if(PerformOMPthreadPinning) {
-
-                //using (var tr = new FuncTrace("SetOMPbinding")) // to much overhead
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
-                //MKLservice.BindOMPthreads_1To1(cpus);
+                MKLservice.BindOMPthreads_1To1(cpus);
             }
             
             /*{
@@ -755,18 +754,6 @@ namespace ilPSP {
             }
         }
 
-        /*
-        static bool FileExistsSafe(FileInfo fi) {
-            bool exists;
-            try {
-                exists = File.Exists(fi.FullName);
-            } catch(IOException) {
-                exists = true;
-            }
-            return exists;
-        }
-        */
-
         static MPIEnvironment m_MpiEnv;
 
         /// <summary>
@@ -777,29 +764,5 @@ namespace ilPSP {
                 return m_MpiEnv;
             }
         }
-
-        /*
-
-        /// <summary>
-        /// Utility function which tries to copy a file from
-        /// <paramref name="sourceFileName"/> to
-        /// <paramref name="destFileName"/> overwriting existing files if
-        /// required. Issues a warning (but proceeds as normal) if the copy
-        /// process fails.
-        /// </summary>
-        /// <param name="sourceFileName">
-        /// The path to the file to be copied
-        /// </param>
-        /// <param name="destFileName">The path to the destination</param>
-        private static void TryCopy(string sourceFileName, string destFileName) {
-            try {
-                File.Copy(sourceFileName, destFileName, true);
-                //Console.WriteLine("Copy: " + sourceFileName + " -> " + destFileName);
-            } catch(Exception e) {
-                Console.WriteLine("WARNING: Unable to copy to: '"
-                    + destFileName + "': " + e.GetType().Name + " says:'" + e.Message + "'");
-            }
-        }
-        */
     }
 }
