@@ -17,6 +17,7 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Schema;
@@ -27,17 +28,11 @@ using static System.Reflection.Metadata.BlobBuilder;
 namespace BoSSS.Solution.AdvancedSolvers {
 
 
-    /// <summary>
-    /// Additive Schwarz method with optional, multiplicative coarse-grid correction.
-    /// 
-    /// In this class, we assume to have a relatively low number of DOFs per MPI rank, therefore we can have Schwarz blocks which span more than one process.
-    /// So, it is intended to be used at the coarser end of the multigrid structure.
-    /// 
-    /// In contrast to the <see cref="Schwarz"/> implementation of Schwarz, this implementation:
-    /// - computes the blocking globally using <see cref="METIS"/>, and use less blocks than MPI processors
-    /// - is hard-coded to use PARDISO in the blocks, i.e., can't use p-multigrid.
-    /// </summary>
-    public class SchwarzForTaskParallel : ISolverSmootherTemplate {
+	/// <summary>
+	/// Additive Schwarz method modified w.r.t. task parallelization. Similar to <see cref="SchwarzForCoarseMesh"/> but does not require a multigrid operator.
+	/// Instead it uses <see cref="StandAloneOperatorMappingPairWithGridData"/> to get the operator matrix and the grid data."/>
+	/// </summary>
+	public class SchwarzForTaskParallel : ISolverSmootherTemplate {
 
         /// <summary>
         /// 
@@ -50,11 +45,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public string Shortname => "AddSwzTP";
 
             public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-                var R = new SchwarzForTaskParallel();
-                R.m_config = this;
-                R.Init(level);
-                return R;
-            }
+               throw new NotImplementedException("This solver is not designed to be used with MultigridOperator.");
+			}
 
             public bool Equals(ISolverFactory _other) {
                 var other = _other as Config;
@@ -78,7 +70,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             private int m_Overlap = 1;
 
-
             /// <summary>
             /// Overlap of the Schwarz blocks, in number-of-cells.
             /// - in the case of 0, Additive Schwarz degenerates to Block-Jacobi
@@ -94,8 +85,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (value < 0) {
                         throw new ArgumentException("overlap cannot be negative");
                     }
-                    if (value > 2) {
-                        throw new ArgumentException($"overlap of {value} is not supported - maximum is 2.");
+                    if (value > 5) {
+                        throw new ArgumentException($"overlap of {value} is not supported - maximum is 5.");
                     }
                     m_Overlap = value;
                 }
@@ -106,7 +97,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// if negative or zero, auto-determined.
             /// </summary>
             public int NoOfBlocks = -1;
-
 
             /// <summary>
             /// If <see cref="Overlap"/> > 0, the solution, in cells which are covered by multiple blocks, 
@@ -130,7 +120,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         int NoIter = 0;
-
 
         /// <summary>
         /// <see cref="ISolverSmootherTemplate.ThisLevelIterations"/>
@@ -169,7 +158,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.NoIter = 0;
         }
 
-
         public object Clone() {
             throw new NotImplementedException();
         }
@@ -191,10 +179,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// Note that the Schwarz block index is **not** the MPI rank, since the number of Schwarz blocks here is typically different than the MPI size
 		/// </summary>
 		/// <returns>
-		/// Mapping from local cell index to Schwarz block
-		/// - index: local cell index `j
+		/// Mapping from global cell index to Schwarz block
+		/// - index: global cell index `j
 		/// - content: for cell `j`, the global (among all MPI processors) Schwarz block index to which this cell belongs
-		/// Note: at first, all processors have all blocks, although the block might be empty on the respective processor.
+		/// Note: only the processor with rank 0 will compute the mappinng, the exchange is done later on.
 		/// </returns>
 
 		long[] ComputeSchwarzBlockIndexMETISGlobal(StandAloneOperatorMappingPairWithGridData op) {
@@ -248,17 +236,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		SchwarzBlock[] GetCellsFromPart(int[] part, int NoOfBlocks) {
-            var ret = NoOfBlocks.ForLoop(iBlck => new SchwarzBlock() { iBlock = iBlck });
-
-            int L = part.Length;
-            for (int j = 0; j < L; j++) {
-                ret[part[j]].jLocal.Add(j);
-            }
-
-            return ret;
-        }
-
+		/// <summary>
+		/// Using CSR format, get the neighbors of a cell. (notice that CSR is stored at the rank 0)
+		/// </summary>
+		/// <param name="j"></param>
+		/// <param name="xadj"></param>
+		/// <param name="adj"></param>
+		/// <returns></returns>
 		long[] getNeighborsCSR(long j, int[] xadj, int[] adj) {
 			int start = xadj[j];
 			int end = xadj[j + 1];
@@ -269,12 +253,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return neighbors;
 		}
 
+		/// <summary>
+		/// Enlarge the Schwarz block by adding the neighbors of the cells in the block.
+		/// </summary>
+		/// <param name="op"></param>
+		/// <param name="block"></param>
+		/// <exception cref="ArgumentException"></exception>
 		void EnlargeSchwarzBlock(StandAloneOperatorMappingPairWithGridData op, SchwarzBlock block) {
             var Mapping = op.DgMapping;
 			using (var tr = new FuncTrace()) {
 
 				var blockCells = block.jGlobal.ToList();
-				BitArray marker = new BitArray(blockCells.Count);
 
 				if (config.Overlap < 0)
 					throw new ArgumentException();
@@ -286,9 +275,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					}
 
 					var bi = block.jLocal;
-
-					foreach (int jcomp in bi)
-						marker[jcomp] = true;
 
 					// determine overlap regions
 					for (int k = 0; k < config.Overlap; k++) { // overlap sweeps
@@ -308,71 +294,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				Debug.Assert(blockCells.Distinct().Count() == blockCells.Count, "Duplicate cells in Schwarz block");
 
-
 				blockCells.Sort();
 				block.jGlobal = blockCells.ToArray();
-
 			}
 		}
-
-		/// <summary>
-		/// assigns:
-		/// - <see cref="SchwarzBlock.jGlobal"/>
-		/// - <see cref="SchwarzBlock.i0Cell"/>
-		/// - <see cref="SchwarzBlock.lenCell"/>
-		/// </summary>
-		SchwarzBlock GetBlockPartProperties(SchwarzBlock block, MultigridMapping map) {
-            IGridData g = map.AggGrid;
-            int NoOfCells = block.jLocal.Count;
-            int J = g.iLogicalCells.NoOfLocalUpdatedCells;
-            long j0 = g.CellPartitioning.i0;
-            long[] gIdxExt = g.iParallel.GlobalIndicesExternalCells;
-
-            long[] jGlobal = new long[NoOfCells];
-            block.jGlobal = jGlobal;
-            long[] i0Cell = new long[NoOfCells];
-            block.i0Cell = i0Cell;
-            int[] lenCell = new int[NoOfCells];
-            block.lenCell = lenCell;
-
-            //            var Temp = new (long i0Cell, int lenCell)[NoOfCells];
-            for (int i = 0; i < NoOfCells; i++) {
-                int jCellLoc = block.jLocal[i];
-
-                long jCellGlob;
-                if (jCellLoc < J)
-                    jCellGlob = jCellLoc + j0;
-                else
-                    jCellGlob = gIdxExt[jCellLoc - J];
-
-                jGlobal[i] = jCellGlob;
-                //Temp[i] = (map.GlobalUniqueIndex(0, jCellLoc, 0), map.GetLength(jCellLoc));
-                i0Cell[i] = map.GetCellI0(jCellLoc);
-                lenCell[i] = map.GetLength(jCellLoc);
-            }
-
-            //            // sort according to global cell index
-            //            Array.Sort(jGlobal, Temp);
-            //            for (int i = 0; i < NoOfCells; i++) {
-            //                if(i > 0) {
-            //                    Debug.Assert(Temp[i-1].i0Cell < Temp[i].i0Cell);
-            //                    Debug.Assert(jGlobal[i-1] < jGlobal[i]);
-            //                }
-            //#if DEBUG
-            //                if (g.CellPartitioning.IsInLocalRange(jGlobal[i])) {
-            //                    int jLocal = g.CellPartitioning.TransformIndexToLocal(jGlobal[i]);
-            //                    Debug.Assert(Temp[i].i0Cell == map.GlobalUniqueIndex(0, jLocal, 0), "sorting messed things up");
-            //                }
-            //#endif
-
-            //                i0Cell[i] = Temp[i].i0Cell;
-            //                lenCell[i] = Temp[i].lenCell;
-            //            }
-
-            block.jLocal = null; // not needed anymore
-
-            return block;
-        }
 
         SchwarzBlock[][] ExchangeBlocks(SchwarzBlock[] localPartsOfBlocks) {
             using (new FuncTrace()) {
@@ -808,7 +733,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int GetBlockOwnerRank(int iBlock) {
             Debug.Assert(thisCommSize == m_op.OperatorMatrix._RowPartitioning.MpiSize);
             return (iBlock % thisCommSize);
-            //return (iBlock % (MPIsz - 1)) + 1; // we avoid rank 0, because rank 0 is doing the coarse solve
         }
 
 		StandAloneOperatorMappingPairWithGridData m_op;
@@ -824,7 +748,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			throw new NotSupportedException("Use Init(StandAloneOperatorMappingPairWithGridData op) instead.");
 		}
 
-
 		public void Init(StandAloneOperatorMappingPairWithGridData op) {
 #if DEBUG
             InitWithTest(op, true);
@@ -832,7 +755,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             InitWithTest(op, false);
 #endif
         }
-
 
         bool verbose = false;
 
@@ -846,7 +768,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
   			using (var f = new FuncTrace()) {
 
                 m_op = op;
-                var locBlocks = CalculateBlocks(op);
+                var locBlocks = CalculateBlocks(op); //by utilizing mostly rank0, calculate blocks and get them on respective procs
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 				var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
 
@@ -900,7 +822,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		/// <summary>
 		/// Calculates the Schwarz blocks for the given operator 
-        /// [ToprakToDo]: ad-hoc distribution of dofs to blocks. Can be improved for better scaling between procs.
+        /// ad-hoc distribution of dofs to blocks from 0 to others. Can be improved for better scaling between procs.
 		/// </summary>
 		/// <param name="op"></param>
 		/// <returns></returns>
@@ -908,7 +830,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			int MPIrnk = thisCommRank;
 			var cellToBlock = ComputeSchwarzBlockIndexMETISGlobal(op); //each cell to target block index
 
-			SchwarzBlock[] Blocks = new SchwarzBlock[this.config.NoOfBlocks];
+			SchwarzBlock[] Blocks = new SchwarzBlock[this.config.NoOfBlocks]; //there is only block info at rank0, the rests are null
 			for (int iBlck = 0; iBlck < this.config.NoOfBlocks; iBlck++) {
 				Blocks[iBlck] = new SchwarzBlock() { iBlock = iBlck };
 
@@ -918,23 +840,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					    if (cellToBlock[i] == iBlck)
 						    indices.Add((long)i);
 				    }
-				var cellInThisBlock = indices.ToArray();
 
-
-				Blocks[iBlck].jGlobal = cellInThisBlock;
-				Blocks[iBlck].i0Cell = new long[cellInThisBlock.Length];
-				Blocks[iBlck].lenCell = new int[cellInThisBlock.Length];
+				Blocks[iBlck].jGlobal = indices.ToArray();
+				Blocks[iBlck].i0Cell = new long[] { };
+				Blocks[iBlck].lenCell = new int[] { };
 			}
 
 			// determine the Owner processor for the respective Schwarz block:
 			for (int i = 0; i < Blocks.Length; i++) {
 				Blocks[i].iOwnerProc = GetBlockOwnerRank(i);
-				//Blocks[i] = GetBlockPartProperties(Blocks[i], m_worldLevelMGMaping);
 			}
 
-			if (MPIrnk == 0) {
+			if (MPIrnk == 0) { //notice that this is under master rank as it is the only one which has csr graph. so it should also decide on the overlap
 				for (int iBlock = 0; iBlock < Blocks.Length; iBlock++) {
-					EnlargeSchwarzBlock(op, Blocks[iBlock]);
+					EnlargeSchwarzBlock(op, Blocks[iBlock]); 
 					CalculateBlockCellToDOFdata(op, Blocks[iBlock]);
 				}
 			}
@@ -945,11 +864,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		/// <summary>
 		/// Filters/calculates the matrix data for the given block.
-		/// [ToprakToDo]: ad-hoc distribution of dofs to blocks. Can be improved for better scaling between procs. 
+		/// ad-hoc distribution of dofs to blocks. Can be improved for better scaling between procs.
+        /// but since CSR is gathered already on proc 0. this should not kill the performance.
 		/// </summary>
 		/// <param name="op"></param>
 		/// <param name="Block"></param>
 		void CalculateBlockCellToDOFdata(StandAloneOperatorMappingPairWithGridData op, SchwarzBlock Block) {
+            Debug.Assert(thisCommRank == 0); //designed only for the master rank as the necessary information is gathered there
+
 			var blockCells = Block.jGlobal;
             Block.i0Cell = new long[blockCells.Length];
             Block.lenCell = new int[blockCells.Length];
@@ -962,7 +884,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-        double[][] m_OverlapScaling = null;
+		double[][] m_OverlapScaling = null;
 
 		/// <summary>
 		/// Test the communication of the redistribution matrix.
@@ -1016,7 +938,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		double[][] AllocBlockMem() {
             return m_BlockSizes.Select(sz => sz > 0 ? new double[sz] : null).ToArray();
         }
-
 
         int[] m_BlockSizes;
 
@@ -1397,7 +1318,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
-
 		/// <summary>
 		/// A special case to test the convergence of the Schwarz method.
 		/// </summary>
@@ -1430,7 +1350,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			Debug.Assert(X.MPI_L2NormPow2(m_op.OperatorMatrix.MPI_Comm) < Math.Pow(10,-2), "Schwarz method does not converge well");
 		}
-
 
 		public void Solve<U, V>(U X, V B)
             where U : IList<double>

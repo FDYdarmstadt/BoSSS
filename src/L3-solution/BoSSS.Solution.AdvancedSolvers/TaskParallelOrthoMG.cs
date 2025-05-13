@@ -503,16 +503,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(m_MultigridMapping);
             m_NoOfSpecies = GetNoOfSpeciesList(m_MultigridMapping);
-			(ThisCellI0s, ThisNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfThisProcs);
+
+			//distribution at cell/block level
+			(ThisCellI0s, ThisNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfThisProcs); 
 			(SmootherCellI0s, SmootherNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfSmootherProcs);
 			(CoarseCellI0s, CoarseNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfCoarseProcs);
-            CellToDOFdata = CellIndexToDOFs(m_MultigridMapping);
 			CalculateWorldToSubDistribution();
-
-			// To Do:
-			// 1. Check if the change of basis is correct
-			// 2. Check if the prolongation matrix is correct
-			// 3. Check if the operator matrix is correct (write a test function)
 		}
 
 
@@ -955,42 +951,72 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="xadj"></param>
 		/// <param name="adj"></param>
 		/// <param name="NoOfSpecies">a weight information</param>
-		/// <param name="GridDataOn"> if true, the grid data is used to create the mapping</param>
-		public StandAloneOperatorMappingPairWithGridData(BlockMsrMatrix OperatorMtx, List<(long source, long target)> cellIndexMapping, int[] xadj, int[] adj, int[] NoOfSpecies, bool GridDataOn = true) {
+		/// <param name="GridDataOnRank0"> if true, the grid data is stored on Rank0 explicitly</param>
+		public StandAloneOperatorMappingPairWithGridData(BlockMsrMatrix OperatorMtx, List<(long source, long target)> cellIndexMapping, int[] xadj, int[] adj, int[] NoOfSpecies, bool GridDataOnRank0 = true) {
 			m_OpMtx = OperatorMtx;
 
 			Debug.Assert(cellIndexMapping.Count == OperatorMtx._RowPartitioning.TotalNoOfBlocks);
 			m_Mapping = new PseudoCoordinateMapping(OperatorMtx._RowPartitioning);
+
 			// if the master/leader proc, get the grid/csr data and convert to the new cell indices
-			if (OperatorMtx._RowPartitioning.MpiRank == 0 && GridDataOn) {
+			if (OperatorMtx._RowPartitioning.MpiRank == 0 && GridDataOnRank0) {
 				m_xadj = new int[xadj.Length];
 				m_adj = new int[adj.Length];
 				m_NoOfSpecies = new int[NoOfSpecies.Length];
 				RemapCSRAndSpieces(xadj, adj, NoOfSpecies, cellIndexMapping, out m_xadj, out m_adj, out m_NoOfSpecies);
 			}
 
-			if (GridDataOn)
+			if (GridDataOnRank0)
 				CellToDOFdata = CellIndexToDOFs(m_Mapping);
 		}
 
 		/// <summary>
-		/// A very ad-hoc and ugly way to deal with DOF data
+		/// Get block info from 
 		/// </summary>
 		/// <param name="map"></param>
 		/// <returns></returns>
 		(long i0Cell, int lenCell)[] CellIndexToDOFs(IBlockPartitioning map) {
 			int J = map.LocalNoOfBlocks;
-			var myList = new (long i0Cell, int lenCell)[J]; //for cell currently on this proc (may be distributed to another or not)
+			var myList = new BlockInfo[J]; //for cell currently on this proc (may be distributed to another or not)
+			
+			List<BlockInfo> globList = new List<BlockInfo>();
 
 			// Create matrix entry information from cell indices
 			for (int jCellLoc = 0; jCellLoc < J; jCellLoc++) {
 				long jCellGlob = map.FirstBlock + jCellLoc;
-				myList[jCellLoc] = (map.GetBlockI0(jCellGlob), map.GetBlockLen(jCellGlob));
+				myList[jCellLoc] = new BlockInfo(jCellGlob, map.GetBlockI0(jCellGlob), map.GetBlockLen(jCellGlob));
 			}
-			(long i0Cell, int lenCell)[][] globList = myList.MPIAllGatherO(map.MPI_Comm);
-			var flatGlobArray = globList.SelectMany(x => x).ToArray();
 
-			return flatGlobArray;
+			Dictionary<int, BlockInfo[]> sendList = new Dictionary<int, BlockInfo[]>();
+
+			if (map.MpiRank != 0)
+				sendList.Add(0, myList); //should be sent to 0
+			else
+				globList.AddRange(myList); //directly add the glob list on rank0
+
+			var data = ArrayMessenger<BlockInfo>.ExchangeData(sendList, map.MPI_Comm);
+
+			if (map.MpiRank == 0) {
+				foreach (var message in data) {
+					globList.AddRange(message.Value);
+				}
+				globList.Sort((x, y) => x.iBlock.CompareTo(y.iBlock));
+				return globList.Select(b => (b.i0Cell, b.lenCell)).ToArray();
+			} 
+
+			return null;			
+		}
+
+		[StructLayout(LayoutKind.Sequential)]
+		private struct BlockInfo {
+			public long iBlock;
+			public long i0Cell;
+			public int lenCell;
+			internal BlockInfo(long iBlock, long i0Cell, int lenCell) {
+				this.iBlock = iBlock;
+				this.i0Cell = i0Cell;
+				this.lenCell = lenCell;
+			}
 		}
 
 		/// <summary>
