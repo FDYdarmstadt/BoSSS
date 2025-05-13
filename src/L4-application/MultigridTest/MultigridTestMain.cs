@@ -55,7 +55,8 @@ namespace BoSSS.Application.MultigridTest {
             TestProgramCurvedMG.Init();
             TestProgramLinearMG.Init();
 
-            BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest_2(2,0.0d);
+            BoSSS.Application.MultigridTest.TestProgramLinearMG.RestictionMatrixTest(1);
+            BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest(0,0.0d,0);
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.RestrictionOfSystemOpTest();
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_Norm(0, 0.1, 1, MultigridOperator.Mode.SymPart_DiagBlockEquilib);
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest_2(0, 0.3d);

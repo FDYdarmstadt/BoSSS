@@ -512,8 +512,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Prolongates/injects a vector from 
-        /// the aggregated grid (<see cref="AggGrid"/>)
-        /// to the full grid ((<see cref="AggGrid"/>, <see cref="AggregationGridData.AncestorGrid"/>))
+        /// the aggregated grid (<see cref="AggregationGridBasis.AggGrid"/>)
+        /// to the full grid.
         /// </summary>
         /// <param name="FullGridVector">output; DG coordinates w.r.t. <see cref="XDGBasis"/></param>
         /// <param name="AggGridVector">input; DG coordinates on the aggregate mesh, length is <see cref="LocalDim"/></param>
