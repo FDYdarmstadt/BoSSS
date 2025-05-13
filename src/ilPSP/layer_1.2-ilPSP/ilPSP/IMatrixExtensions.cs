@@ -1824,6 +1824,7 @@ namespace ilPSP {
                             for (int j = 0; j < i; j++) // loop over lower-triangular columns
                                 B_entries[i + j * N] = 0.0;
 
+                        // inversion of upper triangular
                         int UPLO = 'U', DIAG = 'N';
                         LAPACK.F77_LAPACK.DTRTRI_(ref UPLO, ref DIAG, ref N, B_entries, ref N, out info);
 

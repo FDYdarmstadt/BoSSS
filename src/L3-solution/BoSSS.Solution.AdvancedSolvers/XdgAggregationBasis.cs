@@ -177,13 +177,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 try {
                                     AggCellMMb4Ortho.SymmetricLDLInversion(B, default(double[]));
                                 } catch (ArithmeticException ae) {
+#region diagnostic_output                                    
+                                    int[] parts = (AggGrid.iLogicalCells?.AggregateCellToParts[jagg]) ?? new int[0];
+
                                     Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
                                     Console.Error.WriteLine("Mesh level: " + AggGrid.MgLevel);
                                     Console.Error.WriteLine("Aggregate cell " + jagg);
                                     Console.Error.WriteLine("Species Index: " + iSpc_agg);
-                                    Console.Error.WriteLine("Species Index Mapping: " + sim.GetRow(iSpc_agg).Take(K).ToConcatString("{", ",", "}") + ", No of non-void cells: " + sim.GetRow(iSpc_agg).Where(idx => idx >= 0).Count() + ".");
+                                    Console.Error.WriteLine("Species Index Mapping: " + sim.GetRow(iSpc_agg).Take(K).ToConcatString("{", ",", "}") 
+                                                             + ", No of non-void cells: " + sim.GetRow(iSpc_agg).Where(idx => idx >= 0).Count() + ".");
+                                                             //+ ", Volume fractions: " + sim.GetRow(iSpc_agg).Where(idx => idx >= 0)  +  ".");
 
-                                    int[] parts = (AggGrid.iLogicalCells?.AggregateCellToParts[jagg]) ?? new int[0];
                                     Console.Error.WriteLine("Aggregate Cell: " + parts.ToConcatString("{", ",", "}"));
                                     var LevSet0 = LsTrk.LevelSets[0] as LevelSet;
                                     var Marker = new SinglePhaseField(new Basis(LevSet0.GridDat, 0), "marker");
@@ -192,8 +196,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         Marker.SetMeanValue(j, 1.0);
                                         ba[j] = true;
                                     }
+
+                                    var vols = LsTrk.GetXDGSpaceMetrics().CutCellMetrics.CutCellVolumes[GetSpecies(jagg, iSpc_agg)];
                                     var cm = new Foundation.Grid.CellMask(Marker.GridDat, ba);
-                                    cm.SaveToTextFile("trouble.csv", false);
+                                    cm.SaveToTextFile("trouble.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => vols[GeomItemIndex]/LsTrk.GridDat.iGeomCells.GetCellVolume(GeomItemIndex));
 
                                     Tecplot.Tecplot.PlotFields(new DGField[] { LevSet0, Marker }, "TroublePlot", 0.0, 0);
 
@@ -224,13 +230,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     AggCellMMb4Ortho.SaveToTextFile("indef.txt");
 
                                     throw ae;
+#endregion                                    
                                 }
 
                                 if(this.XCompositeBasis[jagg][iSpc_agg] == null)
                                     this.XCompositeBasis[jagg][iSpc_agg] = MultidimensionalArray.Create(K, N, N);
 
                                 var X_ExPolMtx = this.XCompositeBasis[jagg][iSpc_agg];
-                                var NonX_ExPolMtx = CompositeBasis[jagg];
+                                var NonX_ExPolMtx = GetCompositeBasis(jagg);
                                 X_ExPolMtx.Allocate(NonX_ExPolMtx.Lengths); // should not reallocate if lengths stay the same;
 
                                 X_ExPolMtx.Multiply(1.0, NonX_ExPolMtx, B, 0.0, "imn", "imk", "kn");
@@ -447,6 +454,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         //int[][,] CoarseToFineSpeciesIndex;
+
+
+        /// <summary>
+        /// Returns the species id of the <paramref name="spc_idx"/>-th species in
+        /// composite/aggregate cell <paramref name="jAgg"/> .
+        /// </summary>
+        public SpeciesId GetSpecies(int jAgg, int spc_idx) {
+            if(spc_idx >= NoOfSpecies[jAgg])
+                throw new ArgumentOutOfRangeException("invalid species index");
+
+            if(AggCellsSpecies[jAgg] != null) {
+                return AggCellsSpecies[jAgg][spc_idx];
+            } else {
+                int[] BaseCells = this.AggGrid.iLogicalCells.AggregateCellToParts[jAgg];
+                var LsTrk = this.XDGBasis.Tracker;
+                return LsTrk.Regions.GetSpeciesIdFromIndex(BaseCells[0], spc_idx);
+            }
+        }
 
 
         /// <summary>
