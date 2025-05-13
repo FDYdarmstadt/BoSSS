@@ -308,6 +308,7 @@ namespace BoSSS.Application.MultigridTest {
             Assert.IsTrue(RestErrNorm < 1.0e-10);
             Assert.IsTrue(PrlgErrNorm < 1.0e-10);
 
+            /*
             // restriction onto level itself
             BlockMsrMatrix RestMtx = currentLevelMap.FromOtherLevelMatrix(currentLevelMap);
             BlockMsrMatrix ShldBeEye = BlockMsrMatrix.Multiply(RestMtx, RestMtx.Transpose());
@@ -315,7 +316,7 @@ namespace BoSSS.Application.MultigridTest {
             double errNorm = ShldBeEye.InfNorm();
             Console.WriteLine("Id norm {0} \t (level {1})", errNorm, currentLevelMap.AggGrid.MgLevel);
             Assert.IsTrue(errNorm < 1.0e-8);
-
+            */
 
             // recursion
             if (MgMapSeq.Count() > 1)

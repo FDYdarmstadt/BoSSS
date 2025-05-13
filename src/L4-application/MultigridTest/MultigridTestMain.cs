@@ -52,6 +52,7 @@ namespace BoSSS.Application.MultigridTest {
         /// <param name="args"></param>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
+            ilPSP.Environment.NumThreads = 1;
             TestProgramCurvedMG.Init();
             TestProgramLinearMG.Init();
 
