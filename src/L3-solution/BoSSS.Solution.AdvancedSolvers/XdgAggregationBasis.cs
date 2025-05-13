@@ -116,7 +116,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // nothing to do.
                         // +++++++++++++++++++++++++++++++++++++++++++++++
 
-                        this.XCompositeBasis[jagg] = null;
+                        if(this.XCompositeBasis != null) // TEST CODE
+                            this.XCompositeBasis[jagg] = null;
                     } else {
                         // the cut-cell may require some special treatment
                         // +++++++++++++++++++++++++++++++++++++++++++++++
@@ -153,6 +154,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
 //#endif
 
+                            if(this.XCompositeBasis == null) // TEST CODE
+                                this.XCompositeBasis = new MultidimensionalArray[base.AggGrid.iLogicalCells.NoOfLocalUpdatedCells][]; // TEST CODE
                             if(this.XCompositeBasis[jagg] == null || (this.XCompositeBasis[jagg].Length != NoOfSpc_jagg))
                                 this.XCompositeBasis[jagg] = new MultidimensionalArray[NoOfSpc_jagg];
 
@@ -507,6 +510,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        /// <summary>
+        /// Prolongates/injects a vector from 
+        /// the aggregated grid (<see cref="AggGrid"/>)
+        /// to the full grid ((<see cref="AggGrid"/>, <see cref="AggregationGridData.AncestorGrid"/>))
+        /// </summary>
+        /// <param name="FullGridVector">output; DG coordinates w.r.t. <see cref="XDGBasis"/></param>
+        /// <param name="AggGridVector">input; DG coordinates on the aggregate mesh, length is <see cref="LocalDim"/></param>
         public override void ProlongateToFullGrid<T, V>(T FullGridVector, V AggGridVector) {
 
             var fullMapping = new UnsetteledCoordinateMapping(this.XDGBasis);

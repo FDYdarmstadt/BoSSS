@@ -841,8 +841,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// the aggregated grid (<see cref="AggGrid"/>)
         /// to the full grid ((<see cref="AggGrid"/>, <see cref="AggregationGridData.AncestorGrid"/>))
         /// </summary>
-        /// <param name="FullGridVector">output;</param>
-        /// <param name="AggGridVector">input;</param>
+        /// <param name="FullGridVector">output; DG coordinates w.r.t. <see cref="DGBasis"/></param>
+        /// <param name="AggGridVector">input; DG coordinates on the aggregate mesh, length is <see cref="LocalDim"/></param>
         virtual public void ProlongateToFullGrid<T, V>(T FullGridVector, V AggGridVector)
             where T : IList<double>
             where V : IList<double> //
@@ -873,7 +873,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int n = 0; n < N; n++)
                     AggCoords[n] = AggGridVector[n + i0];
 
-                for(int k = 0; k < K; k++) { // loop over the cells wich form the aggregated cell...
+                for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                     int jCell = agCl[k];
                     int j0 = fullMapping.LocalUniqueCoordinateIndex(0, jCell, 0);
 
@@ -1061,20 +1061,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public virtual int GetNoOfSpecies(int jCell) {
             return 1;
         }
-       
+
         /// <summary>
-        /// **Note: the internal computation of this member is quite expensive and may lead to non-linear runtime behavior w.r.t. the number of cells.
-        /// Use <see cref="GetCompositeBasis"/> if the transformation is only required for a certain cell.**
-        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
+        /// The projector in the L2 Norm, 
+        /// from the space defined by the basis <see cref="DGBasis"/> on the original mesh,
         /// onto the DG space on the aggregate grid.
         /// - array index: aggregate cell index; 
-        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis 
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis, correlates with <see cref="ILogicalCellData.AggregateCellToParts"/>
         /// - 2nd index into <see cref="MultidimensionalArray"/>: row
         /// - 3rd index into <see cref="MultidimensionalArray"/>: column
         /// - content: local cell index into the original grid, see <see cref="Foundation.Grid.ILogicalCellData.AggregateCellToParts"/>
         /// </summary>
         /// <remarks>
-        /// This method does not scale linear with problem size, its only here for reference/testing purpose.
+        ///  **Note: This method does not scale linear with problem size, its only here for reference/testing purpose.
+        ///  The internal computation of this member is quite expensive and may lead to non-linear runtime behavior w.r.t. the number of cells.
+        /// Use <see cref="GetCompositeBasis"/> if the transformation is only required for a certain cell.**
         /// </remarks>
         public MultidimensionalArray[] CompositeBasis {
             get {
@@ -1092,15 +1093,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original mesh,
         /// onto the DG space on the aggregate grid.
-        /// **In contrast to <see cref="CompositeBasis"/>, the re-computation is performed only for cell <paramref name="jAgg"/>,
-        /// making this more efficient if only a singe cell is required.**
         /// </summary>
         /// <param name="jAgg"></param>
         /// <returns>
-        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis 
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis, correlates with <see cref="ILogicalCellData.AggregateCellToParts"/>
         /// - 2nd index into <see cref="MultidimensionalArray"/>: row
         /// - 3rd index into <see cref="MultidimensionalArray"/>: column
         /// </returns>
+        /// <remarks>
+        /// **In contrast to <see cref="CompositeBasis"/>, the re-computation is performed only for cell <paramref name="jAgg"/>,
+        /// making this more efficient if only a singe cell is required.**
+        /// </remarks>
         public MultidimensionalArray GetCompositeBasis(int jAgg) {
             if(m_CompositeBasis == null || m_CompositeBasis[jAgg] == null) {
                 SetupCompositeBasis(jAgg);
