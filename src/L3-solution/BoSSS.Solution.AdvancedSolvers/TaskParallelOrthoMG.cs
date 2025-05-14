@@ -458,7 +458,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool CancellationTriggered;
     }
 
-
 	/// <summary>
 	/// Helper class designed to hold information getting from the WORLD.
 	/// It distributes all the necessary information to the responsible processors on the world communicator.
@@ -955,6 +954,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
+		public void ClearMemory() { 
+			m_OpMtx = null;
+			m_ProlMtx = null;
+			m_LeftChangeOfBasis = null;
+			m_RightChangeOfBasis = null;
+			m_MultigridMapping = null;
+			m_xadj = null;
+			m_adj = null;
+			m_NoOfSpecies = null;
+		}
 	}
 
 	public class StandAloneOperatorMappingPairWithGridData : IOperatorMappingPair {
@@ -1397,7 +1406,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return ret; // finally create a new matrix with the new Comm
 		}
 
-
 		(long i0Global, int CellLen)[] GetLocalBlocks(IBlockPartitioning part) { 
 			int J = part.LocalNoOfBlocks;
 			var ret = new (long i0Global, int CellLen)[J];
@@ -1414,15 +1422,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		BlockMsrMatrix worldCommFromCoarseLeftChangeOfBasisMatrix => TpMapping.CoarserLevel.m_LeftChangeOfBasis;
 		BlockMsrMatrix worldCommFromCoarseRightChangeOfBasisMatrix => TpMapping.CoarserLevel.m_RightChangeOfBasis;
 
-
 		BlockMsrMatrix subCommFromCoarseProlongationOperator = null;
 		BlockMsrMatrix subCommToCoarseRestrictionOperator = null;
 
 		BlockMsrMatrix subCommLeftChangeOfBasisMatrix = null;
 		BlockMsrMatrix subCommRightChangeOfBasisMatrix = null;
 
-		//BlockMsrMatrix subCommRestrictionOperator = null;
-		//BlockMsrMatrix subCommProlongationOperator = null;
 		BlockMsrMatrix thisCommOpMatrix = null;
 		BlockMsrMatrix subCommSmootherOpMatrix = null;
 		BlockMsrMatrix subCommCoarseOpMatrix = null;
@@ -1574,15 +1579,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		ICoordinateMapping MgMap => m_OpMapPair.DgMapping;
 
-		/// <summary>
-		/// uses permutation matrix to permutate the operator matrix, only works for the matrix in this level of MG and if it is square
-		/// </summary>
-		void PermutateOpMatrixFromScratch() {
-			using (var tr = new FuncTrace()) {
-				subCommSmootherOpMatrix = ChangeDistributionAndCommunicators(smootherBlocks, WorldCommOpMatrix, smootherPermutation, columnMappingWorldToSmoother, true, $"s_lvl{TpLevel}");
-				subCommCoarseOpMatrix = ChangeDistributionAndCommunicators(coarseBlocks, WorldCommOpMatrix, coarsePermutation, columnMappingWorldToCoarse, true, $"c_lvl{TpLevel}");
-			}
-		}
+
 
 		int TpLevel => TpMapping.Level;
 
@@ -1594,10 +1591,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		void MigrateFromWorldToSubComms() {
 			using (var tr = new FuncTrace()) {
-				thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix.CloneAs(), TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
-
-				subCommSmootherOpMatrix = ChangeCommunicator(TpMapping.m_OpMtx_smoother.CloneAs(), TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
-
+				thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
+				subCommSmootherOpMatrix = ChangeCommunicator(TpMapping.m_OpMtx_smoother, TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
 
 				// In MG operator, the prolongation and restriction operators are stored at the coarse level and restriction performed by operator
 				// However, this is not the case here. The MG operator is dedicated for world level communications and key informations.
@@ -1616,7 +1611,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-
+				TpMapping.ClearMemory();
 			}
 		}
 
@@ -1842,7 +1837,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-
 		(long i0Cell, int lenCell)[] GetLocalDistribution((long i0Cell, int lenCell)[] globalDOFs, List<(long Source, long Target)> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
             int newRank = thisCommRank - procOffset;
             if (newRank < 0 || newRank >= procSize)
@@ -2057,7 +2051,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <exception cref="NotSupportedException">Works only for certain coarse solvers, not with Mg operator</exception>
 		private void InitiateCoarsestSolver() {
 			var CoarserTpMapping = (TpMapping.CoarserLevel as TaskParallelMGOperator);
-			subCommCoarseOpMatrix = ChangeCommunicator(CoarserTpMapping.OperatorMatrix.CloneAs(), CoarserTpMapping.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
+			subCommCoarseOpMatrix = ChangeCommunicator(CoarserTpMapping.OperatorMatrix, CoarserTpMapping.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 
 			if (verbose) {
 				subCommCoarseOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_coarseOpMatrix.txt");
@@ -2073,6 +2067,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				throw new NotSupportedException();
 			}
 
+			CoarserTpMapping.ClearMemory();
 		}
 
 		/// <summary>
