@@ -78,7 +78,7 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
-                DefineConvective(spcName, d, D, boundaryMap, rhoSpc, LFFSpc);
+                DefineConvective(spcName, d, D, boundaryMap, rhoSpc, LFFSpc, dntParams);
             }
 
 
@@ -120,8 +120,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Convective component of the momentum equation
         /// </summary>
-        protected virtual void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc) {
+        protected virtual void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc, DoNotTouchParameters dntParams) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, d, rhoSpc, LFFSpc);
+            if (boundaryMap.BCTypeUseCount[IncompressibleBcType.Dong_OutFlow] > 0) {
+                conv.DongTerm = new DongBoundaryConditionTerm(dntParams.DongTerm_U0, dntParams.DongTerm_Delta);
+            }
             AddComponent(conv);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
@@ -241,8 +244,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Convective component of the momentum equation, using Newton solver version of convective terms
         /// </summary>
-        protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc) {
+        protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc, DoNotTouchParameters dntParams) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, d, rhoSpc, LFFSpc);
+            if (boundaryMap.BCTypeUseCount[IncompressibleBcType.Dong_OutFlow] > 0) {
+                conv.DongTerm = new DongBoundaryConditionTerm(dntParams.DongTerm_U0, dntParams.DongTerm_Delta);
+            }
             AddComponent(conv);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
         }       

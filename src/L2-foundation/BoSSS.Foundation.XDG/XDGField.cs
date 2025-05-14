@@ -1196,7 +1196,18 @@ namespace BoSSS.Foundation.XDG {
         /// todo
         /// </summary>
         public override void ProjectPow(double alpha, DGField f, double pow, CellMask em) {
-            throw new NotImplementedException("todo");
+            if (em == null) {
+                em = CellMask.GetFullMask(this.Basis.GridDat);
+            }
+
+            foreach (var spcId in this.Basis.Tracker.SpeciesIdS) {
+                DGField this_spcId = this.GetSpeciesShadowField(spcId);
+                DGField f_spcId = (f as XDGField)?.GetSpeciesShadowField(spcId) ?? f;
+
+                var mask_spcID = this.Basis.Tracker.Regions.GetSpeciesMask(spcId);
+
+                this_spcId.ProjectPow(alpha, f_spcId, pow, mask_spcID.Intersect(em));
+            }
         }
 
 

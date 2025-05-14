@@ -39,6 +39,8 @@ using static BoSSS.Solution.AMRLevelIndicatorLibrary;
 using BoSSS.Solution;
 using BoSSS.Application.XNSE_Solver.SpecificSolutions;
 using System.IO;
+using BoSSS.Solution.NSECommon;
+using MathNet.Numerics.Statistics.Mcmc;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -493,8 +495,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         public static XNSE_Control DropletReboundGauthier_Restart() {
 
             string _DbPath = @"\\dc3\userspace\smuda\hpccluster\DropletRebound_Gauthier";
-            var rstID = new Guid("4048fd03-ba72-488c-a363-66df1b140d15");
-            int RestartTimestep = -1;
+            var rstID = new Guid("636c0c52-ae2b-46dd-9547-3a18d8f6d1a0");
+            int RestartTimestep = 1;
 
             string sessionDir = Path.Combine(_DbPath, StandardFsDriver.SessionsDir, rstID.ToString());
             string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
@@ -507,9 +509,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ctrl.InitialValues_Evaluators.Clear();
 
             ctrl.RestartInfo = new Tuple<Guid, TimestepNumber>(rstID, RestartTimestep);
+            ctrl.GridGuid = Guid.Empty;
             ctrl.DbPath = _DbPath;
+            ctrl.savetodb = false;
 
-            ctrl.SessionName = "DropletReboundGauthier_8x8x8AMR1_k3_ReI4_restart6_DebugRun";
+            ctrl.SessionName = "DropletReboundGauthier_restart_DebugRun";
 
             return ctrl;
 

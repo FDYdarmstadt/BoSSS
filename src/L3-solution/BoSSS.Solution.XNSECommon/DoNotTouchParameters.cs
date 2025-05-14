@@ -342,7 +342,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public double PenaltySafety = 4;
-        
+
         /*
         /// <summary>
         /// 
@@ -350,6 +350,20 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public double CellAgglomerationThreshold = 0.1;
         */
+
+        /// <summary>
+        /// characteristic velocity scale for the Dong boundary condition term
+        /// </summary>
+        [DataMember]
+        public double DongTerm_U0 = 1.0;
+
+        /// <summary>
+        /// non-dimensional positive constant for the Dong boundary condition term
+        /// </summary>
+        [DataMember]
+        public double DongTerm_Delta = 1.0 / 20.0;
+        
+
 
         /// <summary>
         /// Model for the surface stress tensor

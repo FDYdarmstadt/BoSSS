@@ -378,10 +378,11 @@ namespace BoSSS.Solution.NSECommon {
                         r += u_d * ndotu;
 
                         // Dong energy term
-                        double U0 = 1.0;
-                        double delta = 1.0 / 20.0;
-                        double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
-                        r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        //double U0 = 1.0;
+                        //double delta = 1.0 / 20.0;
+                        //double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
+                        //r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        r -= DongTerm.GetBoundaryTerm(ndotu, uAbs2) * inp.Normal[m_component];
 
                         return r;
                     }
@@ -389,6 +390,8 @@ namespace BoSSS.Solution.NSECommon {
                 throw new NotImplementedException("Boundary condition not implemented!");
             }
         }
+
+        public DongBoundaryConditionTerm DongTerm = new DongBoundaryConditionTerm();
 
         /// <summary>
         /// bla bla bla
@@ -862,10 +865,11 @@ namespace BoSSS.Solution.NSECommon {
                         r += u_d * ndotu;
 
                         // Dong energy term
-                        double U0 = 1.0;
-                        double delta = 1.0 / 20.0;
-                        double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
-                        r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        //double U0 = 1.0;
+                        //double delta = 1.0 / 20.0;
+                        //double Sout = 0.5 * (1.0 - Math.Tanh(ndotu / (U0 * delta)));
+                        //r -= 0.5 * uAbs2 * Sout * inp.Normal[m_component];
+                        r -= DongTerm.GetBoundaryTerm(ndotu, uAbs2) * inp.Normal[m_component];
 
                         return r;
                     }
@@ -873,6 +877,8 @@ namespace BoSSS.Solution.NSECommon {
                 throw new NotImplementedException("Boundary condition not implemented!");
             }
         }
+
+        public DongBoundaryConditionTerm DongTerm = new DongBoundaryConditionTerm();
 
         /// <summary>
         /// bla bla bla

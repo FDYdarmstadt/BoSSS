@@ -157,6 +157,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public int ReInitTimestepIndex = 0;
 
+        /// <summary>
+        /// if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from the BoundaryConditionMap are applied.
+        /// </summary>
+        [DataMember]
+        public bool StokesExtentionUseBCmap = false;
+
 
         /// <summary>
         /// Control Options for ReInit

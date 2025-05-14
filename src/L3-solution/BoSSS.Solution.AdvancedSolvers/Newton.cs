@@ -730,6 +730,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
                         //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
                         solver.Solve(step, CurRes);
+
+                        //{
+                        //    var CurSolDG = base.CurrentLin.ProlongateSolToDg(CurSol, "Sol");
+                        //    var CurStpDG = base.CurrentLin.ProlongateSolToDg(step, "Stp");
+                        //    var CurStpDGtot = CurStpDG[0].CloneAs(); CurStpDGtot.Identification = "StpTot";
+                        //    foreach (var f in CurStpDG) {
+                        //        CurStpDGtot.ProjectPow(1.0, f, 2);
+                        //    }
+
+                        //    var CurResDG = base.CurrentLin.ProlongateSolToDg(CurRes, "Res");
+                        //    var CurResDGtot = CurStpDG[0].CloneAs(); CurResDGtot.Identification = "ResTot";
+                        //    foreach (var f in CurResDG) {
+                        //        CurStpDGtot.ProjectPow(1.0, f, 2);
+                        //    }
+
+
+                        //    var MinEig = base.CurrentLin.OperatorMatrix.MinimalEigen(tol: 1e-9);
+                        //    var MinEigDG = base.CurrentLin.ProlongateSolToDg(MinEig.V, "Eig");
+                        //    Console.WriteLine("Minimal Eigenvalue: " + MinEig.lambdaMin);
+
+
+                        //    var dgList = new List<DGField>();
+                        //    dgList.AddRange(CurSolDG);
+                        //    dgList.AddRange(CurStpDG);
+                        //    dgList.Add(CurStpDGtot);
+                        //    dgList.AddRange(CurResDG);
+                        //    dgList.Add(CurResDGtot);
+                        //    dgList.AddRange(MinEigDG);
+                        //    dgList.Add((this.ProblemMapping.BasisS[0] as XDGBasis).Tracker.LevelSets[0] as LevelSet);
+
+                        //    foreach (var f in CurSolDG.Cat(CurStpDG, MinEigDG)) {
+                        //        f.GetExtremalValues(out double fMin, out double fMax);
+                        //        Console.WriteLine($"  .....  {f.Identification}:     \tmin: {fMin:0.###E-00}\tmax: {fMax:0.###E-00}");
+                        //    }
+
+                        //    Tecplot.Tecplot.PlotFields(dgList, "Newton-" + itc, 0.0, 3);
+                        //}
+
                         step.ScaleV(-1);
 
                         Console.WriteLine($"NewtonStep: linear solver converged? {solver.Converged}");
@@ -747,13 +785,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else {
                     OldSolClone = null;
                 }
-
-                //var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
-                //plotPerssonSensorFields(DgOldSol, "DgOldSol_" + itc);
-                //var DgStep = CurrentLin.ProlongateSolToDg(step, "DgStep_");
-                //plotPerssonSensorFields(DgStep, "DgStep_" + itc);
-                //DGField pressure = SolutionVec.Mapping.Fields[2];
-                //Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
 
                 tr.Info("Using Globalization: " + Globalization);
                 switch (Globalization) {
@@ -830,11 +861,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Console.WriteLine("Jacobian is updated: it {0}", itc);
                     }
                 }
-
-                //// plotting during Newton iterations:  
-                //var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "DgSol_");
-                //plotPerssonSensorFields(DgSolution, "DgSol_" + itc);
-                //Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
 
                 // residual evaluation & callback
                 // ------------------------------
@@ -918,7 +944,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
                     EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue);
-                    
+
+
+                    //{
+                    //    var DGstep = base.CurrentLin.ProlongateSolToDg(step, "NewtonStep");
+                    //    var Sol = base.CurrentLin.ProlongateSolToDg(TempSol, "TempSol");
+                    //    var Resi = base.CurrentLin.ProlongateSolToDg(TempSol, "Resi");
+
+                    //    List<DGField> fs = new List<DGField>();
+                    //    fs.AddRange(DGstep);
+                    //    fs.AddRange(Sol);
+                    //    fs.AddRange(Resi);
+                    //    Tecplot.Tecplot.PlotFields(fs, "LineSearch" + stepcounter, 0.0, 3);
+                    //    stepcounter++;
+
+                    //    Console.WriteLine($"    norm of {lambda}    resi: ");
+                    //}
+
+
                     nft = base.Norm(TempRes); //.L2NormPow2().MPISum().Sqrt();
                     ffm = ffc;
                     ffc = nft * nft;
@@ -936,6 +979,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+        public static int stepcounter = 1;
 
         /// <summary>
         /// Zero Globalization

@@ -31,12 +31,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true, bool useBCmap = false) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
             }
             this.fullStokes = fullStokes;
+            this.useBCmap = useBCmap;
             this.SpatialDimension = D;
             this.AgglomThreshold = AgglomThreshold;
             this.m_HMForder = hMForder;
@@ -58,6 +59,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         string[] parameters;
         int timeStepOrder;
         bool fullStokes;
+        bool useBCmap;
         IncompressibleBoundaryCondMap bcmap;
 
         /// <summary>
@@ -149,7 +151,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         f.Clear();
                 }
 
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes, useBCMap: true);
+            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes, useBCMap: useBCmap);
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
                 if(timeStepper == null) {
@@ -175,7 +177,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public void InitializeReInit(EllipticReInitAlgoControl RI_ctrl, int RI_period, int RI_tsI) {
             ReInit_Control = RI_ctrl;
             ReInit_Period = RI_period;
-            ReInit_TimestepIndex = RI_tsI;
+            ReInit_TimestepIndex = RI_tsI + 1;
         }
 
         /// <summary>
