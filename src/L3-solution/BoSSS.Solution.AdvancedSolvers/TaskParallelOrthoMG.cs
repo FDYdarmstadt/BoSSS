@@ -564,7 +564,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public ICoordinateMapping DgMapping => m_MultigridMapping;
 
 
-		bool verbose = true;
+		bool verbose = false;
 
 		void CheckMPICorrectness() {
 			Console.WriteLine($"TaskParallelMGOperator: {m_MultigridMapping.MPI_Comm.m1} rank {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} with {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} and {NoOfThisProcs}");
@@ -611,17 +611,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (m_IsThereCoarserLevel) { //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
 				localBlocksForSmoother = GetLocalDistribution(SmootherNewCellMapping, SmootherCellI0s, worldMPIOffset, NoOfSmootherProcs);
 				SmootherTargetPartitioning = GetPartitioning(localBlocksForSmoother, currentComm);
-				m_OpMtx_smoother = ChangeThisLevelPartitioning(m_OpMtx, SmootherTargetPartitioning, localBlocksForSmoother, "OpSmooth"); 
-			}
+				m_OpMtx_smoother = ChangeThisLevelPartitioning(m_OpMtx, SmootherTargetPartitioning, localBlocksForSmoother, "OpSmooth");
+				thisLevelPermutationMtx = null;
+				thisLevelPermutationMtxTranspose = null;
+			} // [ToprakToDo]: this got nasty. Solve the problem here.
 
 			m_OpMtx = ChangeThisLevelPartitioning(m_OpMtx, ThisTargetPartitioning, localBlocksForThisLevel, "Op"); //this level of 
+			// if null, these will return null too.
+			m_LeftChangeOfBasis = ChangeThisLevelPartitioning(m_LeftChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "LeftCofB");
+			m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB");
+
 			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelCoarsePartitiong, FinerLevelCoarseBlocks, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
-
-			if (m_LeftChangeOfBasis != null)
-				m_LeftChangeOfBasis = ChangeThisLevelPartitioning(m_LeftChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "LeftCofB"); 
-
-			if (m_RightChangeOfBasis != null)
-				m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB");
 
 			thisLevelPermutationMtx = null;
 			thisLevelPermutationMtxTranspose = null;
@@ -632,12 +632,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		//reserved for optimization [ToprakToDo] (even permutation matrices are not needed. it must be jsut a copy/paste operation with mpi exchange)
 		BlockMsrMatrix ChangeThisLevelPartitioning(BlockMsrMatrix Mtx, IBlockPartitioning targetPartitioning, (long i0Cell, int lenCell)[] blockData = null, string tag = "Op") {
+			if (Mtx is null)
+				return null;
+
+
 			if (verbose) {
 				Mtx.SaveToTextFileSparseDebug($"lvl{Level}_{tag}_oldOp.txt");
 				Mtx.SaveToTextFileSparse($"lvl{Level}_{tag}_oldOp.txt");
 			}
 
-			BlockMsrMatrix ret;
+			BlockMsrMatrix ret; //notice that a null check here might disturb the mpi behavior as 
 
 			if (Mtx.RowPartitioning == targetPartitioning && Mtx.ColPartition == targetPartitioning && blockData == null)
 				//this can happen at the first level of tp
@@ -710,7 +714,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			return ret;
 		}
-
 
 		BlockPartitioning GetPartitioning((long i0Global, int CellLen)[] DOFs, MPI_Comm comm) {
 			using (new FuncTrace()) {
@@ -795,8 +798,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			thisProcBlocks.Sort((x, y) => x.iBlock.CompareTo(y.iBlock));
 			return thisProcBlocks.Select(b => (b.i0Cell, b.lenCell)).ToArray();
 		}
-
-
 
 		(int[] xadj, int[] adj) GetCurrentAggGridGraphForMetis(MultigridMapping Map) {
 			using (new FuncTrace()) {
@@ -959,10 +960,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			m_ProlMtx = null;
 			m_LeftChangeOfBasis = null;
 			m_RightChangeOfBasis = null;
-			m_MultigridMapping = null;
-			m_xadj = null;
-			m_adj = null;
-			m_NoOfSpecies = null;
 		}
 	}
 
@@ -2004,7 +2001,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				Select(i => i < TpMapping.worldMPIOffset ? -1 : i - TpMapping.worldMPIOffset).ToArray();
 		}
 
-		bool verbose = true;
+		bool verbose = false;
 
 
 
