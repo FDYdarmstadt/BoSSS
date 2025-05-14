@@ -866,7 +866,6 @@ namespace ilPSP.LinSolvers {
             if (OriginalLocBlockToDOFdataForCol is null) OriginalLocBlockToDOFdataForCol = OriginalLocBlockToDOFdataForRow;
 
 			var ret = ChangeRowPartitioning2(newRowPart, OriginalLocBlockToDOFdataForRow);
-			//if (newColBlockIndices != null) ret.ChangeColumnIndices(newColBlockIndices);
 			var ret2 = ret.ChangeColumnPartitioning2(newColPart, OriginalLocBlockToDOFdataForCol);
 
             return ret2;

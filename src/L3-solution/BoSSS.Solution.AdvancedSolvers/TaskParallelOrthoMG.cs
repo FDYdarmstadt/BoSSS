@@ -598,11 +598,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		void CalculateWorldToSubDistribution() {
 			localBlocksForThisLevel = GetLocalDistribution(ThisNewCellMapping, ThisCellI0s, worldMPIOffset, NoOfThisProcs);
-			localBlocksForSmoother = GetLocalDistribution(SmootherNewCellMapping, SmootherCellI0s, worldMPIOffset, NoOfSmootherProcs);
 			localBlocksForCoarse = GetLocalDistribution(CoarseNewCellMapping, CoarseCellI0s, worldMPIOffset + NoOfSmootherProcs, NoOfCoarseProcs);
 
 			ThisTargetPartitioning = GetPartitioning(localBlocksForThisLevel, currentComm);
-			SmootherTargetPartitioning = GetPartitioning(localBlocksForSmoother, currentComm);
 			CoarseTargetPartitioning = GetPartitioning(localBlocksForCoarse, currentComm);
 
 			if (verbose) {
@@ -610,9 +608,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				SmootherNewCellMapping.SaveToTextFileDebug($"lvl{Level}_SmootherNewCellMapping", ".txt");
 				CoarseNewCellMapping.SaveToTextFileDebug($"lvl{Level}_CoarseNewCellMapping", ".txt");
 			}
+				
+			if (m_IsThereCoarserLevel) { //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
+				localBlocksForSmoother = GetLocalDistribution(SmootherNewCellMapping, SmootherCellI0s, worldMPIOffset, NoOfSmootherProcs);
+				SmootherTargetPartitioning = GetPartitioning(localBlocksForSmoother, currentComm);
+				m_OpMtx_smoother = ChangeThisLevelPartitioning(m_OpMtx, SmootherTargetPartitioning, localBlocksForSmoother, "OpSmooth"); 
+			}
 
-			if (m_IsThereCoarserLevel)
-				m_OpMtx_smoother = ChangeThisLevelPartitioning(m_OpMtx, SmootherTargetPartitioning, localBlocksForSmoother, "OpSmooth"); //this level of solving is only for smoother so op should partitioned for smoother (reserved for optimization)
 			m_OpMtx = ChangeThisLevelPartitioning(m_OpMtx, ThisTargetPartitioning, localBlocksForThisLevel, "Op"); //this level of 
 			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelCoarsePartitiong, FinerLevelCoarseBlocks, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
 
@@ -620,20 +622,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				m_LeftChangeOfBasis = ChangeThisLevelPartitioning(m_LeftChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "LeftCofB"); 
 
 			if (m_RightChangeOfBasis != null)
-				m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB"); 
+				m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB");
+
+			thisLevelPermutationMtx = null;
+			thisLevelPermutationMtxTranspose = null;
 		}
 
+		BlockMsrMatrix thisLevelPermutationMtx = null;
+		BlockMsrMatrix thisLevelPermutationMtxTranspose = null;
+
+		//reserved for optimization [ToprakToDo] (even permutation matrices are not needed. it must be jsut a copy/paste operation with mpi exchange)
 		BlockMsrMatrix ChangeThisLevelPartitioning(BlockMsrMatrix Mtx, IBlockPartitioning targetPartitioning, (long i0Cell, int lenCell)[] blockData = null, string tag = "Op") {
 			if (verbose) {
 				Mtx.SaveToTextFileSparseDebug($"lvl{Level}_{tag}_oldOp.txt");
 				Mtx.SaveToTextFileSparse($"lvl{Level}_{tag}_oldOp.txt");
 			}
+
 			BlockMsrMatrix ret;
 
-			if (Mtx.RowPartitioning == targetPartitioning && Mtx.ColPartition == targetPartitioning && blockData == null) //this can happen at the first level of tp
+			if (Mtx.RowPartitioning == targetPartitioning && Mtx.ColPartition == targetPartitioning && blockData == null)
+				//this can happen at the first level of tp
 				ret = Mtx.CloneAs();
-			else
-				ret = Mtx.CloneAs().ChangePartitioning(targetPartitioning, blockData, targetPartitioning, blockData);
+			else {
+				 
+				bool needsNewPermutation = thisLevelPermutationMtx is null ||  //if null
+					!targetPartitioning.Equals(thisLevelPermutationMtx._RowPartitioning) || //if not designed for the same target(can happen for smoother)
+					!Mtx._RowPartitioning.Equals(thisLevelPermutationMtx._ColPartitioning); //if not designed for the same source
+
+				if (needsNewPermutation) {
+					thisLevelPermutationMtx = CreateThisLevelPermutationMtx(Mtx._RowPartitioning, targetPartitioning, blockData);
+					thisLevelPermutationMtxTranspose = thisLevelPermutationMtx.Transpose();
+				}
+
+				var temp = BlockMsrMatrix.Multiply(thisLevelPermutationMtx, Mtx);
+				ret = BlockMsrMatrix.Multiply(temp, thisLevelPermutationMtxTranspose);
+			}
 
 			if (verbose) {
 				ret.SaveToTextFileSparseDebug($"lvl{Level}_{tag}_newOp.txt");
@@ -641,6 +664,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 
 			return ret;
+		}
+
+		BlockMsrMatrix CreateThisLevelPermutationMtx(IBlockPartitioning sourcePartitioning, IBlockPartitioning targetPartitioning, (long i0Cell, int lenCell)[]  locDOFsData ) {
+			BlockMsrMatrix PermutationMatrix = new BlockMsrMatrix(targetPartitioning, sourcePartitioning);
+			{
+				int cnt = 0;
+				if (locDOFsData != null && locDOFsData.Length > 0) {
+					int NoCells = locDOFsData.Length;
+
+					for (int j = 0; j < NoCells; j++) {
+						//int Len = part.lenCell[j];
+						int Len = locDOFsData[j].lenCell;
+						long i0Row = targetPartitioning.i0 + cnt;
+						long i0Col = locDOFsData[j].i0Cell;
+
+						PermutationMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
+
+						cnt += Len;
+					}
+				}
+			}
+			return PermutationMatrix;
 		}
 
 		BlockMsrMatrix ChangeProlPartitioning(IBlockPartitioning thisPartitioning, (long i0Cell, int lenCell)[] thisBlockData, IBlockPartitioning finerPartitioning, (long i0Cell, int lenCell)[] finerBlockData, string tag = "c") {
@@ -727,7 +772,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				long iTargetBlock = cellColumnDict[iBlock];
 				int localRank = Array.BinarySearch(targeti0s, iTargetBlock) is var p && p >= 0 ? p : (~p) - 1;  // this is the rank of the target block in the target partitioning
 				int TargetRank = procOffset + localRank; // added offset since we are still on world processor
-
 				Debug.Assert(TargetRank >= procOffset && TargetRank < procOffset + procSize);
 
 				BlockInfo block = new BlockInfo(iTargetBlock, m_MultigridMapping.GetBlockI0(iBlock), m_MultigridMapping.GetBlockLen(iBlock));
@@ -1305,7 +1349,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				op.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_0.txt");
 			}
 
-
 			int level = 1;
 			for (MultigridOperator op_lv = op.CoarserLevel; op_lv != null; op_lv = op_lv.CoarserLevel) {
 				if (verbose) {
@@ -1366,7 +1409,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		//BlockMsrMatrix opCommRestrictionOperator = null;
-		BlockMsrMatrix worldCommProlongationOperator => TpMapping.ProlongationMatrix;
 		BlockMsrMatrix worldCommFromCoarseProlongationOperator => TpMapping.CoarserLevel.ProlongationMatrix;
 
 		BlockMsrMatrix worldCommFromCoarseLeftChangeOfBasisMatrix => TpMapping.CoarserLevel.m_LeftChangeOfBasis;
@@ -1375,9 +1417,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		BlockMsrMatrix subCommFromCoarseProlongationOperator = null;
 		BlockMsrMatrix subCommToCoarseRestrictionOperator = null;
-
-		//BlockMsrMatrix thisCommProlongationOperator = null;
-		//BlockMsrMatrix thisCommRestrictionOperator = null;
 
 		BlockMsrMatrix subCommLeftChangeOfBasisMatrix = null;
 		BlockMsrMatrix subCommRightChangeOfBasisMatrix = null;
@@ -1577,22 +1616,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-				//if (verbose) {
-				//	thisCommOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_thisOp.txt");
-				//	thisCommOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_o_thisOp.txt");
-				//	subCommSmootherOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_o_smoothOp.txt");
-				//	subCommSmootherOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_o_smoothOp.txt");
-				//	thisCommProlongationOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_thisProl.txt");
-				//	thisCommProlongationOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_thisProl.txt");
-				//	thisCommRestrictionOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_thisRest.txt");
-				//	thisCommRestrictionOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_thisRest.txt");
-				//	subCommFromCoarseProlongationOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_subProl.txt");
-				//	subCommFromCoarseProlongationOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_subProl.txt");
-				//	subCommToCoarseRestrictionOperator?.SaveToTextFileSparseDebug($"lvl_{TpLevel}_subRest.txt");
-				//	subCommToCoarseRestrictionOperator?.SaveToTextFileSparse($"lvl_{TpLevel}_subRest.txt");
-				//	//tests the old distribution done from world all to world this procs in the TaskParallelMGOperator, not this level to smoother or 
-				//	//TestMatrices(TpMapping.old_OpMtx, smootherPermutation.Matrix, OpMatrix, "test_", verbose); 
-				//}
+
 			}
 		}
 

@@ -6779,7 +6779,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control RotatingPopcorn() {
-            var C = RotatingTiltedXRigid(1, 8, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
+            var C = RotatingTiltedXRigid(1, 16, 2, false, shape: Shape.Popcorn, RotAxis: "z", SolverOn: true, rateOfRadius: 0.0, TiltAngle: 0.0, partRad: 0.6);
             C.PlotAgglomeration = true;
             C.NoOfTimesteps = 10;
             var config = new OperatorAnalysisConfig();
