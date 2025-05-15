@@ -426,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         [Test]
-        public static void EmptyMaskInSchwarz([Values(SchwarzImplementation.PerProcess, SchwarzImplementation.PerProcess)] SchwarzImplementation schwarz) {
+        public static void EmptyMaskInSchwarz([Values(SchwarzImplementation.PerProcess)] SchwarzImplementation schwarz) {
             //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
 
             // This test simulates bad initial distribution of void cells over ranks
@@ -483,7 +483,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.SayeBug();
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz(SchwarzImplementation.PerProcess);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.SayeBug();
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.TestLoadBalancingAMRtrue();
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();

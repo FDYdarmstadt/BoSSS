@@ -657,6 +657,7 @@ namespace ilPSP {
                 LAPACK.ActivateOMP();
                 PinTPLThreads();
                 PinOMPthreads();
+                StdoutOnlyOnRank0 = true;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
             }
         }
@@ -666,8 +667,8 @@ namespace ilPSP {
 
         private static void PinOMPthreads() {
             if(PerformOMPthreadPinning) {
-                var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
-                MKLservice.BindOMPthreads_1To1(cpus);
+                //var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                //MKLservice.BindOMPthreads_1To1(cpus);
             }
             
             /*{

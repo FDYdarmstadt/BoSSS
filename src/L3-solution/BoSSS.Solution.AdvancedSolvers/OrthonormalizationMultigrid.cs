@@ -836,9 +836,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int iLevel = ((m_OpMapPair as MultigridOperator)?.LevelIndex ?? -1);
 
-                void WriteDebug(int iter, double res, string text) {
+                // Debug-Output should always go through the <see cref="FuncTrace"/>;
+                // If one would like to see it on screen, turn it on by setting `tr.InfoToConsole = true`.
+                void WriteDebug(FuncTrace tr, int iter, double res, string text) {
                     if (iLevel >= 0)
-					    Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
+                        tr.InfoToConsole = false; // set to `true` if you want to see output
+					    tr.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
 					
                     return;
                 }
@@ -868,11 +871,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Array.Copy(AdditionalPostSmoothers, allSmooters, AdditionalPostSmoothers.Length);
                     iPostSmooter = allSmooters.Length - 1;
                 }
-				WriteDebug(0, resNorm, $"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}");
+				WriteDebug(f, 0, resNorm, $"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}");
 				
                     int iIter;
                 for (iIter = 1; bIterate; iIter++) {
-                    WriteDebug(iIter, resNorm, "initial start");
+                    WriteDebug(f, iIter, resNorm, "initial start");
 
 					var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState.bNotTerminate) {
@@ -901,7 +904,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // orthonormalization and residual minimization
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel);
 
-							WriteDebug(iIter, resNorm, " pre-smoother applied");
+							WriteDebug(f, iIter, resNorm, " pre-smoother applied");
 
 							//SpecAnalysisSample(iIter, X, "ortho1");
 							var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
@@ -979,7 +982,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         }
                     } // end of coarse-solver loop
-					WriteDebug(iIter, resNorm, "coarse-solver applied");
+					WriteDebug(f, iIter, resNorm, "coarse-solver applied");
 
 					var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState3.bNotTerminate) {
@@ -1046,7 +1049,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             } else {
 								resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" +  iLevel + "-sw" + g);
-								WriteDebug(iIter, resNorm, "post-smoother applied");
+								WriteDebug(f, iIter, resNorm, "post-smoother applied");
 
 
 
@@ -1088,7 +1091,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } // end of solver iterations
 
                 IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
-				WriteDebug(iIter, resNorm, "final");
+				WriteDebug(f, iIter, resNorm, "final");
 
 
 				// solution copy
