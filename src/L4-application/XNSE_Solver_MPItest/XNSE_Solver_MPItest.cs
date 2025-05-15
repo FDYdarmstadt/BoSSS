@@ -426,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         [Test]
-        public static void EmptyMaskInSchwarz([Values(SchwarzImplementation.PerProcess)] SchwarzImplementation schwarz) {
+        public static void EmptyMaskInSchwarz([Values(SchwarzImplementation.PerProcess, SchwarzImplementation.CoarseMesh)] SchwarzImplementation schwarz) {
             //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
 
             // This test simulates bad initial distribution of void cells over ranks
@@ -479,7 +479,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI(args);
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);

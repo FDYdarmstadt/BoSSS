@@ -26,6 +26,7 @@ using ilPSP.Connectors;
 using System.Threading;
 using System.Threading.Tasks;
 using ilPSP.LinSolvers.monkey.CL;
+using System.IO;
 
 namespace ilPSP.LinSolvers {
 
@@ -2559,17 +2560,28 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// Write the ad-hoc instrumentation to Console
         /// </summary>
+        public static string PerfStatToString() {
+            using(var tw = new StringWriter()) {
+                if(BlockMsrMatrix.multiply != null)
+                    tw.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
+                if (BlockMsrMatrix.multiply_core != null)
+                    tw.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
+                
+                tw.WriteLine("  spmv total     " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
+                tw.WriteLine("   spmv local    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
+                tw.WriteLine("   spmv send     " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalSeconds);
+                tw.WriteLine("   spmv receive  " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalSeconds);
+                tw.WriteLine("   spmv external " + BlockMsrMatrix.SpMV_external.Elapsed.TotalSeconds);
+
+                return tw.ToString();
+            }
+        }
+ 
+        /// <summary>
+        /// Write the ad-hoc instrumentation to Console
+        /// </summary>
         public static void PrintPerfStat() {
-            if(BlockMsrMatrix.multiply != null)
-                Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
-            if (BlockMsrMatrix.multiply_core != null)
-                Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
-            
-            Console.WriteLine("  spmv total     " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv local    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv send     " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv receive  " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv external " + BlockMsrMatrix.SpMV_external.Elapsed.TotalSeconds);
+            Console.WriteLine(PerfStatToString());
         }
 
         /// <summary>
@@ -3003,7 +3015,7 @@ namespace ilPSP.LinSolvers {
                             }
                         }
                     }
-                });
+                }, enablePar:false);
                 SpMV_external.Stop();
 
                 // free temp buffers

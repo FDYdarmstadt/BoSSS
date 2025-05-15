@@ -658,6 +658,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ArithmeticException("Solver did not converge.");
                 }
 
+
+                base.TerminationKey = true;
+                BlockMsrMatrix.PrintPerfStat();
+
+
                 return dt;
             }
         }

@@ -347,8 +347,13 @@ namespace ilPSP {
 
         static void PinTPLThread(int ithread) {
             if(PerformTPLthreadPinning) {
-                int iCpu = DedicatedCPUsForThisRank[DedicatedCPUsForThisRank.Length - NumThreads + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                int L = DedicatedCPUsForThisRank.Length;
+                if(ilPSP.Environment.NumThreads > L)
+                    throw new ApplicationException("Configuration error: more threads than CPUs available");
+                int skip = L - NumThreads;
+                int iCpu = DedicatedCPUsForThisRank[skip + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those, resp. mpiexec is forcing them to do so.
                 CPUAffinity.SetCurrentThreadAffinity(iCpu);
+                //CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank);
             }
         }
 
@@ -466,6 +471,7 @@ namespace ilPSP {
                 tr.InfoToConsole = true;
                 StdoutOnlyOnRank0 = false;
                 //tr.StdoutOnAllRanks();
+
 
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PLACES: {System.Environment.GetEnvironmentVariable("OMP_PLACES")}");
                 tr.Info($"MPI Rank {MPIEnv.MPI_Rank}: Value for OMP_PROC_BIND: {System.Environment.GetEnvironmentVariable("OMP_PROC_BIND")}");
@@ -651,6 +657,13 @@ namespace ilPSP {
                 PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
                 PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
 
+/*
+                if(NumThreads*2 < DedicatedCPUsForThisRank.Length) {
+                    PerformOMPthreadPinning = false;
+                    PerformTPLthreadPinning = false;
+                }
+*/
+
                 tr.Info($"R{MPIEnv.MPI_Rank}: TPL thread pinning: {PerformTPLthreadPinning}, OMP thread pinning: {PerformOMPthreadPinning}");
 
                 BLAS.ActivateOMP();
@@ -666,6 +679,9 @@ namespace ilPSP {
 
 
         private static void PinOMPthreads() {
+
+
+
             if(PerformOMPthreadPinning) {
                 //var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
                 //MKLservice.BindOMPthreads_1To1(cpus);

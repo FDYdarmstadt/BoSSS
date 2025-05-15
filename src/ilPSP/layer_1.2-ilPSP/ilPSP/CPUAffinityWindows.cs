@@ -66,7 +66,7 @@ namespace ilPSP.Utils {
 
         [StructLayout(LayoutKind.Sequential)]
         struct GROUP_AFFINITY {
-            public UIntPtr Mask;
+            public ulong Mask;
             public ushort Group;
             public ushort Reserved1;
             public ushort Reserved2;
@@ -174,6 +174,8 @@ namespace ilPSP.Utils {
             // Works only for systems with up to 64 processors:
             // Process.GetCurrentProcess().ProcessorAffinity
 
+            
+
             unsafe {
                 GROUP_AFFINITY* affinities = stackalloc GROUP_AFFINITY[16];
                 int[] iGroup2affinities = new int[16];
@@ -190,7 +192,7 @@ namespace ilPSP.Utils {
                     }
                     affinities[iAff].Group = checked((ushort)iGroup);
                     int iCPUgrp = iCPU % CPUsPerGroup;
-                    affinities[iAff].Mask = (UIntPtr)((ulong)1 << iCPUgrp);
+                    affinities[iAff].Mask |= (ulong)1 << iCPUgrp;
                 }
 
                 //Console.Error.WriteLine($"Number of groups {NumberOfGroups}, affinity0 0x{affinities[0].Mask:x}");
@@ -267,7 +269,7 @@ namespace ilPSP.Utils {
                     // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
                     //
 
-                    var groupCPUs = CheckCpuAffinity(new UIntPtr(Convert.ToUInt64(aff, 16)), iGroup, NumberOfCPUsPerGroup);
+                    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup, NumberOfCPUsPerGroup);
                     groupOccupied.Add(groupCPUs.Count() > 0);
                     CPUlist.AddRange(groupCPUs);
                     iGroup++;
@@ -331,7 +333,7 @@ namespace ilPSP.Utils {
 
 
 
-        static IEnumerable<int> CheckCpuAffinity(UIntPtr mask, int iProcessorGroup, int procsPerGroup) {
+        static IEnumerable<int> CheckCpuAffinity(ulong mask, int iProcessorGroup, int procsPerGroup) {
             var res = new List<int>();
             ulong bitmask = (ulong)mask;
             for(int cpu = 0; cpu < 64; cpu++)  // Assuming a maximum of 64 CPUs per group
