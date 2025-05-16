@@ -266,10 +266,13 @@ namespace ilPSP {
         }
         */
 
+        public static bool DoYourThing = false;
+
         /// <summary>
-        /// Parallel for-loop, the signature of <see cref="body"/> is: `i`
+        /// Parallel for-loop, the signature of <see cref="body"/> is: `i` (loop run variable in the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>)
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = true) {
+           
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 for(int i = fromInclusive; i < toExclusive; i++) {
                     body(i);
@@ -290,7 +293,33 @@ namespace ilPSP {
                     BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
                     LAPACK.ActivateSEQ();
 
-                    Parallel.For(fromInclusive, toExclusive, options, body);
+                    // let TPL do the balancing
+                    //Parallel.For(fromInclusive, toExclusive, options, body);
+                    
+                    // we do the balancing:
+
+                    object padlock = new object();
+                    int loopCounter = fromInclusive;
+                    void balancingBody(int ithread) {
+                        
+
+                        while(true) {
+
+                            int i;
+                            lock(padlock) {
+                                i = loopCounter;
+                                loopCounter++;
+                            }
+                            if(i >= toExclusive)
+                                return;
+                            body(i);
+                        }
+                    }
+
+
+                    Parallel.For(0, __Numthreads, options, balancingBody);
+
+
                 } finally {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
@@ -300,19 +329,76 @@ namespace ilPSP {
             }
         }
 
+        /*
+                public static Stopwatch PWoverhead = new Stopwatch();
 
-        public static Stopwatch PWoverhead = new Stopwatch();
+                public static void ParallelWixxer(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
+                    PWoverhead.Start();
 
-        public static void ParallelWixxer(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
-            PWoverhead.Start();
+                    if(InParallelSection == true || !enablePar || NumThreads <= 1) {
+                        PWoverhead.Stop();
+                        for(int i = fromInclusive; i < toExclusive; i++) {
+                            body(i, 0);
+                        }
+                        PWoverhead.Start();
+                    } else {
+
+                        int __Numthreads = enablePar ? NumThreads : 1;
+
+
+                        var options = new ParallelOptions {
+                            MaxDegreeOfParallelism = __Numthreads,
+                        };
+                        //ThreadPool.SetMinThreads(__Numthreads, 1);
+                        //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                        try {
+                            InParallelSection = true;
+                            BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                            LAPACK.ActivateSEQ();
+
+                            void _body(int ithread) {
+                                //PinTPLThread(ithread);
+                                int L = toExclusive - fromInclusive;
+                                int i0 = (L * ithread) / __Numthreads;
+                                int iE = (L * (ithread + 1)) / __Numthreads;
+                                for(int i = i0; i < iE; i++) {
+                                    body(i, ithread);
+                                }
+                            }
+
+                            PWoverhead.Stop();
+                            Parallel.For(0, __Numthreads, options, _body);
+                            PWoverhead.Start();
+
+                        } finally {
+                            InParallelSection = false;
+
+                            BLAS.ActivateOMP(); // restore parallel 
+                            LAPACK.ActivateOMP();
+                        }
+                    }
+
+                    PWoverhead.Stop();
+                }
+
+                */
+
+        /// <summary>
+        /// Parallel for-loop, the signature of <see cref="body"/> is: `i0, iE`.
+        /// **Note**: the balancing is the users responsibility,
+        /// i.e., the parallel for assigns each thread an equal protion of the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>.
+        /// Therefore, the runtime cost of <paramref name="body"/> should be a linear funtion of the loop range `iE - i0` 
+        /// </summary>
+        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
+            void _body(int ithread, int i0, int iE) {
+                body(i0, iE);
+            }
+            ParallelFor(fromInclusive, toExclusive, _body, enablePar);
 
             /*if(InParallelSection == true || !enablePar || NumThreads <= 1) {
-                PWoverhead.Stop();
-                for(int i = fromInclusive; i < toExclusive; i++) {
-                    body(i, 0);
-                }
-                PWoverhead.Start();
-            } else */{
+                body(fromInclusive, toExclusive);
+            } else {
 
                 int __Numthreads = enablePar ? NumThreads : 1;
 
@@ -333,53 +419,6 @@ namespace ilPSP {
                         int L = toExclusive - fromInclusive;
                         int i0 = (L * ithread) / __Numthreads;
                         int iE = (L * (ithread + 1)) / __Numthreads;
-                        for(int i = i0; i < iE; i++) {
-                            body(i, ithread);
-                        }
-                    }
-
-                    PWoverhead.Stop();
-                    Parallel.For(0, __Numthreads, options, _body);
-                    PWoverhead.Start();
-                
-                } finally {
-                    InParallelSection = false;
-
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                }
-            }
-
-            PWoverhead.Stop();
-        }
-
-        /// <summary>
-        /// Parallel for-loop, the signature of <see cref="body"/> is: `i0, iE`
-        /// </summary>
-        public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
-            if(InParallelSection == true || !enablePar || NumThreads <= 1) {
-                body(fromInclusive, toExclusive);
-            } else {
-
-                int __Numthreads = enablePar ? NumThreads : 1;
-
-
-                var options = new ParallelOptions {
-                    MaxDegreeOfParallelism = __Numthreads,
-                };
-                //ThreadPool.SetMinThreads(__Numthreads, 1);
-                //ThreadPool.SetMaxThreads(__Numthreads, 2);
-
-                try {
-                    InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
-
-                    void _body(int ithread) {
-                        PinTPLThread(ithread);
-                        int L = toExclusive - fromInclusive;
-                        int i0 = (L * ithread) / __Numthreads;
-                        int iE = (L * (ithread + 1)) / __Numthreads;
 
                         body(i0, iE);
                     }
@@ -392,41 +431,21 @@ namespace ilPSP {
                     LAPACK.ActivateOMP();
                     //PinOMPthreads();
                 }
-            }
+            }*/
         }
 
-        static bool PerformTPLthreadPinning = false;
-
-        static void PinTPLThreads() {
-            if(PerformTPLthreadPinning) {
-                Parallel.For(0, ilPSP.Environment.NumThreads,
-                    new ParallelOptions { MaxDegreeOfParallelism = ilPSP.Environment.NumThreads },
-                    PinTPLThread);
-            }
-        }
-
-        static void PinTPLThread(int ithread) {
-            if(PerformTPLthreadPinning) {
-                int L = DedicatedCPUsForThisRank.Length;
-                if(ilPSP.Environment.NumThreads > L)
-                    throw new ApplicationException("Configuration error: more threads than CPUs available");
-                int skip = L - NumThreads;
-                int iCpu = DedicatedCPUsForThisRank[skip + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those, resp. mpiexec is forcing them to do so.
-                CPUAffinity.SetCurrentThreadAffinity(iCpu);
-                //CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank);
-            }
-        }
-
+        
         /// <summary>
         /// The signature of <see cref="body"/> is: `ithread, i0, iE`
+        /// **Note**: the balancing is the users responsibility,
+        /// i.e., the parallel for assigns each thread an equal protion of the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>.
+        /// Therefore, the runtime cost of <paramref name="body"/> should be a linear funtion of the loop range `iE - i0` 
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int, int> body, bool enablePar = true) {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 body(0, fromInclusive, toExclusive);
             } else {
-
                 int __Numthreads = enablePar ? NumThreads : 1;
-
 
                 var options = new ParallelOptions {
                     MaxDegreeOfParallelism = __Numthreads,
@@ -447,7 +466,6 @@ namespace ilPSP {
                         body(ithread, i0, iE);
                     }
 
-
                     Parallel.For(0, __Numthreads, options, _body);
                 } finally {
                     InParallelSection = false;
@@ -463,18 +481,11 @@ namespace ilPSP {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 TLocal local = localInit();
                 
-                
                 for(int i = fromInclusive; i < toExclusive; i++) {
-                    
-
                     local = body(i, local);
-
-                    
                 }
 
                 localFinally(local);
-
-
             } else {
 
                 if(InParallelSection) {
@@ -508,17 +519,17 @@ namespace ilPSP {
                 }
             }
         }
-  
 
 
-    /// <summary>
-    /// Turns every multithread-parallelization in the respective using-block of this object into a serial execution
-    /// </summary>
-    public class SerialSection : IDisposable {
-            
+
+        /// <summary>
+        /// Turns every multithread-parallelization in the respective using-block of this object into a serial execution
+        /// </summary>
+        public class SerialSection : IDisposable {
+
             int numThreadsBackup;
 
-            
+
             public SerialSection() {
                 if(InParallelSection) {
                     throw new ApplicationException("already in parallel section");
@@ -756,6 +767,31 @@ namespace ilPSP {
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
             }
         }
+
+
+        static bool PerformTPLthreadPinning = false;
+
+        static void PinTPLThreads() {
+            if(PerformTPLthreadPinning) {
+                Parallel.For(0, ilPSP.Environment.NumThreads,
+                    new ParallelOptions { MaxDegreeOfParallelism = ilPSP.Environment.NumThreads },
+                    PinTPLThread);
+            }
+        }
+
+        static void PinTPLThread(int ithread) {
+            if(PerformTPLthreadPinning) {
+                int L = DedicatedCPUsForThisRank.Length;
+                if(ilPSP.Environment.NumThreads > L)
+                    throw new ApplicationException("Configuration error: more threads than CPUs available");
+                int skip = L - NumThreads;
+                int iCpu = DedicatedCPUsForThisRank[skip + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those, resp. mpiexec is forcing them to do so.
+                CPUAffinity.SetCurrentThreadAffinity(iCpu);
+                //CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank);
+            }
+        }
+
+
 
         static bool PerformOMPthreadPinning = false;
 

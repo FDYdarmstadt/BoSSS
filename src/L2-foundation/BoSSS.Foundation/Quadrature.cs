@@ -452,7 +452,6 @@ namespace BoSSS.Foundation.Quadrature {
 
                     }
 
-
                     // compute serial results for checking
                     // (to be removed/de-activated)
                     MultidimensionalArray checkResults;
@@ -517,7 +516,6 @@ namespace BoSSS.Foundation.Quadrature {
                     // ++++++++++++++++++++++++
                     // serial quadrature branch
                     // ++++++++++++++++++++++++
-
 
                     NumThreads = 1;
                     this.m_OnCloneForThreadParallelization?.Invoke(this, 0, 1);

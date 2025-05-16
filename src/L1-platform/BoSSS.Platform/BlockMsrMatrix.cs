@@ -2585,7 +2585,6 @@ namespace ilPSP.LinSolvers {
                 f(SpMV_external_blocking,  "      spmv ext blocking  ");
                 f(SpMV_external_membank,   "      spmv ext membank   ");
 
-                tw.WriteLine("     PW external " + ilPSP.Environment.PWoverhead.Elapsed.TotalSeconds);
                 return tw.ToString();
             }
         }
@@ -2757,8 +2756,7 @@ namespace ilPSP.LinSolvers {
                         //double[] VecAccu = null;
                         //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
                         double[] RowMul(int iBlockLoc, double[] VecAccu) {
-
-                        
+                                                   
                             var BlockRow = m_BlockRows[iBlockLoc];
 
                             long iBlock = iBlockLoc + FirstRowBlock;
@@ -2953,11 +2951,9 @@ namespace ilPSP.LinSolvers {
                     SpMV_external.Start();
                     spmvcalls++;
                     //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
-                    //ilPSP.Environment.ParallelFor(0, NoOfBlockRows, delegate (int iBlockLoc) {
-                    ilPSP.Environment.ParallelWixxer(0, NoOfBlockRows, delegate (int iBlockLoc, int ithread) {
+                    ilPSP.Environment.ParallelFor(0, NoOfBlockRows, delegate (int iBlockLoc) {
                         //SpMV_external_membank[iThread].Start();
                         if(m_ExternalBlock[iBlockLoc]) {
-
                             //SpMV_external_blocking[iThread].Start();
                             var BlockRow = m_BlockRows[iBlockLoc];
                             Debug.Assert(BlockRow != null);
