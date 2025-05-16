@@ -648,7 +648,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
@@ -657,11 +656,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     SaveToDatabase(TimestepNo, phystime);
                     throw new ArithmeticException("Solver did not converge.");
                 }
-
-
-                base.TerminationKey = true;
-                BlockMsrMatrix.PrintPerfStat();
-
 
                 return dt;
             }
