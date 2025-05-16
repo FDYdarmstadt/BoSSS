@@ -218,8 +218,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            //throw new Exception();
-            this.m_MultigridOp = null;
+			//throw new Exception();
+			this.m_MultigridOp = null;
             this.invDiag = null;
             this.Diag = null;
         }
@@ -233,7 +233,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            return (this.invDiag.UsedMemory + this.Diag.UsedMemory);
-        }
-    }
+			return (this.invDiag?.UsedMemory ?? 0)
+				 + (this.Diag?.UsedMemory ?? 0);
+		}
+	}
 }
