@@ -493,23 +493,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="OperatorMatrix"></param>
 		/// <param name="ProlongationMatrix"></param>
 		/// <param name="Mapping"></param>
-		/// <param name="size"></param>
+		/// <param name="TotProcSize"></param>
+		/// <param name="CoarseProcSize"></param>
 		/// <param name="finerLevel"></param>
 		/// <param name="LeftChangeOfBasis"></param>
 		/// <param name="RightChangeOfBasis"></param>
 		/// <param name="IsThereACoarserSolver"></param>
-		public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int size = 0, IOperatorMappingPair finerLevel = null, BlockMsrMatrix LeftChangeOfBasis = null, BlockMsrMatrix RightChangeOfBasis = null, bool IsThereACoarserSolver = true) { 
+		public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int TotProcSize = 0, int CoarseProcSize = 0, IOperatorMappingPair finerLevel = null, BlockMsrMatrix LeftChangeOfBasis = null, BlockMsrMatrix RightChangeOfBasis = null, bool IsThereACoarserSolver = true) { 
             m_OpMtx = OperatorMatrix;
 			m_ProlMtx = ProlongationMatrix;
 			m_MultigridMapping = Mapping;
-			NoOfThisProcs = size == 0 ? finerLevel.OperatorMatrix.RowPartitioning.MpiSize : size;
+			NoOfThisProcs = TotProcSize != 0 ? TotProcSize :
+										finerLevel is TaskParallelMGOperator tp ? // if zero check if finer level TP
+										tp.NoOfCoarseProcs : finerLevel.OperatorMatrix.RowPartitioning.MpiSize;
+			NoOfCoarseProcs = CoarseProcSize != 0 ? CoarseProcSize : Math.Max(1, Math.Min(3 * NoOfThisProcs / 4, NoOfThisProcs - 1));
 			m_IsThereCoarserLevel = IsThereACoarserSolver;
 			FinerLevel = finerLevel;
 			m_LeftChangeOfBasis = LeftChangeOfBasis;
 			m_RightChangeOfBasis = RightChangeOfBasis;	
 			CheckMPICorrectness();
-
-			NoOfCoarseProcs = Math.Max(1, Math.Min(3 * NoOfThisProcs / 4, NoOfThisProcs - 1));
 
 			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(m_MultigridMapping);
             m_NoOfSpecies = GetNoOfSpeciesList(m_MultigridMapping);
@@ -591,7 +593,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (NoOfThisProcs < 2 && m_IsThereCoarserLevel)
 				throw new Exception("Not enough number of processors left for the coarser level.");
 
-			if (NoOfSmootherProcs < 1 && !m_IsThereCoarserLevel)
+			if (NoOfSmootherProcs < 1 && m_IsThereCoarserLevel)
 				throw new Exception("The number of processors for the smoother must be greater than 0. " +
 					"Only allowed if this level is direct solver (i.e., this level is the coarsest level)");
 
@@ -1333,15 +1335,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-			//Debugger.Launch();
+			Debugger.Launch();
+			var NoOfProcs = CalculateProcessorDistribution(op);
+			int WorldSize = op.Mapping.MpiSize;
+			Debug.Assert(NoOfProcs[op.LevelIndex] == WorldSize);
 
 			this.FinerLevelCoarseComm = csMPI.Raw._COMM.WORLD;
 			this.FinerLevelCoarseCommRank = op.Mapping.MpiRank;
-			int WorldSize = op.Mapping.MpiSize;
 
-			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetPrologonationOperator, op.Mapping, WorldSize) {
-				InitLevel = op.LevelIndex,
-			};
+			// Initiate the finest TP MG operator
+			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetPrologonationOperator, op.Mapping, 
+				NoOfProcs[op.LevelIndex], NoOfProcs.ElementAtOrDefault(op.LevelIndex + 1))
+				{ InitLevel = op.LevelIndex };
 
 			TaskParallelMGOperator finerTP = thisTP;
 			if (verbose) {
@@ -1359,7 +1364,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					op_lv.GetPrologonationOperator.SaveToTextFileSparse($"ProlongationMatrix_{level}.txt");
 				}
 
-				var coarserTP = new TaskParallelMGOperator(op_lv.OperatorMatrix, op_lv.GetPrologonationOperator, op_lv.Mapping, finerTP.NoOfCoarseProcs, finerTP, op_lv.LeftChangeOfBasis, op_lv.RightChangeOfBasis, op_lv.CoarserLevel != null);
+
+				var coarserTP = new TaskParallelMGOperator(op_lv.OperatorMatrix, op_lv.GetPrologonationOperator, op_lv.Mapping, 
+					NoOfProcs[op_lv.LevelIndex], NoOfProcs.ElementAtOrDefault(op_lv.LevelIndex+1), finerTP, 
+					op_lv.LeftChangeOfBasis, op_lv.RightChangeOfBasis, op_lv.CoarserLevel != null);
 
 				finerTP.CoarserLevel = coarserTP;
                 //coarserTP.FinerLevel = finerTP;
@@ -1368,6 +1376,101 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 			InitImpl(thisTP);
 			csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+		}
+
+		/// <summary>
+		/// Calculate number of processors for task parallel distribution
+		/// </summary>
+		/// <param name="root"></param>
+		/// <returns>An int array for each level with the number of processors (returns for whole MG but keeps zero until task parallel starts)</returns>
+		int[] CalculateProcessorDistribution(MultigridOperator root) {
+			using (var tr = new FuncTrace()) {
+				tr.InfoToConsole = true;
+				long TotDOFs = 0;
+				long coarsestDOFs = 0;
+				int WorldSize = root.Mapping.MpiSize;
+
+				int StartOfTpLevel = root.LevelIndex;
+
+				MultigridOperator op_lv = root;
+				MultigridOperator coarsest = null;
+
+				// find the coarsest level
+				while (op_lv != null) {
+					TotDOFs += op_lv.Mapping.TotalLength;
+					coarsest = op_lv;             // remember this level
+					op_lv = op_lv.CoarserLevel;
+				}
+				coarsestDOFs = coarsest.Mapping.TotalLength;
+				int EndOfTpLevel = coarsest.LevelIndex;
+
+				// all the smoother operators should have more or less the same DOFs/proc
+				int SmootherDOFsPerProc = (int)((TotDOFs - coarsestDOFs) / WorldSize); 
+				int[] NoProcs = new int[EndOfTpLevel + 1]; // use the original level index and keep 0 for unused ones (better for exception catching)
+
+				// the coarsest level has always 1 processor
+				NoProcs[EndOfTpLevel] = 1;
+
+				// start with one finer level than the coarsest
+				op_lv = coarsest.FinerLevel;
+				for (int l = EndOfTpLevel - 1; l >= StartOfTpLevel; l--) {
+
+					int NoOfThisLevelSmootherProcs = Math.Max((int)(op_lv.Mapping.TotalLength / SmootherDOFsPerProc), 1);
+
+					if (op_lv.Mapping.TotalNoOfBlocks < NoOfThisLevelSmootherProcs )
+						tr.Warning($"Optimization error: task-parallel MG at level {l} has {NoOfThisLevelSmootherProcs} processors assigned but only {op_lv.Mapping.TotalNoOfBlocks} blocks available – you may be using too many processors.");
+
+
+					int NoOfThisLevelProcs = NoOfThisLevelSmootherProcs + NoProcs[l + 1];
+
+					if (NoOfThisLevelProcs > WorldSize || StartOfTpLevel == l)
+						NoOfThisLevelProcs = WorldSize;
+
+					NoProcs[l] = NoOfThisLevelProcs;
+					op_lv = op_lv.FinerLevel;
+				}
+
+
+				tr.Info("\nTask Parallel Multigrid hierarchy (o = smoother, x = coarse/direct)");
+				tr.Info($"Levels from {StartOfTpLevel} to {EndOfTpLevel}   |  level {EndOfTpLevel} (coarsest) uses 1 processor\n");
+				tr.Info("Level        DOFs        # of procs   smoother  coarse    DOFs/proc");
+				tr.Info("-----  -------------   ----------  --------  ------  -------------");
+				op_lv = root;
+
+				for (int l = StartOfTpLevel; l <= EndOfTpLevel; l++) {
+					int p = NoProcs[l];
+					int coarse = (l < EndOfTpLevel) ? NoProcs[l + 1] : 1;
+					int smooth = p - coarse;
+					double ratio = (double)op_lv.Mapping.TotalLength / p;
+					tr.Info(
+						$"{l,3}   {op_lv.Mapping.TotalLength,12:N0}   {p,10}     {smooth,8}   {coarse,6}   {ratio,13:F1}"
+					);
+
+					op_lv = op_lv.CoarserLevel;
+				}
+
+#if DEBUG_EXTENDED
+				tr.Info("\nPer-core assignment");
+				for (int j = StartOfTpLevel; j < EndOfTpLevel+1; j++) {
+					// compute indent = sum of smoother procs on all finer levels
+					int indent = 0;
+					for (int k = StartOfTpLevel; k < j; k++) {
+						int coarseK = (k < EndOfTpLevel) ? NoProcs[k + 1] : 1;
+						indent += NoProcs[k] - coarseK;
+					}
+					// current level’s split
+					int coarseJ = (j < EndOfTpLevel) ? NoProcs[j + 1] : 1;
+					int smoothJ = NoProcs[j] - coarseJ;
+					char leaf = (j < EndOfTpLevel) ? 'x' : 'c';   // ‘x’ = coarse, ‘c’ = coarsest
+														   // build and print the bar
+					string bar = new string(' ', indent)
+							   + new string('o', smoothJ)
+							   + new string(leaf, coarseJ);
+					tr.Info($"L {j} | {bar}");
+				}
+#endif
+				return NoProcs;
+			}
 		}
 
 		BlockMsrMatrix ChangeCommunicator(BlockMsrMatrix mtx, (long i0Global, int CellLen)[] localBlocks, MPI_Comm comm, int[] MPIRankMapping ) {
