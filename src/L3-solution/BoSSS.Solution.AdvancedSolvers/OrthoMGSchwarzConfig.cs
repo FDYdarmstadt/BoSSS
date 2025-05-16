@@ -192,16 +192,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        const double INBALANCE_THRESHOLD = 0.3;
+        const double INBALANCE_THRESHOLD = 0.5;
 
         const int PROCESSLOCAL_SCHWARZBLOCK_MINIMUM = 2;
 
+		internal bool TaskParallelization = false;
 
-        /// <summary>
-        /// - if true, the <see cref="SchwarzForCoarseMesh"/> smoother should be used
-        /// - if false, the <see cref="Schwarz"/> smoother should be used
-        /// </summary>
-        (ISolverSmootherTemplate swz, int LevelLocalBlocks, int LevelGlobalBlocks) SelectSchwarzSmoother(MultigridOperator level, int FinerLevelLocalBlocks, int FinerLevelGlobalBlocks) {
+
+		/// <summary>
+		/// - if true, the <see cref="SchwarzForCoarseMesh"/> smoother should be used
+		/// - if false, the <see cref="Schwarz"/> smoother should be used
+		/// </summary>
+		(ISolverSmootherTemplate swz, int LevelLocalBlocks, int LevelGlobalBlocks) SelectSchwarzSmoother(MultigridOperator level, int FinerLevelLocalBlocks, int FinerLevelGlobalBlocks) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 int MPIsize = level.Mapping.MpiSize;
@@ -225,7 +227,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double inbal = ComputeInbalance(level);
                 tr.Info("DOF MPI inbalance is " + inbal);
 
-                if ((SchwarzImplementation == SchwarzImplementation.Auto && GlobalNoOfBlocks <= MPIsize) || SchwarzImplementation == SchwarzImplementation.TaskParallel) {
+                if (((SchwarzImplementation == SchwarzImplementation.Auto && GlobalNoOfBlocks <= MPIsize) || SchwarzImplementation == SchwarzImplementation.TaskParallel || TaskParallelization) // either directly designated or has GlobalNoOfBlocks <= MPIsize with Auto
+					&& level.CoarserLevel != null) { // and there is a coarser level solver to be used as direct solver
 
 					if (GlobalNoOfBlocks >= FinerLevelGlobalBlocks) {
 						tr.Info("Failing to reduce **global** number of blocks (" + GlobalNoOfBlocks + ") wrt. previous level (" + FinerLevelGlobalBlocks + ").");
@@ -239,7 +242,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
 					r.config.NoOfBlocks = GlobalNoOfBlocks;
 					return (r, -1, GlobalNoOfBlocks);
-
 				}
 
 				if (inbal <= INBALANCE_THRESHOLD
@@ -342,7 +344,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="SchwarzblockSize"></param>
         /// <returns></returns>
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int, int> SchwarzblockSize) {
-            //Debugger.Launch();
+            Debugger.Launch();
 			using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 int MSLength = op.NoOfLevels;
@@ -391,10 +393,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    // instantiate solver at level
-                    // ===========================
+                    if (TaskParallelization && op_lv.CoarserLevel == null) //Task Parallel MG is not designed without direct solver at the coarsest
+						TerminateMultigrid = true;
 
-                    ISolverSmootherTemplate levelSolver;
+					// instantiate solver at level
+					// ===========================
+
+					ISolverSmootherTemplate levelSolver;
                     if (TerminateMultigrid) {
 
                         // ++++++++++++++++++++++++++++++++++++++
@@ -529,7 +534,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		TaskParallelOrthoMG GetTaskParallelOrthoMG(FuncTrace tr, int iLevel, int locBlk, int glbBlk, int maxDG,
 								 ISolverSmootherTemplate smoother1, ISolverSmootherTemplate altSmooth3) {
 			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Chosing Task Parallel Additive Variant");
-
+            this.CoarseUsepTG = false;
+            TaskParallelization = true;
             ISolverSmootherTemplate[] smoothers;
 
 			if (altSmooth3 != null) {
