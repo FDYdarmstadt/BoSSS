@@ -60,6 +60,18 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
+	[StructLayout(LayoutKind.Sequential)]
+	internal struct BlockInfo {
+		public long iBlock;
+		public long i0Cell;
+		public int lenCell;
+		internal BlockInfo(long iBlock, long i0Cell, int lenCell) {
+			this.iBlock = iBlock;
+			this.i0Cell = i0Cell;
+			this.lenCell = lenCell;
+		}
+	}
+
 	/// <summary>
 	/// 
 	/// </summary>
@@ -519,8 +531,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public MultigridMapping m_MultigridMapping;
 		public BlockMsrMatrix m_LeftChangeOfBasis;
 		public BlockMsrMatrix m_RightChangeOfBasis;
-		public int Level => FinerLevel is TaskParallelMGOperator fine ? fine.Level + 1 : 0; //level for this type of solver not overall level
+		public int Level => FinerLevel is TaskParallelMGOperator fine ? fine.Level + 1 : InitLevel; //level for this type of solver not overall level
 																							//if this is attached to some finer level
+		public int InitLevel = 0;
+
 		public int NoOfThisProcs;
 		public int NoOfSmootherProcs => NoOfThisProcs - NoOfCoarseProcs;
 		public int NoOfCoarseProcs;
@@ -746,18 +760,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				int LocalLength = cnt;
 				var partitioning = new BlockPartitioning(LocalLength, i0Cell, LnCell, comm, i0isLocal: true);
 				return partitioning;
-			}
-		}
-
-		[StructLayout(LayoutKind.Sequential)]
-		internal struct BlockInfo {
-			public long iBlock;
-			public long i0Cell;
-			public int lenCell;
-			internal BlockInfo(long iBlock, long i0Cell, int lenCell) {
-				this.iBlock = iBlock;
-				this.i0Cell = i0Cell;
-				this.lenCell = lenCell;
 			}
 		}
 
@@ -1034,18 +1036,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			} 
 
 			return null;			
-		}
-
-		[StructLayout(LayoutKind.Sequential)]
-		private struct BlockInfo {
-			public long iBlock;
-			public long i0Cell;
-			public int lenCell;
-			internal BlockInfo(long iBlock, long i0Cell, int lenCell) {
-				this.iBlock = iBlock;
-				this.i0Cell = i0Cell;
-				this.lenCell = lenCell;
-			}
 		}
 
 		/// <summary>
@@ -1343,12 +1333,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-			Debugger.Launch();
+			//Debugger.Launch();
 
 			this.FinerLevelCoarseComm = csMPI.Raw._COMM.WORLD;
 			this.FinerLevelCoarseCommRank = op.Mapping.MpiRank;
 			int WorldSize = op.Mapping.MpiSize;
-			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetPrologonationOperator, op.Mapping, WorldSize);
+
+			var thisTP = new TaskParallelMGOperator(op.OperatorMatrix, op.GetPrologonationOperator, op.Mapping, WorldSize) {
+				InitLevel = op.LevelIndex,
+			};
+
 			TaskParallelMGOperator finerTP = thisTP;
 			if (verbose) {
 				op.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_0.txt");
@@ -1503,32 +1497,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		void InitSmoothers() {
 			if (myTask != TpTaskType.All && myTask != TpTaskType.Smoother) return;
+			if (Smoothers is null) return;
 
 			var SmootherOpMappingPairOnSubComm = new StandAloneOperatorMappingPairWithGridData(subCommSmootherOpMatrix, columnMappingWorldToSmoother, TpMapping.m_xadj, TpMapping.m_adj, TpMapping.m_NoOfSpecies);
 
-			// init smoother
+			// init smoothers
 			// =============
-			if (PreSmoother != null) {
-				if (PreSmoother is SchwarzForTaskParallel schwarzTp) {
-					schwarzTp.Init(SmootherOpMappingPairOnSubComm);
-				} else if (PreSmoother is ISubsystemSolver ssPreSmother) {
-					ssPreSmother.Init(SmootherOpMappingPairOnSubComm);
-				} else {
-					throw new NotSupportedException($"Unable to initialize pre-smoother if it is not a {typeof(ISubsystemSolver)} and until multigrid operator is designed to work on sub communicators, this won't work");
+			foreach (var smoother in Smoothers) { 
+				if (smoother != null) {
+					if (smoother is SchwarzForTaskParallel schwarzTp) {
+						schwarzTp.Init(SmootherOpMappingPairOnSubComm);
+					} else if (smoother is ISubsystemSolver ssPreSmother) {
+						ssPreSmother.Init(SmootherOpMappingPairOnSubComm);
+					} else {
+						throw new NotSupportedException($"Unable to initialize pre-smoother if it is not a {typeof(ISubsystemSolver)} and until multigrid operator is designed to work on sub communicators, this won't work");
+					}
 				}
 			}
 
-			// init post smoother
-			// =============
-			if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother)) {
-				if (PostSmoother is SchwarzForTaskParallel schwarzTp) {
-					schwarzTp.Init(SmootherOpMappingPairOnSubComm);
-				} else if (PostSmoother is ISubsystemSolver ssPostSmother) {
-					ssPostSmother.Init(SmootherOpMappingPairOnSubComm);
-				} else {
-					throw new NotSupportedException($"Unable to initialize pre-smoother if it is not a {typeof(ISubsystemSolver)} and until multigrid operator is designed to work on sub communicators, this won't work");
-				}
-			}
 		}
 
 		double[] Restrict<T1>(T1 IN_fine)
@@ -1960,24 +1946,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// Creates a new communicator for the coarse level solver.
 		/// </summary>
 		void SplitCommunicator() {
-			if (NoOfCoarseProcs < 1 || NoOfSmootherProcs < 1)
-                throw new ArgumentOutOfRangeException($"Number of coarse processors and smoother processors must be greater than 0. Coarse: {NoOfCoarseProcs}, Smoother: {NoOfSmootherProcs}");
+			using (var f = new FuncTrace()) {
+				if (NoOfCoarseProcs < 1 || NoOfSmootherProcs < 1)
+					throw new ArgumentOutOfRangeException($"Number of coarse processors and smoother processors must be greater than 0. Coarse: {NoOfCoarseProcs}, Smoother: {NoOfSmootherProcs}");
 
-			if (thisCommRank < NoOfSmootherProcs) {
-				myTask = TpTaskType.Smoother;
-				csMPI.Raw.CommSplit(thisComm, 0, FinerLevelCoarseCommRank, out subComm);
-			} else {
-				myTask = TpTaskType.Coarse;
-				csMPI.Raw.CommSplit(thisComm, 1, FinerLevelCoarseCommRank, out subComm);
+				if (thisCommRank < NoOfSmootherProcs) {
+					myTask = TpTaskType.Smoother;
+					csMPI.Raw.CommSplit(thisComm, 0, FinerLevelCoarseCommRank, out subComm);
+				} else {
+					myTask = TpTaskType.Coarse;
+					csMPI.Raw.CommSplit(thisComm, 1, FinerLevelCoarseCommRank, out subComm);
+				}
+
+				csMPI.Raw.Comm_Rank(subComm, out subCommRank);
+				csMPI.Raw.Comm_Size(subComm, out subCommSize);
+
+				if (verbose)
+					f.Info($"The proc with worldRank-{worldCommRank} with opRank{opCommRank} is assigned to {subCommRank}of{subCommSize} new com{subComm.m1}");
+
+				CreateMpiRankMappings();
 			}
-
-			csMPI.Raw.Comm_Rank(subComm, out subCommRank);
-			csMPI.Raw.Comm_Size(subComm, out subCommSize);
-
-            if(verbose)
-			    Console.WriteLine($"The proc with worldRank-{worldCommRank} with opRank{opCommRank} is assigned to {subCommRank}of{subCommSize} new com{subComm.m1}");
-
-            CreateMpiRankMappings();
 		}
 
 
@@ -2093,60 +2081,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		bool m_AdditionalPostSmoothersInitialized = false;
-
-        /// <summary>
-        /// Deferred initialization of the <see cref="AdditionalPostSmoothers"/>;
-        /// these are fall-back-options, so on a normal run, we don't want to waste time and resources for their initialization.
-        /// </summary>
-        /// <exception cref="NotSupportedException"></exception>
-        void InitAdditionalPostSmooters() {
-            using (new FuncTrace()) {
-                if (AdditionalPostSmoothers != null) {
-                    var op = this.m_OpMapPair;
-                    foreach (var ps in AdditionalPostSmoothers) {
-                        if (ps is ISubsystemSolver ssPostSmother) {
-                            ssPostSmother.Init(op);
-                        } else {
-                            if (op is MultigridOperator mgOp) {
-                                ps.Init(mgOp);
-                            } else {
-                                throw new NotSupportedException($"Unable to initialize post-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
-                            }
-                        }
-                    }
-
-                    m_AdditionalPostSmoothersInitialized = true;
-                }
-            }
-        }
-
 		/// <summary>
 		/// coarse-level correction; can be defined either
-		/// - on this level (then the coarse solver may perform its of prolongation/restriction), or
+		/// - this option is not supported for this variant (on this level (then the coarse solver may perform its of prolongation/restriction)), or 
 		/// - on coarser level, then prolongation/restriction is handled by this solver.
 		/// </summary>
-        public ISolverSmootherTemplate CoarserLevelSolver;
+		public ISolverSmootherTemplate CoarserLevelSolver;
 
 		/// <summary>
-		/// high frequency solver before coarse grid correction
+		/// high frequency solver parallel to coarse grid correction
 		/// </summary>
-		public ISolverSmootherTemplate PreSmoother;
+		public ISolverSmootherTemplate[] Smoothers;
 
-        /// <summary>
-        /// high frequency solver after coarse grid correction
-        /// </summary>
-        public ISolverSmootherTemplate PostSmoother;
-
-        /// <summary>
-        /// high frequency solver after coarse grid correction
-        /// </summary>
-        public ISolverSmootherTemplate[] AdditionalPostSmoothers;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+		/// <summary>
+		/// 
+		/// </summary>
+		public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
@@ -2205,7 +2155,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> //
         {
 			using (var f = new FuncTrace()) {
-                f.StdoutOnAllRanks();
+                //f.StdoutOnAllRanks();
 				f.InfoToConsole = true;
 
 				ThisLevelTime.Start();
@@ -2225,7 +2175,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 
                 // clear history of coarse solvers
                 ortho.Clear();
-				//Debugger.Launch();
 
 				PerformIterations(X, B, Res, Res0);
 
@@ -2320,7 +2269,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-
 		private void PerformIterations(double[] X, double[] B, double[] Res, double[] Res0) {
 			int iIter;
 			double iter0_resNorm = ortho.Norm(Res0);
@@ -2359,19 +2307,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					// smoother
 					if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
 						double[] XGuess = SmootherCorrOnSub;
-						SmootherCorrOnSub = ApplyPreSmoother(XGuess, ResforSub, iIter);
+						SmootherCorrOnSub = ApplySmoothers(XGuess, ResforSub, iIter);
 					}
 				}
 				// Stop timing for coarse grid correction
 				CrseLevelTime.Stop();
 
 				var CoarseCorrection = PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
-				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarsemooth" + TpLevel);
-				WriteDebug(iIter, resNorm, "Coarse-correction ");
+				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
+				WriteDebug(iIter, resNorm, "Tp-coarse");
 
 				var PreCorr = PermutateVectorBack(SmootherCorrOnSub, smootherPermutation); //this can be further optimized as smooth part has the full matrix
-				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-presmooth" + TpLevel);
-				WriteDebug(iIter, resNorm, "Tp-presmooth ");
+				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-smoother" + TpLevel);
+				WriteDebug(iIter, resNorm, "Tp-smoother");
 
 				// Iteration callback
 				//IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);
@@ -2440,31 +2388,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return done;
 		}
 
-		private double[] ApplyPreSmoother(double[] X, double[] B, int iIter) {
-			using (var trace = new FuncTrace()) {
-				// Apply the pre-smoother
-				PreSmoother?.Solve(X, B); 
+		private double[] ApplySmoothers(double[] X, double[] B, int iIter) {
+			using (var trace = new FuncTrace("SmootherTpLvl"+TpLevel)) {
+				void RunAllSmoothers() {
+					foreach (var smoother in Smoothers)
+						smoother.Solve(X, B);
+				}
+				
+				RunAllSmoothers(); // Apply smoothers
+
+				for (int sweep = 1; sweep < this.config.NoOfPostSmootherSweeps; sweep++)
+					RunAllSmoothers();
 
 				if (AdvancedParallism) {
 					SendSignal(true, iIter);
 					bool done = CheckSignal();
 					int k = 0;
 					while (!done) { //until the coarse solver is done
-						PreSmoother?.Solve(X, B); // Pre-smoother modifies PreCorr based on Res
+						RunAllSmoothers(); // Pre-smoother modifies PreCorr based on Res
+
 						k++;
 						done = CheckSignal();
 					}
-					Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
-					$"iteration={iIter} - Smoother cycled {k}-times while waiting the coarse solver");
+					trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+					$"iteration={iIter} - All smoothers cycled extra {k}-times while waiting the coarse solver");
 				}
 
 				return X;
 			}
 		}
 
-
 		private double[] ApplyCoarseGridCorrection (double[] X, double[] B, int iIter) {
-			using (var trace = new FuncTrace()) {
+			using (var trace = new FuncTrace("CoarseCorrrectionTpLvl"+TpLevel)) {
 				if (CoarserLevelSolver == null) {
 					throw new InvalidOperationException("Coarse level solver is not initialized.");
 				}
@@ -2488,8 +2443,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							done = CheckSignal();
 						}
 
-						Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
-						$"iteration={iIter} - Coarse cycled {k}-times while waiting the coarse solver");
+						trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the coarse solver");
 					}
 				}
 
@@ -2502,7 +2457,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		/// <summary>
 		/// For performance optimization, the <see cref="OrthonormalizationMultigrid"/>
-		/// assumes that <see cref="PreSmoother"/> and <see cref="PostSmoother"/>
 		/// update the residual on exit.
 		/// </summary>
 		private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
@@ -2545,11 +2499,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get {
                 int iter = 0;
 
-                iter += (this.PreSmoother?.IterationsInNested ?? 0) + (this.PreSmoother?.ThisLevelIterations ?? 0);
-
-                if (this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
-                    iter += this.PostSmoother.IterationsInNested + this.PostSmoother.ThisLevelIterations;
-
+				foreach (var smoother in Smoothers) {
+					iter += (smoother?.IterationsInNested ?? 0) + (smoother?.ThisLevelIterations ?? 0);
+				}
                 iter += (this.CoarserLevelSolver?.IterationsInNested ?? 0) + (this.CoarserLevelSolver?.ThisLevelIterations ?? 0);
 
                 return iter;
@@ -2578,11 +2530,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public void ResetStat() {
             this.Converged = false;
             this.ThisLevelIterations = 0;
-            if (this.PreSmoother != null)
-                this.PreSmoother.ResetStat();
-            if (this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
-                this.PostSmoother.ResetStat();
-            if (this.CoarserLevelSolver != null)
+
+			if (Smoothers != null)
+				foreach (var smoother in Smoothers) {
+					if (smoother != null) 
+						smoother.ResetStat();	
+				}
+
+			if (this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.ResetStat();
         }
 
@@ -2606,8 +2561,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             long Memory = 0;
             if (this.CoarserLevelSolver is TaskParallelOrthoMG)
                 Memory += (this.CoarserLevelSolver as TaskParallelOrthoMG).MemoryOfSmoother();
-            if (PreSmoother != null) Memory += PreSmoother.UsedMemory();
-            if (PostSmoother != null) Memory += PostSmoother.UsedMemory();
+
+			if (this.Smoothers != null) {
+				foreach (var smoother in Smoothers) {
+					if (smoother != null) Memory += smoother.UsedMemory();
+				}
+			}
+
             return Memory;
         }
 
@@ -2639,16 +2599,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ortho = null;
             this.m_OpMapPair = null;
 
-            this.PreSmoother?.Dispose();
-            this.PostSmoother?.Dispose();
+			if (Smoothers != null)
+				foreach (var smoother in Smoothers)
+					smoother?.Dispose();
+
             //this.PreSmoother = null; // don't delete - we need this again for the next init
             //this.PostSmoother = null;  // don't delete - we need this again for the next init
 
-            if(AdditionalPostSmoothers != null && m_AdditionalPostSmoothersInitialized) {
-                foreach(var aps in AdditionalPostSmoothers)
-                    aps?.Dispose();
-                m_AdditionalPostSmoothersInitialized = false;
-            }
+            
         }
 
     }

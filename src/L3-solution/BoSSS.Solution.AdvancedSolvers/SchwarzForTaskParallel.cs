@@ -766,9 +766,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <exception cref="ApplicationException"></exception>
 		public void InitWithTest(StandAloneOperatorMappingPairWithGridData op, bool doTest) {
   			using (var f = new FuncTrace()) {
-
                 m_op = op;
-                var locBlocks = CalculateBlocks(op); //by utilizing mostly rank0, calculate blocks and get them on respective procs
+
+				if (this.config.NoOfBlocks < thisCommSize)
+					f.Warning("!! Warning !! Task parallel Scharz does not have a block per processor. Either you are using too many cores or there is something wrong.");
+
+				var locBlocks = CalculateBlocks(op); //by utilizing mostly rank0, calculate blocks and get them on respective procs
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 				var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
 

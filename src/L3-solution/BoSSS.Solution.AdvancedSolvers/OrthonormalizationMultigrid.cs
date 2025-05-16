@@ -1219,6 +1219,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
 				Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfMultigrid();
 
+			if (this.CoarserLevelSolver is TaskParallelOrthoMG)
+				Memory += (this.CoarserLevelSolver as TaskParallelOrthoMG).MemoryOfMultigrid();
+
 			Memory += ortho?.GetMemUsage() ?? 0;
 			return Memory;
 		}
