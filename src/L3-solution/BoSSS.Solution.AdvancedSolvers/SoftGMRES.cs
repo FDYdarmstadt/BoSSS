@@ -245,18 +245,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     B = _B.ToArray();
                 }
 
-                double[] Y = new double[X.Count()], C = new double[X.Count()];
-                //C.FillRandom();
-                BlockMsrMatrix.ResetPerfStat();
-                for(int iii = 0; iii < 10000; iii++) {
-                    this.Matrix.SpMV(1.0, C, 0.0, Y);
-                }
-                BlockMsrMatrix.PrintPerfStat();
-                csMPI.Raw.mpiFinalize();
-                System.Environment.Exit(555);
-
-
-
                 double bnrm2 = B.MPI_L2Norm(m_MPI_Comm);
                 if(bnrm2 == 0.0) {
                     bnrm2 = 1.0;

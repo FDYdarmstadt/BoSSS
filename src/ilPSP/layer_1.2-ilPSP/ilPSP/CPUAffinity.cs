@@ -54,17 +54,17 @@ namespace ilPSP.Utils {
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
         public static void SetCurrentThreadAffinity(IEnumerable<int> CPUlist) {
-            
-            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+
+            if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                 CPUAffinityWindows.SetCurrentThreadAffinity(CPUlist);
-                
-            } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                Console.WriteLine("not implementd");
+
+            } else if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
+                Console.Error.WriteLine("TPL CPU affinity on Linux is not implemented");
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
 
-         
+
         }
 
 

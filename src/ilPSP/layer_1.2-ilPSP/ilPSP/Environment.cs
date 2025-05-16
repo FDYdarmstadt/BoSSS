@@ -266,8 +266,6 @@ namespace ilPSP {
         }
         */
 
-        public static bool DoYourThing = false;
-
         /// <summary>
         /// Parallel for-loop, the signature of <see cref="body"/> is: `i` (loop run variable in the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>)
         /// </summary>
@@ -328,61 +326,6 @@ namespace ilPSP {
                 }
             }
         }
-
-        /*
-                public static Stopwatch PWoverhead = new Stopwatch();
-
-                public static void ParallelWixxer(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
-                    PWoverhead.Start();
-
-                    if(InParallelSection == true || !enablePar || NumThreads <= 1) {
-                        PWoverhead.Stop();
-                        for(int i = fromInclusive; i < toExclusive; i++) {
-                            body(i, 0);
-                        }
-                        PWoverhead.Start();
-                    } else {
-
-                        int __Numthreads = enablePar ? NumThreads : 1;
-
-
-                        var options = new ParallelOptions {
-                            MaxDegreeOfParallelism = __Numthreads,
-                        };
-                        //ThreadPool.SetMinThreads(__Numthreads, 1);
-                        //ThreadPool.SetMaxThreads(__Numthreads, 2);
-
-                        try {
-                            InParallelSection = true;
-                            BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                            LAPACK.ActivateSEQ();
-
-                            void _body(int ithread) {
-                                //PinTPLThread(ithread);
-                                int L = toExclusive - fromInclusive;
-                                int i0 = (L * ithread) / __Numthreads;
-                                int iE = (L * (ithread + 1)) / __Numthreads;
-                                for(int i = i0; i < iE; i++) {
-                                    body(i, ithread);
-                                }
-                            }
-
-                            PWoverhead.Stop();
-                            Parallel.For(0, __Numthreads, options, _body);
-                            PWoverhead.Start();
-
-                        } finally {
-                            InParallelSection = false;
-
-                            BLAS.ActivateOMP(); // restore parallel 
-                            LAPACK.ActivateOMP();
-                        }
-                    }
-
-                    PWoverhead.Stop();
-                }
-
-                */
 
         /// <summary>
         /// Parallel for-loop, the signature of <see cref="body"/> is: `i0, iE`.
