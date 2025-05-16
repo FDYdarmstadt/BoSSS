@@ -1437,7 +1437,7 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// native blas in C-stype
+        /// native blas in C-style
         /// (matrices are still in FORTRAN order)
         /// </summary>
         unsafe static public void dgemm(int TRANSA, int TRANSB,

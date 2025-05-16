@@ -236,8 +236,8 @@ namespace ilPSP {
             PinOMPthreads();
         }
 
-
-        public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body, bool enablePar = false) {
+        /*
+        public static ParallelLoopResult ParallelFor(int fromInclusive, int toExclusive, Action<int, ParallelLoopState> body, bool enablePar = true) {
             if(InParallelSection) {
                 throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
             }
@@ -264,7 +264,11 @@ namespace ilPSP {
                 PinOMPthreads();
             }
         }
+        */
 
+        /// <summary>
+        /// Parallel for-loop, the signature of <see cref="body"/> is: `i`
+        /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = true) {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 for(int i = fromInclusive; i < toExclusive; i++) {
@@ -273,7 +277,7 @@ namespace ilPSP {
             } else {
 
                 int __Numthreads = enablePar ? NumThreads : 1;
-                PinTPLThreads();
+                //PinTPLThreads();
 
                 var options = new ParallelOptions {
                     MaxDegreeOfParallelism = __Numthreads,
@@ -291,11 +295,67 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    PinOMPthreads();
+                    //PinOMPthreads();
                 }
             }
         }
 
+
+        public static Stopwatch PWoverhead = new Stopwatch();
+
+        public static void ParallelWixxer(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
+            PWoverhead.Start();
+
+            /*if(InParallelSection == true || !enablePar || NumThreads <= 1) {
+                PWoverhead.Stop();
+                for(int i = fromInclusive; i < toExclusive; i++) {
+                    body(i, 0);
+                }
+                PWoverhead.Start();
+            } else */{
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+                    void _body(int ithread) {
+                        //PinTPLThread(ithread);
+                        int L = toExclusive - fromInclusive;
+                        int i0 = (L * ithread) / __Numthreads;
+                        int iE = (L * (ithread + 1)) / __Numthreads;
+                        for(int i = i0; i < iE; i++) {
+                            body(i, ithread);
+                        }
+                    }
+
+                    PWoverhead.Stop();
+                    Parallel.For(0, __Numthreads, options, _body);
+                    PWoverhead.Start();
+                
+                } finally {
+                    InParallelSection = false;
+
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                }
+            }
+
+            PWoverhead.Stop();
+        }
+
+        /// <summary>
+        /// Parallel for-loop, the signature of <see cref="body"/> is: `i0, iE`
+        /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int> body, bool enablePar = true) {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 body(fromInclusive, toExclusive);
@@ -330,7 +390,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    PinOMPthreads();
+                    //PinOMPthreads();
                 }
             }
         }
@@ -357,6 +417,9 @@ namespace ilPSP {
             }
         }
 
+        /// <summary>
+        /// The signature of <see cref="body"/> is: `ithread, i0, iE`
+        /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int, int, int> body, bool enablePar = true) {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 body(0, fromInclusive, toExclusive);
@@ -377,8 +440,6 @@ namespace ilPSP {
                     LAPACK.ActivateSEQ();
 
                     void _body(int ithread) {
-                        PinTPLThread(ithread);
-
                         int L = toExclusive - fromInclusive;
                         int i0 = (L * ithread) / __Numthreads;
                         int iE = (L * (ithread + 1)) / __Numthreads;
@@ -390,49 +451,70 @@ namespace ilPSP {
                     Parallel.For(0, __Numthreads, options, _body);
                 } finally {
                     InParallelSection = false;
+                    
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    PinOMPthreads();
                 }
             }
         }
 
 
-        public static ParallelLoopResult ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, ParallelLoopState, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
-            if(InParallelSection) {
-                throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
-            }
-
-            int __Numthreads = enablePar ? NumThreads : 1;
-            PinTPLThreads();
-
-            var options = new ParallelOptions {
-                MaxDegreeOfParallelism = __Numthreads,
-            };
-            //ThreadPool.SetMinThreads(__Numthreads, 1);
-            //ThreadPool.SetMaxThreads(__Numthreads, 2);
-
-            try {
-                InParallelSection = true;
-                BLAS.ActivateSEQ();
-                LAPACK.ActivateSEQ();
-
+        public static void ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
+            if(InParallelSection == true || !enablePar || NumThreads <= 1) {
+                TLocal local = localInit();
                 
+                
+                for(int i = fromInclusive; i < toExclusive; i++) {
+                    
 
-                return Parallel.For(fromInclusive, toExclusive, options, localInit, body, localFinally);
-            } finally {
-                InParallelSection = false;
-                BLAS.ActivateOMP();
-                LAPACK.ActivateOMP();
-                PinOMPthreads();
+                    local = body(i, local);
+
+                    
+                }
+
+                localFinally(local);
+
+
+            } else {
+
+                if(InParallelSection) {
+                    throw new ApplicationException("trying to call a ParallelFor inside of a ParallelFor");
+                }
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+                ///PinTPLThreads();
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ();
+                    LAPACK.ActivateSEQ();
+
+                    TLocal _body(int i, ParallelLoopState s, TLocal r) {
+                        return body(i, r);
+                    }
+
+                    Parallel.For(fromInclusive, toExclusive, options, localInit, _body, localFinally);
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP();
+                    LAPACK.ActivateOMP();
+                    //PinOMPthreads();
+                }
             }
         }
+  
 
 
-        /// <summary>
-        /// Turns of Multithread-Parallelizatin in a certain subsection
-        /// </summary>
-        public class SerialSection : IDisposable {
+    /// <summary>
+    /// Turns every multithread-parallelization in the respective using-block of this object into a serial execution
+    /// </summary>
+    public class SerialSection : IDisposable {
             
             int numThreadsBackup;
 
@@ -683,8 +765,8 @@ namespace ilPSP {
 
 
             if(PerformOMPthreadPinning) {
-                //var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
-                //MKLservice.BindOMPthreads_1To1(cpus);
+                var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                MKLservice.BindOMPthreads_1To1(cpus);
             }
             
             /*{

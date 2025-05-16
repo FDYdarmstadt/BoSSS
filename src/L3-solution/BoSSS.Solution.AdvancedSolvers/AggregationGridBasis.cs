@@ -528,7 +528,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 ilPSP.Environment.ParallelFor(0, Jagg,
                     () => MultidimensionalArray.Create(Np, Np),
-                    delegate (int j, ParallelLoopState s, MultidimensionalArray ortho) {
+                    delegate (int j, MultidimensionalArray ortho) {
                         //for(int j = 0; j < Jagg; j++) { // loop over aggregate cells
 
                         Debug.Assert(ArrayTools.ListEquals(Ag2Pt[j], C2F[j]));
