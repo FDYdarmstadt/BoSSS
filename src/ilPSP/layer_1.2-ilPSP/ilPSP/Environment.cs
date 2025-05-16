@@ -935,23 +935,53 @@ namespace ilPSP {
 
         static bool m_StdoutOnlyOnRank0 = false;
 
-        /// <summary>
-        /// if true, the standard - output stream will not be visible on screen on processor with MPI rank 
-        /// unequal to 0.
-        /// </summary>
-        public static bool StdoutOnlyOnRank0 {
+		static bool m_StdoutOnlyOnRankLast = false;
+
+		/// <summary>
+		/// if true, the standard - output stream will not be visible on screen on processor with MPI rank 
+		/// unequal to 0.
+		/// </summary>
+		public static bool StdoutOnlyOnRank0 {
             get {
                 return m_StdoutOnlyOnRank0;
             }
             set {
                 if(StdOut != null) {
                     m_StdoutOnlyOnRank0 = value;
-                    if(m_StdoutOnlyOnRank0) {
-                        StdOut.surpressStream0 = (MPIEnv.MPI_Rank != 0);
+					if (m_StdoutOnlyOnRank0) {
+						m_StdoutOnlyOnRankLast = false; // if m_StdoutOnlyOnRank0, then make on RankLast false
+						StdOut.surpressStream = (MPIEnv.MPI_Rank != 0);
                     } else {
-                        StdOut.surpressStream0 = false;
+                        StdOut.surpressStream = false;
                     }
                 }
+            }
+        }
+
+
+		public static bool StdoutOnlyOnRankLast {
+			get {
+				return m_StdoutOnlyOnRankLast;
+			}
+			set {
+				if (StdOut != null) {
+					m_StdoutOnlyOnRankLast = value;
+					if (m_StdoutOnlyOnRankLast) {
+						m_StdoutOnlyOnRank0 = false; // if m_StdoutOnlyOnRankLast, then make on Rank0 false
+						StdOut.surpressStream = (MPIEnv.MPI_Rank != MPIEnv.MPI_Size - 1);
+					} else {
+						StdOut.surpressStream = false;
+					}
+				}
+			}
+		}
+
+		static bool FileExistsSafe(FileInfo fi) {
+            bool exists;
+            try {
+                exists = File.Exists(fi.FullName);
+            } catch (IOException) {
+                exists = true;
             }
         }
 

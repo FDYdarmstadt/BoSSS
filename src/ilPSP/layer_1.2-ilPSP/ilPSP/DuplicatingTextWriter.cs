@@ -36,11 +36,11 @@ namespace ilPSP {
         /// </summary>
         /// <param name="tw0"></param>
         /// <param name="FlushPerio"></param>
-        /// <param name="SurpStrem0"></param>
-        public DuplicatingTextWriter(TextWriter tw0, uint FlushPerio, bool SurpStrem0) {
+        /// <param name="SurpStrem"></param>
+        public DuplicatingTextWriter(TextWriter tw0, uint FlushPerio, bool SurpStrem) {
             Writer0 = tw0;
             m_flushPeriod = FlushPerio;
-            this.surpressStream0 = SurpStrem0;
+            this.surpressStream = SurpStrem;
         }
 
         TextWriter Writer0;
@@ -75,10 +75,10 @@ namespace ilPSP {
         
         uint m_flushPeriod;
 
-        /// <summary>
-        /// if true, the output to the 0-th stream resp. text-writer is suppressed
-        /// </summary>
-        public bool surpressStream0 {
+		/// <summary>
+		/// if true, the output to the stream resp. text-writer is suppressed (usually to 0-th processsor or last processor)
+		/// </summary>
+		public bool surpressStream {
             get;
             set;
         }
@@ -86,7 +86,7 @@ namespace ilPSP {
         private int cnt = 0;
 
         private void Flush1(int l) {
-            if(!surpressStream0) {
+            if(!surpressStream) {
                 try {
                     Writer0.Flush();
                 } catch(ObjectDisposedException) {
@@ -103,7 +103,7 @@ namespace ilPSP {
         }
 
         private void ExecuteOnWriter(Action<TextWriter> a) {
-            if(!surpressStream0) {
+            if(!surpressStream) {
                 try {
                     a(Writer0);
                 } catch(ObjectDisposedException) {

@@ -1845,9 +1845,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 		void WriteDebug(int iter, double res, string text) {
+			CurrentTrace.StdoutOnOnlyLastRank();
+
 			int iLevel = TpLevel;			
 			if (iLevel >= 0)
-				Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, " +
+				CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, " +
 					$"iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
 
 			return;
@@ -1863,7 +1865,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> //
         {
 			using (var f = new FuncTrace()) {
-                //f.StdoutOnAllRanks();
+				CurrentTrace = f;
 				f.InfoToConsole = true;
 
 				ThisLevelTime.Start();
@@ -1894,6 +1896,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ThisLevelTime.Stop();
             } // end of functrace
         }
+
+		FuncTrace CurrentTrace;
 
 		private double[] InitializeVector<T>(T input) where T : IList<double> {
 			if (input is double[] array) {
