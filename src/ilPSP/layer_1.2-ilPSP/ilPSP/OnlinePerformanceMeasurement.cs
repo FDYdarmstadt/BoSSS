@@ -258,13 +258,13 @@ namespace ilPSP {
                 int L = N2;
 
                 double[] globAcc = new double[ilPSP.Environment.NumThreads];
-                ilPSP.Environment.ParallelFor(0, L, delegate (int iThread, int i0, int iE) {
+                ilPSP.Environment.ParallelFor(0, L, delegate (ThreadInfo ti, int i0, int iE) {
                     double locAcc = 0;
                     //Random rnd = new Random();
                     for (int i = i0; i < iE; i++) {
                         locAcc += Math.Sin(i);// + rnd.NextDouble();
                     }
-                    globAcc[iThread] = locAcc;
+                    globAcc[ti.iThread] = locAcc;
                 }, enablePar:par);
 
                 return globAcc.Sum();
