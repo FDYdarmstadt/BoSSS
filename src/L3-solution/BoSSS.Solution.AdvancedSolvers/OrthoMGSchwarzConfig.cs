@@ -483,7 +483,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                           
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
-                                var ret = (i <= 1 || r > r0 * 0.01, true);
+                                var ret = ((i <= 1 || r > r0 * 0.01) && (r0 > MachineEpsilon || r > MachineEpsilon), true);
                                 return ret;
                             };
 
@@ -498,7 +498,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             */
 
                         } else {
-                            (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
+                            (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1 && (r0 > MachineEpsilon || r > MachineEpsilon), true);
                         }            
                     }
                     SolverChain.Add(levelSolver);
