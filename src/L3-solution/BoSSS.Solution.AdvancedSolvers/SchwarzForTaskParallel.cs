@@ -186,7 +186,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </returns>
 
 		long[] ComputeSchwarzBlockIndexMETISGlobal(StandAloneOperatorMappingPairWithGridData op) {
-			using (new FuncTrace()) {
+			using (var tr = new FuncTrace("TaskParallelSchwarzMetisDist")) {
 				(int[] xadj, int[] adjncy) = (op.m_xadj, op.m_adj);
 				int[] NoOfSpecies = op.m_NoOfSpecies;
 
@@ -212,25 +212,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					Debug.Assert(xadj.Where(idx => idx > adjncy.Length).Count() == 0);
 					Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
 
+                    int[] Weights = NoOfSpecies.Select(i => i * 100 + 1).ToArray(); // avoid zero weights
 
+                    int k = 0;
+                    while (k < 3) {
+						bool ok = true;
 
-					METIS.PARTGRAPHKWAY(
-							ref J, ref ncon,
-							xadj,
-							adjncy.ToArray(),
-							NoOfSpecies,
-							null,
-							null,
-							ref NoOfParts,
-							null,
-							null,
-							options,
-							ref edgecut,
-							part);
+						METIS.PARTGRAPHKWAY(ref J, ref ncon,
+							                xadj, adjncy.ToArray(),
+							                Weights, null,
+							                null, ref NoOfParts,
+							                null, null,
+							                options, ref edgecut,
+							                part);
+
+						for (int p = 0; p < NoOfParts; p++) {
+							ok &= part.Contains(p);
+                        }
+                        if (ok)
+                            break;
+                        else
+                            k++;
+
+                        tr.StdoutOnAllRanks();
+                        tr.Warning($"METIS failed to assign all {NoOfParts} parts to the cells. Trying again with different weights.");
+					}
 				} else {
 					part = null;
 				}
-				//var partGlob = part.MPIBroadcast(0, op_comm); //better than communication blocks at the rather stage as this solver is designed for parallelism on coarser grids
 
 				return part?.Select(i => (long) i).ToArray();
 			}
@@ -566,25 +575,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        PARDISOSolver[] GetBlockSolvers(BlockMsrMatrix Redistributed, List<long>[] RowIndices, List<long>[] ColIndices, int[] metisCellsPerBlockGlobal) {
+        PARDISOSolver[] GetBlockSolvers(BlockMsrMatrix Redistributed, List<long>[] RowIndices, List<long>[] ColIndices, int[] metisDOFsPerBlockGlobal) {
             Debug.Assert(RowIndices.Length == ColIndices.Length);
             int NoOfBlocks = RowIndices.Length;
             Debug.Assert(NoOfBlocks == m_config.NoOfBlocks);
 
-            //#if DEBUG
+            #if DEBUG
             {
                 // verify that each block is owned by exactly one process.
                 int[] local_OwnedByProc = RowIndices.Select(ary => ary != null ? 1 : 0).ToArray();
                 int[] OwnedByProc = local_OwnedByProc.MPISum(Redistributed.MPI_Comm);
                 for (int i = 0; i < OwnedByProc.Length; i++) {
-                    if (!(OwnedByProc[i] == 1 || metisCellsPerBlockGlobal[i] == 0)) {
+                    if (!(OwnedByProc[i] == 1 || metisDOFsPerBlockGlobal[i] == 0)) {
                         throw new ApplicationException($"Block {i} is owned by {OwnedByProc[i]} process(es); (expecting that each block is owned by exactly one processor, if not initially empty).");
                     }
                     Debug.Assert((RowIndices[i] != null) == (ColIndices[i] != null));
                 }
             }
 
-            //#endif
+            #endif
 
 
             PARDISOSolver[] ret = new PARDISOSolver[NoOfBlocks];
@@ -767,19 +776,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public void InitWithTest(StandAloneOperatorMappingPairWithGridData op, bool doTest) {
   			using (var f = new FuncTrace()) {
                 m_op = op;
+                f.StdoutOnAllRanks();
 
-				if (this.config.NoOfBlocks < thisCommSize)
-					f.Warning("!! Warning !! Task parallel Scharz does not have a block per processor. Either you are using too many cores or there is something wrong.");
+				if (this.config.NoOfBlocks < thisCommSize) 
+					f.Warning("!! Warning !! Task parallel Schwarz does not have a block per processor. Either you are using too many cores or there is something wrong.");
 
 				var locBlocks = CalculateBlocks(op); //by utilizing mostly rank0, calculate blocks and get them on respective procs
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
-				var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
+
+
+                int[] DOFsPerBlock;
+#if DEBUG
+				var DOFsPerBlockLocal = new int[config.NoOfBlocks];
+				for (int iBlk = 0; iBlk < locDOFs.Length; iBlk++)
+					DOFsPerBlockLocal[iBlk] = locDOFs[iBlk]?.Length ?? 0;
+
+				DOFsPerBlock = DOFsPerBlockLocal.MPISum(op_comm);
+#endif
+
+                var RedistAndIndices = GetRedistributionMatrix(op, locDOFs);
 
 				// obtain the part of the matrix which should be solved on this processor via multiplication with the redistribution matrix.
 				var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, OpMtx);
 
 				// create the local block solvers
-				m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, new int[] { });
+				m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, DOFsPerBlock);
                 m_BlockSizes = RedistAndIndices.RowIndices.Select(IDXs => IDXs?.Count ?? -12345).ToArray();
 
                 m_comm = new CommunicationStuff(this, OpMtx._ColPartitioning, RedistAndIndices.ColIndices);
