@@ -189,7 +189,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		bool verbose = false;
 
 		void CheckMPICorrectness() {
-			Console.WriteLine($"TaskParallelMGOperator: {m_MultigridMapping.MPI_Comm.m1} rank {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} with {m_MultigridMapping.MpiRank} of {m_MultigridMapping.MpiSize} and {NoOfThisProcs}");
+			Console.WriteLine($"TaskParallel-MG level {Level}: {NoOfSmootherProcs} smoother + {NoOfCoarseProcs} coarse = {NoOfThisProcs} total procs");
 			if (m_MultigridMapping.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("The mg mapping must be defined on the WORLD communicator.");
 
@@ -980,7 +980,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				level++;
 			}
 			InitImpl(thisTP);
-			csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 		}
 
 		/// <summary>
@@ -2005,6 +2004,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				// Start listening to signal (see AdvancedParallism)
 				ListenSignal(iIter);
+				IsEndSignalSent = false;
 
 				// Start timing for coarse grid correction and smoother (as they are parallel and wait for each other in case of AdvancedParallism)
 				CrseLevelTime.Start();
@@ -2042,7 +2042,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		int ThisSmootherGroupLeader => 0;
 		int ThisCoarseGroupLeader => NoOfCoarseProcs + NoOfSmootherProcs - 1;
 
-		const int signalTag = 22;
+		const int signalTag = 2;
 
 		MPI_Request RecvRequest;
 		bool IsEndSignalSent = false;
@@ -2070,9 +2070,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank < 0) return;
-
-			csMPI.Raw.Isend(_signalPtr, 1,	csMPI.Raw._DATATYPE.BYTE, targetRank, signalTag + Iter, thisComm, out MPI_Request req);
-			//Console.WriteLine($"Sent signal from {thisCommRank} to {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
+			int tag = (TpLevel << 16) | Iter;
+			csMPI.Raw.Isend(_signalPtr, 1,	csMPI.Raw._DATATYPE.BYTE, targetRank, (signalTag+ tag), thisComm, out MPI_Request req);
+			//CurrentTrace.Info($"Sent signal from {thisCommRank} to {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
 
 			IsEndSignalSent = true;
 			return;
@@ -2082,13 +2082,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (!AdvancedParallism) return;
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank < 0) return;
-
-			csMPI.Raw.Irecv(_recvPtr, 1, csMPI.Raw._DATATYPE.BYTE, targetRank, signalTag + Iter, thisComm, out RecvRequest);
+			int tag = (TpLevel << 16) | Iter;
+			csMPI.Raw.Irecv(_recvPtr, 1, csMPI.Raw._DATATYPE.BYTE, targetRank, (signalTag + tag), thisComm, out RecvRequest);
 
 			byte completionSignal = _recvBuffer[0];
+
 			//if (completionSignal == 1)
-			//	Console.WriteLine($"Got signal on rank {thisCommRank} from {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
+			//	CurrentTrace.Info($"Got signal on rank {thisCommRank} from {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
 		}
+
 
 		bool CheckSignal() {
 			if (!AdvancedParallism) return true; //if not enabled, bypass this feature by returning true
@@ -2122,7 +2124,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						k++;
 						done = CheckSignal();
 					}
-					trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+					CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
 					$"iteration={iIter} - All smoothers cycled extra {k}-times while waiting the coarse solver");
 				}
 
@@ -2155,7 +2157,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							done = CheckSignal();
 						}
 
-						trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+						CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
 						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the coarse solver");
 					}
 				}
