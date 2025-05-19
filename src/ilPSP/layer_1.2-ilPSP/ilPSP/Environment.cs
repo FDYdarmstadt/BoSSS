@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -284,13 +285,20 @@ namespace ilPSP {
 
         /// <summary>
         /// Parallel for-loop, the signature of <see cref="body"/> is: `i` (loop run variable in the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>)
+        /// **Note**: the balancing is the performend by this function,
+        /// i.e., calls to <paramref name="body"/> my have different runtimes dependiung on `i`.
+        /// If some call to <paramref name="body"/> is more expensive, the other threads continue.
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<int> body, bool enablePar = true) {
             ParallelFor(fromInclusive, toExclusive, (ThreadInfo _, int i) => body(i), enablePar);
         }
 
         /// <summary>
-        /// Parallel for-loop, the signature of <see cref="body"/> is: `i` (loop run variable in the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>)
+        /// Parallel for-loop, the signature of <see cref="body"/> is: `ithread, i` (loop run variable in the range from <paramref name="fromInclusive"/> to <paramref name="toExclusive"/>)
+        /// **Note**: the balancing is the performend by this function,
+        /// i.e., calls to <paramref name="body"/> my have different runtimes dependiung on `i`.
+        /// If some call to <paramref name="body"/> is more expensive, the other threads continue.
+        /// </summary>
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<ThreadInfo, int> body, bool enablePar = true) {
 
@@ -355,6 +363,91 @@ namespace ilPSP {
                 }
             }
         }
+
+        /// <summary>
+        /// Parallel foreach-loop, the signature of <see cref="body"/> is: `ithread, item` 
+        /// **Note**: 
+        /// 1. The balancing is the performend by this function,
+        ///    i.e., calls to <paramref name="body"/> my have different runtimes for different items.
+        ///    If some call to <paramref name="body"/> is more expensive, the other threads continue.
+        /// 2. This is only effective if the computational load per item is rather high;
+        ///    Otherwise, the obverhad by locking due to syncronized walktin through <paramref name="data_to_process"/> might outweigh the  improvements from parallelization
+        /// </summary>
+        /// </summary>
+        public static void ParallelForEach<T>(IEnumerable<T> data_to_process, Action<ThreadInfo, T> body, bool enablePar = true) {
+            if(InParallelSection == true || !enablePar || NumThreads <= 1) {
+                ThreadInfo ti;
+                ti.iThread = 0;
+                ti.NumThreads = 1;
+                foreach(T item in data_to_process) {
+                    body(ti, item);
+                }
+            } else {
+
+                int __Numthreads = enablePar ? NumThreads : 1;
+                //PinTPLThreads();
+
+                var options = new ParallelOptions {
+                    MaxDegreeOfParallelism = __Numthreads,
+                };
+                //ThreadPool.SetMinThreads(__Numthreads, 1);
+                //ThreadPool.SetMaxThreads(__Numthreads, 2);
+
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
+
+
+
+                    // we do the balancing:
+                    object padlock = new object();
+                    IEnumerator<T> enu = data_to_process.GetEnumerator();
+                    bool bstart = enu.MoveNext();
+                    T next_item = enu.Current;
+
+                    bool bTerminate = false;
+
+                    void balancingBody(int ithread) {
+                        ThreadInfo ti;
+                        ti.iThread = ithread;
+                        ti.NumThreads = __Numthreads;
+
+
+                        while(true) {
+                            T my_item;
+                            bool continue_on_loop;
+                            lock(padlock) {
+                                if(bTerminate)
+                                    return;
+                                my_item = next_item;
+                                continue_on_loop = enu.MoveNext();
+                                next_item = enu.Current;
+
+                                if(!continue_on_loop) {
+                                    bTerminate = true;
+                                } 
+                            }
+
+                            body(ti, my_item);
+                            if(!continue_on_loop)
+                                return;
+                        }
+                    }
+
+                    if(bstart)
+                        Parallel.For(0, __Numthreads, options, balancingBody);
+
+
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                    //PinOMPthreads();
+                }
+            }
+        }
+
 
         /// <summary>
         /// Parallel for-loop, the signature of <see cref="body"/> is: `i0, iE`.
@@ -455,6 +548,10 @@ namespace ilPSP {
         }
 
 
+        /// <summary>
+        /// The signature of <see cref="body"/> is: `i, localData => localData`
+        /// **Note**: the balancing is performend by the TPL implementation;
+        /// </summary>
         public static void ParallelFor<TLocal>(int fromInclusive, int toExclusive, Func<TLocal> localInit, Func<int, TLocal, TLocal> body, Action<TLocal> localFinally, bool enablePar = true) {
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 TLocal local = localInit();

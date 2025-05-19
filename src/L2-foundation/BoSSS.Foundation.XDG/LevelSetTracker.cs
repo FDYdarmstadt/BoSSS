@@ -1792,32 +1792,32 @@ namespace BoSSS.Foundation.XDG {
         /// physical time associated with current Level Set state, see <see cref="LevelSetRegions.Time"/>
         /// </param>
         public void UpdateTracker(double PhysTime, int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 ilPSP.MPICollectiveWatchDog.Watch();
-                
-                if (this.NearRegionWidth <= 0 && incremental == true) {
+
+                if(this.NearRegionWidth <= 0 && incremental == true) {
                     throw new NotSupportedException("Incremental update requires a near-region width of at least 1.");
                 }
                 CellMask oldNearMask = null;
-                if (incremental)
+                if(incremental)
                     oldNearMask = this.RegionsHistory[1].GetNearFieldMask(m_NearRegionWidth); // index '[1]' is NO mistake!
                 else
                     oldNearMask = null;
 
 
                 // set default values
-                if (__NearRegionWith < 0)
+                if(__NearRegionWith < 0)
                     __NearRegionWith = this.m_NearRegionWidth;
-                if (__LevSetAllowedMovement == null || __LevSetAllowedMovement.Length <= 0)
+                if(__LevSetAllowedMovement == null || __LevSetAllowedMovement.Length <= 0)
                     __LevSetAllowedMovement = this.m_LevSetAllowedMovement;
 
                 // check args
-                if (__LevSetAllowedMovement.Length != m_LevSetAllowedMovement.Length)
+                if(__LevSetAllowedMovement.Length != m_LevSetAllowedMovement.Length)
                     throw new ArgumentException("length must be equal to number of level sets.", "__LevSetAllowedMovement");
-                for (int i = 0; i < __LevSetAllowedMovement.Length; i++)
-                    if (__LevSetAllowedMovement[i] < 0)
+                for(int i = 0; i < __LevSetAllowedMovement.Length; i++)
+                    if(__LevSetAllowedMovement[i] < 0)
                         throw new ArgumentOutOfRangeException("__LevSetAllowedMovement", " each entry must be grater or equal to zero.");
-                if (__NearRegionWith < 0 || __NearRegionWith > 6)
+                if(__NearRegionWith < 0 || __NearRegionWith > 6)
                     throw new ArgumentException("maximum width for near region is 4 cells.", "NearRegionWith");
                 m_NearRegionWidth = __NearRegionWith;
 
@@ -1838,6 +1838,7 @@ namespace BoSSS.Foundation.XDG {
                 ushort[] VertexMarker, LevSetRegions, LevSetRegionsUnsigned;
                 BitArray[] LevSetNeg;
                 ushort[,] VertexMarkerExternal;
+                object _LevSetCoinciding_padlock = new object();
                 (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = null;
                 (int iLevSet, int iCoFace)[][] _LevSetCoincidingCoFaces = null;
 
@@ -1893,22 +1894,22 @@ namespace BoSSS.Foundation.XDG {
                 // evaluate level sets / find cut cells
                 // ====================================
                 #region UpdateTracker_FIND_CUT_CELLS
-                using (new BlockTrace("FIND_CUT_CELLS", tr)) {
+                using(new BlockTrace("FIND_CUT_CELLS", tr)) {
                     // cell sweep: find cut cells
                     // ==========================
 
                     CellMask SearchMask;
                     var TempCutCellsBitmaskS = NoOfLevSets.ForLoop(iLs => new BitArray(J));
-                    if (incremental) {
+                    if(incremental) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // incremental update: use the old Near-Band as a search-mask
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         ushort[] __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
-                        for (int levSetind = 0; levSetind < NoOfLevSets; levSetind++) {
+                        for(int levSetind = 0; levSetind < NoOfLevSets; levSetind++) {
                             BitArray _LevSetNeg = LevSetNeg[levSetind];
-                            for (int j = 0; j < J; j++) {
+                            for(int j = 0; j < J; j++) {
                                 int dist = DecodeLevelSetDist(__PrevLevSetRegions[j], levSetind);
                                 _LevSetNeg[j] = dist < 0;
                             }
@@ -1924,283 +1925,287 @@ namespace BoSSS.Foundation.XDG {
 
                     int MaxVecLen = (int)Math.Ceiling(16000.0 / ((double)TestNodes.Max(ns => ns.NoOfNodes)));
                     MaxVecLen = Math.Max(1, MaxVecLen);
-                    var eps = BLAS.MachineEps*10;
+                    var eps = BLAS.MachineEps * 10;
 
-             
+                    _ = this.TestTransformer;
+                    _ = this.TestTransformerEdges;
 
-
-                    //Environment.ParallelFor(
-                    var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
-                    foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
-                        int j = t_j0_Len.Item1;
-                        int VecLen = t_j0_Len.Item2;
-
-
-                        int iKref = m_gDat.Cells.GetRefElementIndex(j);
-                        var Kref = Krefs[iKref];
-                        int noOfFaces = Kref.NoOfFaces;
-                        int NoOfNodes = TestNodes[iKref].NoOfNodes;
-                        int noOfCoFaces = Kref.NoOfCoFaces;
-                        int[] _TestNodesPerFace = this.NoOfTestNodesPerFace[iKref];
-                        int[] _TestNodesPerCoFace = this.NoOfTestNodesPerCoFace[iKref];
-                        int noOfFaceNodes = _TestNodesPerFace.Sum();
-                        int noOfCoFaceNodes = _TestNodesPerCoFace.Sum();
-                        var quadWeights = TestNodes_QuadWeights[iKref];
-                        int[,] Face2Coface = Kref.FaceToCoFaceIndices;
-
-                        // loop over level sets ...
-                        for(int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
-
-                            (bool retPos, bool retNeg) DetectCoincidingFace(MultidimensionalArray levSetVal, int jCell) {
-                                bool Pos = false;
-                                bool Neg = false;
-
-                                // loop over nodes on edges/faces...
-                                int nodeIndex = 0;
-                                for(int e = 0; e < noOfFaces; e++) {
-                                    bool PosEdge = false;
-                                    bool NegEdge = false;
-
-                                    double quadResult = 0.0;
-                                    for(int k = 0; k < _TestNodesPerFace[e]; k++) {
-                                        double v = levSetVal[jCell - j, nodeIndex];
-
-                                        if(v < 0) {
-                                            NegEdge = true;
-                                        } else if(v > 0) {
-                                            PosEdge = true;
-                                        }
-                                        // [Toprak] why v*v not only v?
-                                        quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
-
-                                        nodeIndex++;
-                                    }
-
-                                    Pos |= PosEdge;
-                                    Neg |= NegEdge;
-
-                                    // detect an edge which coincides with the zero-level-set
-                                    if(quadResult < eps) {
-                                        if(_LevSetCoincidingFaces == null)
-                                            _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
-                                        if(_LevSetCoincidingCoFaces == null)
-                                            _LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[J][];
-
-                                        (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jCell]);
-
-                                        // if the level-set coincides with a face, it also coincides with the co-face
-                                        for(int z = 0; z < Face2Coface.GetLength(1); z++) {
-                                            int iCoFace = Face2Coface[e, z];
-
-                                            if(_LevSetCoincidingCoFaces[jCell] == null || !_LevSetCoincidingCoFaces[jCell].Any(tt => tt.iLevSet == levSetind && tt.iCoFace == iCoFace)) {
-                                                (levSetind, iCoFace).AddToArray(ref _LevSetCoincidingCoFaces[jCell]);
-                                            }
-                                        }
+                    IEnumerable<Tuple<int, int>> Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
+                    ilPSP.Environment.ParallelForEach<Tuple<int, int>>(
+                        Gchnks,
+                        delegate (ThreadInfo ti, Tuple<int, int> t_j0_Len) { // loop over all cells in the search mask...
+                            int j = t_j0_Len.Item1;
+                            int VecLen = t_j0_Len.Item2;
 
 
-                                    }
+                            int iKref = m_gDat.Cells.GetRefElementIndex(j);
+                            var Kref = Krefs[iKref];
+                            int noOfFaces = Kref.NoOfFaces;
+                            int NoOfNodes = TestNodes[iKref].NoOfNodes;
+                            int noOfCoFaces = Kref.NoOfCoFaces;
+                            int[] _TestNodesPerFace = this.NoOfTestNodesPerFace[iKref];
+                            int[] _TestNodesPerCoFace = this.NoOfTestNodesPerCoFace[iKref];
+                            int noOfFaceNodes = _TestNodesPerFace.Sum();
+                            int noOfCoFaceNodes = _TestNodesPerCoFace.Sum();
+                            var quadWeights = TestNodes_QuadWeights[iKref];
+                            int[,] Face2Coface = Kref.FaceToCoFaceIndices;
 
-                                } // end of edges loop
+                            // loop over level sets ...
+                            for(int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
 
-                                return (Pos, Neg);
-                            }
+                                (bool retPos, bool retNeg) DetectCoincidingFace(MultidimensionalArray levSetVal, int jCell) {
+                                    bool Pos = false;
+                                    bool Neg = false;
 
-                            (bool retPos, bool retNeg) DetectCoincidingCoFace(MultidimensionalArray levSetVal, int jCell) {
-                                bool Pos = false;
-                                bool Neg = false;
-
-                                // loop over nodes on edges/faces...
-                                int nodeIndex = noOfFaceNodes;
-                                for(int c = 0; c < noOfCoFaces; c++) {
-                                    bool PosEdge = false;
-                                    bool NegEdge = false;
-
-                                    double quadResult = 0.0;
-                                    for(int k = 0; k < _TestNodesPerCoFace[c]; k++) {
-                                        double v = levSetVal[jCell - j, nodeIndex];
-
-                                        if(v < 0) {
-                                            NegEdge = true;
-                                        } else if(v > 0) {
-                                            PosEdge = true;
-                                        }
-                                        quadResult += v * v; // weight might not even be necessary to test only for positivity
-
-                                        nodeIndex++;
-                                    }
-
-                                    Pos |= PosEdge;
-                                    Neg |= NegEdge;
-
-                                    // detect an edge which coincides with the zero-level-set
-                                    if(quadResult < eps) {
-                                        if(_LevSetCoincidingCoFaces == null)
-                                            _LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[J][];
-
-                                        if(_LevSetCoincidingCoFaces[jCell] == null || !_LevSetCoincidingCoFaces[jCell].Any(tt => tt.iLevSet == levSetind && tt.iCoFace == c)) {
-                                            (levSetind, c).AddToArray(ref _LevSetCoincidingCoFaces[jCell]);
-                                        }
-                                    }
-
-                                } // end of edges loop
-
-                                return (Pos, Neg);
-                            }
-
-                            
-
-                            var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
-
-
-                            if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                // Use the accelerated Bernstein cut cell finding technique for dg levelsets
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                var data = this.m_DataHistories[levSetind].Current;
-                                MultidimensionalArray levSetVal = data.GetLevSetValues(FaceNodes[iKref], j, VecLen);
-
-                                // loop over all cells in this chunk
-                                for (int jj = j; jj < j + VecLen; jj++) {
-                                    double[] modalVals = ls.Coordinates.GetRow(jj);
-                                    var TransformerEdges = this.TestTransformerEdges[levSetind];
-
-                                    // check faces:
-                                    var (Pos, Neg) = DetectCoincidingFace(levSetVal, jj);
-                                    // check co-faces
-                                    var (_Pos, _Neg) = DetectCoincidingCoFace(levSetVal, jj);
-                                    Pos |= _Pos;
-                                    Neg |= _Neg;
-
-
-
-                                    /* Seems to be not robust enough... using the "old" procedure for now
-                                    // loop over nodes on edges...
-                                    double[] bernsteinValsEdges = new double[TransformerEdges.Destination.Polynomials[iKref].Count];
-                                    TransformerEdges.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinValsEdges);
-
-                                    for (int e = 0; e < Kref.NoOfFaces; e++) {
+                                    // loop over nodes on edges/faces...
+                                    int nodeIndex = 0;
+                                    for(int e = 0; e < noOfFaces; e++) {
                                         bool PosEdge = false;
                                         bool NegEdge = false;
 
                                         double quadResult = 0.0;
-                                        foreach (int k in TransformerEdges.FaceCoefficients[iKref][e]) {
-                                            double v = bernsteinValsEdges[k];
+                                        for(int k = 0; k < _TestNodesPerFace[e]; k++) {
+                                            double v = levSetVal[jCell - j, nodeIndex];
 
-                                            if (v < 0) {
+                                            if(v < 0) {
                                                 NegEdge = true;
-                                            } else if (v > 0) {
+                                            } else if(v > 0) {
                                                 PosEdge = true;
                                             }
+                                            // [Toprak] why v*v not only v?
+                                            quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
 
-                                            // another option scale v by some appropriate scaling factor, the problem here can be,
-                                            // that for very small physical cells a coinciding edge is detected, even though this is not really the case.
-                                            quadResult += v * v; //Math.Abs(v); // if all edge control points are zero that edge is necessarily zero as well  
+                                            nodeIndex++;
                                         }
 
                                         Pos |= PosEdge;
                                         Neg |= NegEdge;
 
                                         // detect an edge which coincides with the zero-level-set
-                                        if (quadResult < eps) {
-                                            if (_LevSetCoincidingFaces == null)
-                                                _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
-                                            (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jj]);
+                                        if(quadResult < eps) {
+                                            lock(_LevSetCoinciding_padlock) {
+                                                if(_LevSetCoincidingFaces == null)
+                                                    _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
+                                                if(_LevSetCoincidingCoFaces == null)
+                                                    _LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[J][];
+
+                                                (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jCell]);
+
+                                                // if the level-set coincides with a face, it also coincides with the co-face
+                                                for(int z = 0; z < Face2Coface.GetLength(1); z++) {
+                                                    int iCoFace = Face2Coface[e, z];
+
+                                                    if(_LevSetCoincidingCoFaces[jCell] == null || !_LevSetCoincidingCoFaces[jCell].Any(tt => tt.iLevSet == levSetind && tt.iCoFace == iCoFace)) {
+                                                        (levSetind, iCoFace).AddToArray(ref _LevSetCoincidingCoFaces[jCell]);
+                                                    }
+                                                }
+                                            }
                                         }
-                                    } // end of edges loop 
-                                    */
 
-                                    // check also with slight offset and inside the cell
-                                    var Transformer = this.TestTransformer[levSetind];
-                                    double[] bernsteinVals = new double[Transformer.Destination.Polynomials[iKref].Count];
-                                    Transformer.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinVals);
+                                    } // end of edges loop
 
-                                    double Min = bernsteinVals.Min();
-                                    double Max = bernsteinVals.Max();
-
-                                    Pos |= Max > 0;
-                                    Neg |= Min < 0;
-
-                                    // either clear sign change or all zeros
-                                    if(Pos && Neg || (!Pos && !Neg)) {
-                                        // cell jj is cut by level set
-                                        // code cell:
-
-
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
-                                        TempCutCellsBitmask[jj] = true;
-                                    }
-
-                                    // detect purely negative cells
-                                    if(Max < 0.0) {
-                                        LevSetNeg[levSetind][jj] = true;
-                                    } else {
-                                        LevSetNeg[levSetind][jj] = false;
-                                    }
-
+                                    return (Pos, Neg);
                                 }
-                            } else {
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                // Use the old cut-cell detection,
-                                // which just evaluates the level-set at certain points in the cell.
-                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                                (bool retPos, bool retNeg) DetectCoincidingCoFace(MultidimensionalArray levSetVal, int jCell) {
+                                    bool Pos = false;
+                                    bool Neg = false;
 
-                                var data = this.m_DataHistories[levSetind].Current;
-                                MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
+                                    // loop over nodes on edges/faces...
+                                    int nodeIndex = noOfFaceNodes;
+                                    for(int c = 0; c < noOfCoFaces; c++) {
+                                        bool PosEdge = false;
+                                        bool NegEdge = false;
 
-                                for (int jj = 0; jj < VecLen; jj++) {
-                                    
-                                    // check faces:
-                                    var (Pos, Neg) = DetectCoincidingFace(levSetVal, jj);
-                                    // check co-faces
-                                    var (_Pos, _Neg) = DetectCoincidingCoFace(levSetVal, jj);
-                                    Pos |= _Pos;
-                                    Neg |= _Neg;
+                                        double quadResult = 0.0;
+                                        for(int k = 0; k < _TestNodesPerCoFace[c]; k++) {
+                                            double v = levSetVal[jCell - j, nodeIndex];
 
-                                    // loop over remaining Nodes...
-                                    int nodeIndex = noOfFaceNodes + noOfCoFaceNodes;
-                                    for (; nodeIndex < NoOfNodes; nodeIndex++) {
-                                        double v = levSetVal[jj, nodeIndex];
+                                            if(v < 0) {
+                                                NegEdge = true;
+                                            } else if(v > 0) {
+                                                PosEdge = true;
+                                            }
+                                            quadResult += v * v; // weight might not even be necessary to test only for positivity
 
-                                        bool PosNode = false;
-                                        bool NegNode = false;
-                                        if (v < 0) {
-                                            NegNode = true;
-                                        } else if (v > 0) {
-                                            PosNode = true;
+                                            nodeIndex++;
                                         }
 
-                                        Pos |= PosNode;
-                                        Neg |= NegNode;
+                                        Pos |= PosEdge;
+                                        Neg |= NegEdge;
+
+                                        // detect an edge which coincides with the zero-level-set
+                                        if(quadResult < eps) {
+                                            lock(_LevSetCoinciding_padlock) { 
+                                                if(_LevSetCoincidingCoFaces == null)
+                                                    _LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[J][];
+
+                                                if(_LevSetCoincidingCoFaces[jCell] == null || !_LevSetCoincidingCoFaces[jCell].Any(tt => tt.iLevSet == levSetind && tt.iCoFace == c)) {
+                                                    (levSetind, c).AddToArray(ref _LevSetCoincidingCoFaces[jCell]);
+                                                }
+                                            }
+                                        }
+
+                                    } // end of edges loop
+
+                                    return (Pos, Neg);
+                                }
+
+
+
+                                var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
+
+
+                                if(this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                    // Use the accelerated Bernstein cut cell finding technique for dg levelsets
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                    var data = this.m_DataHistories[levSetind].Current;
+                                    MultidimensionalArray levSetVal = data.GetLevSetValues(FaceNodes[iKref], j, VecLen);
+
+                                    // loop over all cells in this chunk
+                                    for(int jj = j; jj < j + VecLen; jj++) {
+                                        double[] modalVals = ls.Coordinates.GetRow(jj);
+                                        var TransformerEdges = this.TestTransformerEdges[levSetind];
+
+                                        // check faces:
+                                        var (Pos, Neg) = DetectCoincidingFace(levSetVal, jj);
+                                        // check co-faces
+                                        var (_Pos, _Neg) = DetectCoincidingCoFace(levSetVal, jj);
+                                        Pos |= _Pos;
+                                        Neg |= _Neg;
+
+
+
+                                        /* Seems to be not robust enough... using the "old" procedure for now
+                                        // loop over nodes on edges...
+                                        double[] bernsteinValsEdges = new double[TransformerEdges.Destination.Polynomials[iKref].Count];
+                                        TransformerEdges.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinValsEdges);
+
+                                        for (int e = 0; e < Kref.NoOfFaces; e++) {
+                                            bool PosEdge = false;
+                                            bool NegEdge = false;
+
+                                            double quadResult = 0.0;
+                                            foreach (int k in TransformerEdges.FaceCoefficients[iKref][e]) {
+                                                double v = bernsteinValsEdges[k];
+
+                                                if (v < 0) {
+                                                    NegEdge = true;
+                                                } else if (v > 0) {
+                                                    PosEdge = true;
+                                                }
+
+                                                // another option scale v by some appropriate scaling factor, the problem here can be,
+                                                // that for very small physical cells a coinciding edge is detected, even though this is not really the case.
+                                                quadResult += v * v; //Math.Abs(v); // if all edge control points are zero that edge is necessarily zero as well  
+                                            }
+
+                                            Pos |= PosEdge;
+                                            Neg |= NegEdge;
+
+                                            // detect an edge which coincides with the zero-level-set
+                                            if (quadResult < eps) {
+                                                if (_LevSetCoincidingFaces == null)
+                                                    _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
+                                                (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jj]);
+                                            }
+                                        } // end of edges loop 
+                                        */
+
+                                        // check also with slight offset and inside the cell
+                                        var Transformer = this.TestTransformer[levSetind];
+                                        double[] bernsteinVals = new double[Transformer.Destination.Polynomials[iKref].Count];
+                                        Transformer.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinVals);
+
+                                        double Min = bernsteinVals.Min();
+                                        double Max = bernsteinVals.Max();
+
+                                        Pos |= Max > 0;
+                                        Neg |= Min < 0;
+
+                                        // either clear sign change or all zeros
+                                        if(Pos && Neg || (!Pos && !Neg)) {
+                                            // cell jj is cut by level set
+                                            // code cell:
+
+
+                                            EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
+                                            TempCutCellsBitmask[jj] = true;
+                                        }
+
+                                        // detect purely negative cells
+                                        if(Max < 0.0) {
+                                            LevSetNeg[levSetind][jj] = true;
+                                        } else {
+                                            LevSetNeg[levSetind][jj] = false;
+                                        }
+
                                     }
+                                } else {
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                    // Use the old cut-cell detection,
+                                    // which just evaluates the level-set at certain points in the cell.
+                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-                                    if ((Pos && Neg) || (!Pos && !Neg)) {
-                                        // cell j+jj is cut by level set
+                                    var data = this.m_DataHistories[levSetind].Current;
+                                    MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
 
-                                        // code cell:
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
-                                        TempCutCellsBitmask[j + jj] = true;
-                                    }
+                                    for(int jj = 0; jj < VecLen; jj++) {
 
-                                    if (Neg == true && Pos == false) {
-                                        LevSetNeg[levSetind][j + jj] = true;
-                                    } else {
-                                        LevSetNeg[levSetind][j + jj] = false;
+                                        // check faces:
+                                        var (Pos, Neg) = DetectCoincidingFace(levSetVal, jj);
+                                        // check co-faces
+                                        var (_Pos, _Neg) = DetectCoincidingCoFace(levSetVal, jj);
+                                        Pos |= _Pos;
+                                        Neg |= _Neg;
+
+                                        // loop over remaining Nodes...
+                                        int nodeIndex = noOfFaceNodes + noOfCoFaceNodes;
+                                        for(; nodeIndex < NoOfNodes; nodeIndex++) {
+                                            double v = levSetVal[jj, nodeIndex];
+
+                                            bool PosNode = false;
+                                            bool NegNode = false;
+                                            if(v < 0) {
+                                                NegNode = true;
+                                            } else if(v > 0) {
+                                                PosNode = true;
+                                            }
+
+                                            Pos |= PosNode;
+                                            Neg |= NegNode;
+                                        }
+
+
+                                        if((Pos && Neg) || (!Pos && !Neg)) {
+                                            // cell j+jj is cut by level set
+
+                                            // code cell:
+                                            EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
+                                            TempCutCellsBitmask[j + jj] = true;
+                                        }
+
+                                        if(Neg == true && Pos == false) {
+                                            LevSetNeg[levSetind][j + jj] = true;
+                                        } else {
+                                            LevSetNeg[levSetind][j + jj] = false;
+                                        }
                                     }
                                 }
                             }
-                        }
-                        j += VecLen;
+                            j += VecLen;
 
-                    }
+                        });
+                    
 
 
                     if(_LevSetCoincidingFaces != null)
                         Regions.m_LevSetCoincidingFaces = _LevSetCoincidingFaces;
                     if(_LevSetCoincidingCoFaces != null)
                         Regions.m_LevSetCoincidingCoFaces = _LevSetCoincidingCoFaces;
-                }
+                } // end of FIND_CUT_CELLS
 
                 //test.AddVector()
 
