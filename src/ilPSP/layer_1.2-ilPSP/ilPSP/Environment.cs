@@ -351,7 +351,7 @@ namespace ilPSP {
                         }
                     }
 
-
+                    PinTPLThreadsSometimes();
                     Parallel.For(0, __Numthreads, options, balancingBody);
 
 
@@ -359,7 +359,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    //PinOMPthreads();
+                    PinOMPthreadsSometimes();
                 }
             }
         }
@@ -435,6 +435,7 @@ namespace ilPSP {
                         }
                     }
 
+                    PinTPLThreadsSometimes();
                     if(bstart)
                         Parallel.For(0, __Numthreads, options, balancingBody);
 
@@ -443,7 +444,7 @@ namespace ilPSP {
                     InParallelSection = false;
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
-                    //PinOMPthreads();
+                    PinOMPthreadsSometimes();
                 }
             }
         }
@@ -460,43 +461,6 @@ namespace ilPSP {
                 body(i0, iE);
             }
             ParallelFor(fromInclusive, toExclusive, _body, enablePar);
-
-            /*if(InParallelSection == true || !enablePar || NumThreads <= 1) {
-                body(fromInclusive, toExclusive);
-            } else {
-
-                int __Numthreads = enablePar ? NumThreads : 1;
-
-
-                var options = new ParallelOptions {
-                    MaxDegreeOfParallelism = __Numthreads,
-                };
-                //ThreadPool.SetMinThreads(__Numthreads, 1);
-                //ThreadPool.SetMaxThreads(__Numthreads, 2);
-
-                try {
-                    InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
-
-                    void _body(int ithread) {
-                        //PinTPLThread(ithread);
-                        int L = toExclusive - fromInclusive;
-                        int i0 = (L * ithread) / __Numthreads;
-                        int iE = (L * (ithread + 1)) / __Numthreads;
-
-                        body(i0, iE);
-                    }
-
-
-                    Parallel.For(0, __Numthreads, options, _body);
-                } finally {
-                    InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    //PinOMPthreads();
-                }
-            }*/
         }
 
 
@@ -537,12 +501,13 @@ namespace ilPSP {
                         body(ti, i0, iE);
                     }
 
+                    PinTPLThreadsSometimes();
                     Parallel.For(0, __Numthreads, options, _body);
                 } finally {
                     InParallelSection = false;
-
                     BLAS.ActivateOMP(); // restore parallel 
                     LAPACK.ActivateOMP();
+                    PinOMPthreadsSometimes();
                 }
             }
         }
@@ -568,7 +533,6 @@ namespace ilPSP {
                 }
 
                 int __Numthreads = enablePar ? NumThreads : 1;
-                ///PinTPLThreads();
 
                 var options = new ParallelOptions {
                     MaxDegreeOfParallelism = __Numthreads,
@@ -585,12 +549,13 @@ namespace ilPSP {
                         return body(i, r);
                     }
 
+                    PinTPLThreadsSometimes();
                     Parallel.For(fromInclusive, toExclusive, options, localInit, _body, localFinally);
                 } finally {
                     InParallelSection = false;
                     BLAS.ActivateOMP();
                     LAPACK.ActivateOMP();
-                    //PinOMPthreads();
+                    PinOMPthreadsSometimes();
                 }
             }
         }
@@ -845,6 +810,31 @@ namespace ilPSP {
 
 
         static bool PerformTPLthreadPinning = false;
+
+
+        static Stopwatch last_PinTPL = new Stopwatch();
+
+        static void PinTPLThreadsSometimes() {
+            if(last_PinTPL.IsRunning == false || last_PinTPL.ElapsedMilliseconds > 1000 * 60 * 2) { //  reduced to 2-minute interfall to reduce overhead
+                last_PinTPL.Stop();
+                PinTPLThreads();
+                last_PinTPL.Restart();
+            }
+
+        }
+
+        static Stopwatch last_PinOMP = new Stopwatch();
+
+
+        static void PinOMPthreadsSometimes() {
+            if(last_PinOMP.IsRunning == false || last_PinOMP.ElapsedMilliseconds > 1000 * 60 * 2) { //  reduced to 2-minute interfall to reduce overhead
+                last_PinOMP.Stop();
+                PinOMPthreads();
+                last_PinOMP.Restart();
+            }
+        }
+
+
 
         static void PinTPLThreads() {
             if(PerformTPLthreadPinning) {
