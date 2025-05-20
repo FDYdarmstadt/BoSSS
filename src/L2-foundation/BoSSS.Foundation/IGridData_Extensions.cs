@@ -200,17 +200,17 @@ namespace BoSSS.Foundation.Grid {
         }
 
 
-        class Mask2GeomChunks_Enum : IEnumerator<Tuple<int, int>> {
+        class Mask2GeomChunks_Enum : IEnumerator<(int i0, int Length)> {
 
             public int MaxVecLen = 1;
             public CellMask CM;
             public CellInfo ConsecutiveMask = CellInfo.Undefined;
 
             IEnumerator<Chunk> CMenum = null;
-            Tuple<int, int> m_Current = null;
+            (int i0, int Length) m_Current;
             //List<Tuple<int, int>> bisher = new List<Tuple<int, int>>();
 
-            public Tuple<int, int> Current {
+            public (int i0, int Length) Current {
                 get {
                     if (CMenum == null)
                         throw new InvalidOperationException();
@@ -351,12 +351,12 @@ namespace BoSSS.Foundation.Grid {
                 }
 
                 if (iE > i0) {
-                    m_Current = new Tuple<int, int>(i0, iE - i0);
+                    m_Current = (i0, iE - i0);
                     //bisher.Add(m_Current);
                     Debug.Assert(iE - i0 <= MaxLen);
                     return true;
                 } else {
-                    m_Current = null;
+                    m_Current = (-1, -2);
                     return false;
                 }
             }
@@ -368,12 +368,12 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
-        class Mask2GeomChunks_Enumable : IEnumerable<Tuple<int, int>> {
+        class Mask2GeomChunks_Enumable : IEnumerable<(int i0, int Length)> {
             public int MaxVecLen = 1;
             public CellMask CM;
             public CellInfo ConsecutiveMask = CellInfo.Undefined;
 
-            public IEnumerator<Tuple<int, int>> GetEnumerator() {
+            public IEnumerator<(int i0, int Length)> GetEnumerator() {
                 return new Mask2GeomChunks_Enum() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
             }
 
@@ -387,11 +387,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Returns an enumeration of geometrical cell chunks (first index an length) for a given cell mask.
         /// </summary>
-        /// <param name="CM"></param>
-        /// <param name="MaxVecLen"></param>
-        /// <param name="ConsecutiveMask"></param>
-        /// <returns></returns>
-        public static IEnumerable<Tuple<int, int>> GetGeometricCellChunks(this CellMask CM, int MaxVecLen, CellInfo ConsecutiveMask = CellInfo.Undefined) {
+        public static IEnumerable<(int i0, int Length)> GetGeometricCellChunks(this CellMask CM, int MaxVecLen, CellInfo ConsecutiveMask = CellInfo.Undefined) {
             var ret = new Mask2GeomChunks_Enumable() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
 #if DEBUG
             int JG = CM.GridData.iGeomCells.Count;

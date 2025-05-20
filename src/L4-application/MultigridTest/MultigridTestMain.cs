@@ -53,11 +53,13 @@ namespace BoSSS.Application.MultigridTest {
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI(args);
             ilPSP.Environment.NumThreads = 1;
-            TestProgramCurvedMG.Init();
+            //TestProgramCurvedMG.Init();
             TestProgramLinearMG.Init();
 
-            BoSSS.Application.MultigridTest.TestProgramLinearMG.RestictionMatrixTest(1);
-            BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest(0,0.0d,0);
+            BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_Norm(1, 0.0d, 0, MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite);
+
+            //BoSSS.Application.MultigridTest.TestProgramLinearMG.RestictionMatrixTest(1);
+            //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest(0,0.0d,0);
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.RestrictionOfSystemOpTest();
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_Norm(0, 0.1, 1, MultigridOperator.Mode.SymPart_DiagBlockEquilib);
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest_2(0, 0.3d);
@@ -70,8 +72,8 @@ namespace BoSSS.Application.MultigridTest {
             //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(3, 0.0d, 1);
             //BoSSS.Application.MultigridTest.TestProgramCurvedMG.XDG_MatrixPolynomialRestAndPrlgTest_2(0, 0.0);
             //BoSSS.Application.MultigridTest.TestProgramLinearMG.XDG_MatrixPolynomialRestAndPrlgTest(0, 0.0d, 0);
-            foreach (int w in new int[] { 0 }) {
-                for (int p = 1; p <= 1; p++) {
+            foreach(int w in new int[] { 0 }) {
+                for(int p = 1; p <= 1; p++) {
                     //TestProgram.ProlongationTest(p);
                     //TestProgram.PolynomialRestAndPrlgTest(p);
                     //XDG_MatrixPolynomialRestAndPrlgTest_2

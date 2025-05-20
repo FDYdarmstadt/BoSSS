@@ -1277,6 +1277,8 @@ namespace BoSSS.Foundation.XDG {
 
         BernsteinTransformator[] m_TestTransformer;
 
+        object padlock_TestTransformer = new object(); // multi-thread synchronization padlock
+
         /// <summary>
         /// Transformator for each level set to transform the Legendre coefficients to Bernstein coefficients
         /// we then use there superior geometric properties to search for cut cells.
@@ -1284,11 +1286,13 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         BernsteinTransformator[] TestTransformer { 
             get{
-                if (m_TestTransformer == null) {
-                    m_TestTransformer = new BernsteinTransformator[this.LevelSets.Count];
-                    for(int i = 0; i< this.LevelSets.Count; i++ ) {
-                        if (this.LevelSets[i] is LevelSet ls) {
-                            m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005);
+                lock(padlock_TestTransformer) {
+                    if(m_TestTransformer == null) {
+                        m_TestTransformer = new BernsteinTransformator[this.LevelSets.Count];
+                        for(int i = 0; i < this.LevelSets.Count; i++) {
+                            if(this.LevelSets[i] is LevelSet ls) {
+                                m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005);
+                            }
                         }
                     }
                 }
@@ -1298,6 +1302,8 @@ namespace BoSSS.Foundation.XDG {
 
         BernsteinTransformator[] m_TestTransformerEdges;
 
+        object padlock_TestTestTransformerEdges = new object(); // multi-thread synchronization padlock
+
         /// <summary>
         /// Transformator for each level set to transform the legendre coefficients to bernstein coefficients
         /// we then use there superior geometric properties to search for cut cells.
@@ -1305,11 +1311,13 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         BernsteinTransformator[] TestTransformerEdges {
             get {
-                if (m_TestTransformerEdges == null) {
-                    m_TestTransformerEdges = new BernsteinTransformator[this.LevelSets.Count];
-                    for (int i = 0; i < this.LevelSets.Count; i++) {
-                        if (this.LevelSets[i] is LevelSet ls)
-                            m_TestTransformerEdges[i] = new BernsteinTransformator(ls.Basis);
+                lock(padlock_TestTestTransformerEdges) {
+                    if(m_TestTransformerEdges == null) {
+                        m_TestTransformerEdges = new BernsteinTransformator[this.LevelSets.Count];
+                        for(int i = 0; i < this.LevelSets.Count; i++) {
+                            if(this.LevelSets[i] is LevelSet ls)
+                                m_TestTransformerEdges[i] = new BernsteinTransformator(ls.Basis);
+                        }
                     }
                 }
                 return m_TestTransformerEdges;
@@ -1836,7 +1844,7 @@ namespace BoSSS.Foundation.XDG {
                 Regions.Time = PhysTime;
 
                 ushort[] VertexMarker, LevSetRegions, LevSetRegionsUnsigned;
-                BitArray[] LevSetNeg;
+                bool[][] LevSetNeg;
                 ushort[,] VertexMarkerExternal;
                 object _LevSetCoinciding_padlock = new object();
                 (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = null;
@@ -1875,9 +1883,9 @@ namespace BoSSS.Foundation.XDG {
                         VertexMarker[i] = AllFARplus;
                     VertexMarkerExternal = new ushort[JA - J, Krefs.Max(Kref => Kref.NoOfVertices)];
 
-                    LevSetNeg = new BitArray[NoOfLevSets]; // true marks a cell in which the level set field is completely negative
+                    LevSetNeg = new bool[NoOfLevSets][]; // true marks a cell in which the level set field is completely negative
                     for(int i = 0; i < LevSetNeg.Length; i++)
-                        LevSetNeg[i] = new BitArray(J);
+                        LevSetNeg[i] = new bool[J];
 
                     // define test vertices
                     DefineTestNodes();
@@ -1908,7 +1916,7 @@ namespace BoSSS.Foundation.XDG {
                         ushort[] __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
                         for(int levSetind = 0; levSetind < NoOfLevSets; levSetind++) {
-                            BitArray _LevSetNeg = LevSetNeg[levSetind];
+                            bool[] _LevSetNeg = LevSetNeg[levSetind];
                             for(int j = 0; j < J; j++) {
                                 int dist = DecodeLevelSetDist(__PrevLevSetRegions[j], levSetind);
                                 _LevSetNeg[j] = dist < 0;
@@ -1927,15 +1935,16 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps * 10;
 
+                    // initialize the 'deferred members' outside of the multithrad-loop
                     _ = this.TestTransformer;
                     _ = this.TestTransformerEdges;
 
-                    IEnumerable<Tuple<int, int>> Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
-                    ilPSP.Environment.ParallelForEach<Tuple<int, int>>(
+                    IEnumerable<(int i0, int Length)> Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
+                    ilPSP.Environment.ParallelForEach<(int i0, int Length)>(
                         Gchnks,
-                        delegate (ThreadInfo ti, Tuple<int, int> t_j0_Len) { // loop over all cells in the search mask...
-                            int j = t_j0_Len.Item1;
-                            int VecLen = t_j0_Len.Item2;
+                        delegate (ThreadInfo ti, (int i0, int Length) t_j0_Len) { // loop over all cells in the search mask...
+                            int j = t_j0_Len.i0;
+                            int VecLen = t_j0_Len.Length;
 
 
                             int iKref = m_gDat.Cells.GetRefElementIndex(j);
@@ -2036,7 +2045,7 @@ namespace BoSSS.Foundation.XDG {
 
                                         // detect an edge which coincides with the zero-level-set
                                         if(quadResult < eps) {
-                                            lock(_LevSetCoinciding_padlock) { 
+                                            lock(_LevSetCoinciding_padlock) {
                                                 if(_LevSetCoincidingCoFaces == null)
                                                     _LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[J][];
 
@@ -2051,10 +2060,7 @@ namespace BoSSS.Foundation.XDG {
                                     return (Pos, Neg);
                                 }
 
-
-
                                 var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
-
 
                                 if(this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
                                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2076,8 +2082,8 @@ namespace BoSSS.Foundation.XDG {
                                         Neg |= _Neg;
 
 
-
-                                        /* Seems to be not robust enough... using the "old" procedure for now
+                                        /*
+                                        // Seems to be not robust enough... using the "old" procedure for now
                                         // loop over nodes on edges...
                                         double[] bernsteinValsEdges = new double[TransformerEdges.Destination.Polynomials[iKref].Count];
                                         TransformerEdges.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinValsEdges);
@@ -2129,11 +2135,11 @@ namespace BoSSS.Foundation.XDG {
                                             // cell jj is cut by level set
                                             // code cell:
 
-
                                             EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
                                             TempCutCellsBitmask[jj] = true;
                                         }
 
+                                        //lock(globalLock) {
                                         // detect purely negative cells
                                         if(Max < 0.0) {
                                             LevSetNeg[levSetind][jj] = true;
@@ -2141,7 +2147,9 @@ namespace BoSSS.Foundation.XDG {
                                             LevSetNeg[levSetind][jj] = false;
                                         }
 
+                                        //}
                                     }
+
                                 } else {
                                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                     // Use the old cut-cell detection,
@@ -2194,12 +2202,10 @@ namespace BoSSS.Foundation.XDG {
                                         }
                                     }
                                 }
-                            }
+                            } // end loop over level sets
                             j += VecLen;
 
-                        });
-                    
-
+                        } );
 
                     if(_LevSetCoincidingFaces != null)
                         Regions.m_LevSetCoincidingFaces = _LevSetCoincidingFaces;

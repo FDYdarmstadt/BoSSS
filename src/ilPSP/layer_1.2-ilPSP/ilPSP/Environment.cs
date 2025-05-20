@@ -33,7 +33,7 @@ using NUnit.Framework;
 namespace ilPSP {
 
     /// <summary>
-    /// info for expert-versions of the parallel for
+    /// info for expert-versions of the parallel-for-loops
     /// </summary>
     public struct ThreadInfo {
 
@@ -367,11 +367,11 @@ namespace ilPSP {
         /// <summary>
         /// Parallel foreach-loop, the signature of <see cref="body"/> is: `ithread, item` 
         /// **Note**: 
-        /// 1. The balancing is the performend by this function,
+        /// 1. The balancing is the performed by this function,
         ///    i.e., calls to <paramref name="body"/> my have different runtimes for different items.
         ///    If some call to <paramref name="body"/> is more expensive, the other threads continue.
         /// 2. This is only effective if the computational load per item is rather high;
-        ///    Otherwise, the obverhad by locking due to syncronized walktin through <paramref name="data_to_process"/> might outweigh the  improvements from parallelization
+        ///    Otherwise, the overhead by locking due to synchronized walking through <paramref name="data_to_process"/> might outweigh the  improvements from parallelization
         /// </summary>
         /// </summary>
         public static void ParallelForEach<T>(IEnumerable<T> data_to_process, Action<ThreadInfo, T> body, bool enablePar = true) {
@@ -398,8 +398,6 @@ namespace ilPSP {
                     BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
                     LAPACK.ActivateSEQ();
 
-
-
                     // we do the balancing:
                     object padlock = new object();
                     IEnumerator<T> enu = data_to_process.GetEnumerator();
@@ -407,6 +405,9 @@ namespace ilPSP {
                     T next_item = enu.Current;
 
                     bool bTerminate = false;
+
+                    int[] LocalIters = new int[16];
+
 
                     void balancingBody(int ithread) {
                         ThreadInfo ti;
@@ -417,7 +418,7 @@ namespace ilPSP {
                         while(true) {
                             T my_item;
                             bool continue_on_loop;
-                            lock(padlock) {
+                            lock(padlock) { // synchronized walking through the enumerator
                                 if(bTerminate)
                                     return;
                                 my_item = next_item;
@@ -429,6 +430,7 @@ namespace ilPSP {
                                 } 
                             }
 
+                            LocalIters[ithread]++;
                             body(ti, my_item);
                             if(!continue_on_loop)
                                 return;
@@ -438,7 +440,6 @@ namespace ilPSP {
                     PinTPLThreadsSometimes();
                     if(bstart)
                         Parallel.For(0, __Numthreads, options, balancingBody);
-
 
                 } finally {
                     InParallelSection = false;
