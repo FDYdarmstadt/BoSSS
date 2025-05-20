@@ -941,7 +941,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-			var NoOfProcs = CalculateProcessorDistribution(op);
+			var ThisAndCoarserLevels = GetSubOperatorChain(op);
+			var NoOfProcs = CalculateProcessorDistribution(ThisAndCoarserLevels);
 			int WorldSize = op.Mapping.MpiSize;
 			Debug.Assert(NoOfProcs[op.LevelIndex] == WorldSize);
 
@@ -954,70 +955,72 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				{ InitLevel = op.LevelIndex };
 
 			TaskParallelMGOperator finerTP = thisTP;
-			if (verbose) {
-				op.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_0.txt");
-				op.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_0.txt");
-			}
 
-			int level = 1;
-			for (MultigridOperator op_lv = op.CoarserLevel; op_lv != null; op_lv = op_lv.CoarserLevel) {
-				if (verbose) {
-					op_lv.OperatorMatrix.SaveToTextFileSparseDebug($"OperatorMatrix_{level}.txt");
-					op_lv.OperatorMatrix.SaveToTextFileSparse($"OperatorMatrix_{level}.txt");
-
-					op_lv.GetPrologonationOperator.SaveToTextFileSparseDebug($"ProlongationMatrix_{level}.txt");
-					op_lv.GetPrologonationOperator.SaveToTextFileSparse($"ProlongationMatrix_{level}.txt");
-				}
-
-
+			var op_lv_solver = this.CoarserLevelSolver;
+			int maxLevel = NoOfProcs.Length;	
+			
+			for (int TpLevel = 1; TpLevel < ThisAndCoarserLevels.Length; TpLevel++) {
+				var op_lv = ThisAndCoarserLevels[TpLevel];
 				var coarserTP = new TaskParallelMGOperator(op_lv.OperatorMatrix, op_lv.GetPrologonationOperator, op_lv.Mapping, 
 					NoOfProcs[op_lv.LevelIndex], NoOfProcs.ElementAtOrDefault(op_lv.LevelIndex+1), finerTP, 
-					op_lv.LeftChangeOfBasis, op_lv.RightChangeOfBasis, op_lv.CoarserLevel != null);
+					op_lv.LeftChangeOfBasis, op_lv.RightChangeOfBasis, 
+					ThisAndCoarserLevels.ElementAtOrDefault(TpLevel + 1) != null);
 
 				finerTP.CoarserLevel = coarserTP;
-                //coarserTP.FinerLevel = finerTP;
 				finerTP = coarserTP;
-				level++;
 			}
 			InitImpl(thisTP);
+		}
+
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="root"></param>
+		/// <returns></returns>
+		MultigridOperator[] GetSubOperatorChain(MultigridOperator root) {
+			MultigridOperator op_lv = root;
+			ISolverSmootherTemplate op_lv_solver = this;
+			List<MultigridOperator> SubChain = new List<MultigridOperator>();
+			// find the coarsest level
+			while (op_lv != null && op_lv_solver != null) {
+				SubChain.Add(op_lv);
+				op_lv = op_lv.CoarserLevel;
+				op_lv_solver = (op_lv_solver is TaskParallelOrthoMG Tp) ? Tp.CoarserLevelSolver : null;
+			}
+
+			return SubChain.ToArray();
 		}
 
 		/// <summary>
 		/// Calculate number of processors for task parallel distribution
 		/// </summary>
-		/// <param name="root"></param>
+		/// <param name="Chain">Chain of MG operators</param>
 		/// <returns>An int array for each level with the number of processors (returns for whole MG but keeps zero until task parallel starts)</returns>
-		int[] CalculateProcessorDistribution(MultigridOperator root) {
+		int[] CalculateProcessorDistribution(MultigridOperator[] Chain) {
 			using (var tr = new FuncTrace()) {
 				tr.InfoToConsole = true;
-				long TotDOFs = 0;
-				long coarsestDOFs = 0;
-				int WorldSize = root.Mapping.MpiSize;
+				int WorldSize = Chain.First().Mapping.MpiSize;
 
-				int StartOfTpLevel = root.LevelIndex;
+				int StartOfTpLevel = Chain.First().LevelIndex;
+				int EndOfTpLevel = Chain.Last().LevelIndex;
 
-				MultigridOperator op_lv = root;
-				MultigridOperator coarsest = null;
-
-				// find the coarsest level
-				while (op_lv != null) {
-					TotDOFs += op_lv.Mapping.TotalLength;
-					coarsest = op_lv;             // remember this level
-					op_lv = op_lv.CoarserLevel;
-				}
-				coarsestDOFs = coarsest.Mapping.TotalLength;
-				int EndOfTpLevel = coarsest.LevelIndex;
+				long coarsestDOFs = Chain.Last().Mapping.TotalLength;
+				long TotDOFs = Chain.Select(c => c.Mapping.TotalLength).Sum();
 
 				// all the smoother operators should have more or less the same DOFs/proc
 				int SmootherDOFsPerProc = (int)((TotDOFs - coarsestDOFs) / WorldSize); 
 				int[] NoProcs = new int[EndOfTpLevel + 1]; // use the original level index and keep 0 for unused ones (better for exception catching)
 
+				if (Chain.Length < 2) // at least one for this one and one for coarser/direct solver
+					throw new ArgumentException("TaskParallelOrthoMG: MG chain must have at least 2 levels."); 
+
 				// the coarsest level has always 1 processor
 				NoProcs[EndOfTpLevel] = 1;
 
 				// start with one finer level than the coarsest
-				op_lv = coarsest.FinerLevel;
 				for (int l = EndOfTpLevel - 1; l >= StartOfTpLevel; l--) {
+					var op_lv = Chain[l- StartOfTpLevel];
 
 					int NoOfThisLevelSmootherProcs = Math.Max((int)(op_lv.Mapping.TotalLength / SmootherDOFsPerProc), 1);
 
@@ -1039,9 +1042,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				tr.Info($"Levels from {StartOfTpLevel} to {EndOfTpLevel}   |  level {EndOfTpLevel} (coarsest) uses 1 processor\n");
 				tr.Info("Level        DOFs        # of procs   smoother  coarse    DOFs/proc");
 				tr.Info("-----  -------------   ----------  --------  ------  -------------");
-				op_lv = root;
 
 				for (int l = StartOfTpLevel; l <= EndOfTpLevel; l++) {
+					var op_lv = Chain[l - StartOfTpLevel];
 					int p = NoProcs[l];
 					int coarse = (l < EndOfTpLevel) ? NoProcs[l + 1] : 1;
 					int smooth = p - coarse;
@@ -1050,7 +1053,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						$"{l,3}   {op_lv.Mapping.TotalLength,12:N0}   {p,10}     {smooth,8}   {coarse,6}   {ratio,13:F1}"
 					);
 
-					op_lv = op_lv.CoarserLevel;
 				}
 
 #if DEBUG_EXTENDED
@@ -2138,6 +2140,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					throw new InvalidOperationException("Coarse level solver is not initialized.");
 				}
 
+
 				// Restrict the residual to the coarse grid
 				double[] ResCoarse = Restrict(B);
 				double[] XCoarse = Restrict(X);
@@ -2157,7 +2160,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							done = CheckSignal();
 						}
 
-						CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+						trace.InfoToConsole = CurrentTrace.InfoToConsole;
+						trace.StdoutOnOnlyLastRank();
+						trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
 						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the coarse solver");
 					}
 				}

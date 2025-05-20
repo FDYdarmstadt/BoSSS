@@ -785,7 +785,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 
 
-                int[] DOFsPerBlock;
+                int[] DOFsPerBlock = null;
 #if DEBUG
 				var DOFsPerBlockLocal = new int[config.NoOfBlocks];
 				for (int iBlk = 0; iBlk < locDOFs.Length; iBlk++)

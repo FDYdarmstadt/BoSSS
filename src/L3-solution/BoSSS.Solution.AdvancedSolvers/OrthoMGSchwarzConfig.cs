@@ -344,7 +344,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="SchwarzblockSize"></param>
         /// <returns></returns>
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int, int> SchwarzblockSize) {
-            Debugger.Launch();
+            //Debugger.Launch();
 			using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 int MSLength = op.NoOfLevels;
