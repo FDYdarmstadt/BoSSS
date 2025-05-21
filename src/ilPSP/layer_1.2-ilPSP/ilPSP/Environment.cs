@@ -816,7 +816,7 @@ namespace ilPSP {
         static Stopwatch last_PinTPL = new Stopwatch();
 
         static void PinTPLThreadsSometimes() {
-            if(last_PinTPL.IsRunning == false || last_PinTPL.ElapsedMilliseconds > 1000 * 60 * 2) { //  reduced to 2-minute interfall to reduce overhead
+            if(last_PinTPL.IsRunning == false || last_PinTPL.ElapsedMilliseconds > 1000 * 60 * 2) { //  reduced to 2-minute interval to reduce overhead
                 last_PinTPL.Stop();
                 PinTPLThreads();
                 last_PinTPL.Restart();
@@ -828,7 +828,7 @@ namespace ilPSP {
 
 
         static void PinOMPthreadsSometimes() {
-            if(last_PinOMP.IsRunning == false || last_PinOMP.ElapsedMilliseconds > 1000 * 60 * 2) { //  reduced to 2-minute interfall to reduce overhead
+            if(last_PinOMP.IsRunning == false || last_PinOMP.ElapsedMilliseconds > 1000 * 60 * 2) { //  reduced to 2-minute interval to reduce overhead
                 last_PinOMP.Stop();
                 PinOMPthreads();
                 last_PinOMP.Restart();
