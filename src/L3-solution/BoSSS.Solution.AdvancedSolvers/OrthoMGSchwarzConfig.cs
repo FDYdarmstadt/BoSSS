@@ -132,9 +132,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [DataMember]
         public bool SkipPreSmoother = false;
 
-        /// <summary> Pre-smoother and coarse grid correction do not work sequential (i.e., residual from presmoother is not supplied to coarse grid solver) </summary>
-        [DataMember]
-        public bool NonSerialPreSmoother = false;
+		/// <summary> Smoothers and coarse grid correction do not work sequential 
+		/// (i.e., residual from presmoother is not supplied to coarse grid solver) 
+		/// This is not desired. Used only for testing.
+		/// </summary>
+		[DataMember]
+        public bool AdditiveVariant = false;
 
         /// <summary>
         /// 
@@ -235,8 +238,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						tr.Info($"unable to create Schwarz smoother at level {level.LevelIndex}");
 						return (null, -1, -1);
 					}
+                    if (SchwarzImplementation == SchwarzImplementation.Auto)
+					    tr.Info("GlobalNoOfBlocks <= MPIsize, so using Task Parallel Schwarz with " + GlobalNoOfBlocks + " blocks " + MPIsize + " on cores");
+                    else
+						tr.Info("Solver is set to Task Parallel Ortho MG w/ Schwarz with " + GlobalNoOfBlocks + " blocks " + MPIsize + " on cores");
 
-					tr.Info("GlobalNoOfBlocks <= MPIsize, so using Task Parallel Schwarz with " + GlobalNoOfBlocks + " blocks " + MPIsize + " on cores");
 					var r = new SchwarzForTaskParallel();
 					r.config.EnableOverlapScaling = true;
 					r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
@@ -360,8 +366,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (SkipPreSmoother)
                     tr.Info("Skipping pre-smoother is enabled.");
-                else if (NonSerialPreSmoother) {
-                    tr.Info("NonSerialPreSmoother is enabled, so coarse grid and pre-smoother are independent.");
+                else if (AdditiveVariant) {
+                    tr.Info("AdditiveVariant is enabled, so coarse grid and pre-smoother are independent.");
                 }
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
@@ -575,7 +581,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			_levelSolver4.config.m_omega = 1; // v-cycle
 											  //_levelSolver4.config.m_omega = 2; // w-cycle
 			_levelSolver4.config.SkipPreSmoother = this.SkipPreSmoother;
-			_levelSolver4.config.NonSerialPreSmoother = this.NonSerialPreSmoother;
+			_levelSolver4.config.AdditiveVariant = this.AdditiveVariant;
 
 			if (altSmooth3 != null) {
 				_levelSolver4.AdditionalPostSmoothers = new[] { altSmooth3 };

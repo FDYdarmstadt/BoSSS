@@ -503,9 +503,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			[DataMember]
 			public bool SkipPreSmoother = false;
 
-			/// <summary> Pre-smoother and coarse grid correction do not work sequential (i.e., residual from presmoother is not supplied to coarse grid solver) </summary>
+			/// <summary> Smoothers and coarse grid correction do not work sequential 
+			/// (i.e., residual from presmoother is not supplied to coarse grid solver) 
+			/// This is not desired. Used only for testing.
+			/// </summary>
 			[DataMember]
-			public bool NonSerialPreSmoother = false;
+			public bool AdditiveVariant = false;
 
 			/// <summary>
 			/// 
@@ -794,6 +797,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			where U : IList<double>
 			where V : IList<double> //
 		{
+			Debugger.Launch();
 			using (var f = new FuncTrace()) {
 				ThisLevelTime.Start();
 				double[] B, X;
@@ -868,7 +872,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						Array.Copy(AdditionalPostSmoothers, allSmooters, AdditionalPostSmoothers.Length);
 					iPostSmooter = allSmooters.Length - 1;
 				}
-				WriteDebug(0, resNorm, $"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}");
+				WriteDebug(0, resNorm, $"AdditiveVariant for iterative solver is {(config.AdditiveVariant && !config.SkipPreSmoother ? "activated" : "deactivated")}");
 
 				int iIter;
 				for (iIter = 1; bIterate; iIter++) {
@@ -882,14 +886,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 					}
 
+					// --- Additive Smoothers Option ---
+					double[] ResRaw = null;
+					if (config.AdditiveVariant) {
+						ResRaw = new double[L];
+						Array.Copy(Res, ResRaw, L); //store the initial residual
+					}
 
 					// pre-smoother
 					// ------------
-					double[] ResBeforePreSmoother = null, ResAfterPreSmoother = null;
-					if (config.NonSerialPreSmoother && !config.SkipPreSmoother) {
-						ResBeforePreSmoother = new double[L];
-						Array.Copy(Res, ResBeforePreSmoother, L);
-					}
 					{
 						// Be aware that we have two options for skipping the pre-smoother: one for the following iterations (determined at post smoother), the second for skipping in general from config.
 						if (PreSmoother != null && !skipPreSmoothInFollowingIters && !config.SkipPreSmoother) {
@@ -914,10 +919,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						}
 					}
 
-					if (config.NonSerialPreSmoother && !config.SkipPreSmoother) {
-						ResAfterPreSmoother = new double[L];
-						Array.Copy(Res, ResAfterPreSmoother, L);
-						Array.Copy(ResBeforePreSmoother, Res, L);
+					if (config.AdditiveVariant && !config.SkipPreSmoother) {
+						Array.Copy(ResRaw, Res, L);
 					}
 
 
@@ -993,7 +996,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					if (PostSmoother != null || AdditionalPostSmoothers != null) {
 						bool termPost = false;
 
-
+						if (config.AdditiveVariant) {
+							Array.Copy(ResRaw, Res, L);
+						}
 
 						for (int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // Test: Residual on this level / already computed by 'MinimizeResidual' above
 
