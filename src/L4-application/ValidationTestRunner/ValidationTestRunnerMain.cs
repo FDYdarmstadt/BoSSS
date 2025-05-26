@@ -355,7 +355,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Printing Nip Stokes Simulations
-        /// Section 5.1
+        /// Section 5.1 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("PrintingNip/*.ipynb", "PrintingNip/*.sh", "PrintingNip/*.tex", "PrintingNip/*.txt")]
         [Test]
@@ -403,7 +403,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Viscous Eddies (PrintingNip Stokes) Simulations
-        /// Section 5.2
+        /// Section 5.2 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("PrintingNip/*.ipynb")]
         [Test]
@@ -424,7 +424,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// CapillaryWave Simulations
-        /// Section 6.1
+        /// Section 6.1 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/CapillaryWave/*.ipynb")]
         [Test]
@@ -445,7 +445,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Phasefield Rising Bubble Simulations
-        /// Section 6.2
+        /// Section 6.2 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
         [Test]
@@ -466,7 +466,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Phasefield Rising Bubble Simulations
-        /// Section 6.2
+        /// Section 6.2 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSE_Solver/Phasefield/*.ipynb")]
         [Test]
@@ -489,7 +489,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Poisson Boundary Condition Regularity Simulations
-        /// Section 6.3
+        /// Section 6.3 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb", "TemperatureConvergence/*.txt")]
         [Test]
@@ -511,7 +511,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Temperature Velocity Coupling Simulations
-        /// Section 6.3
+        /// Section 6.3 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("TemperatureConvergence/*.ipynb")]
         [Test]
@@ -532,8 +532,96 @@ namespace ValidationTestRunner {
         }
 
         /// <summary>
+        /// (Pseudo) 1D Stefan Problem
+        /// Section 6.4 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb")]
+        [Test]
+        static public void Run__StefanProblem() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "StefanProblem",
+                "StefanProblem*",
+                "delete_StefanProblem",
+                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/StefanProblem_Run.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/StefanProblem_Evaluate.ipynb");
+
+            Console.WriteLine("StefanProblem @ FDYcluster");
+        }
+
+        /// <summary>
+        /// (Pseudo) 1D Sucking Problem
+        /// Section 6.4 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
+        [Test]
+        static public void Run__SuckingProblem() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "SuckingProblem",
+                "SuckingProblem*",
+                "delete_SuckingProblem",
+                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/SuckingProblem_Run.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/SuckingProblem_Evaluate.ipynb");
+
+            Console.WriteLine("SuckingProblem @ FDYcluster");
+        }
+
+        /// <summary>
+        /// 2D Filmboiling
+        /// Section 6.4 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb")]
+        [Test]
+        static public void Run__Filmboiling() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "Filmboiling",
+                "Filmboiling*",
+                "delete_Filmboiling",
+                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/Filmboiling_Run.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/Filmboiling_Evaluate.ipynb");
+
+            Console.WriteLine("Filmboiling @ FDYcluster");
+        }
+
+        /// <summary>
+        /// 3D Scriven Testcase
+        /// Section 6.4 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
+        /// </summary>
+        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb")]
+        [Test]
+        static public void Run__ScrivenProblem() {
+
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "ScrivenProblem",
+                "ScrivenProblem*",
+                "delete_ScrivenProblem",
+                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/ScrivenProblem_Run.ipynb");
+            ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/ScrivenProblem_Evaluate.ipynb");
+
+            Console.WriteLine("ScrivenProblem @ FDYcluster");
+        }
+
+        /// <summary>
         /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
-        /// Section 7.1
+        /// Section 7.1 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("FreeXNSE/ContactLineSingularity/*.ipynb")]
         [Test]
@@ -554,7 +642,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
-        /// Section 7.1
+        /// Section 7.1 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("FreeXNSE/SlugInChannel/*.ipynb")]
         [Test]
@@ -575,7 +663,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Free surface Stokes simulation to investigate contact line singularities and contact angle models
-        /// Section 7.1
+        /// Section 7.1 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("FreeXNSE/ContactAngleHysteresis/*.ipynb")]
         [Test]
@@ -596,7 +684,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Resolution of contact line singularities through interfacial slip
-        /// Section 7.2
+        /// Section 7.2 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/SlipConvergence/*.ipynb", "XNSFE_Solver/SlipConvergence/*.txt")]
         [Test]
@@ -617,7 +705,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Resolution of contact line singularities through interfacial slip - zoomed version at contactline
-        /// Section 7.2
+        /// Section 7.2 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/SlipConvergence/*.ipynb", "XNSFE_Solver/SlipConvergence/*.txt")]
         [Test]
@@ -638,7 +726,7 @@ namespace ValidationTestRunner {
 
         /// <summary>
         /// Demo Simulation of 3 phases with evaporation and contactline
-        /// Section 7.3
+        /// Section 7.3 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Simple/*.ipynb")]
         [Test]
@@ -660,7 +748,7 @@ namespace ValidationTestRunner {
         /// <summary>
         /// Contact Line at heated wall,
         /// Maintainer: Matthias Rieckmann
-        /// Section 7.3
+        /// Section 7.3 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallSimple_VerificationFastMarching.ipynb", "XNSFE_Solver/HeatedWall_Validation/*.json")]
         [Test]
@@ -686,7 +774,7 @@ namespace ValidationTestRunner {
         /// <summary>
         /// Contact Line at heated wall,
         /// Maintainer: Matthias Rieckmann
-        /// Section 7.3
+        /// Section 7.3 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
         [NUnitFileToCopyHack("XNSFE_Solver/HeatedWall_Validation/HeatedWallConvergenceValidation_*.ipynb", "XNSFE_Solver/HeatedWall_Validation/HeatedWall_Validation.zip")]
         [Test]
