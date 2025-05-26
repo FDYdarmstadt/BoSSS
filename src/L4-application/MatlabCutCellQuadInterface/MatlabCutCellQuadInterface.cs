@@ -60,9 +60,9 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         static void Main(string[] args) {
             
             Console.WriteLine("External binder for Matlab");
-            Console.WriteLine("Running an example 2d circle test case");
-            MatlabCutCellQuadInterfaceTests.circle2D();
-        }
+			Console.WriteLine("Running an example 2d ellipse test case");
+			MatlabCutCellQuadInterfaceTests.ellipse2D();
+		}
 
 
         /// <summary>
