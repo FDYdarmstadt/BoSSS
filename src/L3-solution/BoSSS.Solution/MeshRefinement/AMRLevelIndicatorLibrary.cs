@@ -24,6 +24,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -84,6 +85,79 @@ namespace BoSSS.Solution {
                 return base.GetHashCode();
             }
         }
+
+
+        /// <summary>
+        /// refinement on cells which are on the specified boundary. The cell change is determined by the resolution of the cells at corresponding boundary.
+        /// </summary>
+        [Serializable]
+        public class AMRonBoundaryByResolution : AMRLevelIndicator
+        {
+
+            [JsonProperty]
+            private byte[] m_EdgeTags;
+
+            [DataMember]
+            private double m_MinResolution; 
+
+            public AMRonBoundaryByResolution(byte[] EdgeTags, double minResolution)
+            {
+                m_EdgeTags = EdgeTags;
+                m_MinResolution = minResolution;
+            }
+
+            public override int[] DesiredCellChanges()
+            {
+
+                int J = GridData.CellPartitioning.LocalLength;
+                int[] levels = new int[J];
+                int cellsToRefine = 0;
+                //int cellsToCoarse = 0;
+                Cell[] cells = GridData.Grid.Cells;
+                for (int j = 0; j < J; j++)
+                {
+                    int[] edges = GridData.Cells.Cells2Edges[j];
+                    int currentLevel = cells[j].RefinementLevel;
+
+                    bool refine = false;
+                    foreach (int edge in edges)
+                    {
+                        if (m_EdgeTags.Contains(GridData.Edges.EdgeTags[Math.Abs(edge) - 1]))
+                            refine = true;
+                    }
+
+                    double hmin = GridData.Cells.h_min[j];
+                    if (refine && hmin > m_MinResolution && currentLevel < maxRefinementLevel)
+                    {
+                        levels[j] = 1;
+                        cellsToRefine++;
+                    }
+                    //else if (!refine && currentLevel > 0)
+                    //{
+                    //    levels[j] = -1;
+                    //    cellsToCoarse++;
+                    //}
+                }
+
+                return levels;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (!base.Equals(obj))
+                    return false;
+                if (!m_EdgeTags.SetEquals((obj as AMRonBoundaryByResolution)?.m_EdgeTags))
+                    return false;
+                return true;
+            }
+
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
+            }
+        }
+
+
 
         /// <summary>
         /// refinement on cells which are on the specified boundary
