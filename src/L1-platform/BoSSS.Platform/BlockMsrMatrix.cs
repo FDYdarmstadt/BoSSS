@@ -3254,7 +3254,7 @@ namespace ilPSP.LinSolvers {
                     //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
                     ilPSP.Environment.ParallelFor(0, NoOfBlockRows, delegate (int iBlockLoc) {
                         //SpMV_external_membank[iThread].Start();
-                        if(m_ExternalBlock[iBlockLoc]) {
+                        if(m_RowsWithExternalBlock[iBlockLoc]) {
                             //SpMV_external_blocking[iThread].Start();
                             var BlockRow = m_BlockRows[iBlockLoc];
                             Debug.Assert(BlockRow != null);

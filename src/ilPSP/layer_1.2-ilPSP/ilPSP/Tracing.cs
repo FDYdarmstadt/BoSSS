@@ -217,14 +217,14 @@ namespace ilPSP.Tracing {
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
         }
 
-		/// <summary>
-		/// Enables the stdout output for only the last rank
-		/// (normally, suppressed for all ranks but 0)
-		/// </summary>
-		public void StdoutOnOnlyLastRank() {
-			m_StdoutOnlyOnRankLastBkup = ilPSP.Environment.StdoutOnlyOnRankLast;
-			ilPSP.Environment.StdoutOnlyOnRankLast = true;
-		}
+		///// <summary>
+		///// Enables the stdout output for only the last rank
+		///// (normally, suppressed for all ranks but 0)
+		///// </summary>
+		//public void StdoutOnOnlyLastRank() {
+		//	m_StdoutOnlyOnRankLastBkup = ilPSP.Environment.StdoutOnlyOnRankLast;
+		//	ilPSP.Environment.StdoutOnlyOnRankLast = true;
+		//}
 
 		/// <summary>
 		/// logger to write the enter/leave -- messages to;
@@ -333,7 +333,7 @@ namespace ilPSP.Tracing {
 
         bool? m_StdoutOnlyOnRank0Bkup;
 
-		bool? m_StdoutOnlyOnRankLastBkup;
+		//bool? m_StdoutOnlyOnRankLastBkup;
 
 		/// <summary>
 		/// logs an 'inclusive' block;
@@ -673,8 +673,8 @@ namespace ilPSP.Tracing {
             if (m_StdoutOnlyOnRank0Bkup != null)
                 ilPSP.Environment.StdoutOnlyOnRank0 = m_StdoutOnlyOnRank0Bkup.Value;
 
-			if (m_StdoutOnlyOnRankLastBkup != null)
-				ilPSP.Environment.StdoutOnlyOnRankLast = m_StdoutOnlyOnRankLastBkup.Value;
+			//if (m_StdoutOnlyOnRankLastBkup != null)
+			//	ilPSP.Environment.StdoutOnlyOnRankLast = m_StdoutOnlyOnRankLastBkup.Value;
 
 			if (!Tracer.InstrumentationSwitch)
                 return;

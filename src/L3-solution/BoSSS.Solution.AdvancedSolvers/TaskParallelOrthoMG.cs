@@ -1846,7 +1846,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 		void WriteDebug(int iter, double res, string text) {
-			CurrentTrace.StdoutOnOnlyLastRank();
+			//CurrentTrace.StdoutOnOnlyLastRank();
 
 			int iLevel = TpLevel;			
 			if (iLevel >= 0)
@@ -2161,7 +2161,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						}
 
 						trace.InfoToConsole = CurrentTrace.InfoToConsole;
-						trace.StdoutOnOnlyLastRank();
+						//trace.StdoutOnOnlyLastRank();
 						trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
 						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the coarse solver");
 					}

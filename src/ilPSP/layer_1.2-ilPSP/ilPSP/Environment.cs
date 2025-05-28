@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -53,10 +53,10 @@ namespace ilPSP {
     /// </summary>
     public static class Environment {
 
-		static private bool m_BootStrapDone = false;
+        static private bool m_BootStrapDone = false;
 
-		[DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-		private static extern void SetDllDirectory(string lpPathName);
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+        private static extern void SetDllDirectory(string lpPathName);
 
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace ilPSP {
                 MPI.Wrappers.Utils.DynLibLoader.PrimaryLibrarySearchPath = nativeDir.FullName;
                 ret = nativeDir.FullName;
 
-				m_BootStrapDone = true;
+                m_BootStrapDone = true;
 
             } else if(System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
 
@@ -139,13 +139,13 @@ namespace ilPSP {
                 MPI.Wrappers.Utils.DynLibLoader.PrimaryLibrarySearchPath = nativeDir.FullName;
 
 
-				ret = nativeDir.FullName;
+                ret = nativeDir.FullName;
 
-				m_BootStrapDone = true;
-			} else {
-				Console.WriteLine("WARNING: Unable to determine os type (MS Windows or Unix?).");
-				Console.WriteLine("WARNING: No bootstrapping performed");
-			}
+                m_BootStrapDone = true;
+            } else {
+                Console.WriteLine("WARNING: Unable to determine os type (MS Windows or Unix?).");
+                Console.WriteLine("WARNING: No bootstrapping performed");
+            }
 
             // MPI init
             // ========
@@ -156,51 +156,51 @@ namespace ilPSP {
 
 
 
-			// init MPI enviroment
-			// ===================
-			m_MpiEnv = new MPIEnvironment();
-			//System.Threading.Thread.Sleep(10000);
-			//Console.WriteLine("StdoutOnlyOnRank0 set to false");
-			StdoutOnlyOnRank0 = true;
-			NativeLibraryDir = ret;
-			return ret;
-		}
+            // init MPI enviroment
+            // ===================
+            m_MpiEnv = new MPIEnvironment();
+            //System.Threading.Thread.Sleep(10000);
+            //Console.WriteLine("StdoutOnlyOnRank0 set to false");
+            StdoutOnlyOnRank0 = true;
+            NativeLibraryDir = ret;
+            return ret;
+        }
 
-		/// <summary>
-		/// Directory where native libraries are located
-		/// </summary>
-		public static string NativeLibraryDir {
-			get;
-			private set;
-		}
+        /// <summary>
+        /// Directory where native libraries are located
+        /// </summary>
+        public static string NativeLibraryDir {
+            get;
+            private set;
+        }
 
-		/// <summary>
-		/// This text writer id hooked into the standard output stream (<see cref="Console.Out"/>),
-		/// in order to provide e.g. capturing to text files.
-		/// </summary>
-		public static DuplicatingTextWriter StdOut {
-			get;
-			private set;
-		}
+        /// <summary>
+        /// This text writer id hooked into the standard output stream (<see cref="Console.Out"/>),
+        /// in order to provide e.g. capturing to text files.
+        /// </summary>
+        public static DuplicatingTextWriter StdOut {
+            get;
+            private set;
+        }
 
-		/// <summary>
-		/// This text writer id hooked into the standard error stream (<see cref="Console.Error"/>),
-		/// in order to provide e.g. capturing to text files.
-		/// </summary>
-		public static DuplicatingTextWriter StdErr {
-			get;
-			private set;
-		}
+        /// <summary>
+        /// This text writer id hooked into the standard error stream (<see cref="Console.Error"/>),
+        /// in order to provide e.g. capturing to text files.
+        /// </summary>
+        public static DuplicatingTextWriter StdErr {
+            get;
+            private set;
+        }
 
-		/// <summary>
-		/// Number of threads used in multi-thread-parallelization;
-		/// - This variable refers to the number of threads used for the C#-parts of BoSSS, e.g. the quadrature kernel.
-		/// - OpenMP threading is controlled by 
-		/// </summary>
-		public static int NumThreads {
-			get;
-			set;
-		} = 4;
+        /// <summary>
+        /// Number of threads used in multi-thread-parallelization;
+        /// - This variable refers to the number of threads used for the C#-parts of BoSSS, e.g. the quadrature kernel.
+        /// - OpenMP threading is controlled by 
+        /// </summary>
+        public static int NumThreads {
+            get;
+            set;
+        } = 4;
 
         /// <summary>
         /// The maximum number of OpenMP threads on the entire computer (aka. Symmetric Multi Processing Node, SMP Node), among all MPI Ranks;
@@ -211,42 +211,42 @@ namespace ilPSP {
             private set;
         }
 
-		/// <summary>
-		/// Can be turned on and off via <see cref="EnableOpenMP"/> and <see cref="DisableOpenMP"/>, respectively.
-		/// </summary>
-		public static bool OpenMPenabled {
-			get {
-				return !OpenMPdisabled;
-			}
-		}
+        /// <summary>
+        /// Can be turned on and off via <see cref="EnableOpenMP"/> and <see cref="DisableOpenMP"/>, respectively.
+        /// </summary>
+        public static bool OpenMPenabled {
+            get {
+                return !OpenMPdisabled;
+            }
+        }
 
         static bool OpenMPdisabled = false;
         static int backup_MaxNumOpenMPthreads = -1;
 
-		/// <summary>
-		/// Disable the use of OpenMP in external libraries
-		/// </summary>
-		public static void DisableOpenMP() {
+        /// <summary>
+        /// Disable the use of OpenMP in external libraries
+        /// </summary>
+        public static void DisableOpenMP() {
             if(OpenMPdisabled == false) {
-				OpenMPdisabled = true;
-				backup_MaxNumOpenMPthreads = MaxNumOpenMPthreads;
-				MaxNumOpenMPthreads = 1;
-				BLAS.ActivateSEQ();
-				LAPACK.ActivateSEQ();
-			}
-		}
+                OpenMPdisabled = true;
+                backup_MaxNumOpenMPthreads = MaxNumOpenMPthreads;
+                MaxNumOpenMPthreads = 1;
+                BLAS.ActivateSEQ();
+                LAPACK.ActivateSEQ();
+            }
+        }
 
-		/// <summary>
-		/// Enable/Re-enable the use of OpenMP in external libraries (mostly Intel MKL, which provides BLAS, LAPACK and PARDISO)
-		/// </summary>
-		public static void EnableOpenMP() {
+        /// <summary>
+        /// Enable/Re-enable the use of OpenMP in external libraries (mostly Intel MKL, which provides BLAS, LAPACK and PARDISO)
+        /// </summary>
+        public static void EnableOpenMP() {
             if(DisableOpenMP_becauseIsSlow)
                 return;
 
             if(OpenMPdisabled) {
-				MaxNumOpenMPthreads = backup_MaxNumOpenMPthreads;
-				OpenMPdisabled = false;
-			}
+                MaxNumOpenMPthreads = backup_MaxNumOpenMPthreads;
+                OpenMPdisabled = false;
+            }
 
             BLAS.ActivateOMP();
             LAPACK.ActivateOMP();
@@ -268,10 +268,10 @@ namespace ilPSP {
             //ThreadPool.SetMinThreads(__Numthreads, 1);
             //ThreadPool.SetMaxThreads(__Numthreads, 2);
 
-			try {
-				InParallelSection = true;
-				BLAS.ActivateSEQ();
-				LAPACK.ActivateSEQ();
+            try {
+                InParallelSection = true;
+                BLAS.ActivateSEQ();
+                LAPACK.ActivateSEQ();
 
                 return Parallel.For(fromInclusive, toExclusive, options, body);
             } finally {
@@ -320,10 +320,10 @@ namespace ilPSP {
                 //ThreadPool.SetMinThreads(__Numthreads, 1);
                 //ThreadPool.SetMaxThreads(__Numthreads, 2);
 
-				try {
-					InParallelSection = true;
-					BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-					LAPACK.ActivateSEQ();
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
 
                     // let TPL do the balancing
                     //Parallel.For(fromInclusive, toExclusive, options, body);
@@ -393,10 +393,10 @@ namespace ilPSP {
                 //ThreadPool.SetMinThreads(__Numthreads, 1);
                 //ThreadPool.SetMaxThreads(__Numthreads, 2);
 
-				try {
-					InParallelSection = true;
-					BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-					LAPACK.ActivateSEQ();
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
 
                     // we do the balancing:
                     object padlock = new object();
@@ -427,7 +427,7 @@ namespace ilPSP {
 
                                 if(!continue_on_loop) {
                                     bTerminate = true;
-                                } 
+                                }
                             }
 
                             LocalIters[ithread]++;
@@ -486,10 +486,10 @@ namespace ilPSP {
                 //ThreadPool.SetMinThreads(__Numthreads, 1);
                 //ThreadPool.SetMaxThreads(__Numthreads, 2);
 
-				try {
-					InParallelSection = true;
-					BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-					LAPACK.ActivateSEQ();
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
+                    LAPACK.ActivateSEQ();
 
                     void _body(int ithread) {
                         ThreadInfo ti;
@@ -593,11 +593,11 @@ namespace ilPSP {
 
         static int[] DedicatedCPUsForThisRank = null;
 
-		static IEnumerable<int> ReservedCPUsOnSMP = null;
+        static IEnumerable<int> ReservedCPUsOnSMP = null;
 
-		public static bool MpiJobOwnsEntireComputer => ReservedCPUsOnSMP.Count() == CPUAffinity.TotalNumberOfCPUs;
+        public static bool MpiJobOwnsEntireComputer => ReservedCPUsOnSMP.Count() == CPUAffinity.TotalNumberOfCPUs;
 
-		public static bool MpiRnkOwnsEntireComputer => MpiJobOwnsEntireComputer && MPIEnv.ProcessesOnMySMP == 1;
+        public static bool MpiRnkOwnsEntireComputer => MpiJobOwnsEntireComputer && MPIEnv.ProcessesOnMySMP == 1;
 
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
@@ -671,7 +671,7 @@ namespace ilPSP {
                 //}
 
 
-				tr.Info("Finally, setting number of OpenMP and Parallel Task Library threads to " + NumThreads);
+                tr.Info("Finally, setting number of OpenMP and Parallel Task Library threads to " + NumThreads);
 
                 if(NumThreads <= 0)
                     throw new NotSupportedException($"Number of threads must be at least 1; set to {NumThreads}");
@@ -752,13 +752,13 @@ namespace ilPSP {
                                 MaxSkip = -1;
                             }
 
-							int[] _MaxSkip = new int[MPIEnv.NoOfSMPs];
-							_MaxSkip[MPIEnv.SMPrank] = MaxSkip;
-							_MaxSkip = _MaxSkip.MPIMax();
-							skip = _MaxSkip[MPIEnv.SMPrank];
-						} else {
-							skip = 0;
-						}
+                            int[] _MaxSkip = new int[MPIEnv.NoOfSMPs];
+                            _MaxSkip[MPIEnv.SMPrank] = MaxSkip;
+                            _MaxSkip = _MaxSkip.MPIMax();
+                            skip = _MaxSkip[MPIEnv.SMPrank];
+                        } else {
+                            skip = 0;
+                        }
 
                         DedicatedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(skip + MPIEnv.ProcessRankOnSMP * NumThreads, NumThreads);
                         MaxNumOpenMPthreads = Math.Min(ReservedCPUsOnSMP.Count(), MPIEnv.ProcessesOnMySMP * NumThreads);
@@ -885,10 +885,10 @@ namespace ilPSP {
                 } else {
                     int[] OpenMPcpuIdx;
 
-					int L = DedicatedCPUsForThisRank.Count();
-					int Nt = Math.Min(NumThreads, MaxNumOpenMPthreads);
+                    int L = DedicatedCPUsForThisRank.Count();
+                    int Nt = Math.Min(NumThreads, MaxNumOpenMPthreads);
 
-					if (L > Nt) {
+                    if (L > Nt) {
 
                         int skip = 0; // rnd.Next(0, L - Nt + 1);
                         if (skip + Nt > L) {
@@ -935,57 +935,27 @@ namespace ilPSP {
 
         static bool m_StdoutOnlyOnRank0 = false;
 
-		static bool m_StdoutOnlyOnRankLast = false;
-
-		/// <summary>
-		/// if true, the standard - output stream will not be visible on screen on processor with MPI rank 
-		/// unequal to 0.
-		/// </summary>
-		public static bool StdoutOnlyOnRank0 {
-			get {
-				return m_StdoutOnlyOnRank0;
-			}
-			set {
+        /// <summary>
+        /// if true, the standard - output stream will not be visible on screen on processor with MPI rank 
+        /// unequal to 0.
+        /// </summary>
+        public static bool StdoutOnlyOnRank0 {
+            get {
+                return m_StdoutOnlyOnRank0;
+            }
+            set {
                 if(StdOut != null) {
-					m_StdoutOnlyOnRank0 = value;
-					if (m_StdoutOnlyOnRank0) {
-						m_StdoutOnlyOnRankLast = false; // if m_StdoutOnlyOnRank0, then make on RankLast false
-						StdOut.surpressStream = (MPIEnv.MPI_Rank != 0);
-					} else {
+                    m_StdoutOnlyOnRank0 = value;
+                    if(m_StdoutOnlyOnRank0) {
+                        StdOut.surpressStream = (MPIEnv.MPI_Rank != 0);
+                    } else {
                         StdOut.surpressStream = false;
-					}
-				}
-			}
-		}
-
-
-		public static bool StdoutOnlyOnRankLast {
-			get {
-				return m_StdoutOnlyOnRankLast;
-			}
-			set {
-				if (StdOut != null) {
-					m_StdoutOnlyOnRankLast = value;
-					if (m_StdoutOnlyOnRankLast) {
-						m_StdoutOnlyOnRank0 = false; // if m_StdoutOnlyOnRankLast, then make on Rank0 false
-						StdOut.surpressStream = (MPIEnv.MPI_Rank != MPIEnv.MPI_Size - 1);
-					} else {
-						StdOut.surpressStream = false;
-					}
-				}
-			}
-		}
-
-		static bool FileExistsSafe(FileInfo fi) {
-            bool exists;
-            try {
-                exists = File.Exists(fi.FullName);
-            } catch (IOException) {
-                exists = true;
+                    }
+                }
             }
         }
 
-		static MPIEnvironment m_MpiEnv;
+        static MPIEnvironment m_MpiEnv;
 
         /// <summary>
         /// environment of the world communicator
