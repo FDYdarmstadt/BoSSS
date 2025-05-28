@@ -97,7 +97,7 @@ namespace BoSSS.Solution {
             [JsonProperty]
             private byte[] m_EdgeTags;
 
-            [DataMember]
+            [JsonProperty]
             private double m_MinResolution; 
 
             public AMRonBoundaryByResolution(byte[] EdgeTags, double minResolution)
