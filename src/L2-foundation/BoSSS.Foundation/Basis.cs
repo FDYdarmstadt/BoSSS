@@ -25,6 +25,10 @@ using BoSSS.Platform;
 using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
+using System.Collections;
+using System.Xml.Schema;
+using NUnit.Framework.Internal.Execution;
 
 namespace BoSSS.Foundation {
 
@@ -248,6 +252,98 @@ namespace BoSSS.Foundation {
 
                 return MaximalLength;
             }
+        }
+
+        /// <summary>
+        /// Returns the number of consecutive **logical*+ cells, starting at <paramref name="j0"/>, 
+        /// for which the number of basis functions (i.e., <see cref="GetLength(int)"/>) 
+        /// is the same as in cell <paramref name="j0"/>.
+        /// The search stops at the first cell with a different basis length or after <paramref name="Max"/> cells.
+        /// </summary>
+        /// <param name="j0">The starting cell index.</param>
+        /// <param name="Max">The maximum number of cells to check.</param>
+        /// <returns>
+        /// The number of consecutive cells (including <paramref name="j0"/>) with the same basis length as cell <paramref name="j0"/>.
+        /// </returns>
+        public int GetNoOfConsecutiveCellsWithSameLength(int j0, int Max) {
+            int j = j0 + 1;
+            int l0 = GetLength(j0);
+            while(j < j0 + Max) {
+                if(GetLength(j) != l0)
+                    break;
+                j++;
+            }
+            return j - j0;
+        }
+
+        /// <summary>
+        /// Returns the number of consecutive **geometrical** cells, starting at <paramref name="j0_Geom"/>, 
+        /// for which the number of basis functions (i.e., <see cref="GetLength(int)"/>) 
+        /// is the same as in cell <paramref name="j0_Geom"/>.
+        /// The search stops at the first cell with a different basis length or after <paramref name="Max"/> cells.
+        /// </summary>
+        /// <param name="j0_Geom">The starting cell index.</param>
+        /// <param name="Max">The maximum number of cells to check.</param>
+        /// <returns>
+        /// The number of consecutive cells (including <paramref name="j0_Geom"/>) with the same basis length as cell <paramref name="j0_Geom"/>.
+        /// </returns>
+        public int GetNoOfConsecutiveGeometricalCellsWithSameLength(int j0_Geom, int Max) {
+            int j_Geom = j0_Geom + 1;
+            int l0 = GetLength(this.GridDat.GetLogicalCellIndex(j0_Geom));
+            while(j_Geom < j0_Geom + Max) {
+                if(GetLength(this.GridDat.GetLogicalCellIndex(j_Geom)) != l0)
+                    break;
+                j_Geom++;
+            }
+            return j_Geom - j0_Geom;
+        }
+
+
+        /// <summary>
+        /// Returns a mask containing all cells where <see cref="GetLength"/> equals <paramref name="N"/>
+        /// </summary>
+        /// <param name="N">The exact basis length to filter for</param>
+        /// <returns>A cell mask for matching cells</returns>
+        public CellMask GetCellsWithLength(int N) {
+            // Early exit for impossible lengths
+            if (N < MinimalLength || N > MaximalLength)
+                return CellMask.GetEmptyMask(this.GridDat, MaskType.Logical);
+
+            // Prepare bitmask
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray mask = new BitArray(J, false);
+            
+            // Check each logical cell
+            for (int j = 0; j < J; j++) {
+                // Get reference element via first geometric cell
+                if (GetLength(j) == N)
+                    mask[j] = true;
+            }
+            
+            return new CellMask(this.GridDat, mask, MaskType.Logical);
+        }
+
+        /// <summary>
+        /// Returns all distinct lengths, i.e., number of basis elements per cell, for the entire mesh
+        /// </summary>
+        public ISet<int> GetAllUsedLengths() {
+            if(MaximalLength == MinimalLength)
+                return new HashSet<int>([ Length ]);
+
+            bool[] LengthUsed = new bool[MaximalLength + 1];
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            for(int j = 0; j < J; j++) {
+                LengthUsed[GetLength(j)] = true;
+            }
+
+            LengthUsed = LengthUsed.MPIOr();
+
+            var ret = new HashSet<int>();
+            for(int i = 0; i < LengthUsed.Length; i++) {
+                if( LengthUsed[i] )
+                    ret.Add(i);
+            }
+            return ret;
         }
 
 

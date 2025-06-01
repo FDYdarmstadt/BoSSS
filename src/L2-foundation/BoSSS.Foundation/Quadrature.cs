@@ -596,7 +596,7 @@ namespace BoSSS.Foundation.Quadrature {
                     _compositeRule = new[] { m_compositeRule };
                 } else {
                     var __compositeRule = NumThreads.ForLoop(i => new List<IChunkRulePair<TQuadRule>>());
-                    _compositeRule = __compositeRule.Select(list => new CompositeQuadRule<TQuadRule>() { chunkRulePairs = list }).ToArray();
+                    _compositeRule = __compositeRule.Select(list => new CompositeQuadRule<TQuadRule>(m_compositeRule.IntegrationMetric, m_compositeRule.GridData) { chunkRulePairs = list }).ToArray();
 
                     // determine a cost partitioning across threads
                     // Note: this maybe does not align with the item Boundaries

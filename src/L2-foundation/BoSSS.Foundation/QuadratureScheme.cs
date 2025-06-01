@@ -285,7 +285,7 @@ namespace BoSSS.Foundation.Quadrature {
 
                 // apply factories
                 // ---------------
-                CompositeQuadRule<TQuadRule> fullRule = new CompositeQuadRule<TQuadRule>();
+                CompositeQuadRule<TQuadRule> fullRule = new CompositeQuadRule<TQuadRule>(null, gridData);
                 int i = -1;
                 foreach(var factoryDomainPair in factoryDomainPairs) {
                     i++;

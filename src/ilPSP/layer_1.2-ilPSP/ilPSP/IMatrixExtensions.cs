@@ -545,8 +545,6 @@ namespace ilPSP {
         /// <summary>
         /// The 1-Norm (maximum absolute column sum norm) of this matrix;
         /// </summary>
-        /// <returns></returns>
-        /// <param name="b">the matrix</param>
         static public double OneNorm(this IMatrix b) {
             double norm = 0;
 
@@ -561,6 +559,31 @@ namespace ilPSP {
                 }
 
                 if (colnrm > norm)
+                    norm = colnrm;
+            }
+
+            return norm;
+        }
+
+        /// <summary>
+        /// The distance in the 1-Norm(maximum absolute column sum norm)  of a matrix to another matrix;
+        /// </summary>
+        static public double OneNormDistance(this IMatrix b, IMatrix o) {
+            double norm = 0;
+
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+            if(o.NoOfCols != m_NoOfCols || o.NoOfRows != m_NoOfRows)
+                throw new ArgumentException("matrices must have the same size");
+
+            for(int j = 0; j < m_NoOfCols; j++) {
+                double colnrm = 0;
+
+                for(int i = 0; i < m_NoOfRows; i++) {
+                    colnrm += Math.Abs(b[i, j] - o[i, j]);
+                }
+
+                if(colnrm > norm)
                     norm = colnrm;
             }
 
@@ -591,6 +614,31 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// The distance in the Infinity-Norm (maximum absolute row sum norm) of a matrix to another matrix;
+        /// </summary>
+        static public double InfNormDistance(this IMatrix b, IMatrix o) {
+            double norm = 0;
+
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+            if(o.NoOfCols != m_NoOfCols || o.NoOfRows != m_NoOfRows)
+                throw new ArgumentException("matrices must have the same size");
+
+            for(int i = 0; i < m_NoOfRows; i++) {
+                double rownrm = 0;
+
+                for(int j = 0; j < m_NoOfCols; j++) {
+                    rownrm += Math.Abs(b[i, j] - o[i, j]);
+                }
+
+                if(rownrm > norm)
+                    norm = rownrm;
+            }
+
+            return norm;
+        }
+
+        /// <summary>
         /// The Frobenius-Norm (l2-norm over all entries) of a matrix;
         /// </summary>
         static public double FrobeniusNorm(this IMatrix b) {
@@ -608,6 +656,30 @@ namespace ilPSP {
 
             return acc.Sqrt();
         }
+
+        /// <summary>
+        /// The Frobenius-Distance (l2-norm over all entries) of a matrix to another matrix;
+        /// </summary>
+        static public double FrobeniusDistance(this IMatrix b, IMatrix o) {
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+
+            if(o.NoOfCols != m_NoOfCols || o.NoOfRows != m_NoOfRows)
+                throw new ArgumentException("matrices must have the same size");
+
+
+            double acc = 0;
+            for(int i = 0; i < m_NoOfRows; i++) {
+
+                for(int j = 0; j < m_NoOfCols; j++) {
+                    acc += (b[i, j] - o[i,j]).Pow2();
+                }
+
+            }
+
+            return acc.Sqrt();
+        }
+
 
 
         /// <summary>
@@ -2320,6 +2392,44 @@ namespace ilPSP {
             }
         }
 
+        /// <summary>
+        /// Extracts the diagonal of the matrix.
+        /// </summary>
+        static public double[] GetDiagonal<T>(this T M)
+            where T : IMatrix //
+        {
+            if(M.NoOfCols != M.NoOfRows)
+                throw new NotSupportedException("must be quadratic.");
+            int I = M.NoOfRows;
+            var ret = new double[I];
+            for(int i = 0; i < I; i++) 
+                ret[i] = M[i, i];
+            return ret;
+        }
+
+
+        /// <summary>
+        /// Sets the diagonal of the matrix.
+        /// </summary>
+        static public void SetDiagonal<T, V>(this T M, V diag)
+            where T : IMatrix
+            where V : IEnumerable<double> //
+        {
+            if(M.NoOfCols != M.NoOfRows)
+                throw new NotSupportedException("must be quadratic.");
+
+            int I = M.NoOfRows;
+            int i = 0;
+            foreach(double d in diag) {
+                if(i >= I)
+                    throw new ArgumentException("Diagonal array is longer than matrix size.");
+                M[i, i] = d;
+                i++;
+            }
+            if(i < I)
+                throw new ArgumentException("Diagonal array is shorter than matrix size.");
+        }
+
 
         /// <summary>
         /// Least-squares-solve (LAPACK function DGELSY) with multiple right-hand-side vectors.
@@ -2337,12 +2447,12 @@ namespace ilPSP {
         /// into account
         /// </param>
         static public void LeastSquareSolve<T, R>(this T Mtx, R B, double RCOND = 1.0e-14)
-            where T : IMatrix
-            where R : IMatrix {
+        where T : IMatrix
+        where R : IMatrix {
 
             int NRHS = B.NoOfCols;
 
-            if (B.NoOfRows != Math.Max(Mtx.NoOfCols, Mtx.NoOfRows))
+            if(B.NoOfRows != Math.Max(Mtx.NoOfCols, Mtx.NoOfRows))
                 throw new ArgumentException("B must have max(I,J) number of rows, where I,J are the dimensions of Mtx.");
 
             unsafe {

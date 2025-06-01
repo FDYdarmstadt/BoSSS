@@ -25,6 +25,7 @@ namespace AdvancedSolverTests {
         }
 
         public static void Test() {
+            AdvancedSolverTests.SubBlocking.LocalTests.MapConsistencyTest(XDGusage.none, 2);
             //Console.WriteLine("wer hat den output eingestellt: " + ilPSP.Environment.StdoutOnlyOnRank0);
             //AdvancedSolverTests.SubBlocking.LocalTests.MapConsistencyTest(XDGusage.none, 2);
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.none, 2, MatrixShape.diagonal);
@@ -34,8 +35,8 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.Solver.mklILUtest.CompareFactorization();
             //AdvancedSolverTests.SubBlocking.LocalTests.SubSelection(SelectionType.all_combined);
             //Debugger.Launch();
-            AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
-            AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
+            //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
+            //AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
         }
 
     }

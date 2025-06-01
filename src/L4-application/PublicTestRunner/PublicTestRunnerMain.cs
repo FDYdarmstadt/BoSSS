@@ -130,7 +130,8 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(MPITest.Program),
-                        typeof(BoSSS.Application.CutCellQuadratureScaling.AllTests)
+                        typeof(BoSSS.Application.CutCellQuadratureScaling.AllTests),
+                        typeof(BoSSS.Application.TraceDGtest.UnitTests)
                     };
             }
         }
@@ -1906,8 +1907,8 @@ namespace PublicTestRunner {
 
             BoSSS.Solution.Application.InitMPI();
 
-            //Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
-            //ilPSP.Environment.DisableOpenMP();
+            Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
+            ilPSP.Environment.DisableOpenMP();
             
             int ret = -1;
             switch (args[0]) {
