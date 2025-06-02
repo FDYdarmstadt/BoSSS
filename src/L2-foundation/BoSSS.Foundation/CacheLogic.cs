@@ -124,7 +124,6 @@ namespace BoSSS.Foundation.Caching {
         /// Points/Nodes to evaluate in the reference coordinate system;
         /// - 1st index: node index
         /// - 2nd index: spatial dimension; (0 for 1D; 0,1 for 2D; 0,1,2 for 3D)
-        /// </list>
         /// </param>
         /// <param name="Degree">polynomial degree</param>
         /// <returns></returns>
