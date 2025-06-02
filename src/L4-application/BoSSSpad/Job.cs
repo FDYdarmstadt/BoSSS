@@ -1227,7 +1227,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        int m_NumberOfThreads = 1;
+        int m_NumberOfThreads = 2;
 
         /// <summary>
         /// Number of threads for each MPI rank
