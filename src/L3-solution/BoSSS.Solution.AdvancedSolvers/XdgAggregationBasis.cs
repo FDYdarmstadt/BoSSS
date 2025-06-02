@@ -30,8 +30,11 @@ using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Comm;
 using MPI.Wrappers;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+    
+  
     
     /// <summary>
     /// XDG basis on an aggregation mesh
@@ -86,19 +89,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </remarks>
         public void Update(MultiphaseCellAgglomerator Agglomerator) {
             using(new FuncTrace()) {
-                var LsTrk = this.XDGBasis.Tracker;
-                var CCBit = LsTrk.Regions.GetCutCellMask().GetBitMask();
+                //var LsTrk = this.XDGBasis.Tracker;
+                //var CCBit = LsTrk.Regions.GetCutCellMask().GetBitMask();
                 
                 UpdateSpeciesMapping(Agglomerator);
                 m_XCompositeBasis = null;
-                
 
+                
                 // int JAGG = base.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
                 // for(int jagg = 0; jagg < JAGG; jagg++) { // loop over all aggregate cells...
                 //     UpdateBaseGridInjector(jagg);
                 // }  // END OF loop over all aggregate cells.
             }
         }
+
+        
 
         private void UpdateBaseGridInjector(int jagg) {
             var LsTrk = this.XDGBasis.Tracker;
@@ -129,7 +134,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 for(int iSpc_agg = 0; iSpc_agg < NoOfSpc_jagg; iSpc_agg++) { // loop over all species in aggregate cell
-
                     bool partiallyEmptyCell = false; // true: at least one of the base cells which form 
                                                      //                         aggregate cell 'jagg' is empty with respect to the 'iSpc_agg'--th species.
                                                      //                         => this will alter the projection operator.
@@ -332,7 +336,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MaxNoOfSpecies = Math.Max(NoOfSpecies_k, MaxNoOfSpecies);
                     _NoOfSpecies[k] = NoOfSpecies_k;
 
-                    if(MaxNoOfSpecies <= 1 && AnyUnusedSpecies == false) {
+                    // determine, if we have any 'unused' species in the aggregate cell:
+                    if(MaxNoOfSpecies <= 1 && AnyUnusedSpecies == false) { // if we have already more than one species, no further interest in `AnyUnusedSpecies`, because we go into the else-branch
                         for(int iSpc = 0; iSpc < NoOfSpecies_k; iSpc++) {
                             var Spc = Regions.GetSpeciesIdFromIndex(jCell, iSpc);
                             int b = Array.IndexOf(this.UsedSpecies, Spc);
@@ -341,17 +346,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
                         }
                     }
-
                 }
                 
                 if(MaxNoOfSpecies == 1 && AnyUnusedSpecies == false) {
                     // only one species -- use single-phase implementation in underlying class
+                
+                    
+                    
+                    bool bAnyAgglomerated = false;
+                    var Spc = Regions.GetSpeciesIdFromIndex(compCell[0], 0);
+                    for(int k = 0; k < K; k++) { // loop over original cells in composite cell
+                        int jCell = compCell[k];
+                        if(agglomeratedCells[Spc][jCell])
+                            bAnyAgglomerated = true;
+                    }
+                    if(bAnyAgglomerated)
+                        throw new Exception("suspicious");
+
 
                     this.SpeciesIndexMapping[jagg] = null;
                     this.NoOfSpecies[jagg] = 1;
                     //this.XCompositeBasis[jagg] = null;
                     this.AggCellsSpecies[jagg] = null;
                     //this.CoarseToFineSpeciesIndex[jagg] = null;
+
+
+
+
+
                 } else {
                     //LsTrk.ContainesSpecies
 
@@ -451,15 +473,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// species in the composite/aggregate cells;<br/>
-        ///  - 1st index: aggregate cell index.
-        ///  - 2nd index: species index in the composite/aggregate cell.
+        /// species in the composite/aggregate cells
+        ///  - 1st index: aggregate cell index `j`
+        ///  - 2nd index: species index in the composite/aggregate cell, from 0 to <see cref="NoOfSpecies"/>`[j]`
         /// </summary>
         internal SpeciesId[][] AggCellsSpecies;
-
-
-        //int[][,] CoarseToFineSpeciesIndex;
-
 
         /// <summary>
         /// Returns the species id of the <paramref name="spc_idx"/>-th species in
@@ -628,10 +646,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(m_XCompositeBasis == null) {
                 m_XCompositeBasis = new MultidimensionalArray[base.AggGrid.iLogicalCells.NoOfLocalUpdatedCells][];
                 m_XCompositeBasisUpdated = new BitArray(m_XCompositeBasis.Length);
-            } 
+            }
 
-            if(!m_XCompositeBasisUpdated[jAgg])
+            if(!m_XCompositeBasisUpdated[jAgg]) {
                 UpdateBaseGridInjector(jAgg);
+                m_XCompositeBasisUpdated[jAgg] = true;
+            }
 
             MultidimensionalArray Trf;
             if(this.m_XCompositeBasis[jAgg] == null || this.m_XCompositeBasis[jAgg][iSpcAgg] == null)
@@ -738,13 +758,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public override int MaximalLength {
             get {
-                return this.XDGBasis.MaximalLength;
+                return this.GetMaximalLength(this.XDGBasis.Degree);
             }
         }
 
         public override int MinimalLength {
             get {
-                return this.XDGBasis.MinimalLength;
+                return this.GetMinimalLength(this.XDGBasis.Degree);
             }
         }
 
@@ -761,7 +781,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (XDGBasis.Tracker.TotalNoOfSpecies == 0)
                 throw new Exception("0 SPecies");
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
-            return this.XDGBasis.Tracker.TotalNoOfSpecies * base.GetLength(0, p);
+            return this.UsedSpecies.Length * base.GetLength(0, p);
         }
 
         public override int GetMinimalLength(int p) {

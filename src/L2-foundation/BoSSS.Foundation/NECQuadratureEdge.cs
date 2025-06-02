@@ -1190,7 +1190,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     } else {
                         int MaxDegree = Math.Max(m_owner.maxTestBasis != null ? m_owner.maxTestBasis.Degree : 0, m_owner.maxTestGradientBasis != null ? m_owner.maxTestGradientBasis.Degree : 0);
                         OrthoTrf = grid.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCellMin, jCellMax - jCellMin + 1, MaxDegree); // sollte irgendwann sowieso
-                                                                                                                                       //                                                                                                                für alle Zellen vorliegen, also kein Stress
+                                                                                                                                       //                                                                                                                fï¿½r alle Zellen vorliegen, also kein Stress
                                                                                                                                        //                                                                                                                falls jCellMin und jCellMax weit auseinander
                     }
 
@@ -1668,7 +1668,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
 
-                                // Vektorisierung für Rand-Flussfunktionen im Moment ungenutzt
+                                // Vektorisierung fï¿½r Rand-Flussfunktionen im Moment ungenutzt
                                 CallBorder(nonlinFlx, jEdge, IndexOffset, __Len, jEdge, false, NoArgs, NoParams,
                                     components.MapArguments(m_FieldValuesIN, nonlinFlx, false),
                                     MapAlsoMean ? components.MapArguments(m_MeanFieldValuesIN, nonlinFlx, true) : null,
@@ -1840,10 +1840,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     int i0in = 0;
                     if (touchCell1)
-                        i0in = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, 0);
+                        i0in = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell1);
                     int i0ot = 0;
                     if (touchCell2)
-                        i0ot = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, 0);
+                        i0ot = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell2);
 
                     for (int m = 0; m < mE; m++) {
                         int idx = f_offset + m;

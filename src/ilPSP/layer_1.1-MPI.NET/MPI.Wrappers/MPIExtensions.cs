@@ -575,7 +575,7 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
-        /// equal to <see cref="MPIAnd(int,MPI_Comm)"/>, acting on the
+        /// equal to <see cref="MPIAnd(bool, MPI_Comm)"/>, acting on the
         /// WORLD-communicator
         /// </summary>
         static public bool MPIAnd(this bool i) {
@@ -644,16 +644,14 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
-        /// equal to <see cref="MPIEqual(bool,MPI_Comm)"/> acting on WORLD-communicator
+        /// equal to <see cref="MPIEquals(bool,MPI_Comm)"/> acting on WORLD-communicator
         /// </summary>
-        /// <param name="i"></param>
-        /// <returns></returns>
         static public bool MPIEquals(this bool b) {
             return MPIEquals(b, csMPI.Raw._COMM.WORLD);
         }
 
         /// <summary>
-        /// 
+        /// equality of <paramref name="b"/> over all MPI processes in the communicator <paramref name="comm"/>
         /// </summary>
         static public bool MPIEquals(this bool b, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int sz);
@@ -748,11 +746,8 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// returns true on every process for every entry of <paramref name="i"/> if they are equal at every process
+        /// returns true on every process for every entry of <paramref name="bAry"/> if they are equal at every process
         /// </summary>
-        /// <param name="bAry"></param>
-        /// <param name="comm"></param>
-        /// <returns></returns>
         static public bool[] MPIEquals(this double[] bAry, MPI_Comm comm) {
             bool[] check = new bool[bAry.Length];
 
@@ -1706,7 +1701,7 @@ namespace MPI.Wrappers {
 
         /// <summary>
         /// MPI-process with rank <paramref name="root"/> gathers this int[] of all MPI-processes in the
-        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered int[] is specified by <paramref name="recvcount"/>
+        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered int[] is specified by <paramref name="recvcounts"/>
         /// </summary>
         /// <param name="recvcounts">
         /// Significant only at <paramref name="root"/> process. 

@@ -281,6 +281,7 @@ namespace FreeXNSE {
     }
 
     public class SolverSettings {
+        
         /// <summary>
         /// Only for debugging purpose:
         /// solver is turned of and residual of initial value/exact solution is evaluated, used to 

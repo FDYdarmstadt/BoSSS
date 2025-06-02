@@ -148,8 +148,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         f.Clear();
                 }
 
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
-            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
+                ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
                 if(timeStepper == null) {
                     //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
@@ -161,7 +161,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 timeStepper.Perform(dt);
 
-                tr.Info("time in LS evolver: " + timeStepper.Time );
+                tr.Info("time in LS evolver: " + timeStepper.Time);
             }
         }
 

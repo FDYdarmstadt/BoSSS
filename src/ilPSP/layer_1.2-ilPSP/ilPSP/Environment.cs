@@ -53,6 +53,20 @@ namespace ilPSP {
     /// </summary>
     public static class Environment {
 
+        /// <summary>
+        /// Alternative to `Dbugger.Launch()`
+        /// </summary>
+        public static void WaitForDebugger() {
+            if(System.Diagnostics.Debugger.IsAttached)
+                return;
+
+            Console.WriteLine("Waiting for debugger to attach...");
+            while(!System.Diagnostics.Debugger.IsAttached) {
+                System.Threading.Thread.Sleep(1000);
+            }
+            Debugger.Break();
+        }
+
         static private bool m_BootStrapDone = false;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]

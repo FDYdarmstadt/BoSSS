@@ -413,13 +413,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Sigma = 0.0
         };       
 
-        /// <summary>
-        /// Only for debugging purpose:
-        /// solver is turned of and residual of initial value/exact solution is evaluated, used to 
-        /// test the consistency of the implementation.
-        /// </summary>
-        [DataMember]
-        public bool SkipSolveAndEvaluateResidual = false;
+   
 
         /// <summary>
         /// Terminates the simulation if the linear or nonlinear solver fails to converge

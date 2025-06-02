@@ -740,6 +740,8 @@ namespace BoSSS.Application.MultigridTest {
             mgOp.CoarserLevel.Prolongate(1.0, FineOut, 0.0, Coarse2);
         }
 
+
+#region XDG_ProlongationTest_untangling
         /// <summary>
         /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).
         /// </summary>
@@ -811,6 +813,7 @@ namespace BoSSS.Application.MultigridTest {
             ) {
             XDG_ProlongationTest(p, 0.3, 1, MultigridOperator.Mode.IdMass);
         }
+#endregion XDG_ProlongationTest_untangling
 
         /// <summary>
         /// tests if the prolongation of an arbitrary restricted vector has jumps (which it should not have).

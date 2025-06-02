@@ -25,6 +25,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -197,6 +198,28 @@ namespace BoSSS.Foundation.Grid {
 
 #endif
             return enu;
+        }
+
+        /// <summary>
+        /// Returns the logical cell index corresponding to a given geometrical cell index <paramref name="jGeom"/>.
+        /// For standard grids, this is an identity mapping (i.e., <paramref name="jGeom"/> == logical cell index).
+        /// For aggregation or adaptive grids, this uses the <c>GeomCell2LogicalCell</c> mapping.
+        /// </summary>
+        /// <param name="g">The grid data object.</param>
+        /// <param name="jGeom">The geometrical cell index.</param>
+        /// <returns>The logical cell index corresponding to <paramref name="jGeom"/>.</returns>
+        public static int GetLogicalCellIndex(this IGridData g, int jGeom) {
+            if(jGeom < 0 || jGeom >= g.iGeomCells.Count)
+                throw new ArgumentOutOfRangeException(nameof(jGeom), "Geometrical cell index is out of range.");
+
+            var geom2log = g.iGeomCells.GeomCell2LogicalCell;
+            if(geom2log == null) {
+                // Standard grid: logical and geometrical indices are identical
+                return jGeom;
+            } else {
+                int jLog = geom2log[jGeom];
+                return jLog;
+            }
         }
 
 

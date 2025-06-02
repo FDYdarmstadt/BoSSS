@@ -11,6 +11,7 @@ using System.Text;
 using System.Xml;
 using System.Security.Claims;
 using BoSSS.Foundation.Caching;
+using System.Collections;
 
 namespace BoSSS.Foundation {
 
@@ -18,6 +19,98 @@ namespace BoSSS.Foundation {
     /// extension methods
     /// </summary>
     public static class ICompositeQuadRule_Ext {
+
+        /// <summary>
+        /// Creates a <see cref="CellMask"/> containing all cells covered by this composite quadrature rule.
+        /// </summary>
+        /// <param name="compositeRule">The composite quadrature rule to convert</param>
+        /// <returns>A cell mask matching the quadrature rule's coverage</returns>
+        public static CellMask GetCellMask(this ICompositeQuadRule<QuadRule> compositeRule) {
+            // Get upper bound for logical cells
+            var gridData = compositeRule.GridData;
+            int J = gridData.iGeomCells.NoOfLocalUpdatedCells;
+            var RefElements = gridData.iGeomCells.RefElements;
+
+            // Create bitmask
+            BitArray cellMask = new BitArray(J, false);
+            
+            // Mark cells covered by quadrature rule
+            foreach (var chunkPair in compositeRule) {
+                Chunk chunk = chunkPair.Chunk;
+                if(Array.IndexOf(RefElements, chunkPair.Rule.RefElement) < 0)
+                    throw new ArgumentException($"unknown reference element for cell: {chunkPair.Rule.RefElement}");
+
+                for (int j = chunk.i0; j < chunk.JE; j++) {
+                    if (j >= J)
+                        throw new ArgumentException($"Quadrature rule contains invalid cell index {j} (max allowed: {J-1})");
+                    cellMask[j] = true;
+                }
+            }
+            
+            return new CellMask(gridData, cellMask, MaskType.Geometrical);
+        }
+
+        /// <summary>
+        /// Restricts a composite quadrature rule to an execution mask.
+        /// </summary>
+        /// <param name="compositeRule">Original quadrature rule.</param>
+        /// <param name="executionMask">Mask to restrict to.</param>
+        /// <returns>New composite rule containing only parts of the original rule within the mask.</returns>
+        /// <exception cref="ArgumentException">Thrown if the mask contains items not in the original rule.</exception>
+        public static ICompositeQuadRule<QuadRule> RestrictToMask(
+            this ICompositeQuadRule<QuadRule> compositeRule, 
+            ExecutionMask executionMask) {
+            
+            // Get mask as BitArray
+            BitArray maskBits = executionMask.GetBitMask();
+            int upperBound = maskBits.Length;
+
+            // Check coverage of original rule
+            BitArray originalCoverage = new BitArray(upperBound, false);
+            foreach (var chunkPair in compositeRule) {
+                for (int i = chunkPair.Chunk.i0; i < chunkPair.Chunk.JE; i++) {
+                    if (i >= upperBound) 
+                        throw new ArgumentException("Composite rule contains indices beyond the mask's range.");
+                    originalCoverage[i] = true;
+                }
+            }
+
+            // Validate mask is fully covered
+            for (int i = 0; i < maskBits.Length; i++) {
+                if (maskBits[i] && !originalCoverage[i])
+                    throw new ArgumentException($"Mask contains item {i} not present in the composite rule.");
+            }
+
+            // Filter and split chunks
+            List<IChunkRulePair<QuadRule>> filteredChunks = new List<IChunkRulePair<QuadRule>>();
+            foreach (var chunkPair in compositeRule) {
+                Chunk chunk = chunkPair.Chunk;
+                QuadRule rule = chunkPair.Rule;
+
+                List<Chunk> validSubChunks = new List<Chunk>();
+                int currentStart = -1;
+                
+                for (int i = chunk.i0; i < chunk.JE; i++) {
+                    if (maskBits[i]) {
+                        currentStart = (currentStart == -1) ? i : currentStart;
+                    } else if (currentStart != -1) {
+                        validSubChunks.Add(new Chunk { i0 = currentStart, Len = i - currentStart });
+                        currentStart = -1;
+                    }
+                }
+                if (currentStart != -1) 
+                    validSubChunks.Add(new Chunk { i0 = currentStart, Len = chunk.JE - currentStart });
+
+                // Add filtered chunks with original rule
+                foreach (var subChunk in validSubChunks) {
+                    filteredChunks.Add(new ChunkRulePair<QuadRule>(subChunk, rule));
+                }
+            }
+
+            return new CompositeQuadRule<QuadRule>(compositeRule.IntegrationMetric, compositeRule.GridData) { 
+                chunkRulePairs = filteredChunks
+            };
+        }
 
         /// <summary>
         /// Saves the sum of weights of each edge rule in the given
