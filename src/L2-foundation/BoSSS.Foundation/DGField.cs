@@ -93,7 +93,16 @@ namespace BoSSS.Foundation {
             /// <param name="alpha"></param>
             /// <param name="qr">quad. rule to be used</param>
             public ProjectionQuadrature(DGField owner, double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> qr)
-                : base(new int[] { owner.m_Basis.Length }, owner.Basis.GridDat, qr) {
+                : base([owner.m_Basis.GetLength(qr.FirstOrDefault()?.Chunk.i0 ?? 0)], owner.Basis.GridDat, qr) //
+            {
+                
+                int N0 = owner.m_Basis.GetLength(qr.FirstOrDefault()?.Chunk.i0 ?? 0);
+                foreach(int j in qr.GetCellMask().ItemEnum) {
+                    if(owner.m_Basis.GetLength(qr.GridData.GetLogicalCellIndex(j)) != N0) {
+                        throw new ArgumentException("all cells in the quadrule are expected to have the same length.");
+                    }
+                }
+
                 m_func = func;
                 m_Owner = owner;
                 m_alpha = alpha;
@@ -102,12 +111,16 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="owner"></param>
-            /// <param name="func"></param>
-            /// <param name="alpha"></param>
-            /// <param name="qr">quad. rule to be used</param>
             public ProjectionQuadrature(DGField owner, double alpha, ScalarFunctionEx func, ICompositeQuadRule<QuadRule> qr)
-                : base(new int[] { owner.m_Basis.Length }, owner.Basis.GridDat, qr) {
+                : base([owner.m_Basis.GetLength(qr.FirstOrDefault()?.Chunk.i0 ?? 0)], owner.Basis.GridDat, qr)  //
+            {
+                int N0 = owner.m_Basis.GetLength(qr.FirstOrDefault()?.Chunk.i0 ?? 0);
+                foreach(int j in qr.GetCellMask().ItemEnum) {
+                    if(owner.m_Basis.GetLength(qr.GridData.GetLogicalCellIndex(j)) != N0) {
+                        throw new ArgumentException("all cells in the quadrule are expected to have the same length.");
+                    }
+                }
+
                 m_func2 = func;
                 m_Owner = owner;
                 m_alpha = alpha;
@@ -274,15 +287,10 @@ namespace BoSSS.Foundation {
                 int dgDeg = this.Basis.Degree;
                 int order = dgDeg * 2 + 2;
                 tr.Info($"dg degree {dgDeg}, quad order {order}");
-
+                
                 var rule = scheme.SaveCompile(this.Basis.GridDat, order);
 
-                //Stopwatch w = new Stopwatch();
-                //w.Start();
-                var pq = new ProjectionQuadrature(this, alpha, func, rule);
-                pq.Execute();
-                //w.Stop();
-                //Console.WriteLine("Projection took: " + w.Elapsed.TotalSeconds + " seconds.");
+                ProjectField(alpha, func, rule);
             }
         }
 
@@ -298,8 +306,24 @@ namespace BoSSS.Foundation {
         /// </param>
         virtual public void ProjectField(double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> rule) {
             using (new FuncTrace()) {
-                var pq = new ProjectionQuadrature(this, alpha, func, rule);
-                pq.Execute();
+                if(Basis.MinimalLength == Basis.MaximalLength) {
+                    var pq = new ProjectionQuadrature(this, alpha, func, rule);
+                    pq.Execute();
+                } else {
+                    var allNs = Basis.GetAllUsedLengths();
+                    var ruleMask = rule.GetCellMask();
+                    foreach(int N in allNs) {
+                        if(N == 0)
+                            continue;
+
+                        var Nmask = Basis.GetCellsWithLength(N).ToGeometicalMask();
+                        var integrationMask = ruleMask.Intersect(Nmask);
+                        var Nrule = rule.RestrictToMask(Nmask);
+
+                        var pq = new ProjectionQuadrature(this, alpha, func, Nrule);
+                        pq.Execute();
+                    }
+                }
             }
         }
 
@@ -314,9 +338,23 @@ namespace BoSSS.Foundation {
         /// quadrature rule
         /// </param>
         public void ProjectField(double alpha, ScalarFunctionEx func, ICompositeQuadRule<QuadRule> rule) {
-            using (new FuncTrace()) {
+            if(Basis.MinimalLength == Basis.MaximalLength) {
                 var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
+            } else {
+                var allNs = Basis.GetAllUsedLengths();
+                var ruleMask = rule.GetCellMask();
+                foreach(int N in allNs) {
+                    if(N == 0)
+                        continue;
+
+                    var Nmask = Basis.GetCellsWithLength(N).ToGeometicalMask();
+                    var integrationMask = ruleMask.Intersect(Nmask);
+                    var Nrule = rule.RestrictToMask(Nmask);
+
+                    var pq = new ProjectionQuadrature(this, alpha, func, Nrule);
+                    pq.Execute();
+                }
             }
         }
 
@@ -333,8 +371,10 @@ namespace BoSSS.Foundation {
                 int dgDeg = this.Basis.Degree;
                 int order = dgDeg * 2 + 2;
                 tr.Info($"dg degree {dgDeg}, quad order {order}");
-                var pq = new ProjectionQuadrature(this, alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
-                pq.Execute();
+                
+                var rule = scheme.SaveCompile(this.Basis.GridDat, order);
+
+                ProjectField(alpha, func, rule);
             }
         }
 

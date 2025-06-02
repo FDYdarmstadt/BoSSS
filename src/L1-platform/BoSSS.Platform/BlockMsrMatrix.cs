@@ -1022,7 +1022,27 @@ namespace ilPSP.LinSolvers {
                 if (Storage == null && value != 0.0) {
                     if(lockObject != null)
                         Monitor.Exit(lockObject);
-                    throw new ArgumentException("Can not save non-zero entry in void-region.");
+                    
+
+                    string GetIndexList(IBlockPartitioning part, long _i) {
+                        long iBlock = part.GetBlockIndex(_i);
+                        int sblkType = part.GetBlockType(iSblk);
+                        int[] SubBlock_i0 = part.GetSubblk_i0(sblkType);
+                        int[] SubBlockLen = part.GetSubblkLen(sblkType);
+                        var allowedIdx = new List<int>();
+                        for(int z = 0; z < SubBlock_i0.Length; z++) {
+                            for(int k = 0; k < SubBlockLen[z]; k++)
+                                allowedIdx.Add(k + SubBlock_i0[i]);
+                        }
+
+                        if(allowedIdx.Count > 0)
+                            return allowedIdx.ToConcatString("[", ", ", "]");
+                        else
+                            return "EMPTY";
+                    }
+
+
+                    throw new ArgumentException($"Can not save non-zero entry in void-region. Global row/column indices ({i},{j}); within block ({iSblk},{jSblk}); allowed indices within block {GetIndexList(_RowPartitioning, i)},{GetIndexList(_ColPartitioning, j)} ");
                 }
                 Debug.Assert(Storage != null || value == 0.0);
 
@@ -2007,6 +2027,10 @@ namespace ilPSP.LinSolvers {
         /// i.e. first index into <see cref="Membank.Mem"/>, see <see cref="BlockEntry.InMembnk"/>.
         /// </param>
         void AllocSblk(out Membank B, out int MembnkIdx, out int InMembnk, int ISblk, int JSblk) {
+#if DEBUG
+            if(ISblk == 0 || JSblk < 0)
+                throw new ApplicationException($"Membanks for zero-blocks shall not be allocated ({ISblk}x{JSblk}).");
+#endif
             lock (m_Membanks) {
                 int NoOfMembnk = m_Membanks.Count;
                 for (int iMbnk = 0; iMbnk < NoOfMembnk; iMbnk++) { // loop over memory banks, trying to find a suitable one..
@@ -2241,6 +2265,8 @@ namespace ilPSP.LinSolvers {
             /// ctor.
             /// </summary>
             public Membank(int L, int ISblk, int JSblk) {
+                if(ISblk == 0 || JSblk < 0)
+                    throw new ApplicationException($"Membanks for zero-blocks shall not be allocated ({ISblk}x{JSblk}).");
 
                 long MaxL = ((long)int.MaxValue) / (((long)L) * ISblk * JSblk);
                 if (L > MaxL)
@@ -4624,34 +4650,37 @@ namespace ilPSP.LinSolvers {
                             for(int colSblk = 0; colSblk < NoOfColSblk; colSblk++) { // loop over column sub-blocks...
                                 long j0_Sblk = j0_Block + ColSblk_i0[colSblk];
                                 int NclsSblk = ColSblkLen[colSblk];
-                                long jE_Sblk = j0_Sblk + NclsSblk;
-                                Debug.Assert(j0_Sblk >= j0_Block);
-                                Debug.Assert(NclsSblk >= 0);
-                                Debug.Assert(jE_Sblk <= jE_Block);
+                                if(NclsSblk > 0) {
 
-                                if(jE_Sblk <= jPointer)
-                                    continue;
-                                if(j0_Sblk >= _jE)
-                                    continue;
+                                    long jE_Sblk = j0_Sblk + NclsSblk;
+                                    Debug.Assert(j0_Sblk >= j0_Block);
+                                    Debug.Assert(NclsSblk >= 0);
+                                    Debug.Assert(jE_Sblk <= jE_Block);
 
-                                long j0_clip = Math.Max(j0_Sblk, jPointer);
-                                long jE_clip = Math.Min(jE_Sblk, _jE);
-                                int sblk_jOffset = (int)(j0_clip - j0_Sblk);
-                                int this_jOffset = (int)(j0_clip - _j0);
-                                Debug.Assert(sblk_jOffset >= 0);
-                                Debug.Assert(this_jOffset >= 0);
-                                int Jcopy = (int)(jE_clip - j0_clip);
+                                    if(jE_Sblk <= jPointer)
+                                        continue;
+                                    if(j0_Sblk >= _jE)
+                                        continue;
 
-                                double[] Storage;
-                                int Offset, CI, CJ;
-                                BM.GetSetAlloc2(true, iBlock, jBlockCol, rowSblk, colSblk, NrwsSblk, NclsSblk, NoOfRowSblk, NoOfColSblk, out Storage, out Offset, out CI, out CJ);
+                                    long j0_clip = Math.Max(j0_Sblk, jPointer);
+                                    long jE_clip = Math.Min(jE_Sblk, _jE);
+                                    int sblk_jOffset = (int)(j0_clip - j0_Sblk);
+                                    int this_jOffset = (int)(j0_clip - _j0);
+                                    Debug.Assert(sblk_jOffset >= 0);
+                                    Debug.Assert(this_jOffset >= 0);
+                                    int Jcopy = (int)(jE_clip - j0_clip);
 
-                                for(int i = 0; i < ICopy; i++) {
-                                    for(int j = 0; j < Jcopy; j++) {
-                                        int idxSrc = _offset + (i + this_iOffset) * _CI + (j + this_jOffset);
-                                        int idxDst = Offset + (i + sblk_iOffset) * CI + (j + sblk_jOffset) * CJ;
-                                        double V = srcMem[idxSrc];
-                                        Storage[idxDst] += V;
+                                    double[] Storage;
+                                    int Offset, CI, CJ;
+                                    BM.GetSetAlloc2(true, iBlock, jBlockCol, rowSblk, colSblk, NrwsSblk, NclsSblk, NoOfRowSblk, NoOfColSblk, out Storage, out Offset, out CI, out CJ);
+
+                                    for(int i = 0; i < ICopy; i++) {
+                                        for(int j = 0; j < Jcopy; j++) {
+                                            int idxSrc = _offset + (i + this_iOffset) * _CI + (j + this_jOffset);
+                                            int idxDst = Offset + (i + sblk_iOffset) * CI + (j + sblk_jOffset) * CJ;
+                                            double V = srcMem[idxSrc];
+                                            Storage[idxDst] += V;
+                                        }
                                     }
                                 }
                             }

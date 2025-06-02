@@ -976,7 +976,7 @@ namespace BoSSS.Application.XNSEC {
                 CurrentState.Fields.Where(f => f.Identification == VariableNames.Temperature).Single().GetExtremalValues(out minTemperature, out maxTemperature);
                 Console.WriteLine("Min Temperature in this timestep: " + minTemperature);
                 Console.WriteLine("Max Temperature in this timestep: " + maxTemperature);
-            } catch (Exception e) {
+            } catch (Exception) {
 
             }
             //sensor.Update(CurrentState.Fields.Where(f => f.Identification == VariableNames.Temperature).Single());

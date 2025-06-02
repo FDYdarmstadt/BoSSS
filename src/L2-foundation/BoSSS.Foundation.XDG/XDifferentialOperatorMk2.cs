@@ -125,17 +125,23 @@ namespace BoSSS.Foundation.XDG {
 
         public List<string> m_SpeciesList = new List<string>();
 
-        private DifferentialOperator FilterSpeciesOperator(IDifferentialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
+        private DifferentialOperator FilterSpeciesOperator(IDifferentialOperator op, bool[] RowSwitch, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
             var r = new DifferentialOperator(op.DomainVar, op.ParameterVar, op.CodomainVar, (degDom, degParam, degCod) => order);
             r.FluxesAreNOTMultithreadSafe = op.FluxesAreNOTMultithreadSafe;
-            r.UserDefinedValues.AddRange(this.UserDefinedValues[species]);
+            if(species.IsNonEmpty())
+                r.UserDefinedValues.AddRange(this.UserDefinedValues[species]);
 
+            int iRow = -1;
             foreach(string comps in op.CodomainVar) { // loop over rows
+                iRow++;
+                if(!RowSwitch[iRow])
+                    continue;
+
                 foreach(IEquationComponent iec in op.EquationComponents[comps]) {
                     //m_SpatialOperator.EquationComponents[comps].Add(iec);
                     
-                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null) {
+                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null && species.IsNonEmpty()) {
                         string spcNmn = fiec.ValidSpecies;
 
                         if(!this.Species.Contains(spcNmn)) {
@@ -155,20 +161,26 @@ namespace BoSSS.Foundation.XDG {
             r.EdgeQuadraturSchemeProvider = g => eqs;
             r.VolumeQuadraturSchemeProvider = g => cqs;
 
-            r.OperatorCoefficientsProvider = delegate (IGridData g, double time) {
+            if(species.IsNonEmpty()) {
+                r.OperatorCoefficientsProvider = delegate (IGridData g, double time) {
 
-                var c = this.OperatorCoefficientsProvider(lsTrk, lsTrk.GetSpeciesId(species), order, TrackerHistory, time);
+                    var c = this.OperatorCoefficientsProvider(lsTrk, lsTrk.GetSpeciesId(species), order, TrackerHistory, time);
 
-                SpeciesId id = lsTrk.GetSpeciesId(species);
-                CellLenScales.TryGetValue(id, out var cls);
-                EdgLenScales.TryGetValue(id, out var els);
+                    SpeciesId id = lsTrk.GetSpeciesId(species);
+                    CellLenScales.TryGetValue(id, out var cls);
+                    EdgLenScales.TryGetValue(id, out var els);
 
 
-                c.CellLengthScales = cls;
-                c.EdgeLengthScales = els;
+                    c.CellLengthScales = cls;
+                    c.EdgeLengthScales = els;
 
-                return c;
-            };
+                    return c;
+                };
+            } else {
+                r.OperatorCoefficientsProvider = delegate (IGridData g, double time) {
+                    return new CoefficientSet();
+                };
+            }
 
             r.Commit();
             return r;
@@ -396,8 +408,9 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="spcId">species which should be framed</param>
             /// <param name="Full">the vector that should be framed</param>
             /// <param name="FullMap"></param>
-            public SpeciesFrameVector(LevelSetTracker.LevelSetRegions lsTrk_Regions, SpeciesId spcId, V Full, UnsetteledCoordinateMapping FullMap)
-                : this(Full, new FrameBase(lsTrk_Regions, spcId, FullMap, false)) {
+            /// <param name="traceDGhandling"></param>
+            public SpeciesFrameVector(LevelSetTracker.LevelSetRegions lsTrk_Regions, SpeciesId spcId, V Full, UnsetteledCoordinateMapping FullMap, FrameBase_TraceDGhandling traceDGhandling)
+                    : this(Full, new FrameBase(lsTrk_Regions, spcId, FullMap, false, traceDGhandling)) {
             }
 
 
@@ -613,8 +626,9 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="spcId">the species of interest</param>
             /// <param name="fullMapRow">row mapping for the operator matrix <paramref name="full"/></param>
             /// <param name="fullMapCol">column mapping for the operator matrix <paramref name="full"/></param>
-            public SpeciesFrameMatrix(M full, LevelSetTracker.LevelSetRegions lsTrk_regions, SpeciesId spcId, UnsetteledCoordinateMapping fullMapRow, UnsetteledCoordinateMapping fullMapCol)
-                : this(full, new FrameBase(lsTrk_regions, spcId, fullMapRow, false), new FrameBase(lsTrk_regions, spcId, fullMapCol, true)) {
+            /// <param name="traceDGhandling"></param>            
+            public SpeciesFrameMatrix(M full, LevelSetTracker.LevelSetRegions lsTrk_regions, SpeciesId spcId, UnsetteledCoordinateMapping fullMapRow, UnsetteledCoordinateMapping fullMapCol, FrameBase_TraceDGhandling traceDGhandling)
+                : this(full, new FrameBase(lsTrk_regions, spcId, fullMapRow, false, traceDGhandling), new FrameBase(lsTrk_regions, spcId, fullMapCol, true, traceDGhandling)) {
             }
 
             LevelSetTracker.LevelSetRegions m_LsTrk_regions;
@@ -629,7 +643,7 @@ namespace BoSSS.Foundation.XDG {
                 RowFrame = __RowFrame;
                 ColFrame = __ColFrame;
                 m_LsTrk_regions = __RowFrame.Regions;
-
+/* test deact by fk - 30may25 - seems to be mostly effectless anyway
 #if DEBUG
                 var grdDat = RowFrame.FullMap.BasisS.First().GridDat;
                 int J = grdDat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -637,16 +651,18 @@ namespace BoSSS.Foundation.XDG {
                 var spc = RowFrame.Species;
                 Debug.Assert(RowFrame.Species.Equals(ColFrame.Species));
                 var lsTrk = m_LsTrk_regions;
-                Basis[] RowBase = RowMapping.BasisS.ToArray();
-                Basis[] ColBase = ColMapping.BasisS.ToArray();
+                Basis[] rowFrameBsisS = RowMapping.BasisS.ToArray();
+                Basis[] colFrameBsisS = ColMapping.BasisS.ToArray();
+                Basis[] rowOrigBasisS = __RowFrame.FullMap.BasisS.ToArray();
+                Basis[] colOrigBasisS = __ColFrame.FullMap.BasisS.ToArray();
 
                 var _AvailableRowIdx = new List<long>();
                 for (int j = 0; j < J; j++) {
                     int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
                     if (iSpc >= 0) {
-                        for (int k = 0; k < RowBase.Length; k++) {
-                            int N = RowBase[k].GetLength(j);
+                        for (int k = 0; k < rowFrameBsisS.Length; k++) {
+                            int N = Math.Min(rowFrameBsisS[k].GetLength(j), rowOrigBasisS[k].GetLength(j));
                             for (int n = 0; n < N; n++) {
                                 long iRow = RowFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
                                 _AvailableRowIdx.Add(iRow);
@@ -663,8 +679,8 @@ namespace BoSSS.Foundation.XDG {
                     int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
                     if (iSpc >= 0) {
-                        for (int k = 0; k < ColBase.Length; k++) {
-                            int N = ColBase[k].GetLength(j);
+                        for (int k = 0; k < colFrameBsisS.Length; k++) {
+                            int N = Math.Min(colFrameBsisS[k].GetLength(j), colOrigBasisS[k].GetLength(j));
                             for (int n = 0; n < N; n++) {
                                 long iCol = ColFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
                                 _AvailableColIdx.Add(iCol);
@@ -675,17 +691,19 @@ namespace BoSSS.Foundation.XDG {
                 }
                 this.AvailableColIdx = _AvailableColIdx.ToArray();
 #endif
+*/
             }
 
             FrameBase RowFrame;
             FrameBase ColFrame;
 
-
+/*
 #if DEBUG
+
             long[] AvailableRowIdx;
             long[] AvailableColIdx;
 #endif
-
+*/
             /// <summary>
             /// row mapping for the framed matrix
             /// </summary>
@@ -1266,6 +1284,37 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        /// <summary>
+        /// Returns all equation components which implement <see cref="IParameterHandling"/>
+        /// </summary>
+        public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+            var ret = new List<IParameterHandling>();
+            foreach(string codName in this.CodomainVar) {
+                foreach(IEquationComponent comp in this.EquationComponents[codName]) {
+                    if(comp is IParameterHandling ph) {
+                        if(!ret.Contains(ph, (IParameterHandling a, IParameterHandling b) => object.ReferenceEquals(a,b)))
+                            ret.Add(ph);
+                    }
+                }
+            }
+
+            if(TemporalOperator != null) {
+                foreach(var ph in (this.TemporalOperator?.GetAllParameterHandlers() ?? new IParameterHandling[0])) {
+                    if(!ret.Contains(ph, (IParameterHandling a, IParameterHandling b) => object.ReferenceEquals(a,b)))
+                        ret.Add(ph);
+                }
+            }
+
+            foreach(var slaveOp in new IDifferentialOperator[] { this.SurfaceElementOperator_Ls0, this.GhostEdgesOperator, this.ContactLineOperator_Ls0 }) {
+                foreach(var ph in slaveOp.GetAllParameterHandlers()) {
+                    if(!ret.Contains(ph, (IParameterHandling a, IParameterHandling b) => object.ReferenceEquals(a, b)))
+                        ret.Add(ph);
+                }
+            }
+
+            return ret.ToArray();
+        }
+
         List<Action<double>> m_HomotopyUpdate = new List<Action<double>>();
 
         /// <summary>
@@ -1464,7 +1513,7 @@ namespace BoSSS.Foundation.XDG {
             /// locks the configuration of the operator
             /// </summary>
             public void Commit() {
-                if (m_IsCommited)
+                if(m_IsCommited)
                     throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
                 m_IsCommited = true;
 
@@ -1472,6 +1521,10 @@ namespace BoSSS.Foundation.XDG {
 
             public IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
                 return m_encapsulatedObj.GetMassMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+            }
+
+            public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+                return m_encapsulatedObj.GetAllParameterHandlers();
             }
         }
 

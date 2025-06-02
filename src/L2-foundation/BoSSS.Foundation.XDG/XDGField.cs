@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.XDG {
 
 
     /// <summary>
-    /// a DG field for a cut-cell -basis (<see cref="XDGBasis"/>);
+    /// a DG field for a cut-cell-basis (<see cref="XDGBasis"/>);
     /// </summary>
     public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 
@@ -1396,7 +1396,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// most recent entry for <see cref="LevelSetTracker.VersionCnt"/>
         /// </summary>
-        int m_TrackerVersion;
+        public int m_TrackerVersion;
 
         /// <summary>
         /// Updated the data structure of this cut-cell DG field to reflect the

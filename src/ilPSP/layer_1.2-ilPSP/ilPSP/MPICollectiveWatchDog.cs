@@ -67,7 +67,7 @@ namespace ilPSP {
         }
 
         private static void WatchInternal(MPI_Comm comm, double WaitTimeSeconds, bool quitAppIfExpired, int token) {
-            if (!Tracing.Tracer.InstrumentationSwitch)
+            if(!Tracing.Tracer.InstrumentationSwitch)
                 // if tracing is off for performance reasons,
                 // also this method should be turned of.
                 return;
@@ -81,14 +81,14 @@ namespace ilPSP {
                 // find name of calling function: i.e., the first method on stack which is NOT a member of this class
                 // ==================================================================================================
                 m_functionName = "undetermined";
-                for (int i = 0; i < 5000; i++) {
+                for(int i = 0; i < 5000; i++) {
                     StackFrame fr = new StackFrame(i, true);
-                    if (fr == null) {
+                    if(fr == null) {
                         m_functionName = $"undetermined (StackIndex = {i})";
                         break;
                     }
                     System.Reflection.MethodBase m = fr.GetMethod();
-                    if (m == null) {
+                    if(m == null) {
                         m_functionName = $"undetermined (StackIndex = {i})";
                         break;
                     }
@@ -110,26 +110,26 @@ namespace ilPSP {
                 Fire = 100;
                 Fired = 200;
             }
-            Thread wDog = (new Thread(delegate() {
+            Thread wDog = (new Thread(delegate () {
                 Stopwatch stw = new Stopwatch();
                 stw.Start();
 
 
-                while (true) {
+                while(true) {
                     int loc_Fire;
                     lock(padlock) {
                         loc_Fire = Fire;
                     }
-                    if (loc_Fire == 0) {
+                    if(loc_Fire == 0) {
                         lock(padlock) {
                             Fired = 0;
                         }
-                        if (stw.Elapsed.TotalSeconds > WaitTimeSeconds)
+                        if(stw.Elapsed.TotalSeconds > WaitTimeSeconds)
                             Console.WriteLine("Returning from out-of-sync after " + stw.Elapsed.TotalSeconds + " seconds.");
                         return;
-                    } else if (stw.Elapsed.TotalSeconds > WaitTimeSeconds) {
+                    } else if(stw.Elapsed.TotalSeconds > WaitTimeSeconds) {
                         Console.Error.WriteLine("WARNING: MPI out of sync on rank " + rank + " for more than " + WaitTimeSeconds + " seconds.");
-                        Console.Error.WriteLine("Method '" + m_functionName + "' was called at " + entryTime +  " on process " + rank + " but not on all other processes.");
+                        Console.Error.WriteLine("Method '" + m_functionName + "' was called at " + entryTime + " on process " + rank + " but not on all other processes.");
                         Console.Error.WriteLine("Call stack:");
                         Console.Error.WriteLine(st.ToString());
 
@@ -147,7 +147,7 @@ namespace ilPSP {
             // ======================================
             int tokenMin = token.MPIMin(comm);
             int tokenMax = token.MPIMax(comm);
-            if (tokenMin != tokenMax)
+            if(tokenMin != tokenMax)
                 throw new ApplicationException($"synchronization error: token minimum {tokenMin}, maximum {tokenMax}");
             csMPI.Raw.Barrier(comm); // must be in the 'main' thread
                                      // MPI is not necessarily thread-safe!
@@ -164,13 +164,13 @@ namespace ilPSP {
                 Fire = 0; // quit watchdog
                 locFired = Fired;
             }
-            while (locFired != 0)  {
+            while(locFired != 0) {
                 Thread.Sleep(10);
                 lock(padlock) {
                     locFired = Fired;
                 }
             }
-            
+
         }
     }
 }

@@ -236,7 +236,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                 // ALL VELOCITY RELATED FIELDS
                 this.XDGvelocity = new VelocityRelatedVars<XDGField>();
-                InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
+                InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields, out _);
 
                 //this.GravityX = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.StressXX].Degree), "GravityX");
                 //base.RegisterField(this.GravityX);

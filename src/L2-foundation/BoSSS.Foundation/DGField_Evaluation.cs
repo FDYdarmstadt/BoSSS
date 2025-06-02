@@ -44,6 +44,13 @@ namespace BoSSS.Foundation {
             Debug.Assert(L == ResultAcc.GetLength(0));
             Debug.Assert(NumNodes == ResultAcc.GetLength(1));
 
+            if(N == 0) {
+                if(ResultPreScale != 1.0) {
+                    ResultAcc.Scale(ResultPreScale);
+                }
+                return; 
+            }
+
             /*
             MultidimensionalArray BasisValues;
             BasisValues = basis.CellEval(NS, j0, L);
@@ -80,13 +87,9 @@ namespace BoSSS.Foundation {
                             double* pResultAcc = _pResultAcc + ResultAcc.Index(0,0);
                             double* ptrfCoördinates = _ptrfCoördinates + trfCoördinates.Index(0,0);
                             double* pBasisValues = _pBasisValues + BasisValues.Index(0, 0);
-
-                            
 //#if DEBUG
-//                            MultidimensionalArray check = ResultAcc.CloneAs();
-                            
+//                            MultidimensionalArray check = ResultAcc.CloneAs();                         
 //#endif
-
                             int _M = ResultAcc.GetLength(1);   // entspricht k   (node    index)
                             int _N = ResultAcc.GetLength(0);   // entspricht j   (cell    index)
                             int _K = BasisValues.GetLength(1); // entspricht m   (DG mode index)
@@ -107,8 +110,7 @@ namespace BoSSS.Foundation {
                                 pBasisValues, _K,
                                 ptrfCoördinates, _K,
                                 ResultPreScale,
-                                pResultAcc, _M);
-                        
+                                pResultAcc, _M);                
 //#if DEBUG
 //                            check.Multiply(1.0, trfCoördinates, BasisValues, ResultPreScale, ref mp_jk_jm_km);
 //                            check.Acc(-1.0, ResultAcc);
@@ -217,10 +219,10 @@ namespace BoSSS.Foundation {
             M = NS.NoOfNodes;            // number of nodes
             AffineLinear = basis.GridDat.iGeomCells.IsCellAffineLinear(j0);
 
-            Debug.Assert(basis.GetType() == typeof(Basis));
+            //Debug.Assert(basis.GetType() == typeof(Basis) || basis.GetType() == typeof(Trace);
 
             Debug.Assert(Coördinates.Dimension == 2);
-            Debug.Assert(Coördinates.GetLength(1) == N);
+            Debug.Assert(Coördinates.GetLength(1) >= N);
 
 #if DEBUG
             for(int i = 1; i < L; i++) {

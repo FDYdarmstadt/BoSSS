@@ -1494,7 +1494,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 
-                var fQr = new CompositeQuadRule<QuadRule>();
+                var fQr = new CompositeQuadRule<QuadRule>(Qr.IntegrationMetric, Qr.GridData);
                 for(int i = 0; i < E; i++) {
                     if(temp[i] != null) {
                         int iLast = fQr.chunkRulePairs.Count - 1;
@@ -3023,6 +3023,31 @@ namespace BoSSS.Foundation {
             return true;
         }
 
+
+        /// <summary>
+        /// Returns all equation components which implement <see cref="IParameterHandling"/>
+        /// </summary>
+        public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+            var ret = new List<IParameterHandling>();
+            foreach(string codName in this.CodomainVar) {
+                foreach(IEquationComponent comp in this.EquationComponents[codName]) {
+                    if(comp is IParameterHandling ph) {
+                        if(!ret.Contains(ph, (IParameterHandling a, IParameterHandling b) => object.ReferenceEquals(a,b)))
+                            ret.Add(ph);
+                    }
+                }
+            }
+
+            if(TemporalOperator != null) {
+                foreach(var ph in (this.TemporalOperator?.GetAllParameterHandlers() ?? new IParameterHandling[0])) {
+                    if(!ret.Contains(ph, (IParameterHandling a, IParameterHandling b) => object.ReferenceEquals(a,b)))
+                        ret.Add(ph);
+                }
+            }
+
+            return ret.ToArray();
+        }
+
         /// <summary>
         /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
         /// of this operator (because of the ownership, the temporal operator cannot be reused).
@@ -3035,7 +3060,7 @@ namespace BoSSS.Foundation {
                 m_encapsulatedObj = __encapsulatedObj;
                 m_newOwner = __newOwner;
 
-                
+
             }
 
             bool m_IsCommited;
@@ -3044,7 +3069,7 @@ namespace BoSSS.Foundation {
             /// locks the configuration of the operator
             /// </summary>
             public void Commit() {
-                if (m_IsCommited)
+                if(m_IsCommited)
                     throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
                 m_IsCommited = true;
 
@@ -3052,6 +3077,11 @@ namespace BoSSS.Foundation {
 
             public IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
                 return m_encapsulatedObj.GetMassMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+            }
+
+
+            public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+                return m_encapsulatedObj.GetAllParameterHandlers();
             }
         }
 

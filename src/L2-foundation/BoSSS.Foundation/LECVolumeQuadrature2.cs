@@ -121,9 +121,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 }
             }
 
-            var q = CellQuadrature.GetQuadrature2(new int[] { 
+            var q = CellQuadrature.GetQuadrature2( //
+                [ 
                     m_RowL.Sum(), 
-                    (temp.LinearRequired ? m_ColL.Sum() : 0) + (temp.AffineRequired ? 1 : 0) },
+                    (temp.LinearRequired ? m_ColL.Sum() : 0) + (temp.AffineRequired ? 1 : 0) 
+                ],
                 m_GridDat, domNrule,
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
@@ -1034,7 +1036,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         if (bLinearRequired) {
                             for(int delta = 0; delta < DELTA; delta++) { // loop over domain variables ...
                                 bool bAny = (m_UxVSumBuffer[gamma, delta] != null) || (m_GradUxGradVSumBuffer[gamma, delta] != null) || (m_GradUxVSumBuffer[gamma, delta] != null) || (m_UxGradVSumBuffer[gamma, delta] != null);
-                                if(bAny) {
+                                if(bAny && m_owner.m_RowL[gamma] > 0 && m_owner.m_ColL[delta] > 0) {
                                     GetQRbufferLinear(Length, QuadResult, isAffineLinearCell && !metric.AlwaysUsePerNodeScaling, MR, NR, ref iQlBuf, ref Ql, I0Row, gamma, I0Col, delta, out _R, out _Q);
 
                                     double cF = 0.0;
@@ -1095,7 +1097,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         }
                         if(bAffineRequired) {
                             bool bAny = (m_VSumBuffer[gamma, 0] != null) || (m_GradVSumBuffer[gamma, 0] != null);
-                            if(bAny) {
+                            if(bAny && m_owner.m_RowL[gamma] > 0) {
                                 GetRQbufferAffine(Length, QuadResult, isAffineLinearCell && !metric.AlwaysUsePerNodeScaling, MR, ref iQaBuf, ref Qa, I0Row, gamma, I0Col, out _R, out _Q);
                                 double cF = 0.0;
 
@@ -1212,8 +1214,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 if (bLinearRequired) {
                     var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(new int[] { i, 0, 0 }, new int[] { i - 1, M - 1, N - 1 });
 
-                    long m0 = this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
-                    long n0 = this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                    //long m0 = this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                    //long n0 = this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                    long m0 = this.m_RowMap.GlobalUnique1stCoordinate(jCell);
+                    long n0 = this.m_ColMap.GlobalUnique1stCoordinate(jCell);
+
+
+
 
                     //for (int m = 0; m < M; m++) {
                     //    for (int n = 0; n < N; n++) {
@@ -1227,7 +1234,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(new int[] { i, 0, offset }, new int[] { i - 1, M - 1, offset - 1 });
 
 
-                    int m0 = this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell, 0);
+                    int m0 = this.m_RowMap.LocalUnique1stCoordinate(jCell);
 
                     for (int m = 0; m < M; m++)
                         m_Vector[m0 + m] += BlockRes[m]* a;

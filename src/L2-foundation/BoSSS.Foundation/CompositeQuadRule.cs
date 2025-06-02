@@ -41,11 +41,17 @@ namespace BoSSS.Foundation.Quadrature {
 	public sealed class CompositeQuadRule<TQuadRule> : ICompositeQuadRule<TQuadRule>
         where TQuadRule : QuadRule {
 
+       
         /// <summary>
         /// Pairs of quadrature rules and the domain on which they should be
         /// applied
         /// </summary>
         public List<IChunkRulePair<TQuadRule>> chunkRulePairs = new List<IChunkRulePair<TQuadRule>>();
+
+        public CompositeQuadRule(IIntegrationMetric integrationMetric, IGridData gridData) {
+            IntegrationMetric = integrationMetric;
+            GridData = gridData;
+        }
 
         #region ICompositeQuadRule<TQuadRule> Members
 
@@ -65,7 +71,12 @@ namespace BoSSS.Foundation.Quadrature {
             get;
             set;
         }
-        
+
+        public IGridData GridData {
+            get;
+            private set;
+        }
+
 
         #endregion
 
@@ -134,7 +145,7 @@ namespace BoSSS.Foundation.Quadrature {
             where TDomain : ExecutionMask //
         {
             using (var tr = new FuncTrace()) {
-                CompositeQuadRule<TQuadRule> compositeRule = new CompositeQuadRule<TQuadRule>();
+                CompositeQuadRule<TQuadRule> compositeRule = new CompositeQuadRule<TQuadRule>(scaling, domain.GridData);
                 compositeRule.IntegrationMetric = scaling;
                 // BEWARE: This check may cause nasty trouble in parallel runs
                 // where a domain is only present on some domains and has thus been
@@ -225,10 +236,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// </returns>
         public static CompositeQuadRule<TQuadRule> Merge(
             CompositeQuadRule<TQuadRule> A, CompositeQuadRule<TQuadRule> B) {
+            if(!object.ReferenceEquals(A.GridData, B.GridData))
+                throw new ArgumentException("grid mismatch");
 
-            CompositeQuadRule<TQuadRule> result = new CompositeQuadRule<TQuadRule>();
-            result.IntegrationMetric = B.IntegrationMetric;
-            //result.chunkRulePairs = ZipChunkRulePairs(A.chunkRulePairs, B.chunkRulePairs);
+            CompositeQuadRule<TQuadRule> result = new CompositeQuadRule<TQuadRule>(B.IntegrationMetric, B.GridData);
             result.chunkRulePairs = ZipHelper2(A.chunkRulePairs, B.chunkRulePairs);
 
             var nodes = new List<NodeSet>();

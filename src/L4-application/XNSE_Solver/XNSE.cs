@@ -30,6 +30,7 @@ using ilPSP.LinSolvers;
 using BoSSS.Solution.Gnuplot;
 using static System.Reflection.Metadata.BlobBuilder;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Solution.Timestepping;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -77,15 +78,10 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
-            //foreach(ProcessThread t in Process.GetCurrentProcess().Threads) {
-            //    Console.WriteLine($"{t.Id}: {t.ThreadState}");
-            //}
-
-            //InitMPI();
-            //ilPSP.Environment.NumThreads = 1;
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 3, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
-            //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
+            InitMPI();
+            ilPSP.Environment.NumThreads = 1;
+            BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, true, 3);
+            NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
 
             {
