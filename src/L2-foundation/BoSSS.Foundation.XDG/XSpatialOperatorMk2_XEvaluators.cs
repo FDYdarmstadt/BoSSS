@@ -323,24 +323,25 @@ namespace BoSSS.Foundation.XDG {
 
                             var allBuilders = new List<LECQuadratureLevelSet<M, V>>();
                             foreach(var tt in this.CouplingRules) {
-                                int iLevSet = tt.LsIdx;
-                                var SpeciesA = tt.spcA;
-                                var SpeciesB = tt.spcB;
-                                var rule = tt.quadRule;
+                                int iLevSet = tt.Item1;
+                                var SpeciesA = tt.Item2;
+                                var SpeciesB = tt.Item3;
+                                var rule = tt.Item4;
+#if DEBUG
 
                                 int[] NoOfItems = rule.Count().MPIAllGather();
-                                // #if DEBUG
                                 int[] all_iLs = iLevSet.MPIAllGather();
                                 int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
                                 int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
                                 for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
                                     Assert.IsTrue(all_iLs[rnk] == iLevSet, "Level-set index mismatch.");
+
                                     if(NoOfItems.Min() > 0) {
                                         Assert.IsTrue(allSpcA[rnk] == SpeciesA.cntnt, "Mismatch of species designators across MPI ranks for species A");
                                         Assert.IsTrue(allSpcB[rnk] == SpeciesB.cntnt, "Mismatch of species designators across MPI ranks for species B");
                                     }
                                 }
-                                // #endif                                 
+#endif                                 
                                 var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
                                                                  m_Xowner,
                                                                  OnlyAffine ? default(M) : Matrix, AffineOffset,
