@@ -321,12 +321,6 @@ namespace BoSSS.Application.Rheology {
         public int AnalysisLevel = 2;
 
         /// <summary>
-        /// solver is turned off and residual of initial value/exact solution is evaluated, used to test the consistency of the implementation. We need an initial condition for pressure.
-        /// </summary>
-        [DataMember]
-        public bool SkipSolveAndEvaluateResidual = false;
-
-        /// <summary>
         /// Initial pressure?
         /// </summary>
         [DataMember]

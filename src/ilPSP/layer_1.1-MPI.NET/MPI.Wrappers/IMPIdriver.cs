@@ -370,11 +370,20 @@ namespace MPI.Wrappers {
         /// </summary>
         void Wait(ref MPI_Request request, out MPI_Status status);
 
-
         /// <summary>
-        /// Return the parent communicator for this process.
+        /// Splits old communicator into two with respect to color
         /// </summary>
-        void Comm_get_parent(out MPI_Comm parent);
+        /// <param name="oldComm"></param>
+        /// <param name="color"></param>
+        /// <param name="key"></param>
+        /// <param name="newComm"></param>
+        void CommSplit(MPI_Comm oldComm, int color, int key, out MPI_Comm newComm);
+
+
+		/// <summary>
+		/// Return the parent communicator for this process.
+		/// </summary>
+		void Comm_get_parent(out MPI_Comm parent);
 
         /// <summary>
         /// The size of an <see cref="MPI_Status"/>.

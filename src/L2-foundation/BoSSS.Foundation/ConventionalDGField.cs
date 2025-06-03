@@ -38,8 +38,9 @@ namespace BoSSS.Foundation {
         /// </summary>
         protected ConventionalDGField(Basis b, string name) :
             base(b, name) {
-            if (b.GetType() != typeof(Basis))
-                throw new ArgumentException("type " + b.GetType().FullName + " is not allowed as a basis for single phase fields", "b");
+            //if (b.GetType() != typeof(Basis))
+            //    throw new ArgumentException("type " + b.GetType().FullName + " is not allowed as a basis for single phase fields", "b");
+
         }
 
         /// <summary>

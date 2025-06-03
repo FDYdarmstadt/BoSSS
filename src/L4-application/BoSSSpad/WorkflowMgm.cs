@@ -756,6 +756,7 @@ namespace BoSSS.Application.BoSSSpad {
                 DateTime start = DateTime.Now;
                 while(true) {
 
+
                     //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
                     //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
 

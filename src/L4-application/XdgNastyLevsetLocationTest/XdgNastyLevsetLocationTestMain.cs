@@ -51,7 +51,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         /// <param name="args"></param>
         static void Main(string[] args) {
             InitMPI();
-            AllUpTest.ParalleTest_2D(XQuadFactoryHelper.MomentFittingVariants.Saye);
+            AllUpTest.ParalleTest_2D(CutCellQuadratureMethod.Saye);
         }
 
         
@@ -59,8 +59,8 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         internal ITest test = new Schraeg(GetTestRange(), GetTestRange());
         //internal ITest test = new Schraeg( intercept: 5e-13);
 
-        internal XQuadFactoryHelper.MomentFittingVariants momentFittingVariant =
-            XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        internal CutCellQuadratureMethod momentFittingVariant =
+            CutCellQuadratureMethod.OneStepGaussAndStokes;
 
         internal int QUAD_ORDER = 4;
 

@@ -15,7 +15,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// Properties of the discrete XDG space. Note that the properties of discrete XDG space
     /// (e.g. measures of cut-cells and the mass matrix) depend on the 
-    /// the chosen type (<see cref="XQuadFactoryHelperBase.MomentFittingVariants"/>) and order of the cut-cell quadrature, 
+    /// the chosen type (<see cref="CutCellQuadratureMethod"/>) and order of the cut-cell quadrature, 
     /// therefore these are collected in this central object.
     /// Instances of this object are obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics(IEnumerable{SpeciesId}, int, int)"/>.
     /// </summary>
@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Data, e.g. level set gradients, 
         /// constant during object lifetime. 
-        /// - index: lecel set index
+        /// - index: level set index
         /// </summary>
         public IList<LevelSetTracker.LevelSetData> LevelSetData {
             get {
@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The type of quadrature which is be used for computing.
         /// </summary>
-        public XQuadFactoryHelperBase.MomentFittingVariants CutCellQuadratureType {
+        public CutCellQuadratureMethod CutCellQuadratureType {
             get {
                 return m_qfHelper.CutCellQuadratureType;
             }
@@ -194,6 +194,15 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+		/// <summary>
+		/// Write all the quadrature rules (edge, volume and surface) as nodes + weights into vtp files
+		/// </summary>
+		public void WriteAllQuadratureRulesToVtp() {
+			var cutCellMetrics = CutCellMetrics;
+			cutCellMetrics.WriteSurfaceRulesToVtp();
+			cutCellMetrics.WriteEdgeRulesToVtp();
+			cutCellMetrics.WriteVolumeRulesToVtp();
+		}
 
-    }
+	}
 }

@@ -29,6 +29,8 @@ using System.Reflection;
 using ilPSP.LinSolvers;
 using BoSSS.Solution.Gnuplot;
 using static System.Reflection.Metadata.BlobBuilder;
+using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Solution.Timestepping;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -75,97 +77,21 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            //ilPSP.Environment.NumThreads = 8;
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.CapillaryRiseTest();
-            //BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryRise.CapillaryRise_Tube_SFB1194;
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2); 
-            //System.Environment.Exit(111);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
-
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
-            //System.Environment.Exit(111);
-
-            /*
-            var plots = new List<Plot2Ddata>();
-            for(int i = 0; i < 4; i++) {
-                var p = new Plot2Ddata();
-                var x = GenericBlas.Linspace(1, 20, 100);
-                var y = x.Select(x_i => Math.Sin(x_i + i)).ToArray();
-                p.AddDataGroup("pli" + i, x, y);
-
-                plots.Add(p);
-            }
-
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
-            if (rank == 0) {
-                Plot2Ddata[,] multi = new Plot2Ddata[1, plots.Count];
-                int iCol = 0;
-                foreach (var kv in plots) {
-                    multi[0, iCol] = kv;
-                    iCol++;
-                    //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
-                    //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
-                    //kv.Value.SavePgfplotsFile_WA(Path.Combine(OutputDir, kv.Key + ".tex");
-                }
-
-                multi.SaveToGIF("waterfall." + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".png", 600*4, 600);
-
-            }
-
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            throw new Exception("exit2");
-
-            //*/
-
-            /*
-            var mtxa = IMatrixExtensions.LoadFromTextFile(@"..\..\..\bin\release\net5.0\weirdo\indef.txt");
-
-            for (int NN = 10; NN <= mtxa.NoOfRows; NN++) {
-                Console.WriteLine("NN = " + NN);
-                var mtx = mtxa.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NN - 1, NN - 1 }).CloneAs();
-
-                var UpTri = MultidimensionalArray.Create(NN, NN);
-                var UpTri2 = MultidimensionalArray.Create(NN, NN);
-                mtx.SymmetricLDLInversion(UpTri, null);
-                mtx.GramSchmidt(UpTri2, null);
+            InitMPI();
+            ilPSP.Environment.NumThreads = 1;
+            BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, true, 3);
+            NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
 
-                Console.WriteLine("UpTri vs. LDL " + UpTri2.Storage.L2Dist(UpTri.Storage));
-
-                var LoTri = UpTri.TransposeTo();
-                var Eye = LoTri.GEMM(mtx, UpTri);
-                var LoTri2 = UpTri2.TransposeTo();
-                var Eye2 = LoTri2.GEMM(mtx, UpTri2);
-                //L.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\GS.txt");
-                //Eye.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\ID.txt");
-                Eye.AccEye(-1.0);
-                Eye2.AccEye(-1.0);
-                Console.WriteLine("Ortho Error: " + Eye.InfNorm() + "    " + Eye2.InfNorm());
-
-            }
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
-            NUnit.Framework.Assert.IsTrue(false, "remove me"); 
-            */
-
-            
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
                     return p;
                 });
-
-                //Tmeas.Memtrace.Flush();
-                //Tmeas.Memtrace.Close();
             }
             //*/
             ilPSP.LinSolvers.BlockMsrMatrix.PrintPerfStat();
-
-            
         }
     }
 
@@ -200,10 +126,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Algoim
-               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            if(Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye 
+                && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim
+                && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes
+               ) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye}, {XQuadFactoryHelper.MomentFittingVariants.Algoim} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye}, {CutCellQuadratureMethod.Algoim} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -211,11 +139,14 @@ namespace BoSSS.Application.XNSE_Solver {
             //QuadOrder
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            
+            if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye 
+                || Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim
+                ) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
-            } 
+            }
 
             return quadOrder;
         }

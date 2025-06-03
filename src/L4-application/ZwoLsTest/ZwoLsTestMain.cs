@@ -43,20 +43,21 @@ namespace BoSSS.Application.ZwoLsTest {
     /// </summary>
     class ZwoLsTestMain : BoSSS.Solution.Application {
 
-        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        internal CutCellQuadratureMethod MomentFittingVariant = CutCellQuadratureMethod.Saye;
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
             InitMPI();
-            BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, true);
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, true);
+            BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, CutCellQuadratureMethod.OneStepGauss, false);
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, CutCellQuadratureMethod.OneStepGaussAndStokes, true);
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, CutCellQuadratureMethod.OneStepGauss, true);
             Assert.IsTrue(false, "Remove me");
-                        
+
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye, DYNAMIC_BALANCE = true });
+                () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.3, MomentFittingVariant = CutCellQuadratureMethod.Saye, DYNAMIC_BALANCE = true });
             
         }
 
@@ -598,7 +599,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
-
+            //Debugger.Launch();
             //phystime = 1.8;
             LsUpdate(phystime);
 
@@ -694,7 +695,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             // check error
             double ErrorThreshold = 1.0e-1;
-            if(this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
+            if(this.MomentFittingVariant == CutCellQuadratureMethod.OneStepGaussAndStokes)
                 ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
 
@@ -765,7 +766,7 @@ namespace BoSSS.Application.ZwoLsTest {
             MsrMatrix ConMatrix = new MsrMatrix(new Partitioning(J));
             MsrMatrix ConMatrix2 = new MsrMatrix(new Partitioning(J));
             var map = new UnsetteledCoordinateMapping(new Basis(this.GridData, 0));
-            var FConMatrix = new XDifferentialOperatorMk2.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
+            var FConMatrix = new XDifferentialOperatorMk2.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map, FrameBase_TraceDGhandling.DG_XDG_and_TraceDG);
 
             long jCell0 = this.GridData.CellPartitioning.i0;
 

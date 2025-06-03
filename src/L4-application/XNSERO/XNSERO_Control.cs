@@ -34,7 +34,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 TimeSteppingScheme = TimeSteppingScheme.BDF2;
                 NonlinearCouplingSolidFluid = true;
                 UseImmersedBoundary = true;
-                CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+                CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
                 base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
                 base.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
@@ -156,7 +156,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public void SetAddaptiveMeshRefinement(int MaxRefinementLevel) {
             if (MaxRefinementLevel != 0) {
                 AdaptiveMeshRefinement = true;
-                RefinementLevel = MaxRefinementLevel;
+                //RefinementLevel = MaxRefinementLevel;
                 AMR_startUpSweeps = MaxRefinementLevel;
                 activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = MaxRefinementLevel });
             }

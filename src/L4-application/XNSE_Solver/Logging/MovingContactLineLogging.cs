@@ -8,6 +8,7 @@ using ilPSP.Tracing;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -129,11 +130,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
 
-            IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
+            IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(EvoVelocity.Length));
             IReadOnlyDictionary<string, DGField> parameters = this.SolverMainOverride.LsUpdater.Parameters;
 
-            List<ConventionalDGField> velocity = new List<ConventionalDGField>(3);
-            for (int i = 0; i < 3; ++i) {
+            List<ConventionalDGField> velocity = new List<ConventionalDGField>(EvoVelocity.Length);
+            for (int i = 0; i < EvoVelocity.Length; ++i) {
 
                 if (parameters.TryGetValue(velocityName[i], out DGField velocityField)) {
                     velocity.Add((ConventionalDGField)velocityField);
@@ -149,7 +150,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             List<double[]> contactPoints = new List<double[]>();
             List<double[]> contactVelocities = new List<double[]>();
             List<double> contactAngles = new List<double>();
-
+            
             ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(this.CurrentVel);
 
             var Phi = (LevelSet)LsTrk.LevelSets[0];
@@ -167,7 +168,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
             SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
-
+            
             EdgeQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
                 SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
                 delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -389,7 +390,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
 
             var gridDat = (GridData)this.SolverMainOverride.GridData;
-            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
+            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0, 1);
 
             CellQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
                 ContactLineVolumeScheme.Compile(LsTrk.GridDat, 0),

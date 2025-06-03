@@ -135,7 +135,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using(var tr = new FuncTrace()) {
-
                 int D = levelSet.Tracker.GridDat.SpatialDimension;
 
                 SinglePhaseField[] meanVelocity = D.ForLoop(
@@ -149,8 +148,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         f.Clear();
                 }
 
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
-            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
+                ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
                 if(timeStepper == null) {
                     //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
@@ -162,7 +161,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 timeStepper.Perform(dt);
 
-                tr.Info("time in LS evolver: " + timeStepper.Time );
+                tr.Info("time in LS evolver: " + timeStepper.Time);
             }
         }
 

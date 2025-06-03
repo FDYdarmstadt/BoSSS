@@ -126,7 +126,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var levSet0 = new LevelSet(b, "LevelSetField0");
             levSet0.ProjectField(inLevelSet);
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
         }
 
@@ -142,7 +142,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var levSet0 = new LevelSet(b, "LevelSetField0");
             levSet0.ProjectField(inLevelSet);
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
         }
 
@@ -223,7 +223,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             }
 
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
             Console.WriteLine("Successful projection of level set");
         }
@@ -239,7 +239,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             var levSet0 = new LevelSet(b, "LevelSetField0");
             levSet0.ProjectField(inLevelSet);
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
         }
 
@@ -336,24 +336,24 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     }
 
                     //qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-                    var globTr = qr.CloneAs();
-                    globTr.TransformLocal2Global(grd, jCell);
-                    //globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
+                    //var globTr = qr.CloneAs();
+                    var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
+                    globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
                     
 
                     double metric_jCell = JacobiDet[jCell];
                     var WeightsGlobal_jCell = qr.Weights.CloneAs();
                     WeightsGlobal_jCell.Scale(metric_jCell);
 
+                    int SpatialDim = grd.SpatialDimension;
+                    ret = MultidimensionalArray.Create(qr.NoOfNodes, SpatialDim + 1);
 
-                    ret = MultidimensionalArray.Create(globTr.NoOfNodes, globTr.SpatialDim + 1);
 
-
-                    for (int n = 0; n < globTr.NoOfNodes; n++) {
-                        for (int d=0; d < globTr.SpatialDim; d++) {
-                            ret[n, d] = globTr.Nodes[n, d];
+                    for (int n = 0; n < qr.NoOfNodes; n++) {
+                        for (int d=0; d < qr.SpatialDim; d++) {
+                            ret[n, d] = globTr[n, d];
                         }
-                        ret[n, globTr.SpatialDim] = WeightsGlobal_jCell[n];
+                        ret[n, SpatialDim] = WeightsGlobal_jCell[n];
                     }
                     return ret;
                 }
@@ -392,9 +392,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     }
 
                     qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-                    var globTr = qr.CloneAs();
-                    globTr.TransformLocal2Global(grd, jCell);
-                    globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
+                    var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
+                    globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
 
 
                     //var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);

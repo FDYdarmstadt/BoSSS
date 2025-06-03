@@ -1163,9 +1163,14 @@ namespace BoSSS.Foundation.XDG {
 
 
             /// <summary>
+            /// <see cref="LevSetCoincidingFaces"/>
+            /// </summary>
+            internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
+
+            /// <summary>
             /// Handling of special cases, when the level-set coincides with a cell face;
             /// It can be null, if there is no such face in the entire mesh;
-            /// - 1st index: local cell index
+            /// - 1st index: local geometric cell index
             /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
             /// - entry: if null, there is no face on the cell which coincides with any level-set 
             /// - contains tuples, which level-set coincides with which face (if any)
@@ -1178,21 +1183,41 @@ namespace BoSSS.Foundation.XDG {
             /// - the Level set is not recognized in any cell.
             /// Therefore, this case is already intercepted in the tracker beforehand, see <see cref="Quadrature.LevelSetOnEdgeRule"/>
             /// </remarks>
-            internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
-
-            /// <summary>
-            /// Handling of special cases, when the level-set coincides with a cell face;
-            /// It can be null, if there is no such face in the entire mesh;
-            /// - 1st index: local cell index
-            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
-            /// - entry: if null, there is no face on the cell which coincides with any level-set 
-            /// - contains tuples, which level-set coincides with which face (if any)
-            /// </summary>
             public (int iLevSet, int iFace)[][] LevSetCoincidingFaces {
                 get {
                     return m_LevSetCoincidingFaces;
                 }
             }
+
+
+            /// <summary>
+            /// <see cref="LevSetCoincidingCoFaces"/>>
+            /// </summary>
+            internal (int iLevSet, int iCoFace)[][] m_LevSetCoincidingCoFaces;
+
+            /// <summary>
+            /// Handling of special cases, when the level-set coincides with a cell co-face (e.g., in 2D it passes through a corner, in 3D through a co-face);
+            /// It can be null, if there is no such co-face in the entire mesh;
+            /// - 1st index: local geometric cell index
+            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding co-face, so there can be 
+            /// - entry: if null, there is no face on the cell which coincides with any level-set 
+            /// - contains tuples, which level-set coincides with which co-face (if any)
+            /// </summary>
+            /// <remarks>
+            /// This member enables stable treatment of the special case when 
+            /// the level set is on some cell boundary.
+            /// There, the normal rules behave unstably, e.g.
+            /// - the Level set is recognized in both cells
+            /// - the Level set is not recognized in any cell.
+            /// Therefore, this case is already intercepted in the tracker beforehand, see <see cref="Quadrature.LevelSetOnEdgeRule"/>
+            /// </remarks>
+            public (int iLevSet, int iCoFace)[][] LevSetCoincidingCoFaces {
+                get {
+                    return m_LevSetCoincidingCoFaces;
+                }
+            }
+
+
 
             /// <summary>
             /// Returns the sign (pos, neg, both) for all level-sets in cell <paramref name="jCell"/>
@@ -1827,6 +1852,19 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
                 }
+
+                if(m_LevSetCoincidingCoFaces != null) {
+                    int len = m_LevSetCoincidingCoFaces.Length;
+                    L.m_LevSetCoincidingCoFaces = new (int iLevSet, int iCoFace)[len][];
+                    for(int j = 0; j < len; j++) {
+                        var entry_j = m_LevSetCoincidingCoFaces[j];
+                        if(entry_j != null) {
+                            L.m_LevSetCoincidingCoFaces[j] = entry_j.CloneAs();
+                        }
+                    }
+                }
+
+
                 return L;
             }
 

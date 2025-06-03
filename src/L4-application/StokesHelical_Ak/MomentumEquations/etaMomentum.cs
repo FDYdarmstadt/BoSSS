@@ -193,9 +193,6 @@ namespace StokesHelical_Ak {
                     // Term 12 & 13
 
                 }
-
-
-
                 // Term from derivative of multiplier f(r)
                 Acc -= nu * GradU[2, 0] * df_function * V;
                 // Term 14
@@ -283,9 +280,6 @@ namespace StokesHelical_Ak {
 
         }
 
-
-
-
         // now using CoeffGradUR_BE = CoeffGradUR * Metric ,  such that no singularities at r=0 appear
         double[,] CoeffGradUETA_BE(double r) {
             double nu = Globals.nu;
@@ -364,15 +358,6 @@ namespace StokesHelical_Ak {
                     // consistency term
                     Acc += (CoeffOfGradUETA_BE[0, 0] * (GradU_IN[2, 0]) * inp.Normal[0] + CoeffOfGradUETA_BE[1, 1] * (GradU_IN[2, 1]) * inp.Normal[1]) * (V_IN);
                     // Term 6 & 7
-
-                    // symmetry term
-                    // == 0, weil [[u]] = 0;
-                    //Acc += (CoeffOfGradUETA_BE[0, 0] * (GradV_IN[0]) * inp.Normale[0] + CoeffOfGradUETA_BE[1, 1] * (GradV_IN[1]) * inp.Normale[1]) * (U_IN[2] - UD[2]);
-
-
-
-                    // penalty term
-                    // == 0, weil [[u]] = 0;
 
                 }
 

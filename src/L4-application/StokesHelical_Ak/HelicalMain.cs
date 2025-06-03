@@ -51,9 +51,9 @@ namespace StokesHelical_Ak {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            InitMPI();
-
-            if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+            // InitMPI();
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 Console.Write("rm");
                 foreach(var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
@@ -62,21 +62,17 @@ namespace StokesHelical_Ak {
                 }
                 Console.WriteLine(";");
             }
-
-
-
-            var c = StokesHelical_Ak.DNS_Hagen_Poiseulle.HagenPoiseulle(degree: 4, noOfCellsR: 32, noOfCellsXi: 32);
-            c.ImmediatePlotPeriod = 1;
-            c.NoOfTimesteps = 5;
-            var solver = new HelicalMain();
-            solver.Init(c);
-            solver.RunSolverMode();
-            Process.Start("mpiexec");
-            ////StokesHelical_Ak.DNS_Centrifuge.Centrifuge_Flow();
-            ////Restart_Comparison_Regular_Grid_BDF3_with_R0fix
-            //// StokesHelical_Ak.HardcodedControl.TSFP();
-            ////StokesHelical_Ak.TestTransient.TestTransient.PseudoSteadyCentrifuge();
-            ////StokesHelical_Ak.NUnitTestsR0_fix.R0_fix_Test.TestR0_Fix(2);
+            //for (int i = 2; i < 6; i++) {
+            //    StokesHelical_Ak.TestSpartial.TestSpatial.Steady_SpatialConv_CF_Re_100000_Stokes_with_R0fix(i);
+            //}
+            //StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
+            // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix(3);
+            ////c.ImmediatePlotPeriod = 1;
+            ////c.NoOfTimesteps = 5;
+            //var solver = new HelicalMain();
+            //solver.Init(fisch);
+            //solver.RunSolverMode();
+            //Process.Start("mpiexec");
             //FinalizeMPI();
             //System.Environment.Exit(20072022);
 
@@ -145,9 +141,6 @@ namespace StokesHelical_Ak {
         SinglePhaseField uetaError;
         SinglePhaseField psiError;
 
-        // Attributes for fields (Names), initialization of DG fields
-        //==============================================================
-
         // Velocity
 
         /// <summary>
@@ -181,24 +174,6 @@ namespace StokesHelical_Ak {
         SinglePhaseField Residual_MomR;
 
         CoordinateVector m_UnknownsVector = null;
-
-        ///// <summary>
-        ///// The dependent variables
-        ///// </summary>
-        //CoordinateVector UnknownsVector {
-        //    get {
-        //        if(m_UnknownsVector == null)
-        //            m_UnknownsVector = new CoordinateVector(ur, uxi, ueta, Pressure);
-        //        return m_UnknownsVector;
-        //    }
-        //}
-
-        //CoordinateMapping UnknownsMap {
-        //    get {
-        //        return UnknownsVector.Mapping;
-        //    }
-        //}
-
 
         CoordinateVector m_ResidualVector = null;
         /// <summary>
@@ -265,65 +240,7 @@ namespace StokesHelical_Ak {
             }
         }
 
-        //Pressure Reference Point
-        //============================================================//
-        /// <summary>
-        /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
-        /// in order to fix the pressure at some reference point
-        /// </summary>
-        /// <param name="map">row mapping for <paramref name="Mtx"/> as well as <paramref name="rhs"/></param>
-        /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
-        /// <param name="Mtx"></param>
-        /// <param name="rhs"></param>
-        static public void SetPressureReferencePoint<T>(double[] Point, UnsetteledCoordinateMapping map, int iVar, BlockMsrMatrix Mtx, T rhs)
-            where T : IList<double> {
-            using(new FuncTrace()) {
-                var GridDat = map.GridDat;
 
-                if(rhs.Count != map.LocalLength)
-                    throw new ArgumentException();
-                if(Mtx != null) {
-                    if(!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
-                        throw new ArgumentException();
-                }
-
-                GridDat.LocatePoint(Point, out _, out long GlobalIndex, out _, out bool onthisProc);
-
-                long iRowGl = -111; // 
-                if(onthisProc) {
-                    iRowGl = map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalIndex, 0);
-                }
-                iRowGl = iRowGl.MPIMax(); // on all processes where this NOT set, the input is negative; thus we select the value from the respective processor, where it is set
-
-                // clear row
-                // ---------
-                if(onthisProc) {
-                    // ref. cell is on local MPI process
-                    // set matrix row to identity
-                    if(Mtx != null) {
-                        Mtx.ClearRow(iRowGl);
-                        Mtx.SetDiagonalElement(iRowGl, 1.0);
-                    }
-
-                    // clear RHS
-                    int iRowLoc = (int)(iRowGl - map.i0);
-                    rhs[iRowLoc] = 0;
-
-                    Console.WriteLine("Local row: " + iRowLoc);
-                }
-
-                // clear column
-                // ------------
-                if(Mtx != null) {
-                    for(long i = Mtx.RowPartitioning.i0; i < Mtx.RowPartitioning.iE; i++) {
-                        if(i != iRowGl) {
-                            Mtx[i, iRowGl] = 0;
-                        }
-                    }
-                }
-            }
-        }
-        //==============================================================//
 
         double[] Compute_C_restart(double[] u) {
             double[] C = new double[u.Length];
@@ -393,11 +310,6 @@ namespace StokesHelical_Ak {
             }
 
         }
-
-
-
-
-
 
         //Penalty Factor
         //============================================================//
@@ -486,11 +398,16 @@ namespace StokesHelical_Ak {
         /// Setzt Operator Matrix aus Konti und Impulsgleichungen zusammen
         /// </summary>
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            Console.WriteLine("Mit den RB auf Muss der PRP auf true sein!");//
-            this.Control.PressureReferencePoint = true;
-            if(Control.rMin < 10e-6) {
+            Console.WriteLine($"##################################");
+            Console.WriteLine($"Definition of Globals");
+            Console.WriteLine($"Globals.a is defined as");
+            Console.WriteLine($"{Globals.a}");
+            Console.WriteLine($"Globals.b is defined as");
+            Console.WriteLine($"{Globals.b}");
+            Console.WriteLine($"##################################");
+            if (Control.rMin < 10e-6) {
                 this.Control.R0fixOn = true;
-                if(Control.ExactResidual == true) {
+                if(Control.DDD_Man_Sol == true) {
                     if(Control.steady == true) {
                         // Das ist hier noch nicht so sicher!
                         Globals.activeMult = Globals.Multiplier.Bsq;
@@ -564,17 +481,20 @@ namespace StokesHelical_Ak {
                 Console.WriteLine("Solvinng only Stokes/convective terms deactivated");
             }
             // +++++++++++++++++++++++++
-            // Exact Solution
+            // Manufactured Solution of DDD
             // +++++++++++++++++++++++++
-            if(Control.ExactResidual) {
+            if (Control.DDD_Man_Sol) {
                 diffOp_implicit.EquationComponents["rmom"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermR());
                 diffOp_implicit.EquationComponents["zmom"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermXi());
                 diffOp_implicit.EquationComponents["etamom"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermEta());
                 diffOp_implicit.EquationComponents["konti"].Add(new StokesHelical_Ak.ForcingTerms.ManSol.ForcingTermConti());
             }
-            // Set Amplitude of HagenPoeuseulle, or rotating disc. Therefore, not in if statement
+            // Set max Amplitude of Respective Flow (HagenPoeuseulle, Centrifuge, Gaglilei, DDD , ...)
             Globals.MaxAmp = this.Control.maxAmpli;
-            if(Control.HagenPoisseulle) {
+            // +++++++++++++++++++++++++
+            // Frocing Terms act like a Pressure Gradient
+            // +++++++++++++++++++++++++
+            if (Control.HagenPoisseulle) {
                 diffOp_implicit.EquationComponents["zmom"].Add(new StokesHelical_Ak.ForcingTerms.Hagen_Poiseulle.ForcingTermXi_Hagen());
                 diffOp_implicit.EquationComponents["etamom"].Add(new StokesHelical_Ak.ForcingTerms.Hagen_Poiseulle.ForcingTermEta_Hagen());
             }
@@ -599,31 +519,22 @@ namespace StokesHelical_Ak {
                 this.CurrentSolution.Mapping, 
                 this.Control.GetFixedTimestep(), this.Control.GetBDFOrder(), 
                 this.Control.LinearSolver, this.MultigridOperatorConfig, base.MultigridSequence, 
-                myR0fix, this.Control.rMin, this.Control.PressureReferencePoint);
+                myR0fix, this.Control.rMin);
         }
+
+
 
         protected override void PlotCurrentState(double physTime, BoSSS.Foundation.IO.TimestepNumber timestepNo, int superSampling = 0) {
             using(new FuncTrace()) {
                 Tecplot plt1 = new Tecplot(GridData, true, false, (uint)superSampling);
                 List<DGField> FieldsToPlot;
 
-                if(Control.ExactResidual) {
+                if(Control.DDD_Man_Sol) {
                     FieldsToPlot = m_IOFields.ToList();
                     FieldsToPlot = new List<DGField> { ur, uxi, ueta, Residual_MomR, Residual_MomZ, Residual_MomETA };
                 } else {
                     FieldsToPlot = m_IOFields.ToList();
                 }
-                string time_dep;
-                if(this.Control.steady == true) {
-                    time_dep = "Steady_";
-                } else {
-                    time_dep = "Transient_";
-                }
-                DateTime now = DateTime.Now;
-                string dateString = now.ToString("dd.MM.yyyy");
-
-                Assert.IsTrue(Control.PressureReferencePoint, "Pressure Refference Point should be true");
-
                 if(Control.rMin < 10e-6) {
                     Assert.IsTrue(Control.R0fixOn, "R0_fix should be thrue");
                 }
@@ -634,7 +545,7 @@ namespace StokesHelical_Ak {
                     throw new Exception("Mutiplier BSQ and rMin>10e-6");
                 }
 
-                string nameOf_Plot = "Hel__BDF_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + this.Control.PressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
+                string nameOf_Plot = "Hel__BDF_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
                               this.Control.Resolution_R.ToString() + "_DGd_" + this.Control.dg_degree + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
 
                 plt1.PlotFields(nameOf_Plot, physTime, m_IOFields);
@@ -677,14 +588,12 @@ namespace StokesHelical_Ak {
                     }
                     Assert.IsTrue(Control.R0fixOn, "R0_fix should be true");
                     m_Splitting_Timestepper.Solve(phystime + dt, myR0fix, this.Control.restartTimeStep, TimestepInt, this.Control.RestartInfo != null, Unnn_restart_, Unn_restart_, Un_restart_, this.Control.GetBDFOrder());
-                    // Ruecktransformation: note, fk, 11apr24: moved into Solve
-                    myR0fix.CheckSolutionR0Compatibility(this.CurrentSolution);
+                     myR0fix.CheckSolutionR0Compatibility(this.CurrentSolution);
                 } else {
                     m_Splitting_Timestepper.Solve(phystime + dt, this.Control.restartTimeStep, TimestepInt, this.Control.RestartInfo != null, Unnn_restart_, Unn_restart_, Un_restart_, this.Control.GetBDFOrder());
                 }
-                if(this.Control.ExactResidual == true) {
+                if(this.Control.DDD_Man_Sol == true) {
                     ComputeErrorsAndResiduals(phystime + dt, TimestepNo);
-                    // Beim Restart werden hier irgendwie immer neue Error_Felder angelegt
                 }
                 //Stopclock
                 stopwatch.Stop();
@@ -694,11 +603,69 @@ namespace StokesHelical_Ak {
                 this.ResLogger.NextTimestep(false);
                 CoordinateMapping helicalSol = new CoordinateMapping(ur, uxi, ueta, Pressure);
                 CoordinateVector helicalSolVec = new CoordinateVector(helicalSol);
-                helicalSolVec.SaveToTextFile($"After_PC_Solution_StokesSystem_with_dt={dt}.txt");
-                helicalSolVec.SaveToTextFile("helicalSolution.txt");
                 return dt;
             }
         }
+
+        //Pressure Reference Point
+        //============================================================//
+        /// <summary>
+        /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
+        /// in order to fix the pressure at some reference point
+        /// </summary>
+        /// <param name="map">row mapping for <paramref name="Mtx"/> as well as <paramref name="rhs"/></param>
+        /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
+        /// <param name="Mtx"></param>
+        /// <param name="rhs"></param>
+        static public void SetPressureReferencePoint<T>(double[] Point, UnsetteledCoordinateMapping map, int iVar, BlockMsrMatrix Mtx, T rhs)
+            where T : IList<double> {
+            using (new FuncTrace()) {
+                var GridDat = map.GridDat;
+
+                if (rhs.Count != map.LocalLength)
+                    throw new ArgumentException();
+                if (Mtx != null) {
+                    if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
+                        throw new ArgumentException();
+                }
+
+                GridDat.LocatePoint(Point, out _, out long GlobalIndex, out _, out bool onthisProc);
+
+                long iRowGl = -111; // 
+                if (onthisProc) {
+                    iRowGl = map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalIndex, 0);
+                }
+                iRowGl = iRowGl.MPIMax(); // on all processes where this NOT set, the input is negative; thus we select the value from the respective processor, where it is set
+
+                // clear row
+                // ---------
+                if (onthisProc) {
+                    // ref. cell is on local MPI process
+                    // set matrix row to identity
+                    if (Mtx != null) {
+                        Mtx.ClearRow(iRowGl);
+                        Mtx.SetDiagonalElement(iRowGl, 1.0);
+                    }
+
+                    // clear RHS
+                    int iRowLoc = (int)(iRowGl - map.i0);
+                    rhs[iRowLoc] = 0;
+
+                    Console.WriteLine("Local row: " + iRowLoc);
+                }
+
+                // clear column
+                // ------------
+                if (Mtx != null) {
+                    for (long i = Mtx.RowPartitioning.i0; i < Mtx.RowPartitioning.iE; i++) {
+                        if (i != iRowGl) {
+                            Mtx[i, iRowGl] = 0;
+                        }
+                    }
+                }
+            }
+        }
+        //==============================================================//
         void ComputeErrorsAndResiduals(double time, TimestepNumber timestepNo) {
             using(new FuncTrace()) {
                 var ResidualFields = ResidualMap.Fields;
@@ -784,10 +751,10 @@ namespace StokesHelical_Ak {
                 this.error_MomETA = L2errorS[2];
                 this.error_Conti = L2errorS[3];
 
-                // exact solution
+                // Manufactured Solution of DDD
                 // ==============
-                if(this.Control.steady == true) {
-                    if(!Control.ExactResidual) {
+                if (this.Control.steady == true) {
+                    if(!Control.DDD_Man_Sol) {
                         urExact.ProjectField(Globals.DirichletValue_uR);
                         uetaExact.ProjectField(Globals.DirichletValue_uEta);
                         uxiExact.ProjectField(Globals.DirichletValue_uXi);

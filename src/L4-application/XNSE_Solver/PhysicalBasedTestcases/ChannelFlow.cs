@@ -55,10 +55,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             string _DbPath = null; // @"D:\local\local_test_db";
 
             int D = 3;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             //if (D == 3)
-            //    C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //    C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -436,8 +436,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.RefinementLevel = 2;
 
             C.InitSignedDistance = false;

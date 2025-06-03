@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Foundation.Quadrature;
 
 namespace CutEdgeQuadrature {
     class Tester3D {
@@ -34,12 +35,12 @@ namespace CutEdgeQuadrature {
             phi.ProjectField(testcase.LevelSet);
             Tecplot plotter = new Tecplot(grid.GridData, 4);
             plotter.PlotFields("Phi", 0, phi);
-            LevelSetTracker lsTrkr = new LevelSetTracker(grid.GridData, testcase.MomentFittingVariant, 1, new string[] { "A", "B"}, phi);
+            LevelSetTracker lsTrkr = new LevelSetTracker(grid.GridData, testcase.MomentFittingVariant, 1, new string[] { "A", "B" }, phi);
             SpeciesId[] species = new SpeciesId[] { lsTrkr.GetSpeciesId("A"), lsTrkr.GetSpeciesId("B") };
             XDGSpaceMetrics metrics = lsTrkr.GetXDGSpaceMetrics(species, order);
-            
-            double s = EvaluateEdgeArea(metrics, species[0]);
 
+            double s = EvaluateEdgeArea(metrics, species[0]);
+            WriteVolumeNodes(metrics, species[0], order);
             double error = Math.Abs(testcase.EdgeArea - s);
             return error;
         }
@@ -48,8 +49,8 @@ namespace CutEdgeQuadrature {
             MultidimensionalArray areas = metrics.CutCellMetrics.CutEdgeAreas[species];
             EdgeMask edges = EdgeMask.GetFullMask(grid.iGridData, MaskType.Geometrical);
             MultidimensionalArray centers = GetCenters(edges);
-            for(int i = 0; i < edges.NoOfItemsLocally; ++i) {
-                Console.WriteLine($"Edge center x:{centers[i,0,0]} " +
+            for (int i = 0; i < edges.NoOfItemsLocally; ++i) {
+                Console.WriteLine($"Edge center x:{centers[i, 0, 0]} " +
                     $"y:{centers[i, 0, 1]} z:{centers[i, 0, 2]} with area: {areas[i]}");
             }
             return areas[innerEdgeIndex];
@@ -60,7 +61,7 @@ namespace CutEdgeQuadrature {
             MultidimensionalArray localCenterEdge = MultidimensionalArray.Create(1, D - 1);
             MultidimensionalArray localCenterVolume = MultidimensionalArray.Create(1, D);
 
-            MultidimensionalArray centers = MultidimensionalArray.Create(edges.NoOfItemsLocally,1, D);
+            MultidimensionalArray centers = MultidimensionalArray.Create(edges.NoOfItemsLocally, 1, D);
             GridData gridDat = grid.GridData;
             foreach (Chunk chunk in edges) {
                 for (int edge = 0; edge < chunk.Len; edge++) {
@@ -76,6 +77,25 @@ namespace CutEdgeQuadrature {
                 }
             }
             return centers;
+        }
+
+        void WriteVolumeNodes(XDGSpaceMetrics metrics, SpeciesId spc, int order) {
+            Console.WriteLine("Writing nodes for " + metrics.CutCellQuadratureType);
+            var chunRulePairList = metrics.XQuadSchemeHelper.GetEdgeQuadScheme(spc).Compile(grid.GridData, order);
+            foreach (var chunkRulePair in chunRulePairList) {
+                foreach (int edge in chunkRulePair.Chunk.Elements) {
+                    // To visualize the nodes, we need the transformation from edge-based coordinates to cell-based coordinates
+                    var edgeRule = chunkRulePair.Rule;
+                    int jCell = grid.GridData.iGeomEdges.CellIndices[edge, 0];
+
+                    
+
+                    // Transform cell-based local coordinates to global coordinates
+                    var globNodes = edgeRule.Nodes.TransformLocal2Global(grid.GridData, jCell);
+                    globNodes.OutputQuadratureRuleAsVtpXML(edgeRule.Weights, "nodesFor" + metrics.CutCellQuadratureType + "j" + jCell + "e" + edge + ".vtp");
+
+                }
+            }
         }
     }
 }

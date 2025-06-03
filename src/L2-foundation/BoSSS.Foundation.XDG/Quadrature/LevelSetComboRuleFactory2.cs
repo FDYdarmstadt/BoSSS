@@ -166,12 +166,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         bool UseAlsoStokes;
 
-        ///// <summary>
-        ///// the awesome level set tracker
-        ///// </summary>
-        //protected LevelSetTracker tracker;
-
-
         IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory;
         IQuadRuleFactory<CellBoundaryQuadRule> LevelSetBoundaryLineFactory;
 
@@ -278,10 +272,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 // subgrid on which the volume rule should be constructed
                 // ======================================================
-                CellBoundaryQuadratureScheme cellBndSchme = new CellBoundaryQuadratureScheme(this.cellBoundaryFactory, _mask);
+                CellBoundaryQuadratureScheme cellBndSchme = new CellBoundaryQuadratureScheme(scaling:null, factory: this.cellBoundaryFactory, domain: _mask);
                 CellBoundaryQuadratureScheme cellBndLineSchme = null;
                 if (this.UseAlsoStokes)
-                    cellBndLineSchme = new CellBoundaryQuadratureScheme(this.LevelSetBoundaryLineFactory, _mask);
+                    cellBndLineSchme = new CellBoundaryQuadratureScheme(scaling: new SurfaceElementEdgeIntegrationMetric(this.LevelSetData),
+                        factory: this.LevelSetBoundaryLineFactory, domain: _mask);
 
                 // set up
                 // ======
@@ -371,7 +366,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     SurfaceRule = new ChunkRulePair<QuadRule>[_mask.NoOfItemsLocally];
                     var grddat = this.LevelSetData.GridDat;
                     int D = grddat.SpatialDimension;
-                    var CoIncFaces =  this.LevelSetData.Region.m_LevSetCoincidingFaces;
+                    var CoIncFaces =  this.LevelSetData.Region.LevSetCoincidingFaces;
                     
                     
                     int IsSpecialCell(int j) {
@@ -409,8 +404,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             else
                                 surfNodes = VolNodes;
 
-                            MultidimensionalArray metrics;
-                            var Mtx_Gauss = GaußAnsatzMatrix(TestBasis, VolNodes, surfNodes, jCell, out metrics);
+                            var Mtx_Gauss = GaußAnsatzMatrix(TestBasis, VolNodes, surfNodes, jCell);
                             Debug.Assert(Mtx_Gauss.Dimension == 2);
                             Debug.Assert(Mtx_Gauss.GetLength(0) == NoOfEqPerSy);
                             Debug.Assert(Mtx_Gauss.GetLength(1) == NoOfNodes * 2);
@@ -497,7 +491,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 __RHS.Multiply(-1.0, __Mtx, X, 1.0, "j", "jk", "k");
                                 double L2_ERR = __RHS.L2Norm();
                                 if(L2_ERR > 1.0e-7) {
-                                    Console.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
+                                    Console.Error.WriteLine("Un-precise quadrature order " + IntOrder + " rule in cell " + jCell + ": L2_ERR = " + L2_ERR);
                                     //throw new ApplicationException("Quadrature rule in cell " + jCell + " seems to be not very precise: L2_ERR = " + L2_ERR);
                                 }
                             }
@@ -543,7 +537,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     int Kstr = VolNodes.GetLength(0);
 
                                     for(int k = Kstr; k < Kend; k++) {
-                                        qr_l.Weights[k - Kstr] = RHSandSolution[k, 0] / metrics[0, k - Kstr];
+                                        qr_l.Weights[k - Kstr] = RHSandSolution[k, 0];
                                     }
                                     
                                     SurfaceRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
@@ -560,7 +554,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // inside or outside 
                             // w.r.t. the edge that corresponds with face 
 
-                            int iEdge = grddat.Cells.GetEdgesForFace(jCell, SpecialFace, out int InOrOut, out int[] FurtherEdges);
+                            int iEdge = grddat.GetEdgesForFace(jCell, SpecialFace, out int InOrOut, out int[] FurtherEdges);
                             if(FurtherEdges != null && FurtherEdges.Length > 0) {
                                 throw new NotSupportedException("Hanging node on a edge which coincides with the level set - this should be avoided.");
                             }
@@ -600,7 +594,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 VolumeNodes.LockForever();
 
                                 double gTrF = RefElement.FaceTrafoGramianSqrt[SpecialFace];
-                                var metrics = this.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(VolumeNodes, jCell, 1);
+                                //var metrics = this.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(VolumeNodes, jCell, 1);
                                 
                                 QuadRule qr_l = new QuadRule() {
                                     OrderOfPrecision = IntOrder,
@@ -609,7 +603,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 };
 
                                 for(int k = 0; k < K; k++) {
-                                    qr_l.Weights[k] = FaceRule.Weights[k]*gTrF / metrics[0, k];
+                                    qr_l.Weights[k] = FaceRule.Weights[k] * gTrF;// / metrics[0, k];
                                 }
 
                                 SurfaceRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
@@ -669,7 +663,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
 
-        protected MultidimensionalArray GaußAnsatzMatrix(Basis TestBasis, NodeSet VolQrNodes, NodeSet SurfQrNodes, int jCell, out MultidimensionalArray metrics) {
+        protected MultidimensionalArray GaußAnsatzMatrix(Basis TestBasis, NodeSet VolQrNodes, NodeSet SurfQrNodes, int jCell) {
             int N = TestBasis.Length;
             int D = this.LevelSetData.GridDat.Grid.SpatialDimension;
             int Kvol = VolQrNodes.GetLength(0);
@@ -692,7 +686,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             var Phi = TestBasis.Evaluate(SurfQrNodes); // test function, n
             var LevelSetNormals = this.LevelSetData.GetLevelSetReferenceNormals(SurfQrNodes, jCell, 1).ExtractSubArrayShallow(0,-1,-1);
 
-            metrics = this.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(SurfQrNodes, jCell, 1);
+            //metrics = this.LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(SurfQrNodes, jCell, 1);
             
             // multiply
             for (int d = 0; d < D; d++) // loop over spatial dimension...
@@ -922,6 +916,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return Coeffs.ResizeShallow(N * D, NoOfNodes);
         }
 
+        /*
         /// <summary>
         /// Matrix (LHS) for the Stokes/curvature Ansatz, in the _physical_ coordinate system.
         /// </summary>
@@ -982,6 +977,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             return Coeffs.ResizeShallow(N * D, NoOfNodes);
         }
+        */
+
 
         /// <summary>
         /// Computes outward-pointing tangent
@@ -1021,8 +1018,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             //MultidimensionalArray Nudes = null;
             int jSgrd = 0;
+            var rule = cellBndSchme.Compile(GridDat, order);
             qBnd = CellBoundaryQuadrature<CellBoundaryQuadRule>.GetQuadrature(new int[] { D, N },
-                GridDat, cellBndSchme.Compile(GridDat, order),
+                GridDat, rule,
                 delegate(int i0, int Length, CellBoundaryQuadRule NS, MultidimensionalArray EvalResult) { // Evaluate
                     int NoOfNodes = NS.NoOfNodes;
                     MultidimensionalArray BasisValues = TestBasis.Evaluate(NS.Nodes);                 // reference
@@ -1092,14 +1090,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         jSgrd++;
                     }
                 },
-                cs: CoordinateSystem.Physical);
+                cs: CoordinateSystem.Reference);
             qBnd.Execute();
 
             var ret = RHS.ResizeShallow(N * D, _mask.NoOfItemsLocally);
             return ret;
         }
 
-
+        /*
         /// <summary>
         /// RHS for the Stokes/curvature Ansatz, in the _physical_ coordinate system.
         /// </summary>
@@ -1197,6 +1195,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             var ret = RHS.ResizeShallow(N * D, _mask.NoOfItemsLocally);
             return ret;
         }
+        */
     }
 
 }

@@ -194,4 +194,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
     }
+
+	/// <summary>
+	/// Interface for solvers which provide a call-back during the solver-iterations.
+	/// </summary>
+	public interface ISolverWithInnerCycle : ISolverSmootherTemplate {
+
+		/// <summary>
+		/// When the matrix is not explicilty available, an inner iteration can be defined to calculate Matrix x Vector multiplication
+		/// This action should take two vectors as Input and Output, while performing the equivalent of Output = Matrix x Input multiplication, 
+        /// e.g., by using an iterative algorithm in case of Schur complement
+		/// </summary>
+		Action<double[], double[]> InnerCycle {
+			get;
+			set;
+		}
+	}
 }

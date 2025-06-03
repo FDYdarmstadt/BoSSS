@@ -396,7 +396,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ===========================================
             // update level-set (in the case of splitting)
             // ===========================================
-            bool performSplitting;
+            int MassMatrixCount;
             if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                 || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
 
@@ -434,9 +434,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
 
                 // yes, we use splitting (i.e. only one mass matrix is required)
-                performSplitting = true;
+                MassMatrixCount = 1;
+            } else if (this.Config_LevelSetHandling == LevelSetHandling.None) {
+                MassMatrixCount = 1;
             } else {
-                performSplitting = false;
+                MassMatrixCount = 2;
             }
 
             // ==============================================
@@ -444,7 +446,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ==============================================
 
             // init mass matrix & cut-cell metrics 
-            BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[performSplitting ? 1 : 2];
+            BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[MassMatrixCount];
             m_RequiredTimeLevels = 0;
             m_LsTrk.PushStacks();
             

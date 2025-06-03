@@ -654,10 +654,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("  Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
                     tr.Info("  Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
                     tr.Info("  Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
-                    tr.Info("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
-                    tr.Info("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
-                    tr.Info("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-                    tr.Info("  spmv outer " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
+                    tr.Info(BlockMsrMatrix.PerfStatToString());
                 }
 
                 // store solution

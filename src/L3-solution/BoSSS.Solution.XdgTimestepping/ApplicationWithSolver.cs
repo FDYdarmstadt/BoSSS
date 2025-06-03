@@ -467,8 +467,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 if (RollingSave) {
 
-                    int rsIndex = 1;
-                    for (int ts = 1; ts < S; ts++) {
+                    //int rsIndex = 1;
+                    int N = Math.Min(rollingSavesTsi.Count, S);
+                    for (int ts = 1; ts < N; ts++) {
+                        int rsIndex = N - ts - 1; // iterate backward through list, skipping the most recent timestep
+                        if (rsIndex < 0)
+                            break;
                         var ari_ts = adaptedRestartInfo.Where(rsi => rsi.Item1 == timeStepInt - ts);
                         if (ari_ts.Count() == 0) {
                             // delete rolling save (if not in burst range), get restartInfo from timestepper and save adapted timestep
@@ -499,9 +503,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                             //Console.WriteLine($"timestep: {ari_ts.Single()} added to rollingSaves[{rsIndex}] (deleteTs = {ari_ts.Single().Item3})");
 
                         } else
-                            throw new ArgumentException($"There are more than one rolling saves for timestepnumber = {timeStepInt - ts}");
+                            throw new ArgumentException($"There are more than one burst saves for timestepnumber = {timeStepInt - ts}");
 
-                        rsIndex -= 1;
+                        //rsIndex -= 1;
                     }
                 }
 
@@ -523,7 +527,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             else
                 throw new ArgumentNullException();
 
-            if (restartFields == null)
+            if (restartFields == null || restartFields.Length == 0)
                 return null;
 
             var tsn = new TimestepNumber(new int[] { timeStepInt - historyIndex, 1 });
@@ -732,7 +736,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetTimestep();
-            Timestepping.Solve(phystime, dt);
+            Timestepping.Solve(phystime, dt, SkipSolveAndEvaluateResidual:Control.SkipSolveAndEvaluateResidual);
             return dt;
         }
 
@@ -820,7 +824,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Instantiation of Level-Sets (<see cref="ILevelSet"/>, <see cref="LevelSet"/>) and the tracker.
         /// </summary>
-        protected abstract LevelSetTracker InstantiateTracker();
+        protected virtual LevelSetTracker InstantiateTracker() { return null; }
 
 
         /// <summary>
@@ -829,11 +833,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateTracker() {
             var trk = InstantiateTracker();
             //var test = this.Operator;
-            if (base.LsTrk == null) {
-                base.LsTrk = trk;
-            } else {
-                if (!object.ReferenceEquals(trk, base.LsTrk))
-                    throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
+            if(trk != null) {
+                if(base.LsTrk == null) {
+                    base.LsTrk = trk;
+                } else {
+                    if(!object.ReferenceEquals(trk, base.LsTrk))
+                        throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
+                }
             }
 
             //foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {

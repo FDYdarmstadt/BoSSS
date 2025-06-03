@@ -147,9 +147,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             List<XdgPoisson3Control> R = new List<XdgPoisson3Control>();
 
             var hmfVersions = new[] {
-                XQuadFactoryHelper.MomentFittingVariants.Classic,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGauss,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes };
+                CutCellQuadratureMethod.Classic,
+                CutCellQuadratureMethod.OneStepGauss,
+                CutCellQuadratureMethod.OneStepGaussAndStokes };
             foreach (var HMFversion in hmfVersions) {
                 foreach (int pOff in new int[] { -1, 0, 1, 2 }) {
                     foreach (int res in new int[] { 12, 24, 48, 96, 192 }) {
@@ -572,8 +572,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("rhs#B", X => 1.0);
             C.InitialValues_Evaluators.Add("u#A", X => 0);
             C.InitialValues_Evaluators.Add("u#B", X => 0);
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
+            C.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             C.SetDefaultDiriBndCnd = true;  //which means ...
             //C.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             //C.xLaplaceBCs.IsDirichlet = (inp => true);
@@ -663,9 +663,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             List<XdgPoisson3Control> R = new List<XdgPoisson3Control>();
 
             var hmfVersions = new[] {
-                XQuadFactoryHelper.MomentFittingVariants.Classic,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGauss,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes };
+                CutCellQuadratureMethod.Classic,
+                CutCellQuadratureMethod.OneStepGauss,
+                CutCellQuadratureMethod.OneStepGaussAndStokes };
             foreach (var HMFversion in hmfVersions) {
                 foreach (int pOff in new int[] { -1, 0, 1, 2 }) {
                     foreach (int res in new int[] { 12, 24, 48, 96, 192 }) {

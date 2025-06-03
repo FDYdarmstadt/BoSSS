@@ -35,6 +35,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.Tecplot;
 using Newtonsoft.Json.Linq;
+using static BoSSS.Solution.AMRLevelIndicatorLibrary;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -275,11 +276,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void Run_RestartTests(
-                [Values(false, true)] bool transient,
-                [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
-                [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme,
-                [Values(false, true)] bool AMRon,
-                [Values(3, 4, 5)] int savePeriod){
+#if DEBUG
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler)] TimeSteppingScheme timestepScheme,
+            [Values(false, true)] bool AMRon,
+            [Values(3)] int savePeriod
+#else
+            [Values(false, true)] bool transient,
+            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
+            [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme,
+            [Values(false, true)] bool AMRon,
+            [Values(3, 4, 5)] int savePeriod
+#endif
+            ) {
 
             if (savePeriod > 3 && (!AMRon || !transient))
                 return;
@@ -392,6 +402,136 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
+        }
+
+        static public XNSE_Control RollingSaveTest_Control(string DbPath, TimeSteppingScheme timeStepScheme, int savePeriod, out int[] ExpectedTimeSteps) {
+
+            var ctrl = new XNSE_Control();
+
+            ctrl.SetDGdegree(2);
+
+            int kelem = 4;
+            ctrl.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, 1.0, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, 1.0, kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
+
+                return grd;
+            };
+
+            ctrl.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            ctrl.TimeSteppingScheme = timeStepScheme;
+            ctrl.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            ctrl.Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.None;
+
+            ctrl.dtFixed = 0.1;
+            ctrl.NoOfTimesteps = 10;
+
+            ctrl.DbPath = DbPath;
+            ctrl.saveperiod = 5;
+            ctrl.rollingSaves = true;
+            ctrl.DynamicLoadBalancing_RedistributeAtStartup = false;
+
+            ctrl.AddInitialValue("VelocityX", "X => Math.Sin(X[0])*Math.Cos(X[1])", false);
+            ctrl.AddInitialValue("VelocityY", "X => -Math.Cos(X[0])*Math.Cos(X[1])", false);
+
+            ExpectedTimeSteps = new int[] { }; // { 0, 3, 4, 3, 5, 8, 9, 10 };
+
+            switch (timeStepScheme) {
+                case TimeSteppingScheme.ImplicitEuler:
+                    if (savePeriod == 5)
+                        ExpectedTimeSteps = new int[] { 0, 5, 10 };
+                    else
+                        throw new NotImplementedException();
+                    break;
+                case TimeSteppingScheme.BDF2:
+                    if (savePeriod == 5)
+                        ExpectedTimeSteps = new int[] { 0, 4, 5, 9, 10 };
+                    else
+                        throw new NotImplementedException();
+                    break;
+                case TimeSteppingScheme.BDF3:
+                    if (savePeriod == 5)
+                        ExpectedTimeSteps = new int[] { 0, 3, 4, 5, 8, 9, 10 };
+                    else
+                        throw new NotImplementedException();
+                    break;
+                case TimeSteppingScheme.BDF4:
+                    if (savePeriod == 5)
+                        ExpectedTimeSteps = new int[] { 0, 2, 3, 2, 4, 5, 7, 8, 9, 10 };
+                    else
+                        throw new NotImplementedException();
+                    break;
+                default:
+                    throw new ArgumentException("Chosen timestepping scheme not supported for current test setting");
+            }
+
+            //ctrl.ImmediatePlotPeriod = 1;
+            //ctrl.SuperSampling = 3;
+
+            return ctrl;
+        }
+
+        [Test]
+        public static void RollingSaveTest(
+            [Values(true)] bool amr,
+            [Values(TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3, TimeSteppingScheme.BDF4)] TimeSteppingScheme timeStepScheme,
+            [Values(5)] int savePeriod) {
+            string TestDbDir = "testdb_" + DateTime.Now.ToString("MMMdd_HHmm");
+            string TestDbFullPath = Path.Combine(Directory.GetCurrentDirectory(), TestDbDir);
+
+            {
+                var TestDb = DatabaseInfo.CreateOrOpen(TestDbFullPath);
+                DatabaseInfo.Close(TestDb);
+            }
+            /*
+            Guid gridGuid;
+            {
+                var xNodes = GenericBlas.Linspace(-1.0/3.0, 10.0/3.0, 11*3 + 1);
+                var yNodes = GenericBlas.Linspace(-1, 1, 6 * 2 + 1);
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                Guid GridGuid = TestDb.Controller.DBDriver.SaveGrid(grd, TestDb);
+            };
+            */
+
+            var ctrl1 = RollingSaveTest_Control(TestDbFullPath, timeStepScheme, savePeriod, out var ExpectedTs1stRun);
+            if (amr) {
+                ctrl1.AdaptiveMeshRefinement = true;
+                ctrl1.activeAMRlevelIndicators.Add(new AMReveryWhere() { maxRefinementLevel = 3 });
+                ctrl1.AMR_startUpSweeps = 0;
+            }
+            using (var FirstRun = new XNSE()) {
+
+                FirstRun.Init(ctrl1);
+                FirstRun.RunSolverMode();
+            }
+
+
+            Guid RestartSession;
+            {
+                var TestDb2 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
+                Assert.IsTrue(TestDb2.Grids.Count() == (amr ? 4 : 1), "Number of grids seems to be wrong.");
+                Assert.IsTrue(TestDb2.Sessions.Count() == 1, "Number of sessions seems to be wrong.");
+
+
+                var si = TestDb2.Sessions.Single();
+                int[] tsiNumbers = si.Timesteps.Skip(amr ? 1 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
+                Assert.IsTrue(ExpectedTs1stRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
+
+                //var tend = si.Timesteps.Last();
+                RestartSession = si.ID;
+
+                DatabaseInfo.Close(TestDb2);
+            }
+
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            if (rank == 0) {
+                Console.WriteLine($"Deleting test database at {TestDbFullPath} ...");
+                Directory.Delete(TestDbFullPath, true);
+                Console.WriteLine("done.");
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
         }
 
     }

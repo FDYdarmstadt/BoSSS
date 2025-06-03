@@ -490,7 +490,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// - false: <see cref="OrthonormalizationMultigrid.CoarserLevelSolver"/> is initialized on the same level, but it may perform tis own restriction
             /// </summary>
             [DataMember]
-            public bool CoarseOnLovwerLevel = true;
+            public bool CoarseOnLowerLevel = true;
 
             /// <summary>
             /// - if set to 1, a this performs a V-cycle
@@ -498,6 +498,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             [DataMember]
             public int m_omega = 1;
+
+            /// <summary> skip the pre-smoother </summary>
+            [DataMember]
+            public bool SkipPreSmoother = false;
+
+            /// <summary> Pre-smoother and coarse grid correction do not work sequential (i.e., residual from presmoother is not supplied to coarse grid solver) </summary>
+            [DataMember]
+            public bool NonSerialPreSmoother = false;
 
             /// <summary>
             /// 
@@ -660,14 +668,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("OrthonormalizationMultigrid: running without coarse solver.");
                 } else {
                     if (op is MultigridOperator mgOp) {
-                        if (myConfig.CoarseOnLovwerLevel && mgOp.CoarserLevel != null) {
+                        if (myConfig.CoarseOnLowerLevel && mgOp.CoarserLevel != null) {
                             this.CoarserLevelSolver.Init(mgOp.CoarserLevel);
                         } else {
                             tr.Info("OrthonormalizationMultigrid: running coarse solver on same level.");
                             this.CoarserLevelSolver.Init(mgOp);
                         }
                     } else {
-                        if (myConfig.CoarseOnLovwerLevel == false && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
+                        if (myConfig.CoarseOnLowerLevel == false && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
                             ssCoarse.Init(op);
                         } else {
                             throw new NotSupportedException($"Unable to initialize coarse-level-solver if operator is not a {typeof(MultigridOperator)}");
@@ -706,17 +714,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /// <summary>
-        /// coarse-level correction; can be defined either
-        /// - on this level (then the coarse solver may perform its of prolongation/restriction), or
-        /// - on coarser level, then prolongation/restriction is handled by this solver.
-        /// </summary>
+		/// <summary>
+		/// coarse-level correction; can be defined either
+		/// - on this level (then the coarse solver may perform its of prolongation/restriction), or
+		/// - on coarser level, then prolongation/restriction is handled by this solver.
+		/// </summary>
         public ISolverSmootherTemplate CoarserLevelSolver;
 
-        /// <summary>
-        /// high frequency solver before coarse grid correction
-        /// </summary>
-        public ISolverSmootherTemplate PreSmoother;
+		/// <summary>
+		/// high frequency solver before coarse grid correction
+		/// </summary>
+		public ISolverSmootherTemplate PreSmoother;
 
         /// <summary>
         /// high frequency solver after coarse grid correction
@@ -776,7 +784,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        
+       
         /// <summary>
         /// the multigrid iterations for a linear problem
         /// </summary>
@@ -803,7 +811,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[] ResCoarse;
                 int Lc;
-                if (this.CoarserLevelSolver != null && myConfig.CoarseOnLovwerLevel) {
+                if (this.CoarserLevelSolver != null && myConfig.CoarseOnLowerLevel) {
                     Lc = ((MultigridOperator)m_OpMapPair).CoarserLevel.Mapping.LocalLength;
                     ResCoarse = new double[Lc];
                 } else {
@@ -828,6 +836,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int iLevel = ((m_OpMapPair as MultigridOperator)?.LevelIndex ?? -1);
 
+                // Debug-Output should always go through the <see cref="FuncTrace"/>;
+                // If one would like to see it on screen, turn it on by setting `tr.InfoToConsole = true`.
+                void WriteDebug(FuncTrace tr, int iter, double res, string text) {
+                    if (iLevel >= 0)
+                        tr.InfoToConsole = false; // set to `true` if you want to see output
+					    tr.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
+					
+                    return;
+                }
+
                 double iter0_resNorm = ortho.Norm(Res0);
                 double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
@@ -836,7 +854,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ortho.Clear();
                 bool bIterate = true;
 
-                bool skipPreSmooth = false;
+                bool skipPreSmoothInFollowingIters = false;
+
+                // Be aware that we have two options for skipping the pre-smoother: one for the following iterations (determined at post smoother), the second for skipping in general from config.
+                if (config.SkipPreSmoother)
+                    Console.WriteLine($"Skipping pre-smoother");
 
 
                 ISolverSmootherTemplate[] allSmooters;
@@ -849,23 +871,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Array.Copy(AdditionalPostSmoothers, allSmooters, AdditionalPostSmoothers.Length);
                     iPostSmooter = allSmooters.Length - 1;
                 }
-
-
-                int iIter;
+				WriteDebug(f, 0, resNorm, $"NonSerialPreSmoother for iterative solver is {(config.NonSerialPreSmoother && !config.SkipPreSmoother ? "activated" : "deactivated")}");
+				
+                    int iIter;
                 for (iIter = 1; bIterate; iIter++) {
-                    var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                    WriteDebug(f, iIter, resNorm, "initial start");
+
+					var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState.bNotTerminate) {
                         Converged = termState.bSuccess;
                         break;
                     } else {
 
                     }
-
+                                        
+                    
                     // pre-smoother
                     // ------------
-
+                    double[] ResBeforePreSmoother = null, ResAfterPreSmoother = null;
+                    if (config.NonSerialPreSmoother && !config.SkipPreSmoother) {  
+                        ResBeforePreSmoother = new double[L];
+                        Array.Copy(Res, ResBeforePreSmoother, L);
+                    }
                     {
-                        if (PreSmoother != null && skipPreSmooth == false) {
+                        // Be aware that we have two options for skipping the pre-smoother: one for the following iterations (determined at post smoother), the second for skipping in general from config.
+                        if (PreSmoother != null && !skipPreSmoothInFollowingIters && !config.SkipPreSmoother) {
                             VerivyCurrentResidual(X, B, Res, iIter);
 
                             double[] PreCorr = new double[L];
@@ -874,20 +904,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // orthonormalization and residual minimization
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel);
 
-                            //SpecAnalysisSample(iIter, X, "ortho1");
-                            var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+							WriteDebug(f, iIter, resNorm, " pre-smoother applied");
+
+							//SpecAnalysisSample(iIter, X, "ortho1");
+							var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                             if (!termState2.bNotTerminate) {
                                 Converged = termState2.bSuccess;
                                 break;
                             }
 
-                            skipPreSmooth = false;
+                            skipPreSmoothInFollowingIters = false;
                         }
                     }
+                    
+                    if (config.NonSerialPreSmoother && !config.SkipPreSmoother) {
+                        ResAfterPreSmoother = new double[L];
+                        Array.Copy(Res, ResAfterPreSmoother, L);
+                        Array.Copy(ResBeforePreSmoother, Res, L);
+                    }
 
-                    // coarse grid correction
-                    // ----------------------
-                    CrseLevelTime.Start();
+
+					// coarse grid correction
+					// ----------------------
+					CrseLevelTime.Start();
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
                     VerivyCurrentResidual(X, B, Res, iIter);
 
@@ -896,7 +935,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if (this.CoarserLevelSolver != null) {
 
                             double[] vl = new double[L];
-                            if (myConfig.CoarseOnLovwerLevel) {
+                            if (myConfig.CoarseOnLowerLevel) {
 
                                 var _MgOperator = m_OpMapPair as MultigridOperator;
 
@@ -931,7 +970,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 CoarseArithmeticExceptionCount++;
                                 Console.WriteLine("Coarse solver failed " + CoarseArithmeticExceptionCount);
                                 if(CoarseArithmeticExceptionCount == 1) {
-                                    BlockMsrMatrix coarseMtx = myConfig.CoarseOnLovwerLevel ? (m_OpMapPair as MultigridOperator).CoarserLevel.OperatorMatrix : m_OpMapPair.OperatorMatrix;
+                                    BlockMsrMatrix coarseMtx = myConfig.CoarseOnLowerLevel ? (m_OpMapPair as MultigridOperator).CoarserLevel.OperatorMatrix : m_OpMapPair.OperatorMatrix;
                                     coarseMtx.SaveToTextFileSparse("FailedCoarseMatrix.txt");
                                 }
                                 vl = null;
@@ -943,8 +982,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         }
                     } // end of coarse-solver loop
+					WriteDebug(f, iIter, resNorm, "coarse-solver applied");
 
-                    var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+					var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState3.bNotTerminate) {
                         Converged = termState3.bSuccess;
                         break;
@@ -1008,11 +1048,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
 
                             } else {
-                                resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" +  iLevel + "-sw" + g);
+								resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" +  iLevel + "-sw" + g);
+								WriteDebug(f, iIter, resNorm, "post-smoother applied");
 
 
 
-                                var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+								var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                                 if (!termState4.bNotTerminate) {
                                     Converged = termState4.bSuccess;
                                     termPost = true;
@@ -1020,7 +1061,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
 
                                 if (ortho.CancellationTriggered) {
-                                    skipPreSmooth = true; // most of the time, the pre-smoother does nothing different than the post-smoother; So, if we cancel post-smoothing there is no need to do pre-smoothing in the next loop.
+                                    skipPreSmoothInFollowingIters = true; // most of the time, the pre-smoother does nothing different than the post-smoother; So, if we cancel post-smoothing there is no need to do pre-smoothing in the next loop.
 
                                     iPostSmooter++;
                                     if(iPostSmooter >= allSmooters.Length)
@@ -1050,11 +1091,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } // end of solver iterations
 
                 IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
+				WriteDebug(f, iIter, resNorm, "final");
 
 
-                // solution copy
-                // =============
-                if (!ReferenceEquals(_xl, X)) {
+				// solution copy
+				// =============
+				if (!ReferenceEquals(_xl, X)) {
                     _xl.SetV(X);
                 }
                 ThisLevelTime.Stop();
@@ -1136,10 +1178,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             private set;
         }
 
-        /// <summary>
-        /// %
-        /// </summary>
-        public void ResetStat() {
+		/// <summary>
+		/// %
+		/// </summary>
+		public void ResetStat() {
             this.Converged = false;
             this.ThisLevelIterations = 0;
             if (this.PreSmoother != null)

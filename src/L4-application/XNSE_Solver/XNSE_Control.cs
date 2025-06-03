@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
     /// <summary>
-    /// 
+    /// Solver control object for incompressible multi-phase solver.
     /// </summary>
     [DataContract]
     [Serializable]
@@ -56,7 +56,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public XNSE_Control() {
 
-            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
             base.DynamicLoadBalancing_On = true;
             base.DynamicLoadBalancing_RedistributeAtStartup = true;
-
+            
         }
 
 
@@ -307,6 +307,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool switchOffPlotting = false;
         */
 
+        /* killed by fk:
+         * this seems to be deprecated code.
 
         /// <summary>
         /// different implementations for the level indicator 
@@ -372,7 +374,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public bool RefineNavierSlipBoundary = false;
-
+        */
 
         /// <summary>
         /// option for clearing the velocities for restart
@@ -411,13 +413,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Sigma = 0.0
         };       
 
-        /// <summary>
-        /// Only for debugging purpose:
-        /// solver is turned of and residual of initial value/exact solution is evaluated, used to 
-        /// test the consistency of the implementation.
-        /// </summary>
-        [DataMember]
-        public bool SkipSolveAndEvaluateResidual = false;
+   
 
         /// <summary>
         /// Terminates the simulation if the linear or nonlinear solver fails to converge
@@ -575,6 +571,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
+        /*
         /// <summary>
         /// Exact solution, temperature, for each species (either A or B).
         /// </summary>
@@ -587,6 +584,14 @@ namespace BoSSS.Application.XNSE_Solver {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
+        */
+
+        /// <summary>
+        /// Exact solution, electric potential, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionElectricPotential;
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).

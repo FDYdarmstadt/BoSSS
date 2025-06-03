@@ -61,7 +61,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
+#if !DEBUG        
         [Test]
+#endif
         public static void LevelSetAdvectionTest2D_fwd(
            [Values(2, 3, 4)] int LSdegree,
            [Values(0, 1, 2)] int AMRlevel,
@@ -71,11 +73,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
 
-        
+
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
+#if !DEBUG
         [Test]
+#endif
         public static void LevelSetAdvectionTest2D_reverse(
            [Values(2, 3, 4)] int LSdegree,
            [Values(0, 1, 2)] int AMRlevel,
@@ -229,9 +233,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-
-
-
         public static void LevelSetTest(IXNSETest Tst, XNSE_Control C, string IO = null) {
 
             using (var solver = new XNSE()) {

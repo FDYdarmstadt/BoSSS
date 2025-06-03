@@ -232,7 +232,7 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
-
+        /*
         /// <summary>
         /// Additional number of cores (for all jobs with more than one MPI rank) which are allocated for 'service', independent of the MPI Size.
         /// </summary>
@@ -245,14 +245,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public int NumOfAdditionalServiceCoresMPISerial = 0;
+        */
 
 
         /// <summary>
-        /// Additional number of cores which are allocated for 'service';
-        /// <see cref="NumOfAdditionalServiceCores"/>.
+        /// Additional number of cores which are allocated for each MPI rank for 'service', e.g., background threads, IO, garbage collection, etc.;
         /// </summary>
         [DataMember]
-        public int NumOfServiceCoresPerMPIprocess = 0;
+        public int NumOfServiceCoresPerMPIprocess = 1;
 
        
         /// <summary>
@@ -529,7 +529,7 @@ namespace BoSSS.Application.BoSSSpad {
             return ret;
         }
 
-
+       
         /// <summary>
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
@@ -561,7 +561,7 @@ namespace BoSSS.Application.BoSSSpad {
                     for (int i = 0; i < parts.Length; i++) {
                         if (parts[i].Equals("id:", StringComparison.InvariantCultureIgnoreCase))
                             id = int.Parse(parts[i + 1]);
-
+                            
                     }
                     //Console.WriteLine(ret);
                 }
@@ -642,6 +642,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// 
         /// </summary>
+        [DataMember]
+        public bool UseNodeExclusive = false;
+
+        /// <summary>
+        /// 
+        /// </summary>
         private (int id, JobState state)[] _ListJobs() {
 
 
@@ -709,20 +715,25 @@ namespace BoSSS.Application.BoSSSpad {
             string JobName = myJob.Name;
 
             int MPISz = myJob.NumberOfMPIProcs;
-
+            int NoOfThreads = myJob.NumberOfThreads;
 
             //job modify 190848 /numcores:1 - 1
-            int NumberOfCores = MPISz*myJob.NumberOfThreads + MPISz*this.NumOfServiceCoresPerMPIprocess + (MPISz > 1 ? this.NumOfAdditionalServiceCores : this.NumOfAdditionalServiceCoresMPISerial);
-            
-            
+            int CoresPerProcess = myJob.NumberOfThreads + this.NumOfServiceCoresPerMPIprocess;
+            if(CoresPerProcess % 2  != 0) 
+                CoresPerProcess++; // avoid odd numbers
+            int NumberOfCores = MPISz * CoresPerProcess;
+
+
+
             bool SingleNode = this.SingleNode;
             var Priority = this.DefaultJobPriority;
             string user = this.Username;
 
             string CommandLine;
             using (var str = new StringWriter()) {
-                str.Write($"mpiexec -n {MPISz} ");
-                //str.Write($"mpiexec ");
+                if(MPISz > 1)
+                    str.Write($"mpiexec -al 1 -n {MPISz} ");
+                    //str.Write($"mpiexec -n {MPISz} ");
                 if (!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
                 str.Write(myJob.EntryAssemblyName);
@@ -741,7 +752,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-            bool exclusive = false;
+            bool exclusive = this.UseNodeExclusive;
 
 
             using (var stw = new StringWriter()) {
@@ -819,6 +830,16 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 return m_AdditionalEnvironmentVars;
             }
+        }
+
+
+        /// <summary>
+        /// publicly available wrapper, used for extension methods to <see cref="MsHPC2012Client"/>
+        /// </summary>
+        /// <param name="xmlFilePath"></param>
+        /// <returns></returns>
+        public (int exitcode, string stdOut, string stdErr) SubmitProcess(string xmlFilePath) {
+            return this.ExecuteProcess("job.exe", $"submit /jobfile:\"{xmlFilePath}\" {this.GetLoginArg()}", 60000);
         }
 
 
