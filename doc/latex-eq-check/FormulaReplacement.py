@@ -2,10 +2,11 @@ import os
 import re
 
 # Root directory to scan XML files
-root_dir = r'd:\Users\monzer\Documents\BoSSS-master\public\src'
+#root_dir = r'd:\Users\monzer\Documents\BoSSS-master\public\src'
+root_dir = r'..\..\src'
 
 # Output report file path
-report_path = r'd:\Users\monzer\Documents\BoSSS Formulas\Formulus Replacement\equation_delimiterssss_report.txt'
+report_path = r'.\equation_delimiterssss_report.txt'
 
 # Inline math replacements
 inline_patterns = [
