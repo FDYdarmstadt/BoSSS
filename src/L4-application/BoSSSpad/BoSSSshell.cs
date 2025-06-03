@@ -262,7 +262,6 @@ namespace BoSSS.Application.BoSSSpad {
             if (logger_output != null)
                 throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
 
-
             string settingsDir = Foundation.IO.Utils.GetBoSSSUserSettingsPath();
             string tracingDir = Path.Combine(settingsDir, "bossspad-trace");
             if (!System.IO.Directory.Exists(tracingDir))
@@ -270,9 +269,9 @@ namespace BoSSS.Application.BoSSSpad {
             DateTime nau = DateTime.Now;
             string bbb = $"{nau.ToString("MMMdd_HHmmss")}-{nau.Millisecond}";
             string baseneme = Path.Combine(tracingDir, $"trace.{bbb}.txt");
-            ProfilingFile = Path.Combine(ProfilingFile, $"profiling_summary.{bbb}.txt");
+            ProfilingFile = Path.Combine(tracingDir, $"profiling_summary.{bbb}.txt");
             Console.WriteLine("Tracing file: " + baseneme);
-            Console.WriteLine("Profiling file: " + baseneme);
+            Console.WriteLine("Profiling file: " + ProfilingFile);
             WriteProfiling();
 
             tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
