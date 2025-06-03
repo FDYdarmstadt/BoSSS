@@ -25,6 +25,8 @@ using System.Runtime.InteropServices;
 using ilPSP.Connectors;
 using System.Threading;
 using System.Threading.Tasks;
+using ilPSP.LinSolvers.monkey.CL;
+using System.IO;
 
 namespace ilPSP.LinSolvers {
 
@@ -2545,6 +2547,8 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public static Stopwatch SpMV_receive = new Stopwatch();
 
+        public static int spmvcalls = 0;
+
         /// <summary>
         /// Ad-hoc performance instrumentation
         /// </summary>
@@ -2558,17 +2562,68 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// Write the ad-hoc instrumentation to Console
         /// </summary>
+        public static string PerfStatToString() {
+            using(var tw = new StringWriter()) {
+                if(BlockMsrMatrix.multiply != null)
+                    tw.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
+                if (BlockMsrMatrix.multiply_core != null)
+                    tw.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
+                
+                tw.WriteLine("  spmv total     " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds + "   \t\t(" + spmvcalls + " calls)");
+                tw.WriteLine("   spmv local    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
+                tw.WriteLine("   spmv send     " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalSeconds);
+                tw.WriteLine("   spmv receive  " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalSeconds);
+                tw.WriteLine("   spmv external " + BlockMsrMatrix.SpMV_external.Elapsed.TotalSeconds);
+
+                void f(Stopwatch[] stopwatches, string name) {
+                    var times = stopwatches.Take(ilPSP.Environment.NumThreads).Select(stp => stp.Elapsed.TotalSeconds);
+                    tw.WriteLine(name + ": " + times.Min() + " -- " + times.Max());
+
+                }
+
+                f(SpMV_external_innermost, "      spmv ext innermost ");
+                f(SpMV_external_blocking,  "      spmv ext blocking  ");
+                f(SpMV_external_membank,   "      spmv ext membank   ");
+
+                return tw.ToString();
+            }
+        }
+
+        /// <summary>
+        /// resets performance stopwatches
+        /// </summary>
+        /// <returns></returns>
+        public static void ResetPerfStat() {
+            var all = new Stopwatch[] {
+                BlockMsrMatrix.multiply,
+                BlockMsrMatrix.multiply_core,
+                BlockMsrMatrix.SPMV_tot,
+                BlockMsrMatrix.SpMV_local,
+                BlockMsrMatrix.SpMV_initSending,
+                BlockMsrMatrix.SpMV_receive,
+                BlockMsrMatrix.SpMV_external,
+            };
+
+            all = all.Cat(SpMV_external_innermost);
+            all = all.Cat(SpMV_external_blocking);
+            all = all.Cat(SpMV_external_membank);
+
+
+            foreach(var s in all) {
+
+                s.Stop();
+                s.Reset();
+
+            }
+        }
+
+
+
+        /// <summary>
+        /// Write the ad-hoc instrumentation to Console
+        /// </summary>
         public static void PrintPerfStat() {
-            if(BlockMsrMatrix.multiply != null)
-                Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
-            if (BlockMsrMatrix.multiply_core != null)
-                Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
-            
-            Console.WriteLine("  spmv total     " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv local    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv send     " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv receive  " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalSeconds);
-            Console.WriteLine("   spmv external " + BlockMsrMatrix.SpMV_external.Elapsed.TotalSeconds);
+            Console.WriteLine(PerfStatToString());
         }
 
         /// <summary>
@@ -2692,7 +2747,6 @@ namespace ilPSP.LinSolvers {
                 // ====================
 
                 SpMV_local.Start();
-
                 int NoOfBlockRows = _RowPartitioning.LocalNoOfBlocks;
                 Debug.Assert(NoOfBlockRows == m_BlockRows.Length);
                 long FirstRowBlock = _RowPartitioning.FirstBlock;
@@ -2701,9 +2755,8 @@ namespace ilPSP.LinSolvers {
                         double* pa = __pa;
                         //double[] VecAccu = null;
                         //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
-                        double[] RowMul(int iBlockLoc, ParallelLoopState s, double[] VecAccu) {
-
-                        
+                        double[] RowMul(int iBlockLoc, double[] VecAccu) {
+                                                   
                             var BlockRow = m_BlockRows[iBlockLoc];
 
                             long iBlock = iBlockLoc + FirstRowBlock;
@@ -2856,9 +2909,7 @@ namespace ilPSP.LinSolvers {
                             () => default(double[]),
                             RowMul,
                             (double[] _) => { },
-                            enablePar: false);
-
-
+                            enablePar: true);
                         }
                 }
                 SpMV_local.Stop();
@@ -2896,85 +2947,91 @@ namespace ilPSP.LinSolvers {
 
                 // external multiplication
                 // ====================
-                SpMV_external.Start();
-                //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
-                ilPSP.Environment.ParallelFor(0, NoOfBlockRows, delegate (int iBlockLoc) {
-                    if (m_ExternalBlock[iBlockLoc]) {
+                if(this.MPI_Comm != csMPI.Raw._COMM.SELF) {
+                    SpMV_external.Start();
+                    spmvcalls++;
+                    //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
+                    ilPSP.Environment.ParallelFor(0, NoOfBlockRows, delegate (int iBlockLoc) {
+                        //SpMV_external_membank[iThread].Start();
+                        if(m_ExternalBlock[iBlockLoc]) {
+                            //SpMV_external_blocking[iThread].Start();
+                            var BlockRow = m_BlockRows[iBlockLoc];
+                            Debug.Assert(BlockRow != null);
+                            long iBlock = iBlockLoc + FirstRowBlock;
+                            int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
+                            int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
+                            int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
+                            int locBlockRowOffset = (int)(_RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0);
+                            //SpMV_external_blocking[iThread].Stop();
 
-                        var BlockRow = m_BlockRows[iBlockLoc];
-                        Debug.Assert(BlockRow != null);
-                        long iBlock = iBlockLoc + FirstRowBlock;
-                        int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
-                        int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
-                        int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
-                        int locBlockRowOffset = (int)(_RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0);
+                            foreach(var kv in BlockRow) { // loop over block columns...
 
-                        foreach (var kv in BlockRow) { // loop over block columns...
-                            BlockEntry BE = kv.Value;
-                            long jBlkCol = kv.Key;
-                            Debug.Assert(BE.jBlkCol == jBlkCol);
+                                BlockEntry BE = kv.Value;
+                                long jBlkCol = kv.Key;
+                                Debug.Assert(BE.jBlkCol == jBlkCol);
 
-                            int OwnerRank = -1;
-                            long[,] RcvList = null;
-                            int RcvListBlockRow = 0;
-                            IntPtr RecvBuffer = IntPtr.Zero;
-                            int OffetInto_RecvBuffer = 0;
+                                int OwnerRank = -1;
+                                long[,] RcvList = null;
+                                int RcvListBlockRow = 0;
+                                IntPtr RecvBuffer = IntPtr.Zero;
+                                int OffetInto_RecvBuffer = 0;
 
-                            if (!_ColPartitioning.IsLocalBlock(jBlkCol)) {
-                                //int OwnerProc = _ColPartitioning.FindProcessForBlock(jBlkCol);
-                                //throw new NotImplementedException("para todo");
+                                if(!_ColPartitioning.IsLocalBlock(jBlkCol)) {
+                                    //int OwnerProc = _ColPartitioning.FindProcessForBlock(jBlkCol);
+                                    //throw new NotImplementedException("para todo");
 
-                                //int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
-                                long j0, jE;
-                                int _OwnerRank = GetExternalSubblockIndices(_ColPartitioning, jBlkCol, out j0, out jE);
-                                if (_OwnerRank != OwnerRank) {
-                                    RcvList = ReceiveLists[_OwnerRank];
-                                    RcvListBlockRow = 0;
-                                    OffetInto_RecvBuffer = 0;
-                                    OwnerRank = _OwnerRank;
-                                    int bufferIdx = Array.IndexOf(RecvRanks, OwnerRank);
-                                    RecvBuffer = RecvBuffers[bufferIdx];
-                                }
-                                while (RcvList[RcvListBlockRow, 0] < j0) {
-                                    OffetInto_RecvBuffer += (int)(RcvList[RcvListBlockRow, 1] - RcvList[RcvListBlockRow, 0]);
-                                    RcvListBlockRow++;
-                                }
-                                Debug.Assert(RcvList[RcvListBlockRow, 0] == j0);
-                                Debug.Assert(RcvList[RcvListBlockRow, 1] == jE);
+                                    //int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
+                                    long j0, jE;
+                                    int _OwnerRank = GetExternalSubblockIndices(_ColPartitioning, jBlkCol, out j0, out jE);
+                                    if(_OwnerRank != OwnerRank) {
+                                        RcvList = ReceiveLists[_OwnerRank];
+                                        RcvListBlockRow = 0;
+                                        OffetInto_RecvBuffer = 0;
+                                        OwnerRank = _OwnerRank;
+                                        int bufferIdx = Array.IndexOf(RecvRanks, OwnerRank);
+                                        RecvBuffer = RecvBuffers[bufferIdx];
+                                    }
+                                    while(RcvList[RcvListBlockRow, 0] < j0) {
+                                        OffetInto_RecvBuffer += (int)(RcvList[RcvListBlockRow, 1] - RcvList[RcvListBlockRow, 0]);
+                                        RcvListBlockRow++;
+                                    }
+                                    Debug.Assert(RcvList[RcvListBlockRow, 0] == j0);
+                                    Debug.Assert(RcvList[RcvListBlockRow, 1] == jE);
 
-                                Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
-                                Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
-                                int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
-                                int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
-                                Debug.Assert(NoOfSblk_Cols == 1);
-                                Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
-                                Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
+                                    Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
+                                    Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
+                                    int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
+                                    int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
+                                    Debug.Assert(NoOfSblk_Cols == 1);
+                                    Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
+                                    Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
 
-                                for (int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
-                                    int MembnkIdx = BE.MembnkIdx[iSblkRow, 0];
-                                    int InMembnk = BE.InMembnk[iSblkRow, 0];
-                                    Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
+                                    for(int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
+                                        int MembnkIdx = BE.MembnkIdx[iSblkRow, 0];
+                                        int InMembnk = BE.InMembnk[iSblkRow, 0];
+                                        Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
-                                    if (InMembnk >= 0) {
-                                        double[] RawMem;
-                                        int Offset, CI, CJ;
-                                        bool isDense;
-                                        m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
-                                        unsafe {
-                                            double* dRecvBuffer = (double*)RecvBuffer;
+                                        if(InMembnk >= 0) {
+                                            double[] RawMem;
+                                            int Offset, CI, CJ;
+                                            bool isDense;
+                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+                                            unsafe {
+                                                double* dRecvBuffer = (double*)RecvBuffer;
 
-                                            int I = RowLenSblk[iSblkRow];
-                                            int J = (int)(jE - j0);
-                                            Debug.Assert(I == m_Membanks[MembnkIdx].Mem.GetLength(1));
-                                            Debug.Assert(J == m_Membanks[MembnkIdx].Mem.GetLength(2));
-                                            for (int i = 0; i < I; i++) { // loop over sub-block rows...
-                                                int iRowLoc = locBlockRowOffset + i + Row_i0Sblk[iSblkRow]; // local row index
-                                                Debug.Assert(iRowLoc >= 0 && iRowLoc < _RowPartitioning.LocalLength);
-                                                double Accu = 0;
+                                                int I = RowLenSblk[iSblkRow];
+                                                int J = (int)(jE - j0);
+                                                Debug.Assert(I == m_Membanks[MembnkIdx].Mem.GetLength(1));
+                                                Debug.Assert(J == m_Membanks[MembnkIdx].Mem.GetLength(2));
+                                                //SpMV_external_innermost[iThread].Start();
+                                                for(int i = 0; i < I; i++) { // loop over sub-block rows...
+                                                    int iRowLoc = locBlockRowOffset + i + Row_i0Sblk[iSblkRow]; // local row index
+                                                    Debug.Assert(iRowLoc >= 0 && iRowLoc < _RowPartitioning.LocalLength);
+                                                    double Accu = 0;
 
-                                                for (int j = 0; j < J; j++) { // loop over sub-block columns...
-                                                    int iRcvBuff = OffetInto_RecvBuffer + j;
-                                                    int iStorage = Offset + CI * i + CJ * j; // index into memory bank
+                                                    for(int j = 0; j < J; j++) { // loop over sub-block columns...
+                                                        int iRcvBuff = OffetInto_RecvBuffer + j;
+                                                        int iStorage = Offset + CI * i + CJ * j; // index into memory bank
 #if DEBUG_EXTENDED
                                                     SpMV_indextrans.Start();
                                                     long jColGlob = j0 + j; // global column index
@@ -2989,24 +3046,27 @@ namespace ilPSP.LinSolvers {
                                                     Debug.Assert(iRcvBuff == iList);
 
 #endif
-                                                    //double* dRecvBuffer = (double*)RecvBuffers[bufferIdx];
-                                                    //Accu += RawMem[iStorage] * dRecvBuffer[iList];
+                                                        //double* dRecvBuffer = (double*)RecvBuffers[bufferIdx];
+                                                        //Accu += RawMem[iStorage] * dRecvBuffer[iList];
 
-                                                    Accu += RawMem[iStorage] * dRecvBuffer[iRcvBuff];
+                                                        Accu += RawMem[iStorage] * dRecvBuffer[iRcvBuff];
+                                                    }
+
+                                                    acc[iRowLoc] += alpha * Accu;
                                                 }
+                                                //SpMV_external_innermost[iThread].Stop();
 
-                                                acc[iRowLoc] += alpha * Accu;
                                             }
-
                                         }
                                     }
                                 }
-                            }
+                            } // end loop over block columns
                         }
-                    }
-                });
-                SpMV_external.Stop();
+                        //SpMV_external_membank[iThread].Stop();
+                    }, enablePar: true);
+                    SpMV_external.Stop();
 
+                }
                 // free temp buffers
                 // =================
                 {
@@ -3022,7 +3082,9 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-
+        static Stopwatch[] SpMV_external_innermost = 4.ForLoop(i => new Stopwatch());
+        static Stopwatch[] SpMV_external_membank = 4.ForLoop(i => new Stopwatch());
+        static Stopwatch[] SpMV_external_blocking = 4.ForLoop(i => new Stopwatch());
 
         int BruteForceExternalIndexTranslation(long GlobIndex, out int OwnerProc) {
             OwnerProc = m_ColPartitioning.FindProcess(GlobIndex);
@@ -3787,16 +3849,58 @@ namespace ilPSP.LinSolvers {
             return sd;
         }
 
-        /// <summary>
-        /// Performs the operation: this = this + <paramref name="Ascale"/>*<paramref name="A"/>;
-        /// </summary>
-        /// <param name="A">
-        /// another matrix with same size and equal <see cref="RowPartitioning"/>;
-        /// </param>
-        /// <param name="Ascale">
-        /// scaling
-        /// </param>
-        public void Acc(double Ascale, BlockMsrMatrix A) {
+		/// <summary>
+		/// Checks if a matrix is a unit matrix.
+		/// </summary>
+		/// <param name="quick">Specifies whether to perform a quick check (look only the number of elements) or a thorough one (explicitly reaching the memory).</param>
+		/// <param name="threshold">The tolerance for comparing values to 0 or 1.</param>
+		/// <returns>True if the matrix is a unit matrix, false otherwise.</returns>
+		public bool CheckIfUnitMatrix(bool quick = true, double threshold = 1e-6) { 
+            if (!CheckIfSquareMatrix())
+                return false;
+
+			long[] ColumnIndices = null;
+            int totalNonDiagonal = 0;
+            for (long i = RowPartitioning.i0; i < RowPartitioning.iE; i++) {
+				if (Math.Abs(this[i, i] - 1) > threshold )//check diagonal element
+					return false;
+
+                if (quick) { //checks only the number of stored values                    
+					totalNonDiagonal += GetOccupiedColumnIndices(i, ref ColumnIndices); 
+                } else { //by explicitly checking the stored values
+                    double[] Values = null;
+					GetRowInternal(i, ref ColumnIndices, ref Values, false);
+					foreach (var Val in Values) {
+						totalNonDiagonal += Math.Abs(Val) > threshold ? 1 : 0; //check if it is non-zero
+					}
+				}
+			}
+
+            bool ret = totalNonDiagonal == RowPartitioning.LocalLength; //check if only diagonal elements are non-zero
+			return ret.MPIAnd();
+		}
+
+		/// <summary>
+		/// Computes the deviation of this matrix from symmetry
+		/// </summary>
+		/// <returns>
+		/// The accumulated sum of the differences between corresponding
+		/// off-diagonal entries.
+		/// </returns>
+		public bool CheckIfSquareMatrix() {
+            return (RowPartitioning.TotalLength == ColPartition.TotalLength);
+		}
+
+		/// <summary>
+		/// Performs the operation: this = this + <paramref name="Ascale"/>*<paramref name="A"/>;
+		/// </summary>
+		/// <param name="A">
+		/// another matrix with same size and equal <see cref="RowPartitioning"/>;
+		/// </param>
+		/// <param name="Ascale">
+		/// scaling
+		/// </param>
+		public void Acc(double Ascale, BlockMsrMatrix A) {
             if(m_RowPartitioning.LocalLength != A._RowPartitioning.LocalLength)
                 throw new ArgumentException("Mismatch in number of rows.");
             if(m_ColPartitioning.TotalLength != A._ColPartitioning.TotalLength)
@@ -5320,7 +5424,7 @@ namespace ilPSP.LinSolvers {
 
 
                     //for(long iBlkRow = C_iBlk0; iBlkRow < C_IBlkE; iBlkRow++) { // loop over the rows of 'C'
-                    MultiplyTemp RowMul(int iBlkRow_loc, ParallelLoopState s, MultiplyTemp temp) {
+                    MultiplyTemp RowMul(int iBlkRow_loc, MultiplyTemp temp) {
                         long iBlkRow = iBlkRow_loc + C_iBlk0;
 
                         // extract row from 'C'
@@ -5469,9 +5573,7 @@ namespace ilPSP.LinSolvers {
                         Caccu.Save(C, iBlkRow);
 
                         return temp;
-                    }
-
-                    // end of `RowMul(...)`
+                    } // end of `RowMul(...)`
 
                     ilPSP.Environment.ParallelFor(0, C_NoBlk,
                         () => new MultiplyTemp(),

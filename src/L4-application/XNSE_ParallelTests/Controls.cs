@@ -140,7 +140,7 @@ namespace XNSE_ParallelTets {
             // ==============
             #region solver
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.LSContiProjectionMethod = ContinuityProjectionOption.None;

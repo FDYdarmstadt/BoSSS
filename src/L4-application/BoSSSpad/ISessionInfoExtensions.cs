@@ -1621,7 +1621,7 @@ namespace BoSSS.Foundation.IO {
                 var phi = session.Timesteps.First().Fields.ElementAt(0);
                 var LevSet = new LevelSet(phi.Basis, "LevelSet");
                 LevSet.Acc(1.0, phi);
-                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, LevSet);
                 int numCC = LsTrk.Regions.GetCutCellMask().Count();
                 cellCount += numCC;
             }
@@ -1694,6 +1694,13 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public static int NumberOfCores(this ISessionInfo session) {
             return session.ComputeNodeNames.Count();
+        }
+
+        /// <summary>
+        /// The number of threads per mpi rank used for this simulation
+        /// </summary>
+        public static int NumberOfThreadsPerRank(this ISessionInfo session) {
+            return session.ThreadPerMPIRank;
         }
 
         /// <summary>
@@ -2064,12 +2071,106 @@ namespace BoSSS.Foundation.IO {
         /// imports the specified log file data 
         /// </summary>
         /// <param name="sess"> List of sessions to be evaluated </param>
+        /// <param name="logName"> which log file to be evaluated </param>
+        /// <param name="values"> which log values to be evaluated </param>
+        /// <param name="evalName"></param>
+        /// <param name="keyName"></param>
+        /// <returns></returns>
+        public static List<Plot2Ddata> ReadLogData(this List<ISessionInfo> sess, string logName, string[] values, string evalName = null, string keyName = null) {
+
+            List<Plot2Ddata> plotData = new List<Plot2Ddata>();
+
+            int numberSessions = sess.Count();
+            int numberValues = values.Count();
+            for (int vIdx = 2; vIdx < numberValues; vIdx++) {
+
+                double[][] times = new double[numberSessions][];
+                double[][] valueDatas = new double[numberSessions][];
+
+                // Read all data
+                for (int j = 0; j < numberSessions; j++) {
+                    string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
+                    string[] lines = File.ReadAllLines(path);
+
+                    if (sess.Pick(j).RestartedFrom == Guid.Empty) {
+
+                        double[] time = new double[lines.Length - 1];
+                        double[] valueData = new double[lines.Length - 1];
+
+                        for (int i = 0; i < lines.Length - 1; i++) {
+                            time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                        }
+                        times[j] = time;
+                        valueDatas[j] = valueData;
+
+                    } else {
+
+                        string pathR = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).RestartedFrom + logName;
+                        string[] linesR = File.ReadAllLines(pathR);
+
+                        int len = (lines.Length - 1) + (linesR.Length - 1);
+                        double[] time = new double[len];
+                        double[] valueData = new double[len];
+                        int iL = 0;
+                        for (int i = 0; i < linesR.Length - 1; i++) {
+                            time[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                            iL++;
+                        }
+                        for (int i = 0; i < lines.Length - 1; i++) {
+                            time[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            valueData[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
+                            iL++;
+                        }
+
+                        // remove doubled time steps 
+                        List<double> rTime = new List<double>();
+                        List<double> rValDat = new List<double>();
+                        rTime.Add(time[len - 1]);
+                        rValDat.Add(valueData[len - 1]);
+                        for (int i = len - 2; i >= 0; i--) {
+                            if (time[i] < rTime.Last()) {
+                                rTime.Add(time[i]);
+                                rValDat.Add(valueData[i]);
+                            }
+                        }
+                        rTime.Reverse();
+                        rValDat.Reverse();
+
+                        times[j] = rTime.ToArray();
+                        valueDatas[j] = rValDat.ToArray();
+
+                    }
+                }
+
+                // Build DataSet
+                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
+                for (int i = 0; i < numberSessions; i++) {
+                    string sessName;
+                    if (evalName == null || keyName == null)
+                        sessName = (sess.Pick(i).Name).Replace("_", "-");
+                    else
+                        sessName = evalName + (Convert.ToDouble(sess.Pick(i).KeysAndQueries[keyName])).ToString();
+
+                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i] });
+                }
+                Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
+                plotData.Add(new Plot2Ddata(dataRowsValue));
+            }
+
+            return plotData;
+        }
+
+        /// <summary>
+        /// imports the specified log file data 
+        /// </summary>
+        /// <param name="sess"> List of sessions to be evaluated </param>
         /// <param name="logName"> which log values to be evaluated </param>
         /// <param name="evalName"></param>
         /// <param name="keyName"></param>
         /// <returns></returns>
         public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, string logName, string evalName = null, string keyName = null) {
-
 
             string[] values;
             switch (logName) {
@@ -2105,106 +2206,31 @@ namespace BoSSS.Foundation.IO {
                     throw new ArgumentException("No specified LogFormat");
             }
 
-
-            List<Plot2Ddata> plotData = new List<Plot2Ddata>();
-
-            int numberSessions = sess.Count();
-            int numberValues = values.Count();      
-            for (int vIdx = 2; vIdx < numberValues; vIdx++) {       
-
-                double[][] times = new double[numberSessions][];
-                double[][] valueDatas = new double[numberSessions][];
-
-                // Read all data
-                for (int j = 0; j < numberSessions; j++) {
-                    string path = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).ID.ToString(), logName + ".txt");
-                    string[] lines = File.ReadAllLines(path);
-
-                    if (sess.Pick(j).RestartedFrom == Guid.Empty) { 
-                   
-                        double[] time = new double[lines.Length - 1];
-                        double[] valueData = new double[lines.Length - 1];
-
-                        for (int i = 0; i < lines.Length - 1; i++) {
-                            time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                        }
-                        times[j] = time;
-                        valueDatas[j] = valueData;
-
-                    } else {
-
-                        string pathR = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).RestartedFrom + "\\" + logName + ".txt";
-                        string[] linesR = File.ReadAllLines(pathR);
-
-                        int len = (lines.Length - 1) + (linesR.Length - 1);
-                        double[] time = new double[len];
-                        double[] valueData = new double[len];
-                        int iL = 0;
-                        for (int i = 0; i < linesR.Length - 1; i++) {
-                            time[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[iL] = Convert.ToDouble(linesR[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                            iL++;
-                        }
-                        for (int i = 0; i < lines.Length - 1; i++) {
-                            time[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                            valueData[iL] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[vIdx]);
-                            iL++;
-                        }
-
-                        // remove doubled time steps 
-                        List<double> rTime = new List<double>();
-                        List<double> rValDat = new List<double>();
-                        rTime.Add(time[len-1]);
-                        rValDat.Add(valueData[len-1]);
-                        for(int i = len-2; i >= 0; i--) {
-                            if (time[i] < rTime.Last()) {
-                                rTime.Add(time[i]);
-                                rValDat.Add(valueData[i]);
-                            }
-                        }
-                        rTime.Reverse();
-                        rValDat.Reverse();
-
-                        times[j] = rTime.ToArray();
-                        valueDatas[j] = rValDat.ToArray();
-
-                    }
-                }
-
-                // Build DataSet
-                KeyValuePair<string, double[][]>[] dataRowsValue = new KeyValuePair<string, double[][]>[numberSessions];
-                for (int i = 0; i < numberSessions; i++) {
-                    string sessName;
-                    if (evalName == null || keyName == null)
-                        sessName = (sess.Pick(i).Name).Replace("_", "-");
-                    else
-                        sessName = evalName + (Convert.ToDouble(sess.Pick(i).KeysAndQueries[keyName])).ToString();
-
-                    dataRowsValue[i] = new KeyValuePair<string, double[][]>(sessName, new double[][] { times[i], valueDatas[i] });
-                }
-                Console.WriteLine("Element at {0}: time vs {1}", vIdx - 2, values[vIdx]);
-                plotData.Add(new Plot2Ddata(dataRowsValue));
-            }
-
-            return plotData;
+            return ReadLogData(sess, logName, values, evalName, keyName);
 
         }
 
         /// <summary>
         /// special purpose method, most likely legacy stuff
         /// </summary>
-        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess) {
+        public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess, string[] CustomValues = null) {
 
-            string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
+
+            string[] values;
+            if (CustomValues != null) {
+                values = CustomValues;
+            } else {
+                values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-Velocity", "contact-angle" };
+            }
 
             // check number of contact lines
             string path = @sess.Pick(0).Database.Path + "\\sessions\\" + sess.Pick(0).ID + "\\ContactAngle.txt";
             string[] lines = File.ReadAllLines(path);
-            int numCL = 0;
-            for (int i = 1; i <= 4; i++) {       // max number of contact lines should be 4
+            int numCL = 1;
+            int ts0 = (int)Convert.ToDouble(lines[1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
+            for (int i = 2; i <= 4; i++) {       // max number of contact lines should be 4
                 int ts = (int)Convert.ToDouble(lines[i].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[0]);
-                if (ts == 0)
+                if (ts == ts0)
                     numCL++;
             }
 

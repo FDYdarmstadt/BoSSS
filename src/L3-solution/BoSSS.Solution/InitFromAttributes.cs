@@ -38,7 +38,7 @@ namespace BoSSS.Solution {
         /// Instantiates those fields that are marked by an <see cref="InstantiateFromControlFileAttribute"/> - attribute;
         /// </summary>
         public static void CreateFieldsAuto(object _this, IGridData context,
-            IDictionary<string, FieldOpts> FieldOptions, XQuadFactoryHelper.MomentFittingVariants cutCellQuadType,
+            IDictionary<string, FieldOpts> FieldOptions, CutCellQuadratureMethod cutCellQuadType,
             ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
             FieldInfo[] fields = _this.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Static);
 
@@ -258,6 +258,9 @@ namespace BoSSS.Solution {
 
 
                 int D = ctx.SpatialDimension;
+                 // Console.WriteLine("Changes from Akbari! Velocity has 3 Components, but takes only 2. Since Grid has dimesnion 2");
+                // int D = ((IEnumerable<CustomAttributeTypedArgument>)f.CustomAttributes.First().ConstructorArguments.First().Value).Count();
+
                 string[] cName = at.GetControlFileNames(f, D);
                 string[] iName = at.GetInCodeIdentifications(f, D);
 

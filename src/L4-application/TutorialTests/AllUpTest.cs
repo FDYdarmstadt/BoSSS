@@ -40,19 +40,19 @@ namespace BoSSS.Application.TutorialTests {
         internal static string DirectoryOffset = "";
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
-        [Test]
-        static public void Run__IsentropicVortex() {
-            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
-        }
-
-        /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("InitialValues/InitialValues.ipynb")]
         [Test]
         static public void Run__InitialValues() {
             RunWorksheet("InitialValues/InitialValues.ipynb");
         }
 
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
+        [Test]
+        static public void Run__IsentropicVortex() {
+            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
+        }
       
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -68,6 +68,14 @@ namespace BoSSS.Application.TutorialTests {
         static public void Run__ue2Basics() {
             //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__ue2Basics
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("WeakVsSuperweak/WeakVsSuperweak.ipynb")]
+        [Test]
+        static public void Run__WeakVsSuperweak() {
+            //--test=BoSSS.Application.TutorialTests.AllUpTest.WeakVsSuperweak
+            RunWorksheet("WeakVsSuperweak/WeakVsSuperweak.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>

@@ -34,9 +34,11 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            //InitMPI();
+            InitMPI();
+            ilPSP.Environment.NumThreads = 2;
+            BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
             //BoSSS.Application.XNSEC.NUnitTest.ManufacturedSolutionLowMachCombustionTest();
-            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
 
 
             //DeleteOldPlotFiles();
@@ -145,10 +147,10 @@ namespace BoSSS.Application.XNSEC {
         /// $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.
         /// </remarks>
         public override int QuadOrder() {
-            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            if (Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -157,7 +159,7 @@ namespace BoSSS.Application.XNSEC {
 
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 2);
-            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -1070,30 +1072,6 @@ namespace BoSSS.Application.XNSEC {
         public override IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
             return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, config, this.MultigridOperatorConfig);
         }
-
-
-        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-        //    // Cells Numbers
-        //    var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
-        //    if (CellNumbers == null) {
-        //        CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
-        //        this.RegisterField(CellNumbers);
-        //    }
-        //    CellNumbers.Clear();
-        //    CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-        //        int K = result.GetLength(1); // No nof Nodes
-        //        for (int j = 0; j < Len; j++) {
-        //            for (int k = 0; k < K; k++) {
-        //                result[j, k] = j0 + j;
-        //            }
-        //        }
-        //    }, new CellQuadratureScheme());
-
-
-        //    //DGField[] RefinedFields = new[] { Refined_u, Refined_TestData, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
-        //    //string filename2 = "RefinedGrid." + timestepNo;
-        //    //Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
-        //}
 
         /// <summary>
         /// User-defined validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds,

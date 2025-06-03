@@ -68,7 +68,7 @@ namespace CutCellQuadrature {
                                     new NodeSet(RefElement, new double[2], false), cell, 1);
                                 if (Math.Sign(levelSetValue.Storage[0]) < 0) {
                                     // Cell is completely void
-                                    QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, 2);
+                                    QuadRule emptyRule = QuadRule.CreateBlank(RefElement, 1, 2);
                                     emptyRule.Nodes.LockForever();
                                     modifiedRule = emptyRule;
                                 } else {

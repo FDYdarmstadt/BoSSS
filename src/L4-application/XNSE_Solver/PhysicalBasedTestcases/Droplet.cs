@@ -349,13 +349,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //if (AMRlvl > 0) {
             //    C.AdaptiveMeshRefinement = true;
-            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    C.BaseRefinementLevel = AMRlvl;
+            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    //C.BaseRefinementLevel  AMRlvl;
             //}
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  1;
+            //C.RefinementLevel = 1;
             //C.AMR_startUpSweeps = 2;
 
             //C.InitSignedDistance = false;
@@ -462,6 +462,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         }
 
+        /*
         /// <summary>
         /// 
         /// </summary>
@@ -725,8 +726,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //if (!hysing) {
             //    C.AdaptiveMeshRefinement = true;
-            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    C.BaseRefinementLevel = 3;
+            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    //C.BaseRefinementLevel  3;
             //    C.AMR_startUpSweeps = 4;
             //    C.RefinementLevel = 1;
             //}
@@ -738,8 +739,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.LFFB = 0.9;
 
             //C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.AMR_startUpSweeps = 2;
             //C.SessionName = C.SessionName + "_AMR1";
 
@@ -1045,7 +1046,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             return C;
         }
-
+        */
 
         /// <summary>
         /// 
@@ -1057,8 +1058,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ImmediatePlotPeriod = 1;
             //C.SuperSampling = 3;
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -1869,15 +1870,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //if (!hysing) {
             //    C.AdaptiveMeshRefinement = true;
-            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    C.BaseRefinementLevel = 3;
+            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    //C.BaseRefinementLevel  3;
             //    C.AMR_startUpSweeps = 4;
             //    C.RefinementLevel = 1;
             //}
 
             //C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.AMR_startUpSweeps = 2;
             //C.SessionName = C.SessionName + "_AMR1";
 
@@ -3096,8 +3097,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -3137,7 +3138,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             int D = 2;
 
             if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -3385,8 +3386,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
+            //C.RefinementLevel = 1;
 
             #endregion
 

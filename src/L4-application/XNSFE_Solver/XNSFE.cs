@@ -29,7 +29,7 @@ namespace BoSSS.Application.XNSFE_Solver {
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
-    /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
+    /// - Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
     /// </summary>
     public class XNSFE : XNSFE<XNSFE_Control> {
 
@@ -38,19 +38,21 @@ namespace BoSSS.Application.XNSFE_Solver {
         // ===========
         static void Main(string[] args) {
             //InitMPI(args);
-           // ilPSP.Environment.InitThreading(true, 8);
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye,  NonLinearSolverCode.Newton, double.PositiveInfinity, 0.143d, 1.2d);
             //Assert.IsTrue(false, "remove me");
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //Tests.ParameterizedLevelSetTest_Elemental.Test();
-            //Tests.ParameterizedLevelSet_Translation.Test();
-            //Tests.ASUnitTest.ParameterizedLevelSetTest_Translation();
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.TransientEvaporationTest(0.0, 3, 0.1, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected, NonLinearSolverCode.Newton, Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2);
-            //System.Environment.Exit(111);
+            //using (var solver = new XNSFE()) {
+            //    solver.Init(ThermalSlip_HardcodedControls.HeatedWall_3PhaseDemo(true));
+            //    solver.RunSolverMode();
+            //}
 
+            //FinalizeMPI();
+            //System.Environment.Exit(-111);
+
+            //ilPSP.Environment.InitThreading(true, 8);
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
+            //Assert.IsTrue(false, "remove me");
 
 
             XNSFE._Main(args, false, delegate () {
@@ -74,7 +76,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             // configuration for Temperature
             var confTemp = new MultigridOperator.ChangeOfBasisConfig() {
                 DegreeS = new int[] { pTemp }, //Math.Max(1, pTemp - iLevel) },
-                mode = MultigridOperator.Mode.LeftInverse_DiagBlock,//MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,//MultigridOperator.Mode.LeftInverse_DiagBlock,
                 VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Temperature) }
             };
             configsLevel.Add(confTemp);
@@ -98,6 +100,46 @@ namespace BoSSS.Application.XNSFE_Solver {
                     configsLevel.Add(confHeatFlux);
                 }
             }
+        }
+
+        /// <summary>
+        /// override of <see cref="XNSE{T}.QuadOrder"/>, takes into account the temperature degree
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        override public int QuadOrder() {
+            if (Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes} and {CutCellQuadratureMethod.Algoim}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+                    $"If you do not know how to remove this exception, you should better return now!");
+            }
+
+            //QuadOrder
+            int degU = Math.Max(VelocityDegree(), TemperatureDegree());
+            int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
+            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
+                //See remarks
+                quadOrder *= 2;
+                quadOrder += 1;
+            }
+
+            return quadOrder;
+        }
+
+        /// <summary>
+        ///  temperature degree.
+        /// </summary>
+        protected int TemperatureDegree() {
+            int pT;
+            if (this.Control.FieldOptions.TryGetValue("Temperature", out FieldOpts t)) {
+                pT = t.Degree;            
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            return pT;
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
@@ -207,10 +249,6 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// override of <see cref="DefineMomentumEquation(OperatorFactory, XNSE_OperatorConfiguration, int, int)"/>
         /// adding evaporation extension for Navier-Stokes equations
         /// </summary>
-        /// <param name="opFactory"></param>
-        /// <param name="config"></param>
-        /// <param name="d"></param>
-        /// <param name="D"></param>
         protected override void DefineMomentumEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int d, int D) {
             base.DefineMomentumEquation(opFactory, config, d, D);
 
@@ -256,8 +294,8 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
 
             opFactory.AddEquation(new SolidHeat("C", D, thermBoundaryMap, config));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config, Control.HeatSourceIBM));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config, Control.HeatSourceIBM));            
 
             // we need these "dummy" equations, otherwise the matrix has zero rows/columns
             // If this is to be used frequently something more sophisticated should be implemented, e.g. strike out rows for unused variables...
@@ -303,7 +341,11 @@ namespace BoSSS.Application.XNSFE_Solver {
                 if (config.isEvaporation) {
                     opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
-                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
+                    if (config.FixedInterfaceTemperature) {
+                        opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
+                    } else {
+                        opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
+                    }
                 }
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
@@ -354,7 +396,6 @@ namespace BoSSS.Application.XNSFE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-
             //if (Control.InitialValues_EvaluatorsVec.TryGetValue("Temperature#B", out var scalarFunctionTimeDep) && this.Control.SkipSolveAndEvaluateResidual) {
             //    ScalarFunction T_ex = null;
             //    T_ex = scalarFunctionTimeDep.SetTime(phystime);
@@ -499,7 +540,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             double safety = 5;
             return 1 / safety * Math.Sqrt((C.PhysicalParameters.rho_A + C.PhysicalParameters.rho_B) * Math.Pow(h / (p + 1), 3) / (2 * Math.PI * Math.Abs(C.PhysicalParameters.Sigma)));
         }
-
+        /*
         private void PlotAdditionalFields(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             #region additional fields
 
@@ -959,6 +1000,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             base.PlotCurrentState(physTime, timestepNo, superSampling);
         }
+        */
 
         /// <summary>
         /// automatized analysis of condition number 
@@ -971,9 +1013,9 @@ namespace BoSSS.Application.XNSFE_Solver {
             //int[] varGroup_Stokes = Enumerable.Range(0, D + 1).ToArray();
             //int[] varGroup_Temperature = Enumerable.Range(D + 1, 1).ToArray();
             //int[] varGroup_all = Enumerable.Range(0, D + 2).ToArray();
-            //var res = this.Timestepping.OperatorAnalysis(new[] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
+            //var res = this.Timestepping.OperatorAnalysis(config, new int[][] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
 
-            int[] varGroup = new int[] { 0, 1, 2, 3};
+            int[] varGroup = Enumerable.Range(0, D + 2).ToArray();
             var res = this.Timestepping.OperatorAnalysis(config, new[] { varGroup });
 
             return res;

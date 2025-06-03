@@ -83,6 +83,9 @@ namespace BoSSS.Solution {
 
         }
 
+        public void Init() {
+            base.Init(new EmptyAppControl());
+        }
 
         static string[] m_LatestCmdLineArgs;
         internal static string[] LatestCmdLineArgs {
@@ -190,6 +193,7 @@ namespace BoSSS.Solution {
 
                     ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor)System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
                     ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+                    ilPSP.Connectors.Matlab.BatchmodeConnector.AltTempDir = o.TempDir;
 
                 } catch (Exception e) {
                     var errStr = $"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}";
@@ -1430,6 +1434,9 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.ComputeNodeNames.Clear();
                 CurrentSessionInfo.ComputeNodeNames.AddRange(ilPSP.Environment.MPIEnv.HostnameForRank);
 
+                //set number of threads per mpi rank
+                CurrentSessionInfo.ThreadPerMPIRank = ilPSP.Environment.NumThreads;
+
                 // save
                 this.CurrentSessionInfo.Save();
             }
@@ -2345,7 +2352,7 @@ namespace BoSSS.Solution {
                 // Main/outmost time-stepping loop
                 // (in steady-state: only one iteration)
                 // =================================================================================
-                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+                //ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 {
 
 
@@ -2363,18 +2370,19 @@ namespace BoSSS.Solution {
 
                     bool gridChanged;
 
-                    var lastLogWrite = DateTime.Now;
-
+                    
                     for (int i = i0.MajorNumber + 1; RunLoop(i); i++) {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
+                        MPICollectiveWatchDog.Watch(token: -5672 + i);
                         gridChanged = this.MpiRedistributeAndMeshAdapt(i, physTime);
+                        MPICollectiveWatchDog.Watch(token: -42345 + i);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        MPICollectiveWatchDog.Watch(token: -8643 + i);
                         // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
-                        if( i <= i0.MajorNumber + 1 || (DateTime.Now - lastLogWrite > new TimeSpan(0, 5, 0))) { // prevent writing the log to often
-                            this.ProfilingLog();
-                            lastLogWrite = DateTime.Now;
-                        }
+                        MPICollectiveWatchDog.Watch(token: -123 + i);
+                        this.ProfilingLog(i <= i0.MajorNumber + 1);
+                        MPICollectiveWatchDog.Watch(token: -9 + i);
                         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
@@ -2455,14 +2463,14 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="pT"></param>
         /// <param name="TSnum"></param>
-        /// <param name="rollingSavesSammeldingens"></param>
-        private void PlotAndSave(double pT, TimestepNumber TSnum, List<Tuple<int, ITimestepInfo, bool>> rollingSavesSammeldingens = null) {
+        /// <param name="rollingSaves"></param>
+        private void PlotAndSave(double pT, TimestepNumber TSnum, List<Tuple<int, ITimestepInfo, bool>> rollingSaves = null) {
             if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                 PlotCurrentState(pT, TSnum, this.Control.SuperSampling);
 
             var tsi = SaveToDatabase(TSnum, pT);
-            if (rollingSavesSammeldingens != null && this.RollingSave)
-                rollingSavesSammeldingens.Add(Tuple.Create(TSnum.MajorNumber, tsi, false));
+            if (rollingSaves != null && this.RollingSave)
+                rollingSaves.Add(Tuple.Create(TSnum.MajorNumber, tsi, false));
         }
 
 
@@ -2489,10 +2497,10 @@ namespace BoSSS.Solution {
                 if ((timeStepInt + sb) % SavePeriod == 0 || (!runNextLoop && sb == 0)) {
                     tsi = SaveToDatabase(timeStepInt, physTime);
                     //Console.WriteLine($"timestep: {tsi} saved");
-                    this.ProfilingLog();
                     break;
                 }
             }
+            this.ProfilingLog();
 
 
             if (this.RollingSave) {
@@ -2959,7 +2967,6 @@ namespace BoSSS.Solution {
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
                 if (Control == null
                     || !Control.DynamicLoadBalancing_On
                     || (     TimeStepNo % Control.DynamicLoadBalancing_Period != 0 
@@ -2968,12 +2975,9 @@ namespace BoSSS.Solution {
                     || MPISize <= 1) {
                     return null;
                 }
-
                 
                 if (m_Balancer == null) {
                     m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators, this);
-
-                    
                 }
 
                 return m_Balancer.GetNewPartitioning(
@@ -3061,23 +3065,53 @@ namespace BoSSS.Solution {
             private set; 
         }
 
+        DateTime? ProfilingLog_lastLogWrite = null;
+
+        string ProfilingLog_suffix = null;
+
+
         /// <summary>
         /// writes the profiling report 
         /// </summary>
-        protected virtual void ProfilingLog() {
+        protected virtual void ProfilingLog(bool force = false) {
             using (new FuncTrace()) {
                 if (OnlineProfiling == null)
                     //OnlineProfiling = new OnlineProfiling(this.Control);
                     return; // for some reason (i.e., because only Dispose was called()) not initialized yet
-                ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
+
+                if(force == false) {
+                    if(ProfilingLog_lastLogWrite == null) {
+                        // must write
+                        ProfilingLog_lastLogWrite = DateTime.Now;
+                    } else {
+                        if(DateTime.Now - ProfilingLog_lastLogWrite > new TimeSpan(0, 5, 0)) {
+                            ProfilingLog_lastLogWrite = DateTime.Now;
+                        } else {
+                            return; // can skip writing
+                        }
+
+                    }
+                }
+
+
+                //ilPSP.OnlinePerformanceMeasurement.ExecuteBenchmarks();
                 OnlineProfiling.AppEndTime = DateTime.Now;
                 
                 OnlineProfiling.UpdateDGInfo(this.Grid, this.m_RegisteredFields);
                 Tracer.Current.UpdateTime();
 
                 if (this.DatabaseDriver != null && this.CurrentSessionInfo != null) {
+
+                    if(ProfilingLog_suffix == null) {
+                        if(this.CurrentSessionInfo.ID == Guid.Empty)
+                            ProfilingLog_suffix = $"{DateTime.Now.ToString("MMMdd_HHmmss")}";
+                        else
+                            ProfilingLog_suffix = "";
+                    }
+
+
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_bin{ProfilingLog_suffix}")) {
                             var str = OnlineProfiling.Serialize();
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 stw.Write(str);
@@ -3090,7 +3124,7 @@ namespace BoSSS.Solution {
                     }
 
                     try {
-                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                        using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, $"profiling_summary{ProfilingLog_suffix}")) {
                             using (StreamWriter stw = new StreamWriter(stream)) {
                                 OnlineProfiling.WriteProfilingReport(stw);
                                 stw.Flush();
@@ -3306,7 +3340,7 @@ namespace BoSSS.Solution {
 
                         app.ByeInt();
                         app.Bye();
-                        app.ProfilingLog();
+                        app.ProfilingLog(true);
 #if DEBUG
                     }
 #else
@@ -3547,7 +3581,7 @@ namespace BoSSS.Solution {
                 try {
                     ByeInt();
                     Bye();
-                    ProfilingLog();
+                    ProfilingLog(true);
 
                     foreach( var l in PostprocessingModules) {
                         l.Dispose();

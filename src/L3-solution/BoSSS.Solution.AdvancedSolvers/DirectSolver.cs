@@ -118,6 +118,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 get;
                 set;
             } = true;
+
+
+            /// <summary>
+            /// Overrides any OpenMP or MPI parallelization, and tries to solve sequentially.
+            /// </summary>
+            public bool EnforceSquential {
+                get;
+                set;
+            } = false;
         }
 
 
@@ -172,8 +181,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var MgMap = op.DgMapping;
                 MatrixNMapping = op;
 
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
-                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) //notice that on Debug configuration Mtx may not be initialized
+					throw new ArgumentException("Row partitioning mismatch.");
                 if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
@@ -220,6 +229,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         class DenseSolverWrapper : ISparseSolver {
 
+            class OpenMPbracket : IDisposable {
+                public OpenMPbracket(bool useSerial) {
+                    if(useSerial && ilPSP.Environment.OpenMPenabled) {
+                        ilPSP.Environment.DisableOpenMP();
+                        mustEnable = true;
+                    }
+                }
+
+                bool mustEnable;
+
+                public void Dispose() {
+                    if(mustEnable) {
+                        ilPSP.Environment.EnableOpenMP();
+                    }
+                }
+            }
+
+            internal bool EnforceSquential = false;
+            bool RunSerial; 
+
             MultidimensionalArray LU_FullMatrix;
 
             int[] ipiv;
@@ -227,7 +256,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public void DefineMatrix(IMutableMatrixEx M) {
                 LU_FullMatrix = M.ToFullMatrixOnProc0();
                 ipiv = new int[LU_FullMatrix.NoOfRows];
-                LU_FullMatrix.FactorizeLU(ipiv);
+                RunSerial = M.MPI_Comm == csMPI.Raw._COMM.SELF || this.EnforceSquential;
+                using(new OpenMPbracket(RunSerial)) {
+                    LU_FullMatrix.FactorizeLU(ipiv);
+                }
             }
 
             public void Dispose() {
@@ -251,7 +283,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Int_rhs = rhs.ToArray();
 
                 //LU_FullMatrix.Solve(Int_x, Int_rhs);
-                LU_FullMatrix.BacksubsLU(ipiv, Int_x, Int_rhs);
+                using(new OpenMPbracket(RunSerial)) {
+                    LU_FullMatrix.BacksubsLU(ipiv, Int_x, Int_rhs);
+                }
 
                 if(writeBack)
                     x.SetV(Int_x);
@@ -269,7 +303,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
 
-            bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF;
+            bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF || this.m_config.EnforceSquential;
 
             if(config.WhichSolver != _whichSolver.PARDISO) {
                 if (!config.UseDoublePrecision)
@@ -303,7 +337,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 break;
 
                 case _whichSolver.Lapack:
-                solver = new DenseSolverWrapper();
+                solver = new DenseSolverWrapper() {
+                    EnforceSquential = m_config.EnforceSquential
+                };
                 break;
 
                 default:
@@ -460,7 +496,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(m_Solver != null)
                 m_Solver.Dispose();
             m_Solver = null;
-            this.m_Mtx = null;
+			this.MatrixNMapping = null;
+			this.m_Mtx = null;
         }
 
         public long UsedMemory() {

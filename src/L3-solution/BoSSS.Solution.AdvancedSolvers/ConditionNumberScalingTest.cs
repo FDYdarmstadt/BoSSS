@@ -28,11 +28,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         public class Config {
 
             public const string TotCondNo = "TotCondNo-*";
-            public const string StencilCondNo_innerUncut = "StencilCondNo-innerUncut-*";
+            public const string StencilCondNo_innerUncut = "StencilCondNo-innerUncut-*"; 
             public const string StencilCondNo_innerCut = "StencilCondNo-innerCut-*";
             public const string StencilCondNo_bndyUncut = "StencilCondNo-bndyUncut-*";
             public const string StencilCondNo_bndyCut = "StencilCondNo-bndyCut-*";
 
+            //This is original one. But those names doesn't match the names used in "CalculateStencilNumbers()"
+            //public const string StencilCondNo_innerUncut = "StencilCondNo-innerUncut-*";
+            //public const string StencilCondNo_innerCut = "StencilCondNo-innerCut-*";
+            //public const string StencilCondNo_bndyUncut = "StencilCondNo-bndyUncut-*";
+            //public const string StencilCondNo_bndyCut = "StencilCondNo-bndyCut-*";
 
             public Config() {
                 this.ExpectedSlopes = new Dictionary<string, (XAxisDesignation, double, double)>();
@@ -102,6 +107,11 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             /// <seealso cref="BoSSS.Solution.OperatorAnalysisConfig.CalculateGlobalConditionNumbers"/>
             /// </summary>
             public bool ComputeGlobalCondNo = true;
+
+            /// <summary>
+            /// Visualization option for stencil condition number <see cref="ComputeStencilCondNo"/>
+            /// </summary>
+            public bool PlotStencilConditionNumbers = false;
         }
 
 
@@ -447,7 +457,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     var prop = solver.OperatorAnalysis(
                         new OperatorAnalysisConfig() {
                             CalculateStencilConditionNumbers = m_config.ComputeStencilCondNo,
-                            CalculateGlobalConditionNumbers = m_config.ComputeGlobalCondNo
+                            CalculateGlobalConditionNumbers = m_config.ComputeGlobalCondNo,
+                            PlotStencilConditionNumbers = m_config.PlotStencilConditionNumbers
                         });
                     Console.WriteLine("  finished analysis.");
 

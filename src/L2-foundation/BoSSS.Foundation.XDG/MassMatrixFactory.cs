@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -70,46 +71,7 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-        //Basis m_MaxNonXBasis {
-        //    get {
-        //        if (MaxBasis is XDGBasis) {
-        //            return ((XDGBasis)MaxBasis).NonX_Basis;
-        //        } else {
-        //            return MaxBasis;
-        //        }
-        //    }
-        //}
-
-
-        //MultiphaseCellAgglomerator m_agglomerator;
-
-        //LevelSetTracker m_LsTrk;
-
-   
-
-        //public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
-        //    get;
-        //    private set;
-        //}
-
-        ///// <summary>
-        ///// Computes the mass matrices for a given mapping, for all species in <see cref="AvailableSpecies"/>
-        ///// </summary>
-        //public BlockDiagonalMatrix GetMassMatrix_depr(UnsetteledCoordinateMapping mapping, bool inverse) {
-        //    double[] alpha = new double[mapping.BasisS.Count];
-        //    alpha.SetAll(1.0);
-        //    return GetMassMatrix_depr(mapping, alpha, inverse, this.AvailableSpecies.ToArray());
-        //}
-
-        ///// <summary>
-        ///// Computes the mass matrices for a given mapping.
-        ///// </summary>
-        //public BlockDiagonalMatrix GetMassMatrix_depr(UnsetteledCoordinateMapping mapping, double[] _alpha, bool inverse, params SpeciesId[] Spc) {
-        //    Dictionary<SpeciesId, IEnumerable<double>> alpha = new Dictionary<SpeciesId, IEnumerable<double>>();
-        //    foreach (var species in Spc)
-        //        alpha.Add(species, _alpha.CloneAs());
-        //    return GetMassMatrix_depr(mapping, alpha, inverse);
-        //}
+        
 
         /// <summary>
         /// computes the mass matrices for a given mapping.
@@ -157,37 +119,7 @@ namespace BoSSS.Foundation.XDG {
             return GetMassMatrix(mapping, alpha, inverse);
         }
 
-        /*
-        /// <summary>
-        /// computes the mass matrices for a given mapping.
-        /// </summary>
-        /// <param name="mapping">
-        /// </param>
-        /// <param name="alpha">
-        /// 'Fine-grained' scaling for blocks, for each species and each variable in the <paramref name="mapping"/>.
-        /// The default value of null maps to 1.0 for each species and variable.
-        /// </param>
-        /// <param name="VariableAgglomerationSwitch">
-        /// Switch to turn agglomeration on/off for each variable; default=null=on.
-        /// </param>
-        /// <param name="inverse">
-        /// Return the inverse mass matrix.
-        /// </param>
-        public BlockDiagonalMatrix GetMassMatrix_depr(UnsetteledCoordinateMapping mapping, IDictionary<SpeciesId, IEnumerable<double>> alpha = null, bool inverse = false, bool[] VariableAgglomerationSwitch = null) {
-            if (alpha == null) {
-                int NoVar = mapping.NoOfVariables;
-                alpha = new Dictionary<SpeciesId, IEnumerable<double>>();
-                double[] AllOne = new double[NoVar];
-                AllOne.SetAll(1.0);
-                foreach (var spc in this.m_LsTrk.SpeciesIdS) {
-                    alpha.Add(spc, AllOne);
-                }
-            }
-            var Return = new BlockDiagonalMatrix(mapping.LocalLength, mapping.MaxTotalNoOfCoordinatesPerCell);
-            AccMassMatrix(Return, mapping, alpha, inverse, VariableAgglomerationSwitch);
-            return Return;
-        }
-        */
+        
 
         /// <summary>
         /// Provides access to a 'raw' form of the mass matrix, where only blocks for the cut cells
@@ -202,37 +134,6 @@ namespace BoSSS.Foundation.XDG {
                 throw new NotSupportedException("requested basis exceeds maximally supported basis.");
 
             var MMB = this.MassBlocks[spc];
-//#if DEBUG
-//            {
-//                var CCBit = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask().GetBitMask();
-//                //var AggCells = this.Agglomerator.GetAgglomerator(spc).AggInfo.SourceCells;
-//                //var AggCellsBit = AggCells.GetBitMask();
-//                //var AggAffectedBit = this.Agglomerator.GetAgglomerator(spc).AggInfo.AllAffectedCells.GetBitMaskWithExternal();
-
-//                int J = XDGSpaceMetrics.GridDat.Cells.NoOfLocalUpdatedCells;
-
-//                int JSUB = MMB.jSub2jCell.Length;
-//                for (int jSub = 0; jSub < JSUB; jSub++) {
-//                    var Block = MMB.MassMatrixBlocks.ExtractSubArrayShallow(jSub, -1, -1);
-//                    int jCell = MMB.jSub2jCell[jSub];
-//                    double BlockNorm = Block.InfNorm();
-
-//                    //if (jCell < J) {
-//                    //    Debug.Assert(CCBit[jCell] || AggAffectedBit[jCell]);
-//                    //    Debug.Assert(AggCellsBit[jCell] == (BlockNorm == 0));
-//                    //}
-//                }
-
-//                //foreach (var jCellAgg in AggCells.ItemEnum) {
-//                //    int jSub = MMB.jCell2jSub[jCellAgg];
-//                //    var Block = MMB.MassMatrixBlocks.ExtractSubArrayShallow(jSub, -1, -1);
-//                //    double BlockNorm = Block.InfNorm();
-
-//                //    Debug.Assert(BlockNorm == 0.0);
-//                //}
-//            }
-
-//#endif
             return MMB;
         }
 
@@ -260,7 +161,8 @@ namespace BoSSS.Foundation.XDG {
                 var _basisS = mapping.BasisS.ToArray();
                 var ctx = _basisS[0].GridDat;
                 int J = ctx.iLogicalCells.NoOfLocalUpdatedCells;
-
+                if(!object.ReferenceEquals(this.XDGSpaceMetrics.Tracker.GridDat, ctx))
+                    throw new ArgumentException("grid object mismatch");
                 if (!M.RowPartitioning.EqualsPartition(mapping))
                     throw new ArgumentException("Mismatch in row mapping.");
                 if (!M.ColPartition.EqualsPartition(mapping))
@@ -288,8 +190,6 @@ namespace BoSSS.Foundation.XDG {
                 Dictionary<SpeciesId, MassMatrixBlockContainer>[] invBlocks = null;
                 if (inverse) {
                     invBlocks = GetInverseMassMatrixBlocks(RequestedSpecies, mapping.BasisS.Select(b => b.Degree).ToArray());
-                    //VariableAgglomerationSwitch = new bool[VariableAgglomerationSwitch.Length];
-                    //VariableAgglomerationSwitch.SetAll(true); // we already took care about this in the 'GetInverseMassMatrixBlocks'
                 }
 
                 // set the matrix
@@ -408,7 +308,7 @@ namespace BoSSS.Foundation.XDG {
                     if (SpeciesToDo.Count() > 0) {
                         // only for species that we haven't done/cached yet
                         Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer> _MassBlocks;
-                        ComputeMassMatrixBlocks(SpeciesToDo, out _MassBlocks, nonXbasis, this.XDGSpaceMetrics); // m_quadorder, m_LsTrk, this.m_agglomerator, MomentFittingVariant);
+                        ComputeMassMatrixBlocks(SpeciesToDo, out _MassBlocks, nonXbasis, this.XDGSpaceMetrics);
                         this.MassBlocks.AddRange(_MassBlocks);
                     }
                 }
@@ -419,46 +319,31 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// 
         /// </summary>
-        /// <remarks>
-        /// Note that due to cell agglomeration,
-        /// there may be non-identity mass matrices in uncut cells:
-        /// this happens when a cut cell is agglomerated to an un-cut cell.
-        /// </remarks>
         public class MassMatrixBlockContainer {
 
             /// <summary>
-            /// Mass matrix blocks, with agglomeration applied. 
-            /// 1st index: subgrid cell index (which map to local cell indices by <see cref="jSub2jCell"/>)
-            /// 2nd index: diagonal block row;
-            /// 3rd index: diagonal block column;
+            /// Mass matrix blocks
+            /// - 1st index: subgrid cell index (which map to local cell indices by <see cref="jSub2jCell"/>)
+            /// - 2nd index: diagonal block row;
+            /// - 3rd index: diagonal block column;
             /// </summary>
             public MultidimensionalArray MassMatrixBlocks;
-
-            /*
-            /// <summary>
-            /// 'Backup' of mass matrix blocks before agglomeration; if an entry is null, the corresponding cell is not affected by agglomeration.
-            /// </summary>
-            public MultidimensionalArray[] MassMatrixBlocks_B4Agglom;
-            */
-
+       
             /// <summary>
             /// mapping from sub-grid index (correlates to 1st index of <see cref="MassMatrixBlocks"/>) to local cell index
             /// </summary>
             public int[] jSub2jCell;
 
-            ///// <summary>
-            ///// the inverse mapping of <see cref="jSub2jCell"/>
-            ///// </summary>
-            //public Dictionary<int, int> jCell2jSub;
 
+            /// <summary>
+            /// mapping from cell index to subgrid index (correlates to 1st index of <see cref="MassMatrixBlocks"/>)
+            /// </summary>
+            public int[] jCell2jSub;
 
             /// <summary>
             /// The integration domain for mass matrices; this contains only cut cells.
-            /// It may not correspond to <see cref="jSub2jCell"/>, since 
-            /// some cut-cells may be agglomerated to uncut cells.
             /// </summary>
             internal CellMask IntegrationDomain;
-
         }
 
         static internal void ComputeMassMatrixBlocks(
@@ -489,8 +374,8 @@ namespace BoSSS.Foundation.XDG {
                     // interation dom
                     var _IntegrationDomain = homie.LevelSetRegions.GetSpeciesMask(Species).Intersect(homie.LevelSetRegions.GetCutCellMask());
 
-                    // domain for mass-matrix blocks (include agglomeration targets)
-                    var _BlockDomain = _IntegrationDomain; //.Union(Agg.GetAgglomerator(Species).AggInfo.AllAffectedCells);
+                    // domain for mass-matrix blocks 
+                    var _BlockDomain = _IntegrationDomain;
 
                     // alloc mem for blocks
                     var _MassMatrixBlocksSpc = MultidimensionalArray.Create(_BlockDomain.NoOfItemsLocally, Nnx, Nnx);
@@ -498,21 +383,18 @@ namespace BoSSS.Foundation.XDG {
                     // Subgrid index to cell index
                     int[] _jSub2jCell = _BlockDomain.ItemEnum.ToArray();
 
-                    // cell to subgrid index
-                    //Dictionary<int, int> _jCell2jSub;
-                    //if (Agg.GetAgglomerator(Species).AggInfo.AgglomerationPairs.Length > 0) {
-                    //    _jCell2jSub = new Dictionary<int, int>();
-                    //    for (int i = 0; i < _jSub2jCell.Length; i++) {
-                    //        _jCell2jSub.Add(_jSub2jCell[i], i);
-                    //    }
-                    //} else {
-                    //    _jCell2jSub = null;
-                    //}
+                    // the inverse:
+                    int[] _jCell2jSub = new int[ctx.iLogicalCells.Count];
+                    _jCell2jSub.SetAll(int.MinValue);
+                    for(int i = 0; i < _jSub2jCell.Length; i++) {
+                        _jCell2jSub[_jSub2jCell[i]] = i;
+                    }
 
+                    // cell to subgrid index
                     Result.Add(Species, new MassMatrixBlockContainer() {
                         IntegrationDomain = _IntegrationDomain,
                         MassMatrixBlocks = _MassMatrixBlocksSpc,
-                        //jCell2jSub = _jCell2jSub,
+                        jCell2jSub = _jCell2jSub,
                         jSub2jCell = _jSub2jCell
                     });
 
@@ -522,22 +404,28 @@ namespace BoSSS.Foundation.XDG {
                 // ==============
 
                 foreach (var Species in _SpeciesIds) {
+                    int[] jSub2jCell = Result[Species].jSub2jCell;
+                    int[] jCell2jSub = Result[Species].jCell2jSub;
                     // get quad scheme
                     CellQuadratureScheme scheme = schemeHelper.GetVolumeQuadScheme(Species, IntegrationDomain: Result[Species].IntegrationDomain);
-
+                    
                     // result storage
                     var MassMatrixBlocksSpc = Result[Species].MassMatrixBlocks;
+                    //for(int i = 0; i < jSub2jCell.Length; i++) {
+                    //    for(int n = 0; n < Nnx; n++)
+                    //        MassMatrixBlocksSpc[i,n,n] = 0.0;
+                    //}
 
                     tracer.Info("mass matrix quad order: " + quadorder);
 
                     // compute the products of the basis functions:
-                    int BlockCnt = -1;
-                    int[] BlockCell = Result[Species].jSub2jCell;
+                    //int BlockCnt = -1;
                     CellMask speciesCells = homie.LevelSetRegions.GetSpeciesMask(Species);
+                    var compRule = scheme.Compile(ctx, quadorder);
                     var quad = CellQuadrature.GetQuadrature(
                         new int[] { Nnx, Nnx },
                         ctx,
-                        scheme.Compile(ctx, quadorder),
+                        compRule,
                         delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                             // Del_Evaluate
                             // ~~~~~~~~~~~~~
@@ -565,29 +453,30 @@ namespace BoSSS.Foundation.XDG {
 
                             for(int i = 0; i < Length; i++) {
                                 int jCell = i0 + i;
-                                BlockCnt++;
+                                //BlockCnt++;
+                                int BlockIdx = jCell2jSub[jCell];
 
                                 // insert ID block in agglomeration target cells (if necessary):
                                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-                                var Block = MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockCnt, -1, -1);
-                                while(BlockCell[BlockCnt] < jCell) {
-                                    // agglomeration source/target cell that is not cut
-                                    // mass matrix is identity (full) or zero (void)
-                                    Block.Clear();
-                                    if(speciesCells.Contains(BlockCell[BlockCnt])) {
-                                        // cell is full
-                                        for(int nn = 0; nn < Nnx; nn++) {
-                                            Block[nn, nn] = 1.0;
-                                        }
-                                    }
-                                    BlockCnt++;
-                                    Block = MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockCnt, -1, -1);
-                                }
+                                var Block = MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockIdx, -1, -1);
+                                //while(BlockCell[BlockCnt] < jCell) {
+                                //    // agglomeration source/target cell that is not cut
+                                //    // mass matrix is identity (full) or zero (void)
+                                //    Block.Clear();
+                                //    if(speciesCells.Contains(BlockCell[BlockCnt])) {
+                                //        // cell is full
+                                //        for(int nn = 0; nn < Nnx; nn++) {
+                                //            Block[nn, nn] = 1.0;
+                                //        }
+                                //    }
+                                //    BlockCnt++;
+                                //    Block = MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockCnt, -1, -1);
+                                //}
 
                                 // store computed block
                                 // - - - - - - - - - - - 
-                                Debug.Assert(BlockCell[BlockCnt] == jCell);
-                                MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockCnt, -1, -1)
+                                Debug.Assert(jSub2jCell[BlockIdx] == jCell);
+                                MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockIdx, -1, -1)
                                     .Set(ResultsOfIntegration.ExtractSubArrayShallow(i, -1, -1));
 #if DEBUG
                                 for (int n = 0; n < Nnx; n++)
@@ -599,21 +488,21 @@ namespace BoSSS.Foundation.XDG {
                     quad.Execute();
                     // ------------------------------------ quadrature end.
 
-                    BlockCnt++;
-                    while (BlockCnt < MassMatrixBlocksSpc.GetLength(0)) {
-                        // agglomeration source/target cell that is not cut
-                        // mass matrix is identity (full) or zero (void)
-                        var Block = MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockCnt, -1, -1);
-                        Block.Clear();
-                        if (speciesCells.Contains(BlockCell[BlockCnt])) 
-                        {
-                            // cell is full
-                            for (int nn = 0; nn < Nnx; nn++) {
-                                Block[nn, nn] = 1.0;
-                            }
-                        }
-                        BlockCnt++;
-                    }
+                    //BlockCnt++;
+                    //while (BlockCnt < MassMatrixBlocksSpc.GetLength(0)) {
+                    //    // agglomeration source/target cell that is not cut
+                    //    // mass matrix is identity (full) or zero (void)
+                    //    var Block = MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockCnt, -1, -1);
+                    //    Block.Clear();
+                    //    if (speciesCells.Contains(BlockCell[BlockCnt])) 
+                    //    {
+                    //        // cell is full
+                    //        for (int nn = 0; nn < Nnx; nn++) {
+                    //            Block[nn, nn] = 1.0;
+                    //        }
+                    //    }
+                    //    BlockCnt++;
+                    //}
 
 
                     /*
@@ -665,29 +554,6 @@ namespace BoSSS.Foundation.XDG {
 
                     }
                     // */
-
-                    // backup before agglomeration (required if we wanna treat e.g. velocity in DG and pressure in XDG)
-                    //MultidimensionalArray[] massMatrixBlocksB4Agglom = new MultidimensionalArray[Result[Species].jSub2jCell.Length];
-                    //Result[Species].MassMatrixBlocks_B4Agglom = massMatrixBlocksB4Agglom;
-                    //var _jCell2jSub = Result[Species].jCell2jSub;
-                    //int J = ctx.Cells.NoOfLocalUpdatedCells;
-                    //foreach (var pair in Agg.GetAgglomerator(Species).AggInfo.AgglomerationPairs) {
-
-                    //    foreach (int jCell in new int[] { pair.jCellSource, pair.jCellTarget }) { // create a backup of source and target cell
-                    //        if (jCell >= J)
-                    //            continue;
-
-                    //        int jSub = _jCell2jSub[jCell];
-
-                    //        if (massMatrixBlocksB4Agglom[jSub] == null) {
-                    //            massMatrixBlocksB4Agglom[jSub] = MassMatrixBlocksSpc.ExtractSubArrayShallow(jSub, -1, -1).CloneAs();
-                    //        }
-                    //    }
-                    //}
-
-                    // agglomeration
-                    //Agg.GetAgglomerator(Species).ManipulateMassMatrixBlocks(MassMatrixBlocksSpc, b, Result[Species].jSub2jCell, Result[Species].jCell2jSub);
-                    //throw new NotImplementedException("todo");
                 }
             }
         }

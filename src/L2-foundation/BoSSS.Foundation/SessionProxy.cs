@@ -185,6 +185,17 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// See <see cref="SessionInfo.ThreadPerMPIRank"/>
+        /// </summary>
+        public int ThreadPerMPIRank
+        {
+            get
+            {
+                return RealSessionInfo.ThreadPerMPIRank;
+            }
+        }
+
+        /// <summary>
         /// See <see cref="SessionInfo.Tags"/>
         /// </summary>
         public IEnumerable<string> Tags {
@@ -404,6 +415,17 @@ namespace BoSSS.Foundation.IO {
             public string DeployPath {
                 get {
                     return "";
+                }
+            }
+
+            /// <summary>
+            /// An empty list
+            /// </summary>
+            public int ThreadPerMPIRank
+            {
+                get
+                {
+                    return 0;
                 }
             }
 

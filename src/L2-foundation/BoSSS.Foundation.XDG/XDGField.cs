@@ -1232,6 +1232,9 @@ namespace BoSSS.Foundation.XDG {
             return FieldReturn;
         }
 
+        //public override double L2Norm(CellMask CM) {
+        //    return L2NormAllSpecies(CM);
+        //}
 
         public double L2NormAllSpecies(CellMask cm = null) {
             

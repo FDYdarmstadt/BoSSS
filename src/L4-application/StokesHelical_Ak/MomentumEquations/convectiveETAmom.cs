@@ -77,13 +77,6 @@ namespace StokesHelical_Ak.MomentumEquations {
             return Acc;
         }
 
-        //public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-        //    for(int i = 0; i < 3; i++) {
-        //        Console.WriteLine($"Remember: u_eta Convektive is null !!!!!!");
-        //    }
-        //    return 0;
-        //}
-
         public double InnerEdgeForm(ref CommonParams inp, double[] Uin, double[] Uout, double[,] _Grad_uIN, double[,] _Grad_uOUT, double V_IN, double V_OT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             // Terme 2 & 3 Wurden hier abgedeckt. Herleitung siehe unten mit Vergleich zum Paper
             double Acc = 0;
@@ -185,7 +178,6 @@ namespace StokesHelical_Ak.MomentumEquations {
                 //
                 // Bei der inneren Edge für r=0 wird die Funktion f(r) durch aktiv durch B(r)^2 ersetzt,
                 // um Singularitäten zu eleminieren. An den anderen Kanten wird dies nicht explizit geamcht. 
-                // Wieso eigentlich nicht????
                 if (ur0_IN * inp.Normal[0] + uxi0_IN * inp.Normal[1] > 0) { // Upwind_Flux
                     // Erster Term aus Gleichung 4.7 mit Upwind flux
                     // Da Audruck positiv, deswegen Inner_Values

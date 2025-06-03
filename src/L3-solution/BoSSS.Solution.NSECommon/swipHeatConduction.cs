@@ -83,10 +83,24 @@ namespace BoSSS.Solution.NSECommon {
         private double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = cj[jCellIn];
             double mu = PenaltyBase * cj_in;
-            if (jCellOut >= 0) {
+            //if (jCellOut >= 0) {
+            //    double cj_out = cj[jCellOut];
+            //    mu = Math.Max(mu, PenaltyBase * cj_out);
+            //}
+            if(jCellOut >= 0 && !cj[jCellOut].IsNaNorInf()) {
+                // there is no OUT-cell, i.e., current edge is at the boundary of the domain
+                // -- or -- 
+                // in 3D, with certain cut-cell quad rules (e.g. Algoim),
+                // when the Level Set passes exactly through the corner of the cell,
+                // it might happen that the species-volume of the OUT-cell is empty,
+                // but the edge integral is only almost zero (slightly positive, e.g., weights around 10e-14 or so).
+                // In such cases, the edge integral is evaluated (since it is a non-empty rule),
+                // but the OUT-cell already has a NAN-length scale assigned.
                 double cj_out = cj[jCellOut];
                 mu = Math.Max(mu, PenaltyBase * cj_out);
             }
+
+
             if(mu.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
             return mu;

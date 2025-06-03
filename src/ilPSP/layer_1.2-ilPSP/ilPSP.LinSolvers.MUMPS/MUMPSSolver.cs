@@ -426,7 +426,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                     unsafe
                     {
                         fixed (double* px = &_x[0])
-                        {
+                        {//[Toprak] can be optimized (current implementation is serial)
                             for (int targ_rank = 1; targ_rank < size; targ_rank++) {
                                 csMPI.Raw.Send((IntPtr)(px + m_OrgMatrix.RowPartitioning.GetI0Offest(targ_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(targ_rank), csMPI.Raw._DATATYPE.DOUBLE, targ_rank, 4444 + targ_rank, this.m_MPI_Comm);
                             }

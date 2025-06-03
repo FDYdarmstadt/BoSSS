@@ -29,7 +29,7 @@ using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
-   
+     
     /// <summary>
     /// edge quadrature of nonlinear equation components
     /// </summary>
@@ -558,7 +558,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             /// <summary>
             /// Integrand evaluation.
             /// </summary>
-            public void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
+            public void EvaluateEx(int i0, int Length, QuadRule QR, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
 
                 NodeSet qrNodes = QR.Nodes;
                 IGridData grid = m_owner.GridDat;
@@ -783,10 +783,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // evaluate normals and quadrature transformation metric
                 MultidimensionalArray NormalsGlobalCoords = grid.iGeomEdges.NormalsCache.GetNormals_Edge(qrNodes, i0, Length);
                 MultidimensionalArray QuadScalings;
-                if (affine) {
-                    QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                if (affine && !metric.AlwaysUsePerNodeScaling) {
+                    //QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                    QuadScalings = metric.GetScalingsForLinearElements(grid, QR, i0, Length);
                 } else {
-                    QuadScalings = grid.iGeomEdges.NormalsCache.GetIntegrationMetric(qrNodes, i0, Length);
+                    //QuadScalings = grid.iGeomEdges.NormalsCache.GetIntegrationMetric(qrNodes, i0, Length);
+                    QuadScalings = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
                 }
 
                 // nodes in global coordinates
@@ -1112,14 +1114,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 // multiply fluxes with Jacobi determinant (integral transformation metric):
                 for (int i = 0; i < NoOfEquations; i++) {
+                    bool __affine = affine && !metric.AlwaysUsePerNodeScaling;
                     if (m_FluxValuesIN[i] != null) {
-                        m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
-                        m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
+                        m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", __affine ? "j" : "jk");
+                        m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", __affine ? "j" : "jk");
                     }
 
                     if (m_GradientFluxValuesIN[i] != null) {
-                        m_GradientFluxValuesIN[i].Multiply(1.0, m_GradientFluxValuesIN[i], QuadScalings, 0.0, "jkd", "jkd", affine ? "j" : "jk");
-                        m_GradientFluxValuesOT[i].Multiply(1.0, m_GradientFluxValuesOT[i], QuadScalings, 0.0, "jkd", "jkd", affine ? "j" : "jk");
+                        m_GradientFluxValuesIN[i].Multiply(1.0, m_GradientFluxValuesIN[i], QuadScalings, 0.0, "jkd", "jkd", __affine ? "j" : "jk");
+                        m_GradientFluxValuesOT[i].Multiply(1.0, m_GradientFluxValuesOT[i], QuadScalings, 0.0, "jkd", "jkd", __affine ? "j" : "jk");
                     }
                 }
 
@@ -1771,8 +1774,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         ThreadLocalsEdg[] m_ThreadLocals;
 
 
-        void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
-            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
+        void EvaluateEx(int i0, int Length, QuadRule qr, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
+            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, metric, QuadResult, iThread, NumThreads);
         }
 
         /// <summary>

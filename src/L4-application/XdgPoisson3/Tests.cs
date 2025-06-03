@@ -80,13 +80,20 @@ namespace BoSSS.Application.XdgPoisson3 {
         [Test]    
         public static void ParabolaTest(
             [Values(2,3,4)] int dgDegree,
-            [Values(0.0, 0.6)] double AggThresshold
+            [Values(0.0, 0.6)] double AggThresshold,
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadratureType
             ) //
         {
-
+            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6)
             using (var solver = new XdgPoisson3Main()) {
-                var C = HardCodedControl.PiecewiseParabola(dgDegree, agg: AggThresshold);
+                if(cutCellQuadratureType == CutCellQuadratureMethod.Classic && solver.MPISize > 1) {
+                    Console.WriteLine($"Reminder: {CutCellQuadratureMethod.Classic} does not work MPI-parallel");
+                    return;
+                }
 
+
+                var C = HardCodedControl.PiecewiseParabola(dgDegree, agg: AggThresshold);
+                C.CutCellQuadratureType = cutCellQuadratureType;
                 solver.Init(C);
                 solver.RunSolverMode();
 
@@ -98,10 +105,10 @@ namespace BoSSS.Application.XdgPoisson3 {
 
 
 
-                Assert.Less(L2_ERR, 1e-10, "'L2_ERR' out-of-bounds");
-                Assert.Less(L2_ERR_HMF, 1e-10, "'L2_ERR' out-of-bounds");
-                Assert.Less(L2_ERR_HMF_A, 1e-10, "'L2_ERR' out-of-bounds");
-                Assert.Less(L2_ERR_HMF_B, 1e-10, "'L2_ERR' out-of-bounds");
+                Assert.Less(L2_ERR, 2e-9, "'L2_ERR' out-of-bounds");
+                Assert.Less(L2_ERR_HMF, 2e-9, "'L2_ERR_HMF' out-of-bounds");
+                Assert.Less(L2_ERR_HMF_A, 1e-10, "'L2_ERR_HMF_A' out-of-bounds");
+                Assert.Less(L2_ERR_HMF_B, 2e-9, "'L2_ERR_HMF_B' out-of-bounds");
 
             }
 

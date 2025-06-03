@@ -51,6 +51,7 @@ namespace ilPSP {
             Watch(csMPI.Raw._COMM.WORLD, token: token);
         }
 
+        private static readonly object padlock = new object();
         static volatile int Fire = 100;
         static volatile int Fired = 100;
 
@@ -105,16 +106,24 @@ namespace ilPSP {
 
             // start watchdog ...
             // ==================
-            Fire = 100;
-            Fired = 200;
+            lock(padlock) {
+                Fire = 100;
+                Fired = 200;
+            }
             Thread wDog = (new Thread(delegate() {
                 Stopwatch stw = new Stopwatch();
                 stw.Start();
 
 
                 while (true) {
-                    if (Fire == 0) {
-                        Fired = 0;
+                    int loc_Fire;
+                    lock(padlock) {
+                        loc_Fire = Fire;
+                    }
+                    if (loc_Fire == 0) {
+                        lock(padlock) {
+                            Fired = 0;
+                        }
                         if (stw.Elapsed.TotalSeconds > WaitTimeSeconds)
                             Console.WriteLine("Returning from out-of-sync after " + stw.Elapsed.TotalSeconds + " seconds.");
                         return;
@@ -150,8 +159,17 @@ namespace ilPSP {
             //ilPSP.Environment.StdoutOnlyOnRank0 = b;
 
             // ok
-            Fire = 0; // quit watchdog
-            while (Fired != 0) ;
+            int locFired;
+            lock(padlock) {
+                Fire = 0; // quit watchdog
+                locFired = Fired;
+            }
+            while (locFired != 0)  {
+                Thread.Sleep(10);
+                lock(padlock) {
+                    locFired = Fired;
+                }
+            }
             
         }
     }

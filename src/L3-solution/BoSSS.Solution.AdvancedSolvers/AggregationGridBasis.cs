@@ -528,7 +528,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 ilPSP.Environment.ParallelFor(0, Jagg,
                     () => MultidimensionalArray.Create(Np, Np),
-                    delegate (int j, ParallelLoopState s, MultidimensionalArray ortho) {
+                    delegate (int j, MultidimensionalArray ortho) {
                         //for(int j = 0; j < Jagg; j++) { // loop over aggregate cells
 
                         Debug.Assert(ArrayTools.ListEquals(Ag2Pt[j], C2F[j]));
@@ -829,6 +829,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Aggcoords.Clear();
                 Aggcoords.Multiply(1.0, this.CompositeBasis[jAgg], coords, 0.0, "n", "kmn", "km");
 
+/*
+                var Mama = MultidimensionalArray.Create(N,N);
+                Mama.Multiply(1.0, this.CompositeBasis[jAgg], this.CompositeBasis[jAgg], 0.0, "mn", "kim", "kin");
+                Mama.AccEye(-1.0);
+                double isId = Mama.FrobeniusNorm();
+                Console.WriteLine( "   --------   dist from ID: " + isId);
+*/
                 int i0 = jAgg * N;
                 for (int n = 0; n < N; n++)
                     AggGridVector[n + i0] = Aggcoords[n];
@@ -841,8 +848,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// the aggregated grid (<see cref="AggGrid"/>)
         /// to the full grid ((<see cref="AggGrid"/>, <see cref="AggregationGridData.AncestorGrid"/>))
         /// </summary>
-        /// <param name="FullGridVector">output;</param>
-        /// <param name="AggGridVector">input;</param>
+        /// <param name="FullGridVector">output; DG coordinates w.r.t. <see cref="DGBasis"/></param>
+        /// <param name="AggGridVector">input; DG coordinates on the aggregate mesh, length is <see cref="LocalDim"/></param>
         virtual public void ProlongateToFullGrid<T, V>(T FullGridVector, V AggGridVector)
             where T : IList<double>
             where V : IList<double> //
@@ -873,7 +880,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int n = 0; n < N; n++)
                     AggCoords[n] = AggGridVector[n + i0];
 
-                for(int k = 0; k < K; k++) { // loop over the cells wich form the aggregated cell...
+                for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                     int jCell = agCl[k];
                     int j0 = fullMapping.LocalUniqueCoordinateIndex(0, jCell, 0);
 
@@ -1061,20 +1068,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public virtual int GetNoOfSpecies(int jCell) {
             return 1;
         }
-       
+
         /// <summary>
-        /// **Note: the internal computation of this member is quite expensive and may lead to non-linear runtime behavior w.r.t. the number of cells.
-        /// Use <see cref="GetCompositeBasis"/> if the transformation is only required for a certain cell.**
-        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
+        /// The injector (see <see cref="ProlongateToFullGrid{T, V}(T, V)"/>) / projector (see <see cref="RestictFromFullGrid{T, V}(T, V)"/>) in the L2 Norm , 
+        /// from the space defined by the basis <see cref="DGBasis"/> on the original mesh,
         /// onto the DG space on the aggregate grid.
+        /// 
+        /// W.l.o.g., let the aggregate cell consists of two cells with DG basis $\underline{phi}^1$ and $\underline{phi}^2$, respectively.
+        /// Then, the basis in the aggregate cell, $\underline{phi}^{\textrm{agg}}$ is given as 
+        /// \[
+        ///    \underline{phi}^{\textrm{agg}} = \underline{phi}^1 \text{CB}^1 + \underline{phi}^1 \text{CB}^2,
+        /// \]
+        /// where $\left[ \text{CB}^1, \text{CB}^2 \right] $ is the `j`-th entry of this array.
+        /// 
         /// - array index: aggregate cell index; 
-        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis 
-        /// - 2nd index into <see cref="MultidimensionalArray"/>: row
-        /// - 3rd index into <see cref="MultidimensionalArray"/>: column
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index $i$ within aggregation basis, correlates with <see cref="ILogicalCellData.AggregateCellToParts"/>
+        /// - 2nd index into <see cref="MultidimensionalArray"/>: row index of $\text{CB}^i$
+        /// - 3rd index into <see cref="MultidimensionalArray"/>: column index of $\text{CB}^i$
         /// - content: local cell index into the original grid, see <see cref="Foundation.Grid.ILogicalCellData.AggregateCellToParts"/>
+        /// 
+        /// The general $L^2$ projector from the base mesh onto the aggregate mesh is given by the matrix
+        /// \[
+        ///    \text{Proj} := (\text{CB}^{1,T} \text{CB}^{1} + \text{CB}^{2,T} \text{CB}^{2})^{-1} \left[ \text{CB}_1, \text{CB}_2 \right] ,
+        /// \]
+        /// i.e., if a DG field on the base mesh is given as $\underline{phi}^1 \cdot \tilde{u}^1 + \underline{phi}^2 \cdot \tilde{u}^2$
+        /// and its projection as $\underline{phi}^{\textrm{agg}} \cdot \tilde{u}^{\textrm{agg}}$,
+        /// then the aggregate coordinates are given as $\tilde{u}^{\textrm{agg}} = \text{Proj} \left[ \tilde{u}^1, \tilde{u}^2 \right]^T$.
+        /// 
+        /// Here, the mass matrix $(\text{CB}^{1,T} \text{CB}^{1} + \text{CB}^{2,T} \text{CB}^{2})$ of the aggregate basis is 
+        /// the identity matrix. Terefore, it does not need to be stored.
         /// </summary>
         /// <remarks>
-        /// This method does not scale linear with problem size, its only here for reference/testing purpose.
+        ///  **Note: This method does not scale linear with problem size, its only here for reference/testing purpose.
+        ///  The internal computation of this member is quite expensive and may lead to non-linear runtime behavior w.r.t. the number of cells.
+        /// Use <see cref="GetCompositeBasis"/> if the transformation is only required for a certain cell.**
         /// </remarks>
         public MultidimensionalArray[] CompositeBasis {
             get {
@@ -1090,17 +1117,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original mesh,
+        /// The injector (see <see cref="ProlongateToFullGrid{T, V}(T, V)"/>) projector in the L2 Norm (really?), from the space defined by the basis <see cref="DGBasis"/> on the original mesh,
         /// onto the DG space on the aggregate grid.
-        /// **In contrast to <see cref="CompositeBasis"/>, the re-computation is performed only for cell <paramref name="jAgg"/>,
-        /// making this more efficient if only a singe cell is required.**
         /// </summary>
         /// <param name="jAgg"></param>
         /// <returns>
-        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis 
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis, correlates with <see cref="ILogicalCellData.AggregateCellToParts"/>
         /// - 2nd index into <see cref="MultidimensionalArray"/>: row
         /// - 3rd index into <see cref="MultidimensionalArray"/>: column
         /// </returns>
+        /// <remarks>
+        /// **In contrast to <see cref="CompositeBasis"/>, the re-computation is performed only for cell <paramref name="jAgg"/>,
+        /// making this more efficient if only a singe cell is required.**
+        /// </remarks>
         public MultidimensionalArray GetCompositeBasis(int jAgg) {
             if(m_CompositeBasis == null || m_CompositeBasis[jAgg] == null) {
                 SetupCompositeBasis(jAgg);

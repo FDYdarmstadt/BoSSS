@@ -137,7 +137,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using(var tr = new FuncTrace()) {
-
                 int D = levelSet.Tracker.GridDat.SpatialDimension;
 
                 SinglePhaseField[] meanVelocity = D.ForLoop(
@@ -169,7 +168,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-
         private EllipticReInitAlgoControl ReInit_Control = new EllipticReInitAlgoControl();
         private int ReInit_TimestepIndex = 0;
         private int ReInit_Period = 0;
@@ -198,7 +196,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
             // after level-set evolution and for initializing non-signed-distance level set fields
-            if(ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
+            if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
 
                 Console.WriteLine("Performing ReInit");
                 ReInit_Control.Potential = ReInitPotential.BastingSingleWell;

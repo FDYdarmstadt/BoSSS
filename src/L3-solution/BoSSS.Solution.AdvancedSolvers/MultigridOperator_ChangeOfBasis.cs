@@ -301,7 +301,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     ilPSP.Environment.ParallelFor(0, J, 
                         () => new ComputeChangeOfBasis_ThreadLocals(this),
-                        delegate (int jCell, ParallelLoopState s, ComputeChangeOfBasis_ThreadLocals tmp) {
+                        delegate (int jCell, ComputeChangeOfBasis_ThreadLocals tmp) {
                             //for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
                             //ReducedRegionCode rrc;
                             //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);

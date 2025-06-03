@@ -159,7 +159,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
                         omg.config.m_omega = 1;
-                        omg.config.CoarseOnLovwerLevel = false;
+                        omg.config.CoarseOnLowerLevel = false;
                         return omg;
                     }
 

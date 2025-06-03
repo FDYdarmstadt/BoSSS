@@ -50,7 +50,6 @@ namespace StokesHelical_Ak {
         private ISparseSolver hiSolver;
         public HelicalControl() {
             base.NoOfMultigridLevels = 10000;
-            base.ImmediatePlotPeriod = 1;
             base.LinearSolver = new DirectSolver.Config() { WhichSolver = DirectSolver._whichSolver.PARDISO, };
             this.steady = false;
         }
@@ -84,9 +83,6 @@ namespace StokesHelical_Ak {
         public double penaltySafety = 4;
 
         [DataMember]
-        public bool PressureReferencePoint = true;
-
-        [DataMember]
         public TermSwitch TermSwitch =
                 TermSwitch.Viscosity_1stOrder_MomXI
                 | TermSwitch.Pressure_MomXI
@@ -98,7 +94,7 @@ namespace StokesHelical_Ak {
                 | TermSwitch.Viscosity_2ndOrder_MomR;
 
         [DataMember]
-        public bool ExactResidual = true;
+        public bool DDD_Man_Sol = false;
 
 
         [DataMember]
@@ -168,7 +164,7 @@ namespace StokesHelical_Ak {
         public double rMin = 0.1;
 
         [DataMember]
-        public double maxAmpli = 0.01;
+        public double maxAmpli = 1;
 
         [DataMember]
         public double rMax = 1;

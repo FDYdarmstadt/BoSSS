@@ -273,12 +273,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             //// Dummy Level Set
             //DummyLevSet = new LevelSet(new Basis(this.GridData, 1), "Levset");
             //DummyLevSet.AccConstant(-1);
-            //this.DummyLsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, DummyLevSet);
+            //this.DummyLsTrk = new LevelSetTracker((GridData)(this.GridData), CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, DummyLevSet);
             //this.DummyLsTrk.UpdateTracker(0.0);
 
             // Actual Level Set used for correction operations
             CorrectionLevSet = new LevelSet(phi.Basis, "Levset");
-            this.CorrectionLsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "A", "B" }, CorrectionLevSet);
+            this.CorrectionLsTrk = new LevelSetTracker((GridData)(this.GridData), CutCellQuadratureMethod.Saye, 2, new string[] { "A", "B" }, CorrectionLevSet);
             CorrectionLevSet.Clear();
             CorrectionLevSet.Acc(1.0, phi);
             this.CorrectionLsTrk.UpdateTracker(0.0);
@@ -318,13 +318,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                 string[] codomainVar = new string[] { "Res_phi" };
 
                 switch(this.Control.ModTyp) {
-                    case PhasefieldControl.ModelType.modelA:
+                    case ModelType.modelA:
                     break;
-                    case PhasefieldControl.ModelType.modelB:
+                    case ModelType.modelB:
                     domainVar = domainVar.Cat("mu");
                     codomainVar = codomainVar.Cat("Res_mu");
                     break;
-                    case PhasefieldControl.ModelType.modelC:
+                    case ModelType.modelC:
                     default:
                     throw new NotImplementedException();
                     //break;
@@ -366,7 +366,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                 );
 
                 switch(this.Control.ModTyp) {
-                    case PhasefieldControl.ModelType.modelA:
+                    case ModelType.modelA:
 
                     CHOp.EquationComponents["Res_phi"].Add(
                     new phi_Source(this.Control.diff)
@@ -406,7 +406,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                     //    break;
                     //}
                     break;
-                    case PhasefieldControl.ModelType.modelB:
+                    case ModelType.modelB:
 
                     CHOp.EquationComponents["Res_phi"].Add(
                         new phi_Diffusion(D, this.Control.penalty_poisson, this.Control.diff, this.Control.lambda, m_bcMap)
@@ -450,7 +450,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                     //}
                     break;
                     
-                    case PhasefieldControl.ModelType.modelC:
+                    case ModelType.modelC:
                     throw new NotImplementedException();
                     //break;
                     
@@ -478,11 +478,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             DGField[] SolutionFields = new DGField[] { phi };
 
             switch(this.Control.ModTyp) {
-                case PhasefieldControl.ModelType.modelB:
+                case ModelType.modelB:
                 SolutionFields = SolutionFields.Cat(mu);
                 break;
-                case PhasefieldControl.ModelType.modelA:
-                case PhasefieldControl.ModelType.modelC:
+                case ModelType.modelA:
+                case ModelType.modelC:
                 default:
                 break;
             }
@@ -505,11 +505,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             DGField[] ResidualFields = new DGField[] { phi_Resi };
 
             switch(this.Control.ModTyp) {
-                case PhasefieldControl.ModelType.modelB:
+                case ModelType.modelB:
                 ResidualFields = ResidualFields.Cat(mu_Resi);
                 break;
-                case PhasefieldControl.ModelType.modelA:
-                case PhasefieldControl.ModelType.modelC:
+                case ModelType.modelA:
+                case ModelType.modelC:
                 default:
                 break;
             }
@@ -531,12 +531,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                 m_CurrentSolution = new CoordinateVector(this.phi);
 
                 switch(Control.ModTyp) {
-                    case PhasefieldControl.ModelType.modelA:
+                    case ModelType.modelA:
                     break;
-                    case PhasefieldControl.ModelType.modelB:
+                    case ModelType.modelB:
                     m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.mu));
                     break;
-                    case PhasefieldControl.ModelType.modelC:
+                    case ModelType.modelC:
                     default:
                     break;
                 }
@@ -559,12 +559,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                 m_CurrentResidual = new CoordinateVector(this.phi_Resi);
 
                 switch(Control.ModTyp) {
-                    case PhasefieldControl.ModelType.modelA:
+                    case ModelType.modelA:
                     break;
-                    case PhasefieldControl.ModelType.modelB:
+                    case ModelType.modelB:
                     m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.mu_Resi));
                     break;
-                    case PhasefieldControl.ModelType.modelC:
+                    case ModelType.modelC:
                     default:
                     break;
                 }

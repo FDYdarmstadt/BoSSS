@@ -30,6 +30,7 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -189,7 +190,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.SkipSolveAndEvaluateResidual = true;
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 

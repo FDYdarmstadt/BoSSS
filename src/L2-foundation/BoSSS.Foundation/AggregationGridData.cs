@@ -704,9 +704,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 #endif
         }
 
-        public void TransformLocal2Global(MultidimensionalArray LocalVerticesIn, MultidimensionalArray GlobalVerticesOut, int jCell) {
-            ParentGrid.TransformLocal2Global(LocalVerticesIn, GlobalVerticesOut, jCell);
-        }
+        
 
         public void TransformLocal2Global(MultidimensionalArray LocalVerticesIn, int j0, int Len, MultidimensionalArray GlobalVerticesOut, int OutArrayOffset) {
             ParentGrid.TransformLocal2Global(LocalVerticesIn, j0, Len, GlobalVerticesOut, OutArrayOffset);

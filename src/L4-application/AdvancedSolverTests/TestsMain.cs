@@ -34,6 +34,7 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.Solver.mklILUtest.CompareFactorization();
             //AdvancedSolverTests.SubBlocking.LocalTests.SubSelection(SelectionType.all_combined);
             //Debugger.Launch();
+            AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
             AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
         }
 

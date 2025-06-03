@@ -7,14 +7,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MPI.Wrappers</RootNamespace>
     <AssemblyName>MPI.Wrappers</AssemblyName>
-    <FileAlignment>512</FileAlignment>
     <TargetFrameworkVersion>netstandard2.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

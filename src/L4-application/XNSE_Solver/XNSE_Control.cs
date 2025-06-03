@@ -47,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
     /// <summary>
-    /// 
+    /// Solver control object for incompressible multi-phase solver.
     /// </summary>
     [DataContract]
     [Serializable]
@@ -58,7 +58,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public XNSE_Control() {
 
-            //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
@@ -73,7 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
             base.DynamicLoadBalancing_On = true;
             base.DynamicLoadBalancing_RedistributeAtStartup = true;
-
+            
         }
 
 
@@ -298,73 +298,6 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-
-        /// <summary>
-        /// different implementations for the level indicator 
-        /// </summary>
-        public enum RefinementStrategy {
-
-            /// <summary>
-            /// same refinement level on near band
-            /// </summary>
-            constantInterface,
-
-            /// <summary>
-            /// additional refinement on cells in phase A
-            /// </summary>
-            PhaseARefined,
-
-            /// <summary>
-            /// additional refinement on cells with high curvature
-            /// </summary>
-            CurvatureRefined,
-
-            /// <summary>
-            /// additional refinement at contact line
-            /// </summary>
-            ContactLineRefined,
-
-            /// <summary>
-            /// additional refinement at navier slip boundary
-            /// </summary>
-            NavierSlipRefined,
-
-            /// <summary>
-            /// additional refinement on near band cells for high velocity gradients
-            /// </summary>
-            VelocityGradient
-        }
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// See <see cref="LoggingValues"/>
-        /// </summary>
-        [DataMember]
-        public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// desired minimum refinement level at interface
-        /// </summary>
-        [DataMember]
-        public int BaseRefinementLevel = 0;
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// maximum refinement level including additional refinement (contact line, curvature, etc.)
-        /// </summary>
-        [DataMember]
-        public int RefinementLevel = 0;
-
-
-        /// <summary>
-        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
-        /// additional refinement of the navier slip boundary 
-        /// </summary>
-        [DataMember]
-        public bool RefineNavierSlipBoundary = false;
-
-
         /// <summary>
         /// option for clearing the velocities for restart
         /// </summary>
@@ -567,6 +500,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
 
+        /*
         /// <summary>
         /// Exact solution, temperature, for each species (either A or B).
         /// </summary>
@@ -579,6 +513,14 @@ namespace BoSSS.Application.XNSE_Solver {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
+        */
+
+        /// <summary>
+        /// Exact solution, electric potential, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionElectricPotential;
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).

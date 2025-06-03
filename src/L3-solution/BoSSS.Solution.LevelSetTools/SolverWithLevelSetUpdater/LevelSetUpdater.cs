@@ -9,9 +9,7 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Utils;
-using MathNet.Numerics.LinearAlgebra.Factorization;
 using MPI.Wrappers;
-using NUnit.Framework.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -258,6 +256,75 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
 
+            //internal void EnforceContinuity(bool enforceOnNearband = false) {
+            //    LevelSetTracker Tracker = phaseInterface.Tracker;
+            //    CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
+            //    CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
+
+            //    //enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+
+            //    ContinuityProjection preEnforcer = new ContinuityProjection(
+            //        phaseInterface.CGLevelSet.Basis,
+            //        phaseInterface.DGLevelSet.Basis,
+            //        Tracker.GridDat,
+            //        ContinuityProjectionOption.None);
+            //    LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+            //    preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
+            //    LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+            //    preTracker.UpdateTracker(0.0);
+
+            //    CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
+            //    CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
+            //    PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
+            //    preTracker.Dispose();
+
+            //    bool FalseContactline = false;
+
+            //    if(!enforceOnNearband) {
+            //        enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
+
+            //        EdgeMask CCplusBnd = CCplus.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(CCplus.GetAllInnerEdgesMask()));
+            //        foreach(int iEdge in CCplusBnd.ItemEnum) {
+            //            Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+            //            MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+            //            if(phiIn.Max() * phiIn.Min() < 0 || phiOut.Max() * phiOut.Min() < 0) {
+            //                FalseContactline = true;
+            //            }
+            //        }
+
+            //        FalseContactline = FalseContactline.MPIOr();
+
+            //        if(FalseContactline) {
+            //            Console.WriteLine("Error in continuity projection, extending computation to nearband!");
+            //            EnforceContinuity(true);
+            //        }
+            //    } else {
+            //        enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+
+            //        EdgeMask NearBnd = Near1.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(Near1.GetAllInnerEdgesMask()));
+            //        foreach(int iEdge in NearBnd.ItemEnum) {
+            //            Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+            //            MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+            //            if(phiIn.Max() * phiIn.Min() < 0) {
+            //                FalseContactline = true;
+            //            }
+            //        }
+
+            //        FalseContactline = FalseContactline.MPIOr();
+
+            //        if(FalseContactline) {
+            //            throw new ApplicationException("Continuity projection failed, cannot recover!");
+            //        }
+            //    }
+            //}
+
+
             /// <summary>
             /// 
             /// </summary>
@@ -304,10 +371,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
                 PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
-
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
                 preTracker.Dispose();
-
             }
 
             /// <summary>
@@ -451,9 +516,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
-        /// constructor for one level-set, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[], ILevelSet)"/>
+        /// constructor for one level-set, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[], ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet, string interfaceName, ContinuityProjectionOption continuityMode) {
@@ -482,9 +547,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// Constructor for two level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,], ILevelSet, ILevelSet)"/>
+        /// Constructor for two level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,], ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1,
@@ -520,9 +585,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// Constructor for three level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,,], ILevelSet, ILevelSet, ILevelSet)"/>
+        /// Constructor for three level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,,], ILevelSet, ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,,] _SpeciesTable, 
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2,
@@ -555,9 +620,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// constructor for four level sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,,,], ILevelSet, ILevelSet, ILevelSet, ILevelSet)"/>
+        /// constructor for four level sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,,,], ILevelSet, ILevelSet, ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,,,] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3,

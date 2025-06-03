@@ -481,7 +481,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //Quadrature Order
             //----------------
 
-            if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 m_HMForder = 2 * degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3) + 1;
             } else {
                 m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 3);

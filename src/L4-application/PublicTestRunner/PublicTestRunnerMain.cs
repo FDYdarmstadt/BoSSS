@@ -22,7 +22,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-
 namespace PublicTestRunner {
 
     /// <summary>
@@ -43,7 +42,7 @@ namespace PublicTestRunner {
         }
 
         public override void Fail(string message, string detailMessage) {
-            Console.Error.WriteLine("Assertion Fail: >>>" + message + ": " + ", detailed message is: " + detailMessage);
+            Console.Error.WriteLine("Assertion Fail: >>>" + message + ": " + ", detailed message is: " + detailMessage );
             Assert.Fail(message + ", details: " + detailMessage);
         }
     }
@@ -123,15 +122,16 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
                         typeof(BoSSS.Application.XDGTest.UnitTest),
                         typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
-                        typeof(CutCellQuadrature.Program),
+                        typeof(CutCellQuadrature.CutCellQuadratureMain),
                         typeof(BoSSS.Application.SpecFEM.AllUpTest),
                         typeof(BoSSS.Application.ipViscosity.TestSolution),
                         //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
-                        typeof(MPITest.Program)
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE),
+                        typeof(MPITest.Program),
+                        typeof(BoSSS.Application.CutCellQuadratureScaling.AllTests)
                     };
             }
         }
@@ -143,7 +143,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
-                        typeof(BoSSS.Application.XNSE_Solver.XNSE),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.CNSProgram),
@@ -164,7 +164,8 @@ namespace PublicTestRunner {
                         typeof(BUIDT.Tests.BUIDTTestProgram),
                         typeof(SAIDT.Tests.SAIDTTestProgram),
                         typeof(XESF.Tests.XESFTestProgram),
-                        typeof(XNSE_ParallelTests.XNSE_ParallelTests)
+                        //typeof(XNSE_ParallelTests.XNSE_ParallelTests),
+                        typeof(StokesHelical_Ak.HelicalMain)
                 };
             }
         }
@@ -208,7 +209,9 @@ namespace PublicTestRunner {
             DirectoryInfo repoRoot;
             try {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                repoRoot = dir.Parent.Parent.Parent.Parent.Parent.Parent;
+                repoRoot = dir?.Parent?.Parent?.Parent?.Parent?.Parent?.Parent;
+                if(repoRoot == null)
+                    return null;
 
                 var src = repoRoot.GetDirectories("src").SingleOrDefault();
                 var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
@@ -330,7 +333,6 @@ namespace PublicTestRunner {
 
             return R.ToArray();
         }
-
 
         static string[] LocateFile(string PartialPath) {
             DirectoryInfo repoRoot = TestTypeProvider.GetRepositoryBaseDir();
@@ -657,7 +659,8 @@ namespace PublicTestRunner {
                         }
                     }
                 }
-                {
+                Console.WriteLine("skipping MPI tests for now...");
+                /*{
                     var ParAssln = GetAllMpiAssemblies();
                     if (ParAssln != null) {
                         foreach (var TT in ParAssln) {
@@ -672,7 +675,7 @@ namespace PublicTestRunner {
                             }
                         }
                     }
-                }
+                }*/
 
                 Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
                 int cnt = 0;
@@ -1050,6 +1053,7 @@ namespace PublicTestRunner {
                             for(int iJob = 0; iJob < AllOpenJobs.Count; iJob++) {
                                 var jj = AllOpenJobs[iJob];
                                 var s = jj.job.Status;
+                                var runtime = jj.job.LatestDeployment.RunTime; ;
 
                                 {
                                     string resultArg = "--result=";
@@ -1104,7 +1108,7 @@ namespace PublicTestRunner {
                                                 File.Copy(orig, dest, true);
                                             }
                                         } catch(IOException ioe) {
-                                            Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                                            Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message + "(" + ioe.StackTrace + ")");
                                             returnCode--;
                                         }
                                     }
@@ -1128,8 +1132,11 @@ namespace PublicTestRunner {
                                                 if (DetectSlowBenchmark(profilings, out _))
                                                     reallyDelete = false;
 
+                                                if(runtime > new TimeSpan(hours: 1, minutes: 0, seconds: 0))
+                                                    reallyDelete = false;
+
                                             } catch (Exception ioe) {
-                                                Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
+                                                Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message + "(" + ioe.StackTrace + ")");
                                             }
                                         }
                                     }
@@ -1141,7 +1148,7 @@ namespace PublicTestRunner {
                                                 try {
                                                     Directory.Delete(jj.job.LatestDeployment.DeploymentDirectory.FullName, true);
                                                 } catch (Exception e) {
-                                                    Console.Error.WriteLine($"{e.GetType().Name}: {e.Message}");
+                                                    Console.Error.WriteLine($"{e.GetType().Name}: {e.Message} ({e.StackTrace})");
                                                 }
                                             }
                                         }
@@ -1203,7 +1210,7 @@ namespace PublicTestRunner {
                     returnCode -= 1;
                 }
 
-
+                /*
                 Console.WriteLine("--- Performance Benchmarks -------------------------------------------------------------------------");
                 foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
 
@@ -1212,6 +1219,7 @@ namespace PublicTestRunner {
                         Console.WriteLine($"{jj.job.Name} : Online profiling: {BenchmarkSummary}");
                     }
                 }
+                */
 
                 Console.WriteLine("--- Test Results -----------------------------------------------------------------------------------");
 
@@ -1266,7 +1274,7 @@ namespace PublicTestRunner {
                             if (osString == null)
                                 osString = "NIX";
                         } catch (Exception e) {
-                            Console.WriteLine(e);
+                            Console.WriteLine(e + "(" + e.StackTrace + ")");
                             osString = "NIX";
                         }
                         resTable[os].Add(osString);
@@ -1608,7 +1616,7 @@ namespace PublicTestRunner {
             }
         }
 
-
+        const string TelemetryFolder = "c:\\telemetry";
 
         /// <summary>
         /// Runs all tests serially
@@ -1616,8 +1624,31 @@ namespace PublicTestRunner {
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[0];// { "" };
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
+
+            string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
+            string TelemetryFile = Guid.NewGuid().ToString() + $".{MpiRank}of{MpiSize}";
+            var start = DateTime.Now;
+            if(CCP_AFFINITY.IsNonEmpty()) {
+                if(!Directory.Exists(TelemetryFolder)) {
+                    Thread.Sleep(Math.Abs(TelemetryFile.GetHashCode())%10000);
+                    Directory.CreateDirectory(TelemetryFolder);
+                }
+
+                string TelemetryPath = Path.Combine(TelemetryFolder, TelemetryFile);
+                using(var tele = new StreamWriter(TelemetryPath)) {
+
+                    tele.WriteLine(start.ToFileTimeUtc());
+                    tele.WriteLine(CPUAffinityWindows.TotalNumberOfCPUs + " " + CPUAffinityWindows.NumberOfCPUsPerGroup);
+                    tele.WriteLine(CCP_AFFINITY);
+                    tele.WriteLine(CPUAffinityWindows.GetCurrentThreadAffinity().ToConcatString("", ", ", ""));
+                    tele.WriteLine(CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("", ", ", ""));
+                    tele.WriteLine(start);
+
+                }
+            }
+
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
             Tracer.NamespacesToLog_EverythingOverrideTestRunner = true;
@@ -1758,8 +1789,31 @@ namespace PublicTestRunner {
                 }
 
 
+
+
                 Console.WriteLine();
                 ftr.Info($"failstate all tests: {ret} (false means OK)");
+
+                if(CCP_AFFINITY.IsNonEmpty()) {
+                    var end = DateTime.Now;
+                    var duration = end - start;
+
+                    string TelemetryPath = Path.Combine(TelemetryFolder, TelemetryFile + ".end");
+                    using(var tele = new StreamWriter(TelemetryPath)) {
+
+                        tele.WriteLine(start.ToFileTimeUtc());
+                        tele.WriteLine(duration.TotalSeconds);
+                        tele.WriteLine(CPUAffinityWindows.TotalNumberOfCPUs + " " + CPUAffinityWindows.NumberOfCPUsPerGroup);
+                        tele.WriteLine(CCP_AFFINITY);
+                        tele.WriteLine(CPUAffinityWindows.GetCurrentThreadAffinity().ToConcatString("", ", ", ""));
+                        tele.WriteLine(CPUAffinityWindows.Decode_CCP_AFFINITY().ToConcatString("", ", ", ""));
+                        tele.WriteLine(duration);
+                        tele.WriteLine(start);
+
+                    }
+                }
+
+
                 return ret ? -1 : 0;
             }
         }
@@ -1854,8 +1908,8 @@ namespace PublicTestRunner {
 
             BoSSS.Solution.Application.InitMPI();
 
-            Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
-            ilPSP.Environment.DisableOpenMP();
+            //Console.WriteLine("De-activation of OpenMP parallelization in external libraries; (Multiple processes using OpenMP at the same tine in Windows seem to cause deadlocks with our current MKL version.) ");
+            //ilPSP.Environment.DisableOpenMP();
             
             int ret = -1;
             switch (args[0]) {
@@ -1969,7 +2023,7 @@ namespace PublicTestRunner {
                     size = 0;
                 }
 
-                Console.WriteLine("Got some exception: " + e);
+                Console.WriteLine("Got some exception: " + e + "(" + e.StackTrace + ")");
 
                 using (var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + "." + rank + "of" + size + ".txt")) {
                     stw.WriteLine("Got some exception: " + e);

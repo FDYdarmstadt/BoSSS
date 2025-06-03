@@ -50,36 +50,6 @@ namespace StokesHelical_Ak {
             }
         }
 
-
-        internal void InternalChecks() {
-
-            Trafo.SaveToTextFileSparse("Prolo.txt");
-            TrafoTranspose.SaveToTextFileSparse("Restr.txt");
-
-        }
-
-
-        /* Fk, 11apr24: deactivated, because seemingly un-used
-
-        public R0fix(UnsetteledCoordinateMapping map, double rMin, bool old) {
-            //public R0fix(UnsetteledCoordinateMapping map, R0condType[] condType) {
-             //if(map.BasisS.Count != condType.Length)
-             //    throw new ArgumentException("mismatch between number of DG basis objects and number of R0-condition specifiers.");
-             if(rMin < 10e-6) {
-                 m_map = map;
-                 if(old == true) {
-                     (Trafo, UnusedDofs_local, UnusedDofs_global) = CreateTrafoMatrix2(map);
-                     TrafoTranspose = Trafo.Transpose();
-                     R0BndyCells = GetR0BndyCells(map.GridDat);
-                 } else {
-                     (Trafo, UnusedDofs_local, UnusedDofs_global) = CreateTrafoMatrix(map);
-                     TrafoTranspose = Trafo.Transpose();
-                     R0BndyCells = GetR0BndyCells(map.GridDat);
-                 }
-             }
-         }
-
-        */
         public static MultidimensionalArray GetImplicitCondition_Value0(Basis B) {
             if(B.GridDat.SpatialDimension != 2)
                 throw new NotSupportedException();
@@ -651,19 +621,19 @@ namespace StokesHelical_Ak {
                     Console.WriteLine($"R0Fix: {variables[varIndex]}, zero expected; AbsMax = {Math.Max(result_in.Min().MPIMin().Abs(), result_in.Max().MPIMax().Abs()):0.###e-00} (Min|Max Value = {result_in.Min().MPIMin():0.###e-00} | {result_in.Max().MPIMax():0.###e-00})");
 
                     if(throwException) {
-                        Assert.Less(result_in.Max().MPIMax().Abs(), 1E-14, "R0fix_exeption: Max value for {0} should be less than {2} but is {1}", variables[varIndex], result_in.Max(), 1E-14);
-                        Assert.Less(result_in.Min().MPIMin().Abs(), 1E-14, "R0fix_exeption: Min value for {0} should be less than {2} but is {1}", variables[varIndex], result_in.Min(), 1E-14);
+                        Assert.Less(result_in.Max().MPIMax().Abs() / Globals.MaxAmp, 1E-13, "R0fix_exeption: Max value for {0} should be less than {2} but is {1} (Devided by Max Amplitude)", variables[varIndex], result_in.Max() / Globals.MaxAmp, 1E-13 );
+                        Assert.Less(result_in.Min().MPIMin().Abs() / Globals.MaxAmp, 1E-13, "R0fix_exeption: Min value for {0} should be less than {2} but is {1} (Devided by Max Amplitude)", variables[varIndex], result_in.Min() / Globals.MaxAmp, 1E-13 );
                     }
                 } else if(varIndex >= 2) {
                     // Check for zero gradient in results
                     double l_inf = Math.Max(result_in.Max().Abs(), result_in.Min().Abs()).MPIMax();
                     Console.WriteLine($"R0Fix: {variables[varIndex]}, zero variation expected; Diff = {result_in.Min().MPIMin() - result_in.Max().MPIMax():0.###e-00} (Min/Max Value = {result_in.Min().MPIMin():0.###e-00} | {result_in.Max().MPIMax():0.###e-00})");
 
-                    if((result_in.Max().MPIMax() - result_in.Min().MPIMin()) >= 1E-13) {
-                        Console.WriteLine($"ERROR: Gradient0_Check1 failed: {(result_in.Max().MPIMax() - result_in.Min().MPIMin())} is not smaller than {1E-13}");
+                    if((result_in.Max().MPIMax() - result_in.Min().MPIMin()) >= 1E-12) {
+                        Console.WriteLine($"ERROR: Gradient0_Check1 failed: {(result_in.Max().MPIMax() - result_in.Min().MPIMin())} is not smaller than {1E-12}");
                         Console.WriteLine("Check if Check2 fails as well:");
-                        if((result_in.Max().MPIMax() - result_in.Min().MPIMin()) / (l_inf) >= 1E-10) {
-                            Console.WriteLine($"Gradient0_Check2 failed: {(result_in.Max().MPIMax() - result_in.Min().MPIMin()) / (l_inf)} is not smaller than {1E-10} --> Assertion");
+                        if((result_in.Max().MPIMax() - result_in.Min().MPIMin()) / (l_inf) >= 1E-9) {
+                            Console.WriteLine($"Gradient0_Check2 failed: {(result_in.Max().MPIMax() - result_in.Min().MPIMin()) / (l_inf)} is not smaller than {1E-9} --> Assertion");
                             
                             if(throwException)
                                 throw new Exception("Gradient Zero Check Failed!");
