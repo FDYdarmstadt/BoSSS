@@ -101,9 +101,9 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        /// <summary>
-        /// stores XDG coordinates species-wise and retains backward compatibility using a mysterious magic header
-        /// </summary>
+        // <summary>
+        // stores XDG coordinates species-wise and retains backward compatibility using a mysterious magic header
+        // </summary>
         //public override double[] SerializeDGcoords(int j) {
 
         //    int Ndg = this.Basis.NonX_Basis.GetLength(j);
@@ -139,9 +139,9 @@ namespace BoSSS.Foundation.XDG {
         //    return Ret;
         //}
 
-        /// <summary>
-        /// loads XDG coordinates species-wise and retains backward compatibility using a mysterious magic header
-        /// </summary>
+        // <summary>
+        // loads XDG coordinates species-wise and retains backward compatibility using a mysterious magic header
+        // </summary>
         //public override void DeserializeDGcoords(int j, double[] coords_j) {
         //    if(coords_j.Length >= 3 
         //        && double.IsNegativeInfinity(coords_j[0]) && coords_j[1] == double.MaxValue && double.IsNaN(coords_j[2])) {

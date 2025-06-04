@@ -26,7 +26,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private ParticleSuperEllipsoid() : base() {
+        protected ParticleSuperEllipsoid() : base() {
 
         }
 

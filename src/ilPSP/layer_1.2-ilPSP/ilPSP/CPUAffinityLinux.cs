@@ -19,7 +19,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// (Linux version) Returns the list of CPU's to which the current process is assigned to.
         /// </summary>
-        public static IEnumerable<int> GetAffinity() {
+        public static IEnumerable<int> GetProcessAffinity() {
 
             const int CPU_SETSIZE = 1024;
             const int ULONG_SIZE = 8; // Size of ulong in bytes

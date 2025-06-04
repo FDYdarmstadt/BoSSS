@@ -347,10 +347,17 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             List<int> NeighCandidates = new List<int>();
 
             // loop over aggregated cells of parent grid...
-            int[][] Neighbourship = ag.iLogicalCells.CellNeighbours;
+            //int[][] Neighbourship = ag.iLogicalCells.CellNeighbours;
+            
+           
+
             for (int i = 0; i < Jloc; i++) {
                 int jCell = Perm[i]; // pick next cell
-                Debug.Assert(Neighbourship[jCell].Contains(jCell) == false);
+
+                int[] Neighbourship_jCell = ag.GetCellNeighboursViaEdges(jCell, OmmitPeriodic: true).Select(ttt => ttt.jCellLoc).ToArray();
+                //int[] Neighbourship_jCell = Neighbourship[jCell];
+
+                //Debug.Assert(Neighbourship_jCell.Contains(jCell) == false);
                 if (!UsedCellMarker[jCell]) { // if the cell is not already agglomerated to another cell
 
                     aggCell.Clear();
@@ -365,11 +372,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                         foreach (int j in aggCell) {
                             Debug.Assert(j < Jloc);
                             Debug.Assert(UsedCellMarker[j] == true);
-                            foreach (int jNeigh in Neighbourship[j]) {
+                            int[] Neighbourship_j = ag.GetCellNeighboursViaEdges(j, OmmitPeriodic: true).Select(ttt => ttt.jCellLoc).ToArray();
+                            foreach (int jNeigh in Neighbourship_j) {
+                            //foreach (int jNeigh in Neighbourship_jCell) {
                                 if (jNeigh >= Jloc)
                                     continue;
                                 if (UsedCellMarker[jNeigh] == true)
                                     continue;
+
                                 Debug.Assert(aggCell.Contains(jNeigh) == false); // for all cells which are already in 'aggCell', the marker should be true
                                 if (!NeighCandidates.Contains(jNeigh))
                                     NeighCandidates.Add(jNeigh);

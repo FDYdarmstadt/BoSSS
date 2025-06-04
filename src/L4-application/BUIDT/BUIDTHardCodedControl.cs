@@ -54,7 +54,7 @@ namespace BUIDT
             c.Mu_Start = 1;
 
             // ### Quadrature ###
-            c.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             c.SolDegree = dgDegree;
             c.LsOne_NegSpecies = "L";

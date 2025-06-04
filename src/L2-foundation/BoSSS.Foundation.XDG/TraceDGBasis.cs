@@ -47,13 +47,17 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public override int GetLength(int jCell) {
             ushort code = m_Tracker.Regions.m_LevSetRegions[jCell];
-            if (code == LevelSetTracker.AllFARplus || code == LevelSetTracker.AllFARminus) {
-                // default: uncut cell
-                return 0;
-            } else {
-                // cut cell
-                return base.GetLength(jCell);
+
+            int NearWidth = m_Tracker.NearRegionWidth;
+            int NoOfLevelSets = m_Tracker.NoOfLevelSets;
+            for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                if(Math.Abs(LevelSetTracker.DecodeLevelSetDist(code, iLs)) <= 0)
+                    // some level-set cuts the cell => the Trace-DG field is defined
+                    return base.GetLength(jCell);
             }
+
+            // default: uncut cell
+            return 0;
         }
 
         /// <summary>
@@ -139,12 +143,8 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// two <see cref="XDGBasis"/>-objects are equal, if their polynomial list
-        /// (<see cref="Basis.Polynomials"/>) is equal (equal Guid for each entry),
-        /// and if <see cref="DOFperSpeciesPerCell"/> coincide.
+        /// two <see cref="TraceDGBasis"/>-objects are equal, if their polynomial list (<see cref="Basis.Polynomials"/>) is equal (equal Guid for each entry).
         /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
         public override bool Equals(object obj) {
             var othr = obj as TraceDGBasis;
             if (othr == null)

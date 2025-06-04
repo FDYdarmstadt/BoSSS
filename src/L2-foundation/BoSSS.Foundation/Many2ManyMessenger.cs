@@ -145,18 +145,19 @@ namespace BoSSS.Foundation.Comm {
         /// <summary>
         /// A value x at entry [i,j] indicates that processor j (target process) will receive
         /// x items from processor i (source process);
-        /// 1st index: source process
-        /// 2nd index: target process
+        /// - 1st index: source process
+        /// - 2nd index: target process
         /// </summary>
         private int[,] m_AllCommPaths;
 
         /// <summary>
         /// setup procedure;
-        /// 2nd function (exactly one call in the whole lifecycle of this object is permitted and 
-        /// required) in the setup process;
-        /// In normal use, called after <see cref="SetCommPath"/>;
+        /// - 2nd function (exactly one call in the whole lifecycle of this object is permitted and 
+        ///   required) in the setup process;
+        /// - In normal use, called after <see cref="SetCommPath"/>;
         /// </summary>
         public void CommitCommPaths() {
+
             if(m_CommPathsCommited)
                 throw new ApplicationException("setup phase is already finished.");
 
@@ -166,8 +167,8 @@ namespace BoSSS.Foundation.Comm {
             IntPtr pSndBuf = Marshal.UnsafeAddrOfPinnedArrayElement(m_MyCommPaths, 0);
             IntPtr pRcvBuf = Marshal.UnsafeAddrOfPinnedArrayElement(m_AllCommPaths, 0);
 
-            csMPI.Raw.Allgather(pSndBuf, m_MyCommPaths.Length * 4, csMPI.Raw._DATATYPE.BYTE,
-                             pRcvBuf, m_MyCommPaths.Length * 4, csMPI.Raw._DATATYPE.BYTE,
+            csMPI.Raw.Allgather(pSndBuf, m_MyCommPaths.Length, csMPI.Raw._DATATYPE.INT,
+                             pRcvBuf, m_MyCommPaths.Length, csMPI.Raw._DATATYPE.INT,
                              m_Comm);
 
             myCommPathsPin.Free();

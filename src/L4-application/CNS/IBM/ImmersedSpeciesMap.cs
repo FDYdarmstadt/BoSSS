@@ -130,7 +130,7 @@ namespace CNS.IBM {
         public MultiphaseCellAgglomerator CellAgglomeration {
             get {
                 if (cellAgglomeration == null) {
-                    if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Classic) {
+                    if (Control.CutCellQuadratureType == CutCellQuadratureMethod.Classic) {
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
                             Control.SurfaceHMF_ProjectNodesToLevelSet;
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.RestrictNodes =

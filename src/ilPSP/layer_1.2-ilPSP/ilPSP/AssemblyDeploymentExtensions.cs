@@ -91,7 +91,7 @@ namespace ilPSP {
         /// <summary>
         /// copies an assembly and all dependencies to a certain <paramref name="Destination"/>
         /// </summary>
-        public static void DeployAt(this Assembly entryAssembly, DirectoryInfo Destination) {
+        public static FileInfo DeployAt(this Assembly entryAssembly, DirectoryInfo Destination) {
             var assiList = GetAllDependentAssemblies(entryAssembly);
             string MainAssemblyDir = Path.GetDirectoryName(entryAssembly.Location);
 
@@ -107,6 +107,8 @@ namespace ilPSP {
             if(Directory.Exists(runtimes_Src)) {
                 CopyFilesRecursively(runtimes_Src, runtimes_Dst);
             }
+
+            return new FileInfo(Path.Combine(Destination.FullName, Path.GetFileName(entryAssembly.Location)));
         }
 
         static void CopyFilesRecursively(string sourcePath, string targetPath) {

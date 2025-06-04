@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
             int D = 3;
             C.ImmediatePlotPeriod = 1;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
@@ -325,10 +325,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
-            C.RefineNavierSlipBoundary = true;
-            C.BaseRefinementLevel = 1;
-            C.RefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
+            //C.RefineNavierSlipBoundary = true;
+            //C.BaseRefinementLevel  1;
+            //C.RefinementLevel = 2;
 
             #endregion
 
@@ -674,10 +674,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = true;
-            C.BaseRefinementLevel = 2;
-            C.RefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = true;
+            //C.BaseRefinementLevel  2;
+            //C.RefinementLevel = 2;
             //C.AMR_startUpSweeps = 2;
 
             C.adaptiveReInit = true;
@@ -942,10 +942,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = true;
-            C.BaseRefinementLevel = 1;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = true;
+            //C.BaseRefinementLevel  1;
+            //C.RefinementLevel = 1;
             //C.ReInitPeriod = 100;
 
             C.ReInitOnRestart = true;
@@ -1170,8 +1170,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -1208,7 +1208,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
 
@@ -1388,9 +1388,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
-            C.RefineNavierSlipBoundary = true;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
+            //C.RefineNavierSlipBoundary = true;
 
             #endregion
 
@@ -1426,7 +1426,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
 
@@ -1625,9 +1625,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
-            C.RefineNavierSlipBoundary = true;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
+            //C.RefineNavierSlipBoundary = true;
 
             #endregion
 

@@ -65,7 +65,8 @@ namespace BoSSS.Foundation.XDG {
         /// <summary> constructor </summary>
         /// <param name="basis"></param>
         /// <param name="Identification">
-        /// identification string for this field;<br/>
+        /// identification string for this field;
+        /// 
         /// This can be null or empty, 
         /// however, if IO should be performed for this object, the identification must be unique 
         /// within a given context
@@ -110,7 +111,7 @@ namespace BoSSS.Foundation.XDG {
         public new TraceDGBasis Basis {
             get {
                 Debug.Assert(Object.ReferenceEquals(m_TraceBasis, base.Basis));
-                return (TraceDGBasis)base.Basis;
+                return m_TraceBasis;
             }
         }
 
@@ -133,10 +134,7 @@ namespace BoSSS.Foundation.XDG {
                 Basis a_Basis = a.Basis;
                 IMatrix _aCoordinates = a.Coordinates;
 
-                //int _NSepMin = Math.Min(a.Basis.MaximalLength, Nsep);
-                //int Nmin = Math.Min(Nsep + Ncom, a.Basis.MaximalLength);
-
-
+               
                 while (true) {
 
                     Chunk cnk;
@@ -367,7 +365,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// most recent entry for <see cref="LevelSetTracker.VersionCnt"/>
         /// </summary>
-        int m_TrackerVersion;
+        public int m_TrackerVersion;
 
         /// <summary>
         /// Updated the data structure of this cut-cell DG field to reflect the

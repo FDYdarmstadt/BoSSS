@@ -241,7 +241,52 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        /// computes the inverse transformation.<br/>
+        /// Inverse transformation; if dimension ans co-dimension do not match, a projection is performed
+        /// </summary>
+        public void TransformInverse(MultidimensionalArray vtxIn, MultidimensionalArray vtxOut) {
+            if(vtxOut.GetLength(1) != DomainDimension)
+                throw new ArgumentException("spatial dimension mismatch");
+            if(vtxIn.GetLength(1) != CodomainDimension)
+                throw new ArgumentException("spatial dimension mismatch");
+            if(vtxIn.GetLength(0) != vtxOut.GetLength(0))
+                throw new ArgumentException("mismatch in number of vectors between in and out;");
+
+            int K = vtxIn.GetLength(0);
+            int M = DomainDimension; // number of columns
+            int N = CodomainDimension; // number of rows
+            var tmp = vtxIn.TransposeTo();
+            for(int k = 0; k < K; k++) {
+                for(int d = 0; d < N; d++) {
+                    tmp[d, k] -= Affine[d];
+                }
+            }
+
+            MultidimensionalArray tmpOut = MultidimensionalArray.Create(vtxOut.NoOfCols, vtxOut.NoOfRows);
+
+            if(M != N) {
+                this.Matrix.LeastSquareSolve(tmpOut, tmp);
+            } else {
+                this.Matrix.SolveEx(tmpOut, tmp);
+            }
+            
+            tmpOut.TransposeTo(vtxOut);
+
+        }
+
+        /// <summary>
+        /// Inverse transformation; if dimension ans co-dimension do not match, a projection is performed
+        /// </summary>
+        public MultidimensionalArray TransformInverse(MultidimensionalArray vtx) {
+            MultidimensionalArray vtxOt = MultidimensionalArray.Create(vtx.NoOfRows, this.DomainDimension);
+            TransformInverse(vtx, vtxOt);
+            return vtxOt;
+        }
+
+
+
+        /// <summary>
+        /// computes the inverse transformation.
+        /// 
         /// Quite surprising, ey?
         /// </summary>
         /// <returns></returns>

@@ -45,7 +45,9 @@ namespace MPI.Wrappers.Utils {
         [DllImport("libdl.so.2", CharSet = CharSet.Ansi, EntryPoint = "dlopen")]
         static extern IntPtr dlopen_libdl2(string filename, int flag);
 
-
+        /// <summary>
+        /// Unix command to open a shared object (lib*.so), aka. DLL, called <paramref name="filename"/>;
+        /// </summary>
         static public IntPtr dlopen(string filename, int flag) {
             try {
                 return dlopen_libdl(filename, flag);
@@ -66,13 +68,16 @@ namespace MPI.Wrappers.Utils {
         [DllImport("libdl.so.2", EntryPoint = "dlerror")]
         unsafe static extern byte* dlerror_libdl2();
 
+        /// <summary>
+        /// Unix command to get the last error message from a shared object.
+        /// </summary>
         unsafe static public byte* dlerror() {
             try {
                 return dlerror_libdl();
-            } catch (DllNotFoundException nf1) {
+            } catch(DllNotFoundException nf1) {
                 try {
                     return dlerror_libdl2();
-                } catch (DllNotFoundException nf2) {
+                } catch(DllNotFoundException nf2) {
                     throw new AggregateException(nf1, nf2);
                 }
             }
@@ -111,13 +116,16 @@ namespace MPI.Wrappers.Utils {
         unsafe static extern IntPtr dlsym_libdl2(DynLibHandle handle, string symbol);
 
 
+        /// <summary>
+        /// loads a symbol <paramref name="symbol"/> from a shared object,
+        /// </summary>
         static public IntPtr dlsym(DynLibHandle handle, string symbol) {
             try {
                 return dlsym_libdl(handle, symbol);
-            } catch (DllNotFoundException nf1) {
+            } catch(DllNotFoundException nf1) {
                 try {
                     return dlsym_libdl2(handle, symbol);
-                } catch (DllNotFoundException nf2) {
+                } catch(DllNotFoundException nf2) {
                     throw new AggregateException(nf1, nf2);
                 }
             }
@@ -143,13 +151,16 @@ namespace MPI.Wrappers.Utils {
         [DllImport("libdl.so.2", EntryPoint = "dlclose")]
         static extern int dlclose_libdl2(DynLibHandle handle);
 
+        /// <summary>
+        /// closes a shared object (lib*.so), aka. DLL, called <paramref name="handle"/>;
+        /// </summary>
         static public int dlclose(DynLibHandle handle) {
             try {
                 return dlclose_libdl(handle);
-            } catch (DllNotFoundException nf1) {
+            } catch(DllNotFoundException nf1) {
                 try {
                     return dlclose_libdl2(handle);
-                } catch (DllNotFoundException nf2) {
+                } catch(DllNotFoundException nf2) {
                     throw new AggregateException(nf1, nf2);
                 }
             }

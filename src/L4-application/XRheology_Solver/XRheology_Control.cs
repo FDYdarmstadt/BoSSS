@@ -47,7 +47,7 @@ namespace BoSSS.Application.XRheology_Solver {
         /// Ctor.
         /// </summary>
         public XRheology_Control() {
-            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            base.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 50; //Solver_MaxIterations
@@ -131,12 +131,6 @@ namespace BoSSS.Application.XRheology_Solver {
         //[DataMember]
         //public bool ClearVelocitiesOnRestart = false;
 
-        /// <summary>
-        /// Only for debugging purpose:
-        /// solver is turned of and residual of initial value/exact solution is evaluated, used to 
-        /// test the consistency of the implementation.
-        /// </summary>
-        public bool SkipSolveAndEvaluateResidual = false;
 
         public bool FixedStreamwisePeriodicBC = false;
 

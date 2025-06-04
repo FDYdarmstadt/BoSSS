@@ -283,14 +283,14 @@ namespace ilPSP {
 
 
         /// <summary>
-        /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// Finds those row <paramref name="iDmin"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
         /// </summary>
         /// <param name="mda">some matrix</param>
         /// <param name="Row">some row</param>
-        /// <param name="Dmax">minimum L2 distance over all rows</param>
-        /// <param name="iDmax">index of minimum L2-distance row</param>
+        /// <param name="Dmin">minimum L2 distance between <paramref name="Row"/> against all other rows in <paramref name="mda"/></param>
+        /// <param name="iDmin">index of minimum L2-distance row</param>
         /// <returns></returns>
-        static public void MindistRow(this IMatrix mda, double[] Row, out double Dmax, out int iDmax) {
+        static public void MindistRow(this IMatrix mda, double[] Row, out double Dmin, out int iDmin) {
             if(Row.Length != mda.NoOfCols)
                 throw new ArgumentException();
 
@@ -298,23 +298,23 @@ namespace ilPSP {
             int N = mda.NoOfCols;
             int M = mda.NoOfRows;
 
-            Dmax = double.MaxValue;
-            iDmax = int.MinValue;
+            Dmin = double.MaxValue;
+            iDmin = int.MinValue;
 
             for(int i = 0; i < M; i++) {
-                double dist = 0.0;
+                double dist = 0.0; // distance between `Row` and `mda[j,:]`, computed in below
                 for(int j = 0; j < N; j++) {
                     double a = Row[j] - mda[i, j];
                     dist += a * a;
                 }
 
-                if(Dmax > dist) {
-                    Dmax = dist;
-                    iDmax = i;
+                if(Dmin > dist) {
+                    Dmin = dist;
+                    iDmin = i;
                 }
             }
 
-            Dmax = Math.Sqrt(Dmax);
+            Dmin = Math.Sqrt(Dmin);
         }
         
         /// <summary>
@@ -332,14 +332,14 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Finds those row <paramref name="iDmax"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
+        /// Finds those row <paramref name="iDmin"/> of <paramref name="mda"/>, where the L2-distance between the row and <paramref name="Row"/> is minimal. 
         /// </summary>
         /// <param name="mda">some matrix</param>
         /// <param name="Row">some row</param>
-        /// <param name="Dmax">minimum L2 distance over all rows</param>
-        /// <param name="iDmax">index of minimum L2-distance row</param>
+        /// <param name="Dmin">minimum L2 distance between <paramref name="Row"/> against all other rows in <paramref name="mda"/></param>
+        /// <param name="iDmin">index of minimum L2-distance row</param>
         /// <returns></returns>
-        static public void MindistRow(this IMatrix mda, Vector Row, out double Dmax, out int iDmax) {
+        static public void MindistRow(this IMatrix mda, Vector Row, out double Dmin, out int iDmin) {
             if(Row.Dim != mda.NoOfCols)
                 throw new ArgumentException();
 
@@ -347,23 +347,23 @@ namespace ilPSP {
             int N = mda.NoOfCols;
             int M = mda.NoOfRows;
 
-            Dmax = double.MaxValue;
-            iDmax = int.MinValue;
+            Dmin = double.MaxValue;
+            iDmin = int.MinValue;
 
             for(int i = 0; i < M; i++) {
-                double dist = 0.0;
+                double dist = 0.0; // distance between `Row` and `mda[j,:]`, computed in below
                 for(int j = 0; j < N; j++) {
                     double a = Row[j] - mda[i, j];
                     dist += a * a;
                 }
 
-                if(Dmax > dist) {
-                    Dmax = dist;
-                    iDmax = i;
+                if(Dmin > dist) {
+                    Dmin = dist;
+                    iDmin = i;
                 }
             }
 
-            Dmax = Math.Sqrt(Dmax);
+            Dmin = Math.Sqrt(Dmin);
         }
         
         /// <summary>
@@ -390,7 +390,7 @@ namespace ilPSP {
 
             double Dmax = double.MaxValue;
 
-            for(int i = 0; i < M; i++) {
+            for(int i = 0; i < M; i++) { 
 
                 for(int k = i + 1; k < M; k++) {
 
@@ -545,8 +545,6 @@ namespace ilPSP {
         /// <summary>
         /// The 1-Norm (maximum absolute column sum norm) of this matrix;
         /// </summary>
-        /// <returns></returns>
-        /// <param name="b">the matrix</param>
         static public double OneNorm(this IMatrix b) {
             double norm = 0;
 
@@ -561,6 +559,31 @@ namespace ilPSP {
                 }
 
                 if (colnrm > norm)
+                    norm = colnrm;
+            }
+
+            return norm;
+        }
+
+        /// <summary>
+        /// The distance in the 1-Norm(maximum absolute column sum norm)  of a matrix to another matrix;
+        /// </summary>
+        static public double OneNormDistance(this IMatrix b, IMatrix o) {
+            double norm = 0;
+
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+            if(o.NoOfCols != m_NoOfCols || o.NoOfRows != m_NoOfRows)
+                throw new ArgumentException("matrices must have the same size");
+
+            for(int j = 0; j < m_NoOfCols; j++) {
+                double colnrm = 0;
+
+                for(int i = 0; i < m_NoOfRows; i++) {
+                    colnrm += Math.Abs(b[i, j] - o[i, j]);
+                }
+
+                if(colnrm > norm)
                     norm = colnrm;
             }
 
@@ -589,6 +612,75 @@ namespace ilPSP {
 
             return norm;
         }
+
+        /// <summary>
+        /// The distance in the Infinity-Norm (maximum absolute row sum norm) of a matrix to another matrix;
+        /// </summary>
+        static public double InfNormDistance(this IMatrix b, IMatrix o) {
+            double norm = 0;
+
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+            if(o.NoOfCols != m_NoOfCols || o.NoOfRows != m_NoOfRows)
+                throw new ArgumentException("matrices must have the same size");
+
+            for(int i = 0; i < m_NoOfRows; i++) {
+                double rownrm = 0;
+
+                for(int j = 0; j < m_NoOfCols; j++) {
+                    rownrm += Math.Abs(b[i, j] - o[i, j]);
+                }
+
+                if(rownrm > norm)
+                    norm = rownrm;
+            }
+
+            return norm;
+        }
+
+        /// <summary>
+        /// The Frobenius-Norm (l2-norm over all entries) of a matrix;
+        /// </summary>
+        static public double FrobeniusNorm(this IMatrix b) {
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+
+            double acc = 0;
+            for(int i = 0; i < m_NoOfRows; i++) {
+
+                for(int j = 0; j < m_NoOfCols; j++) {
+                    acc += b[i, j].Pow2();
+                }
+
+            }
+
+            return acc.Sqrt();
+        }
+
+        /// <summary>
+        /// The Frobenius-Distance (l2-norm over all entries) of a matrix to another matrix;
+        /// </summary>
+        static public double FrobeniusDistance(this IMatrix b, IMatrix o) {
+            int m_NoOfCols = b.NoOfCols;
+            int m_NoOfRows = b.NoOfRows;
+
+            if(o.NoOfCols != m_NoOfCols || o.NoOfRows != m_NoOfRows)
+                throw new ArgumentException("matrices must have the same size");
+
+
+            double acc = 0;
+            for(int i = 0; i < m_NoOfRows; i++) {
+
+                for(int j = 0; j < m_NoOfCols; j++) {
+                    acc += (b[i, j] - o[i,j]).Pow2();
+                }
+
+            }
+
+            return acc.Sqrt();
+        }
+
+
 
         /// <summary>
         /// detects NAN's and INF's 
@@ -1804,6 +1896,7 @@ namespace ilPSP {
                             for (int j = 0; j < i; j++) // loop over lower-triangular columns
                                 B_entries[i + j * N] = 0.0;
 
+                        // inversion of upper triangular
                         int UPLO = 'U', DIAG = 'N';
                         LAPACK.F77_LAPACK.DTRTRI_(ref UPLO, ref DIAG, ref N, B_entries, ref N, out info);
 
@@ -2299,6 +2392,44 @@ namespace ilPSP {
             }
         }
 
+        /// <summary>
+        /// Extracts the diagonal of the matrix.
+        /// </summary>
+        static public double[] GetDiagonal<T>(this T M)
+            where T : IMatrix //
+        {
+            if(M.NoOfCols != M.NoOfRows)
+                throw new NotSupportedException("must be quadratic.");
+            int I = M.NoOfRows;
+            var ret = new double[I];
+            for(int i = 0; i < I; i++) 
+                ret[i] = M[i, i];
+            return ret;
+        }
+
+
+        /// <summary>
+        /// Sets the diagonal of the matrix.
+        /// </summary>
+        static public void SetDiagonal<T, V>(this T M, V diag)
+            where T : IMatrix
+            where V : IEnumerable<double> //
+        {
+            if(M.NoOfCols != M.NoOfRows)
+                throw new NotSupportedException("must be quadratic.");
+
+            int I = M.NoOfRows;
+            int i = 0;
+            foreach(double d in diag) {
+                if(i >= I)
+                    throw new ArgumentException("Diagonal array is longer than matrix size.");
+                M[i, i] = d;
+                i++;
+            }
+            if(i < I)
+                throw new ArgumentException("Diagonal array is shorter than matrix size.");
+        }
+
 
         /// <summary>
         /// Least-squares-solve (LAPACK function DGELSY) with multiple right-hand-side vectors.
@@ -2316,12 +2447,12 @@ namespace ilPSP {
         /// into account
         /// </param>
         static public void LeastSquareSolve<T, R>(this T Mtx, R B, double RCOND = 1.0e-14)
-            where T : IMatrix
-            where R : IMatrix {
+        where T : IMatrix
+        where R : IMatrix {
 
             int NRHS = B.NoOfCols;
 
-            if (B.NoOfRows != Math.Max(Mtx.NoOfCols, Mtx.NoOfRows))
+            if(B.NoOfRows != Math.Max(Mtx.NoOfCols, Mtx.NoOfRows))
                 throw new ArgumentException("B must have max(I,J) number of rows, where I,J are the dimensions of Mtx.");
 
             unsafe {

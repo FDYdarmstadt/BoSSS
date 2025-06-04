@@ -38,6 +38,8 @@ namespace SAIDT.Tests {
                         agg: 0.4,
                         optiLevelSetType: OptiLevelSetType.SplineLevelSet
                         );
+                Console.WriteLine("CutCellquadType = " + C.CutCellQuadratureType);
+
                 C.minimalSQPIterations = new int[] {40};
                 p.Init(C);
                 p.RunSolverMode();

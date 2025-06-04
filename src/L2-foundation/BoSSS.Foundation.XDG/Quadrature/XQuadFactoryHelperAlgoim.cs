@@ -25,7 +25,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Foundation.XDG.Quadrature;
+using BoSSS.Foundation.XDG.Quadrature.Algoim;
 using IntersectingQuadrature;
 using static BoSSS.Foundation.XDG.XQuadFactoryHelperBase;
 
@@ -45,7 +45,7 @@ namespace BoSSS.Foundation.XDG {
         public XQuadFactoryHelperAlgoim(LevelSetTracker.LevelSetData[] lsDatas) : base(lsDatas) {
 
             //there are some methods explilictly rely on this propery
-            this.CutCellQuadratureType = MomentFittingVariants.Algoim;
+            this.CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
         }
 
         public override IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, JumpTypes jmp, RefElement KrefVol) {
@@ -55,9 +55,9 @@ namespace BoSSS.Foundation.XDG {
 
             var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol, negativeLevelSet);
 
-            var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+            var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
                     algoimFactory.GetCellBoundaryVolumeFactory(),
-                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
 
             return r;
         }
@@ -79,9 +79,9 @@ namespace BoSSS.Foundation.XDG {
 
 			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
 
-			var r = new EdgeRuleFromCellBoundaryFactory(gdat,
-		    cellBoundaryFac,
-		    _cutDom);
+			var r = new EdgeRuleFromCellBoundaryFactory(gdat, true,
+		                                                cellBoundaryFac,
+		                                                _cutDom);
 
 			return r;
 		}
@@ -90,17 +90,40 @@ namespace BoSSS.Foundation.XDG {
             throw new NotImplementedException();
         }
 
+        Quadrature.HMF.LineAndPointQuadratureFactory[] LineAndPoint_in2D = null;
+
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, RefElement KrefVol) {
-            CheckKref(levSetIndex, KrefVol);
             var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
+            int D = gdat.SpatialDimension;
 
-            var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+            if(D == 2) {
+                if(LineAndPoint_in2D == null)
+                    LineAndPoint_in2D = new LineAndPointQuadratureFactory[this.m_LevelSetDatas.Length];
 
-            var r = new EdgeRuleFromCellBoundaryFactory(gdat,
-                    algoimFactory.GetCellBoundarySurfaceFactory(),
-                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                if(LineAndPoint_in2D[levSetIndex] == null) {
+                    LineAndPoint_in2D[levSetIndex] = new LineAndPointQuadratureFactory(
+                        KrefVol,
+                        this.m_LevelSetDatas[levSetIndex],
+                        true);
+                }
 
-            return r;
+                //return LineAndPoint_in2D[levSetIndex].GetPointFactory();
+
+                return new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
+                        LineAndPoint_in2D[levSetIndex].GetPointFactory(),
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
+            } else {
+                CheckKref(levSetIndex, KrefVol);
+                
+
+                var algoimFactory = new AlgoimFactories(m_LevelSetDatas[levSetIndex], KrefVol);
+
+                var r = new EdgeRuleFromCellBoundaryFactory(gdat, D > 2,
+                        algoimFactory.GetCellBoundarySurfaceFactory(),
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).ToGeometicalMask());
+
+                return r;
+            }
         }
 
         public override IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -121,9 +144,9 @@ namespace BoSSS.Foundation.XDG {
 
 			var gdat = this.m_LevelSetDatas[levSetIndex0].GridDat;
 
-			var r = new EdgeRuleFromCellBoundaryFactory(gdat,
-			cellBoundaryFac,
-			_cutDom);
+			var r = new EdgeRuleFromCellBoundaryFactory(gdat, gdat.SpatialDimension > 2,
+                                                        cellBoundaryFac,
+			                                            _cutDom);
 
 			return r;
 		}
