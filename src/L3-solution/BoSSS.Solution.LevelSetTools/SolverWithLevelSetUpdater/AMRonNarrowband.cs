@@ -33,6 +33,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     public class AMRonNarrowband : AMRLevelIndicatorWithLevelset {
 
         public int levelSet = -1; // level set this Indicator should be active on
+        public int bandwidth = 1;
         public override int[] DesiredCellChanges() {
 
             int J = GridData.CellPartitioning.LocalLength;
@@ -40,9 +41,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             CellMask band;
             if (levelSet == -1) {
-                band = this.LsTrk.Regions.GetNearFieldMask(1);
+                band = this.LsTrk.Regions.GetNearFieldMask(bandwidth);
             } else {
-                band = this.LsTrk.Regions.GetNearMask4LevSet(levelSet, 1);
+                band = this.LsTrk.Regions.GetNearMask4LevSet(levelSet, bandwidth);
             }
 
             int cellsToRefine = 0;
