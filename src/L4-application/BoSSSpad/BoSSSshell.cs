@@ -269,7 +269,7 @@ namespace BoSSS.Application.BoSSSpad {
             DateTime nau = DateTime.Now;
             string bbb = $"{nau.ToString("MMMdd_HHmmss")}-{nau.Millisecond}";
             string baseneme = Path.Combine(tracingDir, $"trace.{bbb}.txt");
-            ProfilingFile = Path.Combine(ProfilingFile, $"profiling_summary.{bbb}.txt");
+            ProfilingFile = Path.Combine(ProfilingFile ?? "", $"profiling_summary.{bbb}.txt");
             Console.WriteLine("Tracing file: " + baseneme);
             Console.WriteLine("Profiling file: " + baseneme);
             WriteProfiling();
