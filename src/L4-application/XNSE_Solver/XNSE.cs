@@ -82,12 +82,12 @@ namespace BoSSS.Application.XNSE_Solver {
             //}
 
 
-            //ilPSP.Environment.NumThreads = 8;
+            //ilPSP.Environment.NumThreads = 2;
             //InitMPI();
 
-            //ilPSP.Environment.NumThreads = 1;
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 3, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest(1, 40 * Math.PI / 180, NonLinearSolverCode.Newton);
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
             {

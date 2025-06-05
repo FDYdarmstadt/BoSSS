@@ -346,7 +346,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             /// <summary>
             /// The preEnforcer ensures that the projection is performed on new cut-cells in case of a moving interface
-            /// Sometimes (so far only 2D) one need to do the projection on the nearband in order to remove holes in the interface
             /// </summary>
             /// <param name="ProjOpt"></param>
             internal void EnforceContinuityWithPreEnforcer(ContinuityProjectionOption ProjOpt = ContinuityProjectionOption.None) {
@@ -377,18 +376,19 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             /// <summary>
             /// Checks for inner contact points/lines
+            /// Sometimes (so far only 2D) one need to do the projection on the nearband in order to remove holes in the interface
             /// </summary>
             /// <returns></returns>
             internal bool IsInterfaceClosed() {
 
                 LevelSetTracker LsTrk = phaseInterface.Tracker;
-                LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
-                LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
-                testTracker.UpdateTracker(0.0);
+                //LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+                //LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+                //testTracker.UpdateTracker(0.0);
 
-                int order = preCGLevelSet.Basis.Degree;
-                var testFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-                EdgeMask CutCellInnerBoundaryEdgeMask = LsTrk.Regions.GetCutCellMask().AllEdges().Except(LsTrk.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(LsTrk.GridDat.BoundaryEdges);
+                int order = phaseInterface.CGLevelSet.Basis.Degree;
+                var testFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(phaseInterface.LevelSetIndex, LsTrk.GridDat.Grid.RefElements[0]);
+                EdgeMask CutCellInnerBoundaryEdgeMask = LsTrk.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex).AllEdges().Except(LsTrk.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex).GetAllInnerEdgesMask()).Except(LsTrk.GridDat.BoundaryEdges);
                 EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, CutCellInnerBoundaryEdgeMask);
 
                 //ilPSP.Environment.StdoutOnlyOnRank0 = false;
@@ -429,7 +429,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         }
                     }
                 ).Execute();
-                testTracker.Dispose();
+                //testTracker.Dispose();
 
                 //Console.WriteLine($"proc {LsTrk.GridDat.MpiRank}: result = {result}");
                 //ilPSP.Environment.StdoutOnlyOnRank0 = true;

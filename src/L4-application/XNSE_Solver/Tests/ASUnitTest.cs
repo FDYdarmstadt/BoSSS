@@ -1016,6 +1016,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
 
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 2;
+
+
             XNSESolverTest(Tst, C);
 
         }
@@ -1046,8 +1050,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 2;
 
             // set to transient...
             C.dtFixed = 0.1;
@@ -1084,8 +1088,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 2;
 
             C.PhysicalParameters.IncludeConvection = false;
 
