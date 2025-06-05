@@ -124,7 +124,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
         IContinuityProjection MyProjection;
 
-        ContinuityProjectionOption myOption;
+        public ContinuityProjectionOption myOption;
 
         /// <summary>
         /// Makes <paramref name="DGLevelSet"/> a continuous function <paramref name="LevelSet"/>,

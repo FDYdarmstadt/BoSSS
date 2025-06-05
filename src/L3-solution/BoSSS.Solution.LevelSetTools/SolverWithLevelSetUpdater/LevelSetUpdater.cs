@@ -332,7 +332,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 EnforceContinuityWithPreEnforcer();
 
-                if (!IsInterfaceClosed()) {
+                if (enforcer.myOption != ContinuityProjectionOption.None && !IsInterfaceClosed()) {
                     Console.WriteLine("Enforce continuity on nearband");
                     //EnforceContinuityWithPreEnforcer(ContinuityProjectionOption.ConstrainedDG);
 

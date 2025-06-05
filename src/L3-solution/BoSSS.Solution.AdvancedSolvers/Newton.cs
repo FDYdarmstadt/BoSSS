@@ -629,7 +629,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = false;
+                tr.InfoToConsole = true;
                 // computation of Newton step
                 // --------------------------
 
@@ -826,7 +826,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //        cellBA.SetAll(true);
                         //        cellBA[maxNormInd] = false;
                         //        double remainderNorm = f.L2Norm(new CellMask(grdDat, cellBA));
-                                                
+
                         //        tr.Info($"Field {f.Identification}: max L2-Norm in cell {maxNormInd}. L2-Norm is {L2NormPerCell[maxNormInd]} (remainder norm = {remainderNorm})");
                         //        tr.Info($"Cell center coordinates of cell {maxNormInd}: ({grdDat.iGeomCells.GetCenter(maxNormInd).ToConcatString("( ", ", ", ")")})");
 
@@ -1069,7 +1069,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </returns>
         private void LineSearch(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] step, double HomotopyValue) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 double[] TempSol;
                 double[] TempRes;
 
