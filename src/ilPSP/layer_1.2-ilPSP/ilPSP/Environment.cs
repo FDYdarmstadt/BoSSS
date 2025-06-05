@@ -406,7 +406,7 @@ namespace ilPSP {
 
                     bool bTerminate = false;
 
-                    int[] LocalIters = new int[16];
+                    //int[] LocalIters = new int[16];
 
 
                     void balancingBody(int ithread) {
@@ -430,7 +430,7 @@ namespace ilPSP {
                                 } 
                             }
 
-                            LocalIters[ithread]++;
+                            //LocalIters[ithread]++;
                             body(ti, my_item);
                             if(!continue_on_loop)
                                 return;
