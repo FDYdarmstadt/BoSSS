@@ -32,6 +32,8 @@ using BoSSS.Foundation.XDG;
 using NUnit.Framework;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using System.Collections.Concurrent;
+using BoSSS.Foundation.Grid;
+using System.Collections;
 
 
 namespace BoSSS.Solution.AdvancedSolvers {
@@ -750,20 +752,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    var CurSolDG = base.CurrentLin.ProlongateSolToDg(CurSol, "Sol");
                         //    var CurStpDG = base.CurrentLin.ProlongateSolToDg(step, "Stp");
                         //    var CurStpDGtot = CurStpDG[0].CloneAs(); CurStpDGtot.Identification = "StpTot";
-                        //    foreach (var f in CurStpDG) {
+                        //    CurStpDGtot.Clear();
+                        //    foreach(var f in CurStpDG) {
                         //        CurStpDGtot.ProjectPow(1.0, f, 2);
                         //    }
 
-                        //    var CurResDG = base.CurrentLin.ProlongateSolToDg(CurRes, "Res");
-                        //    var CurResDGtot = CurStpDG[0].CloneAs(); CurResDGtot.Identification = "ResTot";
-                        //    foreach (var f in CurResDG) {
-                        //        CurStpDGtot.ProjectPow(1.0, f, 2);
+                        //    var CurResDG = base.CurrentLin.ProlongateRhsToDg(CurRes, "Res");
+                        //    var CurResDGtot = CurResDG[0].CloneAs(); CurResDGtot.Identification = "ResTot";
+                        //    CurResDGtot.Clear();
+                        //    foreach(var f in CurResDG) {
+                        //        CurResDGtot.ProjectPow(1.0, f, 2);
                         //    }
 
 
-                        //    var MinEig = base.CurrentLin.OperatorMatrix.MinimalEigen(tol: 1e-9);
-                        //    var MinEigDG = base.CurrentLin.ProlongateSolToDg(MinEig.V, "Eig");
-                        //    Console.WriteLine("Minimal Eigenvalue: " + MinEig.lambdaMin);
+                        //    //var MinEig = base.CurrentLin.OperatorMatrix.MinimalEigen(tol: 1e-9);
+                        //    //var MinEigDG = base.CurrentLin.ProlongateSolToDg(MinEig.V, "Eig");
+                        //    //Console.WriteLine("Minimal Eigenvalue: " + MinEig.lambdaMin);
 
 
                         //    var dgList = new List<DGField>();
@@ -772,20 +776,99 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    dgList.Add(CurStpDGtot);
                         //    dgList.AddRange(CurResDG);
                         //    dgList.Add(CurResDGtot);
-                        //    dgList.AddRange(MinEigDG);
+                        //    //dgList.AddRange(MinEigDG);
                         //    dgList.Add((this.ProblemMapping.BasisS[0] as XDGBasis).Tracker.LevelSets[0] as LevelSet);
 
-                        //    foreach (var f in CurSolDG.Cat(CurStpDG, MinEigDG)) {
-                        //        f.GetExtremalValues(out double fMin, out double fMax);
-                        //        Console.WriteLine($"  .....  {f.Identification}:     \tmin: {fMin:0.###E-00}\tmax: {fMax:0.###E-00}");
-                        //    }
+                        //    //foreach(var f in CurSolDG.Cat(CurStpDG, MinEigDG)) {
+                        //    //    f.GetExtremalValues(out double fMin, out double fMax);
+                        //    //    Console.WriteLine($"  .....  {f.Identification}:     \tmin: {fMin:0.###E-00}\tmax: {fMax:0.###E-00}");
+                        //    //}
 
                         //    Tecplot.Tecplot.PlotFields(dgList, "Newton-" + itc, 0.0, 3);
                         //}
 
                         step.ScaleV(-1);
 
-                        Console.WriteLine($"NewtonStep: linear solver converged? {solver.Converged}");
+                        //Console.WriteLine($"NewtonStep: linear solver converged? {solver.Converged}");
+                        tr.Info($"NewtonStep: linear solver converged? {solver.Converged}");
+
+                        //if(!solver.Converged) {
+                        //    // check for high residual in single cells
+                        //    var checkCurStpDG = base.CurrentLin.ProlongateSolToDg(step, "checkStp");
+                        //    var checkCurStpDGtot = checkCurStpDG[0].CloneAs(); checkCurStpDGtot.Identification = "StpTot";
+                        //    checkCurStpDGtot.Clear();
+                        //    foreach(var f in checkCurStpDG) {
+                        //        checkCurStpDGtot.ProjectPow(1.0, f, 2);
+                        //    }
+                        //    var checkCurResDG = base.CurrentLin.ProlongateRhsToDg(CurRes, "checkRes");
+                        //    var checkCurResDGtot = checkCurResDG[0].CloneAs(); checkCurResDGtot.Identification = "ResTot";
+                        //    checkCurResDGtot.Clear();
+                        //    foreach(var f in checkCurResDG) {
+                        //        checkCurResDGtot.ProjectPow(1.0, f, 2);
+                        //    }
+
+                        //    var checkDGList = new List<DGField>();
+                        //    checkDGList.Add(checkCurStpDGtot);
+                        //    checkDGList.Add(checkCurResDGtot);
+
+                        //    var grdDat = checkDGList[0].GridDat;
+                        //    int J = grdDat.iLogicalCells.NoOfLocalUpdatedCells;
+                        //    foreach(var f in checkDGList) {
+                        //        double[] L2NormPerCell = new double[J];
+                        //        BitArray cellBA = new BitArray(J);
+                        //        for(int j = 0; j < J; j++) {
+                        //            cellBA[j] = true;
+                        //            L2NormPerCell[j] = f.L2Norm(new CellMask(grdDat, cellBA));
+                        //            cellBA[j] = false;
+                        //        }
+
+                        //        int maxNormInd = L2NormPerCell.IndexOfMax();
+                        //        cellBA.SetAll(true);
+                        //        cellBA[maxNormInd] = false;
+                        //        double remainderNorm = f.L2Norm(new CellMask(grdDat, cellBA));
+                                                
+                        //        tr.Info($"Field {f.Identification}: max L2-Norm in cell {maxNormInd}. L2-Norm is {L2NormPerCell[maxNormInd]} (remainder norm = {remainderNorm})");
+                        //        tr.Info($"Cell center coordinates of cell {maxNormInd}: ({grdDat.iGeomCells.GetCenter(maxNormInd).ToConcatString("( ", ", ", ")")})");
+
+                        //        //// check the norm per Mode
+                        //        //cellBA.SetAll(false);
+                        //        //cellBA[maxNormInd] = true;
+                        //        //if(f is XDGField xField) {
+                        //        //    foreach(var spc in xField.Basis.Tracker.SpeciesNames) {
+                        //        //        ConventionalDGField spcField = xField.GetSpeciesShadowField(spc);
+                        //        //        for(int p = 0; p <= f.Basis.Degree; p++) {
+                        //        //            double L2err_p = spcField.L2NormPerMode(p, new CellMask(grdDat, cellBA));
+                        //        //            tr.Info($"Field {spcField.Identification}: L2-Norm of DG mode {p} in cell {maxNormInd}: {L2err_p}");
+                        //        //        }
+                        //        //    }
+                        //        //}
+
+                        //        //List<double> troubledCells = new List<double>();
+                        //        //for(int j = 0; j < J; j++) {
+                        //        //    if(L2NormPerCell[j] > thrshld) {
+                        //        //        tr.Info($"Field {f.Identification}: L2-Norm of cell {j} is above threshold factor ({thrshld}): L2-Norm is {L2NormPerCell[j]} (minimal Norm = {minNorm})");
+                        //        //        tr.Info($"Cell center coordinates of cell {j}: ({grdDat.iGeomCells.GetCenter(j).ToConcatString("( ", ", ", ")")})");
+                        //        //        troubledCells.Add(j);
+
+                        //        //        // check the norm per Mode
+                        //        //        cellBA[j] = true;
+                        //        //        if(f is XDGField xField) {
+                        //        //            foreach(var spc in xField.Basis.Tracker.SpeciesNames) {
+                        //        //                ConventionalDGField spcField = xField.GetSpeciesShadowField(spc);
+                        //        //                for(int p = 0; p <= f.Basis.Degree; p++) {
+                        //        //                    double L2err_p = spcField.L2NormPerMode(p, new CellMask(grdDat, cellBA));
+                        //        //                    tr.Info($"Field {spcField.Identification}: L2-Norm of DG mode {p} in cell {j}: {L2err_p}");
+                        //        //                }
+                        //        //            }
+                        //        //        }
+                        //        //        cellBA[j] = false;
+                        //        //    }
+                        //        //}
+                        //        //tr.Info($"Field {f.Identification}: No of troubled cells = {troubledCells.Count}");
+                        //    }
+
+                        //}
+
                     }
                 } else {
                     throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
@@ -986,7 +1069,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </returns>
         private void LineSearch(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] step, double HomotopyValue) {
             using (var tr = new FuncTrace()) {
-                //tr.InfoToConsole = true;
+                tr.InfoToConsole = true;
                 double[] TempSol;
                 double[] TempRes;
 

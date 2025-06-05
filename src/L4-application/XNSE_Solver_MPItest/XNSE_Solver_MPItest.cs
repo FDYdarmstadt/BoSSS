@@ -483,7 +483,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz(SchwarzImplementation.PerProcess);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz(SchwarzImplementation.PerProcess);
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.SayeBug();
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.TestLoadBalancingAMRtrue();
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
