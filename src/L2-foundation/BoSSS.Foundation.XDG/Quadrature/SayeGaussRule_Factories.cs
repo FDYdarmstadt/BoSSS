@@ -173,7 +173,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     try {
                         var sayeRule = rule.Evaluate(cell);
                         ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
-                        sayePair.Rule.OrderOfPrecision = order;
+                        //sayePair.Rule.OrderOfPrecision = order;
                         result.Add(sayePair);
                     } catch(Exception e) {
                         var vector = mask.GridData.iGeomCells.GetCenter(cell);

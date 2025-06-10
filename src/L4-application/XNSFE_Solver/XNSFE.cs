@@ -39,7 +39,8 @@ namespace BoSSS.Application.XNSFE_Solver {
         static void Main(string[] args) {
             //InitMPI(args);
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye,  NonLinearSolverCode.Newton, double.PositiveInfinity, 0.143d, 1.2d);
+            ////BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, double.PositiveInfinity, 0.143d, 1.2d);
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 0.0d, 1.0d, 0.27d);
             //Assert.IsTrue(false, "remove me");
 
             //using (var solver = new XNSFE()) {

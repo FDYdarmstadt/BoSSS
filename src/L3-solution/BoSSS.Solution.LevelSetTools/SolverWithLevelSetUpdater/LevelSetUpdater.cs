@@ -332,7 +332,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 EnforceContinuityWithPreEnforcer();
 
-                if (enforcer.myOption != ContinuityProjectionOption.None && !IsInterfaceClosed()) {
+                if(enforcer.myOption != ContinuityProjectionOption.None && !IsInterfaceClosed()) {
                     Console.WriteLine("Enforce continuity on nearband");
                     //EnforceContinuityWithPreEnforcer(ContinuityProjectionOption.ConstrainedDG);
 
@@ -382,13 +382,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             internal bool IsInterfaceClosed() {
 
                 LevelSetTracker LsTrk = phaseInterface.Tracker;
-                //LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
-                //LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
-                //testTracker.UpdateTracker(0.0);
+                LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+                LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+                testTracker.UpdateTracker(0.0);
 
                 int order = phaseInterface.CGLevelSet.Basis.Degree;
-                var testFactory = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(phaseInterface.LevelSetIndex, LsTrk.GridDat.Grid.RefElements[0]);
-                EdgeMask CutCellInnerBoundaryEdgeMask = LsTrk.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex).AllEdges().Except(LsTrk.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex).GetAllInnerEdgesMask()).Except(LsTrk.GridDat.BoundaryEdges);
+                var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
+                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, testTracker.GridDat.Grid.RefElements[0]);
+                EdgeMask CutCellInnerBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
                 EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, CutCellInnerBoundaryEdgeMask);
 
                 //ilPSP.Environment.StdoutOnlyOnRank0 = false;
@@ -398,16 +399,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //Console.WriteLine($"proc {rank}: no of local cells {LsTrk.GridDat.Cells.NoOfLocalUpdatedCells} - ({cellPart.i0}, {cellPart.iE-1})");
 
                 double result = 0.0;
-                int D = LsTrk.GridDat.SpatialDimension;
-                EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                    SurfaceElement_BoundaryEdge.Compile(LsTrk.GridDat, order),
+                int D = testTracker.GridDat.SpatialDimension;
+                EdgeQuadrature.GetQuadrature(new int[] { 1 }, testTracker.GridDat,
+                    SurfaceElement_BoundaryEdge.Compile(testTracker.GridDat, order),
                     delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
                         for (int i = 0; i < length; i++) {
-                            EdgeInfo edgInfo = LsTrk.GridDat.Edges.Info[i0 + i];
+                            EdgeInfo edgInfo = testTracker.GridDat.Edges.Info[i0 + i];
                             double edgSign = 1.0;
                             if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
-                                double[] edgNormal = LsTrk.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
+                                double[] edgNormal = testTracker.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
                                 edgSign = edgNormal.Sum();
                             }
                             for (int qn = 0; qn < QR.NoOfNodes; qn++) {
@@ -429,7 +430,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         }
                     }
                 ).Execute();
-                //testTracker.Dispose();
+                testTracker.Dispose();
 
                 //Console.WriteLine($"proc {LsTrk.GridDat.MpiRank}: result = {result}");
                 //ilPSP.Environment.StdoutOnlyOnRank0 = true;
