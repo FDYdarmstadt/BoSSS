@@ -163,7 +163,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
-                Degree = LevSetDegree + 1,
+                Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
