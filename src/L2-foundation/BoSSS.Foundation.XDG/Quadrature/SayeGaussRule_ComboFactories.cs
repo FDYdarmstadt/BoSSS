@@ -93,8 +93,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
             foreach (Chunk chunk in mask) {
                 foreach (int cell in chunk.Elements) {
                     QuadRule[] sayeRule = comboRule.ComboEvaluate(cell);
-                    ChunkRulePair<QuadRule> sayePair_volume = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[0]); //sayeRule[0].OrderOfPrecision = order;
-                    ChunkRulePair<QuadRule> sayePair_surface = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[1]); //sayeRule[1].OrderOfPrecision = order;
+                    ChunkRulePair<QuadRule> sayePair_volume = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[0]); 
+                    if (sayeRule[0].OrderOfPrecision == 0)
+                        sayeRule[0].OrderOfPrecision = order;
+                    ChunkRulePair<QuadRule> sayePair_surface = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[1]); 
+                    if(sayeRule[1].OrderOfPrecision == 0)
+                        sayeRule[1].OrderOfPrecision = order;
                     rulez[0].Add(sayePair_volume);
                     rulez[1].Add(sayePair_surface);
                 }

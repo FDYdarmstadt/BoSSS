@@ -81,13 +81,14 @@ namespace BoSSS.Application.XNSE_Solver {
             //    Console.WriteLine($"{t.Id}: {t.ThreadState}");
             //}
 
-            //InitMPI(num_threads: 1);
+            InitMPI(num_threads: 2);
 
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 3, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest(1, 40 * Math.PI / 180, NonLinearSolverCode.Newton);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 3, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest(1, 40 * Math.PI / 180, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_fwd(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p2_Newton_Standard(0.01d, 60.0 * Math.PI / 180.0, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, false, CutCellQuadratureMethod.Saye);
+            NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
             {
                 XNSE._Main(args, false, delegate () {
