@@ -1846,9 +1846,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 		void WriteDebug(int iter, double res, string text) {
-			//CurrentTrace.StdoutOnOnlyLastRank();
+			CurrentTrace.StdoutOnAllRanks();
 
-			int iLevel = TpLevel;			
+            int iLevel = TpLevel;			
 			if (iLevel >= 0)
 				CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, " +
 					$"iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
