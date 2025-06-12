@@ -456,7 +456,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         FinerLevelLocalBlocks = locBlk;
 
                         SoftGMRES altSmooth3;
-                        {   altSmooth3 = new SoftGMRES();
+                        {   
+                            altSmooth3 = new SoftGMRES();
                             altSmooth3.MaxKrylovDim = 80;
                             altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
                                 return (iIter <= 82 && ri > 1e-7*r0, ri <= 1e-7*r0);
@@ -472,9 +473,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         if (smoother1 is SchwarzForTaskParallel)
-                            levelSolver = GetTaskParallelOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, altSmooth3);
+                            levelSolver = GetTaskParallelOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
 						else
-                            levelSolver = GetNormalOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, altSmooth3);
+                            levelSolver = GetNormalOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
 					}
 
                     // Set termination criterion for respective level
