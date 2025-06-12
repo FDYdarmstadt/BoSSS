@@ -1995,9 +1995,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					Converged = termState.bSuccess;
 					break;
 				}
+                ThisLevelIterations++;
 
-				// Initialize task-specific data
-				double[] XforSub, BforSub, ResforSub;
+                // Initialize task-specific data
+                double[] XforSub, BforSub, ResforSub;
 				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
 
 				// Initiate sub comm level variables (must be initiated on thisComm level to be able permutate them back)
