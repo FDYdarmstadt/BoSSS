@@ -489,7 +489,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
-                sw.WriteLine("#SBATCH -c " + NumThreads);
+                int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess; // Total number of threads per MPI process
+                sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
                 if (!this.Email.IsEmptyOrWhite()) {
                     sw.WriteLine("#SBATCH --mail-user=" + this.Email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
