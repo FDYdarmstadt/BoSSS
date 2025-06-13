@@ -522,10 +522,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
-            LevelSet dgLevelSet, string interfaceName, ContinuityProjectionOption continuityMode) {
+            LevelSet dgLevelSet, string interfaceName, ContinuityProjectionOption continuityMode, int CGLevelSetDegree = -1) {
 
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
-                    dgLevelSet, backgroundGrid, continuityMode);
+                    dgLevelSet, backgroundGrid, continuityMode, CGLevelSetDegree);
             cgLevelSet.Identification = interfaceName;
             //cgLevelSet.AccLaidBack(1.0, dgLevelSet);
 

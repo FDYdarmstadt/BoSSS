@@ -100,15 +100,19 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="gridData"></param>
         /// <param name="Option"></param>
         /// <returns>The Level-Set Field for storing the filtered, i.e. continuous representation.</returns>
-        public static LevelSet CreateField(SinglePhaseField DGLevelSet, Foundation.Grid.Classic.GridData gridData, ContinuityProjectionOption Option) {
-            int k = DGLevelSet.Basis.Degree;
+        public static LevelSet CreateField(SinglePhaseField DGLevelSet, GridData gridData, ContinuityProjectionOption Option, int CGLevelSetDegree = -1) {
+            int kDG = DGLevelSet.Basis.Degree;
+            int kCG = kDG + 1;
+            if (CGLevelSetDegree >= kDG)
+                kCG = CGLevelSetDegree;
+
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k + 1);
+                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, kCG);
                         return new LevelSet(ContinuousLevelSetBasis.ContainingDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.ConstrainedDG: {
-                        var ContinuousLevelSetDGBasis = new Basis(gridData, k + 1);
+                        var ContinuousLevelSetDGBasis = new Basis(gridData, kCG);
                         return new LevelSet(ContinuousLevelSetDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.None: {

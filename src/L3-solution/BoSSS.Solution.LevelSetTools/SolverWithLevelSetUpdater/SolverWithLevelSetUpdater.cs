@@ -16,6 +16,7 @@ using BoSSS.Solution.Control;
 using ilPSP.Tracing;
 using System.Diagnostics;
 using BoSSS.Platform;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     
@@ -176,11 +177,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
-                int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
+                int DGlevelSetDegree = Control.FieldOptions[LevelSetDG].Degree;
+                if (DGlevelSetDegree == -1) {
+                    DGlevelSetDegree = Control.FieldOptions[LevelSetCG].Degree; // catches old definition of the level set degree
+                }
+                Assert.True(DGlevelSetDegree >= 0, "PhiDG degree is negative!");
+                //Assert.AreEqual(Control.FieldOptions["VelocityX#A"].Degree, DGlevelSetDegree, "DG-LevelSet degree should be equal to flow degree");
 
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier:
-                        FourierLevelSet fourierLevelSetDG = new FourierLevelSet(this.Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), LevelSetDG);
+                        FourierLevelSet fourierLevelSetDG = new FourierLevelSet(this.Control.FourierLevSetControl, new Basis(GridData, DGlevelSetDegree), LevelSetDG);
                         DGlevelSets[iLevSet] = fourierLevelSetDG;
                         break;
                     case LevelSetEvolution.Prescribed:
@@ -188,22 +194,22 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Phasefield:
                     case LevelSetEvolution.None: {
-                        LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
+                        LevelSet levelSetDG = new LevelSet(new Basis(GridData, DGlevelSetDegree), LevelSetDG);
                         DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }
                     case LevelSetEvolution.SplineLS: {
-                            SplineLevelSet levelSetDG = new SplineLevelSet(Control.Phi0Initial, Control, new Basis(GridData, levelSetDegree), LevelSetDG, 30);                            
+                            SplineLevelSet levelSetDG = new SplineLevelSet(Control.Phi0Initial, Control, new Basis(GridData, DGlevelSetDegree), LevelSetDG, 30);                            
                             DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }
                     case LevelSetEvolution.RigidObject: {
-                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
+                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, DGlevelSetDegree), LevelSetDG);
                         break;
                     }
                     case LevelSetEvolution.ParameterizedLevelSet:
                         if (this.Control.ParameterizedLevelSetControl is LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControlEllipse plsce) {
-                            ParameterizedLevelSet paramLevelSetDG = new ParameterizedLevelSetEllipse(plsce, new Basis(GridData, levelSetDegree), LevelSetDG);
+                            ParameterizedLevelSet paramLevelSetDG = new ParameterizedLevelSetEllipse(plsce, new Basis(GridData, DGlevelSetDegree), LevelSetDG);
                             DGlevelSets[iLevSet] = paramLevelSetDG;
                         } else if (this.Control.ParameterizedLevelSetControl is LevelSetTools.ParameterizedLevelSet.ParameterizedLevelSetControPolynomial plscp) {
                             throw new NotImplementedException("todo Irina");
@@ -229,10 +235,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             LevelSetUpdater lsUpdater;
             switch (NoOfLevelSets) {
                 case 1:
+                int CGlevelSetDegree = (Control.FieldOptions[lsNames[0].DgLs].Degree >= 0) ? Control.FieldOptions[lsNames[0].ContLs].Degree : -1;
                 lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
                     (string[])this.SpeciesTable,
                     this.GetLsUpdaterInputFields,
-                    DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod);
+                    DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod, CGlevelSetDegree);
                 break;
 
                 case 2:
@@ -384,7 +391,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 string LevelSetCG = lsNames[iLevSet].ContLs;
                 DualLevelSet pair = LsUpdater.LevelSets[LevelSetCG];
 
-                int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
+                int levelSetDegree = Control.FieldOptions[LevelSetDG].Degree;
+                if(levelSetDegree == -1) {
+                    levelSetDegree = Control.FieldOptions[LevelSetCG].Degree; //
+                }
                 if (levelSetDegree != pair.DGLevelSet.Basis.Degree)
                     throw new ApplicationException();
 

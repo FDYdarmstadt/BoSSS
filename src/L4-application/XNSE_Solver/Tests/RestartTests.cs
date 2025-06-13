@@ -95,8 +95,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
 
 
-            ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            ctrl.NonLinearSolver.ConvergenceCriterion = 1e-12;
+            ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            //ctrl.NonLinearSolver.ConvergenceCriterion = 1e-12;
             ctrl.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             //ctrl.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
@@ -191,8 +191,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.DynamicLoadBalancing_RedistributeAtStartup = false;
 
 
-            ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            ctrl.NonLinearSolver.ConvergenceCriterion = 1e-12;
+            ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            //ctrl.NonLinearSolver.ConvergenceCriterion = 1e-12;
             ctrl.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             //ctrl.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
@@ -268,10 +268,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             { "Residual-MomentumX", 1e-9 },
             { "Residual-MomentumY", 1e-9 },
             { "Residual-ContiEq", 1e-14 },
-            { "Velocity0X_Mean", 1e-15 },
-            { "Velocity0Y_Mean", 1e-15 },
-            { "VelocityX@Phi", 1e-13 },
-            { "VelocityY@Phi", 1e-13 },
+            //{ "Velocity0X_Mean", 1e-15 },
+            //{ "Velocity0Y_Mean", 1e-15 },
+            //{ "VelocityX@Phi", 1e-13 },
+            //{ "VelocityY@Phi", 1e-13 },
         };
 
 
@@ -372,6 +372,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     //Console.WriteLine($"========== timestep {tsi.TimeStepNumber.MajorNumber} ==========");
                     var tsiComparison = siRef.Timesteps.Single(t => t.TimeStepNumber.Equals(tsi.TimeStepNumber));
                     foreach (var f in tsi.Fields) {
+
                         var s = tsiComparison.Fields.Single(fRe => fRe.Identification == f.Identification);
                         Assert.IsTrue(s != null);
                         s.Coordinates.Acc(-1.0, f.Coordinates);

@@ -147,7 +147,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Set Field Options, i.e. the DG degrees
         /// </summary>
-        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+        public void SetFieldOptions(int VelDegree, int DGLevSetDegree) {
             if(VelDegree < 1)
                 throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
             
@@ -159,61 +159,38 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = VelDegree - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {  
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
-                Degree = LevSetDegree,
+                //Degree = LevSetDegree,    // will be set to DGLevSetDegree + 1
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
-                Degree = LevSetDegree,
+                //Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
-                Degree = LevSetDegree*2,
-                SaveToDB = SaveCurvature
-            });
-        }
-
-        /*
-        public void SetDGdegree2(int p) {
-            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
-                Degree = p - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
+                Degree = DGLevSetDegree * 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
-        
 
-        /// <summary>
-        /// Allows to set DG degree of level set and flow solver 
-        /// </summary>
-        /// <param name="VelDegree"></param>
-        /// <param name="LevSetDegree"></param>
-        public void SetFieldOptions2(int VelDegree, int LevSetDegree) {
-            FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
-                Degree = VelDegree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add(VariableNames.VelocityY, new FieldOpts() {
+
+        public void SetFieldOptions(int VelDegree, int DGLevSetDegree, int CGLevSetDegree, int CurvatureDegree = -1) {
+            if(VelDegree < 1)
+                throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
+            if(DGLevSetDegree < 0)
+                throw new ArgumentOutOfRangeException("DG LevelSet degree must be 0 at minimum.");
+            if(CGLevSetDegree < DGLevSetDegree)
+                throw new ArgumentOutOfRangeException("CG LevelSet degree must be at least the DG LevelSet degree.");
+
+            FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -221,19 +198,29 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = VelDegree - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("PhiDG", new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = LevSetDegree,
+            FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+                Degree = CGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = LevSetDegree,
+            FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                Degree = DGLevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
+                Degree = CGLevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
+                Degree = (CurvatureDegree > 0) ? CurvatureDegree : CGLevSetDegree * 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE             
             });
         }
-        */
+
+
 
         [DataMember]
         public string methodTagLS;
