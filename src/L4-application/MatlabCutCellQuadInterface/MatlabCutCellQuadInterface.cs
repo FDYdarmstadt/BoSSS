@@ -175,10 +175,46 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         }
 
         /// <summary>
-        /// Project the submitted level sets
+        /// Project the submitted level sets with the classic HMF quadrature rule
+        /// </summary>
+        /// <param name="degree">degree of the level set</param>
+        public void ProjectLevelSetWithClassic(int degree) {
+            Console.WriteLine("Using classic HMF quadrature rule");
+            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
+        }
+
+        /// <summary>
+        /// Project the submitted level sets with the GaussAndStokes HMF quadrature rule
+        /// </summary>
+        /// <param name="degree">degree of the level set</param>
+        public void ProjectLevelSetWithGaussAndStokes(int degree) {
+            Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
+            ProjectLevelSet(degree, CutCellQuadratureMethod.OneStepGaussAndStokes);
+        }
+
+        /// <summary>
+        /// Project the submitted level sets with the TwoStepStokesAndGauss HMF quadrature rule
+        /// </summary>
+        /// <param name="degree">degree of the level set</param>
+        public void ProjectLevelWithTwoStepStokesAndGauss(int degree) {
+            Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
+            ProjectLevelSet(degree, CutCellQuadratureMethod.TwoStepStokesAndGauss);
+        }
+
+        /// <summary>
+        /// Project the submitted level sets with classic (for compatibility reaons keep the same signature)
         /// </summary>
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSet(int degree) {
+            Console.WriteLine("Using classic HMF quadrature rule");
+            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
+        }
+
+        /// <summary>
+        /// Project the submitted level sets
+        /// </summary>
+        /// <param name="degree">degree of the level set</param>
+        public void ProjectLevelSet(int degree, CutCellQuadratureMethod cellQuadratureMethod) {
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
 
@@ -195,7 +231,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 throw new Exception("Only 2D and 3D meshes are supported.");
             }
 
-            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, cellQuadratureMethod, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
             Console.WriteLine("Successful projection of level set");
         }
