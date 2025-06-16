@@ -158,6 +158,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (2D).");
 
             Levelsets2D.Add(inLevelSet);
+            Console.WriteLine("Submitted a 2D level set function.");
         }
 
         /// <summary>
@@ -172,6 +173,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                 throw new Exception($"Mismatch in the spatial dimension of the grid ({grd.SpatialDimension}D) with the level set (3D).");
 
             Levelsets3D.Add(inLevelSet);
+            Console.WriteLine("Submitted a 3D level set function.");
         }
 
         /// <summary>
@@ -234,7 +236,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
             lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
-            Console.WriteLine("Successful projection of level set");
+            Console.WriteLine($"Successful projection of level set with {cellQuadratureMethod.ToString()}");
         }
 
         /// <summary>
