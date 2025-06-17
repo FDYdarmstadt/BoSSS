@@ -26,11 +26,11 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
             double[] center = {  0.5, 0.5 };
             double R = 0.2;
-            _2D phiCircle = (double x, double y) => (x - center[0])* (x - center[0]) + (y - center[1])* (y - center[1]) - R*R;
+            _2D phiCircle = (double x, double y) => -((x - center[0])* (x - center[0]) + (y - center[1])* (y - center[1]) - R*R);
 
             app.Submit2DLevelSet(phiCircle);
-            app.ProjectLevelSetWithClassic(3);
-            app.CompileQuadRules(2, -1);
+            app.ProjectLevelSet(3);
+            //app.CompileQuadRules(2, -1);
             app.CompileQuadRules(2, 1);
 
             app.GetQuadRules(3, 1);
