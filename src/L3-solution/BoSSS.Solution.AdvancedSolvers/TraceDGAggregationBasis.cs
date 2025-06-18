@@ -315,5 +315,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public override int GetMinimalLength(int p) {
             return 0;
         }
+
+        override internal bool ReqModeIndexTrafo {
+            get {
+                return true;
+            }
+        }
     }
 }
