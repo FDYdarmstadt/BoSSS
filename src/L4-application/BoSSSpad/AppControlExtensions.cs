@@ -28,7 +28,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// The Session information after the solver is finished.
         /// </returns>
         public static SessionInfo Run(this AppControl ctrl) {
-            //Debugger.Launch();
+            ilPSP.Environment.NumThreads = 1;
+            Debugger.Launch();
             var solverClass = ctrl.GetSolverType();
             object solver = Activator.CreateInstance(solverClass);
 
