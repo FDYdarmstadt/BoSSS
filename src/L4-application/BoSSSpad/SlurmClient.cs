@@ -489,8 +489,14 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
+
+                /* ---------- OpenMP ---------- */
                 int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess; // Total number of threads per MPI process
                 sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
+                sw.WriteLine("#SBATCH --cpu-bind=cores "); // Only start one MPI-process per socket
+                sw.WriteLine($"export OMP_PLACES=cores");  // OpenMP sees those 8 cores as its 'places'
+                sw.WriteLine($"export OMP_PROC_BIND=close "); //keep OpenMP threads fixed to the cores
+
                 if (!this.Email.IsEmptyOrWhite()) {
                     sw.WriteLine("#SBATCH --mail-user=" + this.Email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
@@ -498,6 +504,7 @@ namespace BoSSS.Application.BoSSSpad {
                 foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
                     sw.WriteLine(cmd);
                 }
+
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
                 // Load modules
@@ -517,6 +524,19 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                     sw.WriteLine($"export {envvar.Key}={envValue}");
                 }
+
+                // ---------- .NET GC ---------- //
+                if(NumOfServiceCoresPerMPIprocess > 64)
+                    throw new InvalidOperationException(
+                        "GC affinity mask supports at most 64 service cores.");
+
+                // Set GC affinity mask and heap count
+                ulong mask = 0;
+                for(int i = 0; i < NumOfServiceCoresPerMPIprocess; i++)
+                    mask |= 1UL << (NumThreads + i);              // builds the 64-bit mask
+
+                sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
+                sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
 
                 // Set startupstring
                 string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";
