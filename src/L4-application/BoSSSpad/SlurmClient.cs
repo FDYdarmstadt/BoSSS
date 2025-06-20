@@ -453,7 +453,7 @@ namespace BoSSS.Application.BoSSSpad {
             //}
             
             using (var str = new StringWriter()) {
-                str.Write($"srun {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
+                str.Write($"srun --cpu-bind=cores {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
                 //if (MPIcores > 1) {
                 //    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
                 //} else {
@@ -473,7 +473,7 @@ namespace BoSSS.Application.BoSSSpad {
             string path = Path.Combine(DeploymentDirectory, "batch.sh");
 
             using (StreamWriter sw = File.CreateText(path)) {
-                sw.NewLine = "\n"; // Unix file endings
+                sw.NewLine = "\n";                                                      // Unix file endings
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
@@ -489,13 +489,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
-
-                /* ---------- OpenMP ---------- */
-                int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess; // Total number of threads per MPI process
+                int TotalThreadsPerRank = NumThreads + NumOfServiceCoresPerMPIprocess;  // Total number of threads per MPI process
                 sw.WriteLine("#SBATCH -c " + TotalThreadsPerRank);
-                sw.WriteLine("#SBATCH --cpu-bind=cores "); // Only start one MPI-process per socket
-                sw.WriteLine($"export OMP_PLACES=cores");  // OpenMP sees those 8 cores as its 'places'
-                sw.WriteLine($"export OMP_PROC_BIND=close "); //keep OpenMP threads fixed to the cores
 
                 if (!this.Email.IsEmptyOrWhite()) {
                     sw.WriteLine("#SBATCH --mail-user=" + this.Email);
@@ -505,9 +500,9 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine(cmd);
                 }
 
-                //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
+                //sw.WriteLine("#SBATCH --ntasks-per-node 1");                          // Only start one MPI-process per node
 
-                // Load modules
+                                                                                        // Load modules
                 foreach (string arg in moduleLoad) {
                     sw.WriteLine(arg);
                 }
@@ -519,11 +514,15 @@ namespace BoSSS.Application.BoSSSpad {
 
                     string envValue = envvar.Value;
                     if (envValue.ContainsWhite() || envValue.Contains("'")) {
-                        envValue = envValue.Replace("'", "'\"'\"'"); // see: https://stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
+                        envValue = envValue.Replace("'", "'\"'\"'"); // see: https:     //stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
                         envValue = "'" + envValue + "'";
                     }
                     sw.WriteLine($"export {envvar.Key}={envValue}");
                 }
+
+                // ----------  OpenMP  ---------- //
+                sw.WriteLine($"export OMP_PLACES=cores");                               // OpenMP sees those the cores as its 'places'
+                sw.WriteLine($"export OMP_PROC_BIND=close");                           //keep OpenMP threads fixed to the cores
 
                 // ---------- .NET GC ---------- //
                 if(NumOfServiceCoresPerMPIprocess > 64)
@@ -533,7 +532,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // Set GC affinity mask and heap count
                 ulong mask = 0;
                 for(int i = 0; i < NumOfServiceCoresPerMPIprocess; i++)
-                    mask |= 1UL << (NumThreads + i);              // builds the 64-bit mask
+                    mask |= 1UL << (NumThreads + i);                                    // builds the 64-bit mask
 
                 sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
                 sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
