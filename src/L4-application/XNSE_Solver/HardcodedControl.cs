@@ -2155,11 +2155,28 @@ namespace BoSSS.Application.XNSE_Solver {
 		/// <param name="Res"></param>
 		/// <param name="p"></param>
 		/// <returns></returns>
-		public static XNSE_Control BottiDiPietro3D(int Res = 20, int p = 2) {
-			// --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
-			var C = new XNSE_Control();
+		public static XNSE_Control BottiDiPietro3D(int Res = 16, int p = 5) {
+            // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+            var dbPath = @"D:\Users\toprak\Documents\db";
+            IDatabaseInfo dbInfo;
 
-			C.GridFunc = delegate () {
+            // Only create if not already a valid BoSSS database
+            if(!DatabaseUtils.IsValidBoSSSDatabase(dbPath)) {
+                DatabaseUtils.CreateDatabase(dbPath);
+            }
+
+            // Open the database (returns IDatabaseInfo)
+            dbInfo = DatabaseInfo.Open(dbPath);
+
+            var C = new XNSE_Control();
+
+            C.DbPath = dbInfo.Path;
+            C.savetodb = true;
+            C.ProjectName = "BottiDiPietro3Dt";
+            C.ProjectDescription = "Overhead test";
+
+
+            C.GridFunc = delegate () {
 				GridCommons g;
 				double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
 				double[] yNodes = xNodes;
@@ -2242,10 +2259,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
 			C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
 
-			C.LinearSolver = new SchurPrecondConfig();
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9,
+                //CoarseKickIn = 4000,
+                //TargetBlockSize = 4000,
+                SchwarzImplementation = SchwarzImplementation.PerProcess,
+            };
 
-			C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            Console.WriteLine($" p={p}, Res={Res}");
 			return C;
 		}
 
