@@ -218,8 +218,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		internal (double UsablePart, bool CancellationTriggered) AddSol(ref double[] X, string name) {
 			using (var ft = new FuncTrace()) {
+                ilPSP.Environment.DisableOpenMP(); // disable parallelism, since this method is not thread-safe
 
-				m_UsedMoreThanOneOrthoCycle = false;
+                m_UsedMoreThanOneOrthoCycle = false;
 
 				double FillXwithRandom(double[] __X, double[] __Mxx, int iSweep) {
 					double __NormMxx;
@@ -340,7 +341,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				MxxHistory.Add(Mxx);
 				X = null;
 
-				return (MxxRemainderAfterOrthoNorm, _CancellationTriggered);
+                ilPSP.Environment.EnableOpenMP(); // disable parallelism, since this method is not thread-safe
+                return (MxxRemainderAfterOrthoNorm, _CancellationTriggered);
 			}
 		}
 
