@@ -5742,81 +5742,6 @@ namespace ilPSP.LinSolvers {
                     }
                 }
 
-                // sent external blocks to other processors
-                // ----------------------------------------
-
-                int[] RecvRanks = A.SendLists.Keys.ToArray(); // MPI ranks from which this processor receives data
-                int[] SendRanks = MpiSendCollection.Keys.ToArray(); //
-
-                MiniTransceiver miniTx1 = new MiniTransceiver(comm, SendRanks, RecvRanks);
-
-                {
-                    // calculate size of send buffer
-                    int GetSendBufferSize(int Rank) {
-                        List<Multiply_Helper_1> copyColection = MpiSendCollection[Rank];
-                        int Sz = sizeof(int);
-                        foreach(var H in copyColection) {
-                            Membank Mbnk = A.m_Membanks[H.MembankIdx];
-                            int I = Mbnk.Mem.GetLength(1);
-                            int J = Mbnk.Mem.GetLength(2);
-                            Sz += sizeof(long) * 2 + sizeof(int) * 2 + sizeof(double) * I * J;
-                        }
-                        return Sz;
-                    }
-
-                    // assemble send buffer
-                    void FillSendBuffer(int Rank, IntPtr Buffer) {
-                        unsafe {
-                            List<Multiply_Helper_1> copyColection = MpiSendCollection[Rank];
-                            void* pBuffer = (void*)Buffer;
-                            int* pI = (int*)pBuffer;
-                            *pI = copyColection.Count;
-                            pI++;
-                            pBuffer = pI;
-                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == sizeof(int), "8");
-                            foreach(var H in copyColection) {
-                                Membank Mbnk = A.m_Membanks[H.MembankIdx];
-                                Debug.Assert(Mbnk.Occupied.Length == Mbnk.Mem.GetLength(0), "9");
-                                int I = Mbnk.Mem.GetLength(1);
-                                int J = Mbnk.Mem.GetLength(2);
-
-                                long* pH1 = (long*)pBuffer;
-                                pH1[0] = H.i0;
-                                pH1[1] = H.j0;
-                                pH1 += 2;
-                                int* pH2 = (int*)pH1; pH1 = null;
-                                pH2[0] = I;
-                                pH2[1] = J;
-
-                                double* pB = (double*)(pH2 + 2); pH2 = null;
-
-                                double[] buf;
-                                int offset, Ci, Cj;
-                                bool isDense;
-                                Mbnk.GetFastBlockAccessInfo(out buf, out offset, out Ci, out Cj, out isDense, H.InMembank);
-
-                                for(int i = 0; i < I; i++) {
-                                    for(int j = 0; j < J; j++) {
-                                        Debug.Assert(i * Ci + j * Cj >= 0);
-                                        Debug.Assert(i * Ci + j * Cj < I * J);
-
-                                        pB[i * J + j] = buf[offset + i * Ci + j * Cj];
-                                    }
-                                }
-
-                                double* _pB = pB;
-                                pB += I * J;
-                                pBuffer = pB;
-                                Debug.Assert((((byte*)pBuffer) - ((byte*)_pB)) == I * J * sizeof(double), "10");
-                            }
-#if DEBUG_EXTENDED
-                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == GetSendBufferSize(Rank), "10");
-#endif
-                        }
-                    }
-
-                    miniTx1.TransceiveStart(GetSendBufferSize, FillSendBuffer);
-                }
                 // perform local sparse matrix-matrix multiplication
                 // -------------------------------------------------
 
@@ -5825,7 +5750,7 @@ namespace ilPSP.LinSolvers {
                 //long C_IBlkE = C_iBlk0 + C_NoBlk;
 
                 unsafe {
-                    
+
 
                     //using(TempBlockRow rc1 = new TempBlockRow(), rc2 = new TempBlockRow(),
                     //    rA1 = new TempBlockRow(), rA2 = new TempBlockRow(), rA3 = new TempBlockRow(), bR = new TempBlockRow()) {
@@ -5838,7 +5763,7 @@ namespace ilPSP.LinSolvers {
                         // extract row from 'C'
                         long i0 = C._RowPartitioning.GetBlockI0(iBlkRow);
                         long iE = i0 + C._RowPartitioning.GetBlockLen(iBlkRow);
-                        if (iE == i0)
+                        if(iE == i0)
                             // empty block row
                             return temp;
                         //continue;
@@ -5851,7 +5776,7 @@ namespace ilPSP.LinSolvers {
                         int NoRows = (int)(Arow.iE - Arow.i0);
                         Debug.Assert(NoRows == C._RowPartitioning.GetBlockLen(iBlkRow));
 
-                        if (Arow.count > 0) {
+                        if(Arow.count > 0) {
                             //int jBlk = 0;
                             //while (jBlk < Arow.count) {
 
@@ -5864,8 +5789,8 @@ namespace ilPSP.LinSolvers {
                             long jBlock = long.MinValue, j0 = long.MinValue, jE = long.MinValue;
                             double* pAij = null;
                             double AijSum = 0.0;
-                            while (_BlkCount < Arow.count) {
-                                if (!_inBlock) {
+                            while(_BlkCount < Arow.count) {
+                                if(!_inBlock) {
                                     _j0 = Arow.m_j0S[_BlkCount];
                                     _jE = Arow.m_JES[_BlkCount];
                                     _inBlock = true;
@@ -5875,7 +5800,7 @@ namespace ilPSP.LinSolvers {
                                     Debug.Assert(_jE <= A.ColPartition.iE, "13");
                                     Debug.Assert(_j0 < _jE, "14");
                                 }
-                                if (!inBlock) {
+                                if(!inBlock) {
                                     jBlock = B._RowPartitioning.GetBlockIndex(jPointer);
                                     j0 = B._RowPartitioning.GetBlockI0(jBlock);
                                     jE = B._RowPartitioning.GetBlockLen(jBlock) + j0;
@@ -5894,36 +5819,36 @@ namespace ilPSP.LinSolvers {
                                 //Console.WriteLine("{0} {1}--{2} off: {3}  ===>  {4} {5}--{6} off: {7}", _BlkCount, j, jNext, RelOffsetSource,
                                 //    jBlock, j, jNext, RelOffsetDest);
                                 bool ExMatch = false;
-                                if (Length > 0) {
+                                if(Length > 0) {
                                     ExMatch = RelOffsetDest == 0 && RelOffsetSource == 0 && Length == (jE - j0);
                                     Debug.Assert(ExMatch == (pAij == null), "18");
 
-                                    if (ExMatch) {
+                                    if(ExMatch) {
                                         int PointerOffset, ANoOfCols;
                                         Arow.AccessBlock(_BlkCount, out PointerOffset, out ANoOfCols);
                                         pAij = ((double*)(Arow.m_pMem)) + PointerOffset;
                                         Debug.Assert(ANoOfCols == NoCols, "19");
 
                                         double* _pAij = pAij;
-                                        for (int l = NoRows * NoCols; l > 0; l--) {
+                                        for(int l = NoRows * NoCols; l > 0; l--) {
                                             AijSum += Math.Abs(*_pAij);
                                             _pAij++;
-                                            if (AijSum != 0.0)
+                                            if(AijSum != 0.0)
                                                 break;
                                         }
 
                                     } else {
-                                        if (pAij == null) {
+                                        if(pAij == null) {
                                             int ReqSize = NoRows * NoCols;
-                                            if (ReqSize < temp.tempBuf_Length) {
-                                                if (temp.tempBuf != IntPtr.Zero)
+                                            if(ReqSize < temp.tempBuf_Length) {
+                                                if(temp.tempBuf != IntPtr.Zero)
                                                     Marshal.FreeHGlobal(temp.tempBuf);
                                                 temp.tempBuf_Length = ReqSize * 2;
                                                 temp.tempBuf = Marshal.AllocHGlobal(temp.tempBuf_Length * sizeof(double));
                                             }
                                             pAij = (double*)temp.tempBuf;
                                             double* pD = pAij;
-                                            for (int ii = NoCols * NoRows; ii > 0; ii--) {
+                                            for(int ii = NoCols * NoRows; ii > 0; ii--) {
                                                 *pD = 0;
                                                 pD++;
                                             }
@@ -5934,8 +5859,8 @@ namespace ilPSP.LinSolvers {
                                         double* pAijSrc = (double*)(Arow.m_pMem);
                                         pAijSrc += PointerOffset;
 
-                                        for (int i = 0; i < NoRows; i++) {
-                                            for (int j = 0; j < Length; j++) {
+                                        for(int i = 0; i < NoRows; i++) {
+                                            for(int j = 0; j < Length; j++) {
                                                 double vl = pAijSrc[i * C_Ai + j + RelOffsetSource];
                                                 pAij[i * NoCols + j + RelOffsetDest] = vl;
                                                 AijSum += Math.Abs(vl);
@@ -5944,10 +5869,10 @@ namespace ilPSP.LinSolvers {
                                     }
                                 }
 
-                                if (jNext == jE) {
+                                if(jNext == jE) {
                                     // block complete
                                     //Console.WriteLine("destination block complete");
-                                    if (AijSum != 0) {
+                                    if(AijSum != 0) {
                                         temp.bR.Clear(j0, jE);
                                         temp.bR.Init(B, jBlock, true);
                                         Cnext.Clear(Caccu.i0, Caccu.iE);
@@ -5963,7 +5888,7 @@ namespace ilPSP.LinSolvers {
                                     pAij = null;
                                 }
 
-                                if (jNext == _jE) {
+                                if(jNext == _jE) {
                                     //Console.WriteLine("source block complete");
                                     _inBlock = false;
                                     _BlkCount++;
@@ -5987,201 +5912,325 @@ namespace ilPSP.LinSolvers {
                         () => new MultiplyTemp(),
                         RowMul,
                         (MultiplyTemp t) => t.Dispose(),
-                        enablePar:true);
+                        enablePar: true);
 
 
-                    
+
                 } // end of local multiplication...
 
-                // receive external blocks & perform multiplication
-                // ------------------------------------------------
+                // sent external blocks to other processors
+                // ----------------------------------------
+                const int MAX_BATCH_SIZE = 128 * 1024 * 1024; // Set as appropriate
 
-                // data structure for external rows:
-                // 1st key: owner processor rank
-                // 2nd key: row index
-                // content: the block row
+                // ---------- FIRST WAVE: SEND EXTERNAL BLOCKS ----------
+                var batches = BatchUtils.PartitionBatches(MpiSendCollection, A, MAX_BATCH_SIZE);
+                int localBatches = batches.Count;
+                int maxBatches = localBatches.MPIMax(comm);
+                int[] RecvRanks = A.SendLists.Keys.ToArray(); // MPI ranks from which this processor receives data
+
+                // Data structure for external rows
                 Dictionary<int, Dictionary<long, TempBlockRow>> ExternalRows = new Dictionary<int, Dictionary<long, TempBlockRow>>();
 
-                TempBlockRow CrowNext = new TempBlockRow();
-                using(TempBlockRow rt1 = new TempBlockRow(), rt2 = new TempBlockRow(), rt3 = new TempBlockRow()) {
+                for(int b = 0; b < maxBatches; b++) {
+                    var sendBatch = (b < batches.Count) ? batches[b] : new Dictionary<int, List<Multiply_Helper_1>>();
+                    int[] batchSendRanks = sendBatch.Keys.ToArray();
 
-                    void OnReceive(int OriginRank, IntPtr Buffer, int _RecvSize) {
-                        // create data structure for the respective rank
-                        unsafe {
-                            Dictionary<long, TempBlockRow> ExternalRows_rank;
-                            if(!ExternalRows.TryGetValue(OriginRank, out ExternalRows_rank)) {
-                                ExternalRows_rank = new Dictionary<long, TempBlockRow>();
-                                ExternalRows.Add(OriginRank, ExternalRows_rank);
-                            }
+                    MiniTransceiver miniTx1 = new MiniTransceiver(comm, batchSendRanks, RecvRanks);
 
-                            // start computing the external stuff
-                            void* pBuffer = (void*)Buffer;
-                            int* pI = (int*)pBuffer;
-                            int NoOfBuffers = *pI;
-                            pI++;
-                            pBuffer = pI;
+                    int GetSendBufferSize(int Rank) {
+                        if(sendBatch.ContainsKey(Rank))
+                            return BatchUtils.CalculateSendBufferSize(sendBatch[Rank], A);
+                        else
+                            return sizeof(int); // just the zero count
+                    }
 
-                            for(int iBuf = 0; iBuf < NoOfBuffers; iBuf++) {
-                                long* pH1 = (long*)pBuffer;
-                                long i0 = pH1[0];
-                                long j0 = pH1[1];
-                                int* pH2 = (int*)(pH1 + 2); pH1 = null;
-                                int I = pH2[0];
-                                int J = pH2[1];
-                                Debug.Assert(B._RowPartitioning.IsInLocalRange(j0), "2nd wave: first index not in local range");
-                                Debug.Assert(J <= 0 || B._RowPartitioning.IsInLocalRange(j0 + J - 1), "2nd wave: last index not in local range");
-                                Debug.Assert(A._RowPartitioning.FindProcess(i0) == OriginRank, "2nd wave: receive index mismatch (1)");
-                                Debug.Assert(I <= 0 || A._RowPartitioning.FindProcess(i0 + I - 1) == OriginRank, "2nd wave: receive index mismatch (2)");
-                                double* pBlock = (double*)(pH2 + 2); pH2 = null;
+                    void FillSendBuffer(int Rank, IntPtr Buffer) {
+                        if(sendBatch.ContainsKey(Rank))
+                            BatchUtils.FillSendBufferWithHelpers(sendBatch[Rank], A, Buffer);
+                        else {
+                            unsafe { int* pI = (int*)Buffer; *pI = 0; }
+                        }
+                    }
 
-                                double* _pAij = pBlock;
-                                double AijSum = 0;
-                                for(int l = I * J; l > 0; l--) {
-                                    AijSum += Math.Abs(*_pAij);
-                                    _pAij++;
-                                    if(AijSum != 0.0)
-                                        break;
+                    // 1. Start asynchronous send/receive for this batch
+                    miniTx1.TransceiveStart(GetSendBufferSize, FillSendBuffer);
+
+                    // Using for correct TempBlockRow handling in OnReceive
+                    using(TempBlockRow rt1 = new TempBlockRow(), rt2 = new TempBlockRow(), rt3 = new TempBlockRow()) {
+                        TempBlockRow CrowNext = new TempBlockRow();
+
+                        void OnReceive(int OriginRank, IntPtr Buffer, int _RecvSize) {
+                            // create data structure for the respective rank
+                            unsafe {
+                                Dictionary<long, TempBlockRow> ExternalRows_rank;
+                                if(!ExternalRows.TryGetValue(OriginRank, out ExternalRows_rank)) {
+                                    ExternalRows_rank = new Dictionary<long, TempBlockRow>();
+                                    ExternalRows.Add(OriginRank, ExternalRows_rank);
                                 }
 
-                                if(AijSum != 0.0) {
-                                    // extract block-row [j0 .. j0+J[ from B,
-                                    // multiply with pBlock from left,
-                                    // send back (somehow) later
+                                // start computing the external stuff
+                                void* pBuffer = (void*)Buffer;
+                                int* pI = (int*)pBuffer;
+                                int NoOfBuffers = *pI;
+                                pI++;
+                                pBuffer = pI;
 
-                                    TempBlockRow Btmp = TempBlockRow.Init(B, j0, j0 + J, true, rt1, rt2, rt3);
+                                for(int iBuf = 0; iBuf < NoOfBuffers; iBuf++) {
+                                    long* pH1 = (long*)pBuffer;
+                                    long i0 = pH1[0];
+                                    long j0 = pH1[1];
+                                    int* pH2 = (int*)(pH1 + 2); pH1 = null;
+                                    int I = pH2[0];
+                                    int J = pH2[1];
+                                    Debug.Assert(B._RowPartitioning.IsInLocalRange(j0), "2nd wave: first index not in local range");
+                                    Debug.Assert(J <= 0 || B._RowPartitioning.IsInLocalRange(j0 + J - 1), "2nd wave: last index not in local range");
+                                    Debug.Assert(A._RowPartitioning.FindProcess(i0) == OriginRank, "2nd wave: receive index mismatch (1)");
+                                    Debug.Assert(I <= 0 || A._RowPartitioning.FindProcess(i0 + I - 1) == OriginRank, "2nd wave: receive index mismatch (2)");
+                                    double* pBlock = (double*)(pH2 + 2); pH2 = null;
 
-                                    // access row
-                                    TempBlockRow Crow;
-                                    if(!ExternalRows_rank.TryGetValue(i0, out Crow)) {
-                                        Crow = new TempBlockRow();
-                                        Crow.Clear(i0, i0 + I);
-                                        ExternalRows_rank.Add(i0, Crow);
-                                    } else {
-                                        Debug.Assert(Crow.i0 == i0, "22");
-                                        Debug.Assert(Crow.iE == i0 + I, "23");
+                                    double* _pAij = pBlock;
+                                    double AijSum = 0;
+                                    for(int l = I * J; l > 0; l--) {
+                                        AijSum += Math.Abs(*_pAij);
+                                        _pAij++;
+                                        if(AijSum != 0.0)
+                                            break;
                                     }
 
-                                    // multiply & merge
-                                    TempBlockRow.Merge(CrowNext, Btmp, Crow, pBlock, I, J);
+                                    if(AijSum != 0.0) {
+                                        TempBlockRow Btmp = TempBlockRow.Init(B, j0, j0 + J, true, rt1, rt2, rt3);
 
-                                    // swap
-                                    var _CrowNext = CrowNext;
-                                    CrowNext = Crow;
-                                    ExternalRows_rank[i0] = _CrowNext;
+                                        // access row
+                                        TempBlockRow Crow;
+                                        if(!ExternalRows_rank.TryGetValue(i0, out Crow)) {
+                                            Crow = new TempBlockRow();
+                                            Crow.Clear(i0, i0 + I);
+                                            ExternalRows_rank.Add(i0, Crow);
+                                        } else {
+                                            Debug.Assert(Crow.i0 == i0, "22");
+                                            Debug.Assert(Crow.iE == i0 + I, "23");
+                                        }
+
+                                        // multiply & merge
+                                        TempBlockRow.Merge(CrowNext, Btmp, Crow, pBlock, I, J);
+
+                                        // swap
+                                        var _CrowNext = CrowNext;
+                                        CrowNext = Crow;
+                                        ExternalRows_rank[i0] = _CrowNext;
+                                    }
+
+                                    // move to next block
+                                    pBlock += I * J;
+                                    pBuffer = pBlock;
                                 }
-
-                                // move to next block
-                                pBlock += I * J;
-                                pBuffer = pBlock;
-
-                            }
 #if DEBUG_EXTENDED
-                            Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == _RecvSize, "mismatch between pointer difference and receive size");
+                Debug.Assert((((byte*)pBuffer) - ((byte*)Buffer)) == _RecvSize, "mismatch between pointer difference and receive size");
 #endif
-                        }
-                    }
-
-
-                    miniTx1.Finish(OnReceive);
-                }
-                CrowNext.Dispose();
-
-                // send the block rows back to their respective owners
-                // ---------------------------------------------------
-
-                // now, we have to return data, i.e. the role of send and receive ranks flips
-                {
-                    var tmp = SendRanks;
-                    SendRanks = RecvRanks; // processes which receive data from us
-                    RecvRanks = tmp;       // processes from which we receive data
-                }
-                MiniTransceiver miniTx2 = new MiniTransceiver(comm, SendRanks, RecvRanks);
-
-                {
-                    int GetSendBufferSize(int DestRank) {
-                        var Value = ExternalRows[DestRank];
-
-                        int Sz = sizeof(int);
-                        foreach(var _kv in Value) {
-                            var r = _kv.Value;
-                            Sz += r.GetSize();
-                        }
-
-                        return Sz;
-                    }
-
-                    // serialize block rows, send data
-                    void FillSendBuffer(int DestRank, IntPtr _Buffer) {
-                        unsafe {
-                            var RowCollection = ExternalRows[DestRank];
-
-                            int* pBuffer = (int*)_Buffer;
-                            *pBuffer = RowCollection.Count;
-                            pBuffer++;
-                            IntPtr Buffer = (IntPtr)pBuffer;
-                            foreach(var _kv in RowCollection) {
-                                var r = _kv.Value;
-                                Debug.Assert(C._RowPartitioning.FindProcess(r.i0) == DestRank, "24");
-                                Debug.Assert(C._RowPartitioning.FindProcess(Math.Max(r.i0, r.iE - 1)) == DestRank, "25");
-
-                                Buffer = r.Serialize(Buffer);
                             }
-#if DEBUG_EXTENDED
-                            Debug.Assert((byte*)Buffer - (byte*)_Buffer == GetSendBufferSize(DestRank));
-#endif
                         }
+                        miniTx1.Finish(OnReceive);
+
+                        CrowNext.Dispose();
                     }
-
-                    miniTx2.TransceiveStart(GetSendBufferSize, FillSendBuffer);
-
                 }
 
 
-                // wait for the block rows to come in and accumulate them
-                // ------------------------------------------------------
+                // ---------- SECOND WAVE: RETURN TO OWNERS ----------
+                // Reverse roles for send/receive
+                int[] SendRanks2 = RecvRanks;
+                int[] RecvRanks2 = ExternalRows.Keys.ToArray();
+
+                // Build send collection for second wave
+                var ReturnSendCollection = new Dictionary<int, List<TempBlockRow>>();
+                foreach(var kv in ExternalRows) {
+                    int destRank = kv.Key;
+                    foreach(var row in kv.Value.Values) {
+                        if(!ReturnSendCollection.ContainsKey(destRank))
+                            ReturnSendCollection[destRank] = new List<TempBlockRow>();
+                        ReturnSendCollection[destRank].Add(row);
+                    }
+                }
+
+                // Partition into batches
+                var returnBatches = PartitionReturnBatches(ReturnSendCollection, MAX_BATCH_SIZE);
+
+                // Synchronize batch count globally
+                int localReturnBatches = returnBatches.Count;
+                int maxReturnBatches = localReturnBatches.MPIMax(comm);
 
                 using(TempBlockRow rt1 = new TempBlockRow()) {
+                    for(int b = 0; b < maxReturnBatches; b++) {
+                        var sendBatch = (b < returnBatches.Count) ? returnBatches[b] : new Dictionary<int, List<TempBlockRow>>();
+                        int[] batchSendRanks = sendBatch.Keys.ToArray();
 
-                    void OnReceive(int OriginRank, IntPtr _Buffer, int _RecvSize) {
-                        unsafe {
-                            // de-serialize data & accumulate
-                            int* pBuffer = (int*)_Buffer;
-                            int NoOfRows = *pBuffer;
-                            pBuffer++;
-                            IntPtr Buffer = (IntPtr)(pBuffer);
-                            for(int j = 0; j < NoOfRows; j++) {
-                                Buffer = rt1.Deserialize(Buffer);
-                                Debug.Assert(C._RowPartitioning.IsInLocalRange(rt1.i0), "31");
-                                Debug.Assert(C._RowPartitioning.IsInLocalRange(Math.Max(rt1.i0, rt1.iE - 1)), "32");
+                        MiniTransceiver miniTx2 = new MiniTransceiver(comm, batchSendRanks, RecvRanks2);
 
+                        int GetSendBufferSize2(int DestRank) {
+                            if(sendBatch.ContainsKey(DestRank)) {
+                                int sz = sizeof(int);
+                                foreach(var r in sendBatch[DestRank])
+                                    sz += r.GetSize(); // As in your code: serializes block row
+                                return sz;
+                            } else return sizeof(int);
+                        }
 
-                                // accumulation:
-                                long jPointer = rt1.i0;
-                                while(jPointer < rt1.iE) {
-                                    long iBlock = C._RowPartitioning.GetBlockIndex(jPointer);
-                                    rt1.Save(C, iBlock);
-                                    int BlockLen = C._RowPartitioning.GetBlockLen(iBlock);
-                                    jPointer += BlockLen;
+                        void FillSendBuffer2(int DestRank, IntPtr Buffer) {
+                            unsafe {
+                                if(!sendBatch.ContainsKey(DestRank)) {
+                                    int* p = (int*)Buffer; *p = 0; return;
+                                }
+                                var rows = sendBatch[DestRank];
+                                int* pI = (int*)Buffer;
+                                *pI = rows.Count;
+                                pI++;
+                                IntPtr buf = (IntPtr)pI;
+                                foreach(var row in rows) {
+                                    buf = row.Serialize(buf);
                                 }
                             }
-#if DEBUG_EXTENDED
-                            Debug.Assert(((byte*)Buffer - (byte*)_Buffer) == _RecvSize, "33");
-#endif
                         }
-                    }
 
-                    miniTx2.Finish(OnReceive);
+                        void OnReceive2(int OriginRank, IntPtr _Buffer, int _RecvSize) {
+                            unsafe {
+                                int* pBuffer = (int*)_Buffer;
+                                int NoOfRows = *pBuffer;
+                                pBuffer++;
+                                IntPtr Buffer = (IntPtr)(pBuffer);
+                                for(int j = 0; j < NoOfRows; j++) {
+                                    Buffer = rt1.Deserialize(Buffer); // rt1: TempBlockRow
+                                    long jPointer = rt1.i0;
+                                    while(jPointer < rt1.iE) {
+                                        long iBlock = C._RowPartitioning.GetBlockIndex(jPointer);
+                                        rt1.Save(C, iBlock);
+                                        int BlockLen = C._RowPartitioning.GetBlockLen(iBlock);
+                                        jPointer += BlockLen;
+                                    }
+                                }
+                            }
+                        }
+                        miniTx2.TransceiveStart(GetSendBufferSize2, FillSendBuffer2);
+                        miniTx2.Finish(OnReceive2);
+                    }
                 }
 
-                // dispose external rows
-                // ---------------------
+                // CLEANUP
                 {
                     foreach(var k in ExternalRows.Values)
                         foreach(var t in k.Values)
                             t.Dispose();
                 }
+
+                // -------------- Helper for second wave batching --------------
+                List<Dictionary<int, List<TempBlockRow>>> PartitionReturnBatches(
+                    Dictionary<int, List<TempBlockRow>> returnSendCollection,
+                    int maxBatchBytes) {
+                    var myBatches = new List<Dictionary<int, List<TempBlockRow>>>();
+                    var current = new Dictionary<int, List<TempBlockRow>>();
+                    int curSize = 0;
+                    foreach(var kv in ReturnSendCollection) {
+                        int rank = kv.Key;
+                        foreach(var row in kv.Value) {
+                            int sz = row.GetSize();
+                            if(curSize + sz > maxBatchBytes && current.Count > 0) {
+                                myBatches.Add(current);
+                                current = new Dictionary<int, List<TempBlockRow>>();
+                                curSize = 0;
+                            }
+                            if(!current.ContainsKey(rank))
+                                current[rank] = new List<TempBlockRow>();
+                            current[rank].Add(row);
+                            curSize += sz;
+                        }
+                    }
+                    if(current.Count > 0)
+                        myBatches.Add(current);
+                    return myBatches;
+                }
+
             }
         }
+
+        // Add this class somewhere appropriate
+        class BatchUtils {
+            public static List<Dictionary<int, List<Multiply_Helper_1>>> PartitionBatches(
+                Dictionary<int, List<Multiply_Helper_1>> MpiSendCollection,
+                BlockMsrMatrix A,
+                int maxBatchBytes) {
+                var batches = new List<Dictionary<int, List<Multiply_Helper_1>>>();
+                var current = new Dictionary<int, List<Multiply_Helper_1>>();
+                int curSize = 0;
+                foreach(var kv in MpiSendCollection) {
+                    int rank = kv.Key;
+                    foreach(var helper in kv.Value) {
+                        int sz = EstimateHelper1Size(helper, A);
+                        if(curSize + sz > maxBatchBytes && current.Count > 0) {
+                            batches.Add(current);
+                            current = new Dictionary<int, List<Multiply_Helper_1>>();
+                            curSize = 0;
+                        }
+                        if(!current.ContainsKey(rank))
+                            current[rank] = new List<Multiply_Helper_1>();
+                        current[rank].Add(helper);
+                        curSize += sz;
+                    }
+                }
+                if(current.Count > 0)
+                    batches.Add(current);
+                return batches;
+            }
+
+            public static int EstimateHelper1Size(Multiply_Helper_1 H, BlockMsrMatrix A) {
+                Membank mbnk = A.m_Membanks[H.MembankIdx];
+                int I = mbnk.Mem.GetLength(1);
+                int J = mbnk.Mem.GetLength(2);
+                return sizeof(long) * 2 + sizeof(int) * 2 + sizeof(double) * I * J;
+            }
+
+            public static int CalculateSendBufferSize(List<Multiply_Helper_1> helpers, BlockMsrMatrix A) {
+                int sz = sizeof(int); // for the count (as per your code)
+                foreach(var h in helpers)
+                    sz += EstimateHelper1Size(h, A);
+                return sz;
+            }
+
+            public static void FillSendBufferWithHelpers(List<Multiply_Helper_1> helpers, BlockMsrMatrix A, IntPtr Buffer) {
+                unsafe {
+                    int* pI = (int*)Buffer;
+                    *pI = helpers.Count;
+                    pI++;
+                    byte* pBuffer = (byte*)pI;
+                    foreach(var H in helpers) {
+                        Membank Mbnk = A.m_Membanks[H.MembankIdx];
+                        int I = Mbnk.Mem.GetLength(1);
+                        int J = Mbnk.Mem.GetLength(2);
+
+                        long* pH1 = (long*)pBuffer;
+                        pH1[0] = H.i0;
+                        pH1[1] = H.j0;
+                        pH1 += 2;
+                        int* pH2 = (int*)pH1;
+                        pH2[0] = I;
+                        pH2[1] = J;
+                        double* pB = (double*)(pH2 + 2);
+
+                        double[] buf;
+                        int offset, Ci, Cj;
+                        bool isDense;
+                        Mbnk.GetFastBlockAccessInfo(out buf, out offset, out Ci, out Cj, out isDense, H.InMembank);
+
+                        for(int i = 0; i < I; i++) {
+                            for(int j = 0; j < J; j++) {
+                                pB[i * J + j] = buf[offset + i * Ci + j * Cj];
+                            }
+                        }
+                        pBuffer = (byte*)(pB + I * J);
+                    }
+                }
+            }
+        }
+
+
 
         class MiniTransceiver {
 
