@@ -719,7 +719,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(b is BoSSS.Foundation.XDG.XDGBasis) {
                     if(!b.IsSubBasis(((XdgAggregationBasis)(this.AggBasis[iVar])).XDGBasis))
                         throw new ArgumentException();
-                } else {
+                }else if (b is BoSSS.Foundation.XDG.TraceDGBasis) {
+                    if(!b.IsSubBasis(((TraceDGAggregationBasis)(this.AggBasis[iVar])).TraceDGBasis))
+                        throw new ArgumentException();
+                }
+                else {
                     if(!b.IsSubBasis(this.AggBasis[iVar].DGBasis))
                         throw new ArgumentException();
                 }
