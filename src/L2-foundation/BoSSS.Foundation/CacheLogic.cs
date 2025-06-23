@@ -75,9 +75,9 @@ namespace BoSSS.Foundation.Caching {
         /// </param>
         /// <returns>
         /// Evaluated monomials at <paramref name="NS"/>;
-        /// 1st index: Point index;
-        /// 2nd index: Spatial coordinate index;
-        /// 3rd index: Exponent
+        /// - 1st index: Point index;
+        /// - 2nd index: Spatial coordinate index;
+        /// - 3rd index: Exponent
         /// If monomials are already cached for degree higher than <paramref name="degree"/>, these are returned, so the is 
         /// range of the third index may be higher than expected.
         /// </returns>
@@ -122,10 +122,8 @@ namespace BoSSS.Foundation.Caching {
         /// </summary>
         /// <param name="Nodes">
         /// Points/Nodes to evaluate in the reference coordinate system;
-        /// <list type="bullet">
-        ///   <item>1st index: node index</item>
-        ///   <item>2nd index: spatial dimension; (0 for 1D; 0,1 for 2D; 0,1,2 for 3D)</item>
-        /// </list>
+        /// - 1st index: node index
+        /// - 2nd index: spatial dimension; (0 for 1D; 0,1 for 2D; 0,1,2 for 3D)
         /// </param>
         /// <param name="Degree">polynomial degree</param>
         /// <returns></returns>
@@ -1679,10 +1677,10 @@ namespace BoSSS.Foundation.Caching {
             MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, false), Degree);
             Debug.Assert(value_iTrafo.GetLength(1) >= N);
             if(value_iTrafo.GetLength(1) > N) {
-                value_iTrafo = value_iTrafo.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NS.NoOfNodes - 1, N - 1 });
+                value_iTrafo = value_iTrafo.ExtractSubArrayShallow([0, 0], [NS.NoOfNodes - 1, N - 1]);
             }
 
-            Value.ExtractSubArrayShallow(new int[] { iTrafo, 0, 0 }, new int[] { iTrafo - 1, NS.NoOfNodes - 1, N - 1 }).Set(value_iTrafo);
+            Value.ExtractSubArrayShallow([iTrafo, 0, 0], [iTrafo - 1, NS.NoOfNodes - 1, N - 1]).Set(value_iTrafo);
         }
 
         private void NewMethod2(NodeSet NS, int Degree, MultidimensionalArray Value, int iTrafo, int N) {

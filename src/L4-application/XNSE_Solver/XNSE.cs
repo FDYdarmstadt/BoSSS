@@ -78,12 +78,7 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
-            //foreach(ProcessThread t in Process.GetCurrentProcess().Threads) {
-            //    Console.WriteLine($"{t.Id}: {t.ThreadState}");
-            //}
-
             //InitMPI(num_threads: 2);
-
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 3, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest(1, 40 * Math.PI / 180, NonLinearSolverCode.Newton);

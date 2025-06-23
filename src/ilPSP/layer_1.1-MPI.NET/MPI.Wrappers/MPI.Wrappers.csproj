@@ -12,17 +12,17 @@
     <RootNamespace>MPI.Wrappers</RootNamespace>
     <AssemblyName>MPI.Wrappers</AssemblyName>
     <TargetFrameworkVersion>netstandard2.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+    <WarningLevel>5</WarningLevel>
+	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile></DocumentationFile>
-    <WarningLevel>5</WarningLevel>
-	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>bin\Release\MPI.Wrappers.XML</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

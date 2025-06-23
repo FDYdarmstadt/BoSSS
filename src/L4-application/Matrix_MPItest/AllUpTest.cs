@@ -32,31 +32,27 @@ namespace BoSSS.Application.Matrix_MPItest {
 
 
          public static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
-
-            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 2, false, false);
-            //MultiplyTest(XDGusage.none, 5, false, false);
-            //BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 1, false, false);
-
-            //SubMatrixTest(XDGusage.none, 2, false, false);
-            //MultiplyTest(XDGusage.none, 2, false, false);
-            //SpMVTest(XDGusage.none, 2, false, false);
+            BoSSS.Solution.Application.InitMPI(num_threads: 1);
+            ilPSP.Environment.NumThreads = 1;
+            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.mixed3, 2, false, true);
 
             Console.WriteLine("TOTAL Time spend in matrix operations: " + TotTime_MatrixOp.TotalSeconds + " sec.");
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
         
+
+
         /// <summary>
         /// Test for matrix/matrix multiplication.
         /// </summary>
         [Test]
         public static void MultiplyTest(
 #if DEBUG
-            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed3)] XDGusage UseXdg,
             [Values(1)] int DGOrder,
 #else
-            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.mixed3, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
 #endif
             [Values(false)] bool compressL1,
@@ -97,6 +93,7 @@ namespace BoSSS.Application.Matrix_MPItest {
                 // ====================
 
                 solver.Init(null);
+                
                 solver.RunSolverMode();
 
                 Stopwatch stw = new Stopwatch();
@@ -191,8 +188,6 @@ namespace BoSSS.Application.Matrix_MPItest {
                 BlockMsrMatrix.Multiply(M22xM21, M22, M21);
                 compstw.Stop();
                 double ProdNorm = M22xM21.InfNorm();
-                
-
 
                 stw.Stop();
 
@@ -270,10 +265,10 @@ namespace BoSSS.Application.Matrix_MPItest {
         [Test]
         public static void SubMatrixTest(
 #if DEBUG
-            [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed3)] XDGusage UseXdg,
             [Values(1)] int DGOrder,
 #else
-            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.mixed3, XDGusage.all)] XDGusage UseXdg,
             [Values(1, 3)] int DGOrder,
 #endif
             [Values(false, true)] bool compressL1,
@@ -482,7 +477,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             [Values(XDGusage.none, XDGusage.mixed1)] XDGusage UseXdg,
             [Values(1)] int DGOrder,
 #else
-            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.mixed3, XDGusage.all)] XDGusage UseXdg,
             [Values(1, 3)] int DGOrder,
 #endif
             [Values(false, true)] bool compressL1,
@@ -600,8 +595,5 @@ namespace BoSSS.Application.Matrix_MPItest {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             }
         }
-
-
-       
     }
 }

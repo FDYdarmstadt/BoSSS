@@ -1869,98 +1869,71 @@ namespace BoSSS.Solution.XdgTimestepping {
         ///  - re-sorting of matrices and vectors if the ordering of DOFs has changed.
         /// </summary>
         private void MoveLevelSetAndRelatedStuff(DGField[] locCurSt, double PhysTime, double dt, double UnderRelax) {
-            if (Config_LevelSetHandling == LevelSetHandling.None) {
-                throw new ApplicationException("internal error");
-            }
-            if (m_IterationCounter > 0) {
-                if (Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
+            using(var tr = new FuncTrace()) {
+                if(Config_LevelSetHandling == LevelSetHandling.None) {
                     throw new ApplicationException("internal error");
-            }
-
-
-            // perform extrapolation:
-            // If we use Agglomeration, the extrapolation is
-            // also necessary for SinglePhaseFields, since we have no valid values in cells which are agglomerated.
-            if (m_CurrentAgglomeration != null) {
-                Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
-                this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
-            } else {
-                //if(m_IterationCounter > 1) {
-                //    Debug.Assert(Config_LevelSetHandling == LevelSetHandling.LieSplitting || Config_LevelSetHandling == LevelSetHandling.StrangSplitting);
-                //}
-                Debug.Assert(m_IterationCounter == 0 || Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
-            }
-
-            // level-set evolution
-            int oldVersion = m_LsTrk.VersionCnt;
-            int oldPushCount = m_LsTrk.PushCount;
-
-            if(!ilPSP.DoubleExtensions.ApproxEqual(m_LsTrk.Regions.Time, PhysTime))
-                throw new ApplicationException($"Before Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime}).");
-
-
-
-            m_LastLevelSetResidual = this.UpdateLevelset().Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
-
-
-            int newVersion = m_LsTrk.VersionCnt;
-            int newPushCount = m_LsTrk.PushCount;
-
-
-            if ((newVersion - oldVersion) != 1)
-                throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
-            if ((newPushCount - oldPushCount) != 0)
-                throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
-
-            if(!ilPSP.DoubleExtensions.ApproxEqual(m_LsTrk.Regions.Time, PhysTime + dt))
-                throw new ApplicationException($"After Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime + dt}).");
-            
-
-            //// new cut-cell metric
-            //m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();
-            //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
-            //    throw new ApplicationException("Mismatch between species lists.");
-
-
-            // re-sort mass matrices 
-            {
-                var Mtx2Update = m_Stack_MassMatrix.Skip(1).ToArray(); // shallow copy!
-                TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
-                for (int i = 1; i < m_Stack_MassMatrix.Length; i++) {
-                    m_Stack_MassMatrix[i] = Mtx2Update[i - 1];
                 }
-            }
-
-
-            /*
-            // re-sort mass matrices 
-            // and operator matrix (Exp. Euler or Crank-Nicolson)
-            {
-                var Mtx2Update = new BlockMsrMatrix[m_Stack_MassMatrix.Length + m_Stack_OpMatrix.Length];
-                Debug.Assert(m_Stack_OpMatrix.Length <= 2);
-                if (m_Stack_OpMatrix.Length > 1)
-                    Mtx2Update[0] = m_Stack_OpMatrix[1];
-                for (int i = 1; i < m_Stack_MassMatrix.Length; i++) {
-                    Mtx2Update[i + 1] = m_Stack_MassMatrix[i];
+                if(m_IterationCounter > 0) {
+                    if(Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
+                        throw new ApplicationException("internal error");
                 }
 
-                TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
 
-                if (m_Stack_OpMatrix.Length > 1)
-                    m_Stack_OpMatrix[1] = Mtx2Update[0];
-                for (int i = 1; i < m_Stack_MassMatrix.Length; i++) {
-                    m_Stack_MassMatrix[i] = Mtx2Update[i + 1];
+                // perform extrapolation:
+                // If we use Agglomeration, the extrapolation is
+                // also necessary for SinglePhaseFields, since we have no valid values in cells which are agglomerated.
+                if(m_CurrentAgglomeration != null) {
+                    Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
+                    this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+                } else {
+                    //if(m_IterationCounter > 1) {
+                    //    Debug.Assert(Config_LevelSetHandling == LevelSetHandling.LieSplitting || Config_LevelSetHandling == LevelSetHandling.StrangSplitting);
+                    //}
+                    Debug.Assert(m_IterationCounter == 0 || Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
+                }
+
+                // level-set evolution
+                int oldVersion = m_LsTrk.VersionCnt;
+                int oldPushCount = m_LsTrk.PushCount;
+
+                if(!ilPSP.DoubleExtensions.ApproxEqual(m_LsTrk.Regions.Time, PhysTime))
+                    throw new ApplicationException($"Before Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime}).");
+
+
+                ISlaveTimeIntegrator lsEvolver = this.UpdateLevelset();
+                if(lsEvolver != null) {
+                    m_LastLevelSetResidual = lsEvolver.Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+                } else {
+                    tr.Error("No Evolver for the level-set has been specified -- Level-Set-Position will not change.");
+                    m_LsTrk.UpdateTracker(PhysTime + dt);
+                }
+
+                int newVersion = m_LsTrk.VersionCnt;
+                int newPushCount = m_LsTrk.PushCount;
+
+
+                if((newPushCount - oldPushCount) != 0)
+                    throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
+
+                if(!ilPSP.DoubleExtensions.ApproxEqual(m_LsTrk.Regions.Time, PhysTime + dt))
+                    throw new ApplicationException($"After Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime + dt}).");
+
+
+                //// new cut-cell metric
+                //m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();
+                //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
+                //    throw new ApplicationException("Mismatch between species lists.");
+
+
+                // re-sort mass matrices 
+                {
+                    var Mtx2Update = m_Stack_MassMatrix.Skip(1).ToArray(); // shallow copy!
+                    TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
+                    for(int i = 1; i < m_Stack_MassMatrix.Length; i++) {
+                        m_Stack_MassMatrix[i] = Mtx2Update[i - 1];
+                    }
                 }
             }
-            
-
-            // re-sort RHS  (Exp. Euler or Crank-Nicolson)
-            if (m_Stack_OpMatrix.Length > 1) {
-                TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, m_Stack_OpAffine[1], CurrentStateMapping);
-            }
-            */
-
         }
     }
-
 }

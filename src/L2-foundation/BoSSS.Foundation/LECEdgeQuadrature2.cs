@@ -841,7 +841,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                 || (m_GradUxGradVSumBuffer[gamma, delta, cr, cc] != null)
                                                 || (m_UxGradVSumBuffer[gamma, delta, cr, cc] != null)
                                                 || (m_GradUxVSumBuffer[gamma, delta, cr, cc] != null);
-                                            if(bAny) {
+                                            if(bAny && m_owner.m_RowL[gamma] > 0 && m_owner.m_ColL[delta] > 0) {
                                                 GetQRbufferLinear(Length, EvalResult, cr, cc, AffineLinearEdge && !metric.AlwaysUsePerNodeScaling, MR, NR, ref iRLbuf, ref RLbuf, I0Row, gamma, I0Col, delta, out _R, out _Q);
 
                                                 //var res = EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, cr, cc, I0Row, I0Col }, new int[] { Length - 1, NS.NoOfNodes - 1, cr - 1, cc - 1, I0Row + m_RowL[gamma] - 1, I0Col + m_ColL[delta] - 1 });
@@ -941,7 +941,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                                 for(int cr = 0; cr < 2; cr++) {
                                     var bAny = (m_VSumBuffer[gamma, 0, cr, 0] != null) || (m_GradVSumBuffer[gamma, 0, cr, 0] != null);
-                                    if(bAny) {
+                                    if(bAny && m_owner.m_RowL[gamma] > 0) {
                                         GetRQbufferAffine(Length, EvalResult, cr, AffineLinearEdge, MR, ref iRAbuf, ref RAbuf, I0Row, gamma, I0Col, out _R, out _Q);
 
                                         double cF = 0;
@@ -1533,8 +1533,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             int jCell_cc = Edge2Cell[jEdge, cc];
 
 
-                            long m0 = this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell_cr, 0);
-                            long n0 = this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell_cc, 0);
+                            long m0 = this.m_RowMap.GlobalUnique1stCoordinate(jCell_cr);
+                            long n0 = this.m_ColMap.GlobalUnique1stCoordinate(jCell_cc);
 
 
                             Debug.Assert(ResultsOfIntegration.GetLength(3) == M);
@@ -1555,7 +1555,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     // Affine offset part
                     if (bAffineRequired && jCell_cr < Jup) {
-                        int m0 = this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell_cr, 0);
+                        int m0 = this.m_RowMap.LocalUnique1stCoordinate(jCell_cr);
 
                         
                         var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(

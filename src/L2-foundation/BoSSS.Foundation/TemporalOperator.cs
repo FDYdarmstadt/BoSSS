@@ -94,6 +94,9 @@ namespace BoSSS.Foundation {
             return new InternalBla(this, DomainVarMap, ParameterMap, CodomainVarMap);
         }
 
+        public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+            return null;
+        }
 
         class InternalBla : IEvaluatorLinear {
 
@@ -249,11 +252,11 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Components of the Mass matrix
         /// </summary>
-        public IEquationComponents EquationComponents { 
+        public IEquationComponents EquationComponents {
             get {
                 return InternalRepresentation.EquationComponents;
             }
-        
+
         }
 
         DifferentialOperator InternalRepresentation;
@@ -285,6 +288,10 @@ namespace BoSSS.Foundation {
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
             InternalRepresentation.CurrentHomotopyValue = owner.CurrentHomotopyValue;
             return InternalRepresentation.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+        }
+        
+        public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+            return InternalRepresentation.GetAllParameterHandlers();
         }
     }
 

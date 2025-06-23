@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using BoSSS.Foundation.Grid;
+using System.Collections.Generic;
 
 
 namespace BoSSS.Foundation.Quadrature {
@@ -11,6 +12,13 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public interface ICompositeQuadRule<out TQuadRule> : IEnumerable<IChunkRulePair<TQuadRule>>
         where TQuadRule : QuadRule {
+
+
+        /// <summary>
+        /// a composite quadrature rule is always associated with a grid/mesh
+        /// </summary>
+        IGridData GridData { get; }
+
 
         /// <summary>
         /// The number of quadrature items (cells or edges)

@@ -936,7 +936,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 for (int f = 0; f < NoOfFields; f++) {
                     int mE = m_NoOfTestFunctions[f];
                     int f_offset = m_MyMap[f];
-                    int idx0 = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, 0);
+                    int idx0 = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell);
 
                     for (int m = 0; m < mE; m++) {
                         int idx = f_offset + m;

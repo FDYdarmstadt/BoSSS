@@ -736,7 +736,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetTimestep();
-            Timestepping.Solve(phystime, dt);
+            Timestepping.Solve(phystime, dt, SkipSolveAndEvaluateResidual:Control.SkipSolveAndEvaluateResidual);
             return dt;
         }
 
@@ -824,7 +824,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Instantiation of Level-Sets (<see cref="ILevelSet"/>, <see cref="LevelSet"/>) and the tracker.
         /// </summary>
-        protected abstract LevelSetTracker InstantiateTracker();
+        protected virtual LevelSetTracker InstantiateTracker() { return null; }
 
 
         /// <summary>
@@ -833,11 +833,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateTracker() {
             var trk = InstantiateTracker();
             //var test = this.Operator;
-            if (base.LsTrk == null) {
-                base.LsTrk = trk;
-            } else {
-                if (!object.ReferenceEquals(trk, base.LsTrk))
-                    throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
+            if(trk != null) {
+                if(base.LsTrk == null) {
+                    base.LsTrk = trk;
+                } else {
+                    if(!object.ReferenceEquals(trk, base.LsTrk))
+                        throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
+                }
             }
 
             //foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {

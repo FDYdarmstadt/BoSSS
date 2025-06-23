@@ -1349,7 +1349,9 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
-                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields, out var __lstrk);
+                    if(__lstrk != null)
+                        this.LsTrk = __lstrk;
                 }
                 CreateTracker();
                 using(new BlockTrace("CreateFieldsBlock", ht)) {
@@ -1616,20 +1618,34 @@ namespace BoSSS.Solution {
 
             //FieldOpts fopts;
             //bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
-            FieldOpts fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(f.Identification)).SingleOrDefault().Value;
+            FieldOpts fopts;
+            if(f.Identification != null)
+                fopts = FieldOptions.Where(kv => kv.Key.WildcardMatch(f.Identification)).SingleOrDefault().Value;
+            else
+                fopts = null;
 
-            if (fopts != null) {
-                if (ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
+            if(fopts != null) {
+                if(ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
                     throw new ApplicationException("IO for field '" + f.Identification + "' cannot be turned OFF, i.e. 'SaveToDB==false' is illegal.");
-                if (ioOpt == IOListOption.Never && fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
+                if(ioOpt == IOListOption.Never && fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
                     throw new ApplicationException("IO for field '" + f.Identification + "' cannot be turned ON, i.e. 'SaveToDB==true' is illegal");
 
-                if (ioOpt == IOListOption.Always || fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
+                if(ioOpt == IOListOption.Always || fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
                     IOFields.Add(f);
 
             } else {
-                if (ioOpt == IOListOption.Always)
+                if(ioOpt == IOListOption.Always) {
+                    if(f.Identification.IsEmptyOrWhite()) {
+                        // try to fix zhe name of the field `f`
+                        string newName;
+                        int cnt = 1;
+                        do {
+                            newName = "unnamed" + cnt;
+                        } while(IOFields.Where(fi => fi.Identification == newName).Count() <= 0);
+                        f.Identification = newName;
+                    }
                     IOFields.Add(f);
+                }
             }
 
         }
@@ -1983,49 +1999,56 @@ namespace BoSSS.Solution {
                         if (!object.ReferenceEquals(xdgf.Basis.Tracker, this.LsTrk))
                             throw new ApplicationException("XDG is defined against unknown level-set tracker!");
                     }
+
+                    if(f is TraceDGField) {
+                        var tdgf = (TraceDGField)f;
+                        if(!object.ReferenceEquals(tdgf.Basis.Tracker, this.LsTrk))
+                            throw new ApplicationException("TraceDG is defined against unknown level-set tracker!");
+                    }
                 }
 
 
                 // pass 1: single phase fields
                 // ===========================
+                var bfound = new Dictionary<string, bool>();
+                foreach(var name in this.Control.InitialValues_EvaluatorsVec.Keys)
+                    bfound.Add(name, false); 
 
-                var Pass2_Evaluators = new Dictionary<string, ScalarFunction>();
+
                 foreach (var val in this.Control.InitialValues_EvaluatorsVec) {
                     string DesiredFieldName = val.Key;
                     //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
                     ScalarFunction Function = val.Value.SetTime(time);
 
-                    bool found = false;
                     foreach (DGField f in relevantFields) {
-                        if (f.Identification.Equals(DesiredFieldName)) {
-                            tr.Info("projecting field \"" + f.Identification + "\"");
-                            f.ProjectField(Function);
-                            found = true;
-                            break;
+                        if(f.Identification.IsEmptyOrWhite()) 
+                            // cannot set initial value for field without any identification
+                            continue;
+
+                        if((f is XDGField) || (f is TraceDGField)) {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // we have to perform this after the setting the level-set and updating the tracker
+                            // see you later...
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
                         } else {
+                            // ++++++++++++++++++++++++++++++++++++
+                            // some normal DG field or a level-set
+                            // ++++++++++++++++++++++++++++++++++++
 
-                            // now, the XDG hack:
-                            var NameAndSpc = DesiredFieldName.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
-                            if (NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
-                                tr.Info("projecting XDG-field \"" + f.Identification + "\"");
-                                string spc = NameAndSpc[1];
-                                var xdgf = (XDGField)f;
-                                //var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
-                                //SpeciesOnlyField.ProjectField(Function);
 
-                                Pass2_Evaluators.Add(val.Key, val.Value.SetTime(time));
-
-                                found = true;
-                                break;
+                            if(f.Identification.Equals(DesiredFieldName)) {
+                                tr.Info("projecting field \"" + f.Identification + "\"");
+                                f.ProjectField(Function);
+                                bfound[val.Key] = true;
                             }
+
+
                         }
                     }
 
-                    if (!found) {
-                        Console.WriteLine("Warning: " +
-                            "initial value specified for a field named \"" + DesiredFieldName +
-                            "\", but no field with that identification exists in context.");
-                    }
+                    
                 }
 
                 if (LsTrk != null) {
@@ -2034,46 +2057,53 @@ namespace BoSSS.Solution {
                         AllowedLSMovement[i] = LsTrk.NearRegionWidth + 1;
                     }
                     LsTrk.UpdateTracker(time, __LevSetAllowedMovement: AllowedLSMovement);  // disable CFL-check for first time (setInitial is called after initial AMR and depending on the projected LS the near region may change more than the allowed movement)
-                    LsTrk.UpdateTracker(time); // doppeltes Update h�lt besser; 
+                    LsTrk.UpdateTracker(time); // doppeltes Update hält besser; 
                 }
 
-                // pass 2: XDG fields (after tracker update)
-                // =========================================
-                if (Pass2_Evaluators.Count > 0) {
+                // pass 2: TraceDG/XDG fields (after tracker update)
+                // =================================================
+                foreach(var val in this.Control.InitialValues_EvaluatorsVec) {
+                    string DesiredFieldName = val.Key;
+                    ScalarFunction Function = val.Value.SetTime(time);
 
+                    foreach(DGField f in relevantFields) {
+                        if(f is XDGField || f is TraceDGField) {
+                            if(f.Identification.IsEmptyOrWhite()) 
+                                // cannot set initial value for field without any identification
+                                continue;
 
-                    foreach (var val in Pass2_Evaluators) {
-                        string DesiredFieldName = val.Key;
-                        //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
-                        ScalarFunction Function = val.Value;
+                            if(f.Identification.Equals(DesiredFieldName)) {
+                                    tr.Info("projecting field \"" + f.Identification + "\"");
+                                    f.ProjectField(Function);
+                                    bfound[val.Key] = true;
+                                }
 
-                        bool found = false;
-                        foreach (DGField f in relevantFields) {
-                            if (f.Identification.Equals(DesiredFieldName)) {
-                                throw new ApplicationException();
-                            } else {
-
+                            if(f is XDGField xdgf) {
                                 // now, the XDG hack:
                                 var NameAndSpc = DesiredFieldName.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
-                                if (NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
+                                if(NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
                                     tr.Info("projecting XDG-field \"" + f.Identification + "\"");
                                     string spc = NameAndSpc[1];
-                                    var xdgf = (XDGField)f;
                                     var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
                                     SpeciesOnlyField.ProjectField(Function);
-                                    found = true;
-                                    break;
+                                    bfound[val.Key] = true;
                                 }
-                            }
-                        }
 
-                        if (!found) {
-                            throw new ApplicationException(
-                                "initial value specified for a field named \"" + DesiredFieldName +
-                                "\", but no field with that identification exists in context.");
+                            }
                         }
                     }
                 }
+
+                foreach(var kv in bfound) {
+                    if(kv.Value == false) {
+                        tr.Warning("Warning: " +
+                                "initial value specified for a field named \"" + kv.Key +
+                                "\" in the control object, but no field with that identification exists the solver.");
+                        
+                    }
+                }
+
+
             }
         }
 
@@ -2684,7 +2714,12 @@ namespace BoSSS.Solution {
                 // re-create fields
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
-                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields, out var __lstrk);
+                    if(__lstrk != null) {
+                        if(this.LsTrk != null && !object.ReferenceEquals(this.LsTrk, __lstrk))
+                            throw new ApplicationException("it seems the application tries to initialize two level-set trackers, through `CreateTracker()` AND `[LevelSetTracker]`-attribute.");
+                        this.LsTrk = __lstrk;
+                    }
                 }
                 CreateFields(); // full user control   
                 PostRestart(physTime, TimeStepNo);
@@ -2802,15 +2837,41 @@ namespace BoSSS.Solution {
 
                     // re-set Level-Set tracker
                     this.CreateTracker();
-                    int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
 
+                    //void FuckYouLog() {
+                    //    Console.WriteLine(" ------ tracker version: " + this.LsTrk?.VersionCnt);
+                    //    foreach(var f in m_RegisteredFields) {
+                    //        string white = " ";
+                    //        for(int i = f?.Identification?.Length ?? 0; i < 25; i++)
+                    //            white += " ";
+
+                    //        if(f is XDGField xf) {
+                    //            Console.WriteLine("         " + f.Identification + ":" + white + xf.m_TrackerVersion + "\t" + xf.UpdateBehaviour);
+                    //        }
+                    //        if(f is TraceDGField tf) {
+                    //            Console.WriteLine("         " + f.Identification + ":" + white + tf.m_TrackerVersion + "\t" + tf.UpdateBehaviour);
+                    //        }
+                    //    }
+                    //    Console.WriteLine(" ~~~~~~~ ");
+                    //    Console.WriteLine();
+                    //}
+
+                    
                     // re-create fields
                     if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
-                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields, out var __lstrk);
+                        if(__lstrk != null) {
+                            if(this.LsTrk != null && !object.ReferenceEquals(this.LsTrk, __lstrk))
+                                throw new ApplicationException("it seems the application tries to initialize two level-set trackers, through `CreateTracker()` AND `[LevelSetTracker]`-attribute.");
+                            this.LsTrk = __lstrk;
+                        }
                     }
+                    int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+
                     CreateFields(); // full user control   
                                     //PostRestart(physTime, TimeStepNo);
+
                     if(this.LsTrk != null) {
                         if(this.LsTrk.Regions.Time != physTime)
                             this.LsTrk.UpdateTracker(physTime);
@@ -2867,16 +2928,21 @@ namespace BoSSS.Solution {
 
             // backup DG Fields
             foreach(var f in this.m_RegisteredFields) {
-                if(f is XDGField) {
-                    XDGBasis xb = ((XDGField)f).Basis;
+                if(f is XDGField xf) {
+                    XDGBasis xb = xf.Basis;
                     if(!object.ReferenceEquals(xb.Tracker, oldLsTrk))
+                        throw new ApplicationException();
+                }
+                if(f is TraceDGField tf) {
+                    TraceDGBasis tb = tf.Basis;
+                    if(!object.ReferenceEquals(tb.Tracker, oldLsTrk))
                         throw new ApplicationException();
                 }
                 if(!object.ReferenceEquals(f.Basis.GridDat, oldGridData))
                     throw new ApplicationException();
 
-
-                loadbal.BackupField(f);
+                if(f.Identification.IsNonEmpty())
+                    loadbal.BackupField(f);
             }
 
             // backup user data

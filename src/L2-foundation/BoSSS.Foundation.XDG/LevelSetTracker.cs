@@ -48,18 +48,114 @@ namespace BoSSS.Foundation.XDG {
         /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level set values in a cell are in
         /// the positive far region
         /// </summary>
-        public const ushort AllFARplus = 0xffff;
+        internal const ushort AllFARplus = 0xffff;
 
         /// <summary>
         /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level set values in a cell are in
         /// the negative far region
         /// </summary>
-        public const ushort AllFARminus = 0x1111;
+        internal const ushort AllFARminus = 0x1111;
 
         /// <summary>
         /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level sets cut the actual cell 
         /// </summary>
-        public const ushort AllCut = 0x8888;
+        internal const ushort AllCut = 0x8888;
+
+
+        /// <summary>
+        /// computes the species table array from a code string;
+        /// - E.g., for a single level-set, the code `-:A +:B` means: species A in negative domain, species B in positive domain
+        /// - for 
+        /// </summary>
+        static public Array GetSpeciesTable(string SpeciesTableCode, int NoOfLevelSets) {
+
+            int[] len = new int[NoOfLevelSets];
+            for (int d = 0; d < NoOfLevelSets; d++)
+                len[d] = 2;
+
+            Array speciestable = Array.CreateInstance(typeof(string), len);
+            Array touch = Array.CreateInstance(typeof(bool), len);
+
+            try {
+                string[] parts = SpeciesTableCode.Split(new char[] { '\n', '\t', ' ', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+                int touchcnt = 0;
+                foreach (var p in parts) {
+                    string[] code_N_name = p.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (code_N_name.Length != 2)
+                        throw new Exception();
+
+                    if (code_N_name[0].Length != NoOfLevelSets)
+                        throw new Exception();
+
+                    char[] signs = code_N_name[0].ToCharArray();
+
+
+                    SetRec(NoOfLevelSets, signs, code_N_name[1], new int[NoOfLevelSets], 0, speciestable, touch, ref touchcnt);
+                }
+
+
+                if (touchcnt != Math.Round(Math.Pow(2, NoOfLevelSets)))
+                    throw new Exception();
+            } catch (Exception) {
+                throw new ApplicationException("error in species table");
+            }
+
+
+            return speciestable;
+
+        }
+
+        static void SetRec(int D, char[] signs, string SpecName, int[] idx, int d, Array speciesTable, Array touch, ref int touchcnt) {
+            if (d == D) {
+                if ((bool)(touch.GetValue(idx)))
+                    throw new Exception();
+
+                touch.SetValue(true, idx);
+                speciesTable.SetValue(SpecName, idx);
+                touchcnt++;
+
+            } else {
+                switch (signs[d]) {
+                    case '-':
+                        idx[d] = 0;
+                        SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
+                        return;
+
+                    case '+':
+                        idx[d] = 1;
+                        SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
+                        return;
+
+                    case '*':
+                        idx[d] = 0;
+                        SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
+                        idx[d] = 1;
+                        SetRec(D, signs, SpecName, idx, d + 1, speciesTable, touch, ref touchcnt);
+                        return;
+
+
+                    default: throw new Exception();
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Creates a level set tracker for just one level set.
+        /// </summary>
+        /// <param name="SpeciesTableCode">The species table, see <see cref="SpeciesTable"/>;</param>
+        /// <param name="levSet1"></param>
+        /// <param name="__NearRegionWidth">
+        /// width of near region, in number of cells
+        /// </param>
+        /// <param name="cutCellquadType">
+        /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
+        /// </param>
+        public LevelSetTracker(LevelSet levSet1, string SpeciesTableCode = "-:A +:B", CutCellQuadratureMethod cutCellquadType = CutCellQuadratureMethod.Saye, int __NearRegionWidth = 1) {
+            ConstructorCommon((GridData)(levSet1.GridDat), cutCellquadType, __NearRegionWidth, GetSpeciesTable(SpeciesTableCode,1), levSet1);
+        }
+
 
         /// <summary>
         /// Creates a level set tracker for just one level set.
@@ -110,7 +206,7 @@ namespace BoSSS.Foundation.XDG {
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>
         public LevelSetTracker(GridData BackgroundGrid, CutCellQuadratureMethod cutCellquadType, int __NearRegionWidth, string[,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3) {
-            ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, SpeciesTable, levSet1, levSet2, levSet3);
+            ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1, levSet2, levSet3);
         }
 
         /// <summary>
@@ -1670,6 +1766,7 @@ namespace BoSSS.Foundation.XDG {
 
             // update tracker
             // ==============
+            ObserverHack();
             UpdateTracker(time);
             this.Regions.Version = VersionCounter;
             this.Regions.Time = time;

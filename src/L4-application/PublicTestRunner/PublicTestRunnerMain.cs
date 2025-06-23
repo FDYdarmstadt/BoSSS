@@ -131,7 +131,8 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(MPITest.Program),
-                        typeof(BoSSS.Application.CutCellQuadratureScaling.AllTests)
+                        typeof(BoSSS.Application.CutCellQuadratureScaling.AllTests),
+                        typeof(BoSSS.Application.TraceDGtest.UnitTests)
                     };
             }
         }

@@ -714,14 +714,14 @@ namespace BoSSS.Foundation.XDG {
                                 continue; // nothing to do for domain/column variable 'delta'
                             Debug.Assert(NnonxDom[delta] == M);
 
-                            int[] extr0 = new int[] { 0, 0,
+                            int[] extr0 = [ 0, 0,
                                 cr * N + offsetCod[gamma], // row
-                                cc * M + 1 + offsetDom[delta] }; // col
+                                cc * M + 1 + offsetDom[delta] ]; // col
                                                                  //sectionsTest[gamma, cr] * N + offsetCod[gamma], // row
                                                                  //sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] }; // col
-                            int[] extrE = new int[] { Len - 1, NoOfNodes - 1,
+                            int[] extrE = [ Len - 1, NoOfNodes - 1,
                                 extr0[2] + N - 1, // row
-                                extr0[3] + M - 1 }; // col
+                                extr0[3] + M - 1 ]; // col
                             var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
 
                             if (Sum_Koeff_UxV[gamma, delta] != null) {
@@ -825,7 +825,7 @@ namespace BoSSS.Foundation.XDG {
             Debug.Assert(DELTA == Nnonx.Length);
             offset = new int[DELTA];
             for (int delta = 1; delta < DELTA; delta++) {
-                offset[delta] = offset[delta - 1] + Nnonx[delta - 1] * 2;
+                offset[delta] = offset[delta - 1] + Nnonx[delta - 1] * 2; // note: 2 comes from 2 species; No mater how many species are actually present/computed, from the perspective of a **single level set**, there is always a negative nad a positive species.
             }
 
 #if DEBUG

@@ -2,30 +2,14 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>publish\</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Disk</InstallFrom>
-    <UpdateEnabled>false</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>12.0</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug</OutputPath>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
-    <UseVSHostingProcess>true</UseVSHostingProcess>
-    <LangVersion>7.1</LangVersion>
+     <UseVSHostingProcess>true</UseVSHostingProcess>
     <Optimize>False</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -33,7 +17,7 @@
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <DocumentationFile>bin\Release\BoSSS.Foundation.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
-    <LangVersion>7.1</LangVersion>
+    <!--LangVersion>7.1</LangVersion-->
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
