@@ -2155,7 +2155,7 @@ namespace BoSSS.Application.XNSE_Solver {
 		/// <param name="Res"></param>
 		/// <param name="p"></param>
 		/// <returns></returns>
-		public static XNSE_Control BottiDiPietro3D(int Res = 16, int p = 5) {
+		public static XNSE_Control BottiDiPietro3D(int Res = 16, int p = 2) {
             // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
             var dbPath = @"D:\Users\toprak\Documents\db";
             IDatabaseInfo dbInfo;
