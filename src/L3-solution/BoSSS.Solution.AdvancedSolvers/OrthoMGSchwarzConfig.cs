@@ -27,17 +27,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         CoarseMesh = 1,
 
-
         /// <summary>
         /// force to use the <see cref="Schwarz"/> implementation
         /// </summary>
         PerProcess = 2,
 
 		/// <summary>
-		/// force to use the <see cref="SchwarzForCoarseMesh"/> implementation
+		/// force to use the <see cref="SchwarzForTaskParallel"/> implementation
 		/// </summary>
 		TaskParallel = 3,
-	}
+
+        /// <summary>
+        /// A debug config to test the <see cref="Schwarz"/> + <see cref="SchwarzForCoarseMesh"/>  implementation
+        /// </summary>
+        PerProcessWithIdles = 4,
+    }
 
     /// <summary>
     /// Dynamic configuration for the orthonormalization multigrid.
@@ -253,7 +257,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				if (inbal <= INBALANCE_THRESHOLD
 				&& LocalNoOfBlocks >= (this.UsepTG ? 1 : PROCESSLOCAL_SCHWARZBLOCK_MINIMUM)
 				&& FinerLevelLocalBlocks >= 0
-				&& (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.PerProcess)) {
+				&& (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.PerProcess || SchwarzImplementation == SchwarzImplementation.PerProcessWithIdles)) {
 					// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 					// * DOF's seem sufficiently distributed across MPI cores;
 					// * sufficient number of blocks per process
@@ -290,7 +294,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					}
 				}
 
-				if (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.CoarseMesh) {
+				if (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.CoarseMesh || SchwarzImplementation == SchwarzImplementation.PerProcessWithIdles) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // For some reason, we failed using the per-process-blocking Schwarz;
                     // so, try with the coarse-mesh-Schwarz
