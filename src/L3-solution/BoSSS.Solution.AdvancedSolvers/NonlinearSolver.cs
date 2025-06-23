@@ -518,6 +518,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 AbstractOperator);
             OpAffineRaw = OpAffineRaw.CloneAs();
 
+            // writing to text files
+            //{
+            //    Console.WriteLine("Writing to text file");
+            //    OpMtxRaw.SaveToTextFileSparse("OpMtxRaw-" + LinearizationCounter);
+            //    MassMtxRaw.SaveToTextFileSparse("MassMtxRaw-" + LinearizationCounter);
+            //    CurrentLin.LeftChangeOfBasis.SaveToTextFileSparse("LeftChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.RightChangeOfBasis.SaveToTextFileSparse("RightChangeOfBasis-" + LinearizationCounter);
+            //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("OperatorMatrix-" + LinearizationCounter);
+            //    LinearizationCounter++;
+            //}
+
             // RHS of the linearization
             if (this.RHSRaw != null)
                 OpAffineRaw.AccV(-1.0, this.RHSRaw);

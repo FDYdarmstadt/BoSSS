@@ -684,7 +684,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
 
-                        // Writing to text files
+                        //Writing to text files
                         //{
                         //    Console.WriteLine("Writing to text file");
                         //    CurrentLin.OperatorMatrix.SaveToTextFileSparse("CurrentLinOpMtx");
@@ -693,7 +693,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //}
 
                         //var ana = new OpAnalysisBase(CurrentLin.OperatorMatrix, CurRes, (UnsetteledCoordinateMapping)CurrentLin.DgMapping, CurrentLin.Config, CurrentLin.AbstractOperator);
-                        // Arnoldi iteration
+                        //Arnoldi iteration
                         //{
                         //    var Mtx = CurrentLin.OperatorMatrix;
                         //    int L = Mtx.RowPartitioning.LocalLength;
@@ -704,29 +704,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    var mask = new BlockMask(FullSel);
                         //    var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
 
-                        //    Console.WriteLine("Computing minimal Eigenvalue and Eigenvector");
-                        //    var bla = Part.MinimalEigen();
+                        //    //Console.WriteLine("Computing minimal Eigenvalue and Eigenvector");
+                        //    var minEig = Part.MinimalEigen();
 
-                        //    double[] Vret = new double[L];
-                        //    mask.AccSubVec(bla.V, Vret);
+                        //    double[] minVret = new double[L];
+                        //    mask.AccSubVec(minEig.V, minVret);
 
-                        //    Console.WriteLine("done: " + bla.lambdaMin);
-                        //    var Suprious = CurrentLin.ProlongateSolToDg(bla.V, "Spurious_");
-                        //    Tecplot.Tecplot.PlotFields(Suprious, $"SpuriousModes-{itc}", bla.lambdaMin, 2);
+                        //    //Console.WriteLine("done: " + minEig.lambdaMin);
+                        //    var minEigDG = CurrentLin.ProlongateSolToDg(minEig.V, "minSpurious_");
+
+                        //    //Console.WriteLine("Computing maximal Eigenvalue and Eigenvector");
+                        //    var maxEig = Part.MaximalEigen();
+
+                        //    //double[] maxVret = new double[L];
+                        //    //mask.AccSubVec(maxEig.V, maxVret);
+
+                        //    //Console.WriteLine("done: " + maxEig.lambdaMax);
+                        //    //var maxEigDG = CurrentLin.ProlongateSolToDg(maxEig.V, "maxSpurious_");
+
+                        //    double EigRatio = maxEig.lambdaMax / minEig.lambdaMin;
+                        //    Console.WriteLine($"Eigenvalue ratio: {EigRatio} (lambdaMax {maxEig.lambdaMax} / lambdaMin {minEig.lambdaMin})");
+
+                        //    var dgList = new List<DGField>();
+                        //    dgList.AddRange(minEigDG);
+                        //    //dgList.AddRange(maxEigDG);
+                        //    dgList.Add((this.ProblemMapping.BasisS[0] as XDGBasis).Tracker.LevelSets[0] as LevelSet);
+
+                        //    Tecplot.Tecplot.PlotFields(dgList, "Arnoldi_Eigenvectors-" + itc, minEig.lambdaMin, 3);
+                        //    //Tecplot.Tecplot.PlotFields(Suprious, $"SpuriousModes-{itc}", minEig.lambdaMin, 2);
                         //}
 
-                        // MATLAB
+                        //MATLAB
                         //{
                         //    var Mtx = CurrentLin.OperatorMatrix;
 
                         //    MultidimensionalArray outputD = MultidimensionalArray.Create(1, 1);
                         //    MultidimensionalArray outputV = MultidimensionalArray.Create((int)Mtx.NoOfRows, 1);
 
-                        //    int[] DepVars = CurrentLin.Mapping.ProblemMapping.BasisS.Count.ForLoop(i => i);
-                        //    double[] DepVars_subvec = CurrentLin.Mapping.ProblemMapping.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
+                        //    int[] DepVars = CurrentLin.Mapping.AggBasis.Count().ForLoop(i => i);
+                        //    double[] DepVars_subvec = CurrentLin.Mapping.GetSubvectorIndices(DepVars).Select(i => i + 1.0).ToArray();
 
                         //    Console.WriteLine("Computing minimal Eigenvalue and Eigenvector. Calling MATLAB ...");
-                        //    using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                        //    using(BatchmodeConnector bmc = new BatchmodeConnector()) {
 
                         //        bmc.PutSparseMatrix(Mtx, "FullMatrix");
                         //        bmc.PutVector(DepVars_subvec, "DepVars_subvec");
@@ -737,8 +756,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    }
 
                         //    Console.WriteLine("done: " + outputD[0, 0]);
-                        //    var Suprious = CurrentLin.ProlongateSolToDg(outputV.To1DArray(), "Spurious_");
+                        //    var Suprious = CurrentLin.ProlongateSolToDg(outputV.ExtractSubArrayShallow(-1, 0).To1DArray(), "Spurious_");
                         //    Tecplot.Tecplot.PlotFields(Suprious, $"SpuriousModes-{itc}", outputD[0, 0], 2);
+
+                        //    Console.WriteLine("Computing condition number. Calling MATLAB ...");
+                        //    double condest = Mtx.condest();
+                        //    Console.WriteLine("done: " + condest);
                         //}
 
                         //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");

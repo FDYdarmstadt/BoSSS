@@ -54,7 +54,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
-            int D = 2;
+            int D = 3;
             C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             //if (D == 3)
@@ -213,7 +213,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
                     grd.EdgeTagNames.Add(1, "velocity_inlet_left");
-                    grd.EdgeTagNames.Add(2, "pressure_outlet_right");
+                    grd.EdgeTagNames.Add(2, "Dong_OutFlow_right");
                     grd.EdgeTagNames.Add(3, "wall_lower");
                     grd.EdgeTagNames.Add(4, "wall_upper");
                     grd.EdgeTagNames.Add(5, "velocity_inlet_front");
@@ -389,7 +389,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
             ////C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#B", X => U.Pow2() / 2); 
             ////C.AddBoundaryValue("pressure_outlet_left");
-            C.AddBoundaryValue("pressure_outlet_right");
+            C.AddBoundaryValue("Dong_OutFlow_right");
 
 
             #endregion
@@ -458,7 +458,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -466,7 +466,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 100; // 500;
+            C.NoOfTimesteps = 10; // 500;
             C.saveperiod = 10;
 
             #endregion
