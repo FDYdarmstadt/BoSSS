@@ -5920,22 +5920,24 @@ namespace ilPSP.LinSolvers {
 
                 // sent external blocks to other processors
                 // ----------------------------------------
-                const int MAX_BATCH_SIZE = 128 * 1024 * 1024; // Set as appropriate
+                int MAX_BATCH_SIZE = int.TryParse(System.Environment.GetEnvironmentVariable("MPI_BATCH_SIZE"), out var val)
+                    ? val
+                    : 64 * 1024 * 1024; //maximum batch size in bytes for MPI communication
 
                 // ---------- FIRST WAVE: SEND EXTERNAL BLOCKS ----------
                 var batches = BatchUtils.PartitionBatches(MpiSendCollection, A, MAX_BATCH_SIZE);
                 int localBatches = batches.Count;
                 int maxBatches = localBatches.MPIMax(comm);
+
                 int[] RecvRanks = A.SendLists.Keys.ToArray(); // MPI ranks from which this processor receives data
+                int[] SendRanks = MpiSendCollection.Keys.ToArray();
 
                 // Data structure for external rows
                 Dictionary<int, Dictionary<long, TempBlockRow>> ExternalRows = new Dictionary<int, Dictionary<long, TempBlockRow>>();
 
                 for(int b = 0; b < maxBatches; b++) {
                     var sendBatch = (b < batches.Count) ? batches[b] : new Dictionary<int, List<Multiply_Helper_1>>();
-                    int[] batchSendRanks = sendBatch.Keys.ToArray();
-
-                    MiniTransceiver miniTx1 = new MiniTransceiver(comm, batchSendRanks, RecvRanks);
+                    MiniTransceiver miniTx1 = new MiniTransceiver(comm, SendRanks, RecvRanks);
 
                     int GetSendBufferSize(int Rank) {
                         if(sendBatch.ContainsKey(Rank))
@@ -6039,7 +6041,7 @@ namespace ilPSP.LinSolvers {
                 // ---------- SECOND WAVE: RETURN TO OWNERS ----------
                 // Reverse roles for send/receive
                 int[] SendRanks2 = RecvRanks;
-                int[] RecvRanks2 = ExternalRows.Keys.ToArray();
+                int[] RecvRanks2 = SendRanks;
 
                 // Build send collection for second wave
                 var ReturnSendCollection = new Dictionary<int, List<TempBlockRow>>();
@@ -6053,7 +6055,7 @@ namespace ilPSP.LinSolvers {
                 }
 
                 // Partition into batches
-                var returnBatches = PartitionReturnBatches(ReturnSendCollection, MAX_BATCH_SIZE);
+                var returnBatches = BatchUtils.PartitionReturnBatches(ReturnSendCollection, MAX_BATCH_SIZE);
 
                 // Synchronize batch count globally
                 int localReturnBatches = returnBatches.Count;
@@ -6062,9 +6064,9 @@ namespace ilPSP.LinSolvers {
                 using(TempBlockRow rt1 = new TempBlockRow()) {
                     for(int b = 0; b < maxReturnBatches; b++) {
                         var sendBatch = (b < returnBatches.Count) ? returnBatches[b] : new Dictionary<int, List<TempBlockRow>>();
-                        int[] batchSendRanks = sendBatch.Keys.ToArray();
 
-                        MiniTransceiver miniTx2 = new MiniTransceiver(comm, batchSendRanks, RecvRanks2);
+                        // Now use batchRanks for both sending and receiving:
+                        MiniTransceiver miniTx2 = new MiniTransceiver(comm, SendRanks2, RecvRanks2);
 
                         int GetSendBufferSize2(int DestRank) {
                             if(sendBatch.ContainsKey(DestRank)) {
@@ -6119,33 +6121,6 @@ namespace ilPSP.LinSolvers {
                     foreach(var k in ExternalRows.Values)
                         foreach(var t in k.Values)
                             t.Dispose();
-                }
-
-                // -------------- Helper for second wave batching --------------
-                List<Dictionary<int, List<TempBlockRow>>> PartitionReturnBatches(
-                    Dictionary<int, List<TempBlockRow>> returnSendCollection,
-                    int maxBatchBytes) {
-                    var myBatches = new List<Dictionary<int, List<TempBlockRow>>>();
-                    var current = new Dictionary<int, List<TempBlockRow>>();
-                    int curSize = 0;
-                    foreach(var kv in ReturnSendCollection) {
-                        int rank = kv.Key;
-                        foreach(var row in kv.Value) {
-                            int sz = row.GetSize();
-                            if(curSize + sz > maxBatchBytes && current.Count > 0) {
-                                myBatches.Add(current);
-                                current = new Dictionary<int, List<TempBlockRow>>();
-                                curSize = 0;
-                            }
-                            if(!current.ContainsKey(rank))
-                                current[rank] = new List<TempBlockRow>();
-                            current[rank].Add(row);
-                            curSize += sz;
-                        }
-                    }
-                    if(current.Count > 0)
-                        myBatches.Add(current);
-                    return myBatches;
                 }
 
             }
@@ -6227,6 +6202,33 @@ namespace ilPSP.LinSolvers {
                         pBuffer = (byte*)(pB + I * J);
                     }
                 }
+            }
+
+            // -------------- Helper for second wave batching --------------
+            public static List<Dictionary<int, List<TempBlockRow>>> PartitionReturnBatches(
+                Dictionary<int, List<TempBlockRow>> returnSendCollection,
+                int maxBatchBytes) {
+                var myBatches = new List<Dictionary<int, List<TempBlockRow>>>();
+                var current = new Dictionary<int, List<TempBlockRow>>();
+                int curSize = 0;
+                foreach(var kv in returnSendCollection) {
+                    int rank = kv.Key;
+                    foreach(var row in kv.Value) {
+                        int sz = row.GetSize();
+                        if(curSize + sz > maxBatchBytes && current.Count > 0) {
+                            myBatches.Add(current);
+                            current = new Dictionary<int, List<TempBlockRow>>();
+                            curSize = 0;
+                        }
+                        if(!current.ContainsKey(rank))
+                            current[rank] = new List<TempBlockRow>();
+                        current[rank].Add(row);
+                        curSize += sz;
+                    }
+                }
+                if(current.Count > 0)
+                    myBatches.Add(current);
+                return myBatches;
             }
         }
 
