@@ -1248,7 +1248,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// Note: this is the quasi-inverse operation to <see cref="CommRHStoBlocks{V}(V, double[][])"/>
             /// </remarks>
             public void AccBlockSol<U>(U globalSol, double[][] localSolS) where U : IList<double> {
-                using (new FuncTrace()) {
+                using (new FuncTrace("SchwarzTPAccBlockSol")) {
                     int NoOfBlocks = m_owner.m_BlockSolvers.Length;
                     Debug.Assert(NoOfBlocks == BlockIdxs.Length);
                     Debug.Assert(NoOfBlocks == GlobalIdxs.Length);

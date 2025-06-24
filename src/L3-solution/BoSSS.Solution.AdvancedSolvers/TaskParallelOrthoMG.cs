@@ -1744,6 +1744,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		/// <exception cref="NotSupportedException">Works only for certain coarse solvers, not with Mg operator</exception>
 		private void InitiateCoarsestSolver() {
+            using(var tr = new FuncTrace("InitiateCoarsestSolver")) {
 			var CoarserTpMapping = (TpMapping.CoarserLevel as TaskParallelMGOperator);
 			subCommCoarseOpMatrix = ChangeCommunicator(CoarserTpMapping.OperatorMatrix, CoarserTpMapping.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 
@@ -1763,6 +1764,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			CoarserTpMapping.ClearMemory();
 		}
+        }
 
 		/// <summary>
 		/// Initialize the coarse level solver.
@@ -1865,7 +1867,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> //
         {
-			using (var f = new FuncTrace()) {
+			using (var f = new FuncTrace("TaskParallelOrthoMGSolveLvl" + TpLevel)) {
 				CurrentTrace = f;
 				f.InfoToConsole = true;
 
@@ -2028,6 +2030,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// Stop timing for coarse grid correction
 				CrseLevelTime.Stop();
 
+                using(new FuncTrace("PermutateAndMinimize")) {
 				var CoarseCorrection = PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
 				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
 				WriteDebug(iIter, resNorm, "Tp-coarse");
@@ -2035,7 +2038,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				var PreCorr = PermutateVectorBack(SmootherCorrOnSub, smootherPermutation); //this can be further optimized as smooth part has the full matrix
 				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-smoother" + TpLevel);
 				WriteDebug(iIter, resNorm, "Tp-smoother");
-
+                }
 				// Iteration callback
 				//IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);
 			}
