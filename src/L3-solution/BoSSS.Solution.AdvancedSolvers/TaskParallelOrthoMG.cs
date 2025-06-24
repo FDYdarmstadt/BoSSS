@@ -1324,9 +1324,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		double[] PermutateVectorBack(double[] vec, (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMtx) permutation) {
-			double[] ret = new double[permutation.TransposeMtx.RowPartitioning.LocalLength];
-			permutation.TransposeMtx.SpMV(1.0, vec, 0.0, ret);
-			return ret;
+            double[] ret = new double[permutation.TransposeMtx.RowPartitioning.LocalLength];
+            permutation.TransposeMtx.SpMV(1.0, vec, 0.0, ret);
+            return ret;            
 		}
 
 		/// <summary>
@@ -1745,25 +1745,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <exception cref="NotSupportedException">Works only for certain coarse solvers, not with Mg operator</exception>
 		private void InitiateCoarsestSolver() {
             using(var tr = new FuncTrace("InitiateCoarsestSolver")) {
-			var CoarserTpMapping = (TpMapping.CoarserLevel as TaskParallelMGOperator);
-			subCommCoarseOpMatrix = ChangeCommunicator(CoarserTpMapping.OperatorMatrix, CoarserTpMapping.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
+                var CoarserTpMapping = (TpMapping.CoarserLevel as TaskParallelMGOperator);
+                subCommCoarseOpMatrix = ChangeCommunicator(CoarserTpMapping.OperatorMatrix, CoarserTpMapping.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 
-			if (verbose) {
-				subCommCoarseOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_coarseOpMatrix.txt");
-				subCommCoarseOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_coarseOpMatrix.txt");
-			}
+                if (verbose) {
+                    subCommCoarseOpMatrix.SaveToTextFileSparseDebug($"lvl_{TpLevel}_coarseOpMatrix.txt");
+                    subCommCoarseOpMatrix.SaveToTextFileSparse($"lvl_{TpLevel}_coarseOpMatrix.txt");
+                }
 
-			if (CoarserLevelSolver is PARDISOSolver PARSolver) {
-				PARSolver.DefineMatrix(subCommCoarseOpMatrix);
-			} else if (CoarserLevelSolver is ISubsystemSolver subsystemSolver) {
-				var SmootherOpMappingPairOnSubComm = new StandAloneOperatorMappingPairWithGridData(subCommCoarseOpMatrix, TpMapping.CoarserLevel.CoarseNewCellMapping, TpMapping.m_xadj, TpMapping.m_adj, TpMapping.m_NoOfSpecies, false);
-				subsystemSolver.Init(SmootherOpMappingPairOnSubComm);
-			} else {
-				throw new NotSupportedException();
-			}
+                if (CoarserLevelSolver is PARDISOSolver PARSolver) {
+                    PARSolver.DefineMatrix(subCommCoarseOpMatrix);
+                } else if (CoarserLevelSolver is ISubsystemSolver subsystemSolver) {
+                    var SmootherOpMappingPairOnSubComm = new StandAloneOperatorMappingPairWithGridData(subCommCoarseOpMatrix, TpMapping.CoarserLevel.CoarseNewCellMapping, TpMapping.m_xadj, TpMapping.m_adj, TpMapping.m_NoOfSpecies, false);
+                    subsystemSolver.Init(SmootherOpMappingPairOnSubComm);
+                } else {
+                    throw new NotSupportedException();
+                }
 
-			CoarserTpMapping.ClearMemory();
-		}
+                tr.Info($"NoOfPostSmootherSweeps was equal to {this.config.NoOfPostSmootherSweeps} at TPLvl-{TpLevel} but changed to 1 ");
+                this.config.NoOfPostSmootherSweeps = 1;
+                CoarserTpMapping.ClearMemory();
+            }
         }
 
 		/// <summary>
@@ -2031,13 +2033,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				CrseLevelTime.Stop();
 
                 using(new FuncTrace("PermutateAndMinimize")) {
-				var CoarseCorrection = PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
-				resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
-				WriteDebug(iIter, resNorm, "Tp-coarse");
+                    var CoarseCorrection = PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
+                    resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
+                    WriteDebug(iIter, resNorm, "Tp-coarse");
 
-				var PreCorr = PermutateVectorBack(SmootherCorrOnSub, smootherPermutation); //this can be further optimized as smooth part has the full matrix
-				resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-smoother" + TpLevel);
-				WriteDebug(iIter, resNorm, "Tp-smoother");
+                    var PreCorr = PermutateVectorBack(SmootherCorrOnSub, smootherPermutation); //this can be further optimized as smooth part has the full matrix
+                    resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-smoother" + TpLevel);
+                    WriteDebug(iIter, resNorm, "Tp-smoother");
                 }
 				// Iteration callback
 				//IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);
