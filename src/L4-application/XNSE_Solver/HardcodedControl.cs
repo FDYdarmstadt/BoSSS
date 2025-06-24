@@ -2158,15 +2158,11 @@ namespace BoSSS.Application.XNSE_Solver {
 		public static XNSE_Control BottiDiPietro3D(int Res = 16, int p = 2) {
             // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
             var dbPath = @"D:\Users\toprak\Documents\db";
-            IDatabaseInfo dbInfo;
 
             // Only create if not already a valid BoSSS database
-            if(!DatabaseUtils.IsValidBoSSSDatabase(dbPath)) {
-                DatabaseUtils.CreateDatabase(dbPath);
-            }
+            IDatabaseInfo dbInfo = DatabaseInfo.CreateOrOpen(dbPath);
 
             // Open the database (returns IDatabaseInfo)
-            dbInfo = DatabaseInfo.Open(dbPath);
 
             var C = new XNSE_Control();
 
@@ -2261,9 +2257,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.LinearSolver = new OrthoMGSchwarzConfig() {
                 ConvergenceCriterion = 1e-9,
-                //CoarseKickIn = 4000,
-                //TargetBlockSize = 4000,
-                SchwarzImplementation = SchwarzImplementation.PerProcess,
+                CoarseKickIn = 10000,
+                TargetBlockSize = 10000,
+                SchwarzImplementation = SchwarzImplementation.TaskParallel,
             };
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
