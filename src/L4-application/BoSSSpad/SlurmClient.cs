@@ -535,7 +535,7 @@ namespace BoSSS.Application.BoSSSpad {
                     mask |= 1UL << (NumThreads + i);                                    // builds the 64-bit mask
 
                 sw.WriteLine($"export COMPlus_GCHeapCount={NumOfServiceCoresPerMPIprocess}");
-                sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
+                //sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
 
                 // Set startupstring
                 string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";
