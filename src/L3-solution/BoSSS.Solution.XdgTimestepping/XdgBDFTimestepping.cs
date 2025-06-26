@@ -1079,10 +1079,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 BDFSchemeCoeffs Tsc;
                 int Smax = m_TSCchain[0].S;
                 Debug.Assert(Smax == m_TSCchain.Length);
-                Tsc = m_TSCchain[Smax - m_PopulatedStackDepth];
+                Tsc = m_TSCchain[Math.Min(Smax - m_PopulatedStackDepth, m_TSCchain.Length-1)]; // A quick fix for the case of Condition Number Estimation, where the stack depth is not populated
 
-                // right-hand-side, resp. affine vector
-                double[] RHS = new double[CurrentAffine.Length];
+				// right-hand-side, resp. affine vector
+				double[] RHS = new double[CurrentAffine.Length];
                 if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
                     || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
