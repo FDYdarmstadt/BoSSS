@@ -8,17 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\public\src\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
-    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
   </ItemGroup>
 
   <ItemGroup>
