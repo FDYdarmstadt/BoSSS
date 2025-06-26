@@ -124,7 +124,7 @@ namespace ValidationTestRunner {
         [NUnitFileToCopyHack("AgglomerationTestcases/collidingSpheres2D.ipynb", "AgglomerationTestcases/collidingSpheres2Dpost.ipynb")]
         [Test]
         static public void Run__AggCollidingSpheres2D() {
-            // delete the database if it is more than 75 days old;
+            // delete the database if it is more than 150 days old;
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
