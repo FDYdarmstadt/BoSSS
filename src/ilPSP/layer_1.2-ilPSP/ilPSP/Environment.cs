@@ -702,9 +702,11 @@ namespace ilPSP {
                         else
                             listdiffs = "";
                         if(eqalAff == false) {
+                            tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs from Affinity Mask: {_ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
                             tr.Error("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
+                            tr.Info("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
-                        tr.Info("Win32 reports same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
+                        tr.Info("Does Win32 report same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
                         //ReservedCPUs = _ReservedCPUs;
                     } else {
                         tr.Info($"CCP_AFFINITY not set");
