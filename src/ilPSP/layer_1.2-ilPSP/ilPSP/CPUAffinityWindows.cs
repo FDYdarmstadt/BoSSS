@@ -155,7 +155,7 @@ namespace ilPSP.Utils {
                 ushort group = groups[cntGroup];
                 GROUP_AFFINITY groupAffinity;
                 if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group, NumberOfCPUsPerGroup).ToArray());
+                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group).ToArray());
                 } else {
                     int errorCode = Marshal.GetLastWin32Error();
                     throw new Win32Exception(errorCode);
@@ -273,7 +273,7 @@ namespace ilPSP.Utils {
                     // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
                     //
 
-                    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup, NumberOfCPUsPerGroup);
+                    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup); //, NumberOfCPUsPerGroup
                     groupOccupied.Add(groupCPUs.Count() > 0);
                     CPUlist.AddRange(groupCPUs);
                     iGroup++;
@@ -335,21 +335,51 @@ namespace ilPSP.Utils {
         }
 
 
-
-
-        static IEnumerable<int> CheckCpuAffinity(ulong mask, int iProcessorGroup, int procsPerGroup) {
-            var res = new List<int>();
-            ulong bitmask = (ulong)mask;
-            for(int cpu = 0; cpu < 64; cpu++)  // Assuming a maximum of 64 CPUs per group
-            {
-                ulong cpuBit = 1UL << cpu;
-                if((bitmask & cpuBit) != 0) {
-                    //Console.WriteLine($"  CPU {cpu + iProcessorGroup*64} is available in this group.");
-                    res.Add(cpu + iProcessorGroup * procsPerGroup);
-                }
-            }
-            return res.ToArray();
+        static int[] CoresPerGroup() {
+            int G = NumberOfProcessorGroups;
+            var sizes = new int[G];
+            for(int g = 0; g < G; g++)
+                sizes[g] = (int)GetActiveProcessorCount((ushort)g);
+            return sizes;
         }
+
+        static int[] GroupOffsets() {
+            var sizes = CoresPerGroup();
+            var offs = new int[sizes.Length];
+            int sum = 0;
+            for(int i = 0; i < sizes.Length; i++) {
+                offs[i] = sum;
+                sum += sizes[i];
+            }
+            return offs;
+        }
+
+        static IEnumerable<int> CheckCpuAffinity(ulong mask, int group) {
+            var offs = GroupOffsets();
+            int groupOffset = offs[group];
+            int groupSize = CoresPerGroup()[group];
+
+            var res = new List<int>();
+            for(int cpuInGroup = 0; cpuInGroup < groupSize; cpuInGroup++) {
+                if((mask & (1UL << cpuInGroup)) != 0)
+                    res.Add(groupOffset + cpuInGroup);
+            }
+            return res;
+        }
+
+        //static IEnumerable<int> CheckCpuAffinity(ulong mask, int iProcessorGroup, int procsPerGroup) {
+        //    var res = new List<int>();
+        //    ulong bitmask = (ulong)mask;
+        //    for(int cpu = 0; cpu < 64; cpu++)  // Assuming a maximum of 64 CPUs per group
+        //    {
+        //        ulong cpuBit = 1UL << cpu;
+        //        if((bitmask & cpuBit) != 0) {
+        //            //Console.WriteLine($"  CPU {cpu + iProcessorGroup*64} is available in this group.");
+        //            res.Add(cpu + iProcessorGroup * procsPerGroup);
+        //        }
+        //    }
+        //    return res.ToArray();
+        //}
     }
 }
 
