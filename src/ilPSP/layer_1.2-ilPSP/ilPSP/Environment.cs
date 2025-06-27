@@ -804,7 +804,7 @@ namespace ilPSP {
                 LAPACK.ActivateOMP();
                 PinTPLThreads();
                 PinOMPthreads();
-                StdoutOnlyOnRank0 = true;
+                StdoutOnlyOnRank0 = false;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
             }
         }
