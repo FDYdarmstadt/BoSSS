@@ -238,6 +238,7 @@ namespace ilPSP.Utils {
         /// </summary>
         public static int[] Decode_CCP_AFFINITY() {
             using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 string CCP_AFFINITY = System.Environment.GetEnvironmentVariable("CCP_AFFINITY");
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
