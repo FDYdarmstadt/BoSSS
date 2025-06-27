@@ -178,6 +178,10 @@ namespace ilPSP.Utils {
 
             unsafe {
                 GROUP_AFFINITY* affinities = stackalloc GROUP_AFFINITY[16];
+                for(int i = 0; i < 16; i++) {
+                    affinities[i] = default;  // zeroes Mask and Group
+                }
+
                 int[] iGroup2affinities = new int[16];
                 int NumberOfGroups = 0;
                 foreach(int iCPU in CPUindices) { // sort the CPU indices into processor groups
