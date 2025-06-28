@@ -707,7 +707,7 @@ namespace ilPSP {
                             tr.Info("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
                         tr.Info("Does Win32 report same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
-                        //ReservedCPUs = _ReservedCPUs;
+                        ReservedCPUs = _ReservedCPUs;
                     } else {
                         tr.Info($"CCP_AFFINITY not set");
                     }

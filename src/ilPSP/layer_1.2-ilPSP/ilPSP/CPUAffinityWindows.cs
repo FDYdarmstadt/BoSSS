@@ -125,6 +125,48 @@ namespace ilPSP.Utils {
             }
         }
 
+        /// <summary>
+        /// testing affinity for more than 64 processors
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Win32Exception"></exception>
+        unsafe  public static int[] GetFullProcessAffinity() {
+            var proc = Process.GetCurrentProcess();
+            IntPtr hProc = proc.Handle;
+
+            // 1) Get all groups
+            ushort gCount = 0;
+            GetProcessGroupAffinity(hProc, ref gCount, null);
+            var groups = new ushort[gCount];
+            if(!GetProcessGroupAffinity(hProc, ref gCount, groups))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
+            // 2) Save original thread affinity
+            IntPtr hThread = GetCurrentThread();
+            GetThreadGroupAffinity(hThread, out var original);
+
+            GROUP_AFFINITY previousAffinity;
+
+            var cpus = new List<int>();
+            foreach(var g in groups) {
+                // 3) Pin this thread to group g with a full-ones mask
+                var pin = new GROUP_AFFINITY { Group = g, Mask = UInt64.MaxValue };
+                if(!SetThreadGroupAffinity(hThread, ref pin, &previousAffinity))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+
+                // 4) Read back the thread’s group affinity → this is process-mask ∧ full-mask
+                GetThreadGroupAffinity(hThread, out var actual);
+                for(int b = 0; b < NumberOfCPUsPerGroup; b++)
+                    if(((actual.Mask >> b) & 1) != 0)
+                        cpus.Add(g * NumberOfCPUsPerGroup + b);
+            }
+
+            // 5) Restore original
+            SetThreadGroupAffinity(hThread, ref original, &previousAffinity);
+
+            return cpus.ToArray();
+        }
+
 
         /// <summary>
         /// (Windows version) Returns the list of CPU's to which the current process is assigned to.
