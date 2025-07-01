@@ -273,7 +273,7 @@ namespace FreeXNSE {
                 ContactPoints.Clear();
 
                 int D = grd.SpatialDimension;
-                LevelSetTracker trk = new LevelSetTracker(grd, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, phi);
+                LevelSetTracker trk = new LevelSetTracker(grd, CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, phi);
                 trk.UpdateTracker(0.0);
 
                 XQuadSchemeHelper SchemeHelper = trk.GetXDGSpaceMetrics(trk.SpeciesIdS.ToArray(), 0).XQuadSchemeHelper;

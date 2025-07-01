@@ -29,7 +29,7 @@ namespace BoSSS.Application.XNSFE_Solver {
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
-    /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
+    /// - Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
     /// </summary>
     public class XNSFE : XNSFE<XNSFE_Control> {
 
@@ -37,8 +37,12 @@ namespace BoSSS.Application.XNSFE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            //InitMPI(args);
-            //DeleteOldPlotFiles();
+            InitMPI(args);
+            DeleteOldPlotFiles();
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, double.PositiveInfinity, 0.143d, 1.2d);
+            BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestNonLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 0.0d, 1.0d, 0.27d);
+            Assert.IsTrue(false, "remove me");
+
             //using (var solver = new XNSFE()) {
             //    solver.Init(ThermalSlip_HardcodedControls.HeatedWall_3PhaseDemo(true));
             //    solver.RunSolverMode();
@@ -48,59 +52,8 @@ namespace BoSSS.Application.XNSFE_Solver {
             //System.Environment.Exit(-111);
 
             //ilPSP.Environment.InitThreading(true, 8);
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
-
-            /*
-            InitMPI(args);
-            DeleteOldPlotFiles();
-
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 4);
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 5);
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 6);
-            Tests.InterfaceConvergenceTests.EvaporationConvergence(5, 7);
-
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 3, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 4, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 5, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 6, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 7, 5);
-            //Tests.InterfaceConvergenceTests.CurvatureConvergence(5, 8, 5);
-
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 90.0);
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 90.0);
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 0, 80.0);
-            //Tests.InterfaceConvergenceTests.TemperatureConvergence(5, 1, 80.0);
-
-            //Tests.StaticDropletTest.StaticDropletScalingTest(2);
-            //Tests.StaticDropletTest.StaticDropletConvergenceTest(4, true, 0.0, 80.0);
-
-            //{
-            //    var C = Tests.StaticDropletTest.EvaporatigDropletTestControl(4, 4, true, 0.1, true, 1.0, 80.0);
-            //    //var C = StaticWedgeTestControl(deg, res, true, 0.1, evap, ls, theta);
-            //    C.SkipSolveAndEvaluateResidual = false;
-            //    C.ImmediatePlotPeriod = 1;
-            //    C.SuperSampling = 2;
-
-            //    using (var solver = new XNSFE()) {
-            //        solver.Init(C);
-            //        solver.RunSolverMode();
-            //    }
-            //}
-
-            FinalizeMPI();
-            System.Environment.Exit(-111);
-            */
-
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //Tests.ParameterizedLevelSetTest_Elemental.Test();
-            //Tests.ParameterizedLevelSet_Translation.Test();
-            //Tests.ASUnitTest.ParameterizedLevelSetTest_Translation();
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.TransientEvaporationTest(0.0, 3, 0.1, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected, NonLinearSolverCode.Newton, Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2);
-            //System.Environment.Exit(111);
-
 
 
             XNSFE._Main(args, false, delegate () {
@@ -156,10 +109,11 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         override public int QuadOrder() {
-            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            if (Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes
+               && Control.CutCellQuadratureType != CutCellQuadratureMethod.Algoim) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes} and {CutCellQuadratureMethod.Algoim}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -167,7 +121,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             //QuadOrder
             int degU = Math.Max(VelocityDegree(), TemperatureDegree());
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -443,7 +397,6 @@ namespace BoSSS.Application.XNSFE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-
             //if (Control.InitialValues_EvaluatorsVec.TryGetValue("Temperature#B", out var scalarFunctionTimeDep) && this.Control.SkipSolveAndEvaluateResidual) {
             //    ScalarFunction T_ex = null;
             //    T_ex = scalarFunctionTimeDep.SetTime(phystime);
@@ -592,7 +545,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             double safety = 5;
             return 1 / safety * Math.Sqrt((C.PhysicalParameters.rho_A + C.PhysicalParameters.rho_B) * Math.Pow(h / (p + 1), 3) / (2 * Math.PI * Math.Abs(C.PhysicalParameters.Sigma)));
         }
-
+        /*
         private void PlotAdditionalFields(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             #region additional fields
 
@@ -1052,6 +1005,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             base.PlotCurrentState(physTime, timestepNo, superSampling);
         }
+        */
 
         /// <summary>
         /// automatized analysis of condition number 

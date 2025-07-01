@@ -650,7 +650,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}", false));
             C.AddInitialValue("VelocityX", new Formula($"(X) => {VelocityIn}"));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -811,7 +811,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}", true));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -963,7 +963,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => 1-X[1]*X[1]", true));
             //C.AddBoundaryValue("Velocity_inlet", "VelocityY", new Formula($"(X,t) => 1-x*x", true));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             //C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -1083,7 +1083,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X) => {VelocityIn}"));
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -1336,7 +1336,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //C.EqualOrder = false;
             //C.PressureStabilizationFactor = 1;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             //C.UseSchurBlockPrec = true;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
@@ -1568,7 +1568,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // ====================
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.1;
@@ -1622,7 +1622,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             bool useIB = true;
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -4805,7 +4805,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.ComputeEnergyProperties = false;
             C.AgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -5943,7 +5943,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int D = 3;
 
             if (D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
 
@@ -6393,7 +6393,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var C = Rotating_Something_Unsteady(4, 20, 2, false);
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.ConvergenceCriterion = 0.000001; //it can also happen with 0.001 depending on parameters
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
             C.PhysicalParameters.IncludeConvection = true;
             C.NoOfTimesteps = 300;
             return C;
@@ -6425,8 +6425,8 @@ namespace BoSSS.Application.XNSE_Solver {
             
             //C.UseSchurBlockPrec = true;
             
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
                         
             C.TracingNamespaces = "BoSSS";
 
@@ -6539,7 +6539,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddInitialValue("Pressure", new Formula(@"X => 0"));
             C.AddBoundaryValue("Pressure_Outlet");
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.95;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -6745,7 +6745,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
 
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye; //default
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye; //default
 
             return C;
         }
@@ -6844,7 +6844,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // Solver options
             // ===================
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = aggThreshold;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -7004,7 +7004,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // discretization settings
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
@@ -7160,7 +7160,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;

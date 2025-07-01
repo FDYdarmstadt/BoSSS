@@ -245,7 +245,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     B = _B.ToArray();
                 }
 
-
                 double bnrm2 = B.MPI_L2Norm(m_MPI_Comm);
                 if(bnrm2 == 0.0) {
                     bnrm2 = 1.0;
@@ -559,7 +558,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Dispose() {
             //if (m_MTracker != null) m_MTracker.Dispose();
-            if (this.m_mgop is MultigridOperator _mgop) {
+            if (this.m_mgop is MultigridOperator _mgop && ThisLevelTime.Elapsed.TotalSeconds > 0.0) {
                 int lv = _mgop.LevelIndex;
                 Console.WriteLine($"SoftGMRES lv {lv} - total runtime: {ThisLevelTime.Elapsed.TotalSeconds:F1} sec");
                 Console.WriteLine($"SoftGMRES lv {lv} - precond runtime: {StopwatchPrecond.Elapsed.TotalSeconds:F1} sec ({100*StopwatchPrecond.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");

@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// <param name="j"></param>
         /// <returns></returns>
         public bool IsSpecialCell(int j) {
-            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.m_LevSetCoincidingFaces;
+            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.LevSetCoincidingFaces;
             if (CoIncFaces == null)
                 return false;
             if (CoIncFaces[j] == null)
@@ -92,7 +92,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             int iCell, jCell;
             iCell = grddat.Edges.CellIndices[j, 0];
             jCell = grddat.Edges.CellIndices[j, 1];
-            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.m_LevSetCoincidingFaces;
+            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.LevSetCoincidingFaces;
             if (CoIncFaces == null)
                 return false;
 
@@ -148,7 +148,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// return the face index, for the special face in a certain cell
         /// </summary>
         public int GetSpecialFace(int i) {
-            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.m_LevSetCoincidingFaces;
+            (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.LevSetCoincidingFaces;
             if (CoIncFaces == null)
                 return -1;
             if (CoIncFaces[i] == null)

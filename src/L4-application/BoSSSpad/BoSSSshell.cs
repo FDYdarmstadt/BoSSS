@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver.DongBoundaryConditionTests;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -210,20 +211,68 @@ namespace BoSSS.Application.BoSSSpad {
         static TextWriterAppender logger_output = null;
         static Stream tracerfile;
         static TextWriter tracertxt;
+        static string ProfilingFile;
+
+        static void WriteProfiling() {
+            if (ProfilingFile == null)
+                return;
+
+            var R = Tracer.Root;
+
+            using (var wrt = new StringWriter()) {
+                wrt.WriteLine();
+                wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
+                wrt.WriteLine("(sum over all calling parents)");
+                wrt.WriteLine("=========================================================");
+
+                MethodCallRecordExtension.GetMostExpensiveCalls(wrt, R);
+
+                wrt.WriteLine();
+                wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
+                wrt.WriteLine("(distinction by parent call)");
+                wrt.WriteLine("=========================================================");
+
+                MethodCallRecordExtension.GetMostExpensiveCallsDetails(wrt, R);
+
+                wrt.WriteLine();
+                wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
+                wrt.WriteLine("(sum over all calling parents)");
+                wrt.WriteLine("===========================================================================");
+
+                MethodCallRecordExtension.GetMostMemoryConsumingCalls(wrt, R);
+
+                wrt.WriteLine();
+                wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
+                wrt.WriteLine("(distinction by parent call)");
+                wrt.WriteLine("==========================================================================");
+
+                MethodCallRecordExtension.GetMostMemoryConsumingCallsDetails(wrt, R);
+
+                try {
+                    File.WriteAllText(ProfilingFile, wrt.ToString());
+                } catch (Exception ex) {
+                    Console.Error.WriteLine(ex.ToString());
+                }
+            }
+
+        }
 
         static void InitTraceFile() {
 
             if (logger_output != null)
                 throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
 
-
             string settingsDir = Foundation.IO.Utils.GetBoSSSUserSettingsPath();
             string tracingDir = Path.Combine(settingsDir, "bossspad-trace");
             if (!System.IO.Directory.Exists(tracingDir))
                 System.IO.Directory.CreateDirectory(tracingDir);
             DateTime nau = DateTime.Now;
-            string baseneme = Path.Combine(tracingDir, $"trace.{nau.ToString("MMMdd_HHmmss")}-{nau.Millisecond}.txt");
+            string bbb = $"{nau.ToString("MMMdd_HHmmss")}-{nau.Millisecond}";
+            string baseneme = Path.Combine(tracingDir, $"trace.{bbb}.txt");
+            ProfilingFile = Path.Combine(tracingDir, $"profiling_summary.{bbb}.txt");
             Console.WriteLine("Tracing file: " + baseneme);
+            Console.WriteLine("Profiling file: " + ProfilingFile);
+            WriteProfiling();
 
             tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
             tracertxt = new StreamWriter(tracerfile);
@@ -271,6 +320,8 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         valString = v != null ? optValFormatter(v) : "NULL";
                     writer.Write(valString);
+
+                    WriteProfiling();
                 });
         }
 
@@ -298,6 +349,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     System.Data.DataTable v = (System.Data.DataTable)obj;
                     v.WriteCSVToStream(writer, ' ', true, true, true);
+                    WriteProfiling();
                 });
         }
 
@@ -342,6 +394,7 @@ namespace BoSSS.Application.BoSSSpad {
                         writer.WriteLine("#" + i + ": " + kv.Value + "\t" + kv.Value.ToString());
                         i++;
                     }
+                    WriteProfiling();
                 });
         }
 
@@ -379,6 +432,8 @@ namespace BoSSS.Application.BoSSSpad {
                         writer.WriteLine("#" + i + ": " + valString);
                         i++;
                     }
+
+                    WriteProfiling();
                 });
         }
 
@@ -435,6 +490,7 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 if (m_WorkflowMgm == null)
                     m_WorkflowMgm = new WorkflowMgm();
+
                 return m_WorkflowMgm;
             }
         }
@@ -1155,6 +1211,7 @@ namespace BoSSS.Application.BoSSSpad {
                 typeof(MathNet.Numerics.Complex32),
                 typeof(CNS.CNSProgram),
                 typeof(XNSE_Solver.XNSE),
+                typeof(DongBoundaryCondition_KovasznayFlow),
                 typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                 typeof(Rheology.Rheology),
                 typeof(XNSERO_Solver.XNSERO),

@@ -576,12 +576,6 @@ namespace BoSSS.Solution.Control {
 
                 if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
                     throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
-
-                //if (!ret.Keys.SetEquals(InitialValues_Evaluators.Keys))
-                //    throw new ApplicationException($"InitialValues_Evaluators keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
-                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-
                 return ret;
             }
         }
@@ -601,16 +595,11 @@ namespace BoSSS.Solution.Control {
             get {
                 Sync__InitialValues_Evaluators();
                 var ret = new ProxyDict_Func() {
-                    home = m_InitialValues_Evaluators
+                    home = m_InitialValues_Evaluators 
                 };
 
-                if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
+                if(!InitialValues.Keys.IsSubsetOf(ret.Keys))
                     throw new ApplicationException($"InitialValues key mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")} (expecting a subset).");
-
-                //if (!ret.Keys.SetEquals(InitialValues_EvaluatorsVec.Keys))
-                //    throw new ApplicationException($"InitialValues_EvaluatorsVec keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
-                //if (!ret.Keys.SetEquals(InitialValues_Evaluators_TimeDep.Keys))
-                //    throw new ApplicationException($"InitialValues_Evaluators_TimeDep keys mismatch: {InitialValues.Keys.ToConcatString("[", ", ", "]")} vs. {ret.Keys.ToConcatString("[", ", ", "]")}.");
 
                 return ret;
             }
@@ -632,7 +621,7 @@ namespace BoSSS.Solution.Control {
             get {
                 Sync__InitialValues_Evaluators();
                 var ret = new ProxyDict_Func_TimeDep() {
-                    home = m_InitialValues_Evaluators
+                    home = m_InitialValues_Evaluators 
                 };
 
                 if (!InitialValues.Keys.IsSubsetOf(ret.Keys))
@@ -1007,7 +996,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]
-        public string TracingNamespaces = null;
+        public string TracingNamespaces = "*";
 
         /// <summary>
         /// Activate/Deactivate memory allocation logging
@@ -1137,7 +1126,7 @@ namespace BoSSS.Solution.Control {
         /// this setting has no effect.
         /// </summary>
         [DataMember]
-        public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        public CutCellQuadratureMethod CutCellQuadratureType = CutCellQuadratureMethod.Algoim;
 
         /// <summary>
         /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
@@ -1270,7 +1259,8 @@ namespace BoSSS.Solution.Control {
 
                 foreach(var a in assiList) {
                     var tt = new Dictionary<string, Type>();
-                    knownTypes.Add(a.GetName().Name, tt);
+                    string name = a.GetName().Name;
+                    knownTypes.Add(name, tt);
                     foreach(var t in a.GetExportedTypes()) {
                         tt.Add(t.FullName, t);
                     }

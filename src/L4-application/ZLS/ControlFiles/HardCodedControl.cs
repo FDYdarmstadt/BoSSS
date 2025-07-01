@@ -780,9 +780,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ====================
             #region solver
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 0;
-            C.RefinementLevel = 0;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  0;
+            //C.RefinementLevel = 0;
             //C.AMR_startUpSweeps = 2;
 
             //C.InitSignedDistance = false;

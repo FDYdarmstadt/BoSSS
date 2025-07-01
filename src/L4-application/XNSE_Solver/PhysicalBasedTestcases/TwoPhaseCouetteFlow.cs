@@ -287,10 +287,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 0;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  0;
+            //C.RefinementLevel = 1;
 
             #endregion
 

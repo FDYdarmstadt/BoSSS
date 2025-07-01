@@ -187,14 +187,27 @@ namespace BoSSS.Application.XNSERO_Solver {
                 double residualScalar = 0;
                 for (int i = 0; i < variable.Length; i++) {
                     residual[i] = new double[] { (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]), (m_ForcesAndTorqueWithoutRelaxation[1][i] - m_ForcesAndTorquePreviousIteration[1][i]) };
+
+                    if(residual[i].CheckForNanOrInfV(ExceptionIfFound:false) != 0) {
+                        throw new ArithmeticException($"AitkenRelaxation: variable[i] = {variable[i]}, m_ForcesAndTorquePreviousIteration[0][i] = {m_ForcesAndTorquePreviousIteration[0][i]}, m_ForcesAndTorqueWithoutRelaxation[1][i] = {m_ForcesAndTorqueWithoutRelaxation[1][i]}, m_ForcesAndTorquePreviousIteration[1][i] = {m_ForcesAndTorquePreviousIteration[1][i]}");
+                    }
+
                     residualDiff[i] = residual[i][0] - residual[i][1];
+                    if (residualDiff[i].IsNaNorInf()) {
+                        throw new ArithmeticException($"AitkenRelaxation: residual[i][0] = {residual[i][0]}, residual[i][0] = {residual[i][0]}");
+                    }
+
                     residualScalar += residual[i][1] * residualDiff[i];
+                    if (residualScalar.IsNaNorInf()) {
+                        throw new ArithmeticException($"AitkenRelaxation: residual[i][1] = {residual[i][1]}, residualDiff[i] = {residualDiff[i]}");
+                    }
                 }
                 if (residualDiff.L2NormPow2() > 0.0) {
                     // breakdown of Aitken; no further update
                     Omega = -Omega * residualScalar / residualDiff.L2NormPow2();
-                    //throw new ArithmeticException($"AitkenRelaxation: Omega = {Omega} (residualScalar = {residualScalar}, |residualDiff|_2 = {residualDiff.L2Norm()}");
                 }
+                if(Omega.IsNaNorInf())
+                    throw new ArithmeticException($"AitkenRelaxation: Omega = {Omega} (residualScalar = {residualScalar}, |residualDiff|_2 = {residualDiff.L2Norm()}");
                 double[] outVar = variable.CloneAs();
                 for (int i = 0; i < variable.Length; i++) {
                     outVar[i] = Omega * (variable[i] - m_ForcesAndTorquePreviousIteration[0][i]) + m_ForcesAndTorquePreviousIteration[0][i];

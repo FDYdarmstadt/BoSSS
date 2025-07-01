@@ -205,7 +205,7 @@ namespace BoSSS.Solution.RheologyCommon {
             }
 
             switch (edgType) {
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
 
                     // Atmospheric outlet/pressure outflow: hom. Neumann

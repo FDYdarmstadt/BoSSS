@@ -1,14 +1,18 @@
 ﻿﻿
 using BoSSS.Foundation;
+using BoSSS.Foundation.Caching;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
+using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
@@ -261,10 +265,100 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
 
+            //internal void EnforceContinuity(bool enforceOnNearband = false) {
+            //    LevelSetTracker Tracker = phaseInterface.Tracker;
+            //    CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
+            //    CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
+
+            //    //enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+
+            //    ContinuityProjection preEnforcer = new ContinuityProjection(
+            //        phaseInterface.CGLevelSet.Basis,
+            //        phaseInterface.DGLevelSet.Basis,
+            //        Tracker.GridDat,
+            //        ContinuityProjectionOption.None);
+            //    LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+            //    preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
+            //    LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+            //    preTracker.UpdateTracker(0.0);
+
+            //    CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
+            //    CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
+            //    PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
+            //    preTracker.Dispose();
+
+            //    bool FalseContactline = false;
+
+            //    if(!enforceOnNearband) {
+            //        enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
+
+            //        EdgeMask CCplusBnd = CCplus.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(CCplus.GetAllInnerEdgesMask()));
+            //        foreach(int iEdge in CCplusBnd.ItemEnum) {
+            //            Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+            //            MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+            //            if(phiIn.Max() * phiIn.Min() < 0 || phiOut.Max() * phiOut.Min() < 0) {
+            //                FalseContactline = true;
+            //            }
+            //        }
+
+            //        FalseContactline = FalseContactline.MPIOr();
+
+            //        if(FalseContactline) {
+            //            Console.WriteLine("Error in continuity projection, extending computation to nearband!");
+            //            EnforceContinuity(true);
+            //        }
+            //    } else {
+            //        enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+
+            //        EdgeMask NearBnd = Near1.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(Near1.GetAllInnerEdgesMask()));
+            //        foreach(int iEdge in NearBnd.ItemEnum) {
+            //            Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
+            //            MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
+            //            phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+
+            //            if(phiIn.Max() * phiIn.Min() < 0) {
+            //                FalseContactline = true;
+            //            }
+            //        }
+
+            //        FalseContactline = FalseContactline.MPIOr();
+
+            //        if(FalseContactline) {
+            //            throw new ApplicationException("Continuity projection failed, cannot recover!");
+            //        }
+            //    }
+            //}
+
+
             /// <summary>
             /// 
             /// </summary>
-            internal void EnforceContinuity(bool enforceOnNearband = false) {
+            internal void EnforceContinuity() {
+
+                EnforceContinuityWithPreEnforcer();
+
+                if(enforcer.myOption != ContinuityProjectionOption.None && !IsInterfaceClosed()) {
+                    Console.WriteLine("Enforce continuity on nearband");
+                    //EnforceContinuityWithPreEnforcer(ContinuityProjectionOption.ConstrainedDG);
+
+                    LevelSetTracker Tracker = phaseInterface.Tracker;
+                    CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
+                    CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
+
+                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+                }
+            }
+
+            /// <summary>
+            /// The preEnforcer ensures that the projection is performed on new cut-cells in case of a moving interface
+            /// </summary>
+            /// <param name="ProjOpt"></param>
+            internal void EnforceContinuityWithPreEnforcer(ContinuityProjectionOption ProjOpt = ContinuityProjectionOption.None) {
+
                 LevelSetTracker Tracker = phaseInterface.Tracker;
                 CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
@@ -275,7 +369,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     phaseInterface.CGLevelSet.Basis,
                     phaseInterface.DGLevelSet.Basis,
                     Tracker.GridDat,
-                    ContinuityProjectionOption.None);
+                    ProjOpt);
                 LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
                 preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
                 LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
@@ -284,53 +378,82 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
                 CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
                 PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
+
+                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
                 preTracker.Dispose();
+            }
 
-                bool FalseContactline = false;
+            /// <summary>
+            /// Checks for inner contact points/lines
+            /// Sometimes (so far only 2D) one need to do the projection on the nearband in order to remove holes in the interface
+            /// </summary>
+            /// <returns></returns>
+            internal bool IsInterfaceClosed() {
 
-                if (!enforceOnNearband) {
-                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
+                LevelSetTracker LsTrk = phaseInterface.Tracker;
+                LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+                LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+                testTracker.UpdateTracker(0.0);
 
-                    EdgeMask CCplusBnd = CCplus.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(CCplus.GetAllInnerEdgesMask()));
-                    foreach (int iEdge in CCplusBnd.ItemEnum) {
-                        Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
-                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-                        phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+                int order = phaseInterface.CGLevelSet.Basis.Degree;
+                var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
+                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, testTracker.GridDat.Grid.RefElements[0]);
+                EdgeMask CutCellInnerBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
+                EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, CutCellInnerBoundaryEdgeMask);
 
-                        if (phiIn.Max() * phiIn.Min() < 0 || phiOut.Max() * phiOut.Min() < 0) {
-                            FalseContactline = true;
+                //ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                //int rank = LsTrk.GridDat.MpiRank;
+
+                //var cellPart = LsTrk.GridDat.CellPartitioning;
+                //Console.WriteLine($"proc {rank}: no of local cells {LsTrk.GridDat.Cells.NoOfLocalUpdatedCells} - ({cellPart.i0}, {cellPart.iE-1})");
+
+                double result = 0.0;
+                int D = testTracker.GridDat.SpatialDimension;
+                EdgeQuadrature.GetQuadrature(new int[] { 1 }, testTracker.GridDat,
+                    SurfaceElement_BoundaryEdge.Compile(testTracker.GridDat, order),
+                    delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
+
+                        for (int i = 0; i < length; i++) {
+                            EdgeInfo edgInfo = testTracker.GridDat.Edges.Info[i0 + i];
+                            double edgSign = 1.0;
+                            if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
+                                double[] edgNormal = testTracker.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
+                                edgSign = edgNormal.Sum();
+                            }
+                            for (int qn = 0; qn < QR.NoOfNodes; qn++) {
+                                EvalResult[i, qn, 0] = 1.0 * edgSign;
+                            }
+                        }
+                        //EvalResult.SetAll(1.0);
+
+                    },
+                    delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
+                        for (int i = 0; i < length; i++) {
+                            //if (resOfIntg != 0) {
+                            //    int[,] cellIdx = LsTrk.GridDat.Edges.CellIndices;
+                            //    long jIn = (rank == 0) ? cellIdx[i0 + i, 0] : cellIdx[i0 + i, 0] + cellPart.i0;
+                            //    long jOut = (rank == 0) ? cellIdx[i0 + i, 1] : cellIdx[i0 + i, 1] - LsTrk.GridDat.Cells.NoOfExternalCells;
+                            //    Console.WriteLine($"proc {rank} - edge {i0 + i} ({jIn}, {jOut}): integration result = {ResultsOfIntegration[i, 0]}");
+                            //}
+                            result += ResultsOfIntegration[i, 0];
                         }
                     }
+                ).Execute();
+                testTracker.Dispose();
 
-                    FalseContactline = FalseContactline.MPIOr();
+                //Console.WriteLine($"proc {LsTrk.GridDat.MpiRank}: result = {result}");
+                //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
-                    if (FalseContactline) {
-                        Console.WriteLine("Error in continuity projection, extending computation to nearband!");
-                        EnforceContinuity(true);
-                    }
-                } else {
-                    enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+                result = result.MPISum();
+                bool isClosed = Math.Abs(result) < 1e-10;
 
-                    EdgeMask NearBnd = Near1.AllEdges().Intersect(CellMask.GetFullMask(Tracker.GridDat, MaskType.Logical).GetAllInnerEdgesMask().Except(Near1.GetAllInnerEdgesMask()));
-                    foreach (int iEdge in NearBnd.ItemEnum) {
-                        Tracker.GridDat.Edges.GetRefElement(iEdge).GetNodeSet(5, out NodeSet TestNodes, out _, out _);
-                        MultidimensionalArray phiIn = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-                        MultidimensionalArray phiOut = MultidimensionalArray.Create(1, TestNodes.NoOfNodes);
-                        phaseInterface.CGLevelSet.EvaluateEdge(iEdge, 1, TestNodes, phiIn, phiOut);
+                if (!isClosed)
+                    Console.WriteLine("Interface not closed: result = {0}", result);
 
-                        if (phiIn.Max() * phiIn.Min() < 0) {
-                            FalseContactline = true;
-                        }   
-                    }
 
-                    FalseContactline = FalseContactline.MPIOr();
-
-                    if (FalseContactline) {
-                        throw new ApplicationException("Continuity projection failed, cannot recover!");
-                    }
-                }                
+                return isClosed;
             }
+
 
             public void UpdateParameters(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,
@@ -403,15 +526,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
-        /// constructor for one level-set, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[], ILevelSet)"/>
+        /// constructor for one level-set, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[], ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
-            LevelSet dgLevelSet, string interfaceName, ContinuityProjectionOption continuityMode) {
+            LevelSet dgLevelSet, string interfaceName, ContinuityProjectionOption continuityMode, int CGLevelSetDegree = -1) {
 
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
-                    dgLevelSet, backgroundGrid, continuityMode);
+                    dgLevelSet, backgroundGrid, continuityMode, CGLevelSetDegree);
             cgLevelSet.Identification = interfaceName;
             //cgLevelSet.AccLaidBack(1.0, dgLevelSet);
 
@@ -434,9 +557,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// Constructor for two level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,], ILevelSet, ILevelSet)"/>
+        /// Constructor for two level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,], ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1,
@@ -472,9 +595,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// Constructor for three level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,,], ILevelSet, ILevelSet, ILevelSet)"/>
+        /// Constructor for three level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,,], ILevelSet, ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,,] _SpeciesTable, 
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2,
@@ -507,9 +630,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
-        /// constructor for four level sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,,,], ILevelSet, ILevelSet, ILevelSet, ILevelSet)"/>
+        /// constructor for four level sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, CutCellQuadratureMethod, int, string[,,,], ILevelSet, ILevelSet, ILevelSet, ILevelSet)"/>
         /// </summary>
-        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+        public LevelSetUpdater(GridData backgroundGrid, CutCellQuadratureMethod cutCellquadType,
             int __NearRegionWidth, string[,,,] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3,

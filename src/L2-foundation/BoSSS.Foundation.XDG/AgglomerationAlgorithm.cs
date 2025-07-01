@@ -262,7 +262,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// If agglomeration plots are demanded. A flag for debugging purposes in the agglomeration algorithm.
         /// </summary>
-        public static bool PlotAgglomeration = false;
+        public static bool debugging_PlotAgglomeration = false;
 
         /// <summary>
         /// 
@@ -915,7 +915,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
                 int NoFailedCells = failCells.Count.MPISum();
-                if (NoFailedCells > 0 || PlotAgglomeration) {
+                if (NoFailedCells > 0 || debugging_PlotAgglomeration) {
                     double[] volFrac = new double[Jup];
                     int Dim = grdDat.Cells.GetCenter(0).Dim;
                     int[] pairIdentification = new int[Jup];
@@ -948,8 +948,8 @@ namespace BoSSS.Foundation.XDG {
                     if (NoFailedCells > 0)
                         PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString(Tracker)}");
 
-                        if (PlotAgglomeration)
-                        PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString(Tracker)}");
+                        if (debugging_PlotAgglomeration)
+                            PlotFail(false, CellVolumes, oldCellVolumes, AgglomCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString(Tracker)}");
 
                 }
 
@@ -1644,7 +1644,7 @@ namespace BoSSS.Foundation.XDG {
 
                 failCells.AddRange(CellsNeedChainAgglomeration);
                 int NoFailedCells = failCells.Count.MPISum();
-                if (NoFailedCells > 0 || PlotAgglomeration) {
+                if (NoFailedCells > 0 || debugging_PlotAgglomeration) {
                     int[] pairIdentification = new int[Jup];
                     int[] pairColor = new int[Jup];
                     Vector[] aggDirection = new Vector[Jup];
@@ -1685,7 +1685,7 @@ namespace BoSSS.Foundation.XDG {
                         PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString(Tracker)}");
 
 
-                    if (PlotAgglomeration)
+                    if (debugging_PlotAgglomeration)
                         PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString(Tracker)}");
 
                 }
@@ -1764,7 +1764,7 @@ namespace BoSSS.Foundation.XDG {
                 // In case of still failed cases
                 #region AgglomerationKatastrophe               
                 var NoFailedCells = m_failCells.Count.MPISum();
-                if (NoFailedCells > 0 || PlotAgglomeration) {
+                if (NoFailedCells > 0 || debugging_PlotAgglomeration) {
                     int[] pairIdentification = new int[Jup];
                     int[] pairColor = new int[Jup];
                     Vector[] aggDirection = new Vector[Jup];
@@ -1805,7 +1805,7 @@ namespace BoSSS.Foundation.XDG {
                         PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString(Tracker)}");
 
 
-                    if (PlotAgglomeration)
+                    if (debugging_PlotAgglomeration)
                         PlotFail(false, CellVolumes, oldCellVolumes, AgglomSourceCellsList, m_failCells, AggCandidates, AggTargets, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationGraphOf{spId.ToString(Tracker)}");
 
                 }
@@ -2065,7 +2065,7 @@ namespace BoSSS.Foundation.XDG {
                 #endregion
             }
 
-            if (ChainAgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
+            if (ChainAgglomerationPairs.Any() && debugging_PlotAgglomeration) //for debugging purposes
                 ChainAgglomerationPairs.SaveToTextFileDebugUnsteady(marker  + "ChainAgglomerationPairs" + Tag + spId.ToString(Tracker), ".txt");
 
         }
@@ -2232,7 +2232,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 #endregion
 
-                if (AgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
+                if (AgglomerationPairs.Any() && debugging_PlotAgglomeration) //for debugging purposes
                     AgglomerationPairs.SaveToTextFileDebugUnsteady("DirectAgglomerationPairs" + Tag +  spId.ToString(Tracker), ".txt");
 
             }
@@ -2357,7 +2357,7 @@ namespace BoSSS.Foundation.XDG {
                 topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
 
             // Debugging info
-            if (m_aggGroups.Any() && PlotAgglomeration)
+            if (m_aggGroups.Any() && debugging_PlotAgglomeration)
             {
                 m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag + spId.ToString(Tracker), ".txt");
 

@@ -79,7 +79,7 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
-                DefineConvective(spcName, d, D, boundaryMap, rhoSpc, LFFSpc);
+                DefineConvective(spcName, d, D, boundaryMap, rhoSpc, LFFSpc, dntParams);
             }
 
 
@@ -121,8 +121,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Convective component of the momentum equation
         /// </summary>
-        protected virtual void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc) {
+        protected virtual void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc, DoNotTouchParameters dntParams) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, d, rhoSpc, LFFSpc);
+            if (boundaryMap.BCTypeUseCount[IncompressibleBcType.Dong_OutFlow] > 0) {
+                conv.DongTerm = new DongBoundaryConditionTerm(dntParams.DongTerm_U0, dntParams.DongTerm_Delta);
+            }
             AddComponent(conv);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
@@ -242,8 +245,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Convective component of the momentum equation, using Newton solver version of convective terms
         /// </summary>
-        protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc) {
+        protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc, DoNotTouchParameters dntParams) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, d, rhoSpc, LFFSpc);
+            if (boundaryMap.BCTypeUseCount[IncompressibleBcType.Dong_OutFlow] > 0) {
+                conv.DongTerm = new DongBoundaryConditionTerm(dntParams.DongTerm_U0, dntParams.DongTerm_Delta);
+            }
             AddComponent(conv);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
         }       
@@ -394,17 +400,18 @@ namespace BoSSS.Solution.XNSECommon {
             if (physParams.IncludeConvection && config.isTransport) {
                 DefineConvective(d, dimension, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);                
             }
-            if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
-                // if Moving mesh, we need the interface transport term somehow
+            //if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+            //    // if Moving mesh, we need the interface transport term somehow
 
-                throw new NotImplementedException("Something missing here.");
-            }
+            //    throw new NotImplementedException("Something missing here.");
+            //}
 
 
             // pressure gradient
             // =================
             if (config.isPressureGradient) {
                 var presLs = new Solution.XNSECommon.Operator.Pressure.PressureFormAtLevelSet(d, dimension);
+                //var presLs = new Solution.XNSECommon.Operator.Pressure.PressureFormAtSurfaceVolume(d, dimension);
                 AddComponent(presLs);
             }
 
@@ -441,10 +448,10 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            if (!isMovingMesh) {
+            //if (!isMovingMesh) {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
                 AddComponent(conv);
-            }
+            //}
             // when moving mesh, nothing to do here
         }
     }
@@ -467,10 +474,10 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            if (!isMovingMesh) {
+            //if (!isMovingMesh) {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
                 AddComponent(conv);
-            }
+            //}
             // when moving mesh, nothing to do here
         }
     }
@@ -531,6 +538,7 @@ namespace BoSSS.Solution.XNSECommon {
                         //IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami_Parameter(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         //AddSurfaceComponent(isoSurfT);
                         //AddParameter(BoSSS.Solution.NSECommon.VariableNames.MaxSigma);
+                        //AddComponent(new IsotropicSurfaceTension_LaplaceBeltrami_LevelSetForm(d, D, sigma));
                         IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, sigma * 0.5, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         AddSurfaceComponent(isoSurfT);
                     }

@@ -1457,7 +1457,7 @@ namespace BoSSS.Solution.LevelSetTools {
             double sigma,
             VectorField<SinglePhaseField> surfaceForce,
             VectorField<SinglePhaseField> levSetGradient,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, int HMForder) //
+            CutCellQuadratureMethod momentFittingVariant, int HMForder) //
         {
             //XQuadSchemeHelper qsh = new XQuadSchemeHelper(lsTrk, 0.0, null, momentFittingVariant, HMForder);
 

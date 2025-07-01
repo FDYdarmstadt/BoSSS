@@ -265,7 +265,7 @@ namespace BoSSS.Solution {
 
             /// <summary>
             /// Global vertices coordinates. See
-            /// <see cref="GridData.TransformLocal2Global(MultidimensionalArray, MultidimensionalArray, int)"/>
+            /// <see cref="IGridData_Extensions.TransformLocal2Global(IGridData, MultidimensionalArray, int)"/>
             /// for the definition of the indices (parameter
             /// "GlobalVerticesOut").
             /// </summary>

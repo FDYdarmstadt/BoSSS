@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.XDG {
 
 
     /// <summary>
-    /// a DG field for a cut-cell -basis (<see cref="XDGBasis"/>);
+    /// a DG field for a cut-cell-basis (<see cref="XDGBasis"/>);
     /// </summary>
     public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 
@@ -1196,7 +1196,18 @@ namespace BoSSS.Foundation.XDG {
         /// todo
         /// </summary>
         public override void ProjectPow(double alpha, DGField f, double pow, CellMask em) {
-            throw new NotImplementedException("todo");
+            if (em == null) {
+                em = CellMask.GetFullMask(this.Basis.GridDat);
+            }
+
+            foreach (var spcId in this.Basis.Tracker.SpeciesIdS) {
+                DGField this_spcId = this.GetSpeciesShadowField(spcId);
+                DGField f_spcId = (f as XDGField)?.GetSpeciesShadowField(spcId) ?? f;
+
+                var mask_spcID = this.Basis.Tracker.Regions.GetSpeciesMask(spcId);
+
+                this_spcId.ProjectPow(alpha, f_spcId, pow, mask_spcID.Intersect(em));
+            }
         }
 
 
@@ -1396,7 +1407,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// most recent entry for <see cref="LevelSetTracker.VersionCnt"/>
         /// </summary>
-        int m_TrackerVersion;
+        public int m_TrackerVersion;
 
         /// <summary>
         /// Updated the data structure of this cut-cell DG field to reflect the

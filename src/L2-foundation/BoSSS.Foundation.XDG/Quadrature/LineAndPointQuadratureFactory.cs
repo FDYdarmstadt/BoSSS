@@ -231,6 +231,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 base.Rules = sign ? o.m_LineMeasurePos : o.m_LineMeasureNeg;
                 int D = o.LevelSetData.GridDat.SpatialDimension;
                 this.empty = CellBoundaryQuadRule.CreateEmpty(o.m_RefElement, 1, D, o.referenceLineSegments.Length);
+                this.empty.OrderOfPrecision = int.MaxValue;
                 this.empty.Nodes.LockForever();
             }
 
@@ -277,6 +278,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (D != 2)
                     throw new NotSupportedException("the point measure is only supported in 2D");
                 this.empty = CellBoundaryQuadRule.CreateEmpty(o.m_RefElement, 1, D, o.referenceLineSegments.Length);
+                empty.OrderOfPrecision = int.MaxValue;
                 this.empty.Nodes.LockForever();
             }
 
@@ -329,7 +331,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             var grdDat = this.LevelSetData.GridDat;
             int D = grdDat.SpatialDimension;
             var _Cells = grdDat.Cells;
-            var scalings = grdDat.Edges.SqrtGramian;
+            //var scalings = grdDat.Edges.SqrtGramian;
             var cell2Edge = grdDat.Cells.Cells2Edges;
             //var edge2Cell = tracker.GridDat.Edges.CellIndices;
             //var FaceIdx = tracker.GridDat.Edges.FaceIndices;
@@ -426,7 +428,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     double[][] subdivisions = new double[referenceLineSegments.Length][]; // collect the endpoint of edges for additional subdivisions of the subsegment in a different array, to not mess up the point measures
                     for (int e = 0; e < referenceLineSegments.Length; e++) {
                         // check if line segment (i.e. face) contains hanging nodes
-                        int edg = grdDat.Cells.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
+                        int edg = grdDat.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
                         var rootList = _roots[e].ToList();
                         if (!FurtherEdges.IsNullOrEmpty()) {
                             // if so add an additional (artificial) roots at the hanging nodes
@@ -632,7 +634,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 // this should avoid some special-case handling for empty rules
                                 emptyrule.NumbersOfNodesPerFace[0] = 1;
                                 emptyrule.Nodes.LockForever();
-
+                                emptyrule.OrderOfPrecision = int.MaxValue;
                                 LineMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
 
                                 if(PositiveSegment)
@@ -843,7 +845,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // this should avoid some special-case handling for empty rules
                             emptyrule.NumbersOfNodesPerFace[0] = 1;
                             emptyrule.Nodes.LockForever();
-
+                            emptyrule.OrderOfPrecision = order;
                             PointMeasure_result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), emptyrule));
                         }
                         else  
@@ -902,7 +904,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     NumbersOfNodesPerFace = PtMeas_noOfNodesPerEdge
                                 };
 
-                                var PtMeas_weights = NewMethod(scalings, EdgeData, jCell, cell2Edge_j, _roots);
+                                var PtMeas_weights = NewMethod(EdgeData, jCell, cell2Edge_j, _roots);
 
                                 subdividedRule.Weights.SetVector(PtMeas_weights);
 
@@ -1130,7 +1132,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                         NumbersOfNodesPerFace = new int[_roots.Length]
                                     };
 
-                                    var PtMeas_weights = NewMethod(scalings, grdDat.Edges, jCell, cell2Edge_j, _roots);
+                                    var PtMeas_weights = NewMethod(grdDat.Edges, jCell, cell2Edge_j, _roots);
                                     double[][] _PtMeas_weights = new double[_roots.Length][];
                                     int cnt = 0;
                                     for (int e = 0; e < _roots.Length; e++) {
@@ -1171,7 +1173,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             this.m_LineMeasureNeg.Add(order, LineMeasureNeg_result.ToArray());
         }
 
-        private static List<double> NewMethod(MultidimensionalArray scalings, GridData.EdgeData EdgeData, int jCell, int[] cell2Edge_j, double[][] _roots) {
+        private static List<double> NewMethod(GridData.EdgeData EdgeData, int jCell, int[] cell2Edge_j, double[][] _roots) {
             var edge2Cell = EdgeData.CellIndices;
             var FaceIdx = EdgeData.FaceIndices;
             
@@ -1211,16 +1213,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (!EdgeData.IsEdgeConformal(iEdge, _inOut)) {
                     // compute new scaling for non-conforming edges
 
-                    double scaling = EdgeData.GetSqrtGramianForNonConformEdge(iEdge, _inOut);
+                    //double scaling = EdgeData.GetSqrtGramianForNonConformEdge(iEdge, _inOut);
 
                     for (int l = 0; l < roots.Length; l++) {
-                        PtMeas_weights.Add(1.0 / scaling);
+                        PtMeas_weights.Add(1.0);// / scaling);
                     }
 
                 } else {
                     // use standard scaling of the edges
                     for (int l = 0; l < roots.Length; l++) {
-                        PtMeas_weights.Add(1.0 / scalings[iEdge]);
+                        PtMeas_weights.Add(1.0);// / scalings[iEdge]);
                     }
                 }
             }

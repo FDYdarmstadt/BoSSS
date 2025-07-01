@@ -19,26 +19,26 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(
-            XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
-            ) {
-            //BoSSS.Application.CutCellQuadratureScaling.AllTests.OneLevelSet_2D
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.OneStepGauss, CutCellQuadratureMethod.OneStepGaussAndStokes, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) { 
+
 
 
             using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
 
+                Ref.CompareTotalCutLine();
                 Ref.CompareTotalSurface();
                 Ref.CompareTotalVolume();
 
-
-                using (var Test = new TestSetupSingleLevset2D(0.5, quadOrder, cutCellQuadType)) {
+                using(var Test = new TestSetupSingleLevset2D(0.5, quadOrder, cutCellQuadType)) {
                     Test.Init();
                     Test.RunSolverMode();
 
+                    Test.CompareTotalCutLine();
                     Test.CompareTotalSurface();
                     Test.CompareTotalVolume();
+
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
@@ -57,14 +57,14 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
-            ) {
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
             using(var Ref = new TestSetupSingleLevset3D(1.0, quadOrder, cutCellQuadType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
 
                 Ref.CompareTotalSurface();
                 Ref.CompareTotalVolume();
+                Ref.CompareTotalCutLine();
 
                 using (var Test = new TestSetupSingleLevset3D(0.5, quadOrder, cutCellQuadType)) {
                     Test.Init();
@@ -72,6 +72,8 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 
                     Test.CompareTotalSurface();
                     Test.CompareTotalVolume();
+                    Test.CompareTotalCutLine();
+
                     Test.CompareSurfaceTo(Ref);
                     Test.CompareVolumeTo(Ref);
                     Test.CompareEdgeAreaTo(Ref);
@@ -93,32 +95,23 @@ namespace BoSSS.Application.CutCellQuadratureScaling {
 #else
             [Values(3, 4, 7, 8, 9, 10)] int quadOrder,
 #endif
-            [Values(XQuadFactoryHelper.MomentFittingVariants.Classic, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants cutCellQuadType
-            ) {
+            [Values(CutCellQuadratureMethod.Classic, CutCellQuadratureMethod.Saye, CutCellQuadratureMethod.Algoim)] CutCellQuadratureMethod cutCellQuadType) {
             using(var Ref = new TestSetupSingleLevset2D(1.0, quadOrder, cutCellQuadType)) {
                 Ref.Init();
                 Ref.RunSolverMode();
-
-                var surf = Ref.latestCCM.InterfaceArea[Ref.LsTrk.GetSpeciesId("A")].To1DArray().Sum();
-                
 
 
                 using(var Test = new TestSetupSingleLevset3D(1, quadOrder, cutCellQuadType)) {
                     Test.Init();
                     Test.RunSolverMode();
 
-                    var surf3D = Test.latestCCM.InterfaceArea[Ref.LsTrk.GetSpeciesId("A")].To1DArray().Sum();
-
-
-
+                    //Test.CompareCutLineTo2D(Ref);
                     Test.CompareSurfaceTo2D(Ref);
+                    Test.CompareVolumeTo2D(Ref);
                 }
 
             }
 
         }
-
-
-
     }
 }

@@ -486,10 +486,10 @@ namespace BoSSS.Foundation.XDG {
                 var OneOverSqrt_AbsJacobiDet = m_owner.GridDat.ChefBasis.Scaling;
                 MultidimensionalArray result = MultidimensionalArray.Create(Len, noOfNodes);
 
-                for(int i = 0; i < Len; i++) {
+                for(int i = 0; i < Len; i++) { // loop over cells...
                     int jCell = j0 + i;
 
-                    if(m_owner.GridDat.Cells.IsCellAffineLinear(jCell)) {
+                    if(m_owner.GridDat.Cells.IsCellAffineLinear(jCell)) { // loop over nodes...
                         double sc = OneOverSqrt_AbsJacobiDet[jCell];
                         for(int j = 0; j < noOfNodes; j++) {
                             double normPhys = 0.0;
@@ -515,8 +515,6 @@ namespace BoSSS.Foundation.XDG {
 
                 return result;
             }
-
-
 
             private class LevelSetReferenceHessianCache : Caching.CacheLogic_CNs {
 
@@ -652,7 +650,6 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 
             /// </summary>
-
             public object Clone() {
                 throw new NotImplementedException();
             }

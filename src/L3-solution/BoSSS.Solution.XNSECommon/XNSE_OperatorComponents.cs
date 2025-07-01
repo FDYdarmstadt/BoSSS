@@ -656,6 +656,16 @@ namespace BoSSS.Solution.XNSECommon {
         bool isVolForce { get; }
 
         /// <summary>
+        /// includes inertia force terms in rotating systems
+        /// </summary>
+        bool isRotInertiaForce { get; }
+
+        /// <summary>
+        /// includes cylindrical terms
+        /// </summary>
+        bool isCylindricalCoords { get; }
+
+        /// <summary>
         /// slip on the fluid-fluid interface
         /// </summary>
         bool isInterfaceSlip { get; }

@@ -1621,7 +1621,7 @@ namespace BoSSS.Foundation.IO {
                 var phi = session.Timesteps.First().Fields.ElementAt(0);
                 var LevSet = new LevelSet(phi.Basis, "LevelSet");
                 LevSet.Acc(1.0, phi);
-                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+                var LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)phi.GridDat, CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, LevSet);
                 int numCC = LsTrk.Regions.GetCutCellMask().Count();
                 cellCount += numCC;
             }
@@ -2183,7 +2183,7 @@ namespace BoSSS.Foundation.IO {
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities.LogfileName: {
-                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity" };
+                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "mean velocity - x", "mean velocity - y" };
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
@@ -2207,6 +2207,7 @@ namespace BoSSS.Foundation.IO {
             }
 
             return ReadLogData(sess, logName, values, evalName, keyName);
+
         }
 
         /// <summary>

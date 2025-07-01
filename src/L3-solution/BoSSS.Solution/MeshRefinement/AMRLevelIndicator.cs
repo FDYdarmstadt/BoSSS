@@ -33,6 +33,7 @@ namespace BoSSS.Solution {
     /// </summary>
     [Serializable]
     public abstract class AMRLevelIndicator {
+
         [DataMember]
         public int maxRefinementLevel = 1;
 

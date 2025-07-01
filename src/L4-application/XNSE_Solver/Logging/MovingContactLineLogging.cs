@@ -53,6 +53,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         List<double[]> contactPointsRef;
 
         /// <summary>
+        /// print logging values to console (development, debugging)
+        /// </summary>
+        public bool printToConsole = false;
+
+        /// <summary>
         /// 
         /// </summary>
         protected override void PerformTimestepPostProcessing(int TimestepNo, double phystime) {
@@ -120,6 +125,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         contactPointsSorted.ElementAt(p)[0], contactPointsSorted.ElementAt(p)[1],
                         contactVelocitiesSorted.ElementAt(p)[0], contactVelocitiesSorted.ElementAt(p)[1], contactAnglesSorted.ElementAt(p));
                     Log.WriteLine(line);
+
+                    if (printToConsole) {
+                        Console.WriteLine(line);
+                    }
                 }
                 Log.Flush();
 
@@ -205,11 +214,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
                     }
 
-                    double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
-                    double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
-                    double theta = (theta_surf - theta_edge) * (180 / Math.PI);
+                    //double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
+                    //double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
+                    //double theta = (theta_surf - theta_edge) * (180 / Math.PI);
 
-                    EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
+                    //EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
+                    //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
+
+                    double[] surfNormal = new double[] { normal_IN[0, 0, 0], normal_IN[0, 0, 1] };
+                    double[] edgeNormal = new double[] { LsTrk.GridDat.Edges.NormalsForAffine[i0, 0], LsTrk.GridDat.Edges.NormalsForAffine[i0, 1] };
+                    Console.WriteLine("surf normal = ({0}, {1})", surfNormal[0], surfNormal[1]);
+                    Console.WriteLine("edge normal = ({0}, {1})", edgeNormal[0], edgeNormal[1]);
+                    double contactAngle = GetAngleBetweenNormals(surfNormal, edgeNormal);
+
+                    EvalResult[0, 0, 2 * D] = (Math.PI - contactAngle) * (180.0 / Math.PI);
                     //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
 
                 },
@@ -233,6 +251,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             return new Tuple<List<double[]>, List<double[]>, List<double>>(contactPoints, contactVelocities, contactAngles);
 
+        }
+
+
+        double GetAngleBetweenNormals(double[] a, double[] b) {
+
+            double scalarProdcut = (a[0] * b[0]) + (a[1] * b[1]);
+            double aNorm = Math.Sqrt(a[0].Pow2() + a[1].Pow2());
+            double bNorm = Math.Sqrt(b[0].Pow2() + b[1].Pow2());
+
+            return Math.Acos(scalarProdcut / (aNorm * bNorm));
         }
 
 
@@ -390,7 +418,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
 
             var gridDat = (GridData)this.SolverMainOverride.GridData;
-            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
+            var ContactLineVolumeScheme = SchemeHelper.GetContactLineQuadScheme(this.LsTrk.GetSpeciesId("A"), 0, 1);
 
             CellQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
                 ContactLineVolumeScheme.Compile(LsTrk.GridDat, 0),

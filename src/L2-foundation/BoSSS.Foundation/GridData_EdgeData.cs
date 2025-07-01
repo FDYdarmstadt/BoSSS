@@ -27,6 +27,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.Utils.Geom;
 using System.IO;
+using NUnit.Framework;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -260,6 +261,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     return area;
                 }
+            }
+
+            /// <summary>
+            /// Center-of-gravity for the edge
+            /// </summary>
+            public Vector GetCenter(int e) {
+                return m_owner.GlobalNodes.GetValue_EdgeSV(this.GetRefElement(e).Center, e).GetRowPt(0);
             }
 
             /// <summary>

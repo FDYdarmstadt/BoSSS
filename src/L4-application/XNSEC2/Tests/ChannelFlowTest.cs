@@ -402,7 +402,7 @@ namespace BoSSS.Application.XNSEC {
             string _DbPath = null;
 
             int D = 2;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             //C.ImmediatePlotPeriod = 1;
             // basic database options
             // ======================
@@ -628,8 +628,8 @@ namespace BoSSS.Application.XNSEC {
             C.AdaptiveMeshRefinement = false;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.RefinementLevel = 2;
 
             C.InitSignedDistance = false;

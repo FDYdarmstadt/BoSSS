@@ -52,7 +52,7 @@ namespace BoSSS.Application.XRheology_Solver {
             int D = 2;
 
             //if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -1853,7 +1853,7 @@ namespace BoSSS.Application.XRheology_Solver {
             int D = 2;
 
             if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 

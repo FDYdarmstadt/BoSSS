@@ -68,7 +68,7 @@ namespace CNS.Tests.MovingIBMTests {
                 return grid;
             };
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;

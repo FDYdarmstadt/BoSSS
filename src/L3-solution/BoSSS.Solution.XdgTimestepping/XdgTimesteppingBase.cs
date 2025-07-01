@@ -29,6 +29,8 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using BoSSS.Solution.Queries;
+using BoSSS.Foundation.IO;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -451,6 +453,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             nonlinSolver.IterationCallback += this.LogResis;
 
+            if (this.XdgSolverFactory.Config.CustomIterationCallback != null) {
+                nonlinSolver.IterationCallback += this.XdgSolverFactory.Config.CustomIterationCallback;
+            }
+
             return nonlinSolver;
 
           
@@ -509,16 +515,18 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     Mgop.TransformRhsFrom(R, currentRes);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-                    /*
-                    //// plotting during Newton iterations:  
-                    var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
 
+                    //// plotting during Newton iterations:  
+                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+
+                    //Console.WriteLine($"Plot fields during Newton iteration {iterIndex}");
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields, this.m_LsTrk.LevelSets[0]), "DuringNewton-" + iterIndex, iterIndex, 2);
 
                     //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
                     //var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
                     //Console.WriteLine($"RESILOG: w.r.t. XDG (nonagg): {Norm(R, FreshMama):0.####E-00}");
-                    */
+
 
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
@@ -730,14 +738,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
 
-                /*
-                {
-                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
-                    var bla = ana.MinimalEigen();
-                    Console.WriteLine("done: " + bla.lambdaMin);
-                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
-                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
-                }*/
+
+                //{
+                //    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
+                //    var bla = ana.MinimalEigen();
+                //    Console.WriteLine("done: " + bla.lambdaMin);
+                //    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                //    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                //}
                 //k++;
             }
 

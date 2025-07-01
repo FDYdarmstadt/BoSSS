@@ -51,7 +51,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         ///// <summary>
         ///// The Variant for Quadrature on the Cut-Cells
         ///// </summary>
-        //public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+        //public CutCellQuadratureMethod MomentFittingVariant = CutCellQuadratureMethod.Classic;
 
         /// <summary>
         /// Use a fast marching solver to generate an initial solution
