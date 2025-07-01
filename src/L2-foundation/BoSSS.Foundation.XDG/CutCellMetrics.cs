@@ -149,11 +149,6 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Write quadrature rules to text file, for debugging
-        /// </summary>
-        static private bool metricDiagnosis = false;
-
-        /// <summary>
         /// Writes all the edge rules as vtp files
         /// </summary>
         public void WriteEdgeRulesToVtp() {
@@ -281,8 +276,6 @@ namespace BoSSS.Foundation.XDG {
 
                     var edgeScheme = schH.GetEdgeQuadScheme(spc);
                     var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
-                    if(metricDiagnosis)
-                        edgeScheme.ToTextFileEdge(gd, this.CutCellQuadratureOrder, $"CutEdgeRule-{this.XDGSpaceMetrics.Tracker.GetSpeciesName(spc)}.txt");
 
                     BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
@@ -328,8 +321,6 @@ namespace BoSSS.Foundation.XDG {
                     tr.Info("Checkpoint1.3");
                     var volRule = volScheme.Compile(gd, this.CutCellQuadratureOrder);
                     tr.Info("Checkpoint1.4");
-                    if (metricDiagnosis) 
-                        volScheme.ToTextFileCell(gd, this.CutCellQuadratureOrder, $"CutVolRule-{this.XDGSpaceMetrics.Tracker.GetSpeciesName(spc)}.txt");
 
                     BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
@@ -383,8 +374,6 @@ namespace BoSSS.Foundation.XDG {
 
                                         CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
                                         var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
-                                        if (metricDiagnosis)
-                                            SurfIntegration.ToTextFileCell(gd, this.CutCellQuadratureOrder, $"CutSurfRule-{this.XDGSpaceMetrics.Tracker.GetSpeciesName(SpeciesA)}-{this.XDGSpaceMetrics.Tracker.GetSpeciesName(SpeciesB)}.txt");
 
                                         BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                                             new int[] { 1 }, gd,

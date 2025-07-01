@@ -948,7 +948,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;

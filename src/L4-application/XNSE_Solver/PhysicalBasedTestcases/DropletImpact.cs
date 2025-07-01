@@ -1148,7 +1148,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
@@ -1315,7 +1315,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });

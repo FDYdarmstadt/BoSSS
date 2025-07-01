@@ -51,10 +51,10 @@ namespace BoSSS.Application.LsTest {
         }
 
         public override int QuadOrder() {
-            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            if (Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye
+                && Control.CutCellQuadratureType != CutCellQuadratureMethod.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The SolverWithLevelSetUpdater solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"{CutCellQuadratureMethod.Saye} and {CutCellQuadratureMethod.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
                     $"If you do not know how to remove this exception, you should better return now!");
             }
@@ -62,7 +62,7 @@ namespace BoSSS.Application.LsTest {
             //QuadOrder
             int degU = LevelSetDegree();
             int quadOrder = degU * 3; // Use high quadorder, to correctly capture the advection term
-            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks in XNSE
                 quadOrder *= 2;
                 quadOrder += 1;

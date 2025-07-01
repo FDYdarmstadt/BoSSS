@@ -585,7 +585,7 @@ namespace BoSSS.Application.LsTest {
             }
             // exact level-set tracker
             exactLsTrk = new LevelSetTracker((GridData)solver.GridData,
-            XQuadFactoryHelper.MomentFittingVariants.Saye, 1, solver.LsTrk.SpeciesNames.ToArray(), exactPhi);
+            CutCellQuadratureMethod.Saye, 1, solver.LsTrk.SpeciesNames.ToArray(), exactPhi);
             exactLsTrk.UpdateTracker(time);
         }
 
