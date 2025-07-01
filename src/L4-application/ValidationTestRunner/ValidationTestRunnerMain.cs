@@ -535,11 +535,11 @@ namespace ValidationTestRunner {
         /// (Pseudo) 1D Stefan Problem
         /// Section 6.4 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
-        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb")]
+        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
         [Test]
         static public void Run__StefanProblem() {
 
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__StefanProblem
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "StefanProblem",
@@ -561,7 +561,7 @@ namespace ValidationTestRunner {
         [Test]
         static public void Run__SuckingProblem() {
 
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__SuckingProblem
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "SuckingProblem",
@@ -579,14 +579,14 @@ namespace ValidationTestRunner {
         /// 2D Filmboiling
         /// Section 6.4 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
-        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb")]
+        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
         [Test]
         static public void Run__Filmboiling() {
 
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__Filmboiling
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "Filmboiling",
+                "Filmboiling_v2",
                 "Filmboiling*",
                 "delete_Filmboiling",
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
@@ -601,14 +601,14 @@ namespace ValidationTestRunner {
         /// 3D Scriven Testcase
         /// Section 6.4 Rieckmann (2024) https://doi.org/10.26083/tuprints-00028626
         /// </summary>
-        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb")]
+        [NUnitFileToCopyHack("XNSFE_Solver/EvaporationValidation/*.ipynb", "XNSFE_Solver/EvaporationValidation/*.csv")]
         [Test]
         static public void Run__ScrivenProblem() {
 
-            // --test=ValidationTestRunner.WorksheetTests_Local.Run__TemperatureVelocityCoupling
+            // --test=ValidationTestRunner.WorksheetTests_Local.Run__ScrivenProblem
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "ScrivenProblem",
+                "ScrivenProblem_v3",
                 "ScrivenProblem*",
                 "delete_ScrivenProblem",
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
