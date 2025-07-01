@@ -681,12 +681,13 @@ namespace ilPSP {
                 if(ReservedCPUsInitially == null)
                     ReservedCPUsInitially = CPUAffinity.GetCurrentThreadAffinity().ToList().AsReadOnly();
                 IEnumerable<int> ReservedCPUs = ReservedCPUsInitially.ToArray();
-
                 //if(ReservedCPUs.Count() == 1) {
                 //Debugger.Launch();
                 //ReservedCPUs = CPUAffinity.GetAffinity();
                 //ReservedCPUs = CPUAffinity.GetAffinity().ToConcatString("[", ", ", "]")
                 //}
+
+                //--- this is mpi-local --//
                 if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     if(System.Environment.GetEnvironmentVariable("CCP_AFFINITY").IsNonEmpty()) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -707,11 +708,13 @@ namespace ilPSP {
                             tr.Info("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
                         tr.Info("Does Win32 report same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
-                        ReservedCPUs = _ReservedCPUs;
+                        //ReservedCPUs = _ReservedCPUs;
                     } else {
                         tr.Info($"CCP_AFFINITY not set");
                     }
                 }
+                //--- end of mpi-local --//
+
                 tr.Info($"R{MPIEnv.MPI_Rank}: reserved CPUs: {ReservedCPUs.ToConcatString("[", ",", "]")}, C# reports mask {Process.GetCurrentProcess().ProcessorAffinity:X}");
 
                 ReservedCPUsOnSMP = CPUAffinity.CpuListOnSMP(ReservedCPUs, out bool disjoint, out bool allequal);
@@ -808,6 +811,8 @@ namespace ilPSP {
                 PinOMPthreads();
                 StdoutOnlyOnRank0 = false;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
+                StdoutOnlyOnRank0 = true;
+
             }
         }
 

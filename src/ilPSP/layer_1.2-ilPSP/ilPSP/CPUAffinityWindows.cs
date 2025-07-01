@@ -180,7 +180,7 @@ namespace ilPSP.Utils {
             GetProcessGroupAffinity(processHandle, ref groupCount, null); // second arg 0 on iput -> returns the n umber of processor 
             if(groupCount != 1) {
                 //Console.WriteLine($"Process associated to more than one processor group ({groupCount}) -- i don't know what to do about it (tell Florian)!");
-                //throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
+                throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
             }
 
             // second pass: get actual groups
@@ -197,7 +197,7 @@ namespace ilPSP.Utils {
                 ushort group = groups[cntGroup];
                 GROUP_AFFINITY groupAffinity;
                 if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group).ToArray());
+                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group, NumberOfCPUsPerGroup).ToArray());
                 } else {
                     int errorCode = Marshal.GetLastWin32Error();
                     throw new Win32Exception(errorCode);
@@ -307,27 +307,39 @@ namespace ilPSP.Utils {
 
 
                 var affGroup = CCP_AFFINITY.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                var iGroup = GetCurrentThreadGroupNumber();
+                var CurrentaffGroup = affGroup.ElementAt(iGroup);
+
+
 
                 var CPUlist = new List<int>();
-                int iGroup = 0;
+                //int iGroup = 0;
                 var groupOccupied = new List<bool>();
-                foreach(string aff in affGroup) {
-                    //
-                    // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
-                    //
+                //foreach(string aff in affGroup) {
+                //    //
+                //    // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
+                //    //
 
-                    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup); //, NumberOfCPUsPerGroup
-                    groupOccupied.Add(groupCPUs.Count() > 0);
-                    CPUlist.AddRange(groupCPUs);
-                    iGroup++;
+                //    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup, NumberOfCPUsPerGroup); //, NumberOfCPUsPerGroup
+                //    groupOccupied.Add(groupCPUs.Count() > 0);
+                //    CPUlist.AddRange(groupCPUs);
+                //    iGroup++;
 
-                }
+                //}
+                var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(CurrentaffGroup, 16), iGroup, NumberOfCPUsPerGroup); //, NumberOfCPUsPerGroup
+                CPUlist.AddRange(groupCPUs);
                 CPUlist.Sort();
 
                 return CPUlist.ToArray();
             }
         }
 
+        public static int GetCurrentThreadGroupNumber() {
+            GROUP_AFFINITY groupAffinity;
+            if(!GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            return groupAffinity.Group;
+        }
 
         /// <summary>
         /// When MS HPC server is used, it seems to be necessary to define the `OMP_PLACES` environment variable.
@@ -397,32 +409,32 @@ namespace ilPSP.Utils {
             return offs;
         }
 
-        static IEnumerable<int> CheckCpuAffinity(ulong mask, int group) {
-            var offs = GroupOffsets();
-            int groupOffset = offs[group];
-            int groupSize = CoresPerGroup()[group];
+        //static IEnumerable<int> CheckCpuAffinity(ulong mask, int group) {
+        //    var offs = GroupOffsets();
+        //    int groupOffset = offs[group];
+        //    int groupSize = CoresPerGroup()[group];
 
-            var res = new List<int>();
-            for(int cpuInGroup = 0; cpuInGroup < groupSize; cpuInGroup++) {
-                if((mask & (1UL << cpuInGroup)) != 0)
-                    res.Add(groupOffset + cpuInGroup);
-            }
-            return res;
-        }
-
-        //static IEnumerable<int> CheckCpuAffinity(ulong mask, int iProcessorGroup, int procsPerGroup) {
         //    var res = new List<int>();
-        //    ulong bitmask = (ulong)mask;
-        //    for(int cpu = 0; cpu < 64; cpu++)  // Assuming a maximum of 64 CPUs per group
-        //    {
-        //        ulong cpuBit = 1UL << cpu;
-        //        if((bitmask & cpuBit) != 0) {
-        //            //Console.WriteLine($"  CPU {cpu + iProcessorGroup*64} is available in this group.");
-        //            res.Add(cpu + iProcessorGroup * procsPerGroup);
-        //        }
+        //    for(int cpuInGroup = 0; cpuInGroup < groupSize; cpuInGroup++) {
+        //        if((mask & (1UL << cpuInGroup)) != 0)
+        //            res.Add(groupOffset + cpuInGroup);
         //    }
-        //    return res.ToArray();
+        //    return res;
         //}
+
+        static IEnumerable<int> CheckCpuAffinity(ulong mask, int iProcessorGroup, int procsPerGroup) {
+            var res = new List<int>();
+            ulong bitmask = (ulong)mask;
+            for(int cpu = 0; cpu < 64; cpu++)  // Assuming a maximum of 64 CPUs per group
+            {
+                ulong cpuBit = 1UL << cpu;
+                if((bitmask & cpuBit) != 0) {
+                    //Console.WriteLine($"  CPU {cpu + iProcessorGroup*64} is available in this group.");
+                    res.Add(cpu + iProcessorGroup * procsPerGroup);
+                }
+            }
+            return res.ToArray();
+        }
     }
 }
 
