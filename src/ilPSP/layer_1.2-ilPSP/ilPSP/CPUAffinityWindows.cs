@@ -193,15 +193,12 @@ namespace ilPSP.Utils {
 
             var CPUlist = new List<int>();
 
-            for(int cntGroup = 0; cntGroup < groupCount; cntGroup++) {
-                ushort group = groups[cntGroup];
-                GROUP_AFFINITY groupAffinity;
-                if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group, NumberOfCPUsPerGroup).ToArray());
-                } else {
-                    int errorCode = Marshal.GetLastWin32Error();
-                    throw new Win32Exception(errorCode);
-                }
+            GROUP_AFFINITY groupAffinity;
+            if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
+                CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, NumberOfCPUsPerGroup).ToArray());
+            } else {
+                int errorCode = Marshal.GetLastWin32Error();
+                throw new Win32Exception(errorCode);
             }
 
             return CPUlist.ToArray();
