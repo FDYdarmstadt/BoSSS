@@ -308,26 +308,23 @@ namespace ilPSP.Utils {
 
                 var affGroup = CCP_AFFINITY.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
                 var iGroup = GetCurrentThreadGroupNumber();
-                var CurrentaffGroup = affGroup.ElementAt(iGroup);
-
 
 
                 var CPUlist = new List<int>();
                 //int iGroup = 0;
                 var groupOccupied = new List<bool>();
-                //foreach(string aff in affGroup) {
-                //    //
-                //    // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
-                //    //
+                foreach(string aff in affGroup) {
+                    //
+                    // note: at least in our MKL version, it seems that the indices for OMP_PLACES always start at 0 for group 0 and 64 for group 1; Even if the system has e.g. 48 processors per group.
+                    //
 
-                //    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup, NumberOfCPUsPerGroup); //, NumberOfCPUsPerGroup
-                //    groupOccupied.Add(groupCPUs.Count() > 0);
-                //    CPUlist.AddRange(groupCPUs);
-                //    iGroup++;
+                    var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(aff, 16), iGroup, NumberOfCPUsPerGroup); //, NumberOfCPUsPerGroup
+                    groupOccupied.Add(groupCPUs.Count() > 0);
+                    CPUlist.AddRange(groupCPUs);
+                    iGroup++;
 
-                //}
-                var groupCPUs = CheckCpuAffinity(Convert.ToUInt64(CurrentaffGroup, 16), iGroup, NumberOfCPUsPerGroup); //, NumberOfCPUsPerGroup
-                CPUlist.AddRange(groupCPUs);
+                }
+
                 CPUlist.Sort();
 
                 return CPUlist.ToArray();
