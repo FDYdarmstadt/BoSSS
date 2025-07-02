@@ -113,7 +113,7 @@ namespace BoSSS.Application.LsTest {
                 throw new ArgumentOutOfRangeException();
             }
 
-            grd.EdgeTagNames.Add(1, "wall");
+            grd.EdgeTagNames.Add(1, "pressure_outlet");
 
 
             grd.DefineEdgeTags(delegate (double[] X) {
@@ -130,7 +130,7 @@ namespace BoSSS.Application.LsTest {
         public virtual IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
-            config.Add("wall", new AppControl.BoundaryValueCollection()); 
+            config.Add("pressure_outlet", new AppControl.BoundaryValueCollection()); 
 
             return config;
         }
