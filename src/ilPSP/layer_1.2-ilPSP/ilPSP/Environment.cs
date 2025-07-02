@@ -708,7 +708,7 @@ namespace ilPSP {
                             tr.Info("Mismatch in CPU affinity (" + MPIEnv.MPI_Rank + "of" + MPIEnv.MPI_Size + ")! " + listdiffs);
                         }
                         tr.Info("Does Win32 report same affinity as CPUs from CCP_AFFINITY? " + eqalAff);
-                        //ReservedCPUs = _ReservedCPUs;
+                        ReservedCPUs = _ReservedCPUs;
                     } else {
                         tr.Info($"CCP_AFFINITY not set");
                     }
@@ -774,11 +774,12 @@ namespace ilPSP {
                     DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
 
                 } else {
-                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
+                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray(); //this should be similar to above but get the list sorting only in its group. Exchange the group number per rank and than sort the list with respect to ranks. Then get subvector within the group with respect to ranks in the group
                     // just hope for the best
                     MKLservice.Dynamic = true;
                     MKLservice.SetNumThreads(NumThreads);
                     tr.Warning("Reserved CPUs for all ranks are neither equal nor disjoint; some CPUs are owned by multiple ranks, some are exclusive; Pinning will be disabled.");
+                    TestingPinning = true;
                 }
                 if(NumThreads > DedicatedCPUsForThisRank.Count()) {
                     NumThreads = Math.Max(1, DedicatedCPUsForThisRank.Count());
@@ -803,6 +804,8 @@ namespace ilPSP {
                                 }
                 */
 
+                int GroupNumber = MPIEnv.ProcessRankOnSMP; // this is the group number of the current rank, i.e., the rank within the SMP group
+
                 tr.Info($"R{MPIEnv.MPI_Rank}: TPL thread pinning: {PerformTPLthreadPinning}, OMP thread pinning: {PerformOMPthreadPinning}");
 
                 BLAS.ActivateOMP();
@@ -816,6 +819,7 @@ namespace ilPSP {
             }
         }
 
+        static bool TestingPinning = false;
 
         static bool PerformTPLthreadPinning = false;
 
@@ -849,6 +853,8 @@ namespace ilPSP {
                 Parallel.For(0, ilPSP.Environment.NumThreads,
                     new ParallelOptions { MaxDegreeOfParallelism = ilPSP.Environment.NumThreads },
                     PinTPLThread);
+            } else if(TestingPinning) {
+                PinTPLThreadAllToAll();
             }
         }
 
@@ -865,6 +871,12 @@ namespace ilPSP {
         }
 
 
+        static void PinTPLThreadAllToAll() {
+            if(TestingPinning) {
+                CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank); //this should be the all cpus on this group
+            }
+        }
+
 
         static bool PerformOMPthreadPinning = false;
 
@@ -876,6 +888,9 @@ namespace ilPSP {
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
                 MKLservice.BindOMPthreads_1To1(cpus);
+            } else if (TestingPinning) {
+                var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
+                MKLservice.BindOMPthreads_AllToAll(cpus);
             }
 
             /*{

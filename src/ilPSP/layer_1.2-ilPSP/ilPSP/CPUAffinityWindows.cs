@@ -180,7 +180,7 @@ namespace ilPSP.Utils {
             GetProcessGroupAffinity(processHandle, ref groupCount, null); // second arg 0 on iput -> returns the n umber of processor 
             if(groupCount != 1) {
                 //Console.WriteLine($"Process associated to more than one processor group ({groupCount}) -- i don't know what to do about it (tell Florian)!");
-                throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
+                //throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
             }
 
             // second pass: get actual groups
@@ -196,6 +196,7 @@ namespace ilPSP.Utils {
             GROUP_AFFINITY groupAffinity;
             if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
                 CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, NumberOfCPUsPerGroup).ToArray());
+                GroupNumber = groupAffinity.Group;
             } else {
                 int errorCode = Marshal.GetLastWin32Error();
                 throw new Win32Exception(errorCode);
@@ -204,6 +205,8 @@ namespace ilPSP.Utils {
             return CPUlist.ToArray();
         }
 
+        static int GroupNumber = 0;
+        
         /// <summary>
         /// Set WIN32 affinity for current thread; supports systems with more than 64 processors.
         /// </summary>

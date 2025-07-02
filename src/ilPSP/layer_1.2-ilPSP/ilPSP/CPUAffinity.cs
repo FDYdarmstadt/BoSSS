@@ -262,8 +262,8 @@ namespace ilPSP.Utils {
             int[] SMPRank = new int[CPUList.Length]; 
             SMPRank.SetAll(mySMPRank);
 
-            var GlobalCPUList = CPUList.MPIAllGather();
-            var GlobalSMPRank = SMPRank.MPIAllGather();
+            var GlobalCPUList = CPUList.MPIAllGatherv();
+            var GlobalSMPRank = SMPRank.MPIAllGatherv();
 
             var r = new HashSet<int>();
             disjoint = true;
