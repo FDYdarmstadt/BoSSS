@@ -534,6 +534,8 @@ namespace BoSSS.Application.LsTest {
             C.Timestepper_LevelSetHandling = levelSetHandling;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler; // should not really matter, we are only projecting the exact underlying advection velocity in each timestep
 
+            C.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
+
             // adaptive mesh refinement
             if (AMRlevel > 0) {
                 C.AdaptiveMeshRefinement = true;

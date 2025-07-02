@@ -63,7 +63,8 @@ namespace BoSSS.Application.LsTest {
             //QuadOrder
             int degU = LevelSetDegree();
             int quadOrder = degU * 3; // Use high quadorder, to correctly capture the advection term
-            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
+            if (this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye ||
+                this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Algoim) {
                 //See remarks in XNSE
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -166,7 +167,7 @@ namespace BoSSS.Application.LsTest {
                     XOP.EquationComponents[kvp.Key].Add(comp);
                 }
             }
-            XOP.AgglomerationThreshold = 0.1;            
+            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;            
             XOP.TemporalOperator = new ConstantXTemporalOperator(XOP, 0.0);
 
             // === level set related parameters === //

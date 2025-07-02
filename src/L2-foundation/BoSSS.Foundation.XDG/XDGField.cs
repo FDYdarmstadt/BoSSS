@@ -1223,12 +1223,14 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// </summary>
         public SinglePhaseField ProjectToSinglePhaseField(int BasisDegreeMultiplicator = 2, CellMask cellMask = null) {
-            var QRs = GridDat.iGeomCells.RefElements.Select(Kref => Kref.GetQuadratureRule(this.Basis.Degree * BasisDegreeMultiplicator));
+            int order = this.Basis.Degree * BasisDegreeMultiplicator;
+            var QRs = GridDat.iGeomCells.RefElements.Select(Kref => Kref.GetQuadratureRule(order));
             SinglePhaseField FieldReturn = new SinglePhaseField(this.Basis.NonX_Basis, this.Identification);
             CellQuadratureScheme CQS = new CellQuadratureScheme(false, cellMask).AddFixedRuleS(QRs);
             FieldReturn.ProjectField(1.0,
                 this.Evaluate,
-                CQS);
+                CQS,
+                order);
             return FieldReturn;
         }
 
