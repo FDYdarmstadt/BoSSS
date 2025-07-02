@@ -193,20 +193,20 @@ namespace ilPSP.Utils {
 
             var CPUlist = new List<int>();
 
-            GROUP_AFFINITY groupAffinity;
-            if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, NumberOfCPUsPerGroup).ToArray());
-                GroupNumber = groupAffinity.Group;
-            } else {
-                int errorCode = Marshal.GetLastWin32Error();
-                throw new Win32Exception(errorCode);
+            for(int cntGroup = 0; cntGroup < groupCount; cntGroup++) {
+                ushort group = groups[cntGroup];
+                GROUP_AFFINITY groupAffinity;
+                if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
+                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group, NumberOfCPUsPerGroup).ToArray());
+                } else {
+                    int errorCode = Marshal.GetLastWin32Error();
+                    throw new Win32Exception(errorCode);
+                }
             }
 
             return CPUlist.ToArray();
         }
 
-        static int GroupNumber = 0;
-        
         /// <summary>
         /// Set WIN32 affinity for current thread; supports systems with more than 64 processors.
         /// </summary>
