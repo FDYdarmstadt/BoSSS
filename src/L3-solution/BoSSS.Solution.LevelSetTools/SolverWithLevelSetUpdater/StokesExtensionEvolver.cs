@@ -220,7 +220,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
                 //FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, null);
                 changed = true;
-                ReInit_TimestepIndex = 0; // start counting again after reinit
             }
 
             
