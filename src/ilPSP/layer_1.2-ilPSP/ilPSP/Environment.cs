@@ -734,7 +734,7 @@ namespace ilPSP {
                     int i0 = (l * r) / s, iE = (l * (r + 1)) / s;
 
                     DedicatedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(i0, iE - i0);
-
+                    //tr.Info($"l={l}, r={r}, s={s}, i0={i0}, iE={iE}");
                     /*if(ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Sufficient CPUs to give each MPI rank `NumThreads` CPUs
@@ -779,7 +779,7 @@ namespace ilPSP {
                     MKLservice.Dynamic = true;
                     MKLservice.SetNumThreads(NumThreads);
                     tr.Warning("Reserved CPUs for all ranks are neither equal nor disjoint; some CPUs are owned by multiple ranks, some are exclusive; Pinning will be disabled.");
-                    TestingPinning = true;
+                    //TestingPinning = true;
                 }
                 if(NumThreads > DedicatedCPUsForThisRank.Count()) {
                     NumThreads = Math.Max(1, DedicatedCPUsForThisRank.Count());
@@ -804,13 +804,17 @@ namespace ilPSP {
                                 }
                 */
 
-                int GroupNumber = MPIEnv.ProcessRankOnSMP; // this is the group number of the current rank, i.e., the rank within the SMP group
 
                 tr.Info($"R{MPIEnv.MPI_Rank}: TPL thread pinning: {PerformTPLthreadPinning}, OMP thread pinning: {PerformOMPthreadPinning}");
+
+                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity before OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD); // wait for all ranks to finish setting up the CPU affinity
 
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 PinTPLThreads();
+                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
+
                 PinOMPthreads();
                 StdoutOnlyOnRank0 = false;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
@@ -819,7 +823,7 @@ namespace ilPSP {
             }
         }
 
-        static bool TestingPinning = false;
+        //static bool TestingPinning = false;
 
         static bool PerformTPLthreadPinning = false;
 
@@ -853,9 +857,7 @@ namespace ilPSP {
                 Parallel.For(0, ilPSP.Environment.NumThreads,
                     new ParallelOptions { MaxDegreeOfParallelism = ilPSP.Environment.NumThreads },
                     PinTPLThread);
-            } else if(TestingPinning) {
-                PinTPLThreadAllToAll();
-            }
+            } 
         }
 
         static void PinTPLThread(int ithread) {
@@ -865,15 +867,9 @@ namespace ilPSP {
                     throw new ApplicationException("Configuration error: more threads than CPUs available");
                 int skip = L - NumThreads;
                 int iCpu = DedicatedCPUsForThisRank[skip + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those, resp. mpiexec is forcing them to do so.
+                Console.Error.WriteLine($"R{MPIEnv.MPI_Rank}: trying to TPL pin {ithread}-thread to {iCpu}");
                 CPUAffinity.SetCurrentThreadAffinity(iCpu);
                 //CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank);
-            }
-        }
-
-
-        static void PinTPLThreadAllToAll() {
-            if(TestingPinning) {
-                CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank); //this should be the all cpus on this group
             }
         }
 
@@ -888,10 +884,7 @@ namespace ilPSP {
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
                 MKLservice.BindOMPthreads_1To1(cpus);
-            } else if (TestingPinning) {
-                var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
-                MKLservice.BindOMPthreads_AllToAll(cpus);
-            }
+            } 
 
             /*{
                 //tr.InfoToConsole = true;
