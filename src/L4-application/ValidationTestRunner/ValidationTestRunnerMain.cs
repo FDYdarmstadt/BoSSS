@@ -1140,6 +1140,35 @@ namespace ValidationTestRunner {
         }
 
 
+        /// <summary> 
+        /// grid generation for Linear solver performance tests
+        /// </summary>
+        [NUnitFileToCopyHack("handbook/apdx-MPISolverPerformance/unified/ParLinslvPerf_GridGeneration.ipynb")]
+        [Test]
+        static public void Run__ParLinSlvPerfPar_GridGen() {
+
+            string really = System.Environment.GetEnvironmentVariable("RUN_PARLINSLVPERF_GRIDGEN");
+            if (really.IsEmptyOrWhite()) {
+                Console.WriteLine("skipping Run__ParLinSlvPerf_GridGen");
+                return;
+            } else {
+                Console.WriteLine("RUN_PARLINSLVPERF_GRIDGEN = " + really);
+            }
+
+            Console.WriteLine("Lets go...");
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                "LinslvPerfPar_GridGen",
+                "LinslvPerfPar_GridGen*",
+                "delete_LinslvPerfPar_GridGen",
+                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
+
+            ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_GridGen.ipynb");
+
+        }
 
         /*
         /// <summary>
@@ -1274,7 +1303,6 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Local.Run__LinslvPerfSer
 
             string PROJECT_NAME = System.Environment.GetEnvironmentVariable("LinslvPerfSer") ?? "LinslvPerfSer"; // this allows to modify the project name for testing purposes
-
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
@@ -1468,6 +1496,9 @@ namespace ValidationTestRunner {
             // --test=ValidationTestRunner.WorksheetTests_Lichtenberg.Run__LinslvPerfPar
 
             string PROJECT_NAME = System.Environment.GetEnvironmentVariable("LinslvPerfPar") ?? "LinslvPerfPar"; // this allows to modify the project name for testing purposes
+
+            Console.WriteLine("skipping Run__LinslvPerfSer");
+            return;
 
             // delete the database if it is more than XX days old;
             // this will cause a re-execution of all computations
