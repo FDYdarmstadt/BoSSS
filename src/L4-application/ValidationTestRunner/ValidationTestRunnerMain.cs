@@ -546,7 +546,7 @@ namespace ValidationTestRunner {
                 "StefanProblem",
                 "StefanProblem*",
                 "delete_StefanProblem",
-                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/StefanProblem_Run.ipynb");
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/StefanProblem_Evaluate.ipynb");
@@ -568,7 +568,7 @@ namespace ValidationTestRunner {
                 "SuckingProblem",
                 "SuckingProblem*",
                 "delete_SuckingProblem",
-                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/SuckingProblem_Run.ipynb");
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/SuckingProblem_Evaluate.ipynb");
@@ -590,7 +590,7 @@ namespace ValidationTestRunner {
                 "Filmboiling_v2",
                 "Filmboiling*",
                 "delete_Filmboiling",
-                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/Filmboiling_Run.ipynb");
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/Filmboiling_Evaluate.ipynb");
@@ -612,7 +612,7 @@ namespace ValidationTestRunner {
                 "ScrivenProblem_v3",
                 "ScrivenProblem*",
                 "delete_ScrivenProblem",
-                new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 0));
+                new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/ScrivenProblem_Run.ipynb");
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/ScrivenProblem_Evaluate.ipynb");
