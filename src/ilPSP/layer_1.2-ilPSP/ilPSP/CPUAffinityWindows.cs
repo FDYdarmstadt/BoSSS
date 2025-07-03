@@ -62,7 +62,15 @@ namespace ilPSP.Utils {
         [DllImport("kernel32.dll")]
         private static extern uint SetThreadIdealProcessor(IntPtr hThread, uint dwIdealProcessor);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr OpenThread(uint dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CloseHandle(IntPtr hObject);
+
+        private const uint THREAD_SET_INFORMATION = 0x0020;
+        private const uint THREAD_QUERY_INFORMATION = 0x0040;
 
         [StructLayout(LayoutKind.Sequential)]
         struct GROUP_AFFINITY {
@@ -167,6 +175,26 @@ namespace ilPSP.Utils {
             return cpus.ToArray();
         }
 
+        public static IEnumerable<int> GetProcessAffinity() {
+            var cpuList = new HashSet<int>();
+            int procsPerGroup = NumberOfCPUsPerGroup;
+
+            Process currentProcess = Process.GetCurrentProcess();
+            foreach(ProcessThread pt in currentProcess.Threads) {
+                IntPtr hThread = OpenThread(THREAD_SET_INFORMATION | THREAD_QUERY_INFORMATION, false, (uint)pt.Id);
+                if(hThread == IntPtr.Zero) continue;
+
+                if(GetThreadGroupAffinity(hThread, out var groupAffinity)) {
+                    var cpus = CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, procsPerGroup);
+                    foreach(var cpu in cpus)
+                        cpuList.Add(cpu);
+                }
+                CloseHandle(hThread);
+            }
+            var sortedList = cpuList.ToList();
+            sortedList.Sort();
+            return sortedList;
+        }
 
         /// <summary>
         /// (Windows version) Returns the list of CPU's to which the current process is assigned to.
@@ -197,7 +225,7 @@ namespace ilPSP.Utils {
                 ushort group = groups[cntGroup];
                 GROUP_AFFINITY groupAffinity;
                 if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, group, NumberOfCPUsPerGroup).ToArray());
+                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, NumberOfCPUsPerGroup).ToArray());
                 } else {
                     int errorCode = Marshal.GetLastWin32Error();
                     throw new Win32Exception(errorCode);
@@ -246,7 +274,7 @@ namespace ilPSP.Utils {
 
 
                 for(int cntGroup = 0; cntGroup < NumberOfGroups; cntGroup++) {
-
+                    Console.Error.WriteLine($"Setting {cntGroup + 1}/{NumberOfGroups} group with affinity 0x{affinities[cntGroup].Mask:x} at group-{affinities[cntGroup].Group}");
                     if(SetThreadGroupAffinity(GetCurrentThread(), ref affinities[cntGroup], null)) {
 
                     } else {
@@ -307,11 +335,8 @@ namespace ilPSP.Utils {
 
 
                 var affGroup = CCP_AFFINITY.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                var iGroup = GetCurrentThreadGroupNumber();
-
-
                 var CPUlist = new List<int>();
-                //int iGroup = 0;
+                int iGroup = 0;
                 var groupOccupied = new List<bool>();
                 foreach(string aff in affGroup) {
                     //
