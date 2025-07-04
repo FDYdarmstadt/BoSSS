@@ -1,4 +1,5 @@
 ﻿using ilPSP.Utils;
+using MPI.Wrappers;
 using MPI.Wrappers.Utils;
 using System;
 using System.Collections.Generic;
@@ -117,7 +118,11 @@ namespace ilPSP {
 
 
         public static void BindOMPthreads_1To1(int[] CPUindices) {
+            int rank = -1;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            Console.Error.WriteLine($"R{rank}: binding 1to1 OpenMP threads to CPUs: " + string.Join(", ", CPUindices.Select(x => x.ToString())));
             CPUindices = CPUAffinity.ToOpenMpCPUindices(CPUindices).ToArray();
+            Console.Error.WriteLine($"Again R{rank}: binding 1to1 OpenMP threads to CPUs: " + string.Join(", ", CPUindices.Select(x => x.ToString())));
 
             int ret;
             int NumCpus = CPUindices.Length;
