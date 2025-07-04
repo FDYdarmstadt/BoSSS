@@ -6514,7 +6514,7 @@ namespace BoSSS.Application.XNSE_Solver {
             bool Steady = false;
             double bigR = 0.26;
             double smallR = 0.22;
-            C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = -1;
             C.SuperSampling = 0;
             C.DynamicLoadBalancing_On = true;
             C.DynamicLoadBalancing_Period = 1; //Make it challenging by changing the decomposition every timestep
