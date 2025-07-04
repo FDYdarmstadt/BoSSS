@@ -686,7 +686,7 @@ namespace ilPSP {
                 //ReservedCPUs = CPUAffinity.GetAffinity();
                 //ReservedCPUs = CPUAffinity.GetAffinity().ToConcatString("[", ", ", "]")
                 //}
-
+                bool eqalAff = true;
                 //--- this is mpi-local --//
                 if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     if(System.Environment.GetEnvironmentVariable("CCP_AFFINITY").IsNonEmpty()) {
@@ -696,7 +696,7 @@ namespace ilPSP {
                         tr.Info($"CCP_AFFINITY is set as '{System.Environment.GetEnvironmentVariable("CCP_AFFINITY")}'");
 
                         var _ReservedCPUs = CPUAffinityWindows.Decode_CCP_AFFINITY();
-                        bool eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
+                        eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
                         string listdiffs;
                         if(!eqalAff)
                             listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ",", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ",", "]") + ")";
@@ -726,7 +726,7 @@ namespace ilPSP {
 
                 tr.Info($"MpiJobOwnsEntireComputer = {MpiJobOwnsEntireComputer}, RnkJobOwnsEntireComputer = {MpiRnkOwnsEntireComputer}");
 
-                if(allequal) {
+                if(allequal && eqalAff) {
                     int l = ReservedCPUsOnSMP.Count();
                     int r = MPIEnv.ProcessRankOnSMP;
                     int s = MPIEnv.ProcessesOnMySMP;
@@ -769,12 +769,12 @@ namespace ilPSP {
                         MaxNumOpenMPthreads = Math.Min(ReservedCPUsOnSMP.Count(), MPIEnv.ProcessesOnMySMP * NumThreads);
                     }*/
 
-                } else if(disjoint) {
+                } else if(disjoint && eqalAff) {
 
                     DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
 
                 } else {
-                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray(); //this should be similar to above but get the list sorting only in its group. Exchange the group number per rank and than sort the list with respect to ranks. Then get subvector within the group with respect to ranks in the group
+                    DedicatedCPUsForThisRank = ReservedCPUs.ToArray(); 
                     // just hope for the best
                     MKLservice.Dynamic = true;
                     MKLservice.SetNumThreads(NumThreads);
@@ -794,8 +794,8 @@ namespace ilPSP {
                     tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
                 }
 
-                PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
-                PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
+                PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint) && eqalAff;
+                PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint) && eqalAff;
 
                 /*
                                 if(NumThreads*2 < DedicatedCPUsForThisRank.Length) {
