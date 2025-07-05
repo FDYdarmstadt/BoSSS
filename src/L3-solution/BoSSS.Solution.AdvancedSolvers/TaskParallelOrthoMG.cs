@@ -779,37 +779,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     public class PermutateAndDistribute {
 
-        ///// <summary>
-        ///// Data copy indices into Schwarz blocks, for each Schwarz block, for data exchange on this MPI processor
-        ///// - 1st index: Schwarz block index
-        ///// - 2nd index: enumeration
-        ///// </summary>
-        //int[] BlockIdxs;
-
-        ///// <summary>
-        ///// Data copy indices into global vectors, for each Schwarz block, for data exchange on this MPI processor
-        ///// - 1st index: Schwarz block index
-        ///// - 2nd index: enumeration
-        ///// </summary>
-        //int[] GlobalIdxs;
-
-
-        ///// <summary>
-        ///// Data copy indices into Schwarz blocks, for each MPI processor, for each Schwarz block, for data exchange between processors
-        ///// - 1st index: MPI rang of data origin process
-        ///// - 2nd index: Schwarz block index
-        ///// - 3rd index: enumeration
-        ///// </summary>
-        //int[][] externBlockIdxs;
-
-        ///// <summary>
-        ///// Data copy indices into data package for origin process, for each MPI processor, for each Schwarz block, for data between processors
-        ///// - 1st index: MPI rank of origin process
-        ///// - 2nd index: Schwarz block index
-        ///// - 3rd index: enumeration
-        ///// </summary>
-        //int[][] externPackageIdxs;
-
         /// <summary>
         /// - 1st index: MPI rank of target processor
         /// - 2nd index:
@@ -828,138 +797,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ArrayMessenger<double> Permutate; // Source To Target   
         ArrayMessenger<double> BackPermutate; // Target To Source
 
-        //public SetIndexes(IBlockPartitioning Part, List<long> BlockGlobalIdx) {
-        //    using(new FuncTrace()) {
+        // for the permutation from source to target partitioning
+        long[] TargetIndices; //indices of cells to be on this processor, according to target partitioning
+        long[] SourceIndices; //indices of cells to be on this processor, according to source partitioning
 
-        //        LocalIdxs = new int[];
-        //        GlobalIdxs = new int[];
-        //        var _externBlockIdxs = new List<int>[Part.MpiSize][];
-        //        var _externPackageIdxs = new List<int>[Part.MpiSize][];
-        //        externBlockIdxs = new int[Part.MpiSize][];
-        //        externPackageIdxs = new int[Part.MpiSize][];
-        //        var _Packets = new List<int>[Part.MpiSize];
-        //        PackagesSize = new int[Part.MpiSize];
+        int LengthBeforePermutation;
+        int LengthAfterPermutation;
 
-
-        //        if(m_owner.m_BlockSolvers[iBlock] != null) {
-        //            var localSourceIdx = new List<int>();
-        //            var localTargetIdx = new List<int>();
-        //            var glIdxS = BlockGlobalIdx[iBlock];
-        //            int LneBlock = glIdxS.Count;
-
-        //            for(int i = 0; i < LneBlock; i++) { // loop over rows/columns of Schwarz block...
-        //                long glIdx = glIdxS[i]; // global index which corresponds to block index 'i'
-
-        //                if(Part.IsInLocalRange(glIdx)) {
-        //                    localSourceIdx.Add(Part.Global2Local(glIdx));
-        //                    localTargetIdx.Add(i);
-        //                } else {
-        //                    int originRank = Part.FindProcess(glIdx); // data is received from the `originRank`
-        //                                                              // 
-        //                    if(_externBlockIdxs[originRank] == null) {
-        //                        _externBlockIdxs[originRank] = new List<int>;
-        //                        _externPackageIdxs[originRank] = new List<int>;
-        //                    }
-        //                    Debug.Assert((_externPackageIdxs[originRank] == null) == (_externBlockIdxs[originRank] == null));
-        //                    if(_externBlockIdxs[originRank][iBlock] == null) {
-        //                        _externBlockIdxs[originRank][iBlock] = new List<int>();
-        //                        _externPackageIdxs[originRank][iBlock] = new List<int>();
-        //                    }
-        //                    Debug.Assert((_externPackageIdxs[originRank][iBlock] == null) == (_externBlockIdxs[originRank][iBlock] == null));
-        //                    if(_Packets[originRank] == null) {
-        //                        _Packets[originRank] = new List<int>();
-        //                    }
-
-        //                    _externBlockIdxs[originRank].Add(i);
-        //                    _externPackageIdxs[originRank].Add(_Packets[originRank].Count);
-
-        //                    _Packets[originRank].Add(checked((int)(glIdx - Part.GetI0Offest(originRank))));
-        //                }
-
-        //            }
-
-
-        //            GlobalIdxs[iBlock] = localSourceIdx.ToArray();
-        //            BlockIdxs[iBlock] = localTargetIdx.ToArray();
-
-        //            if(GlobalIdxs[iBlock].Length > 0) {
-        //                Debug.Assert(GlobalIdxs[iBlock].Min() >= 0);
-        //                Debug.Assert(GlobalIdxs[iBlock].Max() < Part.LocalLength);
-
-        //                Debug.Assert(BlockIdxs[iBlock].Min() >= 0);
-        //                Debug.Assert(BlockIdxs[iBlock].Max() < LneBlock);
-        //            }
-        //        }
-
-
-        //        for(int rnk = 0; rnk < Part.MpiSize; rnk++) {
-        //            if(_externBlockIdxs[rnk] != null) {
-        //                externBlockIdxs[rnk] = new int[NoOfBlocks][];
-        //                externPackageIdxs[rnk] = new int[NoOfBlocks][];
-        //                for(int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
-
-        //                    if(_externBlockIdxs[rnk][iBlock] != null) {
-        //                        int LneBlock = BlockGlobalIdx[iBlock].Count;
-        //                        externBlockIdxs[rnk][iBlock] = _externBlockIdxs[rnk][iBlock].ToArray();
-        //                        externPackageIdxs[rnk][iBlock] = _externPackageIdxs[rnk][iBlock].ToArray();
-
-        //                        Debug.Assert(externBlockIdxs[rnk][iBlock].Length > 0);
-        //                        Debug.Assert(externPackageIdxs[rnk][iBlock].Length > 0);
-
-        //                        Debug.Assert(externBlockIdxs[rnk][iBlock].Min() >= 0);
-        //                        Debug.Assert(externBlockIdxs[rnk][iBlock].Max() < LneBlock);
-        //                        Debug.Assert(externPackageIdxs[rnk][iBlock].Min() >= 0);
-        //                        Debug.Assert(externPackageIdxs[rnk][iBlock].Max() < _Packets[rnk].Count);
-        //                    }
-        //                }
-        //            }
-        //        }
-
-        //        PackagesSize = _Packets.Select(l => l?.Count ?? -271897).ToArray();
-        //        if(PackagesSize.Any(sz => sz == 0))
-        //            throw new Exception("internal error");
-
-
-        //        using(var f = new ArrayMessenger<int>(Part.MPI_Comm)) {
-        //            for(int r = 0; r < Part.MpiSize; r++) {
-        //                if(_Packets[r] != null)
-        //                    f.SetCommPath(r, _Packets[r].Count);
-        //            }
-        //            f.CommitCommPaths();
-        //            for(int r = 0; r < Part.MpiSize; r++) {
-        //                if(_Packets[r] != null)
-        //                    f.Transmit(r, _Packets[r].ToArray());
-        //            }
-        //            IdxsToBeSent = new int[Part.MpiSize][];
-        //            while(f.GetNext(out int p, out int[] data)) {
-        //                IdxsToBeSent[p] = data;
-        //                Debug.Assert(IdxsToBeSent[p].Min() >= 0);
-        //                Debug.Assert(IdxsToBeSent[p].Max() < Part.LocalLength);
-        //            }
-        //        }
-
-        //        {
-        //            Global2Blocks = new ArrayMessenger<double>(Part.MPI_Comm);
-        //            for(int r = 0; r < Part.MpiSize; r++) {
-        //                if(IdxsToBeSent[r] != null)
-        //                    Global2Blocks.SetCommPath(r, IdxsToBeSent[r].Length);
-        //            }
-        //            Global2Blocks.CommitCommPaths();
-        //        }
-
-        //        {
-        //            Blocks2Global = new ArrayMessenger<double>(Part.MPI_Comm);
-        //            for(int r = 0; r < Part.MpiSize; r++) {
-        //                if(PackagesSize[r] > 0)
-        //                    Blocks2Global.SetCommPath(r, PackagesSize[r]);
-        //            }
-        //            Blocks2Global.CommitCommPaths();
-        //        }
-        //    }
-        //}
-
-        long[] TargetIndices; long[] SourceIndices;
-
+        /// <summary>
+        /// Vector permutation class
+        /// </summary>
+        /// <param name="sourcePartitioning"></param>
+        /// <param name="targetPartitioning"></param>
+        /// <param name="blockData"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         internal PermutateAndDistribute(IBlockPartitioning sourcePartitioning, IBlockPartitioning targetPartitioning, (long i0Cell, int lenCell)[] blockData = null) {
             if(sourcePartitioning == null || targetPartitioning == null)
                 throw new ArgumentNullException("Source and target partitionings cannot be null.");
@@ -975,19 +827,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             externalSourceIdx = new List<int>[sourcePartitioning.MpiSize];
             externalTargetIdx = new List<int>[sourcePartitioning.MpiSize];
 
-            CalculateSendList(SourceIndices, sourcePartitioning, TargetIndices, targetPartitioning);    
+            CalculateSendAndReceiveLists(SourceIndices, sourcePartitioning, TargetIndices, targetPartitioning);    
         }
 
-
-        //externIdx = 
+        // Cells which are both in source and target partitioning on this processor
         List<int> localSourceIdx = new List<int>();
         List<int> localTargetIdx = new List<int>();
 
         List<int>[] externalSourceIdx; //Receive list to other processors (local indices on their respective partition)
-        List<int>[] externalTargetIdx; //Receive list from other processors (local indices)
+        List<int>[] externalTargetIdx; //Receive list from other processors (local indices on the target partitioning)
 
-        //IBlockPartitioning sourcePartitioning;
-        //IBlockPartitioning targetPartitioning;
+        void CalculateSendAndReceiveLists(long[] SourceIndices, IBlockPartitioning sourcePartitioning, long[] TargetIndices, IBlockPartitioning targetPartitioning) {
 
         void CalculateSendList(long[] SourceIndices, IBlockPartitioning sourcePartitioning, long[] TargetIndices, IBlockPartitioning targetPartitioning) {
 
@@ -1048,13 +898,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 BackPermutate.CommitCommPaths();
             }
+
+            LengthBeforePermutation = IdxsToBeSent.Sum(arr => arr?.Length ?? 0) + localSourceIdx.Count; // total number of items sent + local items
+            LengthAfterPermutation = SourceIndices.Length;
         }
 
         public double[] PermutateVector<V>(V input) where V : IList<double> {
             using(new FuncTrace()) {
                 Debug.Assert(Permutate.Size == IdxsToBeSent.Length);
 
-                double[] output = new double[SourceIndices.Length];
+                double[] output = new double[LengthAfterPermutation];
 
                 // Start transmitting data
                 // =======================
@@ -1073,6 +926,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         output[localTargetIdx[l]] = input[localSourceIdx[l]];
                     }
                 }
+
                 // insert received data
                 // ====================
                 { 
@@ -1080,22 +934,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var eSourceIdxs = externalSourceIdx[OriginProc];
                         var eTargetIdxs = externalTargetIdx[OriginProc];
 
+                        Debug.Assert(externalSourceIdx[OriginProc].Count == eTargetIdxs.Count);
                         Debug.Assert(data.Length == PackagesSize[OriginProc]);
 
-                        if(eSourceIdxs != null) {
-                            Debug.Assert(eSourceIdxs.Count == eTargetIdxs.Count);
-
-                            int L = eSourceIdxs.Count;
+                        if(eTargetIdxs != null) {
+                            int L = eTargetIdxs.Count;
                             for(int l = 0; l < L; l++) {
                                 output[eTargetIdxs[l]] = data[l];
                             }
                         }
-
                     }
                 }
 
                 return output;
-
             }
         }
 
@@ -1103,7 +954,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double[] PermutateVectorBack<V>(V input) where V : IList<double> {
             using(new FuncTrace()) {
                 Debug.Assert(BackPermutate.Size == IdxsToBeSent.Length);
-                int initialSize = IdxsToBeSent.Sum(arr => arr?.Length ?? 0) + localSourceIdx.Count; // total number of items sent + local items
+                int initialSize = LengthBeforePermutation; 
                 double[] output = new double[initialSize];
 
                 // Start transmitting data
@@ -1123,18 +974,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         output[localSourceIdx[l]] = input[localTargetIdx[l]];
                     }
                 }
+
                 // insert received data
                 // ====================
                 {
                     while(BackPermutate.GetNext(out int OriginProc, out double[] data)) {
-                        var eSourceIdxs = IdxsToBeSent[OriginProc];
+                        var eTargetIdxs = IdxsToBeSent[OriginProc];
 
-                        if(eSourceIdxs != null) {
-                            int L = eSourceIdxs.Length;
+                        if(eTargetIdxs != null) {
+                            int L = eTargetIdxs.Length;
                             Debug.Assert(data.Length == L);
 
                             for(int l = 0; l < L; l++) {
-                                output[eSourceIdxs[l]] = data[l];
+                                output[eTargetIdxs[l]] = data[l];
                             }
                         }
                     }
