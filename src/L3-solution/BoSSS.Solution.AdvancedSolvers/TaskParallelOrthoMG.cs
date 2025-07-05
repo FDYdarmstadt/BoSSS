@@ -1658,19 +1658,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return flatGlobArray;
 		}
 
-		//      List<(long source, long target)> columnMappingOpToSmootherOld;
-		//List<(long source, long target)> columnMappingOpToCoarseOld;
+        //      List<(long source, long target)> columnMappingOpToSmootherOld;
+        //List<(long source, long target)> columnMappingOpToCoarseOld;
 
-		/// <summary>
-		/// tests if the permutation matrix is correct with respect to the original matrix and the subComm matrix
-		/// </summary>
-		/// <param name="opCommMtx">a matrix defined on opComm</param>
-		/// <param name="PermutationMtx">permutation matrix to be tested</param>
-		/// <param name="subCommMtx">the subComm version of <paramref name="opCommMtx"/> </param>
-		/// <param name="tag">tag for i/o outputs</param>
-		/// <param name="WriteToFiles">true or false</param>
-		/// <exception cref="Exception"></exception>
-		void TestMatrices(BlockMsrMatrix opCommMtx, PermutateAndDistribute Permutation, BlockMsrMatrix subCommMtx, string tag = "t_", bool WriteToFiles = false) {
+        /// <summary>
+        /// tests if the permutation matrix is correct with respect to the original matrix and the subComm matrix
+        /// </summary>
+        /// <param name="opCommMtx">a matrix defined on opComm</param>
+        /// <param name="Permutation">permutation to be tested</param>
+        /// <param name="subCommMtx">the subComm version of <paramref name="opCommMtx"/> </param>
+        /// <param name="tag">tag for i/o outputs</param>
+        /// <param name="WriteToFiles">true or false</param>
+        /// <exception cref="Exception"></exception>
+        void TestMatrices(BlockMsrMatrix opCommMtx, PermutateAndDistribute Permutation, BlockMsrMatrix subCommMtx, string tag = "t_", bool WriteToFiles = false) {
 			//Create a test vector
 			Random rnd = new Random(44); //seed is 44
 			var TestVector = new double[opCommMtx.ColPartition.LocalLength];
@@ -1718,7 +1718,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// tests if the permutation matrix is correct with respect to the original matrix and the subComm matrix
 		/// </summary>
-		/// <param name="PermutationMtx">permutation matrix to be tested</param>
+		/// <param name="Per">permutation to be tested</param>
 		/// <param name="tag">tag for i/o outputs</param>
 		/// <param name="WriteToFiles">true or false</param>
 		/// <exception cref="Exception"></exception>
