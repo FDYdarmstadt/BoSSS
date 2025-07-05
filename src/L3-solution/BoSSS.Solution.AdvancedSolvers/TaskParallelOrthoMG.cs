@@ -801,8 +801,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long[] TargetIndices; //indices of cells to be on this processor, according to target partitioning
         long[] SourceIndices; //indices of cells to be on this processor, according to source partitioning
 
-        int LengthBeforePermutation;
-        int LengthAfterPermutation;
+        public int LengthBeforePermutation;
+        public int LengthAfterPermutation;
 
         /// <summary>
         /// Vector permutation class
@@ -838,8 +838,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         List<int>[] externalTargetIdx; //Receive list from other processors (local indices on the target partitioning)
 
         void CalculateSendAndReceiveLists(long[] SourceIndices, IBlockPartitioning sourcePartitioning, long[] TargetIndices, IBlockPartitioning targetPartitioning) {
-
-        void CalculateSendList(long[] SourceIndices, IBlockPartitioning sourcePartitioning, long[] TargetIndices, IBlockPartitioning targetPartitioning) {
 
             Debug.Assert(SourceIndices.Length == TargetIndices.Length, "Source and target indices must have the same length.");
 
@@ -931,7 +929,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ====================
                 { 
                     while(Permutate.GetNext(out int OriginProc, out double[] data)) {
-                        var eSourceIdxs = externalSourceIdx[OriginProc];
                         var eTargetIdxs = externalTargetIdx[OriginProc];
 
                         Debug.Assert(externalSourceIdx[OriginProc].Count == eTargetIdxs.Count);
@@ -1414,11 +1411,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		BlockMsrMatrix subCommSmootherOpMatrix = null;
 		BlockMsrMatrix subCommCoarseOpMatrix = null;
 
-		(BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMtx) smootherPermutation = (null, null, null, null);
-		(BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMtx) coarsePermutation = (null, null, null, null);
-
-		BlockMsrMatrix smootherPermutationMtx => smootherPermutation.Matrix;
-		BlockMsrMatrix coarsePermutationMtx => coarsePermutation.Matrix;
+        PermutateAndDistribute smootherPermutation = null;
+        PermutateAndDistribute coarsePermutation = null;
 
 		List<(long source, long target)> columnMappingWorldToThis => TpMapping.ThisNewCellMapping;
 		List<(long source, long target)> columnMappingWorldToSmoother => TpMapping.SmootherNewCellMapping;
@@ -1476,7 +1470,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				CreatePermutationMatrices();
 
 #if DEBUG
-				TestMatrices(OpMatrix, smootherPermutationMtx, subCommSmootherOpMatrix, $"test_lvl{TpLevel}_s",verbose);
+				TestMatrices(OpMatrix, smootherPermutation, subCommSmootherOpMatrix, $"test_lvl{TpLevel}_s",verbose);
 #endif
 
 				// initiate smoother and coarser level (notice initializing them are also task parallel)
@@ -1553,8 +1547,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		ICoordinateMapping MgMap => m_OpMapPair.DgMapping;
 
-
-
 		int TpLevel => TpMapping.Level;
 
 		/// <summary>
@@ -1589,53 +1581,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		double[] ChangeVectorDistr(double[] vec, IBlockPartitioning newPart) {
-			double[] ret = new double[newPart.LocalLength];
-			return ret;
-		}
-
-		double[] ChangeVectorDistrBack(double[] vec, IBlockPartitioning newPart) {
-			double[] ret = new double[newPart.LocalLength];
-			return ret;
-		}
-
-		double[] PermutateVector(double[] vec, (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMtx) permutation) {
-			double[] ret = new double[permutation.Matrix.RowPartitioning.LocalLength];
-			permutation.Matrix.SpMV(1.0, vec, 0.0, ret);
-			return ret;
-		}
-
-		double[] PermutateVectorBack(double[] vec, (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMtx) permutation) {
-            double[] ret = new double[permutation.TransposeMtx.RowPartitioning.LocalLength];
-            permutation.TransposeMtx.SpMV(1.0, vec, 0.0, ret);
-            return ret;            
-		}
-
-		/// <summary>
-		/// ChangeDistributionAndCommunicators with matrix multiplication on rows
-		/// </summary>
-		/// <param name="localBlocks"></param>
-		/// <param name="Mtx"></param>
-		/// <param name="permutation"></param>
-		/// <param name="columnMapping"></param>
-		/// <param name="test"></param>
-		/// <param name="tag"></param>
-		/// <returns></returns>
-		BlockMsrMatrix ChangeDistributionAndCommunicators((long i0Global, int CellLen)[] localBlocks, BlockMsrMatrix Mtx, (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMtx) permutation, IList<(long Source, long Target)> columnMapping, bool test = true, string tag = "d_") {
-			//smoother (should be called by all procs in opComm)
-			var LocalizedMatrix = BlockMsrMatrix.Multiply(permutation.Matrix, Mtx); // transfer matrix to the target procs (changed the position of rows not columns)
-			LocalizedMatrix.ChangeColumnIndices(columnMapping); //switches column indices with respect to the mapping
-			LocalizedMatrix.ChangeColumnPartitioning(LocalizedMatrix._RowPartitioning); // calculates new external indices with respec to the new partitioning (still opComm)
-			var newColMapping = GetPartitioning(localBlocks, subComm);
-			LocalizedMatrix.ChangeMPICommForColumns(ThisCommToSubCommMapping, newColMapping); // changes the communicator to the new one (subComm)
-			var permutatedMatrix = LocalizedMatrix.GetSubMatrix(permutation.RowIndices, permutation.RowIndices, subComm); // finally create a new matrix with the new Comm
-#if DEBUG
-			if (test)
-				TestMatrices(Mtx, permutation.Matrix, permutatedMatrix, tag, verbose);
-#endif
-			return permutatedMatrix;
-		}
-
 		(long i0Cell, int lenCell)[] smootherBlocks;
 		(long i0Cell, int lenCell)[] coarseBlocks;
 
@@ -1666,21 +1611,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var ThisglobalDOFs = CellIndexToDOFs2(thisPartitioningInThisComm, TpMapping.localBlocksForThisLevel);
 
 			smootherBlocks = GetLocalDistribution(ThisglobalDOFs, colMapThisToSmoother, TpMapping.SmootherCellI0s, 0, NoOfSmootherProcs);
-			smootherPermutation = GetPermutationMatrix(thisPartitioningInThisComm, smootherBlocks); //this is technically a permutation matrix but also distributes 
-
             BlockPartitioning smootherTargetPartitioning = GetPartitioning(smootherBlocks, thisComm);
-            var PerSmoother = new PermutateAndDistribute(thisPartitioningInThisComm,smootherTargetPartitioning, smootherBlocks);
+            smootherPermutation = new PermutateAndDistribute(thisPartitioningInThisComm,smootherTargetPartitioning, smootherBlocks);
 
 			coarseBlocks = GetLocalDistribution(ThisglobalDOFs, colMapThisToCoarse, TpMapping.CoarseCellI0s, NoOfSmootherProcs, NoOfCoarseProcs);
-			coarsePermutation = GetPermutationMatrix(thisPartitioningInThisComm, coarseBlocks);
-
             BlockPartitioning coarseTargetPartitioning = GetPartitioning(coarseBlocks, thisComm);
-            var PerCoarse = new PermutateAndDistribute(thisPartitioningInThisComm, coarseTargetPartitioning, coarseBlocks);
+            coarsePermutation = new PermutateAndDistribute(thisPartitioningInThisComm, coarseTargetPartitioning, coarseBlocks);
 
 #if DEBUG
-            TestPermutation(smootherPermutationMtx, PerSmoother, $"lvl_{TpLevel}_smootherPermutationTest_", verbose);
+            TestPermutation(smootherPermutation, $"lvl_{TpLevel}_smootherPermutationTest_", verbose);
 
-            TestPermutation(coarsePermutationMtx, PerCoarse, $"lvl_{TpLevel}_coarsePermutationTest_", verbose);
+            TestPermutation(coarsePermutation, $"lvl_{TpLevel}_coarsePermutationTest_", verbose);
 #endif
         }
 
@@ -1729,7 +1670,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="tag">tag for i/o outputs</param>
 		/// <param name="WriteToFiles">true or false</param>
 		/// <exception cref="Exception"></exception>
-		void TestMatrices(BlockMsrMatrix opCommMtx, BlockMsrMatrix PermutationMtx, BlockMsrMatrix subCommMtx, string tag = "t_", bool WriteToFiles = false) {
+		void TestMatrices(BlockMsrMatrix opCommMtx, PermutateAndDistribute Permutation, BlockMsrMatrix subCommMtx, string tag = "t_", bool WriteToFiles = false) {
 			//Create a test vector
 			Random rnd = new Random(44); //seed is 44
 			var TestVector = new double[opCommMtx.ColPartition.LocalLength];
@@ -1742,17 +1683,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			opCommMtx.SpMV(1.0, TestVector, 0.0, opResult);
 				
 			// test vector to subComm
-			var TestVectorSub = new double[PermutationMtx._RowPartitioning.LocalLength];
-			PermutationMtx.SpMV(1.0, TestVector, 0.0, TestVectorSub);
+			var TestVectorSub = Permutation.PermutateVector(TestVector);
 
 			// result at the subComm
 			var subOpResult = new double[subCommMtx._RowPartitioning.LocalLength];
 			subCommMtx.SpMV(1.0, TestVectorSub, 0.0, subOpResult);
 
-			// map back the subComm result to the opComm
-			var TransposeRedist = PermutationMtx.Transpose();
-			var subOpResultBackToOp = new double[TransposeRedist._RowPartitioning.LocalLength];
-			TransposeRedist.SpMV(1.0, subOpResult, 0.0, subOpResultBackToOp);
+            // map back the subComm result to the opComm
+            var subOpResultBackToOp = Permutation.PermutateVectorBack(subOpResult);
 
 			if (WriteToFiles) {
 				//dist.SaveToTextFileDebug($"{tag}localDistForSmoother.txt");
@@ -1767,9 +1705,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				subCommMtx.SaveToTextFileSparseDebug($"{tag}localBlock.txt");
 				subCommMtx.SaveToTextFileSparse($"{tag}localBlock.txt");
 				
-				PermutationMtx.SaveToTextFileSparseDebug($"{tag}Redist.txt");
-				PermutationMtx.SaveToTextFileSparse($"{tag}Redist.txt");
-
 				subOpResult.SaveToTextFileDebug($"{tag}subOpResult", ".txt");
 				subOpResultBackToOp.SaveToTextFileDebug($"{tag}backPermutation", ".txt");
 			}
@@ -1787,52 +1722,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="tag">tag for i/o outputs</param>
 		/// <param name="WriteToFiles">true or false</param>
 		/// <exception cref="Exception"></exception>
-		void TestPermutation(BlockMsrMatrix PermutationMtx, PermutateAndDistribute Per, string tag = "t_", bool WriteToFiles = false) {
+		void TestPermutation(PermutateAndDistribute Per, string tag = "t_", bool WriteToFiles = false) {
 			//Create a test vector
 			Random rnd = new Random(44); //seed is 44
-			var TestVector = new double[PermutationMtx.ColPartition.LocalLength];
+			var TestVector = new double[Per.LengthBeforePermutation];
 			for (int i = 0; i < TestVector.Length; i++) {
 				TestVector[i] = rnd.NextDouble();
 			}
 
 			// test vector to subComm
-			var TestVectorSub = new double[PermutationMtx._RowPartitioning.LocalLength];
-			PermutationMtx.SpMV(1.0, TestVector, 0.0, TestVectorSub);
-
-
-            var TestVectorSub2 = Per.PermutateVector(TestVector);
-
+			var TestVectorSub = Per.PermutateVector(TestVector);
 
             // map back the subComm result to the opComm
-            var TransposeRedist = PermutationMtx.Transpose();
-			var backPermutation = new double[TransposeRedist._RowPartitioning.LocalLength];
-            TransposeRedist.SpMV(1.0, TestVectorSub, 0.0, backPermutation);
-
-            var backPermutation2 = Per.PermutateVectorBack(TestVectorSub2);
+            var backPermutation = Per.PermutateVectorBack(TestVectorSub);
 
 
             if (WriteToFiles) {
 				TestVector.SaveToTextFileDebug($"{tag}TestVector", ".txt");
                 TestVectorSub.SaveToTextFileDebug($"{tag}TestVectorSub", ".txt");
-                TestVectorSub2.SaveToTextFileDebug($"{tag}TestVectorSub2", ".txt");
-
-                PermutationMtx.SaveToTextFileSparseDebug($"{tag}Redist.txt");
-				PermutationMtx.SaveToTextFileSparse($"{tag}Redist.txt");
 				backPermutation.SaveToTextFileDebug($"{tag}backPermutation", ".txt");
-                backPermutation2.SaveToTextFileDebug($"{tag}backPermutation2", ".txt");
-
             }
 
             for (int i = 0; i < backPermutation.Length; i++) {
 				if (Math.Abs(TestVector[i] - backPermutation[i]) > Math.Pow(10, -12))
 					throw new Exception("Something odd with redistribution matrix, the solutions do not hold");
 			}
-
-
-            for(int i = 0; i < backPermutation2.Length; i++) {
-                if(Math.Abs(TestVector[i] - backPermutation2[i]) > Math.Pow(10, -12))
-                    throw new Exception("Something odd with the permutation, the solutions do not hold");
-            }
         }
 
 		(long i0Cell, int lenCell)[] GetLocalDistribution((long i0Cell, int lenCell)[] globalDOFs, List<(long Source, long Target)> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
@@ -1858,69 +1772,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             Debug.Assert(newBlockiE - newBlocki0 == ret.Count);
 			return ret.ToArray();
-		}
-
-        /// <summary>
-        /// Creates permutation matrix and calculates Row and col indixes of each DOF (not block as in cellColumnMapping)
-        /// </summary>
-        /// <param name="mapping">MG mapping for grid data at the current level</param>
-        /// <param name="locDOFsData">DOFs data with global indices</param>
-        /// <returns></returns>
-		private (BlockMsrMatrix Matrix, List<long> RowIndices, List<long> ColIndices, BlockMsrMatrix TransposeMatrix) GetPermutationMatrix(IBlockPartitioning mapping, (long i0Global, int CellLen)[] locDOFsData) {
-			using (new FuncTrace()) {
-
-				BlockPartitioning TargetPartitioning = GetPartitioning(locDOFsData, thisComm);
-				BlockMsrMatrix PermutationMatrix = new BlockMsrMatrix(TargetPartitioning, mapping);
-                List<long> RowIndices = new List<long>(); 
-                List<long> ColIndices= new List<long>();
-				{
-					int cnt = 0;
-						if (locDOFsData != null && locDOFsData.Length > 0) {
-							int NoCells = locDOFsData.Length;
-
-							for (int j = 0; j < NoCells; j++) {
-								//int Len = part.lenCell[j];
-								int Len = locDOFsData[j].CellLen;
-								long i0Row = TargetPartitioning.i0 + cnt;
-								long i0Col = locDOFsData[j].i0Global; //TargetPartitioning.i0 + cnt; // locDOFsData[j].i0Global;   //part.i0Cell[j];
-
-								PermutationMatrix.AccBlock(i0Row, i0Col, 1.0, MultidimensionalArray.CreateEye(Len));
-
-								for (int k = 0; k < Len; k++) {
-									RowIndices.Add(i0Row + k);
-									ColIndices.Add(i0Col + k);
-									//columnMappingWorldToSmoother.Add((i0Col + k, i0Row + k));
-							}
-
-								cnt += Len;
-							}
-						}
-
-
-					
-				}
-
-#if DEBUG
-				{
-						if (RowIndices != null) {
-
-							int L = RowIndices.Count;
-							for (int l = 0; l < L; l++) {
-								if (l > 0) {
-									Debug.Assert(RowIndices[l] > RowIndices[l - 1], "Error, Row indexing is not strictly increasing for some reason.");
-									//Debug.Assert(ColIndices[l] > ColIndices[l - 1], "Error, Column indexing is not strictly increasing for some reason.");
-								}
-							}
-
-						}
-
-					
-				}
-#endif
-                var TransposeMtx = PermutationMatrix.Transpose();
-
-				return (PermutationMatrix, RowIndices, ColIndices, TransposeMtx);
-			}
 		}
 
 		private int GetRank(MPI_Comm op_comm) {
@@ -2005,8 +1856,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		bool verbose = true;
-
-
 
 		TpTaskType myTask = TpTaskType.All;
 
@@ -2240,27 +2089,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				}
 
 				if (verbose) { 
-				smootherPermutation.Matrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_smootherPermutation.txt");
-				smootherPermutation.Matrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_smootherPermutation.txt");
-				smootherPermutation.TransposeMtx.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_smootherPermutationTranspose.txt");
-				smootherPermutation.TransposeMtx.SaveToTextFileSparse($"R_lvl_{TpLevel}_smootherPermutationTranspose.txt");
-				coarsePermutation.Matrix.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_coarsePermutation.txt");
-				coarsePermutation.Matrix.SaveToTextFileSparse($"R_lvl_{TpLevel}_coarsePermutation.txt");
-				coarsePermutation.TransposeMtx.SaveToTextFileSparseDebug($"R_lvl_{TpLevel}_coarsePermutationTranspose.txt");
-				coarsePermutation.TransposeMtx.SaveToTextFileSparse($"R_lvl_{TpLevel}_coarsePermutationTranspose.txt");
-				Res.SaveToTextFileDebug("Res", ".txt");
+				    Res.SaveToTextFileDebug("Res", ".txt");
 				}
-				// Permutation matrices live on thisComm, which means that they should be called on thisComm
-				//var XforSubCoarse = PermutateVector(X, coarsePermutation);
-				//var BforSubCoarse = PermutateVector(B, coarsePermutation);
-				var ResforSubCoarse = PermutateVector(Res, coarsePermutation);
+				// Permutation operators live on thisComm, which means that they should be called on thisComm
+				var ResforSubCoarse = coarsePermutation.PermutateVector(Res);
+                var ResforSubSmoother = smootherPermutation.PermutateVector(Res);
 
-				//var XforSubSmoother = PermutateVector(X, smootherPermutation);
-				//var BforSubSmoother = PermutateVector(B, smootherPermutation);
-				var ResforSubSmoother = PermutateVector(Res, smootherPermutation);
-
-				// Initialize task-specific data based on the task type
-				switch (myTask) {
+                // Initialize task-specific data based on the task type
+                switch(myTask) {
 					case TpTaskType.Coarse:
 						// For coarse tasks, only the residual is permuted
 						XforSub = null;
@@ -2312,8 +2148,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
 
 				// Initiate sub comm level variables (must be initiated on thisComm level to be able permutate them back)
-				double[] CoarseCorrectionOnSub = new double[coarsePermutationMtx._RowPartitioning.LocalLength];
-				double[] SmootherCorrOnSub = new double[smootherPermutationMtx._RowPartitioning.LocalLength];
+				double[] CoarseCorrectionOnSub = new double[coarsePermutation.LengthAfterPermutation];
+				double[] SmootherCorrOnSub = new double[smootherPermutation.LengthAfterPermutation];
 
 				// Start listening to signal (see AdvancedParallism)
 				ListenSignal(iIter);
@@ -2339,11 +2175,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				CrseLevelTime.Stop();
 
                 using(new FuncTrace("PermutateAndMinimize")) {
-                    var CoarseCorrection = PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
+                    var CoarseCorrection = coarsePermutation.PermutateVectorBack(CoarseCorrectionOnSub); //PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
                     resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
                     WriteDebug(iIter, resNorm, "Tp-coarse");
 
-                    var PreCorr = PermutateVectorBack(SmootherCorrOnSub, smootherPermutation); //this can be further optimized as smooth part has the full matrix
+                    var PreCorr = smootherPermutation.PermutateVectorBack(SmootherCorrOnSub); //this can be further optimized as smooth part has the full matrix
                     resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-smoother" + TpLevel);
                     WriteDebug(iIter, resNorm, "Tp-smoother");
                 }
@@ -2404,7 +2240,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			//if (completionSignal == 1)
 			//	CurrentTrace.Info($"Got signal on rank {thisCommRank} from {targetRank} on {thisComm} with size {thisCommsize} on TpLevel{TpLevel}");
 		}
-
 
 		bool CheckSignal() {
 			if (!AdvancedParallism) return true; //if not enabled, bypass this feature by returning true
