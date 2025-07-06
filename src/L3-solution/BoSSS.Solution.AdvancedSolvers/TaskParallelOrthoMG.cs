@@ -1249,15 +1249,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				finerTP = coarserTP;
 			}
 			InitImpl(thisTP);
-		}
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD); //To keep tracing and summary info separate from the Solve phase
+        }
 
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="root"></param>
-		/// <returns></returns>
-		MultigridOperator[] GetSubOperatorChain(MultigridOperator root) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="root"></param>
+        /// <returns></returns>
+        MultigridOperator[] GetSubOperatorChain(MultigridOperator root) {
 			MultigridOperator op_lv = root;
 			ISolverSmootherTemplate op_lv_solver = this;
 			List<MultigridOperator> SubChain = new List<MultigridOperator>();
@@ -1855,7 +1856,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				Select(i => i < TpMapping.worldMPIOffset ? -1 : i - TpMapping.worldMPIOffset).ToArray();
 		}
 
-		bool verbose = true;
+		bool verbose = false;
 
 		TpTaskType myTask = TpTaskType.All;
 
@@ -2132,7 +2133,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			int iIter;
 			double iter0_resNorm = ortho.Norm(Res0);
 			double resNorm = iter0_resNorm;
-			csMPI.Raw.Barrier(thisComm);
 			var X0 = X.CloneAs();
 			for (iIter = 1; ; iIter++) {
 				// Check termination
