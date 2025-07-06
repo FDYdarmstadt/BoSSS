@@ -19,6 +19,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Foundation.IO;
+using BoSSS.Application.SemiLagrangianLevelSetTestSuite;
 
 namespace BoSSS.Application.XNSE_Solver {
     public static class FromControl {
@@ -56,6 +57,24 @@ namespace BoSSS.Application.XNSE_Solver {
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
             return new BeltramiGradientAndCurvature(curvatureDegree, levelSetDegree, m_HMForder, AdvancedDiscretizationOptions, D);
         }
+
+        public static Curvaturexye Curvature(XNSE_Control control, string levelSetName, int m_HMForder)
+        {
+            string curvature = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            int curvatureDegree;
+            if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts))
+            {
+                curvatureDegree = opts.Degree;
+            }
+            else
+            {
+                throw new Exception("Curvature options not found in FieldOptions");
+            }
+
+            DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
+            return new Curvaturexye(curvatureDegree, m_HMForder,AdvancedDiscretizationOptions);
+        }
+
     }
 
     /// <summary>
