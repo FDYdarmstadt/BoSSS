@@ -12,6 +12,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -656,5 +657,52 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
+    }
+    /// <summary>
+    /// used for only curvature computations. For postprocessing
+    /// </summary>
+    public class Curvaturexye : ParameterS, ILevelSetParameter {
+
+        int curvatureDegree;
+        int m_HMForder;
+
+        DoNotTouchParameters AdvancedDiscretizationOptions;
+
+
+        public Curvaturexye(int curvatureDegree, int m_HMForder, DoNotTouchParameters AdvancedDiscretizationOptions) { 
+            this.curvatureDegree = curvatureDegree;
+            this.m_HMForder = m_HMForder;
+            this.AdvancedDiscretizationOptions = AdvancedDiscretizationOptions;
+        }
+
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        {
+            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
+            VectorField<SinglePhaseField> filtLevSetGradient;
+            CurvatureAlgorithms.CurvatureDriver(
+                SurfaceStressTensor_IsotropicMode.Curvature_Projected,// changed by xye. need to change it back 
+                AdvancedDiscretizationOptions.FilterConfiguration,
+                Curvature,
+                out filtLevSetGradient,
+                levelSet.Tracker,
+                m_HMForder,
+                levelSet.DGLevelSet);
+
+        }
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        {
+            //Curvature
+            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[1];
+            IGridData gridData = DomainVarFields.First().Value.GridDat;
+            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
+            string curvatureName = BoSSS.Solution.NSECommon.VariableNames.Curvature;
+            fields[0] = (curvatureName, new SinglePhaseField(curvatureBasis, curvatureName));
+            return fields;
+        }
     }
 }
