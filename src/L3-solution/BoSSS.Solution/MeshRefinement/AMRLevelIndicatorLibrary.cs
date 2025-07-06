@@ -147,7 +147,7 @@ namespace BoSSS.Solution {
         [Serializable]
         public class AMRInBoundingBox : AMRLevelIndicator {
 
-            private BoundingBox bb; //from private to public. by xye
+            public BoundingBox bb; //from private to public. by xye
             public AMRInBoundingBox(BoundingBox _bb) {
                 bb = _bb;
             }
