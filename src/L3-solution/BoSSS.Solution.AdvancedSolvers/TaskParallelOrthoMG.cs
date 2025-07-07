@@ -14,49 +14,50 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation;
-using ilPSP.LinSolvers;
-using BoSSS.Platform;
-using MPI.Wrappers;
-using System.Numerics;
-using System.Diagnostics;
-using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Aggregation;
-using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
+using BoSSS.Foundation.XDG;
+using BoSSS.Platform;
 using BoSSS.Platform.Utils.Geom;
-using BoSSS.Solution.Statistic;
-using System.IO;
-using System.Runtime.Serialization;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
-using System.Net.NetworkInformation;
+using BoSSS.Solution.Statistic;
 using BoSSS.Solution.Tecplot;
-using System.Xml.Linq;
-using NUnit.Common;
-using ilPSP.LinSolvers.monkey;
-using System.Runtime.InteropServices;
-using System.Threading;
+using ilPSP;
 using ilPSP.Kraypis;
-using static System.Reflection.Metadata.BlobBuilder;
+using ilPSP.LinSolvers;
+using ilPSP.LinSolvers.monkey;
 using ilPSP.LinSolvers.PARDISO;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using System.Reflection.Emit;
-using System.Drawing;
-using NUnit.Framework.Internal;
-using BoSSS.Foundation.IO;
-using System.ComponentModel.Design;
-using System.Security.Policy;
+using ilPSP.Tracing;
+using ilPSP.Utils;
 using log4net.Core;
+using MPI.Wrappers;
+using Newtonsoft.Json.Linq;
+using NUnit.Common;
+using NUnit.Framework.Internal;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Numerics;
+using System.Reflection.Emit;
+using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
+using System.Security.Policy;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 using static System.Net.Mime.MediaTypeNames;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -171,9 +172,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		// properties for the necessary information
 		public IBlockPartitioning FinerLevelCoarsePartitiong => FinerLevel is TaskParallelMGOperator fine ? fine.CoarseTargetPartitioning : null;
-		public (long i0Cell, int lenCell)[] FinerLevelCoarseBlocks => FinerLevel is TaskParallelMGOperator fine ? fine.localBlocksForCoarse : null;
+        public IBlockPartitioning FinerLevelThisPartitiong => FinerLevel is TaskParallelMGOperator fine ? fine.ThisTargetPartitioning : null;
 
-		public MPI_Comm currentComm => m_MultigridMapping.MPI_Comm;
+        public (long i0Cell, int lenCell)[] FinerLevelCoarseBlocks => FinerLevel is TaskParallelMGOperator fine ? fine.localBlocksForCoarse : null;
+
+        public (long i0Cell, int lenCell)[] FinerLevelThisBlocks => FinerLevel is TaskParallelMGOperator fine ? fine.localBlocksForThisLevel : null;
+
+        public MPI_Comm currentComm => m_MultigridMapping.MPI_Comm;
 
 		/// <summary>
 		/// the offset of this operator matrix in the world communicator, the mpi rank of the first processor in this level
@@ -243,7 +248,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			m_LeftChangeOfBasis = ChangeThisLevelPartitioning(m_LeftChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "LeftCofB");
 			m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB");
 
-			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelCoarsePartitiong, FinerLevelCoarseBlocks, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
+			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelThisPartitiong, FinerLevelThisBlocks, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
 
 			thisLevelPermutationMtx = null;
 			thisLevelPermutationMtxTranspose = null;
@@ -1468,7 +1473,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// ============
 				MigrateFromWorldToSubComms();
 				ortho = new CoreOrthonormalizationProcedure(OpMatrix);
-				CreatePermutationMatrices();
+				CreatePermutations();
 
 #if DEBUG
 				TestMatrices(OpMatrix, smootherPermutation, subCommSmootherOpMatrix, $"test_lvl{TpLevel}_s",verbose);
@@ -1505,46 +1510,50 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 		double[] Restrict<T1>(T1 IN_fine)
 				where T1 : IList<double> {
-			if (TpMapping.CoarserLevel == null)
-				throw new NotSupportedException("Already on finest level -- no finer level to restrict from.");
+            using(var tr = new FuncTrace("RestrictFromLvl" + TpLevel)) {
+                if(TpMapping.CoarserLevel == null)
+                    throw new NotSupportedException("Already on finest level -- no finer level to restrict from.");
 
-			if (IN_fine.Count != subCommToCoarseRestrictionOperator.ColPartition.LocalLength)
-				throw new ArgumentException("Mismatch in length of fine grid vector (input).", "IN_fine");
+                if(IN_fine.Count != subCommToCoarseRestrictionOperator.ColPartition.LocalLength)
+                    throw new ArgumentException("Mismatch in length of fine grid vector (input).", "IN_fine");
 
-			double[] OUT_coarse = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];
+                double[] OUT_coarse = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];
 
-			this.subCommToCoarseRestrictionOperator.SpMV(1.0, IN_fine, 0.0, OUT_coarse);
+                this.subCommToCoarseRestrictionOperator.SpMV(1.0, IN_fine, 0.0, OUT_coarse);
 
-			if (this.subCommLeftChangeOfBasisMatrix != null) {
-				double[] LB = new double[OUT_coarse.Length];
-				this.subCommLeftChangeOfBasisMatrix.SpMV(1.0, OUT_coarse, 0.0, LB);
-				OUT_coarse.SetV(LB);
-			}
+                if(this.subCommLeftChangeOfBasisMatrix != null) {
+                    double[] LB = new double[OUT_coarse.Length];
+                    this.subCommLeftChangeOfBasisMatrix.SpMV(1.0, OUT_coarse, 0.0, LB);
+                    OUT_coarse.SetV(LB);
+                }
 
-			return OUT_coarse;
+                return OUT_coarse;
+            }
 		}
 
-		double[] Prolongate<T1>(T1 IN_coarse)
-		where T1 : IList<double> {
-			if (TpMapping.CoarserLevel == null)
-				throw new NotSupportedException("Already on finest level -- no finer level to prolongate from.");
+        double[] Prolongate<T1>(T1 IN_coarse)
+        where T1 : IList<double> {
+            using(var tr = new FuncTrace("ProlongateBackToLvl"+TpLevel)) {
+                if(TpMapping.CoarserLevel == null)
+                    throw new NotSupportedException("Already on finest level -- no finer level to prolongate from.");
 
-			if (IN_coarse.Count != subCommFromCoarseProlongationOperator.ColPartition.LocalLength)
-				throw new ArgumentException("Mismatch in length of coarse grid vector (input).", "IN_coarse");
+                if(IN_coarse.Count != subCommFromCoarseProlongationOperator.ColPartition.LocalLength)
+                    throw new ArgumentException("Mismatch in length of coarse grid vector (input).", "IN_coarse");
 
-			double[] OUT_fine = new double[subCommFromCoarseProlongationOperator.RowPartitioning.LocalLength];
+                double[] OUT_fine = new double[subCommFromCoarseProlongationOperator.RowPartitioning.LocalLength];
 
-			if (this.subCommRightChangeOfBasisMatrix != null) {
-				double[] RX = new double[IN_coarse.Count];
-				this.subCommRightChangeOfBasisMatrix.SpMV(1.0, IN_coarse, 0.0, RX);
+                if(this.subCommRightChangeOfBasisMatrix != null) {
+                    double[] RX = new double[IN_coarse.Count];
+                    this.subCommRightChangeOfBasisMatrix.SpMV(1.0, IN_coarse, 0.0, RX);
 
-				this.subCommFromCoarseProlongationOperator.SpMV(1.0, RX, 0.0, OUT_fine);
-			} else {
-				this.subCommFromCoarseProlongationOperator.SpMV(1.0, IN_coarse, 0.0, OUT_fine);
-			}
+                    this.subCommFromCoarseProlongationOperator.SpMV(1.0, RX, 0.0, OUT_fine);
+                } else {
+                    this.subCommFromCoarseProlongationOperator.SpMV(1.0, IN_coarse, 0.0, OUT_fine);
+                }
 
-			return OUT_fine;
-		}
+                return OUT_fine;
+            }
+        }
 
 		ICoordinateMapping MgMap => m_OpMapPair.DgMapping;
 
@@ -1565,16 +1574,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// However, this is not the case here. The MG operator is dedicated for world level communications and key informations.
 				// This then must be done by this level solver here for the coarser solver.
 				// So each level solver gets data already restricted and then return without prolongating.
-				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
+				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToSubCommMapping);
 				subCommToCoarseRestrictionOperator = subCommFromCoarseProlongationOperator?.Transpose();
 
 				if (worldCommFromCoarseLeftChangeOfBasisMatrix != null)
 					subCommLeftChangeOfBasisMatrix = ChangeCommunicator(worldCommFromCoarseLeftChangeOfBasisMatrix,
-						TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
+						TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToSubCommMapping);
 
 				if (worldCommFromCoarseRightChangeOfBasisMatrix != null)
 					subCommRightChangeOfBasisMatrix = ChangeCommunicator(worldCommFromCoarseRightChangeOfBasisMatrix,
-					TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
+					TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToSubCommMapping);
 
 
 
@@ -1590,7 +1599,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// Permutation matrices from thisComm to subComms (to disribute vectors)
 		/// </summary>
-		void CreatePermutationMatrices() {
+		void CreatePermutations() {
 			var worldToCoarseDict = columnMappingWorldToCoarse.ToDictionary(x => x.source, x => x.target);
 			var worldToSmootherDict = columnMappingWorldToSmoother.ToDictionary(x => x.source, x => x.target);
 
@@ -2082,6 +2091,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return Res0;
 		}
 
+        /// <summary>
+        /// Distributes the input vectors according to the task type and initializes task-specific data. (must be called on thisComm level)
+        /// </summary>
+        /// <param name="X"></param>
+        /// <param name="B"></param>
+        /// <param name="Res"></param>
+        /// <param name="XforSub"></param>
+        /// <param name="BforSub"></param>
+        /// <param name="ResforSub"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
 		private void InitializeTaskSpecificData(double[] X, double[] B, double[] Res, out double[] XforSub, out double[] BforSub, out double[] ResforSub) {
 			using (var trace = new FuncTrace("InitializeTaskSpecificData")) {
 				// Validate input
@@ -2093,8 +2113,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				    Res.SaveToTextFileDebug("Res", ".txt");
 				}
 				// Permutation operators live on thisComm, which means that they should be called on thisComm
-				var ResforSubCoarse = coarsePermutation.PermutateVector(Res);
+				//var ResforSubCoarse = coarsePermutation.PermutateVector(Res);
+                var ResforSubCoarse = Restrict(Res); // Restrict operator is designed such that the output would already distribute the vecotre into the desired procs with coarseBlock partitioning
                 var ResforSubSmoother = smootherPermutation.PermutateVector(Res);
+
+                Debug.Assert(myTask != TpTaskType.Smoother || ResforSubCoarse.Length == 0);
+                Debug.Assert(myTask != TpTaskType.Coarse || ResforSubSmoother.Length == 0);
 
                 // Initialize task-specific data based on the task type
                 switch(myTask) {
@@ -2124,8 +2148,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						throw new InvalidOperationException($"Unexpected task type: {myTask}");
 				}
 
-				// Log the initialization
-				trace.Info($"Task-specific data initialized for task type: {myTask}");
+                // Log the initialization
+                trace.Info($"Task-specific data initialized for task type: {myTask}");
 			}
 		}
 
@@ -2147,8 +2171,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] XforSub, BforSub, ResforSub;
 				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
 
-				// Initiate sub comm level variables (must be initiated on thisComm level to be able permutate them back)
-				double[] CoarseCorrectionOnSub = new double[coarsePermutation.LengthAfterPermutation];
+                // Initiate sub comm level variables (must be initiated on thisComm level to be able permutate them back)
+                Debug.Assert(smootherPermutation.LengthAfterPermutation == subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength);
+				double[] CoarseCorrectionOnSub = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];
 				double[] SmootherCorrOnSub = new double[smootherPermutation.LengthAfterPermutation];
 
 				// Start listening to signal (see AdvancedParallism)
@@ -2175,7 +2200,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				CrseLevelTime.Stop();
 
                 using(new FuncTrace("PermutateAndMinimize")) {
-                    var CoarseCorrection = coarsePermutation.PermutateVectorBack(CoarseCorrectionOnSub); //PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
+                    var CoarseCorrection = Prolongate(CoarseCorrectionOnSub);
                     resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
                     WriteDebug(iIter, resNorm, "Tp-coarse");
 
@@ -2287,13 +2312,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					throw new InvalidOperationException("Coarse level solver is not initialized.");
 				}
 
+                double[] ResCoarse = B;
+                double[] XCoarse = X;
+                // Restrict the residual to the coarse grid
+                //double[] ResCoarse = Restrict(B); // [Toprak]: this operation is done on subComm level, but it is not necessary to do it on the sub. Instead, it should be done on this level and then permutated.
+                //double[] XCoarse = Restrict(X);
 
-				// Restrict the residual to the coarse grid
-				double[] ResCoarse = Restrict(B);
-				double[] XCoarse = Restrict(X);
-
-				// Solve the coarse grid problem
-				CoarserLevelSolver.Solve(XCoarse, ResCoarse);
+                // Solve the coarse grid problem
+                CoarserLevelSolver.Solve(XCoarse, ResCoarse);
 
 				if (AdvancedParallism) {
 					SendSignal(true, iIter);
@@ -2314,8 +2340,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					}
 				}
 
-				// Prolongate the correction back to the fine grid
-				double[] FineCorrection = Prolongate(XCoarse);
+                // Prolongate the correction back to the fine grid
+                double[] FineCorrection = XCoarse; // Prolongate(XCoarse);
 
 				return FineCorrection;
 			}
@@ -2414,7 +2440,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
 
-        bool m_verbose = true;
+        bool m_verbose = false;
 
         public long UsedMemory() {
             long Memory = 0;
