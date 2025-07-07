@@ -943,13 +943,12 @@ namespace ValidationTestRunner {
 
         [Test]
         static public void Run__HeatedBackwardFacingStep() {
-
-
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "HeatedBackwardFacingStep",
                 "HeatedBackwardFacingStep*",
                 "delete_HeatedBackwardFacingStep",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
+
 
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep_PostProc.ipynb");
@@ -1083,10 +1082,10 @@ namespace ValidationTestRunner {
         /// Cooperation project with CREATOR (SLA) - Experiment from Gauthier et. al.
         /// </summary>
         [NUnitFileToCopyHack("examples/DropletImpact/DropletReboundGauthier_Run.ipynb",
-            "vonKarmanFlowSolution_HAMcoeffU.txt",
-            "vonKarmanFlowSolution_HAMcoeffV.txt",
-            "vonKarmanFlowSolution_HAMcoeffW.txt",
-            "vonKarmanFlowSolution_HAMcoeffP.txt")]
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffU.txt",
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffV.txt",
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffW.txt",
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffP.txt")]
         [Test]
         static public void Run__DropletReboundGauthier() {
 
