@@ -979,12 +979,12 @@ namespace ilPSP.LinSolvers {
                 throw new Exception("new col part should have the same communicator");
 			}
 
-            if (newColPart.LocalNoOfBlocks < 1) { // called by processor that does not have any blocks, ie. not responsible from the new one
+            if (newColPart.LocalNoOfBlocks < 1 && _RowPartitioning.LocalNoOfBlocks < 1) { // called by processor that does not have any blocks, ie. not responsible from the new one
 				m_effectiveComm = comm;
 				return;
             }
 
-			int oldMPIrank = m_RowPartitioning.MpiRank;
+			int oldMPIrank = m_ColPartitioning.MpiRank;
             int newMPIrank;
 			csMPI.Raw.Comm_Rank(comm, out newMPIrank);
             

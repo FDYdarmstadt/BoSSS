@@ -1574,16 +1574,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				// However, this is not the case here. The MG operator is dedicated for world level communications and key informations.
 				// This then must be done by this level solver here for the coarser solver.
 				// So each level solver gets data already restricted and then return without prolongating.
-				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToSubCommMapping);
+				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
 				subCommToCoarseRestrictionOperator = subCommFromCoarseProlongationOperator?.Transpose();
 
 				if (worldCommFromCoarseLeftChangeOfBasisMatrix != null)
 					subCommLeftChangeOfBasisMatrix = ChangeCommunicator(worldCommFromCoarseLeftChangeOfBasisMatrix,
-						TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToSubCommMapping);
+						TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 
 				if (worldCommFromCoarseRightChangeOfBasisMatrix != null)
 					subCommRightChangeOfBasisMatrix = ChangeCommunicator(worldCommFromCoarseRightChangeOfBasisMatrix,
-					TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToSubCommMapping);
+					TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
 
 
 
@@ -2097,12 +2097,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="X"></param>
         /// <param name="B"></param>
         /// <param name="Res"></param>
-        /// <param name="XforSub"></param>
-        /// <param name="BforSub"></param>
-        /// <param name="ResforSub"></param>
+        /// <param name="XforCoarse"></param>
+        /// <param name="XforSmoother"></param>
+        /// <param name="ResforCoarse"></param>
+        /// <param name="ResforSmoother"></param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
-		private void InitializeTaskSpecificData(double[] X, double[] B, double[] Res, out double[] XforSub, out double[] BforSub, out double[] ResforSub) {
+		private void InitializeTaskSpecificData(double[] X, double[] B, double[] Res, out double[] XforCoarse, out double[] XforSmoother, out double[] ResforCoarse, out double[] ResforSmoother) {
 			using (var trace = new FuncTrace("InitializeTaskSpecificData")) {
 				// Validate input
 				if (X == null || B == null || Res == null) {
@@ -2112,41 +2113,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				if (verbose) { 
 				    Res.SaveToTextFileDebug("Res", ".txt");
 				}
-				// Permutation operators live on thisComm, which means that they should be called on thisComm
-				//var ResforSubCoarse = coarsePermutation.PermutateVector(Res);
-                var ResforSubCoarse = Restrict(Res); // Restrict operator is designed such that the output would already distribute the vecotre into the desired procs with coarseBlock partitioning
-                var ResforSubSmoother = smootherPermutation.PermutateVector(Res);
 
-                Debug.Assert(myTask != TpTaskType.Smoother || ResforSubCoarse.Length == 0);
-                Debug.Assert(myTask != TpTaskType.Coarse || ResforSubSmoother.Length == 0);
+                // Permutation operators live on thisComm, which means that they should be called on thisComm
+                // Restrict operator is designed such that the output would already distribute the vecotre into the desired procs with coarseBlock partitioning
+                ResforCoarse = Restrict(Res);
+                XforCoarse = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];  //Restrict(X); //  new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; /
 
-                // Initialize task-specific data based on the task type
-                switch(myTask) {
-					case TpTaskType.Coarse:
-						// For coarse tasks, only the residual is permuted
-						XforSub = null;
-						BforSub = null; // Not used for coarse tasks
-						ResforSub = ResforSubCoarse;
-						break;
+                ResforSmoother = smootherPermutation.PermutateVector(Res);
+                XforSmoother = new double[smootherPermutation.LengthAfterPermutation];
 
-					case TpTaskType.Smoother:
-						// For smoother tasks, all vectors are permuted
-						XforSub = null;
-						BforSub = null;
-						ResforSub = ResforSubSmoother;
-						break;
-
-					case TpTaskType.All:
-						// For all tasks, use the original vectors
-						XforSub = X;
-						BforSub = B;
-						ResforSub = Res;
-						break;
-
-					default:
-						// Handle unexpected task types
-						throw new InvalidOperationException($"Unexpected task type: {myTask}");
-				}
+                Debug.Assert(myTask != TpTaskType.Smoother || ResforCoarse.Length == 0);
+                Debug.Assert(myTask != TpTaskType.Coarse || ResforSmoother.Length == 0);
 
                 // Log the initialization
                 trace.Info($"Task-specific data initialized for task type: {myTask}");
@@ -2168,13 +2145,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ThisLevelIterations++;
 
                 // Initialize task-specific data
-                double[] XforSub, BforSub, ResforSub;
-				InitializeTaskSpecificData(X, B, Res, out XforSub, out BforSub, out ResforSub);
-
-                // Initiate sub comm level variables (must be initiated on thisComm level to be able permutate them back)
-                Debug.Assert(smootherPermutation.LengthAfterPermutation == subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength);
-				double[] CoarseCorrectionOnSub = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];
-				double[] SmootherCorrOnSub = new double[smootherPermutation.LengthAfterPermutation];
+                double[] XforCoarse, XforSmoother, ResforCoarse, ResforSmoother;
+                InitializeTaskSpecificData(X, B, Res, out XforCoarse, out XforSmoother, out ResforCoarse, out ResforSmoother);
 
 				// Start listening to signal (see AdvancedParallism)
 				ListenSignal(iIter);
@@ -2186,32 +2158,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				{ 
 					// Coarse grid correction
 					if (myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
-						double[] XGuess = CoarseCorrectionOnSub;
-						CoarseCorrectionOnSub = ApplyCoarseGridCorrection(XGuess, ResforSub, iIter);
+						double[] XGuess = XforCoarse;
+                        XforCoarse = ApplyCoarseGridCorrection(XGuess, ResforCoarse, iIter);
 					}
 
 					// smoother
 					if (myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-						double[] XGuess = SmootherCorrOnSub;
-						SmootherCorrOnSub = ApplySmoothers(XGuess, ResforSub, iIter);
+						double[] XGuess = XforSmoother;
+                        XforSmoother = ApplySmoothers(XGuess, ResforSmoother, iIter);
 					}
 				}
 				// Stop timing for coarse grid correction
 				CrseLevelTime.Stop();
 
                 using(new FuncTrace("PermutateAndMinimize")) {
-                    var CoarseCorrection = Prolongate(CoarseCorrectionOnSub);
+                    var CoarseCorrection = Prolongate(XforCoarse);
                     resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
                     WriteDebug(iIter, resNorm, "Tp-coarse");
 
-                    var PreCorr = smootherPermutation.PermutateVectorBack(SmootherCorrOnSub); //this can be further optimized as smooth part has the full matrix
+                    var PreCorr = smootherPermutation.PermutateVectorBack(XforSmoother); //this can be further optimized as smooth part has the full matrix
                     resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-smoother" + TpLevel);
                     WriteDebug(iIter, resNorm, "Tp-smoother");
                 }
 				// Iteration callback
 				//IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);
 			}
-			WriteDebug(iIter, resNorm, "final of this level");
+
+            WriteDebug(iIter, resNorm, "final of this level");
 		}
 
 		int ThisSmootherGroupLeader => 0;

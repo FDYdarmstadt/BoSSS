@@ -779,7 +779,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 f.StdoutOnAllRanks();
 
 				if (this.config.NoOfBlocks < thisCommSize) 
-					f.Warning("!! Warning !! Task parallel Schwarz does not have a block per processor. Either you are using too many cores or there is something wrong.");
+					f.Warning($"!! Warning !! Task parallel Schwarz does not have a block per processor, with {this.config.NoOfBlocks} blocks over {thisCommSize} MPI ranks. Either you are using too many cores or there is something wrong.");
 
 				var locBlocks = CalculateBlocks(op); //by utilizing mostly rank0, calculate blocks and get them on respective procs
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
