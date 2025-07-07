@@ -211,14 +211,21 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
-        internal bool RunWorkflowFromBackup {
+
+        static bool? m_RunWorkflowFromBackup = null;
+
+        static internal bool RunWorkflowFromBackup {
             get {
-                using (var tr = new FuncTrace("RunWorkflowFromBackup")) {
+                if(m_RunWorkflowFromBackup != null)
+                    return m_RunWorkflowFromBackup.Value;
+
+                using(var tr = new FuncTrace("RunWorkflowFromBackup")) {
                     //string runfromBackup = System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP");
                     //return runfromBackup.IsEmptyOrWhite() == false;
                     const string magicFile = "BOSSS_RUNTESTFROMBACKUP.txt";
                     bool exists = File.Exists(magicFile);
                     tr.Info($"File {magicFile} exists? {exists} (current directory: {System.Environment.CurrentDirectory})");
+                    m_RunWorkflowFromBackup = exists;
                     return exists;
                 }
             }
@@ -229,7 +236,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Defines the name of the current project; also creates a default database
         /// </summary>
         public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null) {
-            if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
+            if((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);

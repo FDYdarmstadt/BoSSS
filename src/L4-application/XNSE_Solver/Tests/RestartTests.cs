@@ -100,7 +100,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             //ctrl.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
   
             ctrl.TimesteppingMode = transient ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;
@@ -196,7 +196,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             //ctrl.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
-            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            ctrl.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             ctrl.TimesteppingMode = transient ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;

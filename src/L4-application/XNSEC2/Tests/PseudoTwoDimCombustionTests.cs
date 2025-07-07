@@ -331,7 +331,7 @@ namespace BoSSS.Application.XNSEC {
         //    C.Option_LevelSetEvolution = LevelSetEvolution.None;
         //    C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
 
-        //    C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+        //    C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
         //    //C.SkipSolveAndEvaluateResidual = true;
 
         //    C.AdaptiveMeshRefinement = false;

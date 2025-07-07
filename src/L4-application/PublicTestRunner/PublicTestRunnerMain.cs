@@ -143,6 +143,7 @@ namespace PublicTestRunner {
         virtual public Type[] ReleaseOnlyTests {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.LsTest.SolverWithLevelSetUpdaterTestCenter),
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
@@ -492,7 +493,7 @@ namespace PublicTestRunner {
                 foreach (string filePath in s) {
                     string fileName = Path.GetFileName(filePath);
                     if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
-                        throw new IOException($"Dependent Filename {fileName} is not unique for test assembly {a}. (full Path {filePath}).");
+                        throw new IOException($"Dependent Filename {fileName} is not unique for test {testname} in assembly {a}. (full Path {filePath}).");
                     FileNamesOnly.Add(fileName);
                 }
 

@@ -192,7 +192,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.LevelSetTools.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             return C;

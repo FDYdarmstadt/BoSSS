@@ -942,6 +942,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         DirectoryInfo[] GetAllUnkonwnExistingDeployDirectories() {
             using (var tr = new FuncTrace()) {
+
                 if(this.GetControl() == null && this.EntryAssembly == null)
                     throw new NotSupportedException("Insufficient information to find job deployments.");
 
@@ -978,7 +979,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 DirectoryInfo[] AllDirs;
                 using (new BlockTrace("DIRECTORY_QUERY", tr)) {
-                    AllDirs = Directory.GetDirectories(this.AssignedBatchProc.DeploymentBaseDirectory, ShortName + "*").Select(str => new DirectoryInfo(str)).ToArray();
+                    if(WorkflowMgm.RunWorkflowFromBackup)
+                        AllDirs = [];
+                    else
+                        AllDirs = Directory.GetDirectories(this.AssignedBatchProc.DeploymentBaseDirectory, ShortName + "*").Select(str => new DirectoryInfo(str)).ToArray();
                 }
                 try {
                     tr.Info("got " + AllDirs.Count() + " possible deployment directories: "
@@ -1569,7 +1573,6 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc == null)
                     throw new NotSupportedException("Job must be activated before.");
 
-                
                 // ================
                 // status
                 // ================
@@ -1585,8 +1588,8 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                if(BoSSSshell.WorkflowMgm.RunWorkflowFromBackup) {
-                    Console.WriteLine($"BoSSSpad is configured to run from a backup, `RunWorkflowFromBackup` = {BoSSSshell.WorkflowMgm.RunWorkflowFromBackup} ; ");
+                if(WorkflowMgm.RunWorkflowFromBackup) {
+                    Console.WriteLine($"BoSSSpad is configured to run from a backup, `RunWorkflowFromBackup` = {WorkflowMgm.RunWorkflowFromBackup} ; ");
                 }
 
                
@@ -1648,23 +1651,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         /// <returns></returns>
         public JobStatus GetStatus(bool WriteHints = true) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = WriteHints;
 
-                if (AssignedBatchProc == null) {
+                if(AssignedBatchProc == null) {
                     tr.Info($"No batch processor assigned to job jet; therefore, status is {JobStatus.PreActivation}");
                     return JobStatus.PreActivation;
                 }
 
-                if (!WriteHints) {
-                    if (statusCache.HasValue) {
+                if(!WriteHints) {
+                    if(statusCache.HasValue) {
                         tr.Info("returning cached value: " + statusCache.Value);
                         return statusCache.Value;
                     }
                 }
 
-                using (new DeploymentsAtomic(this)) {
-                    using (BoSSSshell.WorkflowMgm.EnterSessionAtomic()) {
+                using(new DeploymentsAtomic(this)) {
+                    using(BoSSSshell.WorkflowMgm.EnterSessionAtomic()) {
 
 
 
@@ -1674,39 +1677,45 @@ namespace BoSSS.Application.BoSSSpad {
 
                         // we have to evaluate the status NOW, and work with this status in order for this method to work correctly.
                         // otherwise, the loophole describes below might happen!
-                        (Deployment Depl, JobStatus fixedStatus)[] DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
-                        tr.Info("Deployments so far (" + DeploymentsSoFar.Length + "): " + DeploymentsSoFar.ToConcatString("", ", ", ";"));
+                        (Deployment Depl, JobStatus fixedStatus)[] DeploymentsSoFar;
+                        //if(WorkflowMgm.RunWorkflowFromBackup) {
+                        //    DeploymentsSoFar = [];
+                        //    tr.Info("Running from backup - ignoring any deployment.");
+                        //} else {
+                        DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
+                        //    tr.Info("Deployments so far (" + DeploymentsSoFar.Length + "): " + DeploymentsSoFar.ToConcatString("", ", ", ";"));
+                        //}
 
                         Deployment[] Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
                         tr.Info("Success: " + Success.Length);
-                        if (SessionReqForSuccess) {
+                        if(SessionReqForSuccess) {
                             ISessionInfo[] SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
-                            if (SuccessSessions.Length <= 0) {
+                            if(SuccessSessions.Length <= 0) {
                                 // look twice
                                 BoSSSshell.WorkflowMgm.ResetSessionsCache();
                                 DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
                                 Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
                                 SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
                             }
-                            if (SuccessSessions.Length > 0) {
+                            if(SuccessSessions.Length > 0) {
                                 tr.Info($"Info: Found successful session \"{SuccessSessions.First()}\" -- job is marked as successful, no further action.");
                                 this.statusCache = JobStatus.FinishedSuccessful;
                                 return JobStatus.FinishedSuccessful;
                             }
 
-                            if (Success.Length > 0) {
+                            if(Success.Length > 0) {
                                 tr.Info($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total.");
                             }
 
-                            if (WriteHints) {
+                            if(WriteHints) {
                                 var c = this.GetControl();
-                                if (c != null && c.savetodb == false) {
+                                if(c != null && c.savetodb == false) {
                                     throw new NotSupportedException("Configuration error: this job can never be successful: a successful result session ('this.SessionReqForSuccess' is true) is required, but control object is configured not to save in the database.");
                                 }
                             }
 
                         } else {
-                            if (Success.Length > 0) {
+                            if(Success.Length > 0) {
                                 tr.Info($"Info: Found successful deployment and no result session is expected ('this.SessionReqForSuccess' is false):  job is marked as successful, no further action.");
                                 this.statusCache = JobStatus.FinishedSuccessful;
                                 return JobStatus.FinishedSuccessful;
@@ -1721,7 +1730,7 @@ namespace BoSSS.Application.BoSSSpad {
                         // potential async loophole could happen: job is still 'PendingInExecutionQueue' here...
                         var inprog = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.InProgress)).ToArray();
                         //tr.Info("inprog length: " + inprog.Length);
-                        if (inprog.Length > 0) {
+                        if(inprog.Length > 0) {
                             tr.Info($"Info: Job {inprog[0].Depl.BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
                             return JobStatus.InProgress;
                         }
@@ -1729,7 +1738,7 @@ namespace BoSSS.Application.BoSSSpad {
                         // ... but moves to 'InProgress' somewhere in between here ...
                         var inq = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.PendingInExecutionQueue)).ToArray();
                         //tr.Info("inq length: " + inq.Length);
-                        if (inq.Length > 0) {
+                        if(inq.Length > 0) {
                             tr.Info($"Info: Job {inq[0].Depl.BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
                             return JobStatus.PendingInExecutionQueue;
                         }
@@ -1743,7 +1752,7 @@ namespace BoSSS.Application.BoSSSpad {
                         // if we pass this point, we want to submit to a batch processor,
                         // but only if still allowed.
                         tr.Info("job submit count: " + this.SubmitCount);
-                        if (this.SubmitCount >= this.RetryCount) {
+                        if(this.SubmitCount >= this.RetryCount) {
                             tr.Info($"Note: Job has reached its maximum number of attempts to run ({this.RetryCount}) -- job is marked as fail, no further action.");
                             tr.Info($"Hint: you might either remove old deployments or increase the 'RetryCount'.");
 
@@ -1751,7 +1760,7 @@ namespace BoSSS.Application.BoSSSpad {
                             return JobStatus.FailedOrCanceled;
                         }
 
-                        if (this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
+                        if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
                             tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
                             tr.Info($"Hint: want to re-activate the job.");
 

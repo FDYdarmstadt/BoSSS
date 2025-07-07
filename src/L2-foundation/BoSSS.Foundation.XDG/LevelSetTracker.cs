@@ -2696,7 +2696,7 @@ namespace BoSSS.Foundation.XDG {
                     ii++;
                 }
             } //*/
-
+            
 
             // update memory of all registered fields
             // =====================================
@@ -2707,7 +2707,7 @@ namespace BoSSS.Foundation.XDG {
             // whether a GC run or update of unused memory is more expensive.
 
 
-            // call the update method of all active fields
+                // call the update method of all active fields
             foreach (var t in ObserversRefs) {
 
                 BehaveUnder_LevSetMoovement bkup = BehaveUnder_LevSetMoovement.JustReallocate;
@@ -2716,15 +2716,15 @@ namespace BoSSS.Foundation.XDG {
                     bkup = xDG.UpdateBehaviour;
                     xDG.UpdateBehaviour = updateBehaveOverride.Value;
                 }
-
-                t.OnNext(Regions);
+                    
+                t.OnNext(Regions);                    
 
                 if(xDG != null && updateBehaveOverride != null) {
                     xDG.UpdateBehaviour = bkup;
-                }
-            }
+                }                
+            }     
             
-            
+
         }
 
         /// <summary>

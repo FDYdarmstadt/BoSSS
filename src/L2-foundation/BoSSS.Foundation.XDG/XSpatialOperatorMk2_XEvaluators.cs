@@ -583,6 +583,7 @@ namespace BoSSS.Foundation.XDG {
                                 int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
                                 int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
                                 for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
+                                    //Debug.WriteLine("Rank {0} : LS {1} SpcA {2} SpcB {3}", rnk, all_iLs[rnk], allSpcA[rnk], allSpcB[rnk]);
                                     Debug.Assert(all_iLs[rnk] == iLevSet);
                                     Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
                                     Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);

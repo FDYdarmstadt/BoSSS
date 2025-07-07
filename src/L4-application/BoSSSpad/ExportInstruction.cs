@@ -135,7 +135,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 string EscapeKack(string p) {
-                    if(plotGenPath.Contains(' ')) {
+                    if(p.Contains(' ')) {
                         // i hate escaping
                         if(System.IO.Path.DirectorySeparatorChar == '\\') {
                             // probably windows --> use quotes
@@ -162,7 +162,7 @@ namespace BoSSS.Application.BoSSSpad {
                     plotProcess.StartInfo.Arguments =
                         $" -n {config.NumberOfProcesses} dotnet {EscapeKack(plotGenPath)} ";
                 }
-                plotProcess.StartInfo.Arguments += "\"" + EscapeKack(plotConfigPath) + "\"";
+                plotProcess.StartInfo.Arguments += EscapeKack(plotConfigPath);
 
                 tr.Info("Plot process file: " + plotProcess.StartInfo.FileName);
                 tr.Info("Plot process args: " + plotProcess.StartInfo.Arguments);
@@ -183,16 +183,16 @@ namespace BoSSS.Application.BoSSSpad {
         /// If you are curious about the naming of this method, see
         /// <see cref="ExportInstructionExtensions"/>.
         /// </remarks>
-        public abstract string YouMust();
+        public abstract string YouMust(bool wait);
 
         /// <summary>
-        /// See <see cref="YouMust()"/>
+        /// See <see cref="YouMust(bool)"/>
         /// </summary>
         /// <returns>
         /// Export path
         /// </returns>
-        public string Do() {
-            return YouMust();
+        public string Do(bool wait = false) {
+            return YouMust(wait);
         }
     }
 

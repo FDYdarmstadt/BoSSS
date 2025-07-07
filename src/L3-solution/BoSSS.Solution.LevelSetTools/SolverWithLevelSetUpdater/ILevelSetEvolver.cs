@@ -70,7 +70,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// sequence determined by <see cref="VariableNames"/> (maybe)
         /// </param>
         /// <param name="ParameterVarFields"></param>
-        Action<DualLevelSet,double,double,bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface{ get; }
+        Func<DualLevelSet,double,double,bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface{ get; }
 
     }
 
