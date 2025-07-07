@@ -1222,9 +1222,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
 
-            Debugger.Launch();
-
-
             var ThisAndCoarserLevels = GetSubOperatorChain(op);
 			var NoOfProcs = CalculateProcessorDistribution(ThisAndCoarserLevels);
 			int WorldSize = op.Mapping.MpiSize;
