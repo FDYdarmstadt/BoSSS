@@ -178,8 +178,8 @@ namespace ValidationTestRunner {
 				"Popcorn2D_condStudy",
 				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn2D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn2Dpost.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb");
 
 			Console.WriteLine("RotatingPopcorn2D @ FDYcluster");
 		}
@@ -200,8 +200,8 @@ namespace ValidationTestRunner {
 				"Popcorn3D_condStudy",
 				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn3D.ipynb");
-			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/Popcorn3Dpost.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3D.ipynb");
+			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3Dpost.ipynb");
 
 			Console.WriteLine("RotatingPopcorn3D @ FDYcluster");
 		}
