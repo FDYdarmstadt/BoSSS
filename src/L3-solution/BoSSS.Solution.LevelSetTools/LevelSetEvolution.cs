@@ -23,6 +23,12 @@ namespace BoSSS.Solution.LevelSetTools {
         Prescribed,
 
         /// <summary>
+        /// Whatever is given as levelsetvelocity is directly used to advect the level set.
+        /// Still the advection velocity is assumed to be divergence free.
+        /// </summary>
+        PrescribedVelocity,
+
+        /// <summary>
         /// Prescribed level-set (wave-like) projected from imported amplitude values.
         /// </summary>
         PrescribedLSwave,

@@ -80,7 +80,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => MassCorrection;
+        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => MassCorrection;
 
         static Dictionary<string,double> mass;
         /// <summary>
@@ -93,15 +93,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <param name="incremental"></param>
         /// <param name="DomainVarFields"></param>
         /// <param name="ParameterVarFields"></param>
-        public void MassCorrection(DualLevelSet phaseInterface,
+        public bool MassCorrection(DualLevelSet phaseInterface,
             double time,
             double dt,
             bool incremental,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
+            bool changed = false;
             if (m_control.PhasefieldControl.CorrectionType != Correction.Mass)
-                return;
+                return changed;
 
             using (FuncTrace ft = new FuncTrace()) {
                 if (mass == null) {
@@ -120,7 +121,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 int i = 0;
                 while (massDiff.Abs() > 1e-6) {
-
+                    changed = true;
                     // FD sensitivity of the mass/area
                     double correction = Math.Sign(massDiff) * 1e-10;
 
@@ -180,6 +181,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     $"\tcorrected mass:     {massNew.Dequeue():N6}");
 
             }
+            return changed;
         }
         
         void ProjectCorrection(LevelSet PhiNew, LevelSet PhiOld, double correction) {

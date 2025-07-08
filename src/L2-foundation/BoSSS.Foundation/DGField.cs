@@ -366,10 +366,13 @@ namespace BoSSS.Foundation {
         /// <param name="func"></param>
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="scheme"></param>
-        public void ProjectField(double alpha, ScalarFunctionEx func, CellQuadratureScheme scheme = null) {
-            using (var tr = new FuncTrace()) {
+        /// <param name="order"></param>
+        public void ProjectField(double alpha, ScalarFunctionEx func, CellQuadratureScheme scheme = null, int order = -1) {
+            using(var tr = new FuncTrace()) {
                 int dgDeg = this.Basis.Degree;
-                int order = dgDeg * 2 + 2;
+                if(order == -1) {
+                    order = dgDeg * 2 + 2;
+                }
                 tr.Info($"dg degree {dgDeg}, quad order {order}");
                 
                 var rule = scheme.SaveCompile(this.Basis.GridDat, order);

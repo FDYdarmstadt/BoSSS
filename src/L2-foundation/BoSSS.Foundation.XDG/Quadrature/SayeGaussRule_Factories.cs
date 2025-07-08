@@ -185,7 +185,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                         Console.WriteLine("proc{2} reporting: coord of {0}:{1}", cell, String.Join(",", vector), ilPSP.Environment.MPIEnv.MPI_Rank);
                         Console.WriteLine("MaskType: " + mask.MaskType.ToString());
                         //Console.WriteLine("MaskLength: " + mask.Count());
-                        throw e;
+                        throw new Exception("Caught Exception in Saye-Rule Evaluation", e);
+                        
                     }
                     ilPSP.Environment.StdoutOnlyOnRank0 = true;
                 }
