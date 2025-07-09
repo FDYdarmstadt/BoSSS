@@ -447,8 +447,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         VerticesFor_KrefEdge,
                                         out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
                             } catch (Exception e) {
-                                var rnd = new Random();
-                                
                                 using (var stw = new System.IO.StreamWriter("AdaptCrash.rank" + MpiRank + ".txt")) {
                                     stw.WriteLine(e.GetType().Name + ": " + e.Message);
                                     
