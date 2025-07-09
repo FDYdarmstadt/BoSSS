@@ -12,7 +12,8 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.Control {
 
     /// <summary>
-    /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers,
+    /// PDE-solver-control 
+    /// object which defines configuration options for nonlinear and linear equation solvers,
     /// resp. for implicit time-stepping.
     /// </summary>
     [Serializable]
@@ -97,9 +98,10 @@ namespace BoSSS.Solution.Control {
             return base.GetHashCode();
         }
 
-        
+
         /// <summary>
-        /// List of active AMR level indicators 
+        /// List of active AMR level indicators;
+        /// One can use e.g., <see cref="AMRLevelIndicatorLibrary.AMRonBoundary"/>, <see cref="AMRLevelIndicatorLibrary.AMRInBoundingBox"/>, <see cref="AMRLevelIndicatorLibrary.AMReveryWhere"/>;
         /// </summary>
         [DataMember]
         public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
@@ -155,5 +157,14 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public double LevelSet_ConvergenceCriterion = 1.0e-6;
+
+
+        /// <summary>
+        /// Only for debugging purpose:
+        /// solver is turned of and residual of initial value/exact solution is evaluated, used to 
+        /// test the consistency of the implementation.
+        /// </summary>
+        [DataMember]
+        public bool SkipSolveAndEvaluateResidual = false;
     }
 }

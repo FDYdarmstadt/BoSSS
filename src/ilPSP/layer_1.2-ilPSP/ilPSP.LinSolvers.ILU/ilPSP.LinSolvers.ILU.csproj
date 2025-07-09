@@ -16,6 +16,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj" />
     <ProjectReference Include="..\ilPSP\ilPSP.csproj" />
   </ItemGroup>

@@ -95,14 +95,14 @@ namespace FreeXNSE {
         }
 
         public override int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if(Control.CutCellQuadratureType != CutCellQuadratureMethod.Saye) {
                 throw new ArgumentException($"Please use Saye-Rules!");
             }
 
             //QuadOrder
             int degU = Control.Degree;
             int quadOrder = degU * (Control.ActiveTerms.Convective != Convective.Off ? 3 : 2);
-            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;

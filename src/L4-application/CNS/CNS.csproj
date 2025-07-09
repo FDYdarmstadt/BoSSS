@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
@@ -67,5 +67,8 @@
     <Compile Remove="IBM\IBMDiffusiveCFLConstraint.cs" />
     <Compile Remove="OperatorFactory.cs" />
     <Compile Remove="Tests\MovingIBMTests\MovingIBMCylinderControl.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
   </ItemGroup>
 </Project>

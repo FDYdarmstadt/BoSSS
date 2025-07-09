@@ -53,7 +53,7 @@ namespace CNS.IBM {
             ISpeciesMap ibmSpeciesMap,
             int explicitOrder,
             int levelSetQuadratureOrder,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
+            CutCellQuadratureMethod momentFittingVariant,
             SubGrid sgrd,
             bool adaptive = false)
             : base(standardOperator, fieldsMap, parametersMap, explicitOrder, adaptive: adaptive, sgrd: sgrd) {

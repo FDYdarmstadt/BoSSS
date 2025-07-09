@@ -335,13 +335,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -598,10 +598,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = true;
-            C.BaseRefinementLevel = 4;
-            C.RefinementLevel = 4;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = true;
+            //C.BaseRefinementLevel  4;
+            //C.RefinementLevel = 4;
             C.AMR_startUpSweeps = 4;
 
             double hmicro = (R / kelemR) / 2.0;
@@ -731,7 +731,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.CurvatureNeeded = false;
 
 
@@ -769,12 +769,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             return C;
         }
 
-
+        /*
         public static XNSE_Control HeatedWall_Run2(int p = 1, int kelemR = 8, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             bool Water = true;
             bool FC72 = false;
@@ -1031,10 +1031,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            C.RefineNavierSlipBoundary = !startUp_Interface;
-            C.BaseRefinementLevel = 2;
-            C.RefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            //C.RefineNavierSlipBoundary = !startUp_Interface;
+            //C.BaseRefinementLevel  2;
+            //C.RefinementLevel = 2;
             C.AMR_startUpSweeps = 2;
             //C.ReInitPeriod = 1;
 
@@ -1249,13 +1249,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             return C;
         }
+        */
 
-
+        /*
         public static XNSE_Control ColdWall(int p = 1, int kelemR = 8, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             bool Water = true;
             bool FC72 = false;
@@ -1451,10 +1452,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            C.RefineNavierSlipBoundary = !startUp_Interface;
-            C.BaseRefinementLevel = 2;
-            C.RefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            //C.RefineNavierSlipBoundary = !startUp_Interface;
+            //C.BaseRefinementLevel  2;
+            //C.RefinementLevel = 2;
             C.AMR_startUpSweeps = 2;
             //C.ReInitPeriod = 1;
 
@@ -1638,7 +1639,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             return C;
         }
-
+        */
 
 
 
@@ -1650,7 +1651,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             bool steady = true;
             bool separated = false;
@@ -1885,14 +1886,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = false; 
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  1;
 
             C.InitSignedDistance = false;
 
@@ -1950,7 +1951,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             bool superheatedVapor = (setUp == 1) ? true : false;
             bool subcooledLiquid = (setUp == 2) ? true : false;
@@ -2361,14 +2362,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 3;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  3;
             C.AMR_startUpSweeps = 3;
 
             //C.ReInitPeriod = 10;
@@ -2644,14 +2645,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  2;
             C.AMR_startUpSweeps = 2;
 
             #endregion
@@ -2916,14 +2917,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  2;
             C.AMR_startUpSweeps = 2;
 
             #endregion
@@ -2970,7 +2971,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -3151,14 +3152,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  1;
             C.AMR_startUpSweeps = 1;
 
             #endregion
@@ -3207,7 +3208,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             bool computeQuarter = true;
 
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             //_DbPath = @"\\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_HeatedWall";
@@ -3469,14 +3470,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  2;
             C.AMR_startUpSweeps = 2;
 
             #endregion
@@ -3526,7 +3527,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             bool OnWall = true;
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -3741,14 +3742,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  2;
             C.AMR_startUpSweeps = 2;
 
             #endregion
@@ -3997,14 +3998,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.BaseRefinementLevel  2;
             C.AMR_startUpSweeps = 2;
 
             #endregion
@@ -4048,7 +4049,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
 
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -4277,14 +4278,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = true;
-            C.BaseRefinementLevel = 3;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = true;
+            //C.BaseRefinementLevel  3;
             C.AMR_startUpSweeps = 3;
 
             #endregion
@@ -4546,13 +4547,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -4813,13 +4814,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = dt * 0.2;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefineNavierSlipBoundary = false;
+            //C.RefinementLevel = 1;
 
             #endregion
 

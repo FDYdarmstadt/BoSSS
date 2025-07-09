@@ -27,14 +27,16 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
+using System.Runtime.Serialization;
+using ilPSP.LinSolvers.PARDISO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Pre-conditioned (<see cref="Precond"/>) conjugate gradient algorithm.
     /// </summary>
-    public class SoftPCG : ISolverSmootherTemplate, ISolverWithCallback {
+    public class SoftPCG : ISolverSmootherTemplate, ISolverWithCallback, ISolverWithInnerCycle {
 
-        /*
+		/*
         static public ISolverSmootherTemplate InitMultigridChain(MultigridOperator MgOp,
             Action<int, SoftPCG> ParamsSeter,
             Func<ISolverSmootherTemplate> CoarsestSolverFactory) {
@@ -45,23 +47,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var MgTop = new SoftPCG();
                 ParamsSeter(MgOp.LevelIndex, MgTop);
 
-                var R = new GenericRestriction();
-                MgTop.Precond = R;
-                R.CoarserLevelSolver = InitMultigridChain(MgOp.CoarserLevel, ParamsSeter, CoarsestSolverFactory);
+                var Res = new GenericRestriction();
+                MgTop.Precond = Res;
+                Res.CoarserLevelSolver = InitMultigridChain(MgOp.CoarserLevel, ParamsSeter, CoarsestSolverFactory);
                                 
                 return MgTop;
             }
         }
         */
-        
-        //public double m_Tolerance = 1.0e-10;
-        //public int m_MaxIterations = 10000;
-        //public int m_MinIterations = 5;
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
+		//public double m_Tolerance = 1.0e-10;
+		[DataMember]
+		public int MaxIterations = 10000;
+		//public int m_MinIterations = 5;
+
+		[DataMember]
+		public double ConvergenceCriterion = 1e-10;
+
+		/// <summary>
+		/// ~
+		/// </summary>
+		public Func<int, double, double, bool> TerminationCriterion {
             get;
             set;
         }
@@ -69,28 +75,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ctor
         /// </summary>
-        public SoftPCG() {
-            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
+        public SoftPCG(bool calculateWithMatrix = true) {
+            this.CalculateWithMatrix = calculateWithMatrix;
+            TerminationCriterion = (int iter, double R0_l2, double R_l2) => R_l2 < R0_l2 * ConvergenceCriterion + ConvergenceCriterion;
         }
 
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+		/// <summary>
+		/// ~
+		/// </summary>
+		public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public ISolverSmootherTemplate Precond {
+		/// <summary>
+		/// ~
+		/// </summary>
+		public PARDISOSolver Precond {
             get;
             set;
         }
 
-        public int NoOfIterations = 0;
+		/// <summary>
+		/// When the matrix is not explicilty available, an inner iteration can be defined to calculate Matrix * Search Direction (m_matrix x P)
+		/// </summary>
+		public Action<double[], double[]> InnerCycle {
+			get;
+			set;
+		}
+
+		public int NoOfIterations = 0;
 
         /// <summary>
         /// implementation of the CG algorithm
@@ -100,117 +115,148 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where Vec2 : IList<double> //
         {
             using (new FuncTrace()) {
-                double[] x, R;
+                double[] x, Res;
                 if (_x is double[]) {
                     x = _x as double[];
                 } else {
                     x = _x.ToArray();
                 }
                 if (_R is double[]) {
-                    R = _R as double[];
+                    Res = _R as double[];
                 } else {
-                    R = _R.ToArray();
+                    Res = _R.ToArray();
                 }
 
                 int L = x.Length;
 
+                // Search direction
                 double[] P = new double[L];
 
-                //double[] R = rhs; // rhs is only needed once, so we can use it to store residuals
-                double[] V = new double[L];
-                double[] Z = new double[L];
+                //double[] Res = rhs; // rhs is only needed once, so we can use it to store residuals
+                double[] V = new double[L]; // m_Matrix times Search Direction P
+				double[] PrecondRes = new double[L]; //Preconditioned Res
 
 
                 // compute P0, R0
                 // ==============
                 GenericBlas.dswap(L, x, 1, P, 1);
-                m_Matrix.SpMV(-1.0, P, 1.0, R);
-                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
+                
+                //Initial res
+                if (CalculateWithMatrix)
+                    m_Matrix.SpMV(-1.0, P, 1.0, Res);
+
+                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), Res.CloneAs(), this.m_MgOp as MultigridOperator);
 
                 GenericBlas.dswap(L, x, 1, P, 1);
-                if (Precond != null) {
-                    Precond.Solve(Z, R);
-                    P.SetV(Z);
-                } else {
-                    P.SetV(R);
-                }
 
-                double alpha = R.InnerProd(P).MPISum();
+                ApplyPreconditioner(PrecondRes, Res);
+                P.SetV(PrecondRes);
+
+                double alpha = Res.InnerProd(PrecondRes).MPISum();
                 double alpha_0 = alpha;
-                double ResNorm;
-
-                ResNorm = Math.Sqrt(alpha);
+                double ResNorm = Res.L2NormPow2().MPISum().Sqrt();
                 double ResNorm0 = ResNorm;
-                if (TerminationCriterion(0, ResNorm0, ResNorm)) {
-                    this.m_Converged = true;
-                    return;
-                }
 
-                // iterate
-                // =======
-                NoOfIterations++; // one iteration has already been performed (P0, R0)
-                for (int n = 1; true; n++) {
+                bool ShouldContinue = CheckIteration(0, ResNorm0, ResNorm,alpha); // one iteration has already been performed (P0, R0)
 
-                    if (TerminationCriterion(n,ResNorm0, ResNorm)) {
-                        this.m_Converged = true;
-                        break;
-                    }
-                    NoOfIterations++;
+				// iterate
+				// =======
+				for (int n = 1; ShouldContinue; n++) {
+                    double VxP = CalculateVxP(V, P);
+					double lambda = alpha / VxP;
+                    CheckIfAcceptable(lambda);
+					x.AccV(lambda, P);
+                    Res.AccV(-lambda, V);
 
-                    if (Math.Abs(alpha) <= double.Epsilon) {
-                        // numerical breakdown
-                        break;
-                    }
+					IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), Res.CloneAs(), this.m_MgOp as MultigridOperator);
 
-
-                    m_Matrix.SpMV(1.0, P, 0, V);
-                    double VxP = V.InnerProd(P).MPISum();
-                    //Console.WriteLine("VxP: {0}", VxP);
-                    if (double.IsNaN(VxP) || double.IsInfinity(VxP))
-                        throw new ArithmeticException();
-                    double lambda = alpha / VxP;
-                    if (double.IsNaN(lambda) || double.IsInfinity(lambda))
-                        throw new ArithmeticException();
-
-
-                    x.AccV(lambda, P);
-
-                    R.AccV(-lambda, V);
-
-                    if (IterationCallback != null) {
-                        IterationCallback(NoOfIterations, x.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
-                    }
-
-                    if (Precond != null) {
-                        Z.Clear();
-                        Precond.Solve(Z, R);
-                    } else {
-                        Z.SetV(R);
-                    }
-
-                    double alpha_neu = R.InnerProd(Z).MPISum();
-
-                    // compute residual norm
-                    ResNorm = R.L2NormPow2().MPISum().Sqrt();
+					ApplyPreconditioner(PrecondRes, Res);
+                    double alpha_neu = Res.InnerProd(PrecondRes).MPISum();
 
                     P.ScaleV(alpha_neu / alpha);
-                    P.AccV(1.0, Z);
+                    P.AccV(1.0, PrecondRes);
 
-                    alpha = alpha_neu;
-                }
+                    // compute residual norm
+                    ResNorm = Res.L2NormPow2().MPISum().Sqrt();
+					alpha = alpha_neu;
 
-                if (!object.ReferenceEquals(_x, x))
+					ShouldContinue = CheckIteration(n, ResNorm0, ResNorm, alpha);
+				}
+                Console.WriteLine("ResNorm " + ResNorm);
+				if (!object.ReferenceEquals(_x, x))
                     _x.SetV(x);
-                if (!object.ReferenceEquals(_R, R))
-                    _R.SetV(R);
+                if (!object.ReferenceEquals(_R, Res))
+                    _R.SetV(Res);
 
 
                 return;
             }
         }
 
-        IOperatorMappingPair m_MgOp;
-        BlockMsrMatrix m_Matrix => m_MgOp.OperatorMatrix;
+		/// <summary>
+		/// Calculate V x P (inner product)
+		/// </summary>
+		/// <param name="V">the variable holding m_Matrix times P</param>
+		/// <param name="P">search direction</param>
+		/// <returns></returns>
+		double CalculateVxP(double[] V, double[] P) {
+			if (m_Matrix != null) {
+				m_Matrix.SpMV(1.0, P, 0, V);
+			} else {
+                InnerCycle(P, V);
+			}
+
+			double VxP = V.InnerProd(P).MPISum();
+			CheckIfAcceptable(VxP);
+			return VxP;
+		}
+
+        bool CheckIteration(int n, double ResNorm0, double ResNorm, double alpha) {
+			NoOfIterations++;
+			bool ret = true;
+
+			if (TerminationCriterion(n, ResNorm0, ResNorm)) {
+				this.m_Converged = true;
+                ret = false;
+			}
+
+            if (n >= MaxIterations) { 
+                ret = false;
+			}
+
+			if (Math.Abs(alpha) <= double.Epsilon) {
+				// numerical breakdown
+				ret = false;
+			}
+            return ret;
+		}
+
+        void CheckIfAcceptable(double X) {
+			if (double.IsNaN(X) || double.IsInfinity(X))
+				throw new ArithmeticException();
+		}
+
+        void ApplyPreconditioner(double[] Z, double[] Res) {
+			if (Precond != null) {
+				Z.Clear();
+				Precond.Solve(Z, Res);
+			} else {
+				Z.SetV(Res);
+			}
+		}
+
+		IOperatorMappingPair m_MgOp;
+
+        bool CalculateWithMatrix;
+
+		BlockMsrMatrix m_Matrix {
+            get {
+				return CalculateWithMatrix ? m_MgOp.OperatorMatrix : null;
+			}
+        }
+
+
+		//BlockMsrMatrix m_Matrix => m_MgOp.OperatorMatrix;
 
 
         /// <summary>
@@ -234,15 +280,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ArgumentException("Column partitioning mismatch.");
 
                     
-                    if(Precond != null)
-                        Precond.Init(op);
+                    //if(Precond != null)
+                    //    Precond.Init(op);
                 }
             }
         }
         public int IterationsInNested {
             get {
-                if(this.Precond != null)
-                    return this.Precond.IterationsInNested + this.Precond.ThisLevelIterations;
+                if (this.Precond != null)
+                    return 0;// this.Precond.IterationsInNested + this.Precond.ThisLevelIterations;
                 else
                     return 0;
             }
@@ -265,7 +311,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void ResetStat() {
             this.m_Converged = false;
             this.NoOfIterations = 0;
-            this?.Precond.ResetStat();
+            //this?.Precond.ResetStat();
         }
 
         /// <summary>

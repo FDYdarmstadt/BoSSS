@@ -120,8 +120,10 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
         public override double[] ComputeL2Error(double time, XNSE_Control control) {
             double[] Ret = new double[1];
 
-            if (control.ExactSolutionTemperature != null) {
-                double error = ComputeTemperatureError(control.ExactSolutionTemperature, time);
+            var fcontrol = control as XNSFE_Control;
+
+            if (fcontrol?.ExactSolutionTemperature != null) {
+                double error = ComputeTemperatureError(fcontrol.ExactSolutionTemperature, time);
                 Ret[0] = error;
             }
             

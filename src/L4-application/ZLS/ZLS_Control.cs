@@ -14,7 +14,9 @@ namespace ZwoLevelSetSolver {
 
         public int Degree { get; private set; }
 
-        public ZLS_Control() : base() { }
+        public ZLS_Control() : base() {
+            base.CutCellQuadratureType = BoSSS.Foundation.XDG.CutCellQuadratureMethod.Saye;
+        }
 
         public override Type GetSolverType() {
             return typeof(ZLS);

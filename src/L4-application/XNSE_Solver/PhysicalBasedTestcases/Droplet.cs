@@ -50,19 +50,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 7, int AMRlvl = 0) {
+        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 28, int AMRlvl = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
-            int D = 3;
+            int D = 2;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
             bool steadyInterface = false;
 
-            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            //_DbPath = @"D:\local\local_test_db";
-            string _DbPath = null; // @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            string _DbPath = @"D:\local\local_test_db";
+            //string _DbPath = null; // @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
             //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
+
+            //C.SkipSolveAndEvaluateResidual = true;
+
 
             // basic database options
             // ======================
@@ -71,8 +74,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "StaticDroplet";
-            //C.ProjectDescription = "Static droplet";
-            //C.SessionName = "SD_meshStudy_Hysing_mesh" + kelem; // "_AMR"+AMRlvl;
+            C.ProjectDescription = "Static droplet";
+            C.SessionName = "SD_gravitySaveToDb"; // "_AMR"+AMRlvl;
 
             C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
@@ -99,9 +102,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     SaveToDB = FieldOpts.SaveToDBOpt.TRUE
                 });
             }
-            //C.FieldOptions.Add("GravityY", new FieldOpts() {
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
+            C.FieldOptions.Add("GravityY#A", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY#B", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
             C.FieldOptions.Add("Pressure", new FieldOpts() {
                 Degree = p - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -110,7 +116,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = Math.Max(2, p),
+                Degree = Math.Max(2, p + 1),
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Curvature", new FieldOpts() {
@@ -267,8 +273,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
             C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
-            //C.InitialValues_Evaluators.Add("GravityY#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
+            C.InitialValues_Evaluators.Add("GravityY#A", X => 1.0);
+            C.InitialValues_Evaluators.Add("GravityY#B", X => 1.0);
+
+
+            //C.UseRampUpForInitialVelocityField = true;
+            //C.rampUpValues_VelocityZ = new double[] { 0.0, 1.0 };
 
 
             // restart
@@ -334,38 +344,38 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
-
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             //if (AMRlvl > 0) {
             //    C.AdaptiveMeshRefinement = true;
-            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    C.BaseRefinementLevel = AMRlvl;
+            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    //C.BaseRefinementLevel  AMRlvl;
             //}
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  1;
+            //C.RefinementLevel = 1;
             //C.AMR_startUpSweeps = 2;
 
             //C.InitSignedDistance = false;
             C.adaptiveReInit = false;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver = LinearSolverCode.automatic.GetConfig();
+            //C.LinearSolver = LinearSolverCode.automatic.GetConfig();
             //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.NonLinearSolver.MaxSolverIterations = 50; 
-            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LevelSet_ConvergenceCriterion = 1e-7;
+            //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            //C.LevelSet_ConvergenceCriterion = 1e-7;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None; // (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             //C.Option_LevelSetEvolution = (steadyInterface) ? LevelSetEvolution.None : LevelSetEvolution.Fourier;
             C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
@@ -373,7 +383,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_I = 1.0 * sigma;
             //C.PhysicalParameters.lambda_I = 2.0 * sigma;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
@@ -433,16 +443,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
             //C.LSunderrelax = 0.05;
-            C.Timestepper_LevelSetHandling = (steadyInterface) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None; // (steadyInterface) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 0.1; //0.01;
+            double dt = 1e-6; //0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1; // 12500; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 2; // 12500; // (int)(125.0 / dt);
             C.saveperiod = 10;
             
             #endregion
@@ -452,6 +462,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         }
 
+        /*
         /// <summary>
         /// 
         /// </summary>
@@ -715,8 +726,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //if (!hysing) {
             //    C.AdaptiveMeshRefinement = true;
-            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    C.BaseRefinementLevel = 3;
+            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    //C.BaseRefinementLevel  3;
             //    C.AMR_startUpSweeps = 4;
             //    C.RefinementLevel = 1;
             //}
@@ -728,8 +739,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.LFFB = 0.9;
 
             //C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.AMR_startUpSweeps = 2;
             //C.SessionName = C.SessionName + "_AMR1";
 
@@ -1035,7 +1046,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             return C;
         }
-
+        */
 
         /// <summary>
         /// 
@@ -1047,8 +1058,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ImmediatePlotPeriod = 1;
             //C.SuperSampling = 3;
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -1859,15 +1870,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //if (!hysing) {
             //    C.AdaptiveMeshRefinement = true;
-            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //    C.BaseRefinementLevel = 3;
+            //    //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    //C.BaseRefinementLevel  3;
             //    C.AMR_startUpSweeps = 4;
             //    C.RefinementLevel = 1;
             //}
 
             //C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.BaseRefinementLevel  2;
             //C.AMR_startUpSweeps = 2;
             //C.SessionName = C.SessionName + "_AMR1";
 
@@ -2131,7 +2142,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.mu_I = 1 * sigma;
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             //if (C.Option_LevelSetEvolution == LevelSetEvolution.Fourier) {
@@ -2816,7 +2827,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.mu_I = 10 * sigma;
             C.PhysicalParameters.lambda_I = 20 * sigma;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             if (C.Option_LevelSetEvolution == LevelSetEvolution.Fourier) {
@@ -3082,12 +3093,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -3127,7 +3138,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             int D = 2;
 
             if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -3372,11 +3383,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
+            //C.RefinementLevel = 1;
 
             #endregion
 

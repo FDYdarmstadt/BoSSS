@@ -692,7 +692,7 @@ namespace BoSSS.Solution.NSECommon {
                 //        goto case IncompressibleBcType.Velocity_Inlet;
                 //    }
                 //}
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
                         // Atmospheric outlet/pressure outflow: hom. Neumann
@@ -821,7 +821,7 @@ namespace BoSSS.Solution.NSECommon {
                 //        }
                 //    }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
 
@@ -893,7 +893,7 @@ namespace BoSSS.Solution.NSECommon {
                         break;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet: {
 

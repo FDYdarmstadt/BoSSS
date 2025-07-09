@@ -38,18 +38,20 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// Maximal Number of Iterations
         /// </summary>
+        [DataMember]
         public int MaxIt = 1000;
-        
+
         /// <summary>
         /// Potential Function for ReInit
         /// DoubleWell by Basting Seems to work best so far
-        /// </summary>
+        /// </summary>        
+        [DataMember]
         public ReInitPotential Potential = ReInitPotential.BastingDoubleWell;
 
         ///// <summary>
         ///// The Variant for Quadrature on the Cut-Cells
         ///// </summary>
-        //public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+        //public CutCellQuadratureMethod MomentFittingVariant = CutCellQuadratureMethod.Classic;
 
         /// <summary>
         /// Use a fast marching solver to generate an initial solution

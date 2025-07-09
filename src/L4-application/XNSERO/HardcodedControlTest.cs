@@ -62,7 +62,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             particles.Add(new ParticleEllipse(motion, 0.4, 0.4, new double[] { 1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
             particles.Add(new ParticleEllipse(motion, 0.4, 0.4, new double[] { -1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
             C.InitialiseParticles(particles);
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             double levelSet0(double[] X) => X[0];
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), levelSet0);
             C.Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // Coupling Properties
             // =============================
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             return C;

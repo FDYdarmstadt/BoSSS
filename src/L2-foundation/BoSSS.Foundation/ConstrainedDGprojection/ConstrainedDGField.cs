@@ -1230,6 +1230,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
     }
 
+    /*
 
     /// <summary>
     /// continuous DG field via L2-projection with continuity constraints
@@ -1465,67 +1466,67 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 // 1. merge between two adjacent patches
                 // =====================================
 
-                /*
-                for (int p1 = 0; p1 < NoPatches; p1++) {
+                
+                //for (int p1 = 0; p1 < NoPatches; p1++) {
 
-                    SubGrid patch1 = new SubGrid(patches.ElementAt(p1));
-                    EdgeMask allEM1 = patch1.AllEdgesMask;
-                    EdgeMask innerEM1 = patch1.InnerEdgesMask;
+                //    SubGrid patch1 = new SubGrid(patches.ElementAt(p1));
+                //    EdgeMask allEM1 = patch1.AllEdgesMask;
+                //    EdgeMask innerEM1 = patch1.InnerEdgesMask;
 
-                    for (int p2 = p1 + 1; p2 < NoPatches; p2++) {
+                //    for (int p2 = p1 + 1; p2 < NoPatches; p2++) {
 
-                        SubGrid patch2 = new SubGrid(patches.ElementAt(p2));
-                        EdgeMask allEM2 = patch2.AllEdgesMask;
-                        EdgeMask innerEM2 = patch2.InnerEdgesMask;
+                //        SubGrid patch2 = new SubGrid(patches.ElementAt(p2));
+                //        EdgeMask allEM2 = patch2.AllEdgesMask;
+                //        EdgeMask innerEM2 = patch2.InnerEdgesMask;
 
-                        // inner edges between patch 1 and patch 2
-                        EdgeMask mergeEM12 = allEM1.Intersect(allEM2);
+                //        // inner edges between patch 1 and patch 2
+                //        EdgeMask mergeEM12 = allEM1.Intersect(allEM2);
 
-                        // 
-                        BitArray merge12PatchBA = new BitArray(J);
-                        foreach (var chunk in mergeEM12) {
-                            int j0 = chunk.i0;
-                            int jE = chunk.JE;
-                            for (int j = j0; j < jE; j++) {
-                                int cell1 = m_grd.Edges.CellIndices[j, 0];
-                                merge12PatchBA[cell1] = true;
-                                int cell2 = m_grd.Edges.CellIndices[j, 1];
-                                merge12PatchBA[cell2] = true;
-                            }
-                        }
-                        CellMask merge12PatchCM = new CellMask(mask.GridData, merge12PatchBA);
-                        SubGrid merge12Patch = new SubGrid(merge12PatchCM);
-                        EdgeMask merge12Boundary = merge12Patch.BoundaryEdgesMask.Intersect(innerEM);
-                        EdgeMask innerMergeEM = mergePatch.InnerEdgesMask;
-                        merge12Boundary = merge12Boundary.Except(innerMergeEM);
+                //        // 
+                //        BitArray merge12PatchBA = new BitArray(J);
+                //        foreach (var chunk in mergeEM12) {
+                //            int j0 = chunk.i0;
+                //            int jE = chunk.JE;
+                //            for (int j = j0; j < jE; j++) {
+                //                int cell1 = m_grd.Edges.CellIndices[j, 0];
+                //                merge12PatchBA[cell1] = true;
+                //                int cell2 = m_grd.Edges.CellIndices[j, 1];
+                //                merge12PatchBA[cell2] = true;
+                //            }
+                //        }
+                //        CellMask merge12PatchCM = new CellMask(mask.GridData, merge12PatchBA);
+                //        SubGrid merge12Patch = new SubGrid(merge12PatchCM);
+                //        EdgeMask merge12Boundary = merge12Patch.BoundaryEdgesMask.Intersect(innerEM);
+                //        EdgeMask innerMergeEM = mergePatch.InnerEdgesMask;
+                //        merge12Boundary = merge12Boundary.Except(innerMergeEM);
 
-                        if (!merge12PatchCM.IsEmptyOnRank) {
-                            Console.WriteLine("======================");
-                            Console.WriteLine("project merging patch {0}-{1}:", p1, p2);
-                            Console.WriteLine("number of cells in merge patch: {0}", merge12PatchCM.NoOfItemsLocally);
-                            Console.WriteLine("number of edges in merge boundary: {0}", merge12Boundary.NoOfItemsLocally);
-                            this.ProjectDGFieldOnPatch(DGField, merge12PatchCM, merge12Boundary, true);
-                            //CellMask mergedPatch12 = patch1.VolumeMask.Union(patch2.VolumeMask).Union(merge12PatchCM);
-                            double jumpNorm = CheckLocalProjection(merge12PatchCM);
-                            Console.WriteLine("L2 jump norm = {0}", jumpNorm);
+                //        if (!merge12PatchCM.IsEmptyOnRank) {
+                //            Console.WriteLine("======================");
+                //            Console.WriteLine("project merging patch {0}-{1}:", p1, p2);
+                //            Console.WriteLine("number of cells in merge patch: {0}", merge12PatchCM.NoOfItemsLocally);
+                //            Console.WriteLine("number of edges in merge boundary: {0}", merge12Boundary.NoOfItemsLocally);
+                //            this.ProjectDGFieldOnPatch(DGField, merge12PatchCM, merge12Boundary, true);
+                //            //CellMask mergedPatch12 = patch1.VolumeMask.Union(patch2.VolumeMask).Union(merge12PatchCM);
+                //            double jumpNorm = CheckLocalProjection(merge12PatchCM);
+                //            Console.WriteLine("L2 jump norm = {0}", jumpNorm);
 
-                            string mergePatchName = "Merging-Patch_" + p1 + p2;
-                            SinglePhaseField mergePatch12Field = new SinglePhaseField(m_Basis, mergePatchName);
-                            mergePatch12Field.AccConstant(1.0, merge12PatchCM);
-                            returnFields.Add(mergePatch12Field);
+                //            string mergePatchName = "Merging-Patch_" + p1 + p2;
+                //            SinglePhaseField mergePatch12Field = new SinglePhaseField(m_Basis, mergePatchName);
+                //            mergePatch12Field.AccConstant(1.0, merge12PatchCM);
+                //            returnFields.Add(mergePatch12Field);
 
-                        } else {
-                            Console.WriteLine("======================");
-                            Console.WriteLine("no projection on merging patch {0}-{1}:", p1, p2);
-                        }
-                    }
-                }
+                //        } else {
+                //            Console.WriteLine("======================");
+                //            Console.WriteLine("no projection on merging patch {0}-{1}:", p1, p2);
+                //        }
+                //    }
+                //}
 
-                // projection of local projections on separate merge patches
-                localProj = new SinglePhaseField(m_Basis, "localMergeProjection");
-                localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
-                returnFields.Add(localProj);
-                */
+                //// projection of local projections on separate merge patches
+                //localProj = new SinglePhaseField(m_Basis, "localMergeProjection");
+                //localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+                //returnFields.Add(localProj);
+                
 
                 //return returnFields.ToArray();
             }
@@ -2674,50 +2675,50 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds, false);
 
                     return ndsR;
-                    //*/
+                    
 
-                    /*
-                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
-                    NodeSet qNodes = quad1D.Nodes;
-                    int Nnds = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
+                    
+                    //QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
+                    //NodeSet qNodes = quad1D.Nodes;
+                    //int Nnds = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
 
-                    int degreeR = degree - numEcond;
-                    int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
-                    if (NoNdsR <= 0) {
-                        return null;
+                    //int degreeR = degree - numEcond;
+                    //int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
+                    //if (NoNdsR <= 0) {
+                    //    return null;
 
-                    } else {
-                        if (edgeOrientation == null && numEcond > 0)
-                            throw new ArgumentException();
-                        if (edgeOrientation == null && numEcond < 1)
-                            edgeOrientation = new int[degree + 1];
+                    //} else {
+                    //    if (edgeOrientation == null && numEcond > 0)
+                    //        throw new ArgumentException();
+                    //    if (edgeOrientation == null && numEcond < 1)
+                    //        edgeOrientation = new int[degree + 1];
 
-                        MultidimensionalArray nds = MultidimensionalArray.Create(Nnds, 2);
-                        int node = 0;
-                        int[] dirCount = new int[2];
-                        for (int dirIdx = 0; dirIdx < edgeOrientation.Length; dirIdx++) {
-                            int dir = edgeOrientation[dirIdx];
-                            int m = dirCount[dir];
-                            int n0 = dirCount[(dir == 0) ? 1 : 0];
-                            int nL = quad1D.NoOfNodes - dirIdx;
-                            for (int n = n0; n < n0 + nL; n++) {
-                                if (dir == 0) {
-                                    nds[node, 0] = qNodes[n, 0];
-                                    nds[node, 1] = qNodes[m, 0];
-                                }
-                                if (dir == 1) {
-                                    nds[node, 0] = qNodes[m, 0];
-                                    nds[node, 1] = qNodes[n, 0];
-                                }
-                                node++;
-                            }
-                            dirCount[dir]++;
-                        }
-                        MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] { Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
-                        //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
-                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
-                    }
-                    */
+                    //    MultidimensionalArray nds = MultidimensionalArray.Create(Nnds, 2);
+                    //    int node = 0;
+                    //    int[] dirCount = new int[2];
+                    //    for (int dirIdx = 0; dirIdx < edgeOrientation.Length; dirIdx++) {
+                    //        int dir = edgeOrientation[dirIdx];
+                    //        int m = dirCount[dir];
+                    //        int n0 = dirCount[(dir == 0) ? 1 : 0];
+                    //        int nL = quad1D.NoOfNodes - dirIdx;
+                    //        for (int n = n0; n < n0 + nL; n++) {
+                    //            if (dir == 0) {
+                    //                nds[node, 0] = qNodes[n, 0];
+                    //                nds[node, 1] = qNodes[m, 0];
+                    //            }
+                    //            if (dir == 1) {
+                    //                nds[node, 0] = qNodes[m, 0];
+                    //                nds[node, 1] = qNodes[n, 0];
+                    //            }
+                    //            node++;
+                    //        }
+                    //        dirCount[dir]++;
+                    //    }
+                    //    MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] { Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
+                    //    //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
+                    //    return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
+                    //}
+                    
 
                 }
                 default:
@@ -2803,28 +2804,28 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         }
                         return new NodeSet(m_grd.Edges.EdgeRefElements[0], nds, false);
                     }
-                    /*
-                    int degreeR = degree - numEcond;
-                    int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
-                    if (NoNdsR <= 0)
-                        return null;
+                    
+                    //int degreeR = degree - numEcond;
+                    //int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
+                    //if (NoNdsR <= 0)
+                    //    return null;
 
-                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
-                    NodeSet qNodes = quad1D.Nodes;
+                    //QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
+                    //NodeSet qNodes = quad1D.Nodes;
 
-                    MultidimensionalArray nds = MultidimensionalArray.Create(NoNdsR, 2);
-                    int node = 0;
-                    for (int n1 = 0; n1 <= degreeR; n1++) {
-                        for (int n2 = 0; n2 <= degreeR - n1; n2++) {
-                            nds[node, 0] = qNodes[n1, 0];
-                            nds[node, 1] = qNodes[n2, 0];
-                            node++;
-                        }
-                    }
-                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                    //MultidimensionalArray nds = MultidimensionalArray.Create(NoNdsR, 2);
+                    //int node = 0;
+                    //for (int n1 = 0; n1 <= degreeR; n1++) {
+                    //    for (int n2 = 0; n2 <= degreeR - n1; n2++) {
+                    //        nds[node, 0] = qNodes[n1, 0];
+                    //        nds[node, 1] = qNodes[n2, 0];
+                    //        node++;
+                    //    }
+                    //}
+                    //NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
 
-                    return ndsR;
-                    */
+                    //return ndsR;
+                    
 
                     //QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
                     //NodeSet qNodes = quad1D.Nodes;
@@ -2865,7 +2866,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     //    MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] { Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
                     //    //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
                     //    return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
-                    //}
+                    // }
                 }
                 default:
                     throw new NotSupportedException("spatial dimension not supported");
@@ -3994,4 +3995,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
     }
+
+    */
 }

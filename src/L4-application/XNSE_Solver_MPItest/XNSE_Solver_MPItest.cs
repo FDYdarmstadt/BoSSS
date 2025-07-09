@@ -426,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         [Test]
-        public static void EmptyMaskInSchwarz([Values(SchwarzImplementation.PerProcess, SchwarzImplementation.PerProcess)] SchwarzImplementation schwarz) {
+        public static void EmptyMaskInSchwarz([Values(SchwarzImplementation.PerProcess, SchwarzImplementation.CoarseMesh)] SchwarzImplementation schwarz) {
             //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
 
             // This test simulates bad initial distribution of void cells over ranks
@@ -479,12 +479,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
-            ilPSP.Environment.InitThreading(true, 4);
+            BoSSS.Solution.Application.InitMPI(args);
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.TestLoadBalancingAMRtrue();
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz(SchwarzImplementation.PerProcess);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.SayeBug();
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.TestLoadBalancingAMRtrue();
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz(SchwarzImplementation.PerProcess);
@@ -767,7 +768,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
             //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -1056,7 +1057,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1202,7 +1203,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
             C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;

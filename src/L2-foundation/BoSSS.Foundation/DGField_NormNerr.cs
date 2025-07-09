@@ -455,7 +455,7 @@ namespace BoSSS.Foundation {
             }
 
             int order = Math.Max(this.Basis.Degree, other.Basis.Degree) * 2;
-            CellQuadratureScheme cqs = new CellQuadratureScheme(domain: cm);
+            CellQuadratureScheme cqs = new CellQuadratureScheme(UseDefaultFactories:true, domain: cm);
             return LxError(other.Evaluate, null, cqs.Compile(this.GridDat, order)).Sqrt();
         }
 
@@ -514,6 +514,7 @@ namespace BoSSS.Foundation {
         /// \f$ b \f$ is the value of <paramref name="function"/> at \f$ \vec{x} \f$.
         /// </param>
         /// <param name="Quadrature_ChunkDataLimitOverride">
+        /// only for debugging purpose,
         /// see <see cref="Foundation.Quadrature.Quadrature{TQuadRule, TDomain}.ChunkDataLimitOverride"/>
         /// </param>
         /// <returns>

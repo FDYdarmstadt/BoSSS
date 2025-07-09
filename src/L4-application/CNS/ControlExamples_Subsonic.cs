@@ -439,7 +439,7 @@ namespace CNS {
                 return grid;
             };
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 10;
             c.LevelSetBoundaryTag = "supersonicInlet";
 
@@ -581,7 +581,7 @@ namespace CNS {
 
             c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 1.0));
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -723,7 +723,7 @@ namespace CNS {
             c.AddBoundaryValue("adiabaticWall");
             c.LevelSetBoundaryTag = "adiabaticWall";
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
             c.LevelSetQuadratureOrder = levelSetQuadratureOrder;
             c.AgglomerationThreshold = agglomerationThreshold;
 
@@ -820,7 +820,7 @@ namespace CNS {
 
             c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 1.0));
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
 
             c.SurfaceHMF_ProjectNodesToLevelSet = true;
             c.SurfaceHMF_RestrictNodes = true;
@@ -898,7 +898,7 @@ namespace CNS {
             c.LevelSetQuadratureOrder = 12;
             c.AgglomerationThreshold = 0.3;
             c.GridPartOptions = "0";
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
 
 
             // Solver Type
@@ -1001,7 +1001,7 @@ namespace CNS {
                 return grid;
             };
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -1130,7 +1130,7 @@ namespace CNS {
             c.AddBoundaryValue("adiabaticSlipWall", CNSVariables.Velocity[1], (X, t) => 0.0);
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -1295,9 +1295,9 @@ namespace CNS {
             c.LevelSetQuadratureOrder = 2 * dgDegree;
             c.AgglomerationThreshold = agg;
 
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
-            //c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //c.CutCellQuadratureType = CutCellQuadratureMethod.Classic;
             //c.SurfaceHMF_ProjectNodesToLevelSet = false;
             //c.SurfaceHMF_RestrictNodes = true;
             //c.SurfaceHMF_UseGaussNodes = false;
