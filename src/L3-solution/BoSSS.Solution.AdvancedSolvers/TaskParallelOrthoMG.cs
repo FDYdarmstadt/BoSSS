@@ -2061,6 +2061,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     _xl.SetV(X);
                 }
                 ThisLevelTime.Stop();
+
+                if(TpLevel == 0)
+                    Console.WriteLine($"Time spent at TpLevel-0 is {ThisLevelTime.Elapsed}");
             } // end of functrace
         }
 
@@ -2111,13 +2114,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				    Res.SaveToTextFileDebug("Res", ".txt");
 				}
 
+
+                ResforSmoother = smootherPermutation.PermutateVector(Res);
+                XforSmoother = new double[smootherPermutation.LengthAfterPermutation];
+
                 // Permutation operators live on thisComm, which means that they should be called on thisComm
                 // Restrict operator is designed such that the output would already distribute the vecotre into the desired procs with coarseBlock partitioning
                 ResforCoarse = Restrict(Res);
                 XforCoarse = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];  //Restrict(X); //  new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; /
 
-                ResforSmoother = smootherPermutation.PermutateVector(Res);
-                XforSmoother = new double[smootherPermutation.LengthAfterPermutation];
 
                 Debug.Assert(myTask != TpTaskType.Smoother || ResforCoarse.Length == 0);
                 Debug.Assert(myTask != TpTaskType.Coarse || ResforSmoother.Length == 0);
@@ -2169,13 +2174,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				CrseLevelTime.Stop();
 
                 using(new FuncTrace("PermutateAndMinimize")) {
-                    var CoarseCorrection = Prolongate(XforCoarse);
-                    resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
-                    WriteDebug(iIter, resNorm, "Tp-coarse");
-
                     var PreCorr = smootherPermutation.PermutateVectorBack(XforSmoother); //this can be further optimized as smooth part has the full matrix
                     resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, X0, Res0, Res, "Tp-smoother" + TpLevel);
                     WriteDebug(iIter, resNorm, "Tp-smoother");
+
+                    var CoarseCorrection = Prolongate(XforCoarse);
+                    resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrection, X, X0, Res0, Res, "Tp-coarse" + TpLevel);
+                    WriteDebug(iIter, resNorm, "Tp-coarse");
                 }
 				// Iteration callback
 				//IterationCallback?.Invoke(iIter, X, Res, m_OpMapPair as MultigridOperator);

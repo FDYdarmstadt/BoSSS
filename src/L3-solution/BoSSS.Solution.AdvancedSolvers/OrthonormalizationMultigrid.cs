@@ -1106,7 +1106,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int iLevel = ((m_OpMapPair as MultigridOperator)?.LevelIndex ?? -1);
 
             if(iLevel >= 0)
-                tr.InfoToConsole = false; // set to `true` if you want to see output
+                tr.InfoToConsole = true; // set to `true` if you want to see output
             tr.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, iteration={iter} {(text != null ? " - " + text : "")} and res norm: {res}");
 
             return;
