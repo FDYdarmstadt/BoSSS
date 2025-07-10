@@ -393,34 +393,34 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool withDissipativePressure;
 
 
-        /// <summary>
-        /// Block-Precondition for the kinetic-Energy-block
-        /// </summary>
-        public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+        ///// <summary>
+        ///// Block-Precondition for the kinetic-Energy-block
+        ///// </summary>
+        //public MultigridOperator.Mode KineticEnergyeBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
-        /// <summary>
-        /// If true, various energy properties will be evaluated in every cycle.
-        /// </summary>
-        [DataMember]
-        public bool ComputeEnergyProperties = false;
+        ///// <summary>
+        ///// If true, various energy properties will be evaluated in every cycle.
+        ///// </summary>
+        //[DataMember]
+        //public bool ComputeEnergyProperties = false;
 
-        /// <summary>
-        /// if true, the jump condition for mass, momentum and energy will be checked
-        /// </summary>
-        [DataMember]
-        public bool CheckJumpConditions = false;
+        ///// <summary>
+        ///// if true, the jump condition for mass, momentum and energy will be checked
+        ///// </summary>
+        //[DataMember]
+        //public bool CheckJumpConditions = false;
 
-        /// <summary>
-        /// if true, the mass conservation and the surface changerate is checked
-        /// </summary>
-        [DataMember]
-        public bool CheckInterfaceProps = false;
+        ///// <summary>
+        ///// if true, the mass conservation and the surface changerate is checked
+        ///// </summary>
+        //[DataMember]
+        //public bool CheckInterfaceProps = false;
 
-        /// <summary>
-        /// Registers all utility (also energy) fields to IOFields
-        /// </summary>
-        [DataMember]
-        public bool RegisterUtilitiesToIOFields = false;
+        ///// <summary>
+        ///// Registers all utility (also energy) fields to IOFields
+        ///// </summary>
+        //[DataMember]
+        //public bool RegisterUtilitiesToIOFields = false;
         
         /// <summary>
         /// average method for constructing the interface velocity

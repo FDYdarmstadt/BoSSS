@@ -663,8 +663,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ComputeEnergy = false;
             C.ComputeInterfaceEnergy = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -954,7 +954,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ComputeEnergy = false;
             C.ComputeInterfaceEnergy = false;
 
-            C.CheckJumpConditions = false;
+            //C.CheckJumpConditions = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -1515,7 +1515,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ComputeInterfaceEnergy = false;
 
             C.CheckJumpConditions = true;
-            C.CheckInterfaceProps = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -1785,8 +1785,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ComputeEnergy = false;
             C.ComputeInterfaceEnergy = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;

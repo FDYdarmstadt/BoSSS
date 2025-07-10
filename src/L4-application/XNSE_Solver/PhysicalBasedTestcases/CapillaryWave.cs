@@ -233,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             //C.solveKineticEnergyEquation = true;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
 
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -1153,7 +1153,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             //C.solveKineticEnergyEquation = true;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.CheckInterfaceProps = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
@@ -1268,7 +1268,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
-            C.RegisterUtilitiesToIOFields = true;
+            //C.RegisterUtilitiesToIOFields = true;
 
             #endregion
 
@@ -1356,7 +1356,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.CheckJumpConditions = true;
+            //C.CheckJumpConditions = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;

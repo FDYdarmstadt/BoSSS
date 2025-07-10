@@ -101,6 +101,17 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+
+        /// <summary>
+        /// Testing adaptive mesh refinement in a parallel 
+        /// </summary>
+        [Test]
+        public static void AMRtest() {
+
+        }
+
+
+
         /// <summary>
         /// Initiates all the test cases
         /// </summary>

@@ -335,11 +335,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
             C.solveKineticEnergyEquation = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -701,14 +701,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.solveKineticEnergyEquation = false;
 
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
             //    Degree = 2 * p,
             //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             //});
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -978,8 +978,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.solveKineticEnergyEquation = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -1437,10 +1437,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.solveKineticEnergyEquation = false;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -1842,14 +1842,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.solveKineticEnergyEquation = false;
 
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
             //    Degree = 2 * p,
             //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             //});
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -2114,9 +2114,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.solveKineticEnergyEquation = false;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
-            C.CheckJumpConditions = false;
+            //C.CheckJumpConditions = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -2426,7 +2426,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
@@ -2798,10 +2798,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.solveKineticEnergyEquation = true;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
-            C.CheckJumpConditions = true;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = true;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -3069,10 +3069,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.solveKineticEnergyEquation = false;
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -3130,15 +3130,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <summary>
         /// 
         /// </summary>
-        /// <returns></returns>
-        public static XNSE_Control DropletOnPlate_AMRtest(int p = 2, int kelem = 16) {
+        public static XNSE_Control DropletOnPlate_AMRtest(int D = 2, int p = 2, int kelem = 16) {
 
             XNSE_Control C = new XNSE_Control();
 
-            int D = 2;
 
-            if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
+            
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
@@ -3162,38 +3159,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==========
             #region degrees
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            if(D == 3) {
-                C.FieldOptions.Add("VelocityZ", new FieldOpts() {
-                    Degree = p,
-                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-                });
-            }
-            C.FieldOptions.Add("GravityY", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = p - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(p);
 
             #endregion
 
@@ -3235,30 +3201,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 0);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
-                    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
-                    grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
-                    grd.EdgeTagNames.Add(3, "navierslip_linear_left");
-                    grd.EdgeTagNames.Add(4, "navierslip_linear_right");
-
                     grd.DefineEdgeTags(delegate (double[] X) {
-                        byte et = 0;
                         if(Math.Abs(X[1]) <= 1.0e-8)
-                            et = 1;
+                            return "navierslip_linear_lower";
                         if(Math.Abs(X[1] - ySize) <= 1.0e-8)
-                            et = 2;
+                            return "navierslip_linear_upper";
                         if(Math.Abs(X[0]) <= 1.0e-8)
-                            et = 3;
+                            return "navierslip_linear_left";
                         if(Math.Abs(X[0] - xSize) <= 1.0e-8)
-                            et = 4;
+                            return "navierslip_linear_right";
 
-                        return et;
+                        throw new ArgumentOutOfRangeException("unable to determine edge name.");
                     });
 
                     return grd;
                 };
-            }
-
-            if(D == 3) {
+            } else if(D == 3) {
                 C.GridFunc = delegate () {
                     double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 1);
@@ -3275,23 +3233,25 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
                         if(Math.Abs(X[2]) <= 1.0e-8)
-                            et = 1;
+                            return "navierslip_linear_lower";
                         if(Math.Abs(X[2] - zSize) <= 1.0e-8)
-                            et = 2;
+                            return "navierslip_linear_upper";
                         if(Math.Abs(X[0]) <= 1.0e-8)
-                            et = 3;
+                            return "navierslip_linear_left";
                         if(Math.Abs(X[0] - xSize) <= 1.0e-8)
-                            et = 4;
+                            return "navierslip_linear_right";
                         if(Math.Abs(X[1]) <= 1.0e-8)
-                            et = 5;
+                            return "navierslip_linear_front";
                         if(Math.Abs(X[1] - ySize) <= 1.0e-8)
-                            et = 6;
+                            return "navierslip_linear_back";
 
-                        return et;
+                        throw new ArgumentOutOfRangeException("unable to determine edge name.");
                     });
 
                     return grd;
                 };
+            } else {
+                throw new ArgumentOutOfRangeException("unsupported spatial dimension: " + D);
             }
 
             #endregion
@@ -3313,12 +3273,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 double[] center_0 = new double[] { xSize / 2.0, ySize / 2.0 };
                 prescribedVel = ySize / 2.1;
                 PhiFunc = ((X, t) => ((X[0] - (center_0[0] + (0.0 * prescribedVel))).Pow2() + (X[1] - (center_0[1] - (t * prescribedVel))).Pow2()).Sqrt() - R);
-            }
-
-            if(D == 3) {
+            } else if(D == 3) {
                 double[] center_0 = new double[] { xSize / 2.0, ySize / 2.0, zSize / 2.0 };
                 prescribedVel = zSize / 2.0;
                 PhiFunc = ((X, t) => ((X[0] - center_0[0]).Pow2() + (X[1] - center_0[1]).Pow2() + (X[2] - (center_0[2] - (t * prescribedVel))).Pow2()).Sqrt() - R);
+            } else {
+                throw new ArgumentOutOfRangeException("unsupported spatial dimension: " + D);
             }
 
             C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
@@ -3333,6 +3293,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
+            /*
             C.AddBoundaryValue("navierslip_linear_lower");
             C.AddBoundaryValue("navierslip_linear_upper");
             C.AddBoundaryValue("navierslip_linear_left");
@@ -3342,7 +3303,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("navierslip_linear_front");
                 C.AddBoundaryValue("navierslip_linear_back");
             }
-
+            */
             #endregion
 
 
@@ -3366,11 +3327,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
 
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
-            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
-
-            C.ComputeEnergyProperties = false;
+            
+            //C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
             C.NonLinearSolver.MaxSolverIterations = 50;
