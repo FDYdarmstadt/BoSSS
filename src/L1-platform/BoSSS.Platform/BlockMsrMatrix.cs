@@ -2945,7 +2945,7 @@ namespace ilPSP.LinSolvers {
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
-            using(new FuncTrace()) {
+            using(new FuncTrace("BlockSpMV")) {
                 //SPMV_tot.Reset();
                 //SPMV_inner.Reset();
                 //SpMV_local.Reset();
@@ -2991,57 +2991,60 @@ namespace ilPSP.LinSolvers {
 
                 // prepare receiving
                 // =================
-                for(int i = 0; i < RecvRanks.Length; i++) {
-                    int RecvRnk = RecvRanks[i];
-                    long[,] RcvList = this.ReceiveLists[RecvRnk];
-
-                    int Len = 0;
-                    int L0 = RcvList.GetLength(0);
-                    for(int l = 0; l < L0; l++) {
-                        Len += (int)(RcvList[l, 1] - RcvList[l, 0]);
-                    }
-                    RecvBuffersLen[i] = Len;
-
-                    RecvBuffers[i] = Marshal.AllocHGlobal(Len * sizeof(double));
-                    csMPI.Raw.Irecv(RecvBuffers[i], Len, csMPI.Raw._DATATYPE.DOUBLE, RecvRnk, 55 * 19 * RecvRnk, this.MPI_Comm, out Requests[SendRanks.Length + i]);
-                }
-
-                // send data 
-                // =========
-
-                unsafe {
-                    for(int i = 0; i < SendRanks.Length; i++) {
-                        int SendRnk = SendRanks[i];
-                        long[,] SndList = this.SendLists[SendRnk];
+                using(var trr = new FuncTrace("PrepareRecSpMV")) { 
+                        for(int i = 0; i < RecvRanks.Length; i++) {
+                        int RecvRnk = RecvRanks[i];
+                        long[,] RcvList = this.ReceiveLists[RecvRnk];
 
                         int Len = 0;
-                        int L0 = SndList.GetLength(0);
+                        int L0 = RcvList.GetLength(0);
                         for(int l = 0; l < L0; l++) {
-                            Len += (int)(SndList[l, 1] - SndList[l, 0]);
+                            Len += (int)(RcvList[l, 1] - RcvList[l, 0]);
                         }
-                        SendBuffersLen[i] = Len;
+                        RecvBuffersLen[i] = Len;
 
-                        SendBuffers[i] = Marshal.AllocHGlobal(Len * sizeof(double));
-                        double* sb = (double*)(SendBuffers[i]);
-
-                        for(int l = 0; l < L0; l++) { // loop over all chunks/blocks of the send list
-                            long i0 = SndList[l, 0];
-                            long iE = SndList[l, 1];
-
-                            for(long iRow = i0; iRow < iE; iRow++) {
-                                Debug.Assert(_ColPartitioning.IsInLocalRange(iRow));
-                                int iRowLoc = (int)(iRow - iFirstCol);
-                                Debug.Assert(iRowLoc >= 0 && iRowLoc < a.Length);
-                                *sb = a[iRowLoc];
-                                sb++;
-                            }
-                        }
-                        Debug.Assert((sb - ((double*)(SendBuffers[i]))) == Len);
-
-                        csMPI.Raw.Issend(SendBuffers[i], Len, csMPI.Raw._DATATYPE.DOUBLE, SendRnk, 55 * 19 * MPIrank, this.MPI_Comm, out Requests[i]);
+                        RecvBuffers[i] = Marshal.AllocHGlobal(Len * sizeof(double));
+                        csMPI.Raw.Irecv(RecvBuffers[i], Len, csMPI.Raw._DATATYPE.DOUBLE, RecvRnk, 55 * 19 * RecvRnk, this.MPI_Comm, out Requests[SendRanks.Length + i]);
                     }
                 }
-                SpMV_initSending.Stop();
+                // send data 
+                // =========
+                using(var trr = new FuncTrace("SendSpMV")) {
+
+                    unsafe {
+                        for(int i = 0; i < SendRanks.Length; i++) {
+                            int SendRnk = SendRanks[i];
+                            long[,] SndList = this.SendLists[SendRnk];
+
+                            int Len = 0;
+                            int L0 = SndList.GetLength(0);
+                            for(int l = 0; l < L0; l++) {
+                                Len += (int)(SndList[l, 1] - SndList[l, 0]);
+                            }
+                            SendBuffersLen[i] = Len;
+
+                            SendBuffers[i] = Marshal.AllocHGlobal(Len * sizeof(double));
+                            double* sb = (double*)(SendBuffers[i]);
+
+                            for(int l = 0; l < L0; l++) { // loop over all chunks/blocks of the send list
+                                long i0 = SndList[l, 0];
+                                long iE = SndList[l, 1];
+
+                                for(long iRow = i0; iRow < iE; iRow++) {
+                                    Debug.Assert(_ColPartitioning.IsInLocalRange(iRow));
+                                    int iRowLoc = (int)(iRow - iFirstCol);
+                                    Debug.Assert(iRowLoc >= 0 && iRowLoc < a.Length);
+                                    *sb = a[iRowLoc];
+                                    sb++;
+                                }
+                            }
+                            Debug.Assert((sb - ((double*)(SendBuffers[i]))) == Len);
+
+                            csMPI.Raw.Issend(SendBuffers[i], Len, csMPI.Raw._DATATYPE.DOUBLE, SendRnk, 55 * 19 * MPIrank, this.MPI_Comm, out Requests[i]);
+                        }
+                    }
+                    SpMV_initSending.Stop();
+                }
                 bool[] bTouch = new bool[acc.Count];
 
                 // local multiplication
@@ -3051,175 +3054,179 @@ namespace ilPSP.LinSolvers {
                 int NoOfBlockRows = _RowPartitioning.LocalNoOfBlocks;
                 Debug.Assert(NoOfBlockRows == m_BlockRows.Length);
                 long FirstRowBlock = _RowPartitioning.FirstBlock;
-                unsafe {
-                    fixed(double* __pa = a) {
-                        double* pa = __pa;
-                        //double[] VecAccu = null;
-                        //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
-                        double[] RowMul(int iBlockLoc, double[] VecAccu) {
-                                                   
-                            var BlockRow = m_BlockRows[iBlockLoc];
+                using(var trr = new FuncTrace("LocSpMV")) {
+                    unsafe {
+                        fixed(double* __pa = a) {
+                            double* pa = __pa;
+                            //double[] VecAccu = null;
+                            //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
+                            double[] RowMul(int iBlockLoc, double[] VecAccu) {
 
-                            long iBlock = iBlockLoc + FirstRowBlock;
-                            int RowBlockLength = _RowPartitioning.GetBlockLen(iBlock);
-                            int locBlockRowOffset = (int)(_RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0);
+                                var BlockRow = m_BlockRows[iBlockLoc];
 
-                            if(BlockRow != null) {
-                                // ++++++++++++
-                                // non-zero row
-                                // ++++++++++++
+                                long iBlock = iBlockLoc + FirstRowBlock;
+                                int RowBlockLength = _RowPartitioning.GetBlockLen(iBlock);
+                                int locBlockRowOffset = (int)(_RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0);
 
-                                int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
-                                int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
-                                int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
-                                bool ContainsExternal = false;
+                                if(BlockRow != null) {
+                                    // ++++++++++++
+                                    // non-zero row
+                                    // ++++++++++++
 
-                                if(VecAccu == null || VecAccu.Length < RowBlockLength) {
-                                    VecAccu = new double[RowBlockLength];
-                                } else {
-                                    for(int i = 0; i < RowBlockLength; i++) {
-                                        VecAccu[i] = 0.0;
+                                    int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
+                                    int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
+                                    int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
+                                    bool ContainsExternal = false;
+
+                                    if(VecAccu == null || VecAccu.Length < RowBlockLength) {
+                                        VecAccu = new double[RowBlockLength];
+                                    } else {
+                                        for(int i = 0; i < RowBlockLength; i++) {
+                                            VecAccu[i] = 0.0;
+                                        }
                                     }
-                                }
-                                fixed(double* pVecAccu = VecAccu) {
+                                    fixed(double* pVecAccu = VecAccu) {
 
-                                    foreach(var kv in BlockRow) { // loop over block columns...
-                                        BlockEntry BE = kv.Value;
-                                        long jBlkCol = kv.Key;
-                                        Debug.Assert(BE.jBlkCol == jBlkCol);
-                                        if(_ColPartitioning.IsLocalBlock(jBlkCol)) {
-                                            int locBlockColOffset = (int)(_ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0);
+                                        foreach(var kv in BlockRow) { // loop over block columns...
+                                            BlockEntry BE = kv.Value;
+                                            long jBlkCol = kv.Key;
+                                            Debug.Assert(BE.jBlkCol == jBlkCol);
+                                            if(_ColPartitioning.IsLocalBlock(jBlkCol)) {
+                                                int locBlockColOffset = (int)(_ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0);
 
-                                            int ColBlockType = _ColPartitioning.GetBlockType(jBlkCol);
-                                            int[] Col_i0Sblk = _ColPartitioning.GetSubblk_i0(ColBlockType);
-                                            int[] ColLenSblk = _ColPartitioning.GetSubblkLen(ColBlockType);
+                                                int ColBlockType = _ColPartitioning.GetBlockType(jBlkCol);
+                                                int[] Col_i0Sblk = _ColPartitioning.GetSubblk_i0(ColBlockType);
+                                                int[] ColLenSblk = _ColPartitioning.GetSubblkLen(ColBlockType);
 
-                                            Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
-                                            Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
-                                            int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
-                                            int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
-                                            Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
-                                            Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
-                                            Debug.Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
-                                            Debug.Assert(ColLenSblk.Length == NoOfSblk_Cols);
-                                            for(int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
+                                                Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
+                                                Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
+                                                int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
+                                                int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
+                                                Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
+                                                Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
+                                                Debug.Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
+                                                Debug.Assert(ColLenSblk.Length == NoOfSblk_Cols);
+                                                for(int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
 
-                                                int _iRowLoc = locBlockRowOffset + Row_i0Sblk[iSblkRow]; // local row index
-                                                int _iRowBlockLoc = Row_i0Sblk[iSblkRow]; // row index within block
+                                                    int _iRowLoc = locBlockRowOffset + Row_i0Sblk[iSblkRow]; // local row index
+                                                    int _iRowBlockLoc = Row_i0Sblk[iSblkRow]; // row index within block
 
-                                                for(int jSblkCol = 0; jSblkCol < NoOfSblk_Cols; jSblkCol++) { // loop over sub-block columns
-                                                    int MembnkIdx = BE.MembnkIdx[iSblkRow, jSblkCol];
-                                                    int InMembnk = BE.InMembnk[iSblkRow, jSblkCol];
-                                                    Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
+                                                    for(int jSblkCol = 0; jSblkCol < NoOfSblk_Cols; jSblkCol++) { // loop over sub-block columns
+                                                        int MembnkIdx = BE.MembnkIdx[iSblkRow, jSblkCol];
+                                                        int InMembnk = BE.InMembnk[iSblkRow, jSblkCol];
+                                                        Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
-                                                    if(InMembnk >= 0) {
-                                                        int Offset, CI, CJ;
-                                                        bool isDense;
-                                                        m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out double[] RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+                                                        if(InMembnk >= 0) {
+                                                            int Offset, CI, CJ;
+                                                            bool isDense;
+                                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out double[] RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
 
-                                                        fixed(double* pRawMem = RawMem) {
+                                                            fixed(double* pRawMem = RawMem) {
 
-                                                            int _jColLoc = locBlockColOffset + Col_i0Sblk[jSblkCol]; // local storage index
+                                                                int _jColLoc = locBlockColOffset + Col_i0Sblk[jSblkCol]; // local storage index
 
-                                                            int I = RowLenSblk[iSblkRow];
-                                                            int J = ColLenSblk[jSblkCol];
-                                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(1) == I);
-                                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(2) == J);
+                                                                int I = RowLenSblk[iSblkRow];
+                                                                int J = ColLenSblk[jSblkCol];
+                                                                Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(1) == I);
+                                                                Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(2) == J);
 
-                                                            int iRowLoc = _iRowLoc; // local row index
-                                                            int iRowBlockLoc = _iRowBlockLoc; // row index within block
+                                                                int iRowLoc = _iRowLoc; // local row index
+                                                                int iRowBlockLoc = _iRowBlockLoc; // row index within block
 
-                                                            if(CJ != 1 || I * J < 40) { 
-                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                                                // local multiplication branch:
-                                                                // either the block is very small (less than 40 entries), or
-                                                                // the fast rotating index has a skips some bytes
-                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                                                if(CJ != 1 || I * J < 40) {
+                                                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                                                    // local multiplication branch:
+                                                                    // either the block is very small (less than 40 entries), or
+                                                                    // the fast rotating index has a skips some bytes
+                                                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                                                for(int i = 0; i < I; i++) { // loop over sub-block rows...
+                                                                    for(int i = 0; i < I; i++) { // loop over sub-block rows...
 
-                                                                    double Accu = 0;
+                                                                        double Accu = 0;
 
-                                                                    //int jColLoc = _jColLoc;
-                                                                    double* pRow = pRawMem + Offset + CI * i;
-                                                                    double* pCol = pa + _jColLoc;
-                                                                    for(int j = 0; j < J; j++) { // loop over sub-block columns...
-                                                                                                 // .
-                                                                                                 //int iStorage = Offset + CI * i + CJ * j; // index into memory bank
-                                                                                                 //Accu += RawMem[iStorage] * a[jColLoc];
-                                                                                                 //jColLoc++;
+                                                                        //int jColLoc = _jColLoc;
+                                                                        double* pRow = pRawMem + Offset + CI * i;
+                                                                        double* pCol = pa + _jColLoc;
+                                                                        for(int j = 0; j < J; j++) { // loop over sub-block columns...
+                                                                                                     // .
+                                                                                                     //int iStorage = Offset + CI * i + CJ * j; // index into memory bank
+                                                                                                     //Accu += RawMem[iStorage] * a[jColLoc];
+                                                                                                     //jColLoc++;
 
-                                                                        Accu += *pRow * *pCol;
-                                                                        pCol++;
-                                                                        pRow += CJ;
+                                                                            Accu += *pRow * *pCol;
+                                                                            pCol++;
+                                                                            pRow += CJ;
+                                                                        }
+                                                                        VecAccu[iRowBlockLoc] += Accu;
+                                                                        iRowLoc++;
+                                                                        iRowBlockLoc++;
                                                                     }
-                                                                    VecAccu[iRowBlockLoc] += Accu;
-                                                                    iRowLoc++;
-                                                                    iRowBlockLoc++;
+                                                                } else {
+                                                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                                                                    // default branch: try to use BLAS function DGEMV
+                                                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                                                                    BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
+                                                                        pVecAccu + _iRowBlockLoc,
+                                                                        1);
                                                                 }
-                                                            } else {
-                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++
-                                                                // default branch: try to use BLAS function DGEMV
-                                                                // +++++++++++++++++++++++++++++++++++++++++++++++++++
-                                                                BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
-                                                                    pVecAccu + _iRowBlockLoc,
-                                                                    1);
+
                                                             }
 
                                                         }
-
                                                     }
                                                 }
+
+                                            } else {
+                                                ContainsExternal = true;
                                             }
 
-                                        } else {
-                                            ContainsExternal = true;
                                         }
 
+                                        for(int __i = 0; __i < RowBlockLength; __i++) {
+                                            int __iRowLoc = __i + locBlockRowOffset;
+                                            double ri = acc[__iRowLoc] * beta + alpha * VecAccu[__i];
+                                            acc[__iRowLoc] = ri;
+                                            Debug.Assert(acc[__iRowLoc] == ri, "ri = " + ri + "acc = " + acc[__iRowLoc]);
+                                        }
                                     }
+
+                                    Debug.Assert(m_RowsWithExternalBlock[iBlockLoc] == ContainsExternal);
+                                } else {
+                                    // +++++++++
+                                    // empty row
+                                    // +++++++++
+
+                                    // only scale the accumulator `acc` with `beta`
 
                                     for(int __i = 0; __i < RowBlockLength; __i++) {
                                         int __iRowLoc = __i + locBlockRowOffset;
-                                        double ri = acc[__iRowLoc] * beta + alpha * VecAccu[__i];
+                                        double ri = acc[__iRowLoc] * beta;
                                         acc[__iRowLoc] = ri;
-                                        Debug.Assert(acc[__iRowLoc] == ri, "ri = " + ri + "acc = " + acc[__iRowLoc]);
+                                        Debug.Assert(acc[__iRowLoc] == ri);
                                     }
                                 }
 
-                                Debug.Assert(m_RowsWithExternalBlock[iBlockLoc] == ContainsExternal);
-                            } else {
-                                // +++++++++
-                                // empty row
-                                // +++++++++
+                                return VecAccu;
 
-                                // only scale the accumulator `acc` with `beta`
+                            } // end of `RowMul`
 
-                                for(int __i = 0; __i < RowBlockLength; __i++) {
-                                    int __iRowLoc = __i + locBlockRowOffset;
-                                    double ri = acc[__iRowLoc] * beta; 
-                                    acc[__iRowLoc] = ri;
-                                    Debug.Assert(acc[__iRowLoc] == ri);
-                                }
-                            }
-
-                            return VecAccu;
-
-                        } // end of `RowMul`
-
-                        ilPSP.Environment.ParallelFor(0, NoOfBlockRows,
-                            () => default(double[]),
-                            RowMul,
-                            (double[] _) => { },
-                            enablePar: true);
+                            ilPSP.Environment.ParallelFor(0, NoOfBlockRows,
+                                () => default(double[]),
+                                RowMul,
+                                (double[] _) => { },
+                                enablePar: true);
                         }
+                    }
                 }
                 SpMV_local.Stop();
 
                 // finish communication
                 // ====================
                 SpMV_receive.Start();
-                MPI_Status[] Stats = new MPI_Status[Requests.Length];
-                csMPI.Raw.Waitall(Requests.Length, Requests, Stats);
+                using(var trr = new FuncTrace("SyncSpMV")) { 
+                    MPI_Status[] Stats = new MPI_Status[Requests.Length];
+                    csMPI.Raw.Waitall(Requests.Length, Requests, Stats);
+                }
                 SpMV_receive.Stop();
 #if DEBUG_EXTENDED
                 /*
@@ -3248,91 +3255,92 @@ namespace ilPSP.LinSolvers {
 
                 // external multiplication
                 // ====================
-                if(this.MPI_Comm != csMPI.Raw._COMM.SELF) {
-                    SpMV_external.Start();
-                    spmvcalls++;
-                    //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
-                    ilPSP.Environment.ParallelFor(0, NoOfBlockRows, delegate (int iBlockLoc) {
-                        //SpMV_external_membank[iThread].Start();
-                        if(m_RowsWithExternalBlock[iBlockLoc]) {
-                            //SpMV_external_blocking[iThread].Start();
-                            var BlockRow = m_BlockRows[iBlockLoc];
-                            Debug.Assert(BlockRow != null);
-                            long iBlock = iBlockLoc + FirstRowBlock;
-                            int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
-                            int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
-                            int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
-                            int locBlockRowOffset = (int)(_RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0);
-                            //SpMV_external_blocking[iThread].Stop();
+                using(var trr = new FuncTrace("ExtMulSpMV")) {
+                    if(this.MPI_Comm != csMPI.Raw._COMM.SELF) {
+                        SpMV_external.Start();
+                        spmvcalls++;
+                        //for(int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
+                        ilPSP.Environment.ParallelFor(0, NoOfBlockRows, delegate (int iBlockLoc) {
+                            //SpMV_external_membank[iThread].Start();
+                            if(m_RowsWithExternalBlock[iBlockLoc]) {
+                                //SpMV_external_blocking[iThread].Start();
+                                var BlockRow = m_BlockRows[iBlockLoc];
+                                Debug.Assert(BlockRow != null);
+                                long iBlock = iBlockLoc + FirstRowBlock;
+                                int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
+                                int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
+                                int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
+                                int locBlockRowOffset = (int)(_RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0);
+                                //SpMV_external_blocking[iThread].Stop();
 
-                            foreach(var kv in BlockRow) { // loop over block columns...
+                                foreach(var kv in BlockRow) { // loop over block columns...
 
-                                BlockEntry BE = kv.Value;
-                                long jBlkCol = kv.Key;
-                                Debug.Assert(BE.jBlkCol == jBlkCol);
+                                    BlockEntry BE = kv.Value;
+                                    long jBlkCol = kv.Key;
+                                    Debug.Assert(BE.jBlkCol == jBlkCol);
 
-                                int OwnerRank = -1;
-                                long[,] RcvList = null;
-                                int RcvListBlockRow = 0;
-                                IntPtr RecvBuffer = IntPtr.Zero;
-                                int OffetInto_RecvBuffer = 0;
+                                    int OwnerRank = -1;
+                                    long[,] RcvList = null;
+                                    int RcvListBlockRow = 0;
+                                    IntPtr RecvBuffer = IntPtr.Zero;
+                                    int OffetInto_RecvBuffer = 0;
 
-                                if(!_ColPartitioning.IsLocalBlock(jBlkCol)) {
-                                    //int OwnerProc = _ColPartitioning.FindProcessForBlock(jBlkCol);
-                                    //throw new NotImplementedException("para todo");
+                                    if(!_ColPartitioning.IsLocalBlock(jBlkCol)) {
+                                        //int OwnerProc = _ColPartitioning.FindProcessForBlock(jBlkCol);
+                                        //throw new NotImplementedException("para todo");
 
-                                    //int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
-                                    long j0, jE;
-                                    int _OwnerRank = GetExternalSubblockIndices(_ColPartitioning, jBlkCol, out j0, out jE);
-                                    if(_OwnerRank != OwnerRank) {
-                                        RcvList = ReceiveLists[_OwnerRank];
-                                        RcvListBlockRow = 0;
-                                        OffetInto_RecvBuffer = 0;
-                                        OwnerRank = _OwnerRank;
-                                        int bufferIdx = Array.IndexOf(RecvRanks, OwnerRank);
-                                        RecvBuffer = RecvBuffers[bufferIdx];
-                                    }
-                                    while(RcvList[RcvListBlockRow, 0] < j0) {
-                                        OffetInto_RecvBuffer += (int)(RcvList[RcvListBlockRow, 1] - RcvList[RcvListBlockRow, 0]);
-                                        RcvListBlockRow++;
-                                    }
-                                    Debug.Assert(RcvList[RcvListBlockRow, 0] == j0);
-                                    Debug.Assert(RcvList[RcvListBlockRow, 1] == jE);
+                                        //int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
+                                        long j0, jE;
+                                        int _OwnerRank = GetExternalSubblockIndices(_ColPartitioning, jBlkCol, out j0, out jE);
+                                        if(_OwnerRank != OwnerRank) {
+                                            RcvList = ReceiveLists[_OwnerRank];
+                                            RcvListBlockRow = 0;
+                                            OffetInto_RecvBuffer = 0;
+                                            OwnerRank = _OwnerRank;
+                                            int bufferIdx = Array.IndexOf(RecvRanks, OwnerRank);
+                                            RecvBuffer = RecvBuffers[bufferIdx];
+                                        }
+                                        while(RcvList[RcvListBlockRow, 0] < j0) {
+                                            OffetInto_RecvBuffer += (int)(RcvList[RcvListBlockRow, 1] - RcvList[RcvListBlockRow, 0]);
+                                            RcvListBlockRow++;
+                                        }
+                                        Debug.Assert(RcvList[RcvListBlockRow, 0] == j0);
+                                        Debug.Assert(RcvList[RcvListBlockRow, 1] == jE);
 
-                                    Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
-                                    Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
-                                    int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
-                                    int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
-                                    Debug.Assert(NoOfSblk_Cols == 1);
-                                    Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
-                                    Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
+                                        Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
+                                        Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
+                                        int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
+                                        int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
+                                        Debug.Assert(NoOfSblk_Cols == 1);
+                                        Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
+                                        Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
 
-                                    for(int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
-                                        int MembnkIdx = BE.MembnkIdx[iSblkRow, 0];
-                                        int InMembnk = BE.InMembnk[iSblkRow, 0];
-                                        Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
+                                        for(int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
+                                            int MembnkIdx = BE.MembnkIdx[iSblkRow, 0];
+                                            int InMembnk = BE.InMembnk[iSblkRow, 0];
+                                            Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
-                                        if(InMembnk >= 0) {
-                                            double[] RawMem;
-                                            int Offset, CI, CJ;
-                                            bool isDense;
-                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
-                                            unsafe {
-                                                double* dRecvBuffer = (double*)RecvBuffer;
+                                            if(InMembnk >= 0) {
+                                                double[] RawMem;
+                                                int Offset, CI, CJ;
+                                                bool isDense;
+                                                m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+                                                unsafe {
+                                                    double* dRecvBuffer = (double*)RecvBuffer;
 
-                                                int I = RowLenSblk[iSblkRow];
-                                                int J = (int)(jE - j0);
-                                                Debug.Assert(I == m_Membanks[MembnkIdx].Mem.GetLength(1));
-                                                Debug.Assert(J == m_Membanks[MembnkIdx].Mem.GetLength(2));
-                                                //SpMV_external_innermost[iThread].Start();
-                                                for(int i = 0; i < I; i++) { // loop over sub-block rows...
-                                                    int iRowLoc = locBlockRowOffset + i + Row_i0Sblk[iSblkRow]; // local row index
-                                                    Debug.Assert(iRowLoc >= 0 && iRowLoc < _RowPartitioning.LocalLength);
-                                                    double Accu = 0;
+                                                    int I = RowLenSblk[iSblkRow];
+                                                    int J = (int)(jE - j0);
+                                                    Debug.Assert(I == m_Membanks[MembnkIdx].Mem.GetLength(1));
+                                                    Debug.Assert(J == m_Membanks[MembnkIdx].Mem.GetLength(2));
+                                                    //SpMV_external_innermost[iThread].Start();
+                                                    for(int i = 0; i < I; i++) { // loop over sub-block rows...
+                                                        int iRowLoc = locBlockRowOffset + i + Row_i0Sblk[iSblkRow]; // local row index
+                                                        Debug.Assert(iRowLoc >= 0 && iRowLoc < _RowPartitioning.LocalLength);
+                                                        double Accu = 0;
 
-                                                    for(int j = 0; j < J; j++) { // loop over sub-block columns...
-                                                        int iRcvBuff = OffetInto_RecvBuffer + j;
-                                                        int iStorage = Offset + CI * i + CJ * j; // index into memory bank
+                                                        for(int j = 0; j < J; j++) { // loop over sub-block columns...
+                                                            int iRcvBuff = OffetInto_RecvBuffer + j;
+                                                            int iStorage = Offset + CI * i + CJ * j; // index into memory bank
 #if DEBUG_EXTENDED
                                                     SpMV_indextrans.Start();
                                                     long jColGlob = j0 + j; // global column index
@@ -3347,39 +3355,40 @@ namespace ilPSP.LinSolvers {
                                                     Debug.Assert(iRcvBuff == iList);
 
 #endif
-                                                        //double* dRecvBuffer = (double*)RecvBuffers[bufferIdx];
-                                                        //Accu += RawMem[iStorage] * dRecvBuffer[iList];
+                                                            //double* dRecvBuffer = (double*)RecvBuffers[bufferIdx];
+                                                            //Accu += RawMem[iStorage] * dRecvBuffer[iList];
 
-                                                        Accu += RawMem[iStorage] * dRecvBuffer[iRcvBuff];
+                                                            Accu += RawMem[iStorage] * dRecvBuffer[iRcvBuff];
+                                                        }
+
+                                                        acc[iRowLoc] += alpha * Accu;
                                                     }
+                                                    //SpMV_external_innermost[iThread].Stop();
 
-                                                    acc[iRowLoc] += alpha * Accu;
                                                 }
-                                                //SpMV_external_innermost[iThread].Stop();
-
                                             }
                                         }
                                     }
-                                }
-                            } // end loop over block columns
-                        }
-                        //SpMV_external_membank[iThread].Stop();
-                    }, enablePar: true);
-                    SpMV_external.Stop();
+                                } // end loop over block columns
+                            }
+                            //SpMV_external_membank[iThread].Stop();
+                        }, enablePar: true);
+                        SpMV_external.Stop();
 
+                    }
+                    // free temp buffers
+                    // =================
+                    {
+                        foreach(IntPtr b in SendBuffers)
+                            Marshal.FreeHGlobal(b);
+                        foreach(IntPtr b in RecvBuffers)
+                            Marshal.FreeHGlobal(b);
+                    }
+
+
+
+                    SPMV_tot.Stop();
                 }
-                // free temp buffers
-                // =================
-                {
-                    foreach(IntPtr b in SendBuffers)
-                        Marshal.FreeHGlobal(b);
-                    foreach(IntPtr b in RecvBuffers)
-                        Marshal.FreeHGlobal(b);
-                }
-
-
-
-                SPMV_tot.Stop();
             }
         }
 
