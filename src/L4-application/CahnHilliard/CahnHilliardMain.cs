@@ -580,7 +580,7 @@ namespace BoSSS.Application.CahnHilliard {
             }
         }
 
-
+        /* was effectively inactive for a long time, therefore completely deactivated now (fk, 11jul25)
         /// <summary>
         /// control of mesh adaptation
         /// </summary>
@@ -596,18 +596,18 @@ namespace BoSSS.Application.CahnHilliard {
 
 
                 int MyLevelIndicator(int j, int CurrentLevel) {
-                    /*
-                    double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
+                    
+                    //double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
 
 
-                    if (j == 0)
-                        CurrentLevel = CurrentLevel + 1;
+                    //if (j == 0)
+                    //    CurrentLevel = CurrentLevel + 1;
 
-                    if (CellNorm > MeanNormPow2PerCell * 1.1)
-                        return CurrentLevel + 1;
-                    else
-                        return CurrentLevel;
-                    */
+                    //if (CellNorm > MeanNormPow2PerCell * 1.1)
+                    //    return CurrentLevel + 1;
+                    //else
+                    //    return CurrentLevel;
+                    
 
                     return 0;
                 }
@@ -627,7 +627,7 @@ namespace BoSSS.Application.CahnHilliard {
                     NoOfCellsToRefine = glb[0];
                     NoOfCellsToCoarsen = glb[1];
                 }
-                //*/
+                
 
 
                 // Update Grid
@@ -652,7 +652,7 @@ namespace BoSSS.Application.CahnHilliard {
                 old2NewGrid = null;
             }
         }
-
+        */
 
         /// <summary>
         /// Single run of the solver

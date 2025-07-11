@@ -728,12 +728,17 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int sz);
             if(sz <= 1)
                 return true;
-
-            int glob = int.MaxValue;
+            
             unsafe {
-                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
+                int* ii = stackalloc int[2];
+                ii[0] = i;
+                ii[1] = -i; // by taking the max of the negative, we are computing the min
+                int* glob = stackalloc int[2];
+                csMPI.Raw.Allreduce(((IntPtr)(ii)), ((IntPtr)(glob)), 2, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, comm);
+
+                // all are equal, if minimum and maximum are equal to i
+                return glob[0] == i && glob[1] == -i;
             }
-            return glob == i*sz ? true : false;
         }
 
         /// <summary>
@@ -776,8 +781,7 @@ namespace MPI.Wrappers {
         /// </summary>
         /// <param name="i"></param>
         /// <returns></returns>
-        static public bool[] MPIEquals(this int[] i)
-        {
+        static public bool[] MPIEquals(this int[] i) {
             return MPIEquals(i, csMPI.Raw._COMM.WORLD);
         }
 

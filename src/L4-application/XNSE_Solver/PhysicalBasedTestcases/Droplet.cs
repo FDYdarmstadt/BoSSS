@@ -3197,18 +3197,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if(D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 0);
-                    double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 0);
+                    double[] Xnodes = GenericBlas.Linspace(-xSize * 0.5, xSize*0.5, kelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(-ySize * 0.5, ySize*0.5, kelem + 1);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                     grd.DefineEdgeTags(delegate (double[] X) {
-                        if(Math.Abs(X[1]) <= 1.0e-8)
+                        if(Math.Abs(X[1] + ySize*0.5) <= 1.0e-8)
                             return "navierslip_linear_lower";
-                        if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        if(Math.Abs(X[1] - ySize*0.5) <= 1.0e-8)
                             return "navierslip_linear_upper";
-                        if(Math.Abs(X[0]) <= 1.0e-8)
+                        if(Math.Abs(X[0] + xSize*0.5) <= 1.0e-8)
                             return "navierslip_linear_left";
-                        if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        if(Math.Abs(X[0] - xSize*0.5) <= 1.0e-8)
                             return "navierslip_linear_right";
 
                         throw new ArgumentOutOfRangeException("unable to determine edge name.");
@@ -3218,9 +3218,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 };
             } else if(D == 3) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
-                    double[] Ynodes = GenericBlas.Linspace(0, ySize, kelem + 1);
-                    double[] Znodes = GenericBlas.Linspace(0, zSize, kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(-xSize * 0.5, xSize * 0.5, kelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(-ySize * 0.5, ySize * 0.5, kelem + 1);
+                    double[] Znodes = GenericBlas.Linspace(-zSize * 0.5, zSize * 0.5, kelem + 1);
                     var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
                     grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
@@ -3232,17 +3232,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
-                        if(Math.Abs(X[2]) <= 1.0e-8)
+                        if(Math.Abs(X[2] + zSize*0.5) <= 1.0e-8)
                             return "navierslip_linear_lower";
-                        if(Math.Abs(X[2] - zSize) <= 1.0e-8)
+                        if(Math.Abs(X[2] - zSize * 0.5) <= 1.0e-8)
                             return "navierslip_linear_upper";
-                        if(Math.Abs(X[0]) <= 1.0e-8)
+                        if(Math.Abs(X[0] + xSize * 0.5) <= 1.0e-8)
                             return "navierslip_linear_left";
-                        if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        if(Math.Abs(X[0] - xSize * 0.5) <= 1.0e-8)
                             return "navierslip_linear_right";
-                        if(Math.Abs(X[1]) <= 1.0e-8)
+                        if(Math.Abs(X[1] + ySize * 0.5) <= 1.0e-8)
                             return "navierslip_linear_front";
-                        if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        if(Math.Abs(X[1] - ySize * 0.5) <= 1.0e-8)
                             return "navierslip_linear_back";
 
                         throw new ArgumentOutOfRangeException("unable to determine edge name.");
@@ -3270,11 +3270,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double prescribedVel = 0.0;
 
             if(D == 2) {
-                double[] center_0 = new double[] { xSize / 2.0, ySize / 2.0 };
+                double[] center_0 = [0, 0];
                 prescribedVel = ySize / 2.1;
                 PhiFunc = ((X, t) => ((X[0] - (center_0[0] + (0.0 * prescribedVel))).Pow2() + (X[1] - (center_0[1] - (t * prescribedVel))).Pow2()).Sqrt() - R);
             } else if(D == 3) {
-                double[] center_0 = new double[] { xSize / 2.0, ySize / 2.0, zSize / 2.0 };
+                double[] center_0 = [0, 0, 0];
                 prescribedVel = zSize / 2.0;
                 PhiFunc = ((X, t) => ((X[0] - center_0[0]).Pow2() + (X[1] - center_0[1]).Pow2() + (X[2] - (center_0[2] - (t * prescribedVel))).Pow2()).Sqrt() - R);
             } else {
@@ -3349,6 +3349,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
+            // Adaptive Mesh Refinement (AMR)
+            // ==============================
+
+            #region amr_config
+
+            C.AdaptiveMeshRefinement = true;
+            C.AMR_startUpSweeps = 3;
+            C.activeAMRlevelIndicators.Add(
+                new AMRonNarrowband() { bandwidth = 0, maxRefinementLevel = 2 }
+                );
+
+            #endregion
 
             // Timestepping
             // ============

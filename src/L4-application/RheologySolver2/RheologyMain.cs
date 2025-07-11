@@ -1190,60 +1190,62 @@ namespace BoSSS.Application.Rheology {
         //ADAPTIVE MESH REFINEMENT
         //======================================================================
 
+        /* code seems to be inactive - fully deactivated (fk, 11jul25)
+
         /// <summary>
         /// refinement indicator
         /// </summary>
         int LevelIndicator(int j, int CurrentLevel) {
-            /*
-            if (this.Control.UsePerssonSensor) {
+            
+            //if (this.Control.UsePerssonSensor) {
 
-                double maxVal = this.perssonsensor.GetValue(j);
+            //    double maxVal = this.perssonsensor.GetValue(j);
 
-                double[] coord = this.GridData.iGeomCells.GetCenter(j);
+            //    double[] coord = this.GridData.iGeomCells.GetCenter(j);
 
-                //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement behind the cylinder!
-                double upperbound = this.Control.SensorLimit;
-                double lowerbound = upperbound * 0.001;
+            //    //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement behind the cylinder!
+            //    double upperbound = this.Control.SensorLimit;
+            //    double lowerbound = upperbound * 0.001;
 
-                int DesiredLevel_j = CurrentLevel;
+            //    int DesiredLevel_j = CurrentLevel;
 
-                if (maxVal != 0.0) {
-                    if (maxVal > upperbound && DesiredLevel_j < this.Control.RefinementLevel) {
+            //    if (maxVal != 0.0) {
+            //        if (maxVal > upperbound && DesiredLevel_j < this.Control.RefinementLevel) {
 
-                        DesiredLevel_j = DesiredLevel_j + 1;
+            //            DesiredLevel_j = DesiredLevel_j + 1;
 
-                    } else if (maxVal < lowerbound && DesiredLevel_j > 0) {
-                        DesiredLevel_j = DesiredLevel_j - 1;
-                    }
-                } else {
-                    if (Math.Abs(coord[0] - 10) < 2 && DesiredLevel_j < 2) // this.Control.RefinementLevel)
-                        DesiredLevel_j = DesiredLevel_j + 1;
-                }
+            //        } else if (maxVal < lowerbound && DesiredLevel_j > 0) {
+            //            DesiredLevel_j = DesiredLevel_j - 1;
+            //        }
+            //    } else {
+            //        if (Math.Abs(coord[0] - 10) < 2 && DesiredLevel_j < 2) // this.Control.RefinementLevel)
+            //            DesiredLevel_j = DesiredLevel_j + 1;
+            //    }
 
-                return DesiredLevel_j;
+            //    return DesiredLevel_j;
 
-            } else {
+            //} else {
 
-                double celllength = ((GridData)GridData).Cells.cj[j];
-                double maxVal = this.StressXX.GetMeanValue(j) / celllength;  // this.perssonsensor.GetValue(j);
+            //    double celllength = ((GridData)GridData).Cells.cj[j];
+            //    double maxVal = this.StressXX.GetMeanValue(j) / celllength;  // this.perssonsensor.GetValue(j);
 
-                //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement behind the cylinder!
-                double upperbound = this.Control.SensorLimit / celllength;
-                double lowerbound = -1 * this.Control.SensorLimit / celllength;
+            //    //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement behind the cylinder!
+            //    double upperbound = this.Control.SensorLimit / celllength;
+            //    double lowerbound = -1 * this.Control.SensorLimit / celllength;
 
-                int DesiredLevel_j = CurrentLevel;
+            //    int DesiredLevel_j = CurrentLevel;
 
-                if (maxVal > upperbound && DesiredLevel_j < this.Control.RefinementLevel) {
+            //    if (maxVal > upperbound && DesiredLevel_j < this.Control.RefinementLevel) {
 
-                    DesiredLevel_j = DesiredLevel_j + 1;
+            //        DesiredLevel_j = DesiredLevel_j + 1;
 
-                } else if (maxVal < lowerbound && DesiredLevel_j > 0) {
-                    DesiredLevel_j = DesiredLevel_j - 1;
-                }
+            //    } else if (maxVal < lowerbound && DesiredLevel_j > 0) {
+            //        DesiredLevel_j = DesiredLevel_j - 1;
+            //    }
 
-                return DesiredLevel_j;
-            }
-            */
+            //    return DesiredLevel_j;
+            //}
+            
             return 0;
         }
 
@@ -1293,6 +1295,7 @@ namespace BoSSS.Application.Rheology {
                 old2NewGrid = null;
             }
         }
+        */
 
         /// <summary>
         /// Appends the <see cref="currentWeissenberg"/> number to the timestep

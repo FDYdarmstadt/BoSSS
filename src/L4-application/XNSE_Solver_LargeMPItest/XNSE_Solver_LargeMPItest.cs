@@ -35,6 +35,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
 
+
 namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
@@ -103,11 +104,22 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// Testing adaptive mesh refinement in a parallel 
+        /// Testing adaptive mesh refinement in a MPI-parallel environment
         /// </summary>
         [Test]
         public static void AMRtest() {
+            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.DropletOnPlate_AMRtest(D:2, p:2, kelem:8);
+            C.NoOfTimesteps = 1;
 
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 0;
+
+            using(var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                BoSSS.Foundation.AMRtests.MeshSymmetryTest(solver.Grid);
+            }
         }
 
 
@@ -117,8 +129,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
-            ParallelRotatingSphere();
-            ParallelRotatingTilted3DTorus();
+            AMRtest();
+            //ParallelRotatingSphere();
+            //ParallelRotatingTilted3DTorus();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

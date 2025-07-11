@@ -75,7 +75,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Computes refinement and coarsening lists 
         /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
-        /// based on the max refinement level provided by the calling solver. This method is fully parallized.
+        /// based on the max refinement level provided by the calling solver. This method is fully parallelized.
         /// </summary>
         /// <param name="localCellsToRefine">
         /// Output, local indices of cells which should be refined.
@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.Grid {
                 long[][] globalCellNeigbourship = GetGlobalCellNeigbourship();
                 BitArray cutCellsWithNeighbours = GetGlobalNearBand(globalCellNeigbourship);
 
-                int[] globalRefinementLevel = GetGlobalRefinementLevel(globalCellNeigbourship, cutCellsWithNeighbours, LocalDesiredLevel);
+                int[] globalRefinementLevel = GetGlobalRefinementLevel(globalCellNeigbourship, cutCellsWithNeighbours, LocalDesiredLevel, out int changes);
                 localCellsToRefine = GetCellsToRefine(globalRefinementLevel);
 
                 localCellsToCoarsen = GetCellsToCoarsen(globalRefinementLevel, globalCellNeigbourship, cutCellsWithNeighbours);
@@ -104,6 +104,7 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
+        /*
         /// <summary>
         /// Computes refinement and coarsening lists 
         /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
@@ -135,6 +136,7 @@ namespace BoSSS.Foundation.Grid {
                 return (anyChangeInGrid);
             }
         }
+        */
 
         /// <summary>
         /// Computes the global cell neighbourship of all cells. 
@@ -221,14 +223,15 @@ namespace BoSSS.Foundation.Grid {
         
 
         /// <summary>
-        /// Computes the level indicator for each cell (mpi global). 
+        /// Computes the level indicator for each cell (MPI global). 
         /// </summary>
         /// <param name="globalNeighbourship"></param>
         /// <param name="cutCellsWithNeighbours"></param>
         /// <param name="LocalDesiredLevel"></param>
-        private int[] GetGlobalRefinementLevel(long[][] globalNeighbourship, BitArray cutCellsWithNeighbours, int[] LocalDesiredLevel) {
+        private int[] GetGlobalRefinementLevel(long[][] globalNeighbourship, BitArray cutCellsWithNeighbours, int[] LocalDesiredLevel, out int changes) {
             using(new FuncTrace()) {
-                int[] globalDesiredLevel = GetGlobalDesiredLevel(cutCellsWithNeighbours, LocalDesiredLevel);
+                changes = 0;
+                int[] globalDesiredLevel = GetGlobalDesiredLevel(cutCellsWithNeighbours, LocalDesiredLevel, ref changes);
                 int[] globalCurrentLevel = GetGlobalCurrentLevel();
                 int[] globalRefinementLevel = new int[GlobalNumberOfCells];
                 Debug.Assert(globalRefinementLevel.Length == globalCurrentLevel.Length);
@@ -250,15 +253,16 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <param name="cutCellsWithNeighbours"></param>
         /// <param name="CellRefinementLevel"></param>
-        private int[] GetGlobalDesiredLevel(BitArray cutCellsWithNeighbours, int[] CellRefinementLevel) {
+        private int[] GetGlobalDesiredLevel(BitArray cutCellsWithNeighbours, int[] CellRefinementLevel, ref int changes) {
             using(new FuncTrace()) {
                 int[] globalDesiredLevel = new int[GlobalNumberOfCells];
                 int levelSetMaxLevel = CellRefinementLevel.Max().MPIMax();
 
                 for(int j = 0; j < LocalNumberOfCells; j++) {
                     int globalIndex = checked((int)(j + myI0));
-                    if(CellRefinementLevel[j] > 0 && globalDesiredLevel[globalIndex] <= CellRefinementLevel[j])
+                    if(CellRefinementLevel[j] > 0 && globalDesiredLevel[globalIndex] <= CellRefinementLevel[j]) {
                         globalDesiredLevel[globalIndex] = CellRefinementLevel[j];
+                    }
 
                     if(cutCellsWithNeighbours[globalIndex]) {
                         globalDesiredLevel[globalIndex] = levelSetMaxLevel;
@@ -281,6 +285,39 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
+        /*
+        /// <summary>
+        /// Calculates the desired level for each global cell. Note that the desired level can only increase by 1 compared to the current level of the cell.
+        /// </summary>
+        /// <param name="levelIndicator">
+        /// The level indicator func provided by the calling solver.
+        /// </param>
+        /// <param name="globalNeighbourship">
+        /// Jagged int-array where the first index refers to the current cell and the second one to the neighbour cells.
+        /// </param>
+        private int[] GetGlobalDesiredLevel(Func<int, int, int> levelIndicator, long[][] globalNeighbourship) {
+            int[] globalDesiredLevel = new int[GlobalNumberOfCells];
+
+            int[] globalCurrentLevel = GetGlobalCurrentLevel();
+
+            for(int globalCellIndex = 0; globalCellIndex < GlobalNumberOfCells; globalCellIndex++) {
+                int localCellIndex = globalCellIndex - (int)myI0;
+
+                int currentLevel_j = globalCurrentLevel[globalCellIndex];
+
+                int desiredLevel_j = (localCellIndex < LocalNumberOfCells && localCellIndex >= 0) ? levelIndicator(localCellIndex, currentLevel_j) : 0;
+                desiredLevel_j = desiredLevel_j.MPIMax();
+
+                if(globalDesiredLevel[globalCellIndex] <= desiredLevel_j) {
+                    globalDesiredLevel[globalCellIndex] = desiredLevel_j;
+                    RefineNeighboursRecursive(currentLevel_j, globalDesiredLevel, globalCellIndex, desiredLevel_j - 1, globalNeighbourship, globalCurrentLevel);
+                }
+            }
+            return globalDesiredLevel;
+        }
+        */
+
+
         /// <summary>
         /// Gets the current refinement level for each global cell.
         /// </summary>
@@ -296,6 +333,7 @@ namespace BoSSS.Foundation.Grid {
                 int[][] exchangeGlobalCurrentLevel = localCurrentLevel.MPIGatherO(0);
                 exchangeGlobalCurrentLevel = exchangeGlobalCurrentLevel.MPIBroadcast(0);
 
+
                 for(int m = 0; m < CurrentGrid.MpiSize; m++) {
                     for(int j = 0; j < exchangeGlobalCurrentLevel[m].Length; j++) {
                         globalCurrentLevel[j + i0[m]] = exchangeGlobalCurrentLevel[m][j];
@@ -307,14 +345,15 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Recursive computation for the desired level of each global cell.
+        /// Recursive computation for the desired level of each global cell,
+        /// i.e., ensures that if some cell has refinement level n, that all neighbors have at least n-1.
         /// </summary>
         /// <param name="globalCellIndex">
         /// The global index of the current cell.
         /// </param>
         /// <param name="desiredLevel"></param>
         /// <param name="globalNeighbourship">
-        /// Jagged int-array where the first index refers to the current cell and the second one to the neighbour cells.
+        /// Jagged int-array where the first index refers to the current cell and the second one to the neighbor cells.
         /// </param>
         /// <param name="globalRefinementLevel"></param>
         private void GetRefinementLevelRecursive(long globalCellIndex, int desiredLevel, long[][] globalNeighbourship, int[] globalRefinementLevel) {
@@ -636,35 +675,7 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
-        /// <summary>
-        /// Calculates the desired level for each global cell. Note that the desired level can only increase by 1 compared to the current level of the cell.
-        /// </summary>
-        /// <param name="levelIndicator">
-        /// The level indicator func provided by the calling solver.
-        /// </param>
-        /// <param name="globalNeighbourship">
-        /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
-        /// </param>
-        private int[] GetGlobalDesiredLevel(Func<int, int, int> levelIndicator, long[][] globalNeighbourship) {
-            int[] globalDesiredLevel = new int[GlobalNumberOfCells];
-
-            int[] globalCurrentLevel = GetGlobalCurrentLevel();
-
-            for (int globalCellIndex = 0; globalCellIndex < GlobalNumberOfCells; globalCellIndex++) {
-                int localCellIndex = globalCellIndex - (int)myI0;
-
-                int currentLevel_j = globalCurrentLevel[globalCellIndex];
-
-                int desiredLevel_j = (localCellIndex < LocalNumberOfCells && localCellIndex >= 0) ? levelIndicator(localCellIndex, currentLevel_j) : 0;
-                desiredLevel_j = desiredLevel_j.MPIMax();
-
-                if (globalDesiredLevel[globalCellIndex] <= desiredLevel_j) {
-                    globalDesiredLevel[globalCellIndex] = desiredLevel_j;
-                    RefineNeighboursRecursive(currentLevel_j, globalDesiredLevel, globalCellIndex, desiredLevel_j - 1, globalNeighbourship, globalCurrentLevel);
-                }
-            }
-            return globalDesiredLevel;
-        }
+       
 
 
     }

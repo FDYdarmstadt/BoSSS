@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Collections;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
@@ -40,11 +41,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             int J = GridData.CellPartitioning.LocalLength;
             int[] levels = new int[J];
 
-            CellMask band;
+            BitArray band;
             if (levelSet == -1) {
-                band = this.LsTrk.Regions.GetNearFieldMask(bandwidth);
+                band = this.LsTrk.Regions.GetNearFieldMask(bandwidth).GetBitMask();
             } else {
-                band = this.LsTrk.Regions.GetNearMask4LevSet(levelSet, bandwidth);
+                band = this.LsTrk.Regions.GetNearMask4LevSet(levelSet, bandwidth).GetBitMask();
             }
 
             int cellsToRefine = 0;
@@ -52,10 +53,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             Cell[] cells = GridData.Grid.Cells;
             for (int j = 0; j < J; j++) {
                 int currentLevel = cells[j].RefinementLevel;
-                if (band.Contains(j) && currentLevel < maxRefinementLevel) {
+                if(band[j] && currentLevel < maxRefinementLevel) {
                     levels[j] = 1;
                     cellsToRefine++;
-                } else if (!band.Contains(j) && currentLevel > 0) {
+                } else if (!band[j] && currentLevel > 0) {
                     levels[j] = -1;
                     cellsToCoarse++;
                 }

@@ -66,7 +66,7 @@ namespace BoSSS.Application.XRheology_Solver {
     /// <summary>
     /// Solver for Incompressible Multiphase flows
     /// </summary>
-    public class XRheology_SolverMain : BoSSS.Application.XNSE_Solver.XBase_Solver<XRheology_Control> {
+    public class XRheology_SolverMain : XBase_Solver<XRheology_Control> {
 
 
 
@@ -1718,7 +1718,7 @@ namespace BoSSS.Application.XRheology_Solver {
         }
 
 
-
+        /*
         // =========================
         // adaptive mesh refinement
         // ========================
@@ -1994,7 +1994,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             }
         }
-
+        */
 
         /// <summary>
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
@@ -2003,11 +2003,6 @@ namespace BoSSS.Application.XRheology_Solver {
         public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
         }
-
-
-
-
-        #endregion
 
 
         // =========
