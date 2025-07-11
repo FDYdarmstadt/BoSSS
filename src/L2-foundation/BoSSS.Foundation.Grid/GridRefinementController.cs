@@ -107,6 +107,7 @@ namespace BoSSS.Foundation.Grid {
                 bool anyChangeInGrid = (localCellsToRefine.Count() == 0 && localCellsToCoarsen.Count() == 0) ? false : true;
                 return anyChangeInGrid.MPIOr();
             }
+
         }
 
         void VerifyPeriodicCoarsening(List<int[]> localCellsToCoarsen) {
