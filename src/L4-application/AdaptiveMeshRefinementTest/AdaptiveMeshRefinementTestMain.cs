@@ -228,33 +228,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             }
         }
 
-        /*
-        //bool LevelReminder = false;
-
-        /// <summary>
-        /// Very primitive refinement indicator, works on a gradient criterion.
-        /// </summary>
-        int LevelIndicator(int j, int CurrentLevel) {
-            double GradMag = MagGrad_u.GetMeanValue(j);
-
-            int DesiredLevel_j = 0;
-            if(GradMag > 0.6)
-                DesiredLevel_j = 1;
-            if(GradMag > 0.81)
-                DesiredLevel_j = 2;
-
-            //if(DesiredLevel_j < CurrentLevel) {
-            //    DesiredLevel_j = CurrentLevel;
-            //    if(!LevelReminder) {
-            //        Console.WriteLine("Reminder: coarsening disabled");
-            //        LevelReminder = true;
-            //    }
-            //}
-
-            return DesiredLevel_j;
-            
-        }
-        */
+        
 
         /// <summary>
         /// provides mesh levels for two-level adaptive mesh refinement, based on a gradient-criterion
