@@ -865,9 +865,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPISize {
             get {
-                int size;
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-                return size;
+                return csMPI.Size_World;
             }
         }
 
@@ -877,9 +875,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPIRank {
             get {
-                int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                return rank;
+                return csMPI.Rank_World;
             }
         }
 

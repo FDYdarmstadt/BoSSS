@@ -1370,6 +1370,23 @@ namespace MPI.Wrappers {
             return MPIAllGatherv(send, csMPI.Raw._COMM.WORLD);
         }
 
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public long[] MPIAllGatherv(this long[] send, MPI_Comm comm) {
+            int sz = send.Length;
+            int[] AllSz = sz.MPIAllGather(comm);
+            return MPIAllGatherv(send, AllSz, comm);
+        }
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public long[] MPIAllGatherv(this long[] send) {
+            return MPIAllGatherv(send, csMPI.Raw._COMM.WORLD);
+        }
+
+
 
         /// <summary>
         /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
@@ -1440,14 +1457,14 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// Gathers all double[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
         static public double[] MPIAllGatherv(this double[] send, int[] recvcounts) {
             return send.Double_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
 
         /// <summary>
-        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// Gathers all double[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
         static public double[] MPIAllGatherv(this double[] send, int[] recvcounts, MPI_Comm comm) {
             return send.Double_MPIAllGatherv(recvcounts, comm);
@@ -1489,6 +1506,59 @@ namespace MPI.Wrappers {
 
             return result;
         }
+
+        /*
+        /// <summary>
+        /// Gathers all double[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public double[] MPIAllGatherv(this double[] send, int[] recvcounts) {
+            return send.Double_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers all double[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public long[] MPIAllGatherv(this long[] send, int[] recvcounts, MPI_Comm comm) {
+            return send.Long_MPIAllGatherv(recvcounts, comm);
+        }
+
+        /// <summary>
+        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// </summary>
+        static private double[] Long_MPIAllGatherv(this long[] send, int[] m_recvcounts, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            int rcs = m_recvcounts.Sum();
+            if(rcs == 0)
+                return new double[0];
+
+
+            double[] result = new double[rcs];
+            if(send.Length == 0)
+                send = new double[1];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for(int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + m_recvcounts[i - 1];
+                }
+                fixed(double* pResult = result, pSend = send) {
+                    fixed(int* pRcvcounts = m_recvcounts) {
+                        csMPI.Raw.Allgatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.DOUBLE,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.DOUBLE,
+                            comm);
+                    }
+                }
+            }
+
+            return result;
+        }
+        */
 
 
         /// <summary>
@@ -1540,13 +1610,13 @@ namespace MPI.Wrappers {
         /// Gathers all ulong[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
         static public ulong[] MPIAllGatherv(this ulong[] send, int[] recvcounts) {
-            return send.Long_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+            return send.ULong_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
 
         /// <summary>
         /// Gathers all send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
-        static private ulong[] Long_MPIAllGatherv(this ulong[] send, int[] m_recvcounts, MPI_Comm comm) {
+        static private ulong[] ULong_MPIAllGatherv(this ulong[] send, int[] m_recvcounts, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             int rcs = m_recvcounts.Sum();
             if (rcs == 0)
@@ -1586,6 +1656,13 @@ namespace MPI.Wrappers {
         /// </summary>
         static public long[] MPIAllGatherv(this long[] send, int[] recvcounts) {
             return send.Long_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers all long[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public long[] MPIAllGatherv(this long[] send, int[] recvcounts, MPI_Comm comm) {
+            return send.Long_MPIAllGatherv(recvcounts, comm);
         }
 
         /// <summary>

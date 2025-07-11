@@ -39,7 +39,9 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         /// <param name="cellsToCoarse">
         /// All coarsening clusters with their related cells;
-        /// 
+        /// - 1st index: enumeration over coarse cell of the output mesh
+        /// - 2nd index: enumeration over parts that should be joined together
+        /// - content: enumeration of cells which shall be combined into the <see cref="Cell.ParentCell"/>
         /// </param>
         /// <param name="Old2New">
         /// The correlation between the old and the new grid.
@@ -928,7 +930,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Restores the coarsed cell from the finer cells in the coarsening cluster.
+        /// Restores the coarse cell from the finer cells in the coarsening cluster.
         /// </summary>
         private void CoarseCells(GridCorrelation Old2New, List<Cell> cellsInNewGrid, Cell[][] adaptedCells, int[] cellClusterID) {
             Cell[] currentCellClusterToCoarsen = cellClusterID.Select(j => Cells.GetCell(j)).ToArray();
