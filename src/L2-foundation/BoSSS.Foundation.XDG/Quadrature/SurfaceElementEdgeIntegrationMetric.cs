@@ -9,14 +9,14 @@ using System.Text;
 namespace BoSSS.Foundation.XDG.Quadrature {
 
     /// <summary>
-    /// Integration metric for $D-2$-dimensional integral the boundary of surface elements for each edge.
+    /// Integration metric for $D - 2$-dimensional integral the boundary of surface elements for each edge.
     /// This is a point in 2D and a line in 3D,
     /// i.e., for an edge $e_i$ an integral of the type
     /// \[
     ///    \int_{e_j \cap \mathfrak{I}}  f \mathrm{dl} .
     /// \]
     /// </summary>
-    internal class SurfaceElementEdgeIntegrationMetric : IIntegrationMetric {
+    public class SurfaceElementEdgeIntegrationMetric : IIntegrationMetric {
 
 
         public SurfaceElementEdgeIntegrationMetric(LevelSetTracker.LevelSetData levelSetData) {

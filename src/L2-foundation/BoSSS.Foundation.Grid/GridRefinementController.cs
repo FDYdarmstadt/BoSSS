@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -50,7 +51,7 @@ namespace BoSSS.Foundation.Grid {
         /// Cut cells will have always the max refinement level. Null is a valid input if no level-set is used.
         /// </param>
         /// <param name="cellsNotOK2Coarsen">
-        /// Cells which are not allowed to be coarsend. It is not necessary to include cut cells here, as they are handled by the cutCells CellMask.
+        /// Cells which are not allowed to be coarsened. It is not necessary to include cut cells here, as they are handled by the cutCells CellMask.
         /// </param>
         /// <param name="EnsureHighestLevelAtPeriodicBoundary"></param>
         public GridRefinementController(GridData CurrentGrid, CellMask CutCells, CellMask cellsNotOK2Coarsen = null, bool EnsureHighestLevelAtPeriodicBoundary = false) {
@@ -101,6 +102,7 @@ namespace BoSSS.Foundation.Grid {
 
                 // coarsening of those cells where refinement is not needed (anymore)
                 localCellsToCoarsen = GetCellsToCoarsen(globalRefinementLevel, globalCellNeigbourship, cutCellsWithNeighbours);
+                localCellsToCoarsen = FixPeriodicCoarsening(localCellsToCoarsen);
                 VerifyPeriodicCoarsening(localCellsToCoarsen);
 
                 // return 
@@ -109,6 +111,105 @@ namespace BoSSS.Foundation.Grid {
             }
 
         }
+
+        /// <summary>
+        /// Removes a coarsening cluster if it 
+        /// </summary>
+        List<int[]> FixPeriodicCoarsening(List<int[]> localCellsToCoarsen) {
+            using(var tr = new FuncTrace()) {
+                if(this.CurrentGrid.Grid.PeriodicTrafo.Count <= 0)
+                    return localCellsToCoarsen; // no need to check periodicity
+
+
+                int Nupdate = CellPartitioning.LocalLength;
+                long myI0 = CellPartitioning.i0;
+                long GlobalNumberOfCells = CellPartitioning.TotalLength;
+
+
+                long[] allCellsToCoarsen;
+                Partitioning allCellsToCoarsenPartition;
+                int[] localCell2CoarseningCluster = new int[Nupdate];
+                {
+                    localCell2CoarseningCluster.SetAll(-10000001);
+
+                    List<long> _allCellsToCoarsen = new List<long>();
+                    int icc = 0;
+                    foreach(var CoarsenCluster in localCellsToCoarsen) {
+                        foreach(int j in CoarsenCluster) {
+                            if(j < 0 || j >= Nupdate)
+                                throw new ApplicationException("unable to coarsen external cell");
+
+                            _allCellsToCoarsen.Add(j + myI0);
+                            localCell2CoarseningCluster[j] = icc;
+                        }
+                        icc++;
+                    }
+
+                    allCellsToCoarsen = _allCellsToCoarsen.ToArray().MPIAllGatherv();
+                    allCellsToCoarsenPartition = new Partitioning(_allCellsToCoarsen.Count);
+                }
+
+                BitArray allCellsToCoarsen_mask = new BitArray(checked((int)GlobalNumberOfCells));
+                foreach(long jGlob in allCellsToCoarsen) {
+                    allCellsToCoarsen_mask[checked((int)jGlob)] = true;
+                }
+
+
+                int[,] E2C = this.CurrentGrid.Edges.CellIndices;
+                byte[] tags = this.CurrentGrid.Edges.EdgeTags;
+                long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
+
+
+                int NoOfEdges = tags.Length;
+                bool anyRemoved = false; ;
+                for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) { // loop over local edges...
+                    byte tag = tags[iEdge];
+                    if(tag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
+                        // found some periodic edge
+                        int jCell0_loc = E2C[iEdge, 0];
+                        int jCell1_loc = E2C[iEdge, 1];
+
+                        if(jCell0_loc >= Nupdate)
+                            throw new ApplicationException("at an periodic edge, the 0-th cell is supposed to be local");
+                        long jCell0_glb = jCell0_loc + myI0;
+                        long jCell1_glb = jCell1_loc < Nupdate ? jCell1_loc + myI0 : externalCellsGlobalIndices[jCell1_loc - Nupdate];
+
+
+                        if(allCellsToCoarsen_mask[checked((int)jCell0_glb)] != allCellsToCoarsen_mask[checked((int)jCell1_glb)]) {
+                            // the respective coarsening cluster has to be removed...
+                            if(allCellsToCoarsen_mask[checked((int)jCell0_glb)] && jCell0_loc < Nupdate) {
+                                localCellsToCoarsen[localCell2CoarseningCluster[jCell0_loc]] = null;
+                            }
+                            if(allCellsToCoarsen_mask[checked((int)jCell1_glb)] && jCell1_loc < Nupdate) {
+                                localCellsToCoarsen[localCell2CoarseningCluster[jCell1_loc]] = null;
+                            }
+                            anyRemoved = true;
+                        }
+                    }
+                }
+                tr.InfoToConsole = true;
+                
+                // return
+                // ======
+
+                tr.Info("Found hanging nodes on periodic edges? " + anyRemoved);
+                if(anyRemoved) {
+                    var ret = new List<int[]>();
+                    foreach(var rii in localCellsToCoarsen) {
+                        if(rii != null)
+                            ret.Add(rii);
+                    }
+                    return ret;
+                } else {
+                    return localCellsToCoarsen;
+                }
+
+
+
+            }
+        }
+
+
 
         void VerifyPeriodicCoarsening(List<int[]> localCellsToCoarsen) {
             using(var tr = new FuncTrace()) {
@@ -461,10 +562,6 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Returns local cells to coarsen
         /// </summary>
-        /// <param name="globalRefinementLevel"></param>
-        /// <param name="globalCellNeigbourship"></param>
-        /// <param name="cutCellsWithNeighbours">
-        /// </param>
         private List<int[]> GetCellsToCoarsen(int[] globalRefinementLevel, long[][] globalCellNeigbourship, BitArray cutCellsWithNeighbours) {
             using(new FuncTrace()) {
                 int LocalNumberOfCells = this.CurrentGrid.Cells.NoOfLocalUpdatedCells;
@@ -531,6 +628,18 @@ namespace BoSSS.Foundation.Grid {
                     oK2Coarsen[j] = false;
                 }
             }
+
+            var oK2Coarsen_b4 = oK2Coarsen.CloneAs();
+            oK2Coarsen.MPIOr();
+
+            bool changed = false;
+            for(int j = 0; j < oK2Coarsen.Length; j++) {
+                if(oK2Coarsen[j] != oK2Coarsen_b4[j])
+                    changed = true;
+            }
+            changed = changed.MPIOr();
+            Console.WriteLine("-----------------------------------------  coarse changed " + changed);
+
 
             return oK2Coarsen;
         }

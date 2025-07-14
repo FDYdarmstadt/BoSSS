@@ -632,7 +632,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask Near1 = this.LsTrk.Regions.GetSpeciesRestrictedNearMask4LevSet(0, 1);
                 bool check_distCG = true;
                 if (!Near.SequenceEqual(Near1)) {
-                    Console.WriteLine("Warning: Initial projection mask changed. Second projection will not result in the same projection! -> initial lax DG-projection not sufficint enough ... skiping CG LS distance");
+                    Console.WriteLine("Warning: Initial projection mask changed. Second projection will not result in the same projection! -> initial lax DG-projection not sufficient enough ... skipping CG LS distance");
                     check_distCG = false;
                 }
 

@@ -22,6 +22,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Runtime.Serialization;
 //using System.Runtime.Serialization.Formatters.Binary;
 
@@ -1430,7 +1431,9 @@ namespace MPI.Wrappers {
 
 
             int[] result = new int[rcs];
-            if (send.Length == 0)
+
+            int sendLength = send.Length;
+            if(send.Length == 0)
                 send = new int[1];
 
             unsafe {
@@ -1442,7 +1445,7 @@ namespace MPI.Wrappers {
                     fixed (int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
-                            send.Length,
+                            sendLength,
                             csMPI.Raw._DATATYPE.INT,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
@@ -1481,6 +1484,7 @@ namespace MPI.Wrappers {
 
 
             double[] result = new double[rcs];
+            int sendLength = send.Length;
             if (send.Length == 0)
                 send = new double[1];
 
@@ -1493,7 +1497,7 @@ namespace MPI.Wrappers {
                     fixed (int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
-                            send.Length,
+                            sendLength,
                             csMPI.Raw._DATATYPE.DOUBLE,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
@@ -1533,6 +1537,7 @@ namespace MPI.Wrappers {
 
 
             double[] result = new double[rcs];
+            int sendLength = send.Length;
             if(send.Length == 0)
                 send = new double[1];
 
@@ -1545,7 +1550,7 @@ namespace MPI.Wrappers {
                     fixed(int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
-                            send.Length,
+                            sendLength,
                             csMPI.Raw._DATATYPE.DOUBLE,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
@@ -1579,6 +1584,7 @@ namespace MPI.Wrappers {
 
 
             byte[] result = new byte[rcs];
+            int sendLength = send.Length;
             if (send.Length == 0)
                 send = new byte[1];
 
@@ -1591,7 +1597,7 @@ namespace MPI.Wrappers {
                     fixed (int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
-                            send.Length,
+                            sendLength,
                             csMPI.Raw._DATATYPE.BYTE,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
@@ -1624,6 +1630,7 @@ namespace MPI.Wrappers {
 
             ulong[] result = new ulong[rcs];
 
+            int sendLength = send.Length;
             if (send.Length == 0)
                 send = new ulong[1];
 
@@ -1636,7 +1643,7 @@ namespace MPI.Wrappers {
                     fixed (int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
-                            send.Length,
+                            sendLength,
                             csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
@@ -1670,12 +1677,18 @@ namespace MPI.Wrappers {
         /// </summary>
         static private long[] Long_MPIAllGatherv(this long[] send, int[] m_recvcounts, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
+            if(m_recvcounts.Length != size)
+                throw new ArgumentOutOfRangeException("MPI size mismatch");
+
             int rcs = m_recvcounts.Sum();
             if (rcs == 0)
                 return new long[0];
 
+           
+
             long[] result = new long[rcs];
 
+            int sendLength = send.Length;
             if (send.Length == 0)
                 send = new long[1];
 
@@ -1688,7 +1701,7 @@ namespace MPI.Wrappers {
                     fixed (int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
-                            send.Length,
+                            sendLength,
                             csMPI.Raw._DATATYPE.LONG_LONG,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,

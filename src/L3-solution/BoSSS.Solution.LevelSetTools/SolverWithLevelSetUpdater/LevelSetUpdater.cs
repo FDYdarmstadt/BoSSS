@@ -389,7 +389,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// </summary>
             /// <returns></returns>
             internal bool IsInterfaceClosed() {
-
+                const int iLevSet = 0;
                 LevelSetTracker LsTrk = phaseInterface.Tracker;
                 LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
                 LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
@@ -397,23 +397,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 int order = phaseInterface.CGLevelSet.Basis.Degree;
                 var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
-                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, testTracker.GridDat.Grid.RefElements[0]);
+                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, testTracker.GridDat.Grid.RefElements[0]);
+                
                 EdgeMask CutCellInnerBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
-                EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, CutCellInnerBoundaryEdgeMask);
+                EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme(
+                    new BoSSS.Foundation.XDG.Quadrature.SurfaceElementEdgeIntegrationMetric(testMetrics.LevelSetData[iLevSet]), 
+                    UseDefaultFactories: false, domain: CutCellInnerBoundaryEdgeMask);
+                CutCellInnerBoundary_Scheme.AddFactoryDomainPair(testFactory);
 
-                //ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                //int rank = LsTrk.GridDat.MpiRank;
-
-                //var cellPart = LsTrk.GridDat.CellPartitioning;
-                //Console.WriteLine($"proc {rank}: no of local cells {LsTrk.GridDat.Cells.NoOfLocalUpdatedCells} - ({cellPart.i0}, {cellPart.iE-1})");
+              
 
                 double result = 0.0;
                 int D = testTracker.GridDat.SpatialDimension;
-                EdgeQuadrature.GetQuadrature(new int[] { 1 }, testTracker.GridDat,
-                    SurfaceElement_BoundaryEdge.Compile(testTracker.GridDat, order),
+                EdgeQuadrature.GetQuadrature([ 1 ], testTracker.GridDat,
+                    CutCellInnerBoundary_Scheme.Compile(testTracker.GridDat, order),
                     delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
-                        for (int i = 0; i < length; i++) {
+                        for (int i = 0; i < length; i++) { // 
                             EdgeInfo edgInfo = testTracker.GridDat.Edges.Info[i0 + i];
                             double edgSign = 1.0;
                             if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
@@ -441,15 +441,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ).Execute();
                 testTracker.Dispose();
 
-                //Console.WriteLine($"proc {LsTrk.GridDat.MpiRank}: result = {result}");
                 //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
                 result = result.MPISum();
+                Console.WriteLine($"REMOVE ME: interface closure test result = {result}");
                 bool isClosed = Math.Abs(result) < 1e-10;
 
-                if (!isClosed)
-                    Console.WriteLine("Interface not closed: result = {0}", result);
-
+                if(!isClosed) {
+                    Console.Error.WriteLine($"Interface not closed: result = {result}");
+                    //throw new ArithmeticException($"Interface not closed: result = {result}");
+                }
 
                 return isClosed;
             }
