@@ -3055,18 +3055,11 @@ namespace BoSSS.Solution {
                         Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
                         newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-
-
-                        newGrid.MeshSymmetryTest();
-
                     } else {
-
                         newGrid = null;
                         old2NewGrid = null;
                     }
-
                 } else {
-
                     newGrid = null;
                     old2NewGrid = null;
                 }

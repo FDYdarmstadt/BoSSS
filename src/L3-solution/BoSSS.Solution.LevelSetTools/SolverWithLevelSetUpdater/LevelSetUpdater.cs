@@ -423,7 +423,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             EdgeInfo edgInfo = testTracker.GridDat.Edges.Info[i0 + i];
                             double edgSign = 1.0;
                             if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
-                                // on an interprocess-edge, if both cells are correctly identified as cut-cells
+                                // on an inter-process-edge, if both cells are correctly identified as cut-cells
                                 // the integral contributions from both processors cancel out 
                                 // when the sum over all processors is taken.
 

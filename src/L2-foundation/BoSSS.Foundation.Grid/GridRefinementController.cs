@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Removes a coarsening cluster if it 
+        /// Removes a coarsening cluster if it occurs only on one side of a periodic edge
         /// </summary>
         List<int[]> FixPeriodicCoarsening(List<int[]> localCellsToCoarsen) {
             using(var tr = new FuncTrace()) {
@@ -210,7 +210,9 @@ namespace BoSSS.Foundation.Grid {
         }
 
 
-
+        /// <summary>
+        /// verifies that the <paramref name="localCellsToCoarsen"/> is equal on both sides of periodic edges.
+        /// </summary>
         void VerifyPeriodicCoarsening(List<int[]> localCellsToCoarsen) {
             using(var tr = new FuncTrace()) {
                 if(this.CurrentGrid.Grid.PeriodicTrafo.Count <= 0)
