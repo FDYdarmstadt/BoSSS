@@ -529,6 +529,66 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// computes the logical and of <paramref name="b"/> on all MPI-processes in the
+        /// WORLD--communicator and stores the result in-place
+        /// </summary>
+        static public void MPIAnd(this BitArray b) {
+            MPIAnd(b, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// computes the logical or of <paramref name="b"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator and stores the result in-place
+        /// </summary>
+        static public void MPIAnd(this BitArray b, MPI_Comm comm) {
+            int L = b.Length;
+            int Lx = L / 32 + 1;
+            int[] s_buf = new int[Lx];
+            int[] r_buf = new int[Lx];
+
+            int k = 0;
+            for(int lx = 0; lx < Lx; lx++) {
+                int a = 0;
+                for(int i = 0; i < 32; i++) {
+                    bool b_k = b[k];
+                    if(b_k) {
+                        a |= (1 << i);
+                    }
+                    k++;
+                    if(k >= L)
+                        break;
+                }
+                s_buf[lx] = a;
+
+                if(k >= L)
+                    break;
+            }
+
+
+            unsafe {
+                fixed(int* p_s_buf = s_buf, p_r_buf = r_buf) {
+                    csMPI.Raw.Allreduce(((IntPtr)(p_s_buf)), ((IntPtr)(p_r_buf)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BAND, comm);
+                }
+            }
+
+            k = 0;
+            for(int lx = 0; lx < Lx; lx++) {
+                int a = r_buf[lx];
+                for(int i = 0; i < 32; i++) {
+                    bool b_k = (a & (1 << i)) != 0;
+                    b[k] = b_k;
+                    k++;
+                    if(k >= L)
+                        break;
+                }
+
+                if(k >= L)
+                    break;
+            }
+        }
+
+
+        /// <summary>
         /// equal to <see cref="MPIAnd(System.Collections.Generic.IEnumerable{bool},MPI_Comm)"/>, acting on the
         /// WORLD-communicator
         /// </summary>
