@@ -594,58 +594,59 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <param name="cutCellsWithNeighbours"></param>
         private BitArray GetCellsOk2Coarsen(int[] globalDesiredLevel, long[][] globalCellNeigbourship, BitArray cutCellsWithNeighbours) {
-            int LocalNumberOfCells = this.CurrentGrid.Cells.NoOfLocalUpdatedCells;
-            long myI0 = CellPartitioning.i0;
-            long GlobalNumberOfCells = CellPartitioning.TotalLength;
+            using(var tr = new FuncTrace()) {
+                int LocalNumberOfCells = this.CurrentGrid.Cells.NoOfLocalUpdatedCells;
+                long myI0 = CellPartitioning.i0;
+                long GlobalNumberOfCells = CellPartitioning.TotalLength;
 
 
-            BitArray oK2Coarsen = new BitArray(checked((int)GlobalNumberOfCells));
-            int[] globalCurrentLevel = GetGlobalCurrentLevel();
+                BitArray oK2Coarsen = new BitArray(checked((int)GlobalNumberOfCells));
+                int[] globalCurrentLevel = GetGlobalCurrentLevel();
 
-            for (long globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) {
-                int currentLevel = globalCurrentLevel[globalCellIndex];
+                for(long globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) {
+                    int currentLevel = globalCurrentLevel[globalCellIndex];
 
-                int maxNeighbourDesiredLevel = 0;
-                int maxNeighbourCurrentLevel = 0;
-                for(int i = 0; i < globalCellNeigbourship[globalCellIndex].Length; i++) {
-                    if (globalDesiredLevel[globalCellNeigbourship[globalCellIndex][i]] > maxNeighbourDesiredLevel)
-                        maxNeighbourDesiredLevel = globalDesiredLevel[globalCellNeigbourship[globalCellIndex][i]];
-                    int neighbourCurrentLevel = globalCurrentLevel[globalCellNeigbourship[globalCellIndex][i]];
-                    if (neighbourCurrentLevel > maxNeighbourCurrentLevel)
-                        maxNeighbourCurrentLevel = neighbourCurrentLevel;
+                    int maxNeighbourDesiredLevel = 0;
+                    int maxNeighbourCurrentLevel = 0;
+                    for(int i = 0; i < globalCellNeigbourship[globalCellIndex].Length; i++) {
+                        if(globalDesiredLevel[globalCellNeigbourship[globalCellIndex][i]] > maxNeighbourDesiredLevel)
+                            maxNeighbourDesiredLevel = globalDesiredLevel[globalCellNeigbourship[globalCellIndex][i]];
+                        int neighbourCurrentLevel = globalCurrentLevel[globalCellNeigbourship[globalCellIndex][i]];
+                        if(neighbourCurrentLevel > maxNeighbourCurrentLevel)
+                            maxNeighbourCurrentLevel = neighbourCurrentLevel;
+                    }
+
+                    if(currentLevel > globalDesiredLevel[globalCellIndex]
+                        && currentLevel > maxNeighbourDesiredLevel
+                        && currentLevel > maxNeighbourCurrentLevel - 1
+                        && !cutCellsWithNeighbours[checked((int)globalCellIndex)]) {
+                        oK2Coarsen[checked((int)globalCellIndex)] = true;
+                    }
                 }
 
-                if (currentLevel > globalDesiredLevel[globalCellIndex] 
-                    && currentLevel > maxNeighbourDesiredLevel 
-                    && currentLevel > maxNeighbourCurrentLevel - 1 
-                    && !cutCellsWithNeighbours[checked((int)globalCellIndex)]) {
-                    oK2Coarsen[checked((int)globalCellIndex)] = true;
+                BitArray globalCellsNotOK2Coarsen = GetGlobalCellsNotOK2Coarsen();
+
+                for(int j = 0; j < globalCellsNotOK2Coarsen.Length; j++) {
+                    if(globalCellsNotOK2Coarsen[j]) {
+                        oK2Coarsen[j] = false;
+                    }
                 }
-            }
 
-            BitArray globalCellsNotOK2Coarsen = GetGlobalCellsNotOK2Coarsen();
+                var oK2Coarsen_b4 = oK2Coarsen.CloneAs();
+                oK2Coarsen.MPIAnd();
 
-            for (int j = 0; j < globalCellsNotOK2Coarsen.Length; j++) {
-                if (globalCellsNotOK2Coarsen[j]) {
-                    oK2Coarsen[j] = false;
+                bool changed = false;
+                for(int j = 0; j < oK2Coarsen.Length; j++) {
+                    if(oK2Coarsen[j] != oK2Coarsen_b4[j])
+                        changed = true;
                 }
+                changed = changed.MPIOr();
+                tr.Info("coarse changed " + changed);
+
+
+                return oK2Coarsen;
             }
-
-            var oK2Coarsen_b4 = oK2Coarsen.CloneAs();
-            oK2Coarsen.MPIAnd();
-
-            bool changed = false;
-            for(int j = 0; j < oK2Coarsen.Length; j++) {
-                if(oK2Coarsen[j] != oK2Coarsen_b4[j])
-                    changed = true;
-            }
-            changed = changed.MPIOr();
-            Console.WriteLine("-----------------------------------------  coarse changed " + changed);
-
-
-            return oK2Coarsen;
         }
-
 
         /// <summary>
         /// Globalize cellsNotOk2Coarsen

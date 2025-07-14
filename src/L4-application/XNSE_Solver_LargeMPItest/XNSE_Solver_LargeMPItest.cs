@@ -410,7 +410,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
-            AMRtest();
+            AMRtest_2D(GridPartType.METIS);
             //ParallelRotatingSphere();
             //ParallelRotatingTilted3DTorus();
             BoSSS.Solution.Application.FinalizeMPI();

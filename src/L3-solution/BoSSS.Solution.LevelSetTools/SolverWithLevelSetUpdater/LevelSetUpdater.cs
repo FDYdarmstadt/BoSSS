@@ -12,6 +12,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
@@ -408,8 +409,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme(
                     new BoSSS.Foundation.XDG.Quadrature.SurfaceElementEdgeIntegrationMetric(testMetrics.LevelSetData[iLevSet]), 
                     UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
-                CutCellInnerBoundary_Scheme.AddFactoryDomainPair(testFactory);
+                //EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme( 
+                //    UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
 
+                CutCellInnerBoundary_Scheme.AddFactoryDomainPair(testFactory);
 
                 // integrate over the **boundary** of the cut-cell domain.
                 // if the level-set has no holes due to un-detected cut cells, this integral should be zero
@@ -456,7 +459,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
                 result = result.MPISum();
-                Console.WriteLine($"REMOVE ME: interface closure test result = {result}");
                 bool isClosed = Math.Abs(result) < 1e-10;
 
                 if(!isClosed) {

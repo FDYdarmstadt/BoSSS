@@ -85,22 +85,26 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 
 
                 for(int k = 0; k < K; k++) {
-                    var SurfNormal = LevSetNormals.GetRowPt(k);
-                    var Node = NodesCell.GetRowPt(k);
+                    if(qr.Weights[k] != 0) { // avoid empty rules
+                        var SurfNormal = LevSetNormals.GetRowPt(k);
+                        var Node = NodesCell.GetRowPt(k);
 
-                    var Tangent = CellNormal.CrossProduct(SurfNormal);
-                    Tangent.NormalizeInPlace();
+                        var Tangent = CellNormal.CrossProduct(SurfNormal);
+                        Tangent.NormalizeInPlace();
 
-                    Tangents.SetRowPt(k, Tangent + Node);
-                    Tangents.SetRowPt(k + K, Node);
+                        Tangents.SetRowPt(k, Tangent + Node);
+                        Tangents.SetRowPt(k + K, Node);
+                    }
                 }
 
                 var TangentsTransformed = gridData.TransformLocal2Global(Tangents, jCell0);
 
                 // the metric is the local stretching of the tangent on the boundary line
                 for(int k = 0; k < K; k++) {
-                    var TangentTransformed = TangentsTransformed.GetRowPt(k) - TangentsTransformed.GetRow(k + K);
-                    metric[i, k] = TangentTransformed.L2Norm();
+                    if(qr.Weights[k] != 0) { // avoid empty rules
+                        var TangentTransformed = TangentsTransformed.GetRowPt(k) - TangentsTransformed.GetRow(k + K);
+                        metric[i, k] = TangentTransformed.L2Norm();
+                    }
                 }
             }
 
