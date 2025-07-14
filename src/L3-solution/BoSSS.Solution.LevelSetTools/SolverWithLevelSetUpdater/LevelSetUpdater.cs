@@ -384,7 +384,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             /// <summary>
-            /// Checks for inner contact points/lines
+            /// Checks for inner contact points/lines,
+            /// which may occur when an actually cut cell is **not** detected as cut!
+            /// 
             /// Sometimes (so far only 2D) one need to do the projection on the nearband in order to remove holes in the interface
             /// </summary>
             /// <returns></returns>
@@ -399,14 +401,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
                 var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, testTracker.GridDat.Grid.RefElements[0]);
                 
-                EdgeMask CutCellInnerBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
+
+                // the boundary of the cut-cell domain
+                EdgeMask CutCellBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(
+                    testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
                 EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme(
                     new BoSSS.Foundation.XDG.Quadrature.SurfaceElementEdgeIntegrationMetric(testMetrics.LevelSetData[iLevSet]), 
-                    UseDefaultFactories: false, domain: CutCellInnerBoundaryEdgeMask);
+                    UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
                 CutCellInnerBoundary_Scheme.AddFactoryDomainPair(testFactory);
 
-              
 
+                // integrate over the **boundary** of the cut-cell domain.
+                // if the level-set has no holes due to un-detected cut cells, this integral should be zero
                 double result = 0.0;
                 int D = testTracker.GridDat.SpatialDimension;
                 EdgeQuadrature.GetQuadrature([ 1 ], testTracker.GridDat,
@@ -417,10 +423,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             EdgeInfo edgInfo = testTracker.GridDat.Edges.Info[i0 + i];
                             double edgSign = 1.0;
                             if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
+                                // on an interprocess-edge, if both cells are correctly identified as cut-cells
+                                // the integral contributions from both processors cancel out 
+                                // when the sum over all processors is taken.
+
                                 double[] edgNormal = testTracker.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
                                 edgSign = edgNormal.Sum();
                             }
                             for (int qn = 0; qn < QR.NoOfNodes; qn++) {
+                                // on a closed interface, this integrand should be zero
+                                // (either the quadrature rule is empty or the weights are zero)
                                 EvalResult[i, qn, 0] = 1.0 * edgSign;
                             }
                         }
