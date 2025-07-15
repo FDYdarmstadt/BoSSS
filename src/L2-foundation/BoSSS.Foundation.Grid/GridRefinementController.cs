@@ -634,6 +634,7 @@ namespace BoSSS.Foundation.Grid {
 
                 var oK2Coarsen_b4 = oK2Coarsen.CloneAs();
                 oK2Coarsen.MPIAnd();
+                //Console.WriteLine("Check!!!!!!!!");
 
                 bool changed = false;
                 for(int j = 0; j < oK2Coarsen.Length; j++) {

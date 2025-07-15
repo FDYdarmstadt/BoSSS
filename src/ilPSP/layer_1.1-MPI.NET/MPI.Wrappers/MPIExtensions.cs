@@ -508,7 +508,7 @@ namespace MPI.Wrappers {
 
             unsafe {
                 fixed(int* p_s_buf = s_buf, p_r_buf = r_buf) {
-                    csMPI.Raw.Allreduce(((IntPtr)(p_s_buf)), ((IntPtr)(p_r_buf)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BOR, comm);
+                    csMPI.Raw.Allreduce(((IntPtr)(p_s_buf)), ((IntPtr)(p_r_buf)), Lx, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BOR, comm);
                 }
             }
 
@@ -567,7 +567,7 @@ namespace MPI.Wrappers {
 
             unsafe {
                 fixed(int* p_s_buf = s_buf, p_r_buf = r_buf) {
-                    csMPI.Raw.Allreduce(((IntPtr)(p_s_buf)), ((IntPtr)(p_r_buf)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BAND, comm);
+                    csMPI.Raw.Allreduce(((IntPtr)(p_s_buf)), ((IntPtr)(p_r_buf)), Lx, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BAND, comm);
                 }
             }
 

@@ -31,6 +31,7 @@ using BoSSS.Solution.Gnuplot;
 using static System.Reflection.Metadata.BlobBuilder;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.Timestepping;
+using System.Collections;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -79,12 +80,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //InitMPI(num_threads: 2);
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 3, 0.1d, ViscosityMode.Standard, CutCellQuadratureMethod.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.NervTest();
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest(1, 40 * Math.PI / 180, NonLinearSolverCode.Newton);
-            ////BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D_fwd(2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest_p2_Newton_Standard(0.01d, 60.0 * Math.PI / 180.0, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, false, CutCellQuadratureMethod.Saye);
-            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(true, LevelSetHandling.LieSplitting, TimeSteppingScheme.ImplicitEuler, true, 4);
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(true, LevelSetHandling.LieSplitting, TimeSteppingScheme.ImplicitEuler, true, 3);
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
             {
