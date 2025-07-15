@@ -218,6 +218,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         internal (double UsablePart, bool CancellationTriggered) AddSol(ref double[] X, string name) {
             using (var ft = new FuncTrace()) {
+                var bkup = ilPSP.Environment.NumThreads;
+                ilPSP.Environment.NumThreads = 1;
 
                 m_UsedMoreThanOneOrthoCycle = false;
 

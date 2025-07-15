@@ -1507,10 +1507,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                         MultigridOperator mgOperator;
                         using (new BlockTrace("MultigridOperator setup", tr)) {
-
-
-
-
                             mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
                                 System, MaMa,
                                 this.Config_MultigridOperator,

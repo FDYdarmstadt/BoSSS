@@ -80,8 +80,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             InitMPI();
             ilPSP.Environment.NumThreads = 1;
-            BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, true, 3);
-            NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 
 
             {
