@@ -365,7 +365,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Testing adaptive mesh refinement in a MPI-parallel environment
         /// </summary>
         [Test]
-        public static void AMRtest_2D([Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert)] GridPartType gridPartType) {
+        public static void AMRtest_2D([Values(GridPartType.METIS, GridPartType.Hilbert)] GridPartType gridPartType) {
             var C = DropletOnPlate_AMRtest(D: 2, p: 2, kelem: 8);
             C.NoOfTimesteps = 1;
             C.GridPartType = gridPartType;
@@ -412,7 +412,7 @@ namespace BoSSS.Application.XNSE_Solver {
             BoSSS.Solution.Application.InitMPI();
             AMRtest_2D(GridPartType.METIS);
             //ParallelRotatingSphere();
-            //ParallelRotatingTilted3DTorus();
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.AMRtest_2D(GridPartType.clusterHilbert);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
