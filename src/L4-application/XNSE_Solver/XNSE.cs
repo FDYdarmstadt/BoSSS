@@ -31,6 +31,7 @@ using BoSSS.Solution.Gnuplot;
 using static System.Reflection.Metadata.BlobBuilder;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.Timestepping;
+using System.Collections;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -77,12 +78,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
-            InitMPI();
-            ilPSP.Environment.NumThreads = 1;
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
+            //InitMPI(num_threads: 2);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(true, LevelSetHandling.LieSplitting, TimeSteppingScheme.ImplicitEuler, true, 3);
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
-
 
             {
                 XNSE._Main(args, false, delegate () {
@@ -110,6 +109,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (ctrl.Rigidbody.IsInitialized())
                 ctrl.Rigidbody.ArrangeAll(ctrl);
         }
+
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -483,23 +483,23 @@ namespace BoSSS.Application.XNSE_Solver {
                     MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                     opFactory.AddParameter(maxSigmaParameter);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsBGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    BeltramiGradientAndCurvature lsGradientAndCurvature =
-                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
-                    opFactory.AddParameter(lsGradientAndCurvature);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
+                    GradientAndCurvature lsGradientCurvature
+                        = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
+                    opFactory.AddParameter(lsGradientCurvature);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientCurvature);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
@@ -521,6 +521,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (Control.UseImmersedBoundary)
                 DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
+
+
+            // inertia force terms (centrifugal & Coriolis force for rotating disk)
+            // ================
+            //if (config.isRotInertiaForce) { // specialized terms for x(radial), y(azimuthal), z(axial)
+            //    Console.WriteLine("add inertia force terms");
+            //    DefineRotatingForceTerms(opFactory, config, D);
+            //}
+
+
         }
 
         /// <summary>
@@ -600,11 +610,26 @@ namespace BoSSS.Application.XNSE_Solver {
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
 
             if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine || config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
-                var normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.LevelSetCGidx(1));
+                var normalsParameter = new Normals(VariableNames.LevelSetCGidx(1), D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree);
                 opFactory.AddParameter(normalsParameter);
                 lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), normalsParameter);
             }
         }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="D">Spatial dimension (only 3D)</param>
+        protected virtual void DefineRotatingForceTerms(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
+
+            double[] angVelocity = config.AngularVelocity;
+
+            for (int d = 0; d < 2; ++d)
+                opFactory.AddEquation(new InertiaForceTermsInRotSystem("A", d, D, angVelocity, config));
+        }
+
+
 
         public List<(double, double)> ImbalanceTrack;
 
@@ -642,6 +667,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 if (ImbalanceTrack != null) ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
 
+
+                if (!this.Control.InitialRampUpValues.IsNullOrEmpty()) {
+                    SetRampUpValue(TimestepNo, phystime);
+                }
+
+
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
@@ -654,6 +685,25 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 return dt;
+            }
+        }
+
+
+        void SetRampUpValue(int TimestepNo, double phystime) {
+
+            Console.WriteLine($"setting rampUp values");
+
+            foreach (string rampUpField in this.Control.InitialRampUpValues.Keys) {
+                int numRampUpValues = this.Control.InitialRampUpValues[rampUpField].Count();
+                var rampUpValue = (TimestepNo <= numRampUpValues) ? this.Control.InitialRampUpValues[rampUpField].ElementAt(TimestepNo - 1) : this.Control.InitialRampUpValues[rampUpField].ElementAt(numRampUpValues - 1);
+
+                var NameAndSpc = rampUpField.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (XDGField field in Timestepping.CurrentState.Fields) {
+                    if (field.Identification.Equals(NameAndSpc[0])) {
+                        field.GetSpeciesShadowField(NameAndSpc[1]).Clear();
+                        field.GetSpeciesShadowField(NameAndSpc[1]).ProjectField(delegate (double[] X) { return rampUpValue.Evaluate(X, phystime); });
+                    }
+                }
             }
         }
 
@@ -772,10 +822,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 {
                     var physParams = this.Control.PhysicalParameters;
                     if (physParams.Sigma != 0) {
-                        double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin * (p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                        //double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin / (double)(p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                        double dt_cap = XNSEUtils.GetCapillaryTimeStep(physParams.rho_A, physParams.rho_B, physParams.Sigma, hmin, p);
                         if (dt_cap < dt) {
-                            dt = Math.Min(dt_cap, dt);
-                            Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                            //dt = Math.Min(dt_cap, dt);
+                            //Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                            Console.WriteLine("Warning: time step size larger than capillary timestep restriction {0}", dt_cap);
                         }
                     }
                 }

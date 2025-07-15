@@ -922,12 +922,12 @@ namespace BoSSS.Application.ExternalBinding {
 
                     }
                 }
-            } catch (Exception e) {
-               Console.WriteLine(e.GetType());
-               Console.WriteLine(e.Message);
-               Console.WriteLine(e.StackTrace);
-               Console.WriteLine(e);
-               throw new AggregateException(e);
+            } catch(Exception e) {
+                Console.WriteLine(e.GetType());
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine(e);
+                throw new AggregateException(e);
             }
             // }
         }

@@ -445,7 +445,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                             if (!(this.m_owner.Edges.IsEdgeConformalWithCell1(iEdg) && this.m_owner.Edges.IsEdgeConformalWithCell2(iEdg))) {
+                                //Console.Error.WriteLine("Periodicity on non-conformal edges not supported yet.");
                                 throw new NotImplementedException("Periodicity on non-conformal edges not supported yet.");
+                                //continue;
                             }
 
                             int jCell1 = E2C[iEdg, 0];

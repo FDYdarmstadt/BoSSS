@@ -69,11 +69,10 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// number of patches on current MPI process
         /// </param>
         void ProjectDGField_patchwise_setup(int NoOfPatchesPerProcess) {
-            using(new FuncTrace()) {
+            using(FuncTrace tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
 
-                if(diagnosticOutput)
-                    Console.WriteLine("starting patch-wise procedure: No of (local) cells {0}", domainLimit.NoOfItemsLocally);
+                tr.Info($"starting patch-wise procedure: No of (local) cells {domainLimit.NoOfItemsLocally}");
 
                 SubGrid maskSG = new SubGrid(domainLimit);
                 EdgeMask innerEM = maskSG.InnerEdgesMask;
@@ -157,7 +156,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         NoPatches = (NoOfCoordOnProc / maxNoOfCoordinates) + 1;
                     }
                 }
-                Console.WriteLine("No of local patches: {0}", NoPatches);
+                tr.Info($"No of local patches: {NoPatches}");
 
                 // divide projection domain into non-overlapping patches
                 var m_BlockingStrategy = new METISBlockingStrategy() {
@@ -187,7 +186,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     EdgeMask innerPatch = patch.GetAllInnerEdgesMask();
                     interPatchEM = interPatchEM.Except(innerPatch);
                 }
-                Console.WriteLine("inter patch EM No of edges: {0}", interPatchEM.NoOfItemsLocally);
+                tr.Info($"inter patch EM No of edges: {interPatchEM.NoOfItemsLocally}");
 
                 BitArray interPatchBA = new BitArray(J);
                 foreach(int edg in interPatchEM.ItemEnum) {
@@ -219,12 +218,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 // continuity projection between patches within one process
                 // ========================================================
                 if(NoPatches > 1) {
-
-                    if(diagnosticOutput) {
-                        Console.WriteLine("======================");
-                        Console.WriteLine("project local merging patch: No of cells {0}", interPatchNeigh.NoOfItemsLocally);
-                    }
-
+                     tr.Info($"project local merging patch: No of cells {interPatchNeigh.NoOfItemsLocally}");
+                   
                     //this.ProjectDGFieldOnPatch(domainLimit, interPatchNeigh);
                     localSeaming.Add(new ConstrainedProjectionInternal(this, domainLimit, interPatchNeigh, true));
                 }
@@ -286,8 +281,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                     double ResNorm = base.internalProjection.L2Error(orgDGField, this.domainLimit);
                     relUpdateNorm = updateNorm / Math.Max(ResNorm, 1e-30); // avoid division by zero
-                    //tr.Info
-                    Console.WriteLine("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
+                    tr.Info("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
                 }
             }
         }

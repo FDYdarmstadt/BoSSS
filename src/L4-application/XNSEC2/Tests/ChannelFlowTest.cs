@@ -589,7 +589,7 @@ namespace BoSSS.Application.XNSEC {
 
             #region solver
 
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.solveKineticEnergyEquation = true;
             ////C.CheckJumpConditions = true;
             //C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;
@@ -622,7 +622,7 @@ namespace BoSSS.Application.XNSEC {
             //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
             //C.fullReInit;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.SkipSolveAndEvaluateResidual = true;
 
             C.AdaptiveMeshRefinement = false;

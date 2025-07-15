@@ -30,6 +30,7 @@
   </ItemGroup-->
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.15" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
     <PackageReference Include="System.Security.Permissions" Version="5.0.0" />
   </ItemGroup>
   <!--ItemGroup>
