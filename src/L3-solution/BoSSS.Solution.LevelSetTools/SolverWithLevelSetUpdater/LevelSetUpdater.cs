@@ -12,6 +12,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
@@ -384,12 +385,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             /// <summary>
-            /// Checks for inner contact points/lines
+            /// Checks for inner contact points/lines,
+            /// which may occur when an actually cut cell is **not** detected as cut!
+            /// 
             /// Sometimes (so far only 2D) one need to do the projection on the nearband in order to remove holes in the interface
             /// </summary>
             /// <returns></returns>
             internal bool IsInterfaceClosed() {
-
+                const int iLevSet = 0;
                 LevelSetTracker LsTrk = phaseInterface.Tracker;
                 LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
                 LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
@@ -397,30 +400,42 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 int order = phaseInterface.CGLevelSet.Basis.Degree;
                 var testMetrics = testTracker.GetXDGSpaceMetrics(testTracker.SpeciesIdS.ToArray(), order);
-                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, testTracker.GridDat.Grid.RefElements[0]);
-                EdgeMask CutCellInnerBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
-                EdgeQuadratureScheme SurfaceElement_BoundaryEdge = new EdgeQuadratureScheme(testFactory, CutCellInnerBoundaryEdgeMask);
+                var testFactory = testMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, testTracker.GridDat.Grid.RefElements[0]);
+                
 
-                //ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                //int rank = LsTrk.GridDat.MpiRank;
+                // the boundary of the cut-cell domain
+                EdgeMask CutCellBoundaryEdgeMask = testTracker.Regions.GetCutCellMask().AllEdges().Except(
+                    testTracker.Regions.GetCutCellMask().GetAllInnerEdgesMask()).Except(testTracker.GridDat.BoundaryEdges);
+                EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme(
+                    new BoSSS.Foundation.XDG.Quadrature.SurfaceElementEdgeIntegrationMetric(testMetrics.LevelSetData[iLevSet]), 
+                    UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
+                //EdgeQuadratureScheme CutCellInnerBoundary_Scheme = new EdgeQuadratureScheme( 
+                //    UseDefaultFactories: false, domain: CutCellBoundaryEdgeMask);
 
-                //var cellPart = LsTrk.GridDat.CellPartitioning;
-                //Console.WriteLine($"proc {rank}: no of local cells {LsTrk.GridDat.Cells.NoOfLocalUpdatedCells} - ({cellPart.i0}, {cellPart.iE-1})");
+                CutCellInnerBoundary_Scheme.AddFactoryDomainPair(testFactory);
 
+                // integrate over the **boundary** of the cut-cell domain.
+                // if the level-set has no holes due to un-detected cut cells, this integral should be zero
                 double result = 0.0;
                 int D = testTracker.GridDat.SpatialDimension;
-                EdgeQuadrature.GetQuadrature(new int[] { 1 }, testTracker.GridDat,
-                    SurfaceElement_BoundaryEdge.Compile(testTracker.GridDat, order),
+                EdgeQuadrature.GetQuadrature([ 1 ], testTracker.GridDat,
+                    CutCellInnerBoundary_Scheme.Compile(testTracker.GridDat, order),
                     delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
 
-                        for (int i = 0; i < length; i++) {
+                        for (int i = 0; i < length; i++) { // 
                             EdgeInfo edgInfo = testTracker.GridDat.Edges.Info[i0 + i];
                             double edgSign = 1.0;
                             if (edgInfo.HasFlag(EdgeInfo.Interprocess)) {
+                                // on an inter-process-edge, if both cells are correctly identified as cut-cells
+                                // the integral contributions from both processors cancel out 
+                                // when the sum over all processors is taken.
+
                                 double[] edgNormal = testTracker.GridDat.Edges.NormalsForAffine.ExtractSubArrayShallow(i0 + i, -1).To1DArray();
                                 edgSign = edgNormal.Sum();
                             }
                             for (int qn = 0; qn < QR.NoOfNodes; qn++) {
+                                // on a closed interface, this integrand should be zero
+                                // (either the quadrature rule is empty or the weights are zero)
                                 EvalResult[i, qn, 0] = 1.0 * edgSign;
                             }
                         }
@@ -441,15 +456,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ).Execute();
                 testTracker.Dispose();
 
-                //Console.WriteLine($"proc {LsTrk.GridDat.MpiRank}: result = {result}");
                 //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
                 result = result.MPISum();
                 bool isClosed = Math.Abs(result) < 1e-10;
 
-                if (!isClosed)
-                    Console.WriteLine("Interface not closed: result = {0}", result);
-
+                if(!isClosed) {
+                    Console.Error.WriteLine($"Interface not closed: result = {result}");
+                    //throw new ArithmeticException($"Interface not closed: result = {result}");
+                }
 
                 return isClosed;
             }

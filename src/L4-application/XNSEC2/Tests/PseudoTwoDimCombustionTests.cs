@@ -301,7 +301,7 @@ namespace BoSSS.Application.XNSEC {
 
         //    #region solver
 
-        //    //C.ComputeEnergyProperties = true;
+        //    //////C.ComputeEnergyProperties = true;
         //    //C.solveKineticEnergyEquation = true;
         //    ////C.CheckJumpConditions = true;
         //    //C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;

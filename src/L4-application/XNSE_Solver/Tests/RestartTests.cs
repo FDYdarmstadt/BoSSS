@@ -321,8 +321,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 int nGrids = 1;
                 if (AMRon) nGrids++;
                 if (AMRon && transient) nGrids = 3;
-                Assert.IsTrue(TestDb2.Grids.Count() == nGrids, "Number of grids seems to be wrong.");
-                Assert.IsTrue(TestDb2.Sessions.Count() == 1, "Number of sessions seems to be wrong.");
+                Assert.AreEqual(TestDb2.Grids.Count(), nGrids, "Number of grids seems to be wrong (1).");
+                Assert.AreEqual(TestDb2.Sessions.Count(), 1, "Number of sessions seems to be wrong (2).");
 
                 var si = TestDb2.Sessions.Single();
                 int[] tsiNumbers = si.Timesteps.Skip(AMRon ? 2 : 0).Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();

@@ -616,7 +616,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 StdoutOnlyOnRank0 = false;
                 //tr.StdoutOnAllRanks();
 
@@ -744,6 +744,8 @@ namespace ilPSP {
 
                     DedicatedCPUsForThisRank = ReservedCPUsOnSMP.ToArray().GetSubVector(i0, iE - i0);
 
+
+
                     /*if(ReservedCPUsOnSMP.Count() >= NumThreads * MPIEnv.ProcessesOnMySMP) {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Sufficient CPUs to give each MPI rank `NumThreads` CPUs
@@ -805,6 +807,11 @@ namespace ilPSP {
                 PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
                 PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
 
+                if(DedicatedCPUsForThisRank == null || DedicatedCPUsForThisRank.Length < NumThreads) {
+                    PerformOMPthreadPinning = false;
+                    PerformTPLthreadPinning = false;
+                }
+
                 /*
                                 if(NumThreads*2 < DedicatedCPUsForThisRank.Length) {
                                     PerformOMPthreadPinning = false;
@@ -863,7 +870,7 @@ namespace ilPSP {
             if(PerformTPLthreadPinning) {
                 int L = DedicatedCPUsForThisRank.Length;
                 if(ilPSP.Environment.NumThreads > L)
-                    throw new ApplicationException("Configuration error: more threads than CPUs available");
+                    throw new ApplicationException($"Configuration error: more threads requested ({ilPSP.Environment.NumThreads}) than CPUs available ({L})");
                 int skip = L - NumThreads;
                 int iCpu = DedicatedCPUsForThisRank[skip + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those, resp. mpiexec is forcing them to do so.
                 CPUAffinity.SetCurrentThreadAffinity(iCpu);

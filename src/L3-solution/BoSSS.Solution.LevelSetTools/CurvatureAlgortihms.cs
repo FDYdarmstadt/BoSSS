@@ -239,12 +239,9 @@ namespace BoSSS.Solution.LevelSetTools {
        {
 
             CellMask CC;
-            if (config.UseWholeField)
-            {
+            if(config.UseWholeField) {
                 CC = LsTrk.Regions.GetSpeciesMask("A").Union(LsTrk.Regions.GetSpeciesMask("B"));
-            }
-            else
-            {
+            } else {
                 CC = LsTrk.Regions.GetNearMask4LevSet(0, config.PatchRecoveryDomWidth); // we assume the fluid interface is level-set 0
             }
 
@@ -268,70 +265,70 @@ namespace BoSSS.Solution.LevelSetTools {
 
             // now, do all the rest...
             // =======================
-            switch (surfTenM) {
-                default: {
-                        // same as SurfaceStressTensor_IsotropicMode.Curvature_Projecte, but Hessian does not exist yet
-                        int[] lim;
-                        ComputeHessian(levSet, CC, config, out H, out H, levSet, G, G, l2pr); // do not distinguish between filtered and unfiltered, use what is available
-                        ProjectTotalCurvature(G, H, Curvature, CC, out lim);
-
-                        if (!config.CurvatureLimiting)
-                            lim = null;
-
-                        if (config.CurvatureLimiting)
-                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
-
-                        Curvature.CheckForNanOrInf();
-
-                        LevelSetGradient = new VectorField<SinglePhaseField>(G);
-
-                        return SurfaceStressTensor_IsotropicMode.Curvature_Projected; // return the setting used for the curvature calculation
-                    }
+            switch(surfTenM) {
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected: {
-                        int[] lim;
-                        ProjectTotalCurvature(G, H, Curvature, CC, out lim);
+                    int[] lim;
+                    ProjectTotalCurvature(G, H, Curvature, CC, out lim);
 
-                        if (!config.CurvatureLimiting)
-                            lim = null;
+                    if(!config.CurvatureLimiting)
+                        lim = null;
 
-                        if (config.CurvatureLimiting)
-                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+                    if(config.CurvatureLimiting)
+                        PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
 
-                        Curvature.CheckForNanOrInf();
+                    Curvature.CheckForNanOrInf();
 
-                        LevelSetGradient = new VectorField<SinglePhaseField>(G);
+                    LevelSetGradient = new VectorField<SinglePhaseField>(G);
 
-                        return SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-                    }
+                    return SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                }
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint: {
-                        int[] lim;
-                        ClosestPointTotalCurvature(LsTrk, G, H, Curvature, out lim);
+                    int[] lim;
+                    ClosestPointTotalCurvature(LsTrk, G, H, Curvature, out lim);
 
-                        if (!config.CurvatureLimiting)
-                            lim = null;
+                    if(!config.CurvatureLimiting)
+                        lim = null;
 
-                        if (config.CurvatureLimiting)
-                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+                    if(config.CurvatureLimiting)
+                        PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
 
-                        Curvature.CheckForNanOrInf();
+                    Curvature.CheckForNanOrInf();
 
 
-                        LevelSetGradient = null;// new VectorField<SinglePhaseField>(G); 
+                    LevelSetGradient = null;// new VectorField<SinglePhaseField>(G); 
 
-                        return SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
-                    }
+                    return SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
+                }
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean: {
-                        LaplaceBeltramiFiltered(
-                         LsTrk,
-                         Curvature,
-                         config.FilterCurvatureCycles,
-                         G,
-                         HMForder);
-                        Curvature.CheckForNanOrInf(true, true, true);
+                    LaplaceBeltramiFiltered(
+                     LsTrk,
+                     Curvature,
+                     config.FilterCurvatureCycles,
+                     G,
+                     HMForder);
+                    Curvature.CheckForNanOrInf(true, true, true);
 
-                        LevelSetGradient = null;
-                        return SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
-                    }
+                    LevelSetGradient = null;
+                    return SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
+                }
+                default: {
+                    // same as SurfaceStressTensor_IsotropicMode.Curvature_Projected, but Hessian does not exist yet
+                    int[] lim;
+                    ComputeHessian(levSet, CC, config, out H, out H, levSet, G, G, l2pr); // do not distinguish between filtered and unfiltered, use what is available
+                    ProjectTotalCurvature(G, H, Curvature, CC, out lim);
+
+                    if(!config.CurvatureLimiting)
+                        lim = null;
+
+                    if(config.CurvatureLimiting)
+                        PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+
+                    Curvature.CheckForNanOrInf();
+
+                    LevelSetGradient = new VectorField<SinglePhaseField>(G);
+
+                    return SurfaceStressTensor_IsotropicMode.Curvature_Projected; // return the setting used for the curvature calculation
+                }
             }
             throw new ArgumentOutOfRangeException("unknown AlgorithmClass");
         }
