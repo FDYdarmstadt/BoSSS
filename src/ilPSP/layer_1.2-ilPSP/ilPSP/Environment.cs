@@ -686,7 +686,6 @@ namespace ilPSP {
                 //ReservedCPUs = CPUAffinity.GetAffinity();
                 //ReservedCPUs = CPUAffinity.GetAffinity().ToConcatString("[", ", ", "]")
                 //}
-                bool eqalAff = true;
                 //--- this is mpi-local --//
                 if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
                     if(System.Environment.GetEnvironmentVariable("CCP_AFFINITY").IsNonEmpty()) {
@@ -696,7 +695,7 @@ namespace ilPSP {
                         tr.Info($"CCP_AFFINITY is set as '{System.Environment.GetEnvironmentVariable("CCP_AFFINITY")}'");
 
                         var _ReservedCPUs = CPUAffinityWindows.Decode_CCP_AFFINITY();
-                        eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
+                        var eqalAff = _ReservedCPUs.SetEquals(ReservedCPUs);
                         string listdiffs;
                         if(!eqalAff)
                             listdiffs = " (From Win32: " + ReservedCPUs.ToConcatString("[", ",", "]") + " from CCP_AFFINITY: " + _ReservedCPUs.ToConcatString("[", ",", "]") + ")";
@@ -726,7 +725,7 @@ namespace ilPSP {
 
                 tr.Info($"MpiJobOwnsEntireComputer = {MpiJobOwnsEntireComputer}, RnkJobOwnsEntireComputer = {MpiRnkOwnsEntireComputer}");
 
-                if(allequal && eqalAff) {
+                if(allequal) {
                     int l = ReservedCPUsOnSMP.Count();
                     int r = MPIEnv.ProcessRankOnSMP;
                     int s = MPIEnv.ProcessesOnMySMP;
@@ -769,7 +768,7 @@ namespace ilPSP {
                         MaxNumOpenMPthreads = Math.Min(ReservedCPUsOnSMP.Count(), MPIEnv.ProcessesOnMySMP * NumThreads);
                     }*/
 
-                } else if(disjoint && eqalAff) {
+                } else if(disjoint) {
 
                     DedicatedCPUsForThisRank = ReservedCPUs.ToArray();
 
@@ -794,8 +793,8 @@ namespace ilPSP {
                     tr.Info($"R{MPIEnv.MPI_Rank}: using dynamic OpenMP tread placement.");
                 }
 
-                PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint) && eqalAff;
-                PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint) && eqalAff;
+                PerformOMPthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
+                PerformTPLthreadPinning = MPIEnv.MPI_Size > 1 && (allequal != disjoint);
 
                 /*
                                 if(NumThreads*2 < DedicatedCPUsForThisRank.Length) {
@@ -867,7 +866,6 @@ namespace ilPSP {
                     throw new ApplicationException("Configuration error: more threads than CPUs available");
                 int skip = L - NumThreads;
                 int iCpu = DedicatedCPUsForThisRank[skip + ithread]; // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those, resp. mpiexec is forcing them to do so.
-                Console.Error.WriteLine($"R{MPIEnv.MPI_Rank}: trying to TPL pin {ithread}-thread to {iCpu}");
                 CPUAffinity.SetCurrentThreadAffinity(iCpu);
                 //CPUAffinity.SetCurrentThreadAffinity(DedicatedCPUsForThisRank);
             }

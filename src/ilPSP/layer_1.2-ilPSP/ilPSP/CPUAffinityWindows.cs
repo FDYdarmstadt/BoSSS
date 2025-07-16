@@ -200,39 +200,13 @@ namespace ilPSP.Utils {
         /// (Windows version) Returns the list of CPU's to which the current process is assigned to.
         /// </summary>
         public static IEnumerable<int> GetCurrentThreadAffinity() {
-            Process currentProcess = Process.GetCurrentProcess();
-            IntPtr processHandle = currentProcess.Handle;
-
-            // first pass: get number of groups
-            ushort groupCount = 0;
-            GetProcessGroupAffinity(processHandle, ref groupCount, null); // second arg 0 on iput -> returns the n umber of processor 
-            if(groupCount != 1) {
-                //Console.WriteLine($"Process associated to more than one processor group ({groupCount}) -- i don't know what to do about it (tell Florian)!");
-                //throw new NotSupportedException("Process associated to more than one processor group -- i don't know what to do about it (tell Florian)!");
-            }
-
-            // second pass: get actual groups
-            ushort[] groups = new ushort[groupCount];
-            if(!GetProcessGroupAffinity(processHandle, ref groupCount, groups)) {
-                Console.Error.WriteLine("Failed to get processor group affinity.");
+            GROUP_AFFINITY groupAffinity;
+            if(!GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
                 int errorCode = Marshal.GetLastWin32Error();
                 throw new Win32Exception(errorCode);
             }
 
-            var CPUlist = new List<int>();
-
-            for(int cntGroup = 0; cntGroup < groupCount; cntGroup++) {
-                ushort group = groups[cntGroup];
-                GROUP_AFFINITY groupAffinity;
-                if(GetThreadGroupAffinity(GetCurrentThread(), out groupAffinity)) {
-                    CPUlist.AddRange(CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, NumberOfCPUsPerGroup).ToArray());
-                } else {
-                    int errorCode = Marshal.GetLastWin32Error();
-                    throw new Win32Exception(errorCode);
-                }
-            }
-
-            return CPUlist.ToArray();
+            return CheckCpuAffinity(groupAffinity.Mask, groupAffinity.Group, NumberOfCPUsPerGroup).Distinct();
         }
 
         /// <summary>
