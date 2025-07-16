@@ -79,7 +79,6 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
             //InitMPI(num_threads: 2);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.Saye);
             //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(true, LevelSetHandling.LieSplitting, TimeSteppingScheme.ImplicitEuler, true, 3);
             //NUnit.Framework.Assert.IsTrue(false, "remove me and lines above");
 

@@ -203,7 +203,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     grd.EdgeTagNames.Add(6, "navierslip_linear_back");
 
                     grd.DefineEdgeTags(delegate (double[] X) {
-                        byte et = 0;
                         if(Math.Abs(X[2] + zSize * 0.5) <= 1.0e-8)
                             return "navierslip_linear_lower";
                         if(Math.Abs(X[2] - zSize * 0.5) <= 1.0e-8)
@@ -369,6 +368,7 @@ namespace BoSSS.Application.XNSE_Solver {
             [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert, GridPartType.none)] GridPartType gridPartType,
             [Values(7, 8)] int NumberOfElements) {
             var C = DropletOnPlate_AMRtest(D: 2, p: 2, kelem: NumberOfElements);
+
             C.NoOfTimesteps = 1;
             C.GridPartType = gridPartType;
 

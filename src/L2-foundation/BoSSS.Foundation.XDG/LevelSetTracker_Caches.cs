@@ -501,7 +501,6 @@ namespace BoSSS.Foundation.XDG {
                             }
 
                             if (Math.Abs(normPhys) < 1e-15) {
-                                Debugger.Launch();
                                 Console.WriteLine($"WARNING: commented out exception");
                                 normPhys = 1.0;
                             }
