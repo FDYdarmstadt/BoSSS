@@ -41,7 +41,7 @@ namespace BoSSS.Solution.XNSECommon {
         public double errThreshhold = 1.0e-10;
 
         public override int[] DesiredCellChanges() {
-            using (var tr = new FuncTrace("AMRcheckGauss")) {
+            using(var tr = new FuncTrace("AMRcheckGauss")) {
                 tr.InfoToConsole = true;
 
                 int J = GridData.CellPartitioning.LocalLength;
@@ -54,28 +54,28 @@ namespace BoSSS.Solution.XNSECommon {
                 int cellsToRefine = 0;
                 int cellsToCoarse = 0;
                 Cell[] cells = GridData.Grid.Cells;
-                for (int j = 0; j < J; j++) {
+                for(int j = 0; j < J; j++) {
                     int currentLevel = cells[j].RefinementLevel;
-                    if (!CCmask.Contains(j))
+                    if(!CCmask.Contains(j))
                         continue;
 
                     var result = XNSEUtils.CheckGaussInCutCell(j, LsTrk, LsTrk.GetSpeciesId("A"), testField, LsTrk.GetCachedOrders().Max());
                     bool gaussViolated = result.error.Abs() > errThreshhold;
-                    if (gaussViolated) {
+                    if(gaussViolated) {
                         tr.Info($"Gauss theorem error in cell {j} above threshhold {errThreshhold}: {result.error} ");
                     }
-                    if (gaussViolated && currentLevel < maxRefinementLevel) {
+                    if(gaussViolated && currentLevel < maxRefinementLevel) {
                         levels[j] = 1;
                         cellsToRefine++;
-                    } else if (!gaussViolated && currentLevel > 0) {
+                    } else if(!gaussViolated && currentLevel > 0) {
                         levels[j] = -1;
                         cellsToCoarse++;
                     }
                 }
 
-            return levels;
+                return levels;
             }
-            
+
         }
 
 
@@ -93,7 +93,7 @@ namespace BoSSS.Solution.XNSECommon {
             Func<double[], double> fz = (X => 1.0);
             testFieldZ.ProjectField(fz);
 
-            if (grdDat.SpatialDimension == 2) {
+            if(grdDat.SpatialDimension == 2) {
                 return new VectorField<SinglePhaseField>(new SinglePhaseField[] { testFieldX, testFieldY });
             } else {
                 return new VectorField<SinglePhaseField>(new SinglePhaseField[] { testFieldX, testFieldY, testFieldZ });
@@ -103,14 +103,14 @@ namespace BoSSS.Solution.XNSECommon {
 
 
         public override bool Equals(object obj) {
-            if (!base.Equals(obj))
+            if(!base.Equals(obj))
                 return false;
             var other = obj as AMRwithGaussCheck;
-            if (other == null)
+            if(other == null)
                 return false;
-            if (other.levelSet != this.levelSet)
+            if(other.levelSet != this.levelSet)
                 return false;
-            if (other.errThreshhold != this.errThreshhold)
+            if(other.errThreshhold != this.errThreshhold)
                 return false;
             return true;
         }
