@@ -128,10 +128,7 @@ namespace ValidationTestRunner {
             // this will cause a re-execution of all computations
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-                "CollidingSpheres2D_condStudy",
-                "CollidingSpheres2D_condStudy",
-                "CollidingSpheres2D_condStudy",
-                new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+                "CollidingSpheres2D_condStudy");
 
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2D.ipynb");
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2Dpost.ipynb");
@@ -151,10 +148,7 @@ namespace ValidationTestRunner {
 			// this will cause a re-execution of all computations
 			// otherwise, i.e. if the database is not deleted, sessions from the database 
 			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-				"CollidingSpheres3D_condStudy",
-				"CollidingSpheres3D_condStudy",
-				"CollidingSpheres3D_condStudy",
-				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+				"CollidingSpheres3D_condStudy");
 
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3D.ipynb");
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres3Dpost.ipynb");
@@ -173,10 +167,7 @@ namespace ValidationTestRunner {
 			// this will cause a re-execution of all computations
 			// otherwise, i.e. if the database is not deleted, sessions from the database 
 			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-				"Popcorn2D_condStudy",
-				"Popcorn2D_condStudy",
-				"Popcorn2D_condStudy",
-				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
+				"Popcorn2D_condStudy");
 
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2D.ipynb");
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn2Dpost.ipynb");
@@ -197,7 +188,7 @@ namespace ValidationTestRunner {
 			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
 				"Popcorn3D_condStudy",
 				"Popcorn3D_condStudy",
-				"Popcorn3D_condStudy",
+				"delete_Popcorn3D_condStudy",
 				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/rotatingPopcorn3D.ipynb");
@@ -883,8 +874,6 @@ namespace ValidationTestRunner {
             //System.Diagnostics.Debugger.Launch();
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "HeatedCavity_NusseltStudy",
-                "HeatedCavity_NusseltStudy*",
-                "delete_HeatedCavityNusseltStudy",
                 new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudy.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudyPostProc.ipynb");
@@ -929,8 +918,6 @@ namespace ValidationTestRunner {
             }
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "CounterFlowFlame",
-                "CounterFlowFlame*",
-                "delete_CoFlowDiffusionFlame",
                 new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1));
 
 
@@ -945,8 +932,6 @@ namespace ValidationTestRunner {
         static public void Run__HeatedBackwardFacingStep() {
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "HeatedBackwardFacingStep",
-                "HeatedBackwardFacingStep*",
-                "delete_HeatedBackwardFacingStep",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
 
 
@@ -974,8 +959,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "DiffFlameConvergenceStudy",
-                "DiffFlameConvergenceStudy*",
-                "delete_DiffusionFlameConvergenceStudy",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_Calculations.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_PostProc.ipynb");
@@ -1040,8 +1023,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "CombustingDroplet",
-                "CombustingDroplet*",
-                "delete_CombustingDroplet",
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("CombustingDroplet.ipynb");
         }
@@ -1582,6 +1563,38 @@ namespace ValidationTestRunner {
         /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
         /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
         /// </summary>
+        public static void DeleteDatabaseAndDeploymentsWhenOld(string Directory) {
+            var t = new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 12);
+            DeleteDatabaseAndDeploymentsWhenOld(Directory, t);
+        }
+
+        /// <summary>
+        /// Deletes a database <paramref name="Directory"/> if it older than specified by <paramref name="DeletionAge"/>
+        /// - this will cause a re-execution of all computations specified in the test.
+        /// - otherwise, i.e. if the database is not deleted, existing sessions from the database may be taken if they match 
+        ///    the respective compute job (<see cref="Job"/>)
+        /// 
+        /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
+        /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
+        /// </summary>
+        public static void DeleteDatabaseAndDeploymentsWhenOld(string Directory, TimeSpan DeletionAge) {
+            DeleteDatabaseAndDeploymentsWhenOld(
+                Directory,
+                Directory + "*",
+                "delete_" + Directory,
+                DeletionAge);
+
+        }
+
+        /// <summary>
+        /// Deletes a database <paramref name="Directory"/> if it older than specified by <paramref name="DeletionAge"/>
+        /// - this will cause a re-execution of all computations specified in the test.
+        /// - otherwise, i.e. if the database is not deleted, existing sessions from the database may be taken if they match 
+        ///    the respective compute job (<see cref="Job"/>)
+        /// 
+        /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
+        /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
+        /// </summary>
         public static void DeleteDatabaseAndDeploymentsWhenOld(string Directory, string DeployMents, string EnforceDeletionEnvVar, TimeSpan DeletionAge) {
             bool runfromBackup = File.Exists("BOSSS_RUNTESTFROMBACKUP.txt");
             if(runfromBackup) {
@@ -1596,13 +1609,13 @@ namespace ValidationTestRunner {
             var nau = DateTime.Now;
 
             EnforceDeletionEnvVar = EnforceDeletionEnvVar.ToUpperInvariant();
-            
+
 
             bool enforce = false;
             if(EnforceDeletionEnvVar != null) {
                 string really = System.Environment.GetEnvironmentVariable(EnforceDeletionEnvVar) ?? "";
                 string really2 = System.Environment.GetEnvironmentVariable("BOSSS_DELTETE_OLD_DEPLOYMENTS_DATABASES_MASTER") ?? "";
-                if ((really.IsNonEmpty() && really.Trim() != "0")
+                if((really.IsNonEmpty() && really.Trim() != "0")
                     || (really2.IsNonEmpty() && really2.Trim() != "0")
                     || masterEnforceDeletion) {
 
@@ -1660,8 +1673,13 @@ namespace ValidationTestRunner {
                                 continue; // don't delete the db
 
                             if(delete && d.Exists) {
-                                Console.WriteLine("Deleting deployment dir: " + d.FullName);
-                                d.Delete(true);
+                                try {
+                                    Console.WriteLine("Deleting deployment dir: " + d.FullName);
+                                    d.Delete(true);
+                                    Console.WriteLine("  done.");
+                                } catch(Exception e) {
+                                    Console.Error.WriteLine("   caught exception: " + e);
+                                }
                             }
                         }
                     }
