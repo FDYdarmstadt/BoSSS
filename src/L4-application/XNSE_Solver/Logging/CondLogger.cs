@@ -137,11 +137,18 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
             }
         }
 
-		/// <summary>
-		/// Pre-solver or post-solver (0: both, 1: only pre-solver at initial time step, not repeated and 2: only post-solver )
-		/// </summary>
-		[System.Runtime.Serialization.DataMember]
-		public new int SolverStage = 2;
+        /// <summary>
+        /// Pre-solver or post-solver (0: both, 1: only pre-solver at initial time step, not repeated and 2: only post-solver )
+        /// </summary>
+        [System.Runtime.Serialization.DataMember]
+        public override int SolverStage {
+            get {
+                return 2;
+            }
+            protected set {
+                //goto Nirvana. 
+            }
+        }
 	}
 
 }

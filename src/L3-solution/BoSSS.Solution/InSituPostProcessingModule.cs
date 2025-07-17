@@ -255,6 +255,9 @@ namespace BoSSS.Solution {
         /// Pre-solver or post-solver (0: both, 1: only pre-solver at initial time step and 2: only post-solver )
         /// </summary>1
         [DataMember]
-        public int SolverStage = 0;
+        virtual public int SolverStage {
+            get;
+            protected set;
+        } = 0;
     }
 }

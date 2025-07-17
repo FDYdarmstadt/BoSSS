@@ -541,7 +541,7 @@ namespace BoSSS.Foundation.XDG {
                                         AgglomCellsList.Add(jNewbornCell);
                                         AgglomCellsBitmask[jNewbornCell] = true;
 
-                                        Console.WriteLine("Must agglom NEWBORN cell " + jNewbornCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
+                                        //Console.WriteLine("Must agglom NEWBORN cell " + jNewbornCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
 
                                     }
                                 }
@@ -575,7 +575,7 @@ namespace BoSSS.Foundation.XDG {
                                         VanishingCellsList.Add(jVanishingCell);
                                         AgglomCellsBitmask[jVanishingCell] = true;
 
-                                        Console.WriteLine("Must agglom DEAD cell " + jVanishingCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
+                                        //Console.WriteLine("Must agglom DEAD cell " + jVanishingCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
 
                                     }
                                 }
