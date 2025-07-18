@@ -2207,104 +2207,106 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int iIter;
             for(iIter = 1; ; iIter++) {
-                // Check termination
-                var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-                if(!termState.bNotTerminate) {
-                    Converged = termState.bSuccess;
-                    break;
-                }
-                ThisLevelIterations++;
-
-                double[] XfromCoarse = new double[XforCoarse.Length]; //, XfromSmoother = null;
-                // Start listening to signal (see AdvancedParallism)
-                ListenSignal(iIter);
-                IsEndSignalSent = false;
-
-                // Start timing for coarse grid correction and smoother (as they are parallel and wait for each other in case of AdvancedParallism)
-                CrseLevelTime.Start();
-                // from now, it is not serial as it looks on the screen.
-                {
-                    // Coarse grid correction
-                    if(myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
-                        double[] XGuess = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; // XforCoarse;
-                        XfromCoarse = ApplyCoarseGridCorrection(XGuess, ResforCoarse, iIter);
+                using(var f = new FuncTrace("TPLvl" + TpLevel + "Iter" + iIter)) {
+                    // Check termination
+                    var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                    if(!termState.bNotTerminate) {
+                        Converged = termState.bSuccess;
+                        break;
                     }
+                    ThisLevelIterations++;
 
-                    // smoother
-                    if(myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-                        // XfromSmoother = ApplySmoothers(PreCorrSmoother, ResforSmoother, iIter);
+                    double[] XfromCoarse = new double[XforCoarse.Length]; //, XfromSmoother = null;
+                                                                          // Start listening to signal (see AdvancedParallism)
+                    ListenSignal(iIter);
+                    IsEndSignalSent = false;
+
+                    // Start timing for coarse grid correction and smoother (as they are parallel and wait for each other in case of AdvancedParallism)
+                    CrseLevelTime.Start();
+                    // from now, it is not serial as it looks on the screen.
+                    {
+                        // Coarse grid correction
+                        if(myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
+                            double[] XGuess = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; // XforCoarse;
+                            XfromCoarse = ApplyCoarseGridCorrection(XGuess, ResforCoarse, iIter);
+                        }
+
+                        // smoother
+                        if(myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+                            // XfromSmoother = ApplySmoothers(PreCorrSmoother, ResforSmoother, iIter);
 
 
-                        using(var trace = new FuncTrace("SmootherTpLvl" + TpLevel)) {
-                            int i = 0;
-                            List<double[]> Xsolutions = new List<double[]>();
-                            void RunAllSmoothers() {
-                                foreach(var smoother in Smoothers) {
-                                    double[] PreCorrSmoother = new double[smootherPermutation.LengthAfterPermutation]; //XforSmoother;
-                                    smoother.Solve(PreCorrSmoother, ResforSmoother);
+                            using(var trace = new FuncTrace("SmootherTpLvl" + TpLevel)) {
+                                int i = 0;
+                                List<double[]> Xsolutions = new List<double[]>();
+                                void RunAllSmoothers() {
+                                    foreach(var smoother in Smoothers) {
+                                        double[] PreCorrSmoother = new double[smootherPermutation.LengthAfterPermutation]; //XforSmoother;
+                                        smoother.Solve(PreCorrSmoother, ResforSmoother);
 
-                                    resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorrSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-smoother" + TpLevel);
-                                    WriteDebug(iIter, resNorm, "Tp-smootherS"+i);
-                                    i++;
+                                        resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorrSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-smoother" + TpLevel);
+                                        WriteDebug(iIter, resNorm, "Tp-smootherS" + i);
+                                        i++;
+                                    }
                                 }
-                            }
 
-                            RunAllSmoothers(); // Apply smoothers
+                                RunAllSmoothers(); // Apply smoothers
 
-                            for(int sweep = 1; sweep < this.config.NoOfPostSmootherSweeps; sweep++)
-                                RunAllSmoothers();
+                                for(int sweep = 1; sweep < this.config.NoOfPostSmootherSweeps; sweep++)
+                                    RunAllSmoothers();
 
-                            if(AdvancedParallism) {
-                                SendSignal(true, iIter);
-                                bool done = CheckSignal();
-                                int k = 0;
-                                while(!done) { //until the coarse solver is done
-                                    RunAllSmoothers(); // Pre-smoother modifies PreCorr based on Res
+                                if(AdvancedParallism) {
+                                    SendSignal(true, iIter);
+                                    bool done = CheckSignal();
+                                    int k = 0;
+                                    while(!done) { //until the coarse solver is done
+                                        RunAllSmoothers(); // Pre-smoother modifies PreCorr based on Res
 
-                                    k++;
-                                    done = CheckSignal();
+                                        k++;
+                                        done = CheckSignal();
+                                    }
+                                    CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+                                    $"iteration={iIter} - All smoothers cycled extra {k}-times while waiting the coarse solver");
                                 }
-                                CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
-                                $"iteration={iIter} - All smoothers cycled extra {k}-times while waiting the coarse solver");
                             }
                         }
                     }
-                }
-                // Stop timing for coarse grid correction
-                CrseLevelTime.Stop();
+                    // Stop timing for coarse grid correction
+                    CrseLevelTime.Stop();
 
-                using(new FuncTrace("PermutateAndMinimize")) {
-                    var CoarseCorrection = Prolongate(XfromCoarse); //from coarse to this
-                    var CoarseCorrectionToSmoother = smootherPermutation.PermutateVector(CoarseCorrection); //from this to smoother
+                    using(new FuncTrace("PermutateAndMinimize")) {
+                        var CoarseCorrection = Prolongate(XfromCoarse); //from coarse to this
+                        var CoarseCorrectionToSmoother = smootherPermutation.PermutateVector(CoarseCorrection); //from this to smoother
 
-                    if(myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-                        resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrectionToSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-coarse" + TpLevel);
-                    } else {
-                        resNorm = -1;
+                        if(myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrectionToSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-coarse" + TpLevel);
+                        } else {
+                            resNorm = -1;
+                        }
+
+                        resNorm = resNorm.MPIMax(thisComm);
+                        WriteDebug(iIter, resNorm, "Tp-coarse");
                     }
 
-                    resNorm = resNorm.MPIMax(thisComm);
-                    WriteDebug(iIter, resNorm, "Tp-coarse");
+                    using(var tr = new FuncTrace("InitArrays")) {
+                        Res = smootherPermutation.PermutateVectorBack(ResforSmoother);
+                        ResforCoarse = Restrict(Res);
+                    }
+
                 }
 
-                using(var tr = new FuncTrace("InitArrays")) { 
-                Res = smootherPermutation.PermutateVectorBack(ResforSmoother);
-                ResforCoarse = Restrict(Res); 
-                }
-
+                //if(TpLevel > 0) {
+                //    Console.WriteLine("I am here");
+                //    X.SaveToTextFileDebugUnsteady("XBefore", ".txt");
+                //    XforSmoother.SaveToTextFileDebugUnsteady("XforSmootherBefore", ".txt");
+                //}
+                X = smootherPermutation.PermutateVectorBack(XforSmoother);
+                //if(TpLevel > 0) {
+                //    Console.WriteLine("I am here");
+                //    X.SaveToTextFileDebugUnsteady("XAfter", ".txt");
+                //}
+                WriteDebug(iIter, resNorm, "final of this level");
             }
-
-            //if(TpLevel > 0) {
-            //    Console.WriteLine("I am here");
-            //    X.SaveToTextFileDebugUnsteady("XBefore", ".txt");
-            //    XforSmoother.SaveToTextFileDebugUnsteady("XforSmootherBefore", ".txt");
-            //}
-            X = smootherPermutation.PermutateVectorBack(XforSmoother);
-            //if(TpLevel > 0) {
-            //    Console.WriteLine("I am here");
-            //    X.SaveToTextFileDebugUnsteady("XAfter", ".txt");
-            //}
-            WriteDebug(iIter, resNorm, "final of this level");
         }
 
         int ThisSmootherGroupLeader => 0;
