@@ -602,7 +602,7 @@ namespace BoSSS.Application.ExternalBinding {
                 /*
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
-                LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
+                LevelSetUpdater lsu = new LevelSetUpdater(grd, CutCellQuadratureMethod.Classic,
                                                          2, new string[] { "a", "b" },
                                                          GetNamedInputFields,
                                                          RealLevSet, "c", ContinuityProjectionOption.ConstrainedDG);
@@ -856,7 +856,7 @@ namespace BoSSS.Application.ExternalBinding {
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
                     LevelSetUpdater lsu;
-                    lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
+                    lsu = new LevelSetUpdater(grd, CutCellQuadratureMethod.Classic,
                                                              2, new string[] { "a", "b" },
                                                              GetNamedInputFields,
                                                              RealLevSet, "c", ContinuityProjectionOption.None);
@@ -922,12 +922,12 @@ namespace BoSSS.Application.ExternalBinding {
 
                     }
                 }
-            } catch (Exception e) {
-               Console.WriteLine(e.GetType());
-               Console.WriteLine(e.Message);
-               Console.WriteLine(e.StackTrace);
-               Console.WriteLine(e);
-               throw new AggregateException(e);
+            } catch(Exception e) {
+                Console.WriteLine(e.GetType());
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine(e);
+                throw new AggregateException(e);
             }
             // }
         }

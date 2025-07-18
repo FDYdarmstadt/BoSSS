@@ -11,7 +11,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 
 
-namespace BoSSS.Foundation.XDG.Quadrature {
+namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     public class SayeGaussComboRuleFactory {
         ISayeGaussComboRule comboRule;
         List<ChunkRulePair<QuadRule>>[] rulez;
@@ -93,8 +93,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             foreach (Chunk chunk in mask) {
                 foreach (int cell in chunk.Elements) {
                     QuadRule[] sayeRule = comboRule.ComboEvaluate(cell);
-                    ChunkRulePair<QuadRule> sayePair_volume = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[0]);
-                    ChunkRulePair<QuadRule> sayePair_surface = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[1]);
+                    ChunkRulePair<QuadRule> sayePair_volume = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[0]); 
+                    if (sayeRule[0].OrderOfPrecision == 0)
+                        sayeRule[0].OrderOfPrecision = order;
+                    ChunkRulePair<QuadRule> sayePair_surface = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule[1]); 
+                    if(sayeRule[1].OrderOfPrecision == 0)
+                        sayeRule[1].OrderOfPrecision = order;
                     rulez[0].Add(sayePair_volume);
                     rulez[1].Add(sayePair_surface);
                 }

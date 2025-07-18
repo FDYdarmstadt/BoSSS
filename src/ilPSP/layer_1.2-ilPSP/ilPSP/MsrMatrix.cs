@@ -20,10 +20,12 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
+//using System.Runtime.Serialization.Formatters.Binary;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace ilPSP.LinSolvers {
 
@@ -100,6 +102,8 @@ namespace ilPSP.LinSolvers {
         /// Optional column partition of the output matrix; if null, a column partition is chosen automatically.
         /// </param>
         public static MsrMatrix LoadFromFile(string path, MPI_Comm mpi_comm, IPartitioning RowPart = null, IPartitioning ColPart = null) {
+            
+
 
             int rank, size;
             csMPI.Raw.Comm_Rank(mpi_comm, out rank);
@@ -110,13 +114,21 @@ namespace ilPSP.LinSolvers {
             MsrMatrix M;
             if (rank == 0) {
 
-                FileStream fs = new FileStream(path, FileMode.Open);
-                BinaryFormatter bf = new BinaryFormatter();
+                SerializationContainer sc;
+                using(FileStream fs = new FileStream(path, FileMode.Open)) {
+                    //BinaryFormatter bf = new BinaryFormatter();
+                    using(var rdr = new BsonDataReader(fs)) {
+                        sc = jsonFormatter.Deserialize<SerializationContainer>(rdr);
+                    }
 
-                // deserialize No of Cols, Rows, create Matrix
-                long[] Dim = new long[2];
-                Dim[0] = (long)bf.Deserialize(fs);
-                Dim[1] = (long)bf.Deserialize(fs);
+
+                    // close file
+                    fs.Close();
+                }
+                    // deserialize No of Cols, Rows, create Matrix
+               long[] Dim = new long[2];
+                Dim[0] = (long)sc.NoOfRows;
+                Dim[1] = (long)sc.NoOfColumns;
                 unsafe {
                     fixed (long* pDim = &Dim[0]) {
                         csMPI.Raw.Bcast((IntPtr)pDim, 2, csMPI.Raw._DATATYPE.LONG_LONG_INT, 0, mpi_comm);
@@ -130,18 +142,7 @@ namespace ilPSP.LinSolvers {
                 M = new MsrMatrix(RowPart, ColPart);
 
                 // load matrix
-                MatrixEntry[][] entries = (MatrixEntry[][])bf.Deserialize(fs);
-                //foreach (var row in entries) {
-                //    foreach (var entri in row) {
-                //        if (entri.ColIndex >= 0 && entri.val != 0.0) {
-                //            Console.WriteLine("fuck me.");
-                //        }
-                //    }
-                //}
-                Array.Copy(entries, 0, M.m_Entries, 0, (int)RowPart.GetLocalLength(0));
-
-                // close file
-                fs.Close();
+                Array.Copy(sc.entries, 0, M.m_Entries, 0, (int)RowPart.GetLocalLength(0));
 
                 // distribute data
                 for (int r = 1; r < size; r++)
@@ -150,7 +151,7 @@ namespace ilPSP.LinSolvers {
 
                 for (int r = 1; r < size; r++) {
                     MatrixEntry[][] entriesSend = new MatrixEntry[RowPart.GetLocalLength(r)][];
-                    Array.Copy(entries, (int)RowPart.GetI0Offest(r), entriesSend, 0, entriesSend.Length);
+                    Array.Copy(sc.entries, (int)RowPart.GetI0Offest(r), entriesSend, 0, entriesSend.Length);
                     sms.Transmit(r, entriesSend);
                 }
 
@@ -203,6 +204,29 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
+        /// formatter used for all serialization/de-serialization
+        /// </summary>
+        static JsonSerializer jsonFormatter {
+            get {
+                return new JsonSerializer() {
+                    NullValueHandling = NullValueHandling.Include,
+                    TypeNameHandling = TypeNameHandling.All,
+                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                    //TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+                    TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
+                };
+            } 
+        }
+
+        [Serializable]
+        class SerializationContainer {
+            public long NoOfRows;
+            public long NoOfColumns;
+            public MatrixEntry[][] entries;
+        }
+
+        /// <summary>
         /// writes this matrix to a file (binary format, using 
         /// serialization and
         /// an <see cref="BinaryFormatter"/>);
@@ -245,18 +269,23 @@ namespace ilPSP.LinSolvers {
                 }
 
                 // open file
-                FileStream fs = new FileStream(path, fm);
-                BinaryFormatter bf = new BinaryFormatter();
+                using(FileStream fs = new FileStream(path, fm)) {
+                    //BinaryFormatter bf = new BinaryFormatter();
 
-                // serialize matrix data
-                bf.Serialize(fs, (long)(this.RowPartitioning.TotalLength));
-                bf.Serialize(fs, (long)(this.ColPartition.TotalLength));
+                    // serialize matrix data
+                    var container = new SerializationContainer() {
+                        NoOfRows = this.RowPartitioning.TotalLength,
+                        NoOfColumns = this.ColPartition.TotalLength,
+                        entries = entries
+                    };
 
-                bf.Serialize(fs, entries);
-
-                // finalize
-                fs.Flush();
-                fs.Close();
+                    //bf.Serialize(fs, (long)(this.RowPartitioning.TotalLength));
+                    //bf.Serialize(fs, (long)(this.ColPartition.TotalLength));
+                    //bf.Serialize(fs, entries);
+                    using(var wrt = new BsonDataWriter(fs)) {
+                        jsonFormatter.Serialize(wrt, container);
+                    }
+                }
             } else {
                 sms.SetCommPath(0);
                 sms.CommitCommPaths();

@@ -29,7 +29,7 @@ using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
-   
+     
     /// <summary>
     /// edge quadrature of nonlinear equation components
     /// </summary>
@@ -558,7 +558,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             /// <summary>
             /// Integrand evaluation.
             /// </summary>
-            public void EvaluateEx(int i0, int Length, QuadRule QR, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
+            public void EvaluateEx(int i0, int Length, QuadRule QR, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iFred, int NoOfFreds) {
 
                 NodeSet qrNodes = QR.Nodes;
                 IGridData grid = m_owner.GridDat;
@@ -783,10 +783,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // evaluate normals and quadrature transformation metric
                 MultidimensionalArray NormalsGlobalCoords = grid.iGeomEdges.NormalsCache.GetNormals_Edge(qrNodes, i0, Length);
                 MultidimensionalArray QuadScalings;
-                if (affine) {
-                    QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                if (affine && !metric.AlwaysUsePerNodeScaling) {
+                    //QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
+                    QuadScalings = metric.GetScalingsForLinearElements(grid, QR, i0, Length);
                 } else {
-                    QuadScalings = grid.iGeomEdges.NormalsCache.GetIntegrationMetric(qrNodes, i0, Length);
+                    //QuadScalings = grid.iGeomEdges.NormalsCache.GetIntegrationMetric(qrNodes, i0, Length);
+                    QuadScalings = metric.GetScalingsForNonlinElements(grid, QR, i0, Length);
                 }
 
                 // nodes in global coordinates
@@ -1112,14 +1114,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 // multiply fluxes with Jacobi determinant (integral transformation metric):
                 for (int i = 0; i < NoOfEquations; i++) {
+                    bool __affine = affine && !metric.AlwaysUsePerNodeScaling;
                     if (m_FluxValuesIN[i] != null) {
-                        m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
-                        m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
+                        m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", __affine ? "j" : "jk");
+                        m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", __affine ? "j" : "jk");
                     }
 
                     if (m_GradientFluxValuesIN[i] != null) {
-                        m_GradientFluxValuesIN[i].Multiply(1.0, m_GradientFluxValuesIN[i], QuadScalings, 0.0, "jkd", "jkd", affine ? "j" : "jk");
-                        m_GradientFluxValuesOT[i].Multiply(1.0, m_GradientFluxValuesOT[i], QuadScalings, 0.0, "jkd", "jkd", affine ? "j" : "jk");
+                        m_GradientFluxValuesIN[i].Multiply(1.0, m_GradientFluxValuesIN[i], QuadScalings, 0.0, "jkd", "jkd", __affine ? "j" : "jk");
+                        m_GradientFluxValuesOT[i].Multiply(1.0, m_GradientFluxValuesOT[i], QuadScalings, 0.0, "jkd", "jkd", __affine ? "j" : "jk");
                     }
                 }
 
@@ -1187,7 +1190,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     } else {
                         int MaxDegree = Math.Max(m_owner.maxTestBasis != null ? m_owner.maxTestBasis.Degree : 0, m_owner.maxTestGradientBasis != null ? m_owner.maxTestGradientBasis.Degree : 0);
                         OrthoTrf = grid.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCellMin, jCellMax - jCellMin + 1, MaxDegree); // sollte irgendwann sowieso
-                                                                                                                                       //                                                                                                                für alle Zellen vorliegen, also kein Stress
+                                                                                                                                       //                                                                                                                fï¿½r alle Zellen vorliegen, also kein Stress
                                                                                                                                        //                                                                                                                falls jCellMin und jCellMax weit auseinander
                     }
 
@@ -1665,7 +1668,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
 
-                                // Vektorisierung für Rand-Flussfunktionen im Moment ungenutzt
+                                // Vektorisierung fï¿½r Rand-Flussfunktionen im Moment ungenutzt
                                 CallBorder(nonlinFlx, jEdge, IndexOffset, __Len, jEdge, false, NoArgs, NoParams,
                                     components.MapArguments(m_FieldValuesIN, nonlinFlx, false),
                                     MapAlsoMean ? components.MapArguments(m_MeanFieldValuesIN, nonlinFlx, true) : null,
@@ -1771,8 +1774,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         ThreadLocalsEdg[] m_ThreadLocals;
 
 
-        void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
-            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, QuadResult, iThread, NumThreads);
+        void EvaluateEx(int i0, int Length, QuadRule qr, IIntegrationMetric metric, MultidimensionalArray QuadResult, int iThread, int NumThreads) {
+            m_ThreadLocals[iThread].EvaluateEx(i0, Length, qr, metric, QuadResult, iThread, NumThreads);
         }
 
         /// <summary>
@@ -1837,10 +1840,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                     int i0in = 0;
                     if (touchCell1)
-                        i0in = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, 0);
+                        i0in = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell1);
                     int i0ot = 0;
                     if (touchCell2)
-                        i0ot = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, 0);
+                        i0ot = m_CodomainMapping.LocalUnique1stCoordinate(f, jCell2);
 
                     for (int m = 0; m < mE; m++) {
                         int idx = f_offset + m;

@@ -24,6 +24,8 @@ using ApplicationWithIDT;
 using BoSSS.Solution.CompressibleFlowCommon.ShockFinding;
 using ApplicationWithIDT.OptiLevelSets;
 using BoSSS.Solution.Statistic.QuadRules;
+using System.IO;
+using BoSSS.Solution.Tecplot;
 
 
 namespace XESF
@@ -49,6 +51,8 @@ namespace XESF
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args)
         {
+
+            //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
             //IDTTestRunner.RunTests();
             //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs();
             //XESF.Tests.XESFTestProgram.XDG_SWF_TwoLs_HighOrder();
@@ -186,10 +190,42 @@ namespace XESF
             this.XSpatialOperator = new XDifferentialOperatorMk2(variables, null, variables, Control.quadOrderFunc, this.SpeciesToEvaluate);
             this.Op_obj = new XDifferentialOperatorMk2(variables, null, variables, Control.quadOrderFunc, this.SpeciesToEvaluate);
             #endregion
+            
+            /*
+            var ccm = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS, 2).CutCellMetrics;
+            bool check = true;
+            var errors = new List<DGField>();
+            foreach(SpeciesId s in this.LsTrk.SpeciesIdS) {
+                string speciesName = this.LsTrk.GetSpeciesName(s);
+
+                void CheckOrSave(double[] a, string name) {
+                    if(check) {
+                        var _a = VectorIO.LoadFromTextFile(Path.Combine("C:\\tmp", name + "-" + speciesName));
+                        Console.WriteLine($"   {name}#{speciesName} error: \t\t{_a.L2Dist(a):0.###e-00}\t\t{_a.L2Norm():0.###e-00}");
+                        if(_a.Length == this.GridData.iLogicalCells.NoOfLocalUpdatedCells) {
+                            var err = new SinglePhaseField(new Basis(this.Grid, 0), $"err{name}-{speciesName}");
+                            err.CoordinateVector.AccV(1.0, _a);
+                            err.CoordinateVector.AccV(-1.0, a);
+                            errors.Add(err);
+                        }
+                    } else {
+                        a.SaveToTextFile(Path.Combine("C:\\tmp", name + "-" + speciesName));
+                    }
+                }
+                CheckOrSave(ccm.CutLineLength[s].To1DArray(), "CutLineLength");
+                CheckOrSave(ccm.CutCellVolumes[s].To1DArray(), "CutCellVolumes");
+                CheckOrSave(ccm.CutEdgeAreas[s].To1DArray(), "CutEdgeAreas");
+                CheckOrSave(ccm.IntersectionLength[s].To1DArray(), "IntersectionLength");
+                CheckOrSave(ccm.InterfaceArea[s].To1DArray(), "InterfaceArea");
 
 
+            }
 
-            switch (Control.ConvectiveBulkFlux)
+
+            Tecplot.PlotFields((new DGField[] { this.LevelSet, this.LevelSetTwo }).Cat(errors), "lulu", 0.0, 3);
+            */
+
+            switch(Control.ConvectiveBulkFlux)
             {
                 case ConvectiveBulkFluxes.OptimizedHLLC:
                     switch (Control.FluxVersion)

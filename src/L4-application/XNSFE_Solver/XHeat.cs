@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSFE_Solver {
                 throw new Exception("Temperature not found!");
             }
             int quadOrder = degT * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if(this.Control.CutCellQuadratureType == CutCellQuadratureMethod.Saye) {
                 quadOrder *= 2;
                 quadOrder += 1;
             }
@@ -138,7 +138,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
 
             // Level set evolver need the gradient
-            BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+            GradientAndCurvature lsGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);            
         }        
 

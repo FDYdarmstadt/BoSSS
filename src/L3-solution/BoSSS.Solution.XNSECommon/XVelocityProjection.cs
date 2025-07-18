@@ -32,6 +32,7 @@ using ilPSP;
 using BoSSS.Platform;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Solution.XNSECommon {
     

@@ -480,6 +480,9 @@ namespace ilPSP {
                 throw new ArgumentException();
             if (Cindex.Length != C.Dimension)
                 throw new ArgumentException();
+            if(this.IsLocked) {
+                throw new NotSupportedException("Array is locked -- no changes allows.");
+            }
 
             // determine indices for intermediate result
             // =========================================
@@ -981,6 +984,9 @@ namespace ilPSP {
                 throw new ArgumentException();
             if(mp.DB != B.Dimension)
                 throw new ArgumentException();
+            if(this.IsLocked) {
+                throw new NotSupportedException("Array is locked -- no changes allows.");
+            }
             // this is a routine where mono on windows crashes
             unsafe {
                 int DT = mp.DT;

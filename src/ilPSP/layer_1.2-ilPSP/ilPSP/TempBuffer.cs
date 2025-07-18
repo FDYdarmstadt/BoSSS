@@ -117,7 +117,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Only use this if you know what you are doing: you're about to theave tha save .NET-world.
+        /// Only use this if you know what you are doing: you're about to leave the save .NET-world.
         /// </summary>
         public static MultidimensionalArray GetTempMultidimensionalarray(out int iBuf, params int[] Lengths) {
             int size = 1;

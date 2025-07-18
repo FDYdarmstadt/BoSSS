@@ -182,7 +182,12 @@ namespace BoSSS.Foundation.XDG {
 
                     cp.jCellIn = j + inp.e0;
                     cp.jCellOut = cp.jCellIn;
-                    
+
+                    if (this.OrgComponent.GetType().ToString() == "BoSSS.Solution.XNSECommon.Operator.Pressure.PressureFormAtLevelSet"
+                            && cp.jCellIn == 7) {
+                        Console.WriteLine("PressureFormAtLevelSet.InnerEdgeForm - GetCoeff()");
+                    }
+
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         cp.Normal.SetFrom(inp.Normals, j, n);
                         cp.X.SetFrom(inp.Nodes, j, n);

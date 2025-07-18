@@ -200,14 +200,14 @@ namespace BoSSS.Application.CahnHilliard {
 
             /*
             DummyLevset = new LevelSet(c.Basis, "Levset");
-            this.LsTrk = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, DummyLevset);
+            this.LsTrk = new LevelSetTracker((GridData)(this.GridData), CutCellQuadratureMethod.Saye, 1, new string[] { "A", "B" }, DummyLevset);
             DummyLevset.Clear();
             DummyLevset.AccConstant(-1.0);
             this.LsTrk.UpdateTracker(0.0);
             */
 
             RealLevSet = new LevelSet(c.Basis, "Levset");
-            this.RealTracker = new LevelSetTracker((GridData)(this.GridData), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "A", "B" }, RealLevSet);
+            this.RealTracker = new LevelSetTracker((GridData)(this.GridData), CutCellQuadratureMethod.Saye, 2, new string[] { "A", "B" }, RealLevSet);
             RealLevSet.Clear();
             RealLevSet.Acc(1.0, c);
             this.RealTracker.UpdateTracker(0.0);
@@ -579,80 +579,6 @@ namespace BoSSS.Application.CahnHilliard {
                 return R;
             }
         }
-
-
-        /// <summary>
-        /// control of mesh adaptation
-        /// </summary>
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            if(this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
-
-
-                long oldJ = this.GridData.CellPartitioning.TotalLength;
-
-                //double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
-                //double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
-                //double MeanNormPow2PerCell = TotNormPow2 / oldJ; //                    mean norm per cell
-
-
-                int MyLevelIndicator(int j, int CurrentLevel) {
-                    /*
-                    double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
-
-
-                    if (j == 0)
-                        CurrentLevel = CurrentLevel + 1;
-
-                    if (CellNorm > MeanNormPow2PerCell * 1.1)
-                        return CurrentLevel + 1;
-                    else
-                        return CurrentLevel;
-                    */
-
-                    return 0;
-                }
-
-
-                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
-                bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-                int NoOfCellsToRefine = 0;
-                int NoOfCellsToCoarsen = 0;
-                if(AnyChange) {
-                    int[] glb = (new int[] {
-                        CellsToRefineList.Count,
-                        Coarsening.Sum(L => L.Length),
-                        //0, 0
-                    }).MPISum();
-
-                    NoOfCellsToRefine = glb[0];
-                    NoOfCellsToCoarsen = glb[1];
-                }
-                //*/
-
-
-                // Update Grid
-                // ===========
-
-                if(AnyChange) {
-
-
-                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
-
-                    newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-
-                } else {
-
-                    newGrid = null;
-                    old2NewGrid = null;
-                }
-            } else {
-
-                newGrid = null;
-                old2NewGrid = null;
-            }
-        }
-
 
         /// <summary>
         /// Single run of the solver

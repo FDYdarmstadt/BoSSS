@@ -1003,6 +1003,7 @@ namespace BoSSS.Foundation.XDG {
 
                     }
                 }
+                MPICollectiveWatchDog.Watch(37461287);
             }
             AggPairsDirectedToThisRank = AggPairsDirectedToThisRank.Distinct().ToList();
             return InterProcessAgglomeration;
@@ -1133,6 +1134,32 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         MultidimensionalArray CouplingMtx;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="map"></param>
+        /// <param name="MaxDegree"></param>
+        /// <param name="NoOfVars"></param>
+        /// <param name="i0Func">
+        /// Start indices for blocks
+        /// - 1st argument: local cell index
+        /// - 2nd argument: variable index
+        /// - return: global index of first DOF
+        /// </param>
+        /// <param name="NjFunc">
+        /// Length of blocks
+        /// - 1st argument: local cell index
+        /// - 2nd argument: variable index
+        /// - return: number of DOFs in cell for respective variable
+        /// </param>
+        /// <param name="cm"></param>
+
+        public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
+            int MaxDegree, int NoOfVars, Func<int, int, long> i0Func, Func<int, int, int> NjFunc,
+            CellMask cm) { 
+            return GetRowManipulationMatrix_Internal(map, MaxDegree, NoOfVars, i0Func, NjFunc, false, Enumerable.Repeat(cm, map.NoOfVariables).ToArray(), map.NoOfVariables.ForLoop(iVar => true));
+        }
+
 
         /// <summary>
         /// 
@@ -1152,12 +1179,24 @@ namespace BoSSS.Foundation.XDG {
         /// - 2nd argument: variable index
         /// - return: number of DOFs in cell for respective variable
         /// </param>
-        /// <param name="MakeInPlace"></param>
-        /// <param name="cm"></param>
-        /// <returns></returns>
-        public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
+        /// <param name="MakeInPlace">
+        /// - `true`: the returned matrix $M$ performs an in-place transformation, i.e., for a vector $v$, the agglomeration is given by $v + M v$.
+        ///    The in-place version requires less memory, 
+        ///    since it does not need to store diagonal 1.0 elements in cells not touched by the agglomeration
+        ///    and also requires less multiplications to execute.
+        /// - `false`: the returned matrix $M$ performs the entire agglomeration, i.e., for a vector $v$, the agglomeration is given by $M v$.
+        /// </param>
+        /// <param name="masksPerVariable">
+        /// for each variable in <paramref name="map"/>, a mask which cells should be considered at all, 
+        /// i.e., if the mask does not contain a cell, the corresponding row/column in the matrix will be zero.
+        /// - index: variable index, correlates with DG basis's in <paramref name="map"/>
+        /// </param>    
+        /// <param name="doVar">
+        /// turn agglomeration for each variable on/off
+        /// </param>
+        internal BlockMsrMatrix GetRowManipulationMatrix_Internal(UnsetteledCoordinateMapping map,
             int MaxDegree, int NoOfVars, Func<int, int, long> i0Func, Func<int, int, int> NjFunc,
-            bool MakeInPlace, CellMask cm) {
+            bool MakeInPlace, CellMask[] masksPerVariable, bool[] doVar) {
             using(new FuncTrace()) {
 
                 if(!object.ReferenceEquals(map.GridDat, this.GridDat)) {
@@ -1182,19 +1221,24 @@ namespace BoSSS.Foundation.XDG {
                         // ++++++++++++
                         // if not an in-place matrix, we have to initialize the identity matrix.
                         // ++++++++++++
-                        if(cm == null)
-                            cm = CellMask.GetFullMask(this.GridDat);
+                        
+                        for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
 
-                        foreach(int j in cm.ItemEnum) { // loop over cells...
+                            CellMask cm = masksPerVariable?[gamma];
+                            if(masksPerVariable == null)
+                                cm = CellMask.GetFullMask(this.GridDat);
+
+
+                            foreach(int j in cm.ItemEnum) { // loop over cells...
 
                             
-                            for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
                                 int N = NjFunc(j, gamma);
                                 long i0 = i0Func(j, gamma);
 
                                 for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
                                     LevelMtx[i0 + n, i0 + n] = 1.0;
                                 }
+                          
                             }
                         }
                     }
@@ -1216,18 +1260,20 @@ namespace BoSSS.Foundation.XDG {
                                 continue;
 
                             for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
-                                int N = NjFunc(pair.jCellSource, gamma);
-                                int N2 = NjFunc(pair.jCellTarget, gamma);
-                                if(N != N2) {
-                                    throw new NotSupportedException("Different number of DOF in source and target is not supported.");
-                                }
+                                if(doVar[gamma]) {
+                                    int N = NjFunc(pair.jCellSource, gamma);
+                                    int N2 = NjFunc(pair.jCellTarget, gamma);
+                                    if(N != N2) {
+                                        throw new NotSupportedException("Different number of DOF in source and target is not supported.");
+                                    }
 
-                                long i0_Row = i0Func(pair.jCellTarget, gamma);
-                                long i0_Col = i0Func(pair.jCellSource, gamma);
+                                    long i0_Row = i0Func(pair.jCellTarget, gamma);
+                                    long i0_Col = i0Func(pair.jCellSource, gamma);
 
-                                for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
-                                    for(int m = 0; m < N; m++) {
-                                        LevelMtx[i0_Row + n, i0_Col + m] = Aj[m, n];
+                                    for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
+                                        for(int m = 0; m < N; m++) {
+                                            LevelMtx[i0_Row + n, i0_Col + m] = Aj[m, n];
+                                        }
                                     }
                                 }
                             }
@@ -1240,14 +1286,16 @@ namespace BoSSS.Foundation.XDG {
                                 continue;
 
                             for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
-                                int N = NjFunc(pair.jCellSource, gamma);
-                                long i0 = i0Func(pair.jCellSource, gamma);
+                                if(doVar[gamma]) {
+                                    int N = NjFunc(pair.jCellSource, gamma);
+                                    long i0 = i0Func(pair.jCellSource, gamma);
 
-                                for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
-                                    if(MakeInPlace)
-                                        LevelMtx[i0 + n, i0 + n] = -1.0;
-                                    else
-                                        LevelMtx[i0 + n, i0 + n] = 0.0;
+                                    for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
+                                        if(MakeInPlace)
+                                            LevelMtx[i0 + n, i0 + n] = -1.0;  // case: agglomeration is v + M*v, i.e., to clear the row, we need to subtract
+                                        else
+                                            LevelMtx[i0 + n, i0 + n] = 0.0;   // case: agglomeration is M*v, i.e., matrix must be zero to clear the row
+                                    }
                                 }
                             }
                         }
@@ -1280,9 +1328,11 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// In a vector <paramref name="V"/>, this clears all entries which correspond to agglomerated cells.
         /// </summary>
-        public void ClearAgglomerated<T>(T V, UnsetteledCoordinateMapping RowMap)
+        public void ClearAgglomerated<T>(T V, UnsetteledCoordinateMapping RowMap, bool[] doVar)
             where T : IList<double> {
             if (V.Count != RowMap.LocalLength)
+                throw new ArgumentException();
+            if(doVar.Length != RowMap.NoOfVariables)
                 throw new ArgumentException();
 
             var Brow = RowMap.BasisS.ToArray();
@@ -1359,8 +1409,16 @@ namespace BoSSS.Foundation.XDG {
         /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
         /// </summary>
         public void Extrapolate(CoordinateMapping DgFields) {
+            Extrapolate(DgFields, DgFields.NoOfVariables.ForLoop(iVar => true));
+        }
+
+
+        /// <summary>
+        /// For a list of DG fields, this method performs a
+        /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
+        /// </summary>
+        public void Extrapolate(CoordinateMapping DgFields, bool[] DoAgg) {
             using (new FuncTrace()) {
-                int GAMMA = DgFields.Fields.Count;
                 var Brow = DgFields.BasisS.ToArray();
                 this.InitCouplingMatrices(Brow.Max(basis => basis.Degree));
 
@@ -1402,6 +1460,8 @@ namespace BoSSS.Foundation.XDG {
 
 
                         for (int ii = 0; ii < DgFlds.Length; ii++) { // loop over DG fields 
+                            if(!DoAgg[ii])
+                                continue;
                             Basis B = Brow[ii];
                             int N = B.Length;
 
@@ -1502,20 +1562,21 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Apply the basis agglomeration to a right-hand-side vector.
         /// </summary>
-        virtual public void ManipulateRHS<T>(T V, UnsetteledCoordinateMapping RowMap, bool[] RowMapAggSw = null)
+        virtual public void ManipulateRHS<T>(T V, UnsetteledCoordinateMapping RowMap)
             where T : IList<double> //
         {
             MPICollectiveWatchDog.Watch();
 
-            if (RowMapAggSw != null)
-                throw new NotImplementedException();
+            //if (RowMapAggSw != null)
+            //    throw new NotImplementedException();
 
             Basis[] BasisS = RowMap.BasisS.ToArray();
+            bool[] RowMapAggSw = BasisS.Length.ForLoop(iVar => true);
 
-            BlockMsrMatrix AggMtx = this.GetRowManipulationMatrix(RowMap, BasisS.Max(basis => basis.Degree), BasisS.Length,
+            BlockMsrMatrix AggMtx = this.GetRowManipulationMatrix_Internal(RowMap, BasisS.Max(basis => basis.Degree), BasisS.Length,
                  (jCell, iVar) => RowMap.GlobalUniqueCoordinateIndex(iVar, jCell, 0),
                  (jCell, iVar) => BasisS[iVar].GetLength(jCell),
-                 true, null);
+                 true, null, RowMapAggSw);
 
             double[] tmp = V.ToArray();
             if (object.ReferenceEquals(tmp, V))
@@ -1690,10 +1751,8 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="Matrix">the matrix that should be manipulated.</param>
         /// <param name="Rhs">the right-hand-side that should be manipulated</param>
         /// <param name="ColMap"></param>
-        /// <param name="ColMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on. </param>
         /// <param name="RowMap"></param>
-        /// <param name="RowMapAggSw">The same shit as for <paramref name="ColMapAggSw"/>, just for rows.</param>
-        public void ManipulateMatrixAndRHS<M, T>(M Matrix, T Rhs, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap, bool[] RowMapAggSw = null, bool[] ColMapAggSw = null)
+        public void ManipulateMatrixAndRHS<M, T>(M Matrix, T Rhs, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
             where M : IMutableMatrixEx //
             where T : IList<double> //
         {
@@ -1709,11 +1768,11 @@ namespace BoSSS.Foundation.XDG {
                     // nothing to do
                     return;
 
-                if (RowMapAggSw != null)
-                    throw new NotImplementedException();
-
                 // generate agglomeration sparse matrices
                 // ======================================
+
+                bool[] RowMapAggSw = RowMap.NoOfVariables.ForLoop(iVar => true);
+                bool[] ColMapAggSw = ColMap.NoOfVariables.ForLoop(iVar => true);
 
                 int RequireRight;
                 if (Matrix == null) {
@@ -1733,11 +1792,11 @@ namespace BoSSS.Foundation.XDG {
                 BlockMsrMatrix LeftMul, RightMul;
                 {
                     MiniMapping rowMini = new MiniMapping(RowMap);
-                    LeftMul = this.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, null);
+                    LeftMul = this.GetRowManipulationMatrix_Internal(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, null, RowMapAggSw);
 
                     if (RequireRight == 2) {
                         MiniMapping colMini = new MiniMapping(ColMap);
-                        RightMul = this.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, null);
+                        RightMul = this.GetRowManipulationMatrix_Internal(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, null, ColMapAggSw);
                     } else if (RequireRight == 1) {
                         RightMul = LeftMul;
                     } else {

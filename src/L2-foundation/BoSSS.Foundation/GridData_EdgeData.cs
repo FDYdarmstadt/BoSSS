@@ -27,6 +27,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.Utils.Geom;
 using System.IO;
+using NUnit.Framework;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -260,6 +261,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     return area;
                 }
+            }
+
+            /// <summary>
+            /// Center-of-gravity for the edge
+            /// </summary>
+            public Vector GetCenter(int e) {
+                return m_owner.GlobalNodes.GetValue_EdgeSV(this.GetRefElement(e).Center, e).GetRowPt(0);
             }
 
             /// <summary>
@@ -1641,8 +1649,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     throw new NotSupportedException("Boundary conditions must be specified either by edge tags or by boundary-condition elements. Both options simultaneously is not supported.");
                                 }
 
-                                if (_Q.Count() > 1)
+                                if(_Q.Count() > 1) {
+                                    //Console.Error.WriteLine("Found more than one EdgeTag for a boundary condition, for some face.");
+
+                                    if(_Q.Any(cft => cft.EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG)) {
+                                        throw new NotSupportedException("Found more than one EdgeTag for a boundary condition, for some face - maybe some hanging nodes on periodic boundary, which is not allowed.");
+                                    }
+                                    
                                     throw new NotSupportedException("Found more than one EdgeTag for a boundary condition, for some face.");
+                                }
 
                                 if (_Q.Count() > 0) {
                                     EdgeTag = _Q.First().EdgeTag;

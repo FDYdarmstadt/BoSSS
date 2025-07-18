@@ -23,7 +23,7 @@ using System.Security.Cryptography.X509Certificates;
 using ilPSP.LinSolvers.monkey;
 using System.Data;
 
-namespace BoSSS.Foundation.XDG.Quadrature
+namespace BoSSS.Foundation.XDG.Quadrature.Beck
 {
     public class MultiLevelSetBeckFactoryCreator
     {
@@ -81,6 +81,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         }
         
+        /*
         int GetQuadOrder(int? quadorder)
         {
             int qO = 0;
@@ -94,7 +95,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             return qO;
         }
-
+        */
         LevelSetCombination FindPhi(CombinedID iD)
         {
             foreach(LevelSetCombination phi in phis)
@@ -119,7 +120,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             LevelSetCombination lscomb = new LevelSetCombination(id,
                 (LevelSet)levelSets[levSetIndex0].LevelSet,
                 (LevelSet)levelSets[levSetIndex1].LevelSet);
-            return new BeckQuadratureFactory(backupFactory, new BeckEdgeScheme(levelSets, lscomb,false), levelSets,id);
+            return new BeckQuadratureFactory(backupFactory, new BeckEdgeScheme(levelSets, lscomb, false), levelSets,id);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -137,7 +138,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 (LevelSet) levelSets[levSetIndex0].LevelSet,
                 (LevelSet) levelSets[levSetIndex1].LevelSet);
             lscomb.sign0 = 0;
-            return new BeckQuadratureFactory(backupFactory, new BeckSurfaceScheme(levelSets, lscomb,true), levelSets,id0);
+            return new BeckQuadratureFactory(backupFactory, new BeckSurfaceScheme(levelSets, lscomb, true), levelSets,id0);
         }
 
         public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory)
@@ -151,7 +152,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination lscomb = FindPhi(id);
 
-            return new BeckQuadratureFactory(backupFactory, new BeckVolumeScheme(levelSets, lscomb,true),levelSets,id);
+            //Console.WriteLine("warn: testcode");
+            return new BeckQuadratureFactory(backupFactory, new BeckVolumeScheme(levelSets, lscomb, true),levelSets,id);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -289,11 +291,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                             // add to List and jump to next chunk
                             ChunkRulePair<QuadRule> pairSpecial = new ChunkRulePair<QuadRule>(singleChunk, specialRule);
+                            specialRule.OrderOfPrecision = order;
                             rule.Add(pairSpecial);
                             continue;
                         }
                     }
                     ChunkRulePair<QuadRule> pair = new ChunkRulePair<QuadRule>(singleChunk, scheme.GetQuadRule(i, order));
+                    pair.Rule.OrderOfPrecision = order;
                     rule.Add(pair);
                 }
             }
@@ -317,7 +321,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     }
                     else
                     {
-                        specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                        specialRule = QuadRule.CreateBlank(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -335,7 +339,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         bool coinciding = specialFace == iFace;
                         if (coinciding)
                         {
-                            specialRule = QuadRule.CreateEmpty(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
+                            specialRule = QuadRule.CreateBlank(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                         break;
@@ -350,14 +354,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         }
                         else
                         {
-                            specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                            specialRule = QuadRule.CreateBlank(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                     }
                     else
                     {
                         int iFace = detector.GetSpecialFace(i);
-                        int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+                        int iEdge = singleMask.GridData.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
 
                         int J = ((GridData)singleMask.GridData).Cells.NoOfLocalUpdatedCells;
                         int OtherCell = ((GridData)singleMask.GridData).Edges.CellIndices[iEdge, InOrOut == 0 ? 1 : 0];
@@ -378,7 +382,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                             }
                             else
                             {
-                                specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                                specialRule = QuadRule.CreateBlank(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                                 specialRule.Nodes.LockForever();
                             }
                         }
@@ -388,7 +392,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         }
                         else if (!ThisConform & OtherConform)
                         {
-                            specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                            specialRule = QuadRule.CreateBlank(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                             specialRule.Nodes.LockForever();
                         }
                         else
@@ -405,7 +409,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     }
                     else
                     {
-                        specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                        specialRule = QuadRule.CreateBlank(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
                         specialRule.Nodes.LockForever();
                     }
                     break;
@@ -423,12 +427,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             // determine face
             int iFace = detector.GetSpecialFace(i);
-            int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+            int iEdge = singleMask.GridData.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
             // select all edges, relevant in cells with hanging nodes
             singleMask = new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
             if (FurtherEdges != null)
             {
-                specialRule = QuadRule.CreateEmpty(scheme.GetRefElement(), 1, scheme.GetRefElement().SpatialDimension);
+                specialRule = QuadRule.CreateBlank(scheme.GetRefElement(), 1, scheme.GetRefElement().SpatialDimension);
                 specialRule.Nodes.LockForever();
 
                 foreach (var edg in FurtherEdges)
@@ -459,9 +463,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     var nodes_t = rule_t.Nodes.GetVolumeNodeSet(singleMask.GridData, trf, false);
                     var weights_t = rule_t.Weights;
 
-                    // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
-                    double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
-                    weights_t.Scale(scale);
+                    //// scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
+                    //double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
+                    //weights_t.Scale(scale);
 
                     specialNodes.Add(nodes_t);
                     specialWeights.Add(weights_t);
@@ -496,11 +500,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
     }
     internal abstract class BeckBaseScheme : ISchemeWO
     {
-        public LevelSetData[] data;
+        public readonly LevelSetData[] data;
 
-        public LevelSetCombination lscomb;
-        public int D;
-        public bool isGlobalMode = false;
+        public readonly LevelSetCombination lscomb;
+        public readonly int D;
+        public readonly bool isGlobalMode = false;
 
 
         RefElement ISchemeWO.ReferenceElement => GetRefElement();
@@ -510,7 +514,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public BeckBaseScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode=false)
         {
             this.data = data;
-            this.isGlobalMode= isGlobalMode;
+            this.isGlobalMode = isGlobalMode;
+            if(isGlobalMode) {
+                // only deactivate if you know what you are doing
+                //throw new NotSupportedException("Since quadrature rule metrics have been moved to the `IIntegrationMetric` interface, setting `isGlobalMode` to true is not advised.");
+                //Console.Error.WriteLine("Since quadrature rule metrics have been moved to the `IIntegrationMetric` interface, setting `isGlobalMode` to true is not advised.");
+            }
 
             this.lscomb = lscomb;
             this.D = ((LevelSet)data[0].LevelSet).Basis.GridDat.SpatialDimension;
@@ -557,19 +566,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
             // Get The Quadrature rule From Intersectingquadrature
             QuadratureRule ruleQ = (default);
             
-            try
-            {
-                //find the quad rule
-                ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes, subdiv);
-            }
-            catch(Exception ex)
-            {
-                throw ex;
-            }
+            //try
+            //{
+            //find the quad rule
+            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes, subdiv);
+            //}
+            //catch(Exception ex)
+            //{
+            //    throw ex;
+            //}
             
 
             // Creates a QuadRule Object <- The One BoSSS uses
-            QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, cell.Dimension, true);
+            QuadRule rule = QuadRule.CreateBlank(GetRefElement(), ruleQ.Count, cell.Dimension, false);
             rule.OrderOfPrecision = order;
 
             //transfer from Beck into BoSSS structure
@@ -598,9 +607,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                 if (rule.Nodes.Lengths[0] != 0)
                 {
-                    //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
+                //    //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
 
-                    //Get the Scaling
+                //    //Get the Scaling
                     ScaleWeights(rule,j);
 
                     
@@ -608,9 +617,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             else
             {
-                //Get the Scaling
-                double scaling = GetScaling(j);
-                rule.Weights.Scale(1 / scaling);
+                ////Get the Scaling
+                //double scaling = GetScaling(j);
+                //rule.Weights.Scale(1 / scaling);
                 rule.Nodes.LockForever();
             }
             
@@ -766,15 +775,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <returns></returns>
         public abstract HyperRectangle GetCell(int j);
 
-        /// <summary>
-        /// gives the scaling
-        /// </summary>
-        /// <param name="j"></param>
-        /// <returns></returns>
-        public abstract double GetScaling(int j);
+        ///// <summary>
+        ///// gives the scaling
+        ///// </summary>
+        ///// <param name="j"></param>
+        ///// <returns></returns>
+        //public abstract double GetScaling(int j);
 
         /// <summary>
-        /// This method reutrn a Hyperrectangle that is exactly the domain we want to integrate
+        /// This method returns a Hyperrectangle that is exactly the domain we want to integrate
         /// </summary>
         /// <returns></returns>
         public abstract (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j);
@@ -853,19 +862,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
         }
 
-        public override double GetScaling(int j)
-        {
-            return 1;
-        }
+        //public override double GetScaling(int j)
+        //{
+        //    return 1;
+        //}
 
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
+        public override void ScaleWeights(QuadRule rule, int j) {
             var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
             var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
-            {
-                //rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
-                rule.Weights[iWeight] = rule.Weights[iWeight]/ jacDet[0, iWeight];
+            for(int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++) {
+                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
             }
         }
 
@@ -939,16 +945,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return (new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
         }
 
-        public override double GetScaling(int j)
-        {
-            return 1;
-        }
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
+        //public override double GetScaling(int j)
+        //{
+        //    return 1;
+        //}
+        public override void ScaleWeights(QuadRule rule, int j) {
             var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
             var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
-            {
+            for(int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++) {
                 rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
             }
         }
@@ -1008,30 +1012,40 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
         }
 
-        public override double GetScaling(int j)
-        {
-            if (isGlobalMode)
-            {
-                return 1;
-            }
-            else
-            {
-                var ls = (LevelSet)data[lscomb.ID.LevSet0].LevelSet;
-                var grd = ls.GridDat;
-                var ret = grd.Jacobian.GetValue_Cell(GetRefElement().Center, j, 1);
-                return ret[0, 0, 0];
-            }
-            
-        }
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
+        //public override double GetScaling(int j)
+        //{
+        //    if (isGlobalMode)
+        //    {
+        //        return 1;
+        //    }
+        //    else
+        //    {
+        //        var ls = (LevelSet)data[lscomb.ID.LevSet0].LevelSet;
+        //        var grd = ls.GridDat;
+        //        var ret = grd.Jacobian.GetValue_Cell(GetRefElement().Center, j, 1);
+        //        return ret[0, 0, 0];
+        //    }
+
+        //}
+        public override void ScaleWeights(QuadRule rule, int j) {
             var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
             var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
-            {
-                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+
+            // note: added by Florian, to be able to use the `isGlobalMode == true`-mode 
+            // in the configuration `isGlobalMode == false`, the generation of the rule is much slower and requires many more level-set evaluations
+            var othermetrics0 = base.data[0].GetLevelSetNormalReferenceToPhysicalMetrics(rule.Nodes, j, 1); // the 0-th level-set is always the one we are integrating over
+            
+            for(int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++) {
+                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight] * othermetrics0[0, iWeight];
             }
         }
+        //public override QuadRule GetQuadRule(int j, int order) {
+        //    var rule = base.GetQuadRule(j, order);
+        //    if(rule.NoOfNodes > 0) {
+        //        Console.Write("");
+        //    }
+        //    return rule;
+        //}
     }
 
     internal class BeckZeroScheme : BeckBaseScheme
@@ -1055,18 +1069,17 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new NotImplementedException();
         }
 
-        public override double GetScaling(int j)
-        {
-            throw new NotImplementedException();
-        }
+        //public override double GetScaling(int j)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public override void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j)
         {
             throw new NotImplementedException();
         }
 
-        public override void ScaleWeights(QuadRule rule, int j)
-        {
+        public override void ScaleWeights(QuadRule rule, int j) {
             throw new NotImplementedException();
         }
     }
@@ -1091,10 +1104,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new NotImplementedException();
         }
 
-        public override double GetScaling(int j)
-        {
-            throw new NotImplementedException();
-        }
+        //public override double GetScaling(int j)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public override void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j)
         {
@@ -1414,12 +1427,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public static NodeSet NSFromTensor(Tensor1 x, LevelSet m_levelSet)
         {
-            //transform into multarray
-            MultidimensionalArray GlobIn = MultidimensionalArray.Create(1, x.M);
-            for (int i = 0; i < x.M; i++)
-            {
-                GlobIn[0, i] = x[i];
-            }
+            ////transform into multarray
+            //MultidimensionalArray GlobIn = MultidimensionalArray.Create(1, x.M);
+            //for (int i = 0; i < x.M; i++)
+            //{
+            //    GlobIn[0, i] = x[i];
+            //}
 
             //output array for local coordinates
             //var LocOut = MultidimensionalArray.Create(1, 1, GlobIn.Lengths[1]);
@@ -1430,20 +1443,32 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
 
             //gives the NodeSet using the local Coords
+            RefElement kRef; 
             if(x.M == m_levelSet.Basis.GridDat.SpatialDimension)
             {
-                return new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], GlobIn, true);
+                //return new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], GlobIn, true);
+                kRef = m_levelSet.GridDat.iGeomCells.RefElements[0];
 
             }
             else if(x.M == m_levelSet.Basis.GridDat.SpatialDimension-1)
             {
-                return new NodeSet(m_levelSet.GridDat.iGeomEdges.EdgeRefElements[0], GlobIn, true);
-
+                //return new NodeSet(m_levelSet.GridDat.iGeomEdges.EdgeRefElements[0], GlobIn, true);
+                kRef = m_levelSet.GridDat.iGeomEdges.EdgeRefElements[0];
             }
             else
             {
-                return new NodeSet(Grid.RefElements.Point.Instance, GlobIn, true);
+                //return new NodeSet(Grid.RefElements.Point.Instance, GlobIn, true);
+                kRef = Grid.RefElements.Point.Instance;
             }
+
+            //transform into multarray
+            var GlobIn = new NodeSet(kRef, 1, x.M, false);
+            for(int i = 0; i < x.M; i++) {
+                GlobIn[0, i] = x[i];
+            }
+            GlobIn.LockForever();
+            return GlobIn;
+
         }
         public static NodeSet NSFromGlobalTensor(Tensor1 x, LevelSet m_levelSet, int j)
         {
@@ -1462,7 +1487,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             m_levelSet.GridDat.TransformGlobal2Local(GlobIn, LocOut, j, 1, 0);
 
             //gives the NodeSet using the local Coords
-            var NS = new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], LocOut.ExtractSubArrayShallow(0, -1, -1), true);
+            var NS = new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], LocOut.ExtractSubArrayShallow(0, -1, -1), false);
 
             return NS;
         }

@@ -180,7 +180,7 @@ namespace NSE_SIMPLE {
                 //        break;
                 //    }
                 case IncompressibleBcType.Pressure_Dirichlet: 
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
                     if (base.g_Neu_Override == null) {

@@ -2,6 +2,7 @@
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -25,7 +26,10 @@ namespace ilPSP {
             string fileName = Path.GetFileName(a.Location);
             var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
             if(allMatch.Length > 1) {
-                throw new ApplicationException("internal error in assembly collection.");
+                for (int i = 0; i < allMatch.Length; i++) { 
+                    Console.Error.WriteLine($"match {i+1}: {allMatch[i].ToString()} found at {allMatch[i].Location}");
+                } 
+                throw new ApplicationException($"internal error in assembly collection. Found {fileName} more than once");
             }
 
             foreach(AssemblyName b in a.GetReferencedAssemblies()) {
@@ -91,7 +95,7 @@ namespace ilPSP {
         /// <summary>
         /// copies an assembly and all dependencies to a certain <paramref name="Destination"/>
         /// </summary>
-        public static void DeployAt(this Assembly entryAssembly, DirectoryInfo Destination) {
+        public static FileInfo DeployAt(this Assembly entryAssembly, DirectoryInfo Destination) {
             var assiList = GetAllDependentAssemblies(entryAssembly);
             string MainAssemblyDir = Path.GetDirectoryName(entryAssembly.Location);
 
@@ -107,6 +111,8 @@ namespace ilPSP {
             if(Directory.Exists(runtimes_Src)) {
                 CopyFilesRecursively(runtimes_Src, runtimes_Dst);
             }
+
+            return new FileInfo(Path.Combine(Destination.FullName, Path.GetFileName(entryAssembly.Location)));
         }
 
         static void CopyFilesRecursively(string sourcePath, string targetPath) {

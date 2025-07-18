@@ -1087,43 +1087,43 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (64 bit>nBit*nDim).
         /// Note: The identification of barycenter only works for rectangular-shaped cells.
         /// </summary>
-        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0, bool adjustRefinement=false) {
+        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0, bool adjustRefinement = false) {
 
             //CONSTRUCTIONSITE: GetShortestDistance will be called from here, the return argument will be used to calculate a refinement order
             //This refinement order has to be stored once and is available in here during runtime
-            
+
             //Functype: Constraint mapping (0) or direct Costmapping (1)
             //Notice: Functype=1 will lead to bad behavior, when using Clusters
 
             int[] local_Rank_RedistributionList;
 
-            if (this.Size > 1) {
+            if(this.Size > 1) {
                 int D = this.SpatialDimension;
                 var GlobalBB = this.GetGridBoundingBox();
 
                 int J = this.CellPartitioning.LocalLength;
-                
+
                 ulong[] discreteCenter = new ulong[D];
                 ulong[] local_HilbertIndex = new ulong[J];
                 long[] local_CellIndex = new long[J];
                 int MaxRef = 64;
 
-                for (int j = 0; j < J; j++) {
+                for(int j = 0; j < J; j++) {
                     Cell Cj = this.Cells[j];
                     int NoOfNodes = Cj.TransformationParams.NoOfRows;
                     //Compute Barycenter of rectangular cells
-                    for (int d = 0; d < D; d++) {
+                    for(int d = 0; d < D; d++) {
                         double center = 0;
-                        for (int k = 0; k < NoOfNodes; k++) {
+                        for(int k = 0; k < NoOfNodes; k++) {
                             center += Cj.TransformationParams[k, d];
                         }
 
                         center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
                         double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, MaxRef / D);
                         centerTrf = Math.Round(centerTrf);
-                        if (centerTrf < 0)
+                        if(centerTrf < 0)
                             centerTrf = 0;
-                        if (centerTrf > ulong.MaxValue)
+                        if(centerTrf > ulong.MaxValue)
                             centerTrf = ulong.MaxValue;
                         discreteCenter[d] = (ulong)centerTrf;
                         //Debugger.Break();
@@ -1137,16 +1137,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                 //Gather all stuff for computation on rank==0
                 int numberofcells = this.NumberOfCells;
                 int[] CellsPerRank = new int[this.Size];
-                for (int r = 0; r < CellsPerRank.Length; r++) {
+                for(int r = 0; r < CellsPerRank.Length; r++) {
                     CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
                 }
                 long[] CellIndex = local_CellIndex.MPIGatherv(CellsPerRank);
                 ulong[] HilbertIndex = local_HilbertIndex.MPIGatherv(CellsPerRank);
                 //m_HilbertIdx = local_HilbertIndex;
                 List<int[]> cellCosts = new List<int[]>();
-                if (localcellCosts != null) {
+                if(localcellCosts != null) {
                     cellCosts = new List<int[]>() { new int[numberofcells] };
-                    foreach (int[] cellCostmap in localcellCosts) {
+                    foreach(int[] cellCostmap in localcellCosts) {
                         cellCosts.Add(cellCostmap.MPIGatherv(CellsPerRank));
                     }
                     cellCosts.RemoveAt(0);
@@ -1154,122 +1154,126 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int[] RankIndex = new int[numberofcells];
 
                 //Sequential Part
-                if (MyRank == 0) {
+                if(MyRank == 0) {
                     //catch case localcellsCosts is empty
-                    if (localcellCosts == null) {
+                    if(localcellCosts == null) {
                         cellCosts = new List<int[]>() { new int[numberofcells] };
-                        switch (Functype) {
+                        switch(Functype) {
                             case 0:
-                                cellCosts.Single().SetAll(10);
-                                break;
+                            cellCosts.Single().SetAll(10);
+                            break;
                             case 1:
-                                cellCosts.Single().SetAll(1);
-                                break;
+                            cellCosts.Single().SetAll(1);
+                            break;
                         }
                     }
 
                     ulong[] HilbertIndex_tmp = HilbertIndex.CloneAs<ulong[]>();
                     Array.Sort(HilbertIndex, CellIndex);
 
-                    
+
                     int numproc = this.Size;
                     int[] CostClustermap = new int[numberofcells];
 
-                    switch (Functype) {
-                    case 0:
-                        //Distribution of MPI-Rank along Hilbertcurve considering multiple Constraints with equal weight
-                        //Assuming: Constraintmap only contains two types = (1, a number>1); Constraints do not overlap, but in sum cover whole grid
-                        Debug.Assert(cellCosts.Count >= 1);
-                        int[,] buckets = new int[numproc, cellCosts.Count];
-                        int[] CellsPerCluster = new int[cellCosts.Count];
-                        int CheckCount = 0;
-                        int[] CheckInt = new int[numberofcells];
+                    switch(Functype) {
+                        case 0: {
+                            //Distribution of MPI-Rank along Hilbertcurve considering multiple Constraints with equal weight
+                            //Assuming: Constraintmap only contains two types = (1, a number>1); Constraints do not overlap, but in sum cover whole grid
+                            Debug.Assert(cellCosts.Count >= 1);
+                            int[,] buckets = new int[numproc, cellCosts.Count];
+                            int[] CellsPerCluster = new int[cellCosts.Count];
+                            int CheckCount = 0;
+                            int[] CheckInt = new int[numberofcells];
 
-                        //unite all constraints in CostClustermap
-                        for (int k = 0; k < cellCosts.Count; k++) {
-                            int CountTargetCells = 0;
-                            for (int i = 0; i < cellCosts.ElementAt(k).Length; i++) {
-                                Debug.Assert(cellCosts.ElementAt(k).Length == numberofcells);
-                                if (cellCosts.ElementAt(k)[i] > 1) {
-                                    CountTargetCells++;
-                                    CostClustermap[i] = k;
-                                    CheckInt[i] += 1;
+                            //unite all constraints in CostClustermap
+                            for(int k = 0; k < cellCosts.Count; k++) {
+                                int CountTargetCells = 0;
+                                for(int i = 0; i < cellCosts[k].Length; i++) {
+                                    Debug.Assert(cellCosts[k].Length == numberofcells);
+                                    if(cellCosts[k][i] > 1) {
+                                        CountTargetCells++;
+                                        CostClustermap[i] = k;
+                                        CheckInt[i] += 1;
+                                    }
+                                    if(CheckInt[i] > 1) {
+                                        Debugger.Launch();
+                                        throw new ArgumentException("Clusters are overlapping!");
+                                    }
                                 }
-                                if (CheckInt[i] > 1) {
-                                    throw new ArgumentException("Clusters are overlapping!");
+                                CellsPerCluster[k] = CountTargetCells;
+                                CheckCount += CountTargetCells;
+                            }
+
+                            if(CheckCount != numberofcells)
+                                throw new ArgumentException("There are unmasked Cells in cellCosts!");
+                            Array.Sort(HilbertIndex_tmp, CostClustermap); //Would be better to unify with Array.Sort(HilbertIndex, CellIndex)
+
+                            //fill buckets, buckets contain number of cells to distribute per rank
+                            for(int iCluster = 0; iCluster < CellsPerCluster.Length; iCluster++) {
+                                int N = CellsPerCluster[iCluster];
+                                int TestSum = 0;
+                                for(int iProc = 0; iProc < numproc; iProc++) {
+                                    buckets[iProc, iCluster] = N * (iProc + 1) / numproc - N * iProc / numproc;
+                                    TestSum += buckets[iProc, iCluster];
+                                }
+                                Debug.Assert(CellsPerCluster[iCluster] == TestSum);
+
+                            }
+
+                            //Go through HilbertCurve and map rank->cell
+                            int rank = 0;
+                            for(int cell = 0; cell < CostClustermap.Length;) {
+                                if(buckets[rank, CostClustermap[cell]] != 0) {
+                                    buckets[rank, CostClustermap[cell]]--;
+                                    RankIndex[cell] = rank;
+                                    cell++;
+                                } else {
+                                    rank = (rank + 1) % numproc;
+                                    //Console.WriteLine("switch at: {0}, from rank{1}->{2}", cell, oldrank, rank);
+                                    //Console.WriteLine("proc{0},cluster{2}: {1}", oldrank, buckets[oldrank, CostClustermap[cell]], CostClustermap[cell]);
+                                    //Console.WriteLine("proc{0},cluster{2}: {1}", rank, buckets[rank, CostClustermap[cell]], CostClustermap[cell]);
+                                    //VerdachtsCellen.Add(CellIndex[cell]);
                                 }
                             }
-                            CellsPerCluster[k] = CountTargetCells;
-                            CheckCount += CountTargetCells;
+                            break;
                         }
-
-                        if (CheckCount != numberofcells)
-                            throw new ArgumentException("There are unmasked Cells in cellCosts!");
-                        Array.Sort(HilbertIndex_tmp, CostClustermap); //Would be better to unify with Array.Sort(HilbertIndex, CellIndex)
-
-                        //fill buckets, buckets contain number of cells to distribute per rank
-                        for (int iCluster = 0; iCluster < CellsPerCluster.Length; iCluster++) {
-                            int N = CellsPerCluster[iCluster];
-                            int TestSum = 0;
-                            for (int iProc = 0; iProc < numproc; iProc++) {
-                                buckets[iProc, iCluster] = N * (iProc + 1) / numproc - N * iProc / numproc;
-                                TestSum += buckets[iProc, iCluster];
+                        case 1: {
+                            //direct cost mapping
+                            CostClustermap = cellCosts[0];
+                            if(cellCosts.Count > 1) {
+                                Console.WriteLine("More than one cell cost cluster chosen. You can use cluster Hilbert instead. Proceeding with equal cell costs ...");
+                                var tmp = new int[cellCosts[0].Length];
+                                tmp.SetAll(1);
+                                CostClustermap = tmp;
                             }
-                            Debug.Assert(CellsPerCluster[iCluster] == TestSum);
 
-                        }
+                            Array.Sort(HilbertIndex_tmp, CostClustermap);
+                            int CellCostSum = 0;
+                            for(int cell = 0; cell < CostClustermap.Length; cell++)
+                                CellCostSum += CostClustermap[cell];
 
-                        //Go through HilbertCurve and map rank->cell
-                        int rank = 0;
-                        for (int cell = 0; cell < CostClustermap.Length;) {
-                            if (buckets[rank, CostClustermap[cell]] != 0) {
-                                buckets[rank, CostClustermap[cell]]--;
-                                RankIndex[cell] = rank;
-                                cell++;
-                            } else {
-                                rank = (rank + 1) % numproc;
-                                //Console.WriteLine("switch at: {0}, from rank{1}->{2}", cell, oldrank, rank);
-                                //Console.WriteLine("proc{0},cluster{2}: {1}", oldrank, buckets[oldrank, CostClustermap[cell]], CostClustermap[cell]);
-                                //Console.WriteLine("proc{0},cluster{2}: {1}", rank, buckets[rank, CostClustermap[cell]], CostClustermap[cell]);
-                                //VerdachtsCellen.Add(CellIndex[cell]);
+                            int MPIrank = -1;
+                            int CostofProc = 0;
+                            int DistributedCost = 0;
+                            int TestSumC = 0;
+                            for(int iCell = 0; iCell < numberofcells; iCell++) {
+                                if(DistributedCost >= CostofProc) {
+                                    MPIrank++;
+                                    CostofProc = CellCostSum * (MPIrank + 1) / numproc - CellCostSum * MPIrank / numproc;
+                                    TestSumC += CostofProc;
+                                    DistributedCost = 0;
+                                }
+                                RankIndex[iCell] = MPIrank;
+                                DistributedCost += CostClustermap[iCell];
                             }
-                        }
-                        break;
-                    case 1:
-                        //direct cost mapping
-                        CostClustermap = cellCosts[0];
-                        if (cellCosts.Count > 1) {
-                            Console.WriteLine("More than one cell cost cluster chosen. You can use cluster Hilbert instead. Proceeding with equal cell costs ...");
-                            var tmp = new int[cellCosts[0].Length];
-                            tmp.SetAll(1);
-                            CostClustermap = tmp;
-                        }
 
-                        Array.Sort(HilbertIndex_tmp, CostClustermap);
-                        int CellCostSum = 0;
-                        for (int cell = 0; cell < CostClustermap.Length; cell++)
-                            CellCostSum += CostClustermap[cell];
-                       
-                        int MPIrank = -1;
-                        int CostofProc = 0;
-                        int DistributedCost = 0;
-                        int TestSumC = 0;
-                        for (int iCell = 0; iCell < numberofcells; iCell++) {
-                            if (DistributedCost >= CostofProc) {
-                                MPIrank++;
-                                CostofProc = CellCostSum * (MPIrank + 1) / numproc - CellCostSum * MPIrank / numproc;
-                                TestSumC += CostofProc;
-                                DistributedCost = 0;
-                            }
-                            RankIndex[iCell] = MPIrank;
-                            DistributedCost += CostClustermap[iCell];
+                            Debug.Assert(TestSumC == CellCostSum);
+                            Debug.Assert(MPIrank == this.Size - 1);
+                            break;
                         }
-
-                        Debug.Assert(TestSumC == CellCostSum);
-                        Debug.Assert(MPIrank == this.Size-1);
-                        break;
-                    default:
-                        throw new NotImplementedException();
+                        default: {
+                            throw new NotImplementedException();
+                        }
                     }
                     Array.Sort(CellIndex, RankIndex);
                 }

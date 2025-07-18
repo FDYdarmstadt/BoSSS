@@ -329,6 +329,11 @@ namespace BoSSS.Foundation {
         /// </returns>
         bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable);
 
+
+        /// <summary>
+        /// Returns all equation components which implement <see cref="IParameterHandling"/>
+        /// </summary>
+        IEnumerable<IParameterHandling> GetAllParameterHandlers();
     }
 
     /// <summary>
@@ -347,6 +352,11 @@ namespace BoSSS.Foundation {
         /// Evaluation of the temporal operator matrix (aka. mass matrix).
         /// </summary>
         IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap);
+
+        /// <summary>
+        /// Returns all equation components which implement <see cref="IParameterHandling"/>
+        /// </summary>
+        IEnumerable<IParameterHandling> GetAllParameterHandlers();
     }
 
 }
