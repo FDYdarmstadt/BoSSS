@@ -1337,7 +1337,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 				}
 
-#if DEBUG_EXTENDED
+#if DEBUG
 				tr.Info("\nPer-core assignment");
 				for (int j = StartOfTpLevel; j < EndOfTpLevel+1; j++) {
 					// compute indent = sum of smoother procs on all finer levels
@@ -2205,6 +2205,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             iter0_resNorm = iter0_resNorm.MPIMax(thisComm);
             resNorm = iter0_resNorm;
 
+            WriteDebug(0, resNorm, $"initial start with NoOfPostSmootherSweeps={config.NoOfPostSmootherSweeps}");
+
             int iIter;
             for(iIter = 1; ; iIter++) {
                 using(var f = new FuncTrace("TPLvl" + TpLevel + "Iter" + iIter)) {
@@ -2292,21 +2294,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Res = smootherPermutation.PermutateVectorBack(ResforSmoother);
                         ResforCoarse = Restrict(Res);
                     }
-
                 }
-
-                //if(TpLevel > 0) {
-                //    Console.WriteLine("I am here");
-                //    X.SaveToTextFileDebugUnsteady("XBefore", ".txt");
-                //    XforSmoother.SaveToTextFileDebugUnsteady("XforSmootherBefore", ".txt");
-                //}
-                X = smootherPermutation.PermutateVectorBack(XforSmoother);
-                //if(TpLevel > 0) {
-                //    Console.WriteLine("I am here");
-                //    X.SaveToTextFileDebugUnsteady("XAfter", ".txt");
-                //}
-                WriteDebug(iIter, resNorm, "final of this level");
             }
+            X = smootherPermutation.PermutateVectorBack(XforSmoother);
+            WriteDebug(iIter, resNorm, "final of this level");
         }
 
         int ThisSmootherGroupLeader => 0;
@@ -2441,7 +2432,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				if (CoarserLevelSolver == null) {
 					throw new InvalidOperationException("Coarse level solver is not initialized.");
 				}
-
                 double[] ResCoarse = B;
                 double[] XCoarse = X;
                 // Restrict the residual to the coarse grid
@@ -2463,9 +2453,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							done = CheckSignal();
 						}
 
-						trace.InfoToConsole = CurrentTrace.InfoToConsole;
-						//trace.StdoutOnOnlyLastRank();
-						trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
+                        trace.InfoToConsole = CurrentTrace.InfoToConsole;
+                        trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
 						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the coarse solver");
 					}
 				}
