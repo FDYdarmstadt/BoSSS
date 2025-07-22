@@ -14,10 +14,8 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <DocumentationFile>bin\Release\BoSSS.Foundation.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
-    <!--LangVersion>7.1</LangVersion-->
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
@@ -67,6 +65,6 @@
     <Compile Remove="Tensor2Field.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
   </ItemGroup>
 </Project>

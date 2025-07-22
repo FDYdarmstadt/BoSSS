@@ -54,7 +54,7 @@ namespace BoSSS.Solution.XNSECommon {
                 double ooD = 1.0 / GridData.SpatialDimension;
                 
                 double GetLogicalCellLenthSchale(int j) {
-                    double vol = = base.GridData.iLogicalCells.GetCellVolume(j);
+                    double vol = base.GridData.iLogicalCells.GetCellVolume(j);
                     return Math.Pow(vol, ooD);
                 } 
                 var cutCells = base.LsTrk.Regions.GetCutCellMask4LevSet(this.LevelSetIndex);
@@ -67,7 +67,7 @@ namespace BoSSS.Solution.XNSECommon {
                     int order = (LsTrk.LevelSets[this.LevelSetIndex] as LevelSet)?.Basis?.Degree ?? 4;
                     order *= 2;
 
-                    var testNodes[] = GridData.iGeomCells.RefElements.Select(
+                    var testNodes = GridData.iGeomCells.RefElements.Select(
                         Kref => Kref.GetQuadratureRule(order).Nodes
                     ).ToArray();
 
@@ -88,8 +88,8 @@ namespace BoSSS.Solution.XNSECommon {
                 }
 
                 int[] levels = new int[J];
-                foreach(int jLog in cutCells) {
-                    todo
+                foreach(int jLog in cutCells.ItemEnum) {
+                    throw new Exception("todo");
                 }
 
                 return levels;
