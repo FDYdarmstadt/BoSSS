@@ -11,6 +11,7 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
      <UseVSHostingProcess>true</UseVSHostingProcess>
     <Optimize>False</Optimize>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -64,7 +65,7 @@
     <Compile Remove="SubgridCoordinateMappingExt.cs" />
     <Compile Remove="Tensor2Field.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
-  </ItemGroup>
+  <PropertyGroup>
+    <EnablePackageVulnerabilityChecks>false</EnablePackageVulnerabilityChecks>
+  </PropertyGroup>  
 </Project>

@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.Design;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
@@ -146,7 +147,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using(var tr = new FuncTrace()) {
-                int D = levelSet.Tracker.GridDat.SpatialDimension;
+                var g = levelSet.Tracker.GridDat;
+                int D = g.SpatialDimension;
 
                 SinglePhaseField[] meanVelocity = D.ForLoop(
                     d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
@@ -170,7 +172,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
                 }
 
-                timeStepper.Perform(dt);
+                double degree = timeStepper.Mapping.Fields[0].Basis.Degree;
+                var dtCFL = g.ComputeCFLTime(extensionVelocity, dt * 1000);
+                dtCFL *= 1.0 / (2 * degree + 1);
+
+                if(dt > dtCFL) {
+
+                    int N = (int)Math.Ceiling(dt/dtCFL);
+                    double dtMod = dt / N;
+                    tr.Warning($"CFL violation in level-set evolution: original dt = {dt}, max. stable CFL dt = {dtCFL}; performing {N} sub-steps with dt = {dtMod}");
+                    for(int n  = 0; n < N; n++)
+                        timeStepper.Perform(dtMod);
+
+                } else {
+                    timeStepper.Perform(dt);
+                }
 
                 tr.Info("time in LS evolver: " + timeStepper.Time);
             }
@@ -190,12 +206,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="phaseInterface"></param>
-        /// <param name="time"></param>
-        /// <param name="dt"></param>
-        /// <param name="incremental"></param>
-        /// <param name="DomainVarFields"></param>
-        /// <param name="ParameterVarFields"></param>
         public bool Reinitialize(
             DualLevelSet phaseInterface,
             double time,

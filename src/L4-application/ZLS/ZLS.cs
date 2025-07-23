@@ -192,7 +192,7 @@ namespace ZwoLevelSetSolver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
             LastSolverSuccess = Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"done with time step {TimestepNo}, Solver success? {LastSolverSuccess}");
             Assert.IsTrue(LastSolverSuccess, "Solver did not converge");

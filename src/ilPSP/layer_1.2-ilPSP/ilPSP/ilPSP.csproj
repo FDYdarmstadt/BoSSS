@@ -9,7 +9,6 @@
     <UseVSHostingProcess>True</UseVSHostingProcess>
     <DocumentationFile></DocumentationFile>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <NoWarn>NU1900</NoWarn>
     <WarningLevel>5</WarningLevel>
     <WarningsAsErrors>$(WarningsAsErrors);NU1605</WarningsAsErrors>
   </PropertyGroup>
@@ -19,7 +18,7 @@
     <DocumentationFile></DocumentationFile>
     <WarningLevel>5</WarningLevel>
     <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
-    <NoWarn>1591,1900</NoWarn>
+    <NoWarn>1591</NoWarn>
     <WarningsAsErrors>$(WarningsAsErrors);NU1605</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
@@ -30,4 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
   </ItemGroup>
+  <PropertyGroup>
+    <EnablePackageVulnerabilityChecks>false</EnablePackageVulnerabilityChecks>
+  </PropertyGroup>  
 </Project>

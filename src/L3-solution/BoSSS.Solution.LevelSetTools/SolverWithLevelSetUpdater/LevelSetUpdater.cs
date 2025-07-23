@@ -6,6 +6,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Tecplot;
 using ilPSP;
 using ilPSP.LinSolvers.monkey.CUDA;
 using ilPSP.Utils;
@@ -395,7 +396,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 const int iLevSet = 0;
                 LevelSetTracker LsTrk = phaseInterface.Tracker;
                 LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
-                LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+                LevelSetTracker testTracker = new LevelSetTracker(LsTrk.GridDat, LsTrk.CutCellQuadratureType, 1, [ "A", "B" ], preCGLevelSet);
                 testTracker.UpdateTracker(0.0);
 
                 int order = phaseInterface.CGLevelSet.Basis.Degree;

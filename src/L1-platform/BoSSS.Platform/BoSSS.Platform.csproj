@@ -8,7 +8,6 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <UseVSHostingProcess>true</UseVSHostingProcess>
-    <NoWarn>NU1900</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DocumentationFile>bin\Release\BoSSS.Platform.XML</DocumentationFile>
@@ -21,4 +20,7 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
   </ItemGroup>
+  <PropertyGroup>
+    <EnablePackageVulnerabilityChecks>false</EnablePackageVulnerabilityChecks>
+  </PropertyGroup>    
 </Project>

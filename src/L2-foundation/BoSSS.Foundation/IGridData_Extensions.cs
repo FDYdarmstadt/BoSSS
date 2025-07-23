@@ -1070,10 +1070,7 @@ namespace BoSSS.Foundation.Grid {
 
                 // find the minimum over all processes via MPI and return
                 // ------------------------------------------------------
-                double cfltotal;
-                unsafe {
-                    csMPI.Raw.Allreduce((IntPtr)(&cflhere), (IntPtr)(&cfltotal), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
-                }
+                double cfltotal = cflhere.MPIMin();
                 tr.Info("computed CFL timestep: " + cfltotal);
                 return cfltotal;
 

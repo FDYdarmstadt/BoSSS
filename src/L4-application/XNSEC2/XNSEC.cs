@@ -941,7 +941,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             var overallstart = DateTime.Now;
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
             bool SolverSuccess = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             var overallstop = DateTime.Now;
             var overallduration = overallstop - overallstart;
