@@ -182,7 +182,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSetWithClassic(int degree) {
             Console.WriteLine("Using classic HMF quadrature rule");
-            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
+            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.Classic);
         }
 
         /// <summary>
@@ -191,7 +191,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSetWithGaussAndStokes(int degree) {
             Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
-            ProjectLevelSet(degree, CutCellQuadratureMethod.OneStepGaussAndStokes);
+            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.OneStepGaussAndStokes);
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelWithTwoStepStokesAndGauss(int degree) {
             Console.WriteLine("Using GaussAndStokes HMF quadrature rule");
-            ProjectLevelSet(degree, CutCellQuadratureMethod.TwoStepStokesAndGauss);
+            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.TwoStepStokesAndGauss);
         }
 
         /// <summary>
@@ -209,24 +209,24 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="degree">degree of the level set</param>
         public void ProjectLevelSet(int degree) {
             Console.WriteLine("Using classic HMF quadrature rule");
-            ProjectLevelSet(degree, CutCellQuadratureMethod.Classic);
+            ProjectLevelSet(degree, XQuadFactoryHelperBase.MomentFittingVariants.Classic);
         }
 
         /// <summary>
         /// Project the submitted level sets
         /// </summary>
         /// <param name="degree">degree of the level set</param>
-        public void ProjectLevelSet(int degree, CutCellQuadratureMethod cellQuadratureMethod) {
+        public void ProjectLevelSet(int degree, XQuadFactoryHelperBase.MomentFittingVariants cellQuadratureMethod, string CalculateMethod = "Max") {
             Basis b = new Basis(grd, degree);
             var levSet0 = new LevelSet(b, "LevelSetField0");
 
             // Projection
             if (grd.SpatialDimension == 2) {
-                _2D inLevelSet = ReturnMaxDelegate(Levelsets2D);
+                _2D inLevelSet = ReturnMaxDelegate(Levelsets2D, CalculateMethod);
                 levSet0.ProjectField(inLevelSet);
 
             } else if (grd.SpatialDimension == 3) {
-                _3D inLevelSet = ReturnMaxDelegate(Levelsets3D);
+                _3D inLevelSet = ReturnMaxDelegate(Levelsets3D, CalculateMethod);
                 levSet0.ProjectField(inLevelSet);
 
             } else {
@@ -234,7 +234,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             }
 
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelperBase.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
             Console.WriteLine($"Successful projection of level set with {cellQuadratureMethod.ToString()}");
         }
