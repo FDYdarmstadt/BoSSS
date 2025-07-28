@@ -346,12 +346,12 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                         throw new NotSupportedException("curved cells not supported!");
                     }
 
-                    //qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-                    //var globTr = qr.CloneAs();
-                    var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
+                    var globTr = qr.CloneAs();
+                    globTr.TransformLocal2Global(grd.GridData, jCell);
 
 #if DEBUG
-                    globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
+					qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
+					globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
 #endif                    
 
                     double metric_jCell = JacobiDet[jCell];
@@ -363,7 +363,7 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
 
                     for (int n = 0; n < qr.NoOfNodes; n++) {
                         for (int d=0; d < qr.SpatialDim; d++) {
-                            ret[n, d] = globTr[n, d];
+                            ret[n, d] = globTr.Nodes[n, d];
                         }
                         ret[n, globTr.SpatialDim] = WeightsGlobal_jCell[n];
                     }
