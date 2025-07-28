@@ -120,14 +120,22 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="delegates"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private _2D ReturnMaxDelegate(IList<_2D> delegates) {
+        private _2D ReturnMaxDelegate(IList<_2D> delegates, string CalculateMethod = "Max") {
             if (delegates.Count == 0)
                 throw new Exception("No level sets are submitted, call Submit2DLevelSet() method first!");
 
             if (delegates.Count == 1)
                 return delegates.First();
 
-            return (x0, x1) => delegates.Max(del => del(x0, x1));
+            switch (CalculateMethod) {
+                case "Max":
+                    return (x0, x1) => delegates.Max(del => del(x0, x1));
+                case "Min":
+                    return (x0, x1) => delegates.Min(del => del(x0, x1));
+                default:
+                    throw new ArgumentException("Invalid CalculateMethod. Use 'Max' or 'Min'.");
+			}
+
         }
 
         /// <summary>
@@ -136,14 +144,21 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         /// <param name="delegates"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private _3D ReturnMaxDelegate(IList<_3D> delegates) {
+        private _3D ReturnMaxDelegate(IList<_3D> delegates, string CalculateMethod = "Max") {
             if (delegates.Count == 0)
                 throw new Exception("No level sets are submitted, call Submit3DLevelSet() method first!");
 
             if (delegates.Count == 1)
                 return delegates.First();
 
-            return (x0, x1, x2) => delegates.Max(del => del(x0, x1, x2));
+            switch (CalculateMethod) {
+                case "Max":
+                    return (x0, x1, x2) => delegates.Max(del => del(x0, x1, x2));
+                case "Min":
+                    return (x0, x1, x2) => delegates.Min(del => del(x0, x1, x2));
+                default:
+                    throw new ArgumentException("Invalid CalculateMethod. Use 'Max' or 'Min'.");
+			}
         }
 
         /// <summary>
