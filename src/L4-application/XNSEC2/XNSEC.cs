@@ -9,6 +9,7 @@ using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XheatCommon;
@@ -384,21 +385,21 @@ namespace BoSSS.Application.XNSEC {
                     MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                     opFactory.AddParameter(maxSigmaParameter);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsBGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    BeltramiGradientAndCurvature lsGradientAndCurvature =
-                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
+                    GradientAndCurvature lsGradientAndCurvature =
+                        FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     opFactory.AddParameter(lsGradientAndCurvature);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
                     break;
@@ -940,7 +941,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             var overallstart = DateTime.Now;
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, t = {phystime:g4}, dt = {dt:g4} ...");
             bool SolverSuccess = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             var overallstop = DateTime.Now;
             var overallduration = overallstop - overallstart;

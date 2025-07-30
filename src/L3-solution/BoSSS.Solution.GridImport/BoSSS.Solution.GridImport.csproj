@@ -33,23 +33,6 @@
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <!--BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage-->
-    <!--BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage-->
-    <!--BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage-->
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
@@ -61,5 +44,8 @@
     <Compile Remove="Cgns-old.cs" />
     <Compile Remove="CgnsFile.cs" />
     <Compile Remove="CgnsZoneToBoSSSGrid.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
   </ItemGroup>
 </Project>

@@ -48,12 +48,11 @@ namespace BoSSS.Application.ZwoLsTest {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            InitMPI();
-            BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, CutCellQuadratureMethod.OneStepGauss, false);
+            //InitMPI();
             //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, CutCellQuadratureMethod.OneStepGaussAndStokes, true);
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, CutCellQuadratureMethod.OneStepGauss, true);
-            Assert.IsTrue(false, "Remove me");
-                        
+            ////BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, CutCellQuadratureMethod.OneStepGauss, true);
+            //Assert.IsTrue(false, "Remove me");                   
+
             BoSSS.Solution.Application._Main(
                 args,
                 true,

@@ -71,6 +71,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 r.VarIndex = this.VarIndex.CloneAs();
                 return r;
             }
+
+            public override string ToString() {
+                return $"Change-of-basis, {mode}, variables = {VarIndex.ToConcatString("[", ", ", "]")}, degrees = {DegreeS.ToConcatString("[", ", ", "]")}.";
+            }
         }
 
         /// <summary>
@@ -270,6 +274,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 List<long> IndefRows = new List<long>();
 
 
+                
+
+
                 // compute preconditioner matrices
                 // ===============================
                 using (var bt = new BlockTrace("compute-pc", tr)) {
@@ -297,7 +304,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
                     long i0 = this.Mapping.Partitioning.i0; //Processor offset
 
-                    
+                    BitArray mask_failedCells = new BitArray(J);
+                    bool someFailed = false;
 
                     ilPSP.Environment.ParallelFor(0, J, 
                         () => new ComputeChangeOfBasis_ThreadLocals(this),
@@ -369,11 +377,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     long[] ZeroIdc = Length.ForLoop(Z => _i0s[0] + Z);
                                     IndefRows.AddRange(ZeroIdc);
                                     if (!marker) {
-                                        Console.WriteLine("Zero mass matrix blocks detected. This should not happen, but we can deal with this.");
-                                        Console.WriteLine("zero blocks at cell: ");
+                                        tr.Error("Zero mass matrix blocks detected. This should not happen, but we can deal with this.");
+                                        tr.Error("zero blocks at cell: " + jCell);
                                         marker = true;
                                     }
-                                    Console.WriteLine(jCell);
                                 } else {
 
                                     //if(OperatorBlkNrm == 0) {
@@ -401,7 +408,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     int Rank;
                                     tmp.PCleftBlock[i].Clear();
                                     tmp.PCrightBlock[i].Clear();
-                                    int[] idr = ComputeChangeOfBasisBlock(_Lns, tmp.MassBlock[i], tmp.OperatorBlock[i], tmp.PCleftBlock[i], tmp.PCrightBlock[i], conf.mode, out Rank, tmp.work[i]);
+                                    int[] idr;
+                                    try {
+                                        idr = ComputeChangeOfBasisBlock(_Lns, tmp.MassBlock[i], tmp.OperatorBlock[i], tmp.PCleftBlock[i], tmp.PCrightBlock[i], conf.mode, out Rank, tmp.work[i]);
+                                    } catch(Exception e) {
+                                        tr.Error($"Got exception {e.GetType().Name} ({e.Message}) when trying to pre-condition cell j = {jCell}, item #{i} ({conf})");
+                                        ExtractBlock(_i0s, _Lns, true, MassMatrix, ref tmp.MassBlock[i]);
+                                        ExtractBlock(_i0s, _Lns, true, OpMatrix, ref tmp.OperatorBlock[i]);
+                                        tmp.MassBlock[i].SaveToTextFile("CobFailMass_" + i + "  -" + jCell + ".txt");
+                                        tmp.OperatorBlock[i].SaveToTextFile("CobFailOperator_" + i + "-" + jCell + ".txt");
+                                        mask_failedCells[jCell] = true;
+                                        someFailed = true;
+                                        return tmp;
+                                    }
                                     if (Rank != NN) {
                                         lock (IndefRows) {
                                             IndefRows.AddRange(ConvertRowIndices(jCell, basisS, Degrees, conf, E, _i0s, idr));
@@ -451,6 +470,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         enablePar: true);
 
                     IndefRows.Sort();
+
+                    if(someFailed) {
+                        var fcm = new CellMask(this.Mapping.GridData, mask_failedCells);
+                        fcm.SaveToTextFile("CobFailCells.csv", WriteHeader: false);
+                        throw new ArithmeticException("unable to compute change-of-basis/pre-pre-conditioner");
+                    }
 
                     //bt.LogDummyblock(stw_Data.Elapsed.Ticks, "Change_of_Basis_data_copy");
                     //bt.LogDummyblock(stw_Comp.Elapsed.Ticks, "Change_of_Basis_compute");
@@ -600,61 +625,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
             L.Clear();
             L.StructureType = MatrixStructure.LowerTriangular;
             R.Clear();
-            //R.StructureType = MatrixStructure.LowerTriangular; // will be set in L.TransposeTo(R)
+            //R.StructureType = MatrixStructure.UpperTriangular; // will be set in L.TransposeTo(R)
+
             L.AccEye(1.0);
 #if DEBUG
             var Mbefore = M.CloneAs();
 #endif
             int n = M.NoOfRows;
-            unsafe
-            {
+            unsafe {
 
-                void RowScale(double* pS, int i, double alpha, int RowCyc)
-                {
+                void RowScale(double* pS, int i, double alpha, int RowCyc) {
                     pS += i * RowCyc;
-                    for (int nn = 0; nn < n; nn++)
-                    {
+                    for(int nn = 0; nn < n; nn++) {
                         *pS *= alpha;
                         pS++;
                     }
                 }
 
-                void ColScale(double* pS, int i, double alpha, int RowCyc)
-                {
+                void ColScale(double* pS, int i, double alpha, int RowCyc) {
                     pS += i;
-                    for (int nn = 0; nn < n; nn++)
-                    {
+                    for(int nn = 0; nn < n; nn++) {
                         *pS *= alpha;
                         pS += RowCyc;
                     }
                 }
 
-                void RowAdd(double* pS, int iSrc, int iDst, double alpha, int RowCyc) 
-                {
-                    double* pDest = pS + iDst* RowCyc;
-                    double* pSrc = pS + iSrc* RowCyc;
-                    for (int l = 0; l < n; l++)
-                    {
+                void RowAdd(double* pS, int iSrc, int iDst, double alpha, int RowCyc) {
+                    double* pDest = pS + iDst * RowCyc;
+                    double* pSrc = pS + iSrc * RowCyc;
+                    for(int l = 0; l < n; l++) {
                         *pDest += *pSrc * alpha;
                         pDest++;
                         pSrc++;
                     }
                 }
 
-                void ColAdd(double* pS, int iSrc, int iDst, double alpha, int RowCyc)
-                {
+                void ColAdd(double* pS, int iSrc, int iDst, double alpha, int RowCyc) {
                     double* pDest = pS + iDst;
                     double* pSrc = pS + iSrc;
-                    for (int l = 0; l < n; l++)
-                    {
+                    for(int l = 0; l < n; l++) {
                         *pDest += *pSrc * alpha;
                         pDest += RowCyc;
                         pSrc += RowCyc;
                     }
                 }
 
-                fixed (double* _pL = L.Storage, _pM = M.Storage)
-                {
+                fixed(double* _pL = L.Storage, _pM = M.Storage) {
                     int RowCycL = n > 1 ? (L.Index(1, 0) - L.Index(0, 0)) : 0;
                     int RowCycM = n > 1 ? (M.Index(1, 0) - M.Index(0, 0)) : 0;
 
@@ -662,10 +678,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double* pM = _pM + M.Index(0, 0);
 
 
-                    for (int i = 0; i < n; i++)
-                    {
+                    for(int i = 0; i < n; i++) {
                         double M_ii = M[i, i];
-                        if (M_ii == 0.0)
+                        if(M_ii == 0.0)
                             throw new ArithmeticException("Zero diagonal element at " + i + "-th row.");
                         double scl = 1.0 / Math.Sqrt(Math.Abs(M_ii));
                         //M.RowScale(i, scl);
@@ -676,13 +691,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         ColScale(pM, i, scl, RowCycM);
 
                         double diagsign = Math.Sign(M[i, i]);
-                        if (diagsign == 0.0)
+                        if(diagsign == 0.0)
                             throw new ArithmeticException("Zero diagonal element at " + i + "-th row.");
-                        if (Math.Abs(Math.Abs(M[i, i]) - 1.0) > 1.0e-8)
+                        if(Math.Abs(Math.Abs(M[i, i]) - 1.0) > 1.0e-8)
                             throw new ArithmeticException("Unable to create diagonal 1.0.");
 
-                        for (int k = i + 1; k < n; k++)
-                        {
+                        for(int k = i + 1; k < n; k++) {
                             double M_ki = M[k, i];
 
                             RowAdd(pM, i, k, -M_ki * diagsign, RowCycM);
@@ -691,6 +705,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             Debug.Assert(Math.Abs(M[k, i]) < 1.0e-8);
                             Debug.Assert(Math.Abs(M[i, k]) < 1.0e-8);
+                            //if(Math.Abs(M[i, k]) >= 1.0e-8 || Math.Abs(M[k, i]) >= 1.0e-8)
+                            //    throw new ArithmeticException();
                         }
 
                         /*

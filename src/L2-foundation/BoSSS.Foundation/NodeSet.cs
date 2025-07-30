@@ -241,48 +241,48 @@ namespace BoSSS.Foundation {
         /// <param name="useCaching"></param>
         /// <returns></returns>
         public NodeSet GetVolumeNodeSet(IGridData g, int Edge2CellTrafoIndex, bool useCaching) {
-            if(!base.IsLocked)
-                throw new NotSupportedException("NodeSet must be locked before first usage.");
-            Debug.Assert((base.GetLength(1) == this.RefElement.SpatialDimension) || (base.GetLength(1) == 1 && this.RefElement.SpatialDimension == 0), "Mismatch between number of spatial directions in node set and reference element.");
-                
+            lock(this) {
+                if(!base.IsLocked)
+                    throw new NotSupportedException("NodeSet must be locked before first usage.");
+                Debug.Assert((base.GetLength(1) == this.RefElement.SpatialDimension) || (base.GetLength(1) == 1 && this.RefElement.SpatialDimension == 0), "Mismatch between number of spatial directions in node set and reference element.");
+
 #if DEBUG
-            if(this.GetNodeCoordinateSystem(g) != NodeCoordinateSystem.EdgeCoord) {
-                throw new NotSupportedException("Operation only supported for edge node sets.");
-            }
-#endif            
-            int D = g.SpatialDimension;
-            int NN = this.NoOfNodes;
-            int idx = Edge2CellTrafoIndex + g.iGeomEdges.e2C_offet;
+                if(this.GetNodeCoordinateSystem(g) != NodeCoordinateSystem.EdgeCoord) {
+                    throw new NotSupportedException("Operation only supported for edge node sets.");
+                }
+#endif
+                int D = g.SpatialDimension;
+                int NN = this.NoOfNodes;
+                int idx = Edge2CellTrafoIndex + g.iGeomEdges.e2C_offet;
 
-            if(VolumeNodeSets == null) {
-                // alloc mem, if necessary
-                // ++++++++++++++++++++++++
-                VolumeNodeSets = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
-            }
-            if(VolumeNodeSets.Length < (g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet)) {
-                // re-alloc mem, if necessary
-                // ++++++++++++++++++++++++++
-                var newVNS = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
-                Array.Copy(VolumeNodeSets, 0, newVNS, 0, VolumeNodeSets.Length);
-                VolumeNodeSets = newVNS;
-            }
-            if(VolumeNodeSets[idx] == null) {
-                // transform edge-nodes to cell-nodes, if necessary
-                // ++++++++++++++++++++++++++++++++++++++++++++++++
-                AffineTrafo Trafo = g.iGeomEdges.Edge2CellTrafos[Edge2CellTrafoIndex];
-                int iKref = g.iGeomEdges.Edge2CellTrafosRefElementIndices[Edge2CellTrafoIndex];
+                if(VolumeNodeSets == null) {
+                    // alloc mem, if necessary
+                    // ++++++++++++++++++++++++
+                    VolumeNodeSets = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
+                }
+                if(VolumeNodeSets.Length < (g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet)) {
+                    // re-alloc mem, if necessary
+                    // ++++++++++++++++++++++++++
+                    var newVNS = new NodeSet[g.iGeomEdges.Edge2CellTrafos.Count + g.iGeomEdges.e2C_offet];
+                    Array.Copy(VolumeNodeSets, 0, newVNS, 0, VolumeNodeSets.Length);
+                    VolumeNodeSets = newVNS;
+                }
+                if(VolumeNodeSets[idx] == null) {
+                    // transform edge-nodes to cell-nodes, if necessary
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++
+                    AffineTrafo Trafo = g.iGeomEdges.Edge2CellTrafos[Edge2CellTrafoIndex];
+                    int iKref = g.iGeomEdges.Edge2CellTrafosRefElementIndices[Edge2CellTrafoIndex];
 
-                NodeSet volNS = new NodeSet(g.iGeomCells.RefElements[iKref], NN, D, useCaching);
-                Trafo.Transform(this, volNS);
-                volNS.LockForever();
+                    NodeSet volNS = new NodeSet(g.iGeomCells.RefElements[iKref], NN, D, useCaching);
+                    Trafo.Transform(this, volNS);
+                    volNS.LockForever();
 
-                VolumeNodeSets[idx] = volNS;
+                    VolumeNodeSets[idx] = volNS;
+                }
+
+                return VolumeNodeSets[idx];
             }
-
-            return VolumeNodeSets[idx];
         }
-
-     
     }
 }
 

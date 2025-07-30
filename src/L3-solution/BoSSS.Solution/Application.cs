@@ -865,9 +865,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPISize {
             get {
-                int size;
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-                return size;
+                return csMPI.Size_World;
             }
         }
 
@@ -877,9 +875,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public int MPIRank {
             get {
-                int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                return rank;
+                return csMPI.Rank_World;
             }
         }
 
@@ -1383,6 +1379,17 @@ namespace BoSSS.Solution {
                 if (DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
+                }
+
+                // AMR level indactors
+                //====================
+                m_AMRLevelIndicators.Clear();
+                if(this.Control != null && this.Control.AdaptiveMeshRefinement  && this.Control.activeAMRlevelIndicators != null) {
+                    m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
+                }
+
+                foreach(var lvlInd in ActiveAMRLevelIndicators) {
+                    lvlInd.Setup(this);
                 }
             }
         }
@@ -3013,11 +3020,111 @@ namespace BoSSS.Solution {
         LoadBalancer m_Balancer;
 
         /// <summary>
-        /// Adaptation of the current mesh (<see cref="Grid"/>).
+        /// 
         /// </summary>
         protected virtual void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            newGrid = null;
-            old2NewGrid = null;
+            using(var tr = new FuncTrace()) {
+
+                if(this.Control.AdaptiveMeshRefinement) {
+
+                    // Check grid changes
+                    // ==================
+
+                    int[] desiredLevels = GetDesiredRefinementLevels();
+
+
+
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if(AnyChange.MPIOr()) {
+                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                        NoOfCellsToRefine = glb[0];
+                        NoOfCellsToCoarsen = glb[1];
+                    }
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                    // Update Grid
+                    // ===========
+                    if(AnyChange.MPIOr()) {
+
+                        Console.WriteLine(" Refining   " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                        //AMRtests.MeshSymmetryTest(newGrid);
+                    } else {
+                        newGrid = null;
+                        old2NewGrid = null;
+                    }
+                } else {
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private int[] GetDesiredRefinementLevels() {
+
+            if(Control.AdaptiveMeshRefinement == true) {
+                if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
+                    Console.Error.WriteLine("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
+                }
+            }
+
+            int J = this.GridData.CellPartitioning.LocalLength;
+            int[] levelChanges = null;
+
+            // combine all results of active level indicators
+            int cnt = 0;
+            foreach(var lvlInd in ActiveAMRLevelIndicators) {
+                if(cnt == 0) {
+                    levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
+                } else {
+                    int[] lvls = lvlInd.DesiredCellChanges();
+                    //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+                    levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a, b)).ToArray(); // keep finer level indicator, but don't double refine
+                }
+                cnt++;
+            }
+            if(levelChanges == null)
+                levelChanges = new int[J];
+
+
+            // get desired level 
+            int[] levels = new int[J];
+            Cell[] cells = ((GridData)this.GridData).Grid.Cells;
+            for(int j = 0; j < J; j++) {
+                levels[j] = cells[j].RefinementLevel;
+                if(levelChanges[j] > 0)
+                    levels[j] += 1;
+                else if(levelChanges[j] < 0)
+                    levels[j] -= 1;
+            }
+
+            return levels;
+        }
+
+
+        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.activeAMRlevelIndicators"/>
+        /// </summary>
+        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
+            get {
+                return m_AMRLevelIndicators;
+            }
         }
 
         /// <summary>

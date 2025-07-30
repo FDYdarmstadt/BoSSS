@@ -21,4 +21,7 @@
     <Compile Remove="MaterialProperty\IdealGasLaw.cs" />
     <Compile Remove="MaterialProperty\StiffenedGasLaw.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <!--PackageReference Include="System.Drawing.Common" Version="5.0.3" /-->
+  </ItemGroup>
 </Project>

@@ -33,7 +33,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Resp.: Navier-Stokes vs. Stokes
         /// </summary>
         [DataMember]
-        public bool IncludeConvection;
+        public bool IncludeConvection = true;
 
         /// <summary>
         /// Include Diffusive Term, standard: this is on

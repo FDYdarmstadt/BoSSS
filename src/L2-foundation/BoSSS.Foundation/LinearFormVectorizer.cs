@@ -352,6 +352,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             for(int l = 0; l < L; l++) { // loop over cells...
                 cpv.jCell = prm.j0 + l;
 
+                if (this.volForm.GetType().ToString() == "BoSSS.Solution.XNSECommon.Operator.SurfaceTension.IsotropicSurfaceTension_LaplaceBeltrami"
+                    && cpv.jCell == 7) {
+                    Console.WriteLine("IsotropicSurfaceTension_LaplaceBeltrami.VolumeForm - GetCoeff()");
+                }
+
                 for(int k = 0; k < __K; k++) { // loop over nodes...
                     for(int d = 0; d < D; d++) {
                         cpv.Xglobal[d] = prm.Xglobal[l, k, d];
@@ -866,6 +871,11 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
+                if (this.edgeForm.GetType().ToString() == "BoSSS.Solution.XNSECommon.Operator.SurfaceTension.IsotropicSurfaceTension_LaplaceBeltrami"
+                        && cp.jCellIn == 7) {
+                    Console.WriteLine("IsotropicSurfaceTension_LaplaceBeltrami.InnerEdgeForm - GetCoeff()");
+                }
+
                 for (int k = 0; k < K; k++) { // loop over quadrature nodes
 
                     for(int d = 0; d < D; d++) {
@@ -1036,7 +1046,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         cp.Parameters_OUT[np] = efp.ParameterVars_OUT[np][l, k];
                     }
 
-                    for(int c = 0; c < NoArgs; c++) {
+                    for (int c = 0; c < NoArgs; c++) {
                         UxV[l, k, 0, 0, c] = GetCoeff(ref uA[c], ref vA, ref cp);
                         UxV[l, k, 0, 1, c] = GetCoeff(ref uB[c], ref vA, ref cp);
                         UxV[l, k, 1, 0, c] = GetCoeff(ref uA[c], ref vB, ref cp);

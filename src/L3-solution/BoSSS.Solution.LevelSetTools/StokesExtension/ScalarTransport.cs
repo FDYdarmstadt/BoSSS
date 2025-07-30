@@ -32,18 +32,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 case IncompressibleBcType.NavierSlip_Linear:
                 case IncompressibleBcType.NoSlipNeumann:
                 case IncompressibleBcType.Wall:
-                //return 0.0;
+                return 0.0;
                 default:
                 Vector n = inp.Normal;
 
                 var vel = ((Vector)inp.Parameters_IN);
 
                 if(n * vel >= 0) {
-                    // flow from inside 
+                    // flow from inside->outside, i.e., characteristic is leaving the domain, i.e., an open boundary
                     return (vel * Uin[0]) * n;
                 } else {
                     // flow from outside into the domain
-                    return (vel * Uin[0]) * n;
+                    double Uout = Uin[0];
+                    return (vel * Uout) * n;
                     //return (vel * Inflow(time)) * n;
                 }
             }

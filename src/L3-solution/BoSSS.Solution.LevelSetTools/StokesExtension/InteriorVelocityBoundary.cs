@@ -55,12 +55,16 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             //Console.WriteLine("ivb parameter out " + ParameterOrdering[2] + " " + inp.Parameters_OUT[2]);
             double Ret = 0;
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
-            Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
-            Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
 
+            // enforce interface velocity including tangential component
+            //Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
+            //Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
 
-
-
+            //only enforce interface normal velocity
+            for (int dN = 0; dN<m_D; dN++) {
+                Ret += (uA[dN] - inp.Parameters_IN[dN]) * inp.Normal[dN] * vA* inp.Normal[m_d] * pnlty;
+                Ret += (uB[dN] - inp.Parameters_IN[dN]) * inp.Normal[dN] * vB* inp.Normal[m_d] * pnlty;
+            }
             return Ret;
         }
 

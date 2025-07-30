@@ -701,7 +701,7 @@ namespace BoSSS.Solution.NSECommon {
                     //        goto case IncompressibleBcType.Velocity_Inlet;
                     //    }
                     //}
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -729,6 +729,14 @@ namespace BoSSS.Solution.NSECommon {
 
                     break;
                 }
+                case IncompressibleBcType.Dong_OutFlow: {
+                        //for (int d = 0; d < inp.D; d++) {
+                        //    Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d];
+                        //}
+                        //Acc *= base.m_alpha;
+
+                        break;
+                    }
                 default:
                     throw new NotImplementedException();
             }
@@ -1169,7 +1177,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 //        break;
                 //    }
-                case IncompressibleBcType.Pressure_Dirichlet:                    
+                case IncompressibleBcType.Pressure_Dirichlet:
                     // Inner values of velocity gradient are taken, i.e.
                     // no boundary condition for the velocity (resp. velocity gradient) is imposed.                        
                     for (int i = 0; i < inp.D; i++) {
@@ -1177,26 +1185,34 @@ namespace BoSSS.Solution.NSECommon {
                     }                    
                     Acc *= base.m_alpha;
                     break;
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
-                    //if (!base.g_Neu_GradU.IsNullOrEmpty()) {
-                    //    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
-                    //    Acc += muA * g_N * _vA;
-                    //} else
-                    if (base.g_Neu_Override == null) {
-                        // !!!!! for now B.C. is only imposed via the GradU Term explicitly !!!!!
-                        // Inner values of velocity gradient are taken, i.e.
-                        // no boundary condition for the velocity (resp. velocity gradient) is imposed.
+                        //if (!base.g_Neu_GradU.IsNullOrEmpty()) {
+                        //    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
+                        //    Acc += muA * g_N * _vA;
+                        //} else
+                        if (base.g_Neu_Override == null) {
+                            // !!!!! for now B.C. is only imposed via the GradU Term explicitly !!!!!
+                            // Inner values of velocity gradient are taken, i.e.
+                            // no boundary condition for the velocity (resp. velocity gradient) is imposed.
+                            for (int i = 0; i < inp.D; i++) {
+                                Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                            }
+                        } else {
+                            double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
+                            Acc += muA * g_N * _vA;
+                        }
+                        Acc *= base.m_alpha;
+                        break;
+                    }
+                case IncompressibleBcType.Dong_OutFlow: {
                         for (int i = 0; i < inp.D; i++) {
                             Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
                         }
-                    } else {
-                        double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
-                        Acc += muA * g_N * _vA;
+                        Acc *= base.m_alpha;
+
+                        break;
                     }
-                    Acc *= base.m_alpha;
-                    break;
-                }
                 default:
                     throw new NotSupportedException();
             }
@@ -1549,7 +1565,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
                     if(base.g_Neu_Override == null) {

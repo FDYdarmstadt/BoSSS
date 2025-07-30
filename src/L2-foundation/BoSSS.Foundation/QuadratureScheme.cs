@@ -200,11 +200,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// The factory to be added.
         /// </param>
         /// <param name="domain">
-        /// The domain on which <paramref name="factory"/> should act.
+        /// The domain on which <paramref name="factory"/> should act; if null, the entire domain of the scheme (<see cref="Domain"/> will be used
         /// </param>
         /// <param name="order">
-        /// An optional order that overrides the order passed to
-        /// <see cref="Compile"/>.
+        /// An optional order that overrides the order passed to <see cref="Compile"/>.
         /// </param>
         /// <returns>
         /// This object (to allow for fluent addition of multiple factories).

@@ -19,24 +19,15 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Linq;
 using System.Text;
+
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
-using BoSSS.Solution.LevelSetTools.Advection;
-using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.NSECommon;
-
-using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
-using BoSSS.Solution.LevelSetTools.EllipticReInit;
-using BoSSS.Solution.Timestepping;
-using static BoSSS.Application.XNSE_Solver.XNSE_Control;
 using Newtonsoft.Json;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XRheology_Solver {
 
 
     /// <summary>
@@ -105,7 +96,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         [DataMember]
-        public int ReInitPeriod = 0;
+        public int ReInitPeriod = 20;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.

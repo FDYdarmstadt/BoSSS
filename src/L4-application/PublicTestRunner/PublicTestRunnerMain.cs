@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution;
 using ilPSP;
@@ -142,6 +143,7 @@ namespace PublicTestRunner {
         virtual public Type[] ReleaseOnlyTests {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.LsTest.SolverWithLevelSetUpdaterTestCenter),
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
@@ -164,6 +166,7 @@ namespace PublicTestRunner {
                         typeof(BUIDT.Tests.BUIDTTestProgram),
                         typeof(SAIDT.Tests.SAIDTTestProgram),
                         typeof(XESF.Tests.XESFTestProgram),
+                        //typeof(XNSE_ParallelTests.XNSE_ParallelTests),
                         typeof(StokesHelical_Ak.HelicalMain)
                 };
             }

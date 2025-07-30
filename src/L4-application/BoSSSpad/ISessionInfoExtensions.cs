@@ -2106,7 +2106,7 @@ namespace BoSSS.Foundation.IO {
 
                     } else {
 
-                        string pathR = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).RestartedFrom + logName;
+                        string pathR = Path.Combine(sess.Pick(j).Database.Path, "sessions", sess.Pick(j).RestartedFrom.ToString(), logName + ".txt");
                         string[] linesR = File.ReadAllLines(pathR);
 
                         int len = (lines.Length - 1) + (linesR.Length - 1);
@@ -2183,7 +2183,7 @@ namespace BoSSS.Foundation.IO {
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities.LogfileName: {
-                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity" };
+                        values = new string[] { "#timestep", "time", "area", "center of mass - x", "center of mass - y", "circularity", "mean velocity - x", "mean velocity - y" };
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.MovingContactLineLogging.LogfileName: {
@@ -2207,6 +2207,7 @@ namespace BoSSS.Foundation.IO {
             }
 
             return ReadLogData(sess, logName, values, evalName, keyName);
+
         }
 
         /// <summary>

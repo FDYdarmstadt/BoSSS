@@ -46,7 +46,7 @@ namespace BoSSS.Solution.NSECommon {
 
             switch (edgType) {
                 case IncompressibleBcType.Pressure_Outlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                     return true;
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.Wall:

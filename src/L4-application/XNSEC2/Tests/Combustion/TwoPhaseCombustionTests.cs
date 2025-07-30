@@ -239,11 +239,11 @@ namespace BoSSS.Application.XNSEC {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
             C.solveKineticEnergyEquation = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
