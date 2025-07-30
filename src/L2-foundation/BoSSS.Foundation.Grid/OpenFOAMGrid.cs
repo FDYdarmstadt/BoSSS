@@ -394,7 +394,14 @@ namespace BoSSS.Foundation.Grid {
             
         }
 
-        
+        /// <summary>
+        /// Private constructor to support de-serialization
+        /// </summary>
+        private OpenFOAMGrid()
+            : base(new RefElement[] { Cube.Instance }, new RefElement[] { Square.Instance }) {
+        }
+
+
 
 
         /// <summary>
@@ -421,6 +428,8 @@ namespace BoSSS.Foundation.Grid {
 
         public override GridData GridData {
             get {
+                if(this.GridDataObject == null)
+                    this.GridDataObject = new GridData(this);
                 return GridDataObject;
             }
         }
