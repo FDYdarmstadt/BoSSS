@@ -899,7 +899,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             PreSmoother.Solve(PreCorr, Res); // Vorglättung
 
                             // orthonormalization and residual minimization
-                            resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel);
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmoothL" + iLevel + "It" +iIter);
 
                             WriteDebug(f, iIter, resNorm, " pre-smoother applied");
 
@@ -972,7 +972,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     this.CoarserLevelSolver.Dispose();
                                     this.InitCoarse();
                                 } else {
-                                    resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, "coarsecorL" + iLevel);
+                                    resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, "coarsecorL" + iLevel + "It" + iIter);
                                 }
 
                             }
@@ -1047,7 +1047,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     }
 
                                 } else {
-                                    resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" + iLevel + "-sw" + g);
+                                    resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "pstsmthL" + iLevel +"It" + iIter + "-sw" + g);
                                     WriteDebug(f, iIter, resNorm, "post-smoother applied");
 
                                     var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
