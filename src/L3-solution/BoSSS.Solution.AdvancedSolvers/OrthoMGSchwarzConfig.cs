@@ -549,7 +549,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             TaskParallelization = true;
             ISolverSmootherTemplate[] smoothers;
 
-			if (altSmooth3 != null) {
+            var AlternativeSmoother = new Jacobi();
+            AlternativeSmoother.NoOfIterations = 10;
+            smoother1 = AlternativeSmoother;
+            altSmooth3 = null;
+
+            if (altSmooth3 != null) {
 				tr.Info($"KcycleMultiSchwarz: lv {iLevel}, added {altSmooth3.GetType().Name}");
 				smoothers = new ISolverSmootherTemplate[] { smoother1, altSmooth3 };
             }
@@ -575,8 +580,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         OrthonormalizationMultigrid GetNormalOrthoMG(FuncTrace tr, int iLevel, int locBlk, int glbBlk, int maxDG,
-								 ISolverSmootherTemplate smoother1, ISolverSmootherTemplate altSmooth3) { 
-			OrthonormalizationMultigrid _levelSolver4 = new OrthonormalizationMultigrid() {
+								 ISolverSmootherTemplate smoother1, ISolverSmootherTemplate altSmooth3) {
+
+            var AlternativeSmoother = new Jacobi();
+            AlternativeSmoother.NoOfIterations = 10;
+            smoother1 = AlternativeSmoother;
+            altSmooth3 = null;
+
+            OrthonormalizationMultigrid _levelSolver4 = new OrthonormalizationMultigrid() {
 				PreSmoother = smoother1,
 				PostSmoother = smoother1
 			};
@@ -595,7 +606,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 			if (iLevel == 0) {
-				_levelSolver4.config.NoOfPostSmootherSweeps = 20;
+				_levelSolver4.config.NoOfPostSmootherSweeps = 1;
 			} else {
 				if (glbBlk > 0)
 					_levelSolver4.config.NoOfPostSmootherSweeps = (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2));
