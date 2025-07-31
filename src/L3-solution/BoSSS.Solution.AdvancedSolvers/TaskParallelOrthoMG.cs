@@ -191,7 +191,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public ICoordinateMapping DgMapping => m_MultigridMapping;
 
 
-		bool verbose = true;
+		bool verbose = false;
 
 		void CheckMPICorrectness() {
 			Console.WriteLine($"TaskParallel-MG level {Level}: {NoOfSmootherProcs} smoother + {NoOfCoarseProcs} coarse = {NoOfThisProcs} total procs");
@@ -1213,7 +1213,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// When enabled, it possibly increases the convergence speed, but becomes run-time dependant.
 		/// So, not deterministic anymore and different runs may give different iteration numbers and results.
 		/// </summary>
-		bool AdvancedParallism = false;
+		bool AdvancedParallism = true;
 
         /// <summary>
         /// entry point for the TaskParallelOrthoMG (finest level)
@@ -1221,10 +1221,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Init(MultigridOperator op) {
 			if (op.OperatorMatrix.MPI_Comm != csMPI.Raw._COMM.WORLD)
 				throw new Exception("Task parallel OrthoMG (finest level) should be initiated with an operator in world communicator");
-
-            var BaseGrid = op.BaseGridProblemMapping;
-
-
 
             var ThisAndCoarserLevels = GetSubOperatorChain(op);
 			var NoOfProcs = CalculateProcessorDistribution(ThisAndCoarserLevels);
@@ -1866,7 +1862,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				Select(i => i < TpMapping.worldMPIOffset ? -1 : i - TpMapping.worldMPIOffset).ToArray();
 		}
 
-		bool verbose = true;
+		bool verbose = false;
 
 		TpTaskType myTask = TpTaskType.All;
 
@@ -2047,10 +2043,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				int L = X.Length;
 				double[] Res = new double[L];
 
-                B.SaveToTextFileDebug("BLvl" + TpLevel, ".txt");
-                B.SaveToTextFile("BLvl" + TpLevel + ".csv"); // for debugging
-                // Initialize residual
-                double[] Res0 = InitializeResidual(X, B, Res);
+				// Initialize residual
+				double[] Res0 = InitializeResidual(X, B, Res);
 
                 //this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
                                 
@@ -2059,13 +2053,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 PerformIterations2(ref X, B, Res, Res0);
 
-                Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", TpLevel))} Alphas for level {TpLevel}");
-                foreach(var set in ortho.Alphas)
-                    Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", TpLevel))}  - sol alpha={set.alpha_i}, RelResReduction={set.RelResReduction}, id={set.id}");
-
-                // solution copy
-                // =============
-                if (!ReferenceEquals(_xl, X)) {
+				// solution copy
+				// =============
+				if (!ReferenceEquals(_xl, X)) {
                     _xl.SetV(X);
                 }
                 ThisLevelTime.Stop();
@@ -2240,22 +2230,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // Coarse grid correction
                         if(myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
                             double[] XGuess = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; // XforCoarse;
-                            WriteDebug(iIter, ResforCoarse.MPI_L2Norm(subComm), "Tp-coarse coarse residual before correction");
                             XfromCoarse = ApplyCoarseGridCorrection(XGuess, ResforCoarse, iIter);
-                        }
-
-                        using(new FuncTrace("PermutateAndMinimize")) {
-                            var CoarseCorrection = Prolongate(XfromCoarse); //from coarse to this
-                            var CoarseCorrectionToSmoother = smootherPermutation.PermutateVector(CoarseCorrection); //from this to smoother
-
-                            if(myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
-                                resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrectionToSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-coarseLvl" + TpLevel + "It" + iIter);
-                            } else {
-                                resNorm = -1;
-                            }
-
-                            resNorm = resNorm.MPIMax(thisComm);
-                            WriteDebug(iIter, resNorm, "Tp-coarse");
                         }
 
                         // smoother
@@ -2271,7 +2246,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         double[] PreCorrSmoother = new double[smootherPermutation.LengthAfterPermutation]; //XforSmoother;
                                         smoother.Solve(PreCorrSmoother, ResforSmoother);
 
-                                        resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorrSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-smootherLvl" + TpLevel+"It"+iIter);
+                                        resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorrSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-smoother" + TpLevel);
                                         WriteDebug(iIter, resNorm, "Tp-smootherS" + i);
                                         i++;
                                     }
@@ -2301,11 +2276,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Stop timing for coarse grid correction
                     CrseLevelTime.Stop();
 
+                    using(new FuncTrace("PermutateAndMinimize")) {
+                        var CoarseCorrection = Prolongate(XfromCoarse); //from coarse to this
+                        var CoarseCorrectionToSmoother = smootherPermutation.PermutateVector(CoarseCorrection); //from this to smoother
+
+                        if(myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrectionToSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-coarse" + TpLevel);
+                        } else {
+                            resNorm = -1;
+                        }
+
+                        resNorm = resNorm.MPIMax(thisComm);
+                        WriteDebug(iIter, resNorm, "Tp-coarse");
+                    }
 
                     using(var tr = new FuncTrace("InitArrays")) {
                         Res = smootherPermutation.PermutateVectorBack(ResforSmoother);
                         ResforCoarse = Restrict(Res);
-                        WriteDebug(iIter, ResforCoarse.MPI_L2Norm(subComm), "ResforCoarse residual after correction");
                     }
                 }
             }

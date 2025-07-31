@@ -14,35 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Aggregation;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.XDG;
-using BoSSS.Platform;
-using BoSSS.Platform.Utils.Geom;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.Gnuplot;
-using BoSSS.Solution.Statistic;
-using BoSSS.Solution.Tecplot;
-using ilPSP;
-using ilPSP.LinSolvers;
-using ilPSP.LinSolvers.monkey;
-using ilPSP.Tracing;
-using ilPSP.Utils;
-using log4net.Core;
-using MPI.Wrappers;
-using NUnit.Common;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Numerics;
-using System.Runtime.Serialization;
 using System.Text;
+using ilPSP;
+using ilPSP.Utils;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation;
+using ilPSP.LinSolvers;
+using BoSSS.Platform;
+using MPI.Wrappers;
+using System.Numerics;
+using System.Diagnostics;
+using BoSSS.Foundation.XDG;
+using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Tracing;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.Statistic;
+using System.IO;
+using System.Runtime.Serialization;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.Gnuplot;
+using System.Net.NetworkInformation;
+using BoSSS.Solution.Tecplot;
 using System.Xml.Linq;
+using NUnit.Common;
+using ilPSP.LinSolvers.monkey;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -945,9 +944,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     }
                                     // Berechnung der Grobgitterkorrektur
                                     double[] vlc = new double[Lc];
-                                    WriteDebug(f, iIter, ResCoarse.MPI_L2Norm(), "Norm of coarse res");
                                     this.CoarserLevelSolver.Solve(vlc, ResCoarse);
-
                                     using(new BlockTrace("Prolongation", f)) {
                                         // Prolongation der Grobgitterkorrektur
                                         _MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
@@ -1091,13 +1088,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 IterationCallback?.Invoke(iIter, X, Res, this.m_OpMapPair as MultigridOperator);
 				WriteDebug(f, iIter, resNorm, "final");
 
-                Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", iLevel))} Alphas for level {iLevel}");
-                foreach(var set in ortho.Alphas)
-                    Console.WriteLine($"{string.Concat(Enumerable.Repeat("-", iLevel))}  - sol alpha={set.alpha_i}, RelResReduction={set.RelResReduction}, id={set.id}");
 
-                // solution copy
-                // =============
-                if (!ReferenceEquals(_xl, X)) {
+				// solution copy
+				// =============
+				if (!ReferenceEquals(_xl, X)) {
 					_xl.SetV(X);
 				}
 				ThisLevelTime.Stop();
