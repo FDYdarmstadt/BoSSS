@@ -2192,7 +2192,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double[] XforCoarse, XforSmoother, ResforCoarse, ResforSmoother;
             InitializeTaskSpecificData(X, B, Res, out XforCoarse, out XforSmoother, out ResforCoarse, out ResforSmoother);
 
-            var Res0forSmoother = smootherPermutation.PermutateVector(Res0);
+            double[] Res0forSmoother = new double[smootherPermutation.LengthAfterPermutation]; 
+            Array.Copy(ResforSmoother, Res0forSmoother, smootherPermutation.LengthAfterPermutation);
 
             double iter0_resNorm = -1;
             double resNorm = -1;
