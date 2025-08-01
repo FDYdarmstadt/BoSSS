@@ -2889,7 +2889,7 @@ namespace BoSSS.Foundation.IO {
         public static void WriteChromeTraceFile(this ISessionInfo sess, bool overWrite = false, string writeDir = null) {
             var traceFilePaths = sess.FilesInSessionDir("trace*txt");
 
-            if (traceFilePaths.Count() == 0) {
+            if(traceFilePaths.Count() == 0) {
                 Console.WriteLine("No trace files found in session {0}.", sess.ID);
                 return;
             }
@@ -2897,28 +2897,29 @@ namespace BoSSS.Foundation.IO {
             writeDir ??= sess.GetSessionDirectory();
             string writePath = writeDir + "\\" + "traceChrome.json";
 
-            if (File.Exists(writePath) && !overWrite) {
+            if(File.Exists(writePath) && !overWrite) {
                 Console.WriteLine("Chrome trace file already exists at {0}. Use overWrite=true to overwrite.", writePath);
                 return;
             }
 
-            var enterPattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: (ENTERING|BLKENTER) (.+?) new stack depth = \d+");
-            var leavePattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: LEAVING (.+?) \(([\d.Ee+-]+) sec");
+            try {
+                var enterPattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: (ENTERING|BLKENTER) (.+?) new stack depth = \d+");
+                var leavePattern = new Regex(@"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) INFO\s+ilPSP\.Tracing\.FuncTrace: LEAVING (.+?) \(([\d.Ee+-]+) sec");
 
-            var allEvents = new List<Dictionary<string, object>>();
+                var allEvents = new List<Dictionary<string, object>>();
 
-            foreach(var traceFilePath in traceFilePaths) {
-                int rank = int.Parse(Path.GetFileName(traceFilePath).Split('.')[^2]);
-                var lines = File.ReadAllLines(traceFilePath);
+                foreach(var traceFilePath in traceFilePaths) {
+                    int rank = int.Parse(Path.GetFileName(traceFilePath).Split('.')[^2]);
+                    var lines = File.ReadAllLines(traceFilePath);
 
-                foreach(var line in lines) {
-                    var enterMatch = enterPattern.Match(line);
-                    if(enterMatch.Success) {
-                        var timestampStr = enterMatch.Groups[1].Value;
-                        var function = enterMatch.Groups[3].Value;
-                        long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
+                    foreach(var line in lines) {
+                        var enterMatch = enterPattern.Match(line);
+                        if(enterMatch.Success) {
+                            var timestampStr = enterMatch.Groups[1].Value;
+                            var function = enterMatch.Groups[3].Value;
+                            long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
 
-                        allEvents.Add(new Dictionary<string, object> {
+                            allEvents.Add(new Dictionary<string, object> {
                         { "name", function },
                         { "cat", "function" },
                         { "ph", "B" },
@@ -2926,16 +2927,16 @@ namespace BoSSS.Foundation.IO {
                         { "pid", rank },
                         { "tid", 0 }
                     });
-                        continue;
-                    }
+                            continue;
+                        }
 
-                    var leaveMatch = leavePattern.Match(line);
-                    if(leaveMatch.Success) {
-                        var timestampStr = leaveMatch.Groups[1].Value;
-                        var function = leaveMatch.Groups[2].Value;
-                        long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
+                        var leaveMatch = leavePattern.Match(line);
+                        if(leaveMatch.Success) {
+                            var timestampStr = leaveMatch.Groups[1].Value;
+                            var function = leaveMatch.Groups[2].Value;
+                            long ts = (long)(DateTime.ParseExact(timestampStr, "yyyy-MM-dd HH:mm:ss,fff", CultureInfo.InvariantCulture) - DateTime.UnixEpoch).TotalMilliseconds * 1000;
 
-                        allEvents.Add(new Dictionary<string, object> {
+                            allEvents.Add(new Dictionary<string, object> {
                         { "name", function },
                         { "cat", "function" },
                         { "ph", "E" },
@@ -2943,15 +2944,18 @@ namespace BoSSS.Foundation.IO {
                         { "pid", rank },
                         { "tid", 0 }
                     });
+                        }
                     }
                 }
+
+                var trace = new Dictionary<string, object> { ["traceEvents"] = allEvents };
+
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                File.WriteAllText(writePath, JsonSerializer.Serialize(trace, options));
+                Console.WriteLine("-> traceChrome.json ready at " + writeDir);
+            } catch(Exception ex) {
+                Console.WriteLine(sess.ID + " - Error writing Chrome trace file for: " + ex.Message);
             }
-
-            var trace = new Dictionary<string, object> { ["traceEvents"] = allEvents };
-
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            File.WriteAllText(writePath, JsonSerializer.Serialize(trace, options));
-            Console.WriteLine("-> traceChrome.json ready at "+ writeDir);
         }
 
         // <summary>
