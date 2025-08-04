@@ -234,7 +234,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double inbal = ComputeInbalance(level);
                 tr.Info("DOF MPI inbalance is " + inbal);
 
-                if (((SchwarzImplementation == SchwarzImplementation.Auto && GlobalNoOfBlocks <= MPIsize) || SchwarzImplementation == SchwarzImplementation.TaskParallel || TaskParallelization) // either directly designated or has GlobalNoOfBlocks <= MPIsize with Auto
+                // check for the task parallel Schwarz smoother
+                if(((SchwarzImplementation == SchwarzImplementation.Auto && GlobalNoOfBlocks <= MPIsize) || SchwarzImplementation == SchwarzImplementation.TaskParallel || TaskParallelization) // either directly designated or has GlobalNoOfBlocks <= MPIsize with Auto
 					&& level.CoarserLevel != null) { // and there is a coarser level solver to be used as direct solver
 
 					if (GlobalNoOfBlocks >= FinerLevelGlobalBlocks) {
@@ -254,7 +255,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					return (r, -1, GlobalNoOfBlocks);
 				}
 
-				if (inbal <= INBALANCE_THRESHOLD
+                // check for the per-process blocking Schwarz smoother
+                if(inbal <= INBALANCE_THRESHOLD
 				&& LocalNoOfBlocks >= (this.UsepTG ? 1 : PROCESSLOCAL_SCHWARZBLOCK_MINIMUM)
 				&& FinerLevelLocalBlocks >= 0
 				&& (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.PerProcess || SchwarzImplementation == SchwarzImplementation.PerProcessWithIdles)) {
@@ -294,7 +296,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					}
 				}
 
-				if (SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.CoarseMesh || SchwarzImplementation == SchwarzImplementation.PerProcessWithIdles) {
+                // check for the coarse-mesh Schwarz smoother
+                if(SchwarzImplementation == SchwarzImplementation.Auto || SchwarzImplementation == SchwarzImplementation.CoarseMesh || SchwarzImplementation == SchwarzImplementation.PerProcessWithIdles) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // For some reason, we failed using the per-process-blocking Schwarz;
                     // so, try with the coarse-mesh-Schwarz
@@ -561,14 +564,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Smoothers = smoothers,
 			};
 
-			if (iLevel == 0) {
-				_levelSolver4.config.NoOfPostSmootherSweeps = 1;
-			} else {
-				if (glbBlk > 0)
-					_levelSolver4.config.NoOfPostSmootherSweeps = (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2));
-				else
-					_levelSolver4.config.NoOfPostSmootherSweeps = 2;
-			}
 			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, NoOfPostSmootherSweeps = {_levelSolver4.config.NoOfPostSmootherSweeps}");
 			return _levelSolver4;
         }
@@ -594,14 +589,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 
 
-			if (iLevel == 0) {
-				_levelSolver4.config.NoOfPostSmootherSweeps = 20;
-			} else {
-				if (glbBlk > 0)
-					_levelSolver4.config.NoOfPostSmootherSweeps = (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2));
-				else
-					_levelSolver4.config.NoOfPostSmootherSweeps = 2;
-			}
+            if(_levelSolver4.config.AutomaticSmootherSweepCalcuation) {
+                if(iLevel == 0) {
+                    _levelSolver4.config.NoOfPostSmootherSweeps = 20;
+                } else {
+                    if(glbBlk > 0)
+                        _levelSolver4.config.NoOfPostSmootherSweeps = (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2));
+                    else
+                        _levelSolver4.config.NoOfPostSmootherSweeps = 2;
+                }
+            }
+
 			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, NoOfPostSmootherSweeps = {_levelSolver4.config.NoOfPostSmootherSweeps}");
 			return _levelSolver4;
 		}
