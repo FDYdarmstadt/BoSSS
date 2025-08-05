@@ -499,7 +499,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		public (long[] cellI0s, List<(long source, long target)> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
-			using (new FuncTrace()) {
+			using (var f = new FuncTrace()) {
 				var columnMapping = new List<(long sourceIdx, long targetIdx)>();
 				if (NoOfParts == 1) {
 					columnMapping = Enumerable.Range(0, (int)MGMapping.AggGrid.CellPartitioning.TotalLength).Select(i => ((long)i, (long)i)).ToList();
@@ -514,6 +514,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				int MPIrnk = MGMapping.MpiRank;
 				int[] part;
 				if (MPIrnk == worldMPIOffset) { //call metis on only the rank 0 (opComm)
+                    f.Info($"{MPIrnk}-rank is calculating the distribution map for the level-{Level}");
 					int ncon = 1;
 					int edgecut = 0;
 					int[] options = new int[METIS.METIS_NOPTIONS];
@@ -543,13 +544,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							ref edgecut,
 							part);
 				} else {
-					part = null;
+                    f.Info($"{MPIrnk}-rank is waiting the distribution map for the level-{Level}");
+                    part = null;
 				}
 
-				//broadcast to every processor. (this is necessary to create column mapping)
-				var partGlob = part.MPIBroadcast(worldMPIOffset, MGMapping.MPI_Comm);
+                //broadcast to every processor. (this is necessary to create column mapping)
+                var partGlob = part.MPIBroadcast(worldMPIOffset, MGMapping.MPI_Comm);
+                f.Info($"Distribution is complete over the comm");
 
-				for (int p = 0; p < NoOfParts; p++)
+                for(int p = 0; p < NoOfParts; p++)
 					if (!partGlob.Contains(p))
 						throw new Exception("There are empty blocks with TaskParallelOrthoMG. Either you are using too many processors such that there is not enough DOFs left for a processor or something odd is happening");
 
