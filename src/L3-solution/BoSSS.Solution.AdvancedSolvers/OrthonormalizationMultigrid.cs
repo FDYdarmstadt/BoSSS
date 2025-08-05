@@ -542,12 +542,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			/// </summary>
 			public int NoOfPostSmootherSweeps = 2;
 
-
-            /// <summary>
-            /// Calculates the smoother sweep automatically, based on the DG degree and the number of blocks in each level. 
-            /// (overrides NoOfPostSmootherSweeps, valid only for the original MG variant)
-            /// </summary>
-            public bool AutomaticSmootherSweepCalcuation = true;
         }
 
 

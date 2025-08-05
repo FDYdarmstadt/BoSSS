@@ -144,6 +144,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool AdditiveVariant = false;
 
         /// <summary>
+        /// Calculates the smoother sweep automatically, based on the DG degree and the number of blocks in each level. 
+        /// (overrides NoOfPostSmootherSweeps, valid only for the original MG variant)
+        /// </summary>
+        [DataMember]
+        public bool AutomaticSmootherSweepCalcuation = true;
+
+        /// <summary>
         /// 
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
@@ -589,7 +596,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 
 
-            if(_levelSolver4.config.AutomaticSmootherSweepCalcuation) {
+            if(this.AutomaticSmootherSweepCalcuation) {
                 if(iLevel == 0) {
                     _levelSolver4.config.NoOfPostSmootherSweeps = 20;
                 } else {
