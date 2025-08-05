@@ -514,8 +514,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				int MPIrnk = MGMapping.MpiRank;
 				int[] part;
 				if (MPIrnk == worldMPIOffset) { //call metis on only the rank 0 (opComm)
-                    f.Info($"{MPIrnk}-rank is calculating the distribution map for the level-{Level}");
-					int ncon = 1;
+                    f.Info($"{MPIrnk}-rank is calculating the distribution map for the level-{Level} into {NoOfParts} parts");
+                    PrintGraphPartitioningStats(m_xadj, m_adj, m_NoOfSpecies, NoOfParts, f);   
+
+                    int ncon = 1;
 					int edgecut = 0;
 					int[] options = new int[METIS.METIS_NOPTIONS];
 					METIS.SETDEFAULTOPTIONS(options);
@@ -543,11 +545,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							options,
 							ref edgecut,
 							part);
-				} else {
+                    f.Info($"{MPIrnk}-rank is now broadcasting the distribution map for the level-{Level} into other ranks");
+                } else {
                     f.Info($"{MPIrnk}-rank is waiting the distribution map for the level-{Level}");
                     part = null;
 				}
-
                 //broadcast to every processor. (this is necessary to create column mapping)
                 var partGlob = part.MPIBroadcast(worldMPIOffset, MGMapping.MPI_Comm);
                 f.Info($"Distribution is complete over the comm");
@@ -573,7 +575,49 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		public void ClearMemory() { 
+        public static void PrintGraphPartitioningStats(int[] xadj, int[] adj, int[] nodeWeights, int noOfParts, FuncTrace f) {
+            int numVertices = xadj.Length - 1;
+            int numEdges = adj.Length;
+            double avgDegree = numVertices > 0 ? (double)numEdges / numVertices : 0;
+
+            f.Info("==== METIS Graph Partitioning Stats ====");
+            f.Info($"Number of vertices (nodes): {numVertices}");
+            f.Info($"Number of edges (entries in adj): {numEdges}");
+            f.Info($"Average degree: {avgDegree:F2}");
+            f.Info($"Number of partitions requested: {noOfParts}");
+
+            if(nodeWeights != null) {
+                if(nodeWeights.Length != numVertices) {
+                    f.Info("⚠️  Mismatch: nodeWeights.Length != number of vertices!");
+                } else {
+                    int minW = nodeWeights.Min();
+                    int maxW = nodeWeights.Max();
+                    f.Info($"Node weights: min = {minW}, max = {maxW}");
+                }
+            } else {
+                f.Info("Node weights: none");
+            }
+
+            // Check if any xadj index is out of bounds
+            bool invalidXadj = xadj.Any(idx => idx < 0 || idx > adj.Length);
+            f.Info($"xadj indices valid: {!invalidXadj}");
+
+            // Check if adj entries refer to valid node indices
+            bool invalidAdj = adj.Any(j => j < 0 || j >= numVertices);
+            f.Info($"adj indices valid: {!invalidAdj}");
+
+            // Connectedness quick check (not full BFS/DFS)
+            if(avgDegree < 1)
+                f.Info("⚠️  Graph might be disconnected or too sparse.");
+
+            if(noOfParts > numVertices)
+                f.Info("⚠️  More partitions than nodes — this may slow down Metis or cause poor results.");
+
+            f.Info("========================================");
+        }
+
+
+        public void ClearMemory() { 
 			m_OpMtx = null;
 			m_ProlMtx = null;
 			m_LeftChangeOfBasis = null;
