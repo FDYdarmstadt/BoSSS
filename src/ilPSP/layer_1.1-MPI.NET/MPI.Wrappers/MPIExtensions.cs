@@ -23,6 +23,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Runtime.CompilerServices;
+
 //using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MPI.Wrappers {
@@ -150,6 +152,123 @@ namespace MPI.Wrappers {
             }
             
         }
+
+        static public int[] MPIBroadcast(this int[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+
+            // Phase 1: broadcast the array length
+            if(myRank == root && array != null) {
+                length = array.Length;
+            }
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), 4, csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            // Null array case
+            if(length < 0) {
+                return null;
+            }
+
+            // Allocate array on non-root processes
+            if(myRank != root) {
+                array = new int[length];
+            }
+
+            // Phase 2: broadcast the actual data
+            unsafe {
+                fixed(int* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(int), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
+        static public float[] MPIBroadcast(this float[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+            if(myRank == root && array != null)
+                length = array.Length;
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), 4, csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            if(length < 0)
+                return null;
+
+            if(myRank != root)
+                array = new float[length];
+
+            unsafe {
+                fixed(float* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(float), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
+        static public double[] MPIBroadcast(this double[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+            if(myRank == root && array != null)
+                length = array.Length;
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), 4, csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            if(length < 0)
+                return null;
+
+            if(myRank != root)
+                array = new double[length];
+
+            unsafe {
+                fixed(double* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(double), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
+        static public long[] MPIBroadcast(this long[] array, int root, MPI_Comm comm) {
+            int myRank;
+            csMPI.Raw.Comm_Rank(comm, out myRank);
+
+            int length = -1;
+            if(myRank == root && array != null)
+                length = array.Length;
+
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&length), sizeof(int), csMPI.Raw._DATATYPE.BYTE, root, comm);
+            }
+
+            if(length < 0)
+                return null;
+
+            if(myRank != root)
+                array = new long[length];
+
+            unsafe {
+                fixed(long* ptr = array) {
+                    csMPI.Raw.Bcast((IntPtr)ptr, length * sizeof(long), csMPI.Raw._DATATYPE.BYTE, root, comm);
+                }
+            }
+
+            return array;
+        }
+
 
         /// <summary>
         /// Gathers (serializeable) objects <paramref name="o"/> from each rank on rank <paramref name="root"/>.
