@@ -148,7 +148,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// (overrides NoOfPostSmootherSweeps, valid only for the original MG variant)
         /// </summary>
         [DataMember]
-        public bool AutomaticSmootherSweepCalcuation = true;
+        public bool AutomaticSmootherSweepCalculation = true;
+
+        /// <summary>
+        /// Overrides NoOfPostSmootherSweeps (even if AutomaticSmootherSweepCalculation is true)
+        /// </summary>
+        [DataMember]
+        public int ForcedNoOfPostSmootherSweeps = -1;
 
         /// <summary>
         /// 
@@ -571,7 +577,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Smoothers = smoothers,
 			};
 
-			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, MinimumNoOfPostSmootherSweeps = {_levelSolver4.config.MinimumNoOfPostSmootherSweeps}");
+            if(ForcedNoOfPostSmootherSweeps > 0) 
+                _levelSolver4.config.MinimumNoOfPostSmootherSweeps = ForcedNoOfPostSmootherSweeps;
+
+            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, MinimumNoOfPostSmootherSweeps = {_levelSolver4.config.MinimumNoOfPostSmootherSweeps}");
 			return _levelSolver4;
         }
 
@@ -595,14 +604,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				tr.Info($"KcycleMultiSchwarz: lv {iLevel}, added {altSmooth3.GetType().Name}");
 			}
 
-            if(this.AutomaticSmootherSweepCalcuation) {
+            if(ForcedNoOfPostSmootherSweeps > 0)
+                _levelSolver4.config.NoOfPostSmootherSweeps = ForcedNoOfPostSmootherSweeps;
+            else if(this.AutomaticSmootherSweepCalculation) {
                 if(iLevel == 0) {
                     _levelSolver4.config.NoOfPostSmootherSweeps = 20;
                 } else {
-                    if(glbBlk > 0)
-                        _levelSolver4.config.NoOfPostSmootherSweeps = (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2));
-                    else
-                        _levelSolver4.config.NoOfPostSmootherSweeps = 2;
+                        _levelSolver4.config.NoOfPostSmootherSweeps = glbBlk > 0 ? (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(glbBlk) * 3.0) + maxDG - 2)) : 2;
                 }
             }
 

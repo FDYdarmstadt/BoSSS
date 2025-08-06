@@ -2437,10 +2437,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 						smoother.Solve(X, B);
 				}
 				
-				RunAllSmoothers(); // Apply smoothers
-
-				for (int sweep = 1; sweep < this.config.MinimumNoOfPostSmootherSweeps; sweep++)
-					RunAllSmoothers();
+				RunAllSmoothers();                                                              // Apply smoothers (do the first anyway)
+				for (int sweep = 1; sweep < this.config.MinimumNoOfPostSmootherSweeps; sweep++) // do rest if required
+                    RunAllSmoothers();
 
 				if (AdvancedParallelism) {
 					SendSignal(true, iIter);
