@@ -514,8 +514,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				int MPIrnk = MGMapping.MpiRank;
 				int[] part;
 				if (MPIrnk == worldMPIOffset) { //call metis on only the rank 0 (opComm)
-                    f.Info($"{MPIrnk}-rank is calculating the distribution map for the level-{Level} into {NoOfParts} parts");
-                    PrintGraphPartitioningStats(m_xadj, m_adj, m_NoOfSpecies, NoOfParts, f);   
+                    f.Info($"{MPIrnk}-rank is calculating the re-distribution for the level-{Level} into {NoOfParts} parts");
 
                     int ncon = 1;
 					int edgecut = 0;
@@ -524,7 +523,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 					options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
 					options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
-					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
+					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 50; // Maximum imbalance of 5 percent (this is the default kway clustering)
+                                                                               // 3 percent seems to be to strict for some test cases
 					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
 
 					int J = m_xadj.Length - 1;
@@ -554,9 +554,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var partGlob = part.MPIBroadcast(worldMPIOffset, MGMapping.MPI_Comm);
                 f.Info($"Distribution is complete over the comm");
 
-                for(int p = 0; p < NoOfParts; p++)
-					if (!partGlob.Contains(p))
-						throw new Exception("There are empty blocks with TaskParallelOrthoMG. Either you are using too many processors such that there is not enough DOFs left for a processor or something odd is happening");
+                if (partGlob.Length >= NoOfParts)
+                    for(int p = 0; p < NoOfParts; p++)
+					    if (!partGlob.Contains(p))
+						    throw new InvalidOperationException("There are empty blocks with TaskParallelOrthoMG. Either you are using too many processors such that there is not enough DOFs left for a processor or something odd is happening");
 
 				int[] i0part = new int[NoOfParts+1]; //new i0partitioning for each part
 				for (int p = 1; p < NoOfParts+1; p++)
@@ -575,7 +576,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-        public static void PrintGraphPartitioningStats(int[] xadj, int[] adj, int[] nodeWeights, int noOfParts, FuncTrace f) {
+        /// <summary>
+        /// Prints the graph partitioning statistics for debugging purposes.
+        /// </summary>
+        /// <param name="xadj"></param>
+        /// <param name="adj"></param>
+        /// <param name="nodeWeights"></param>
+        /// <param name="noOfParts"></param>
+        /// <param name="f"></param>
+        /// <param name="level"></param>
+        public static void PrintGraphPartitioningStats(int[] xadj, int[] adj, int[] nodeWeights, int noOfParts, FuncTrace f, int level) {
             int numVertices = xadj.Length - 1;
             int numEdges = adj.Length;
             double avgDegree = numVertices > 0 ? (double)numEdges / numVertices : 0;
@@ -585,6 +595,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             f.Info($"Number of edges (entries in adj): {numEdges}");
             f.Info($"Average degree: {avgDegree:F2}");
             f.Info($"Number of partitions requested: {noOfParts}");
+
+            xadj.SaveToTextFileDebug($"xadj_lvl{level}_{noOfParts}_parts.txt", ".txt");
+            adj.SaveToTextFileDebug($"adj_lvl{level}_{noOfParts}_parts.txt", ".txt");
+            nodeWeights.SaveToTextFileDebug($"nodeWeights_lvl{level}_{noOfParts}_parts.txt", ".txt");
+
 
             if(nodeWeights != null) {
                 if(nodeWeights.Length != numVertices) {
