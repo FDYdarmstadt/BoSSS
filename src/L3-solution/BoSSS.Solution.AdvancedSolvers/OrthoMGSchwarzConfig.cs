@@ -571,7 +571,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Smoothers = smoothers,
 			};
 
-			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, NoOfPostSmootherSweeps = {_levelSolver4.config.NoOfPostSmootherSweeps}");
+			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, MinimumNoOfPostSmootherSweeps = {_levelSolver4.config.MinimumNoOfPostSmootherSweeps}");
 			return _levelSolver4;
         }
 
@@ -594,7 +594,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				_levelSolver4.AdditionalPostSmoothers = new[] { altSmooth3 };
 				tr.Info($"KcycleMultiSchwarz: lv {iLevel}, added {altSmooth3.GetType().Name}");
 			}
-
 
             if(this.AutomaticSmootherSweepCalcuation) {
                 if(iLevel == 0) {

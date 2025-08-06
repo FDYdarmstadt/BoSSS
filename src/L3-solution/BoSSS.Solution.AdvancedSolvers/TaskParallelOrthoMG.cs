@@ -1207,7 +1207,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// 
             /// </summary>
-            public int NoOfPostSmootherSweeps = 2;
+            public int MinimumNoOfPostSmootherSweeps = 1;
         }
 
 
@@ -1275,7 +1275,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// When enabled, it possibly increases the convergence speed, but becomes run-time dependant.
 		/// So, not deterministic anymore and different runs may give different iteration numbers and results.
 		/// </summary>
-		bool AdvancedParallism = true;
+		bool AdvancedParallelism = true;
 
         /// <summary>
         /// entry point for the TaskParallelOrthoMG (finest level)
@@ -1990,8 +1990,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new NotSupportedException();
                 }
 
-                tr.Info($"NoOfPostSmootherSweeps was equal to {this.config.NoOfPostSmootherSweeps} at TPLvl-{TpLevel} but changed to 1 ");
-                this.config.NoOfPostSmootherSweeps = 1;
+                tr.Info($"MinimumNoOfPostSmootherSweeps was equal to {this.config.MinimumNoOfPostSmootherSweeps} at TPLvl-{TpLevel} but changed to 1 ");
+                this.config.MinimumNoOfPostSmootherSweeps = 1;
                 CoarserTpMapping.ClearMemory();
             }
         }
@@ -2214,11 +2214,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] XforCoarse, XforSmoother, ResforCoarse, ResforSmoother;
                 InitializeTaskSpecificData(X, B, Res, out XforCoarse, out XforSmoother, out ResforCoarse, out ResforSmoother);
 
-				// Start listening to signal (see AdvancedParallism)
+				// Start listening to signal (see AdvancedParallelism)
 				ListenSignal(iIter);
 				IsEndSignalSent = false;
 
-				// Start timing for coarse grid correction and smoother (as they are parallel and wait for each other in case of AdvancedParallism)
+				// Start timing for coarse grid correction and smoother (as they are parallel and wait for each other in case of AdvancedParallelism)
 				CrseLevelTime.Start();
 				// from now, it is not serial as it looks on the screen.
 				{ 
@@ -2272,7 +2272,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             iter0_resNorm = iter0_resNorm.MPIMax(thisComm);
             resNorm = iter0_resNorm;
 
-            WriteDebug(0, resNorm, $"initial start with NoOfPostSmootherSweeps={config.NoOfPostSmootherSweeps}");
+            WriteDebug(0, resNorm, $"initial start with MinimumNoOfPostSmootherSweeps={config.MinimumNoOfPostSmootherSweeps}");
 
             int iIter;
             for(iIter = 1; ; iIter++) {
@@ -2286,11 +2286,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     ThisLevelIterations++;
 
                     double[] XfromCoarse = new double[XforCoarse.Length]; //, XfromSmoother = null;
-                                                                          // Start listening to signal (see AdvancedParallism)
+                                                                          // Start listening to signal (see AdvancedParallelism)
                     ListenSignal(iIter);
                     IsEndSignalSent = false;
 
-                    // Start timing for coarse grid correction and smoother (as they are parallel and wait for each other in case of AdvancedParallism)
+                    // Start timing for coarse grid correction and smoother (as they are parallel and wait for each other in case of AdvancedParallelism)
                     CrseLevelTime.Start();
                     // from now, it is not serial as it looks on the screen.
                     {
@@ -2321,10 +2321,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 RunAllSmoothers(); // Apply smoothers
 
-                                for(int sweep = 1; sweep < this.config.NoOfPostSmootherSweeps; sweep++)
+                                for(int sweep = 1; sweep < this.config.MinimumNoOfPostSmootherSweeps; sweep++)
                                     RunAllSmoothers();
 
-                                if(AdvancedParallism) {
+                                if(AdvancedParallelism) {
                                     SendSignal(true, iIter);
                                     bool done = CheckSignal();
                                     int k = 0;
@@ -2393,7 +2393,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		void SendSignal(bool InitiateSignal, int Iter) {
-			if (!AdvancedParallism) return;
+			if (!AdvancedParallelism) return;
 			if (!InitiateSignal && IsEndSignalSent) return;
 
 			int targetRank = GetTargetRankForSignal();
@@ -2407,7 +2407,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		void ListenSignal(int Iter) {
-			if (!AdvancedParallism) return;
+			if (!AdvancedParallelism) return;
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank < 0) return;
 			int tag = (TpLevel << 16) | Iter;
@@ -2420,7 +2420,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		}
 
 		bool CheckSignal() {
-			if (!AdvancedParallism) return true; //if not enabled, bypass this feature by returning true
+			if (!AdvancedParallelism) return true; //if not enabled, bypass this feature by returning true
 			bool done = false;
 			int targetRank = GetTargetRankForSignal();
 			if (targetRank > -1)  csMPI.Raw.Test(ref RecvRequest, out done, out MPI_Status status);
@@ -2439,10 +2439,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				
 				RunAllSmoothers(); // Apply smoothers
 
-				for (int sweep = 1; sweep < this.config.NoOfPostSmootherSweeps; sweep++)
+				for (int sweep = 1; sweep < this.config.MinimumNoOfPostSmootherSweeps; sweep++)
 					RunAllSmoothers();
 
-				if (AdvancedParallism) {
+				if (AdvancedParallelism) {
 					SendSignal(true, iIter);
 					bool done = CheckSignal();
 					int k = 0;
@@ -2472,10 +2472,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 RunAllSmoothers(); // Apply smoothers
 
-                for(int sweep = 1; sweep < this.config.NoOfPostSmootherSweeps; sweep++)
+                for(int sweep = 1; sweep < this.config.MinimumNoOfPostSmootherSweeps; sweep++)
                     RunAllSmoothers();
 
-                if(AdvancedParallism) {
+                if(AdvancedParallelism) {
                     SendSignal(true, iIter);
                     bool done = CheckSignal();
                     int k = 0;
@@ -2508,7 +2508,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // Solve the coarse grid problem
                 CoarserLevelSolver.Solve(XCoarse, ResCoarse);
 
-				if (AdvancedParallism) {
+				if (AdvancedParallelism) {
 					SendSignal(true, iIter);
 
 					if (CoarserLevelSolver is TaskParallelOrthoMG TpCoarse) {
