@@ -152,9 +152,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Overrides NoOfPostSmootherSweeps (even if AutomaticSmootherSweepCalculation is true)
+        /// Usage: an positive integer (by default turned off)
         /// </summary>
         [DataMember]
-        public int ForcedNoOfPostSmootherSweeps = -1;
+        public int ForcedNoOfPostSmootherSweeps = int.MinValue;
+
+        /// <summary>
+        /// Enforces Task Parallel variant after this level (0: finest)
+        /// Usage: an positive integer (by default turn off)
+        /// </summary>
+        [DataMember]
+        public int TaskParallelEnforcedLevel = int.MinValue;
 
         /// <summary>
         /// 
@@ -216,14 +224,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         const int PROCESSLOCAL_SCHWARZBLOCK_MINIMUM = 2;
 
-		internal bool TaskParallelization = false;
 
+        // After TaskParallizationStarted,it is not compitable with the other implementations using WORLD_COMMUNICATOR. So, solver must be arranged accordingly
+        internal bool TaskParallelizationStarted = false;
 
-		/// <summary>
-		/// - if true, the <see cref="SchwarzForCoarseMesh"/> smoother should be used
-		/// - if false, the <see cref="Schwarz"/> smoother should be used
-		/// </summary>
-		(ISolverSmootherTemplate swz, int LevelLocalBlocks, int LevelGlobalBlocks) SelectSchwarzSmoother(MultigridOperator level, int FinerLevelLocalBlocks, int FinerLevelGlobalBlocks) {
+        internal bool TaskParallelizationAllowed = true;
+
+        /// <summary>
+        /// - if true, the <see cref="SchwarzForCoarseMesh"/> smoother should be used
+        /// - if false, the <see cref="Schwarz"/> smoother should be used
+        /// </summary>
+        (ISolverSmootherTemplate swz, int LevelLocalBlocks, int LevelGlobalBlocks) SelectSchwarzSmoother(MultigridOperator level, int FinerLevelLocalBlocks, int FinerLevelGlobalBlocks) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 int MPIsize = level.Mapping.MpiSize;
@@ -248,8 +259,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 tr.Info("DOF MPI inbalance is " + inbal);
 
                 // check for the task parallel Schwarz smoother
-                if(((SchwarzImplementation == SchwarzImplementation.Auto && GlobalNoOfBlocks <= MPIsize) || SchwarzImplementation == SchwarzImplementation.TaskParallel || TaskParallelization) // either directly designated or has GlobalNoOfBlocks <= MPIsize with Auto
-					&& level.CoarserLevel != null) { // and there is a coarser level solver to be used as direct solver
+                if(TaskParallelizationAllowed &&
+                    level.CoarserLevel != null && // Coarser level exists (used as direct solver)
+                    // One of the following must hold:
+                    (   // Auto mode with GlobalNoOfBlocks ≤ MPIsize
+                        (SchwarzImplementation == SchwarzImplementation.Auto && GlobalNoOfBlocks <= MPIsize) ||
+                        // Explicitly set to TaskParallel
+                        SchwarzImplementation == SchwarzImplementation.TaskParallel ||
+                        // Task parallelization has already started in finer levels
+                        TaskParallelizationStarted
+                    ))  {
 
 					if (GlobalNoOfBlocks >= FinerLevelGlobalBlocks) {
 						tr.Info("Failing to reduce **global** number of blocks (" + GlobalNoOfBlocks + ") wrt. previous level (" + FinerLevelGlobalBlocks + ").");
@@ -419,7 +438,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    if (TaskParallelization && op_lv.CoarserLevel == null) //Task Parallel MG is not designed without direct solver at the coarsest
+                    if (TaskParallelizationStarted && op_lv.CoarserLevel == null) //Task Parallel MG is not designed without direct solver at the coarsest
 						TerminateMultigrid = true;
 
 					// instantiate solver at level
@@ -469,6 +488,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // +++++++++++++++++++++++++++++++++++
 
                         ISolverSmootherTemplate smoother1;
+
+                        CheckTaskParallelizationAllowed(op_lv);
 
                         int locBlk, glbBlk;
                         (smoother1, locBlk, glbBlk) = this.SelectSchwarzSmoother(op_lv, FinerLevelLocalBlocks, FinerLevelGlobalBlocks);
@@ -558,11 +579,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-		TaskParallelOrthoMG GetTaskParallelOrthoMG(FuncTrace tr, int iLevel, int locBlk, int glbBlk, int maxDG,
+        /// <summary>
+        /// Checks if the task parallelization is allowed for the given level of the multigrid operator.
+        /// </summary>
+        /// <param name="op_lv"></param>
+        void CheckTaskParallelizationAllowed(MultigridOperator op_lv) {
+            if(TaskParallelEnforcedLevel >= 0)
+                if(TaskParallelEnforcedLevel >= op_lv.LevelIndex)
+                    TaskParallelizationStarted = true;
+                else
+                    TaskParallelizationAllowed = false;
+
+            if(op_lv.CoarserLevel == null)
+                    TaskParallelizationAllowed = false;
+        }
+
+        TaskParallelOrthoMG GetTaskParallelOrthoMG(FuncTrace tr, int iLevel, int locBlk, int glbBlk, int maxDG,
 								 ISolverSmootherTemplate smoother1, ISolverSmootherTemplate altSmooth3) {
 			tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Chosing Task Parallel Additive Variant");
             this.CoarseUsepTG = false;
-            TaskParallelization = true;
+            TaskParallelizationStarted = true;
             ISolverSmootherTemplate[] smoothers;
 
 			if (altSmooth3 != null) {
