@@ -162,7 +162,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Usage: an positive integer (by default turn off)
         /// </summary>
         [DataMember]
-        public int TaskParallelEnforcedLevel = int.MinValue;
+        public int TaskParallelEnforcedLevel = 1; // int.MinValue;
 
         /// <summary>
         /// 
@@ -584,11 +584,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="op_lv"></param>
         void CheckTaskParallelizationAllowed(MultigridOperator op_lv) {
-            if(TaskParallelEnforcedLevel >= 0)
-                if(TaskParallelEnforcedLevel >= op_lv.LevelIndex)
+            if(TaskParallelEnforcedLevel >= 0) { //TaskParallelEnforcedLevel is enabled
+                if(TaskParallelEnforcedLevel <= op_lv.LevelIndex) {
                     TaskParallelizationStarted = true;
-                else
+                    TaskParallelizationAllowed = true;
+
+                } else
                     TaskParallelizationAllowed = false;
+            }
 
             if(op_lv.CoarserLevel == null)
                     TaskParallelizationAllowed = false;
