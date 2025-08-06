@@ -156,9 +156,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		internal (long i0Cell, int lenCell)[] localBlocksForSmoother;   //block data from the original matrix on the world communicator
 		internal (long i0Cell, int lenCell)[] localBlocksForCoarse;     //block data from the original matrix on the world communicator
 
-		public List<(long source, long target)> ThisNewCellMapping;     //global data (all of them) and global indices
-		public List<(long source, long target)> CoarseNewCellMapping;   //global data (all of them) and global indices
-		public List<(long source, long target)> SmootherNewCellMapping; //global data (all of them) and global indices
+		public Dictionary<long, long> ThisNewCellMapping;     //global data (all of them) and global indices
+		public Dictionary<long, long> CoarseNewCellMapping;   //global data (all of them) and global indices
+		public Dictionary<long, long> SmootherNewCellMapping; //global data (all of them) and global indices
 
 		public long[] ThisCellI0s;     //stores the global indices of starting cell indices of the processors for this level (length = NoOfThisProcs + 1)
 		public long[] CoarseCellI0s;   //stores the global indices of starting cell indices of the processors for this level (length = NoOfCoarseProcs + 1)
@@ -376,9 +376,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 		}
 
-		(long i0Cell, int lenCell)[] GetLocalDistribution(List<(long Source, long Target)> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
-			Dictionary<long, long> cellColumnDict = cellColumnMapping.ToDictionary(pair => pair.Source, pair => pair.Target);
-
+		(long i0Cell, int lenCell)[] GetLocalDistribution(Dictionary<long, long> cellColumnDict, long[] targeti0s, int procOffset, int procSize) {
 			int B = m_MultigridMapping.LocalNoOfBlocks;
 
 			List<BlockInfo> thisProcBlocks = new List<BlockInfo>();
@@ -498,20 +496,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return NoOfSpecies.MPIGatherv(rcvCount, worldMPIOffset, Map.MPI_Comm);
 		}
 
-		public (long[] cellI0s, List<(long source, long target)> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
+		public (long[] cellI0s, Dictionary<long, long> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
 			using (var f = new FuncTrace()) {
 				var columnMapping = new List<(long sourceIdx, long targetIdx)>();
-				if (NoOfParts == 1) {
-					columnMapping = Enumerable.Range(0, (int)MGMapping.AggGrid.CellPartitioning.TotalLength).Select(i => ((long)i, (long)i)).ToList();
-					return (new long[] { 0, (int)MGMapping.AggGrid.CellPartitioning.TotalLength }, columnMapping);
-				}
+                int totalLength = (int)MGMapping.AggGrid.CellPartitioning.TotalLength;
 
-				if (NoOfParts == worldCommSize) {
-					columnMapping = Enumerable.Range(0, (int)MGMapping.AggGrid.CellPartitioning.TotalLength).Select(i => ((long)i, (long)i)).ToList();
-					return (MGMapping.AggGrid.CellPartitioning.GetOffsetArray(), columnMapping);
-				}
+                if(NoOfParts == 1) { //nothing to distribute, just return the identity map
+                    var identityMap = Enumerable.Range(0, totalLength).ToDictionary(i => (long)i, i => (long)i);
+                    return (new long[] { 0, totalLength }, identityMap);
+                }
 
-				int MPIrnk = MGMapping.MpiRank;
+                if(NoOfParts == worldCommSize) { //no need to re-distribute (current dist. should be fine), just return the identity map
+                    var identityMap = Enumerable.Range(0, totalLength).ToDictionary(i => (long)i, i => (long)i);
+                    return (MGMapping.AggGrid.CellPartitioning.GetOffsetArray(), identityMap);
+                }
+
+                int MPIrnk = MGMapping.MpiRank;
 				int[] part;
 				if (MPIrnk == worldMPIOffset) { //call metis on only the rank 0 (opComm)
                     f.Info($"{MPIrnk}-rank is calculating the re-distribution for the level-{Level} into {NoOfParts} parts");
@@ -557,7 +557,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (partGlob.Length >= NoOfParts)
                     for(int p = 0; p < NoOfParts; p++)
 					    if (!partGlob.Contains(p))
-						    throw new InvalidOperationException("There are empty blocks with TaskParallelOrthoMG. Either you are using too many processors such that there is not enough DOFs left for a processor or something odd is happening");
+						    throw new InvalidOperationException("There are empty procs with TaskParallelOrthoMG. Either you are using too many processors such that there is not enough DOFs left for a processor or something odd is happening");
 
 				int[] i0part = new int[NoOfParts+1]; //new i0partitioning for each part
 				for (int p = 1; p < NoOfParts+1; p++)
@@ -572,7 +572,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					i0part[targetRank]++; //iterate the index for the next cell
 				}
 
-				return (cell_i0s, columnMapping);
+				return (cell_i0s, columnMapping.ToDictionary(pair => pair.sourceIdx, pair => pair.targetIdx));
 			}
 		}
 
@@ -658,7 +658,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="adj"></param>
 		/// <param name="NoOfSpecies">a weight information</param>
 		/// <param name="GridDataOnRank0"> if true, the grid data is stored on Rank0 explicitly</param>
-		public StandAloneOperatorMappingPairWithGridData(BlockMsrMatrix OperatorMtx, List<(long source, long target)> cellIndexMapping, int[] xadj, int[] adj, int[] NoOfSpecies, bool GridDataOnRank0 = true) {
+		public StandAloneOperatorMappingPairWithGridData(BlockMsrMatrix OperatorMtx, Dictionary<long, long> cellIndexMapping, int[] xadj, int[] adj, int[] NoOfSpecies, bool GridDataOnRank0 = true) {
 			m_OpMtx = OperatorMtx;
 
 			Debug.Assert(cellIndexMapping.Count == OperatorMtx._RowPartitioning.TotalNoOfBlocks);
@@ -724,7 +724,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="newAdj"></param>
 		/// <param name="newNoOfSpecies"></param>
 		void RemapCSRAndSpieces(	int[] xadj, int[] adj, int[] NoOfSpecies,
-								List<(long source, long target)> cellIndexMapping,
+                                Dictionary<long, long> cellIndexMapping,
 								out int[] newXadj, 	out int[] newAdj, out int[] newNoOfSpecies) {
 			int N = xadj.Length - 1;
 			// ensure mapping size matches
@@ -1479,10 +1479,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         PermutateAndDistribute smootherPermutation = null;
         PermutateAndDistribute coarsePermutation = null;
 
-		List<(long source, long target)> columnMappingWorldToThis => TpMapping.ThisNewCellMapping;
-		List<(long source, long target)> columnMappingWorldToSmoother => TpMapping.SmootherNewCellMapping;
+        Dictionary<long, long> columnMappingWorldToThis => TpMapping.ThisNewCellMapping;
+        Dictionary<long, long> columnMappingWorldToSmoother => TpMapping.SmootherNewCellMapping;
         //  new List<(long source, long target)>(); // cell-based indexes for the mapping from the operator to the smoother matrix (source idx, target idx)
-        List<(long source, long target)> columnMappingWorldToCoarse => TpMapping.CoarseNewCellMapping; 
+        Dictionary<long, long> columnMappingWorldToCoarse => TpMapping.CoarseNewCellMapping; 
             //= new List<(long source, long target)>();   // cell-based indexes for the mapping from the operator to the coarse matrix (source idx, target idx)
 
 		CoreOrthonormalizationProcedure ortho;
@@ -1659,18 +1659,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// Permutation matrices from thisComm to subComms (to disribute vectors)
 		/// </summary>
 		void CreatePermutations() {
-			var worldToCoarseDict = columnMappingWorldToCoarse.ToDictionary(x => x.source, x => x.target);
-			var worldToSmootherDict = columnMappingWorldToSmoother.ToDictionary(x => x.source, x => x.target);
+            var colMapThisToSmoother = columnMappingWorldToThis
+                //.Where(kvp => columnMappingWorldToSmoother.TryGetValue(kvp.Key, out _)) // to avoid key not found exception
+                .ToDictionary(
+                    kvp => kvp.Value,                             // local index in "this"
+                    kvp => columnMappingWorldToSmoother[kvp.Key]  // mapped index in smoother
+                );
 
-			List<(long source, long target)> colMapThisToSmoother = columnMappingWorldToThis
-				.Select(x => (x.target, worldToSmootherDict[x.source]))
-				.ToList();
+            var colMapThisToCoarse = columnMappingWorldToThis
+                // .Where(kvp => columnMappingWorldToCoarse.TryGetValue(kvp.Key, out _))
+                .ToDictionary(
+                    kvp => kvp.Value,                           // local index in "this"
+                    kvp => columnMappingWorldToCoarse[kvp.Key]  // mapped index in coarse
+                );
 
-			List<(long source, long target)> colMapThisToCoarse = columnMappingWorldToThis
-				.Select(x => (x.target, worldToCoarseDict[x.source]))
-				.ToList();
 
-			if (verbose) {
+            if(verbose) {
 				colMapThisToSmoother.SaveToTextFileDebug($"lvl_{TpLevel}_colMapThisToSmoother.txt");
 				colMapThisToCoarse.SaveToTextFileDebug($"lvl_{TpLevel}_colMapThisToCoarse.txt");
 			}
@@ -1818,7 +1822,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
         }
 
-		(long i0Cell, int lenCell)[] GetLocalDistribution((long i0Cell, int lenCell)[] globalDOFs, List<(long Source, long Target)> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
+		(long i0Cell, int lenCell)[] GetLocalDistribution((long i0Cell, int lenCell)[] globalDOFs, Dictionary<long, long> cellColumnMapping, long[] targeti0s, int procOffset, int procSize) {
             int newRank = thisCommRank - procOffset;
             if (newRank < 0 || newRank >= procSize)
                 return new (long i0Cell, int lenCell)[0];
@@ -1827,12 +1831,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			var newBlocki0 = (int)targeti0s[newRank];
             var newBlockiE = (int)targeti0s[newRank + 1];
 
-			// if cell is designated to be on this processor, add it to the list
-			for (long iCell = 0; iCell < cellColumnMapping.Count; iCell++) {
-				var iTargetCell = cellColumnMapping[(int)iCell].Target; //designated cell index
-				var iSourceCell = cellColumnMapping[(int)iCell].Source;
+            // if cell is designated to be on this processor, add it to the list
+            foreach(var kvp in cellColumnMapping) {
+                long iSourceCell = kvp.Key;
+                long iTargetCell = kvp.Value;
 
-				if (iTargetCell >= newBlocki0 && iTargetCell < newBlockiE) { // if designated cell index falls into the range of this processor
+                if (iTargetCell >= newBlocki0 && iTargetCell < newBlockiE) { // if designated cell index falls into the range of this processor
 					var sourceBlock = globalDOFs[iSourceCell]; // get the current block index (source)
 					ret.Add(sourceBlock);
 				}
