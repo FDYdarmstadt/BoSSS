@@ -270,7 +270,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         TaskParallelizationStarted
                     ))  {
 
-					if (GlobalNoOfBlocks >= FinerLevelGlobalBlocks) {
+					if (GlobalNoOfBlocks > FinerLevelGlobalBlocks) {
 						tr.Info("Failing to reduce **global** number of blocks (" + GlobalNoOfBlocks + ") wrt. previous level (" + FinerLevelGlobalBlocks + ").");
 						tr.Info($"unable to create Schwarz smoother at level {level.LevelIndex}");
 						return (null, -1, -1);
@@ -347,7 +347,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-					if (GlobalNoOfBlocks < FinerLevelGlobalBlocks) {
+					if (GlobalNoOfBlocks <= FinerLevelGlobalBlocks) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // Number of blocks on this level is sufficiently lower then on upper/finer level
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
