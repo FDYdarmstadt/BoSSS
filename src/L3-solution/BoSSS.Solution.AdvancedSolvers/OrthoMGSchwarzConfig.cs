@@ -162,7 +162,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Usage: an positive integer (by default turn off)
         /// </summary>
         [DataMember]
-        public int TaskParallelEnforcedLevel = 1; // int.MinValue;
+        public int TaskParallelEnforcedLevel = int.MinValue;
 
         /// <summary>
         /// 
