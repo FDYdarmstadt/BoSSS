@@ -153,6 +153,35 @@ namespace MPI.Wrappers {
             
         }
 
+        /// <summary>
+        /// Broadcast a single int
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        public static int MPIBroadcast(this int value, int root, MPI_Comm comm) {
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&value), 1, csMPI.Raw._DATATYPE.INT, root, comm);
+            }
+            return value; // on non-root, this becomes the root's value
+        }
+
+        /// <summary>
+        /// Broadcast a single double
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="root"></param>
+        /// <param name="comm"></param>
+        /// <returns></returns>
+        public static double MPIBroadcast(this double value, int root, MPI_Comm comm) {
+            unsafe {
+                csMPI.Raw.Bcast((IntPtr)(&value), 1, csMPI.Raw._DATATYPE.DOUBLE, root, comm);
+            }
+            return value;
+        }
+
+
         static public int[] MPIBroadcast(this int[] array, int root, MPI_Comm comm) {
             int myRank;
             csMPI.Raw.Comm_Rank(comm, out myRank);
