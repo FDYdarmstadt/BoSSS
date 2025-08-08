@@ -133,8 +133,16 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates a matrix builder
             /// </summary>
-            protected override void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+            protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
+
+                //Here so far, all the implmentations of traceDg are based on single spc. (Theoritically we don't need it) But in order to use XDG ready-to-use
+                // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
+                //Maybe i need to refactor it one day....
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, spcName, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+
 
                 TraceBulkMtxBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 TraceBulkMtxBuilder.MPITtransceive = false;
@@ -706,8 +714,15 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates an evaluator
             /// </summary>
-            protected override void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+            protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
+                //Here so far, all the implmentations of traceDg are based on single spc. (Theoritically we don't need it) But in order to use XDG ready-to-use
+                // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
+                //Maybe i need to refactor it one day....
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, spcName, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 TraceBulkEval = tempOp.GetEvaluatorEx(DomFld, Params, CodomFrame.FrameMap);
                 TraceBulkEval.MPITtransceive = false;
@@ -949,10 +964,12 @@ namespace BoSSS.Foundation.XDG {
                         var sgrd = lsTrk.Regions.GetCutCellSubGrid();
                         var cellScheme = new CellQuadratureScheme(UseDefaultFactories: true, domain: sgrd.VolumeMask);
                         var edgeScheme = new EdgeQuadratureScheme(UseDefaultFactories: true, domain: sgrd.InnerEdgesMask);
-
-                        ctorTraceDGBulkIntegrator(quadOrder, cellScheme, edgeScheme, TraceDgCodomFrame, TraceDgCodomFrame,
+                        foreach(var SpeciesId in ReqSpecies) {
+                            ctorTraceDGBulkIntegrator(SpeciesId, quadOrder, cellScheme, edgeScheme, TraceDgCodomFrame, TraceDgCodomFrame,
                             TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
                             Parameters?.ToArray(), DomainFields?.ToArray());
+                        }
+
                     }
 
 
@@ -1163,7 +1180,10 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// create integrator for bulk components (stabilization components) for Trace DG
             /// </summary>
-            abstract protected void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+            //abstract protected void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+            abstract protected void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+
+
 
             /// <summary>
             /// Create integrator for <see cref="XDifferentialOperatorMk2.GhostEdgesOperator"/>
