@@ -194,7 +194,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				double tol = Math.Max(ResNorm, oldResiNorm) * 0.2;
 				tol = Math.Max(tol, 1.0e-7);
 				if (ResNorm > oldResiNorm + tol)
-					throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm / oldResiNorm}");
+					throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm / oldResiNorm} at {id}");
 
 
 				if (plot)
