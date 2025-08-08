@@ -248,9 +248,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			m_LeftChangeOfBasis = ChangeThisLevelPartitioning(m_LeftChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "LeftCofB");
 			m_RightChangeOfBasis = ChangeThisLevelPartitioning(m_RightChangeOfBasis, ThisTargetPartitioning, localBlocksForThisLevel, "RightCofB");
 
-			m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelThisPartitiong, FinerLevelThisBlocks, "Pro"); //same processors differernt level of mg operator (different number of cells for row and column)
+            m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelCoarsePartitiong, FinerLevelCoarseBlocks, "Pro"); //same processors different level of mg operator (different number of cells for row and column)
 
-			thisLevelPermutationMtx = null;
+            thisLevelPermutationMtx = null;
 			thisLevelPermutationMtxTranspose = null;
 		}
 
@@ -1629,12 +1629,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
 				subCommSmootherOpMatrix = ChangeCommunicator(TpMapping.m_OpMtx_smoother, TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
 
-				// In MG operator, the prolongation and restriction operators are stored at the coarse level and restriction performed by operator
-				// However, this is not the case here. The MG operator is dedicated for world level communications and key informations.
-				// This then must be done by this level solver here for the coarser solver.
-				// So each level solver gets data already restricted and then return without prolongating.
-				subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
-				subCommToCoarseRestrictionOperator = subCommFromCoarseProlongationOperator?.Transpose();
+                // In MG operator, the prolongation and restriction operators are stored at the coarse level and restriction performed by operator
+                // However, this is not the case here. The MG operator is dedicated for world level communications and key informations.
+                // This then must be done by this level solver here for the coarser solver.
+                // So each level solver gets data already restricted and then return without prolongating.
+                subCommFromCoarseProlongationOperator = ChangeCommunicator(worldCommFromCoarseProlongationOperator, TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping); 
+                subCommToCoarseRestrictionOperator = subCommFromCoarseProlongationOperator?.Transpose();
 
 				if (worldCommFromCoarseLeftChangeOfBasisMatrix != null)
 					subCommLeftChangeOfBasisMatrix = ChangeCommunicator(worldCommFromCoarseLeftChangeOfBasisMatrix,
@@ -2184,8 +2184,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // Permutation operators live on thisComm, which means that they should be called on thisComm
                 // Restrict operator is designed such that the output would already distribute the vecotre into the desired procs with coarseBlock partitioning
-                ResforCoarse = Restrict(Res);
-                XforCoarse = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength];  //Restrict(X); //  new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; /
+                ResforCoarse = coarsePermutation.PermutateVector(Res); // Restrict(Res);
+                XforCoarse = new double[ResforCoarse.Length];  //Restrict(X); //  new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; /
 
 
                 Debug.Assert(myTask != TpTaskType.Smoother || ResforCoarse.Length == 0);
@@ -2296,8 +2296,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     {
                         // Coarse grid correction
                         if(myTask == TpTaskType.All || myTask == TpTaskType.Coarse) {
-                            double[] XGuess = new double[subCommToCoarseRestrictionOperator.RowPartitioning.LocalLength]; // XforCoarse;
-                            XfromCoarse = ApplyCoarseGridCorrection(XGuess, ResforCoarse, iIter);
+                            var ResforCoarseRestricted = Restrict(ResforCoarse);
+                            double[] XGuess = new double[ResforCoarseRestricted.Length]; // XforCoarse;
+
+                            var CoarseXfromCoarse = ApplyCoarseGridCorrection(XGuess, ResforCoarseRestricted, iIter);
+                            XfromCoarse = Prolongate(CoarseXfromCoarse); //from coarse to this
                         }
 
                         // smoother
@@ -2344,8 +2347,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     CrseLevelTime.Stop();
 
                     using(new FuncTrace("PermutateAndMinimize")) {
-                        var CoarseCorrection = Prolongate(XfromCoarse); //from coarse to this
-                        var CoarseCorrectionToSmoother = smootherPermutation.PermutateVector(CoarseCorrection); //from this to smoother
+                        var CoarseCorrectionToThisComm = coarsePermutation.PermutateVectorBack(XfromCoarse); //PermutateVectorBack(CoarseCorrectionOnSub, coarsePermutation);
+                        var CoarseCorrectionToSmoother = smootherPermutation.PermutateVector(CoarseCorrectionToThisComm); //from this to smoother
 
                         if(myTask == TpTaskType.All || myTask == TpTaskType.Smoother) {
                             resNorm = ortho.AddSolAndMinimizeResidual(ref CoarseCorrectionToSmoother, XforSmoother, X0forSmoother, Res0forSmoother, ResforSmoother, "Tp-coarse" + TpLevel);
@@ -2359,10 +2362,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     using(var tr = new FuncTrace("InitArrays")) {
                         Res = smootherPermutation.PermutateVectorBack(ResforSmoother);
-                        ResforCoarse = Restrict(Res);
+                        ResforCoarse = coarsePermutation.PermutateVector(Res);
                     }
                 }
             }
+
             X = smootherPermutation.PermutateVectorBack(XforSmoother);
             WriteDebug(iIter, resNorm, "final of this level");
         }
