@@ -100,15 +100,19 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="gridData"></param>
         /// <param name="Option"></param>
         /// <returns>The Level-Set Field for storing the filtered, i.e. continuous representation.</returns>
-        public static LevelSet CreateField(SinglePhaseField DGLevelSet, Foundation.Grid.Classic.GridData gridData, ContinuityProjectionOption Option) {
-            int k = DGLevelSet.Basis.Degree;
+        public static LevelSet CreateField(SinglePhaseField DGLevelSet, GridData gridData, ContinuityProjectionOption Option, int CGLevelSetDegree = -1) {
+            int kDG = DGLevelSet.Basis.Degree;
+            int kCG = kDG + 1;
+            if (CGLevelSetDegree >= kDG)
+                kCG = CGLevelSetDegree;
+
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k + 1);
+                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, kCG);
                         return new LevelSet(ContinuousLevelSetBasis.ContainingDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.ConstrainedDG: {
-                        var ContinuousLevelSetDGBasis = new Basis(gridData, k + 1);
+                        var ContinuousLevelSetDGBasis = new Basis(gridData, kCG);
                         return new LevelSet(ContinuousLevelSetDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.None: {
@@ -124,7 +128,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
         IContinuityProjection MyProjection;
 
-        ContinuityProjectionOption myOption;
+        public ContinuityProjectionOption myOption;
 
         /// <summary>
         /// Makes <paramref name="DGLevelSet"/> a continuous function <paramref name="LevelSet"/>,
@@ -139,6 +143,7 @@ namespace BoSSS.Solution.LevelSetTools {
         /// </param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
             using(var ft = new FuncTrace()) {
+                //ft.InfoToConsole = true;
                 //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
 
                 MyProjection.MakeContinuous(DGLevelSet, LevelSet, Domain);
@@ -146,7 +151,7 @@ namespace BoSSS.Solution.LevelSetTools {
                 double Jnorm = JumpNorm(LevelSet, Domain);
                 ft.Info($"jump norm after continuity projection = {Jnorm}");
 
-                if(myOption != ContinuityProjectionOption.None && setFarFieldConstant) {
+                if (myOption != ContinuityProjectionOption.None && setFarFieldConstant) {
                     SetFarField(LevelSet, Domain, PosMask);
                 }
             }
@@ -218,11 +223,11 @@ namespace BoSSS.Solution.LevelSetTools {
                     NodeSet NS = QR.Nodes;
                     EvalResult.Clear();
                     int NoOfNodes = NS.NoOfNodes;
-                    for (int j = 0; j < Length; j++) {
-                        int iEdge = j + i0;
+                    for (int i = 0; i < Length; i++) {
+                        int iEdge = i + i0;
                         int jCell_IN = grd.Edges.CellIndices[iEdge, 0];
                         int jCell_OT = grd.Edges.CellIndices[iEdge, 1];
-                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
+                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { i, 0, 0 }, new int[] { i, NoOfNodes - 1, -1 });
 
                         if (jCell_OT >= 0) {
 

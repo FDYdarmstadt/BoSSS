@@ -239,11 +239,11 @@ namespace BoSSS.Application.XNSEC {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
             C.solveKineticEnergyEquation = false;
 
-            C.CheckJumpConditions = false;
-            C.CheckInterfaceProps = false;
+            //C.CheckJumpConditions = false;
+            //C.CheckInterfaceProps = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -253,13 +253,13 @@ namespace BoSSS.Application.XNSEC {
 
             if(AMRlvl > 0) {
                 C.AdaptiveMeshRefinement = true;
-                C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-                C.BaseRefinementLevel = AMRlvl;
+                //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+                //C.BaseRefinementLevel  AMRlvl;
                 C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlvl });
             }
      
 
-            C.BaseRefinementLevel =2;
+            //C.BaseRefinementLevel 2;
             C.RefinementLevel = 1;
             C.AMR_startUpSweeps = 2;
 

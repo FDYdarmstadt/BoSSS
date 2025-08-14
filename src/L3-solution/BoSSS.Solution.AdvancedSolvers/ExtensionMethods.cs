@@ -35,25 +35,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public static void UpdateXdgAggregationBasis(this AggregationGridBasis[][] MultigridBasis, MultiphaseCellAgglomerator CurrentAgglomeration) {
 
             bool useX = false;
+            bool useT = false;
             var _XdgAggregationBasis = new XdgAggregationBasis[MultigridBasis.Length];
-            for (int iLevel = 0; iLevel < MultigridBasis.Length; iLevel++) {
-                XdgAggregationBasis[] xab  = MultigridBasis[iLevel].Where(b => b is XdgAggregationBasis).Select(b => ((XdgAggregationBasis)b)).ToArray();
-                if (xab != null && xab.Length > 0) {
-                    for (int ib = 1; ib < xab.Length; ib++) {
-                        if (!(object.ReferenceEquals(xab[ib].DGBasis.GridDat, CurrentAgglomeration.Tracker.GridDat)))
+            var _TrcAggregationBasis = new TraceDGAggregationBasis[MultigridBasis.Length];
+            for(int iLevel = 0; iLevel < MultigridBasis.Length; iLevel++) {
+                XdgAggregationBasis[] xab = MultigridBasis[iLevel].Where(b => b is XdgAggregationBasis).Select(b => ((XdgAggregationBasis)b)).ToArray();
+                if(xab != null && xab.Length > 0) {
+                    for(int ib = 1; ib < xab.Length; ib++) {
+                        if(!(object.ReferenceEquals(xab[ib].DGBasis.GridDat, CurrentAgglomeration.Tracker.GridDat)))
                             throw new ApplicationException();
-                        if (!object.ReferenceEquals(xab[0], xab[ib]))
+                        if(!object.ReferenceEquals(xab[0], xab[ib]))
                             throw new ArgumentException("One should only use one XDG aggregation basis per multigrid level.");
                     }
                     _XdgAggregationBasis[iLevel] = xab[0];
                     useX = true;
                 }
+
+
+                TraceDGAggregationBasis[] tab = MultigridBasis[iLevel].Where(b => b is TraceDGAggregationBasis).Select(b => ((TraceDGAggregationBasis)b)).ToArray();
+                if(tab != null && tab.Length > 0) {
+                    for(int ib = 1; ib < tab.Length; ib++) {
+                        if(!(object.ReferenceEquals(tab[ib].DGBasis.GridDat, CurrentAgglomeration.Tracker.GridDat)))
+                            throw new ApplicationException();
+                        if(!object.ReferenceEquals(tab[0], tab[ib]))
+                            throw new ArgumentException("One should only use one TraceDG aggregation basis per multigrid level.");
+                    }
+
+                    _TrcAggregationBasis[iLevel] = tab[0];
+                    useT = true;
+                }
             }
 
-            if (useX) {
-                foreach (var xmgb in _XdgAggregationBasis) {
+            if(useX) {
+                foreach(var xmgb in _XdgAggregationBasis) {
                     xmgb.Update(CurrentAgglomeration);
                 }
+            }
+            
+            if(useT) {
+                foreach(var tmgb in _TrcAggregationBasis) {
+                    tmgb.Update(CurrentAgglomeration);
+                }
+
             }
         }
     }

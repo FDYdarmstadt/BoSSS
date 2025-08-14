@@ -372,6 +372,11 @@ namespace BoSSS.Foundation.Grid.RefElements {
             return m_FaceTransformation[FaceIndex];
         }
 
+
+      
+
+
+
         /// <summary>
         /// See <see cref="FaceTrafoGramianSqrt"/>
         /// </summary>
@@ -588,10 +593,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
         private NodeSet m_FaceCenters;
 
         /// <summary>
-        /// Normal vectors on all faces;<br/>
-        /// 1st index: face index, in the range of 0 to <see cref="NoOfFaces"/>;<br/>
-        /// 2nd index: spatial dimension, in the range of 0 (including) to
-        /// <see cref="SpatialDimension"/> (excluding)
+        /// Normal vectors on all faces;
+        /// - 1st index: face index, in the range of 0 to <see cref="NoOfFaces"/>;
+        /// - 2nd index: spatial dimension, in the range of 0 (including) to <see cref="SpatialDimension"/> (excluding)
         /// </summary>
         public MultidimensionalArray FaceNormals {
             get {
@@ -599,6 +603,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     InitFaceNormals();
                 return m_FaceNormals;
             }
+        }
+
+        /// <summary>
+        /// returns the normal for a specific face, i.e., a row from <see cref="FaceNormals"/>
+        /// </summary>
+        public Vector GetFaceNormal(int iFace) {
+            return FaceNormals.GetRowPt(iFace);
         }
 
         /// <summary>
@@ -898,6 +909,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
             R.Nodes.LockForever();
 
+            R.OrderOfPrecision = FaceRule.OrderOfPrecision;
+
             return R;
         }
 
@@ -928,7 +941,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             // return values memalloc
             // ----------------------
-            Quadrature.QuadRule ret = QuadRule.CreateEmpty(
+            Quadrature.QuadRule ret = QuadRule.CreateBlank(
                 this, BaseRule.Weights.Length * leaves.Length, D, true);
             ret.OrderOfPrecision = BaseRule.OrderOfPrecision;
 

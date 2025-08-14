@@ -154,6 +154,29 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// <see cref="Math.Pow"/>
+        /// </summary>
+        public static double Pow(this double d, int exponent) {
+            double r = 1;
+            for(int i = 0; i < exponent; i++) {
+                r *= d;
+            }
+            return r;
+        }
+
+        /// <summary>
+        /// <see cref="Math.Pow"/>
+        /// </summary>
+        public static int Pow(this int d, int exponent) {
+            int r = 1;
+            for(int i = 0; i < exponent; i++) {
+                r *= d;
+            }
+            return r;
+        }
+
+
+        /// <summary>
         /// Checks <paramref name="d1"/> and <paramref name="d2"/> for equality
         /// within the given tolerance <paramref name="tol"/>.
         /// </summary>

@@ -36,6 +36,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 
+
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
     /// <summary>
@@ -232,13 +233,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.fullReInit = true;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -498,9 +499,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LS_TrackerWidth = 2;
             C.AdaptiveMeshRefinement = true;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            ////C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //C.RefinementLevel = 2;
-            //C.BaseRefinementLevel = 2;
+            ////C.BaseRefinementLevel  2;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
             C.AMR_startUpSweeps = 2;
             C.LS_TrackerWidth = 3;            
@@ -719,7 +720,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.OneStepGaussAndStokes;
 
             //string _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
@@ -993,8 +994,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  1;
             C.AMR_startUpSweeps = 1;
 
             //C.ReInitOnRestart = true;
@@ -1179,6 +1180,97 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
+        public static XNSE_Control RB2D_Restart() {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // ===================
+            int k = 3;
+
+            // testcase 1
+            double rhoA = 100.0;
+            double rhoB = 1000.0;
+            double muA = 1.0;
+            double muB = 10.0;
+            double sigma = 24.5;
+
+            C.DbPath = @"P:\hpccluster\RisingBubble2D";
+            Guid restartID = new Guid("d3fbafe6-263c-4031-ab07-a8453141fd8e");
+            //Guid restartID = new Guid("e2070804-256b-40bb-ac6f-1c50e6ab0d27");
+           
+            int restartTS = 1101;
+
+            double dt = 0.002;
+            int numTs = 1500;
+
+            string restartName = "RB2D_fullDomain_20x40AMR0_k3_testcase1_withAMRgaussCheck_restart3";
+            C.savetodb = false;
+            // ===========================
+
+
+            C.SetDGdegree(k);
+            C.FieldOptions.Add(VariableNames.GravityY + "#A", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add(VariableNames.GravityY + "#B", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            // physical parameters
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            C.PhysicalParameters.rho_B = rhoB;
+            C.PhysicalParameters.mu_B = muB;
+
+            C.PhysicalParameters.Sigma = sigma;
+            C.PhysicalParameters.IncludeConvection = true;
+
+
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restartID, restartTS);
+  
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            // C.ReInitPeriod = 50;
+
+            // C.SkipSolveAndEvaluateResidual = true;
+            //C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+
+            // C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            // C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+
+            // C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.dtFixed = dt;
+            C.NoOfTimesteps = numTs;
+
+            C.saveperiod = 1;
+
+            {
+                C.AdaptiveMeshRefinement = true;
+                int AMRlevel = 1;
+                C.activeAMRlevelIndicators.Add(new AMRwithGaussCheck() { maxRefinementLevel = AMRlevel });
+                C.AMR_startUpSweeps = AMRlevel;
+            }
+
+            C.PostprocessingModules.Add(new RisingBubble2DBenchmarkQuantities());
+            C.TracingNamespaces = "BoSSS.Solution.XNSECommon";
+
+
+            C.SessionName = restartName;
+
+
+            return C;
+        }
+
 
         /// <summary>
         /// Control for two Rising Bubble 
@@ -1319,7 +1411,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion

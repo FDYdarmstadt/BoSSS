@@ -89,7 +89,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                             U[d].EvaluateGradient(i0, Length, Ns, GradU.ExtractSubArrayShallow(-1, -1, d, -1), 0, 1);
                         }
                         P.Evaluate(i0, Length, Ns, pressure);
-                        MultidimensionalArray Ns_Global = Ns.CloneAs();
+                        MultidimensionalArray Ns_Global = MultidimensionalArray.Create(Ns.Lengths);
                         for(int j = 0; j < Length; j++) {
                             LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j + i0);
                             for(int k = 0; k < K; k++) {

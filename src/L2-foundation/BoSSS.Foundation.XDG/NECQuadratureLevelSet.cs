@@ -85,7 +85,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Physical time.
         /// </summary>
-        public double time;
+        public double time = 0.0;
 
         /// <summary>
         /// index of the level set to evaluate
@@ -152,8 +152,7 @@ namespace BoSSS.Foundation.XDG {
                  context,
                  domAndRule) //
         {
-            MPICollectiveWatchDog.Watch();
-
+            
             // -----------------------------------
             // set members / check ctor parameters
             // -----------------------------------

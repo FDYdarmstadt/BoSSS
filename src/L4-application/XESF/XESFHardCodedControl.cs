@@ -96,7 +96,7 @@ namespace XESF {
 
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
             c.IsTwoLevelSetRun = true;
 
@@ -478,7 +478,7 @@ namespace XESF {
 
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
 
             c.IsTwoLevelSetRun = false;
 
@@ -866,7 +866,7 @@ namespace XESF {
 
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.OneStepGaussAndStokes;
             c.IsTwoLevelSetRun = false;
             c.LevelSetDegree = lsDegree;
             c.AddVariable(XESFVariables.LevelSet, lsDegree); //this is the levelSet used for the Immersed Boundary (the Wedge)
@@ -1380,7 +1380,7 @@ namespace XESF {
             c.tALNRs = tALNRs != null ? tALNRs:new double[] { 1.001, 1.001, 1.001, 1.01, 1.01, 1.01 };
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             //c.NonlinearQuadratureDegree = 6;
             #endregion
             #region Grid
@@ -1723,7 +1723,7 @@ namespace XESF {
             c.tALNRs = tALNRs != null ? tALNRs : new double[] { 1.005, 1.005, 1.001, 1.01, 1.01, 1.01 };
             // ### Agglomeration and quadrature ###
             c.AgglomerationThreshold = agg;
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            c.CutCellQuadratureType = CutCellQuadratureMethod.Saye;
             //c.NonlinearQuadratureDegree = 6;
             #endregion
             #region Grid

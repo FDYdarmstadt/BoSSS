@@ -115,6 +115,39 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
         }
 
         /// <summary>
+        /// Combination of <see cref="Submit2DLevelSet(_2D)">  + <see cref="ProjectLevelSet(int)" >
+        /// Supports only 1 level set
+        /// </summary>
+        /// <param name="degree">Degree of level set</param>
+        /// <param name="inLevelSet"></param>
+        public void SetLevelSet(int degree, _2D inLevelSet) {
+
+            Basis b = new Basis(grd, degree);
+            var levSet0 = new LevelSet(b, "LevelSetField0");
+            levSet0.ProjectField(inLevelSet);
+
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk.UpdateTracker(0.0);
+        }
+
+        /// <summary>
+        /// Combination of <see cref="Submit3DLevelSet(_3D)">  + <see cref="ProjectLevelSet(int)" >
+        /// Supports only 1 level set
+        /// </summary>
+        /// <param name="degree">Degree of level set</param>
+        /// <param name="inLevelSet"></param>
+        public void SetLevelSet(int degree, _3D inLevelSet) {
+
+            Basis b = new Basis(grd, degree);
+            var levSet0 = new LevelSet(b, "LevelSetField0");
+            levSet0.ProjectField(inLevelSet);
+
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk.UpdateTracker(0.0);
+        }
+
+
+        /// <summary>
         /// When multiple level sets are supplied, this method returns a delegate that gives the maximum value from the list of level sets.
         /// </summary>
         /// <param name="delegates"></param>
@@ -249,9 +282,24 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
             }
 
 
-            lsTrk = new LevelSetTracker(grd.GridData, XQuadFactoryHelperBase.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
             lsTrk.UpdateTracker(0.0);
             Console.WriteLine($"Successful projection of level set with {cellQuadratureMethod.ToString()}");
+        }
+
+        /// <summary>
+        /// Combines SubmitLevelSe
+        /// </summary>
+        /// <param name="degree"></param>
+        /// <param name="inLevelSets"></param>
+        public void SetLevelSets(int degree, _3D[] inLevelSets) {
+            _3D inLevelSet = ReturnMaxDelegate(inLevelSets);
+            Basis b = new Basis(grd, degree);
+            var levSet0 = new LevelSet(b, "LevelSetField0");
+            levSet0.ProjectField(inLevelSet);
+
+            lsTrk = new LevelSetTracker(grd.GridData, CutCellQuadratureMethod.Classic, 1, new string[] { "A", "B" }, levSet0);
+            lsTrk.UpdateTracker(0.0);
         }
 
         /// <summary>
@@ -346,26 +394,25 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                         throw new NotSupportedException("curved cells not supported!");
                     }
 
-                    var globTr = qr.CloneAs();
-                    globTr.TransformLocal2Global(grd.GridData, jCell);
-
-#if DEBUG
-					qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-					globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
-#endif                    
+                    //qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
+                    //var globTr = qr.CloneAs();
+                    var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
+                    globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
+                    
 
                     double metric_jCell = JacobiDet[jCell];
                     var WeightsGlobal_jCell = qr.Weights.CloneAs();
                     WeightsGlobal_jCell.Scale(metric_jCell);
 
+                    int SpatialDim = grd.SpatialDimension;
+                    ret = MultidimensionalArray.Create(qr.NoOfNodes, SpatialDim + 1);
 
-                    ret = MultidimensionalArray.Create(globTr.NoOfNodes, globTr.SpatialDim + 1);
 
                     for (int n = 0; n < qr.NoOfNodes; n++) {
                         for (int d=0; d < qr.SpatialDim; d++) {
-                            ret[n, d] = globTr.Nodes[n, d];
+                            ret[n, d] = globTr[n, d];
                         }
-                        ret[n, globTr.SpatialDim] = WeightsGlobal_jCell[n];
+                        ret[n, SpatialDim] = WeightsGlobal_jCell[n];
                     }
                     return ret;
                 }
@@ -404,9 +451,8 @@ namespace BoSSS.Application.ExternalBinding.MatlabCutCellQuadInterface {
                     }
 
                     qr.OutputQuadratureRuleAsVtpXML("NodesJ" + jCell + ".vtp");
-                    var globTr = qr.CloneAs();
-                    globTr.TransformLocal2Global(grd, jCell);
-                    globTr.OutputQuadratureRuleAsVtpXML("NodestransformedJ" + jCell + ".vtp");
+                    var globTr = qr.Nodes.TransformLocal2Global(grd.GridData, jCell);
+                    globTr.OutputQuadratureRuleAsVtpXML(qr.Weights, "NodestransformedJ" + jCell + ".vtp");
 
 
                     //var NodesGlobal_jCell = NodesGlobal.ExtractSubArrayShallow(j, -1, -1);

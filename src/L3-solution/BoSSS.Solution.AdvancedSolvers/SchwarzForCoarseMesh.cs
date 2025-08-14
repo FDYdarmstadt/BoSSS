@@ -10,6 +10,7 @@ using ilPSP.LinSolvers.PARDISO;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
+using NUnit.Framework.Constraints;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -978,6 +979,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (doTest)
                     TestCommunication(RedistAndIndices.Redist);
+                
 
                 if(config.EnableOverlapScaling && config.Overlap > 0) {
                     int L = op.Mapping.LocalLength;
@@ -1003,7 +1005,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         double[][] m_OverlapScaling = null;
 
         private void TestCommunication(BlockMsrMatrix Redist) {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
                 int NoOfBlocks = this.m_BlockSolvers.Length;
 
                 // create test data
@@ -1023,12 +1025,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_comm.CommRHStoBlocks(Origin, distComm);
 
                 double[] distCommCat = new double[0];
-                for (int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
+                for(int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
                     distCommCat = distCommCat.Cat(distComm[iBlock] ?? new double[0]);
                 }
                 double fwdErr = distCommCat.MPI_L2DistPow2(Dist);
                 Console.WriteLine("Forward communication difference = " + fwdErr);
-                if (fwdErr != 0)
+                if(fwdErr != 0)
                     throw new ApplicationException("Forward communication error; err = " + fwdErr);
 
 
@@ -1038,8 +1040,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double bckErr = Back.MPI_L2DistPow2(backComm, m_op.OperatorMatrix.MPI_Comm);
                 Console.WriteLine("Backward communication difference = " + bckErr);
-                if (bckErr != 0)
+                if(bckErr != 0)
                     throw new ApplicationException("Backward communication error; err = " + bckErr);
+
             }
         }
 
@@ -1397,7 +1400,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(packet.Length == Global2BlocksPackages[TargetProc].Length);
 
                         // globalSol[Global2BlocksPackages[TargetProc]] += packet;
-                        GenericBlas.AccV(globalSol, 1.0, packet, Global2BlocksPackages[TargetProc], default(int[]));
+                        using(new ilPSP.Environment.SerialSection()) {
+                            // must be serialized (i.e., only one thread), because the target/accumulator indices `Global2BlocksPackages[TargetProc]`
+                            // typically **contain the same index twice or more**
+                            GenericBlas.AccV(globalSol, 1.0, packet, Global2BlocksPackages[TargetProc], default(int[]));
+                        }
                     }
                 }
             }

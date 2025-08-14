@@ -21,12 +21,12 @@ namespace ilPSP.Utils {
         /// Returns the list of CPU's to which the current process is assigned to;
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
-        public static IEnumerable<int> GetAffinity() {
+        public static IEnumerable<int> GetCurrentThreadAffinity() {
             IEnumerable<int> ret;
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
-                ret = CPUAffinityWindows.GetAffinity();
+                ret = CPUAffinityWindows.GetCurrentThreadAffinity();
             } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                ret = CPUAffinityLinux.GetAffinity();
+                ret = CPUAffinityLinux.GetProcessAffinity();
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
@@ -40,22 +40,31 @@ namespace ilPSP.Utils {
             return ret;
         }
 
+
         /// <summary>
-        /// Returns the list of CPU's to which the current process is assigned to;
+        /// Sets the list of CPU's to which the current process is assigned to;
         /// Driver which calls either the respective Linux or Windows API functions.
         /// </summary>
-        public static void SetAffinity(IEnumerable<int> CPUlist) {
-            
-            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
-                CPUAffinityWindows.SetAffinity(CPUlist);
-                
-            } else if (System.Environment.OSVersion.Platform == PlatformID.Unix) {
-                Console.WriteLine("not implementd");
+        public static void SetCurrentThreadAffinity(params int[] __CPUlist) {
+            SetCurrentThreadAffinity((IEnumerable<int>) __CPUlist);
+        }
+
+        /// <summary>
+        /// Sets the list of CPU's to which the current process is assigned to;
+        /// Driver which calls either the respective Linux or Windows API functions.
+        /// </summary>
+        public static void SetCurrentThreadAffinity(IEnumerable<int> CPUlist) {
+
+            if(System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                CPUAffinityWindows.SetCurrentThreadAffinity(CPUlist);
+
+            } else if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
+                Console.Error.WriteLine("TPL CPU affinity on Linux is not implemented");
             } else {
                 throw new NotSupportedException("Not implemented for system: " + System.Environment.OSVersion.Platform);
             }
 
-         
+
         }
 
 
@@ -77,7 +86,7 @@ namespace ilPSP.Utils {
         /// Deals with a special kink of handing CPU indices to Intel OpenMP on Windows:
         /// - On Windows, E.g. a system with 96 CPUs is organized into two groups of 48 CPUs.
         /// - Normally, the CPUs in the first group are 0 to 47, second group is 48 to 95, etc.
-        /// - OpenMP, however, starts each group at a multiple of 64: fist group is 0 to 47, second is 64 to 111, ...
+        /// - OpenMP, however, starts each group at a multiple of 64: first group is 0 to 47, second is 64 to 111, ...
         /// On other systems, there is nothing to do.
         /// </summary>
         public static IEnumerable<int> ToOpenMpCPUindices(IEnumerable<int> cpuList) {
@@ -109,7 +118,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// Configuration of OpenMP Environment variable `OMP_PLACES` to a given CPU affinity.
         /// </summary>
-        /// <param name="CPUlist">e.g., return value from <see cref="GetAffinity"/></param>
+        /// <param name="CPUlist">e.g., return value from <see cref="GetCurrentThreadAffinity"/></param>
         /// <returns></returns>
         public static int SetOMP_PLACESFromCPUList(IEnumerable<int> CPUlist) {
             using (var tr = new FuncTrace()) {
@@ -206,7 +215,7 @@ namespace ilPSP.Utils {
         /// Configuration of OpenMP Environment variable `KMP_AFFINITY` (Intel-OpenMP specific) to a given CPU affinity.
         /// </summary>
         /// <param name="iThreads">number of threads on MPI rank</param>
-        /// <param name="CPUlist">e.g., return value from <see cref="GetAffinity"/></param>
+        /// <param name="CPUlist">e.g., return value from <see cref="GetCurrentThreadAffinity"/></param>
         /// <returns></returns>
         public static int SetKMP_AFFINITYFromCPUList(int iThreads, IEnumerable<int> CPUlist) {
             using (var tr = new FuncTrace()) {

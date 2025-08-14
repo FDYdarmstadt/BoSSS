@@ -48,17 +48,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 4, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 3, int kelem = 4, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
             int D = 3;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Saye;
 
             //if (D == 3)
-            //    C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //    C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -68,6 +68,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Channel";
             C.ProjectDescription = "Channel flow multicore testing";
+
+            //C.TracingNamespaces = "BoSSS.Solution.AdvancedSolvers";
 
             //C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.ChannelFlow;
@@ -87,7 +89,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            if(D == 3) {
+            if (D == 3) {
                 C.FieldOptions.Add("VelocityZ", new FieldOpts() {
                     Degree = p,
                     SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -131,7 +133,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
-            double sigma = 0.0;
+            double sigma = 0.1;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.beta_S = 0.05;
@@ -147,12 +149,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 2;
+
             double H = 2;
+            int Lscale = 1;
+            double L = Lscale * H;
+
 
             if (D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, Lscale * kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
@@ -208,7 +213,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
                     grd.EdgeTagNames.Add(1, "velocity_inlet_left");
-                    grd.EdgeTagNames.Add(2, "pressure_outlet_right");
+                    grd.EdgeTagNames.Add(2, "Dong_OutFlow_right");
                     grd.EdgeTagNames.Add(3, "wall_lower");
                     grd.EdgeTagNames.Add(4, "wall_upper");
                     grd.EdgeTagNames.Add(5, "velocity_inlet_front");
@@ -254,13 +259,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double radius = 0.4;
 
             if (D == 2) {
-                //C.InitialValues_Evaluators.Add("Phi",
-                //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-                //    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
-                //    );
-                C.InitialValues_Evaluators_TimeDep.Add("Phi",
-                    ((X, t) => ((X[0] - (center[0] + t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                C.InitialValues_Evaluators.Add("Phi",
+                    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
                     );
+                //C.InitialValues_Evaluators_TimeDep.Add("Phi",
+                //    ((X, t) => ((X[0] - (center[0] + t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                //    );
             } else {
                 C.InitialValues_Evaluators.Add("Phi",
                     //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
@@ -292,8 +297,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
             //C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
-            //C.InitialValues_Evaluators.Add("GravityX#A", X => 5.0);
-            //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
+            C.InitialValues_Evaluators.Add("GravityX#A", X => 5.0);
+            C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
 
             if (wallBC == 1) {
                 U = 1.0;
@@ -311,7 +316,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Pressure#B", X => 2.0 - X[0]);
 
             //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid("cf6bd7bf-a19f-409e-b8c2-0b89388daad6");
+            //Guid restartID = new Guid("7edd53d2-ce47-4db0-92d1-7b159dcf06c4");
             //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 10);
 
             #endregion
@@ -339,21 +344,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             switch (wallBC) {
                 case 0:
-                goto default;
+                    goto default;
                 case 1:
-                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
-                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
-                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
-                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
-                break;
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
+                    break;
                 case 2:
-                C.AddBoundaryValue("navierslip_linear_lower");
-                C.AddBoundaryValue("navierslip_linear_upper");
-                break;
+                    C.AddBoundaryValue("navierslip_linear_lower");
+                    C.AddBoundaryValue("navierslip_linear_upper");
+                    break;
                 default:
-                C.AddBoundaryValue("wall_lower");
-                C.AddBoundaryValue("wall_upper");
-                break;
+                    C.AddBoundaryValue("wall_lower");
+                    C.AddBoundaryValue("wall_upper");
+                    break;
             }
 
 
@@ -384,7 +389,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
             ////C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#B", X => U.Pow2() / 2); 
             ////C.AddBoundaryValue("pressure_outlet_left");
-            C.AddBoundaryValue("pressure_outlet_right");
+            C.AddBoundaryValue("Dong_OutFlow_right");
 
 
             #endregion
@@ -395,7 +400,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
 
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.solveKineticEnergyEquation = true;
             ////C.CheckJumpConditions = true;
             //C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;
@@ -404,9 +409,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
 
-            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
-            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LevelSet_ConvergenceCriterion = 1e-6;
+            //C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            //C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -429,13 +434,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.fullReInit;
 
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
-            C.AMR_startUpSweeps = 1;
+            //C.AdaptiveMeshRefinement = true;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            //C.AMR_startUpSweeps = 1;
+
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //C.BaseRefinementLevel = 2;
             //C.RefinementLevel = 2;
@@ -452,15 +458,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 0.138; // 5e-2; // 5e-2;
+            double dt = 0.5; // 0.138; // 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 100; // 500;
+            C.NoOfTimesteps = 10; // 500;
             C.saveperiod = 10;
 
             #endregion
@@ -695,7 +701,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.NonLinearSolver.MaxSolverIterations=50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -703,7 +709,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion
@@ -985,7 +991,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 4;
@@ -997,7 +1003,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Option_LevelSetEvolution = lsEvo;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             #endregion
 
@@ -1261,7 +1267,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergyProperties = false;
+            //C.ComputeEnergyProperties = false;
 
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 4;
@@ -1273,7 +1279,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Option_LevelSetEvolution = lsEvo;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             #endregion
 

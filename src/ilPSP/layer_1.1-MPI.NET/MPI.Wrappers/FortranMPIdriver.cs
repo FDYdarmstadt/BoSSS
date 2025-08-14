@@ -754,7 +754,21 @@ namespace MPI.Wrappers {
         }
 
 #pragma warning disable 649
-        delegate void _MPI_SEND(IntPtr buf, ref int count, ref MPI_Datatype datatype, ref int dest, ref int tag, ref MPI_Comm comm, out int ierr);
+		delegate void _MPI_COMM_SPLIT(ref MPI_Comm comm, ref int color, ref int key, out MPI_Comm newcomm, out int ierr);
+		_MPI_COMM_SPLIT MPI_COMM_SPLIT;
+#pragma warning restore 649
+
+		public void CommSplit(MPI_Comm oldComm, int color, int key, out MPI_Comm newComm) {
+			int ierr;
+			MPI_COMM_SPLIT(ref oldComm, ref color, ref key, out newComm, out ierr);
+
+			if (ierr != 0) {
+				throw new Exception($"MPI_Comm_split failed with error code {ierr}");
+			}
+		}
+
+#pragma warning disable 649
+		delegate void _MPI_SEND(IntPtr buf, ref int count, ref MPI_Datatype datatype, ref int dest, ref int tag, ref MPI_Comm comm, out int ierr);
         _MPI_SEND MPI_SEND;
 #pragma warning restore 649
 

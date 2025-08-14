@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -233,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             //C.solveKineticEnergyEquation = true;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
 
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -548,8 +548,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
 
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.RefinementLevel = 1;
 
             C.SuperSampling = 2;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
@@ -933,8 +933,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  1;
             C.InitSignedDistance = false;
 
 
@@ -992,7 +992,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -1153,7 +1153,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             //C.solveKineticEnergyEquation = true;
-            //C.ComputeEnergyProperties = true;
+            //////C.ComputeEnergyProperties = true;
             //C.CheckInterfaceProps = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
@@ -1227,7 +1227,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = Foundation.XDG.CutCellQuadratureMethod.Classic;
 
             // basic database options
             // ======================
@@ -1268,7 +1268,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
-            C.RegisterUtilitiesToIOFields = true;
+            //C.RegisterUtilitiesToIOFields = true;
 
             #endregion
 
@@ -1356,7 +1356,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.CheckJumpConditions = true;
+            //C.CheckJumpConditions = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;

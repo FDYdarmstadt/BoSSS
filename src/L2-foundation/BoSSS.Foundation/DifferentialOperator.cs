@@ -1059,12 +1059,12 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Only for debugging;  can be used to turn all edge integration in spatial operators off.
         /// </summary>
-        public static bool DoEdge = true;
+        public static bool onlyfordebugging_DoEdge = true;
 
         /// <summary>
         /// Only for debugging; can be used to turn all volume integration in spatial operators off.
         /// </summary>
-        public static bool DoVolume = true;
+        public static bool onlyfordebugging_DoVolume = true;
 
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
@@ -1494,7 +1494,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 
-                var fQr = new CompositeQuadRule<QuadRule>();
+                var fQr = new CompositeQuadRule<QuadRule>(Qr.IntegrationMetric, Qr.GridData);
                 for(int i = 0; i < E; i++) {
                     if(temp[i] != null) {
                         int iLast = fQr.chunkRulePairs.Count - 1;
@@ -1603,10 +1603,12 @@ namespace BoSSS.Foundation {
                     output.CheckForNanOrInfV(true, true, true);
 #endif
 
-                    if(m_NonlinearVolume != null && DoVolume) {
+                    if(m_NonlinearVolume != null) {
                         using(var bt = new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
                             m_NonlinearVolume.m_Output = output;
+                            if(!onlyfordebugging_DoVolume)
+                                m_NonlinearVolume.m_Output = new double[output.Count];
                             m_NonlinearVolume.m_alpha = alpha;
                             m_NonlinearVolume.Time = time;
                             m_NonlinearVolume.Execute();
@@ -1630,7 +1632,7 @@ namespace BoSSS.Foundation {
 
 
                     void CallEdge(Quadrature.NonLin.NECQuadratureEdge ne, string name) {
-                        if(ne != null && DoEdge) {
+                        if(ne != null && onlyfordebugging_DoEdge) {
                             using(var bt = new BlockTrace(name, tr)) {
 
                                 ne.m_Output = output;
@@ -1813,13 +1815,12 @@ namespace BoSSS.Foundation {
                     
                     DifferentialOperator _Owner = (DifferentialOperator)this.Owner;
                     
-                    if(volRule.Any() && DoVolume) {
+                    if(volRule.Any() && onlyfordebugging_DoVolume) {
                         using(var bt = new BlockTrace("Volume_Integration_(new)", tr)) {
                             
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
                             mtxBuilder.Execute(volRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-
                             bt.IntermediateReportOfChildCalls = true;
                         }
 
@@ -1831,12 +1832,11 @@ namespace BoSSS.Foundation {
                     // edge integration
                     // ----------------
                     
-                    if(!edgeRule.IsNullOrEmpty() && DoEdge) {
+                    if(!edgeRule.IsNullOrEmpty() && onlyfordebugging_DoEdge) {
                         using(var bt = new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-
                             bt.IntermediateReportOfChildCalls = true;
                         }
                     }
@@ -3023,6 +3023,31 @@ namespace BoSSS.Foundation {
             return true;
         }
 
+
+        /// <summary>
+        /// Returns all equation components which implement <see cref="IParameterHandling"/>
+        /// </summary>
+        public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+            var ret = new List<IParameterHandling>();
+            foreach(string codName in this.CodomainVar) {
+                foreach(IEquationComponent comp in this.EquationComponents[codName]) {
+                    if(comp is IParameterHandling ph) {
+                        if(!ret.Contains(ph, (IParameterHandling a, IParameterHandling b) => object.ReferenceEquals(a,b)))
+                            ret.Add(ph);
+                    }
+                }
+            }
+
+            if(TemporalOperator != null) {
+                foreach(var ph in (this.TemporalOperator?.GetAllParameterHandlers() ?? new IParameterHandling[0])) {
+                    if(!ret.Contains(ph, (IParameterHandling a, IParameterHandling b) => object.ReferenceEquals(a,b)))
+                        ret.Add(ph);
+                }
+            }
+
+            return ret.ToArray();
+        }
+
         /// <summary>
         /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
         /// of this operator (because of the ownership, the temporal operator cannot be reused).
@@ -3035,7 +3060,7 @@ namespace BoSSS.Foundation {
                 m_encapsulatedObj = __encapsulatedObj;
                 m_newOwner = __newOwner;
 
-                
+
             }
 
             bool m_IsCommited;
@@ -3044,7 +3069,7 @@ namespace BoSSS.Foundation {
             /// locks the configuration of the operator
             /// </summary>
             public void Commit() {
-                if (m_IsCommited)
+                if(m_IsCommited)
                     throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
                 m_IsCommited = true;
 
@@ -3052,6 +3077,11 @@ namespace BoSSS.Foundation {
 
             public IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
                 return m_encapsulatedObj.GetMassMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+            }
+
+
+            public IEnumerable<IParameterHandling> GetAllParameterHandlers() {
+                return m_encapsulatedObj.GetAllParameterHandlers();
             }
         }
 

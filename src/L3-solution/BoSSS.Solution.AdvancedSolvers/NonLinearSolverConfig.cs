@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.AdvancedSolvers;
 using System;
 using System.Runtime.Serialization;
 using static BoSSS.Solution.AdvancedSolvers.Newton;
@@ -117,6 +118,12 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public GlobalizationOption Globalization = GlobalizationOption.Dogleg;
+
+        /// <summary>
+        /// Additional customizable iteration callback routine
+        /// </summary>
+        public Action<int, double[], double[], MultigridOperator> CustomIterationCallback;
+
 
         /// <summary>
         /// Compares value not reference!

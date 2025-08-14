@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Security.AccessControl;
+using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -80,7 +81,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The kind of HMF which is be used for computing cell volumes.
         /// </summary>
-        public XQuadFactoryHelper.MomentFittingVariants HMFvariant {
+        public CutCellQuadratureMethod HMFvariant {
             get {
                 return NonAgglomeratedMetrics.HMFvariant;
             }
@@ -285,7 +286,7 @@ namespace BoSSS.Foundation.XDG {
             return DictAgglomeration[spc];
         }
 
-
+        /*
         private Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>> GetFrameMatrices<M>(M Matrix, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
             where M : IMutableMatrixEx {
             var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>>();
@@ -297,7 +298,7 @@ namespace BoSSS.Foundation.XDG {
 
             return ret;
         }
-
+        */
 
         class MiniMapping {
 
@@ -329,11 +330,13 @@ namespace BoSSS.Foundation.XDG {
                 NoOfVars = BS.Length;
 
                 for (int iVar = 0; iVar < BS.Length; iVar++) {
-                    XDGBasis xBasis = BS[iVar] as XDGBasis;
-                    if (xBasis != null) {
+                    if(BS[iVar] is XDGBasis xBasis) {
                         NS[iVar] = xBasis.NonX_Basis.Length;
                         //m_LsTrk = xBasis.Tracker;
                         VarIsXdg[iVar] = true;
+                    } else if(BS[iVar] is TraceDGBasis trBasis) {
+                        NS[iVar] = trBasis.MaximalLength;
+                        VarIsXdg[iVar] = false;
                     } else {
                         NS[iVar] = BS[iVar].Length;
                         VarIsXdg[iVar] = false;
@@ -362,11 +365,8 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// returns the projection operator 
         /// </summary>
-        /// <param name="RowMap"></param>
-        /// <param name="RowMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on.</param>
-
-        public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping RowMap, bool[] RowMapAggSw = null) {
-            var tt = GetManipulationMatrices(false, RowMap, null, RowMapAggSw, null);
+        public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping RowMap) {
+            var tt = GetManipulationMatrices(false, RowMap, null, DoAgg(RowMap.BasisS), null);
             return tt.LeftMul;
         }
 
@@ -374,12 +374,13 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// returns the prolongation operator 
         /// </summary>
-        /// <param name="ColMap"></param>
-        /// <param name="ColMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on. </param>
-
-        public BlockMsrMatrix GetColManipulationMatrix(UnsetteledCoordinateMapping ColMap, bool[] ColMapAggSw = null) {
-            var tt = GetManipulationMatrices(false, ColMap, null, ColMapAggSw, null);
+        public BlockMsrMatrix GetColManipulationMatrix(UnsetteledCoordinateMapping ColMap) {
+            var tt = GetManipulationMatrices(false, ColMap, null, DoAgg(ColMap.BasisS), null);
             return tt.LeftMul.Transpose();
+        }
+
+        protected CellAgglomerator GetTraceDGAgglomerator() {
+            return null; 
         }
 
 
@@ -402,40 +403,140 @@ namespace BoSSS.Foundation.XDG {
 
             BlockMsrMatrix LeftMul = null, RightMul = null;
             {
-
-                foreach (var kv in DictAgglomeration) {
-                    var Species = kv.Key;
-                    var m_Agglomerator = kv.Value;
-
-                    if (m_Agglomerator != null) {
-
-                        CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
-
-                        MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
-                        BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
-                        if (LeftMul == null) {
-                            LeftMul = LeftMul_Species;
+                CellMask[] GetMasks(UnsetteledCoordinateMapping map, Func<CellMask> GetSpeciesMask, Func<CellMask> GetTraceMask) {
+                    var Ret = new CellMask[map.NoOfVariables];
+                    CellMask spcMsk = null;
+                    CellMask ccMask = null;
+                    for(int iVar = 0; iVar < map.NoOfVariables; iVar++) {
+                        if(map.BasisS[iVar] is TraceDGBasis) {
+                            if(ccMask == null)
+                                ccMask = GetTraceMask();
+                            Ret[iVar] = ccMask;
                         } else {
-                            LeftMul.Acc(1.0, LeftMul_Species);
-                        }
-
-
-                        if (RightIsDifferent && RequireRight) {
-                            MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
-                            BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
-
-                            if (RightMul == null) {
-                                RightMul = RightMul_Species;
-                            } else {
-                                RightMul.Acc(1.0, RightMul_Species);
-                            }
-
-                        } else if (RequireRight) {
-                            RightMul = LeftMul;
-                        } else {
-                            RightMul = null;
+                            if(spcMsk == null)
+                                spcMsk = GetSpeciesMask();
+                            Ret[iVar] = spcMsk;
                         }
                     }
+
+                    return Ret;
+                }
+
+                void SetLeft(Func<BlockMsrMatrix> GetRowMtx) {
+                    BlockMsrMatrix LeftMul_Species = GetRowMtx();
+                    if(LeftMul == null) {
+                        if(LeftMul_Species == null) {
+                            LeftMul_Species = new BlockMsrMatrix(ColMap, ColMap);
+                        }
+                        LeftMul = LeftMul_Species;
+                    } else {
+                        if(LeftMul_Species != null)
+                            LeftMul.Acc(1.0, LeftMul_Species);
+                    }
+                }
+
+                void SetRight(Func<BlockMsrMatrix> GetRight) {
+                    if(RightIsDifferent && RequireRight) {
+                        BlockMsrMatrix RightMul_Species = GetRight();
+
+                        if(RightMul == null) {
+                            if(RightMul_Species == null) {
+                                RightMul_Species = new BlockMsrMatrix(ColMap, ColMap);
+                            }
+                            RightMul = RightMul_Species;
+                        } else {
+                            if(RightMul_Species != null)
+                                RightMul.Acc(1.0, RightMul_Species);
+                        }
+
+                    } else if(RequireRight) {
+                        RightMul = LeftMul;
+                    } else {
+                        RightMul = null;
+                    }
+
+                }
+
+
+                // part 1: XDG agglomeration
+                // =========================
+
+                foreach (var kv in DictAgglomeration) { // loop over species...
+                    var Species = kv.Key;
+                    var _Agglomerator = kv.Value;
+
+                    if (_Agglomerator != null) {
+
+                        var masks = GetMasks(RowMap, () => this.Tracker.Regions.GetSpeciesMask(Species), () => CellMask.GetEmptyMask(this.Tracker.GridDat));
+                        SetLeft(delegate() {
+                            MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
+                            BlockMsrMatrix LeftMul_Species = _Agglomerator.GetRowManipulationMatrix_Internal(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, masks, RowMapAggSw);
+                            return LeftMul_Species;
+                        });
+
+                        SetRight(delegate () {
+                            MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
+                            BlockMsrMatrix RightMul_Species = _Agglomerator.GetRowManipulationMatrix_Internal(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, masks, ColMapAggSw);
+                            return RightMul_Species;
+                        });
+
+                       
+                    }
+                }
+
+                // ensure that marices are nonzero
+                SetLeft(() => null);
+                SetRight(() => null);
+
+
+
+                // part 2: TraceDG agglomeration
+                // =============================
+                {
+                    CellAgglomerator _Agglomerator = GetTraceDGAgglomerator();
+
+                    
+
+                    var masks = GetMasks(RowMap, () => CellMask.GetEmptyMask(this.Tracker.GridDat), () => this.Tracker.Regions.GetCutCellMask());
+
+
+                    if(_Agglomerator != null) {
+                        throw new NotImplementedException("todo");
+
+                    } else {
+
+                        BlockMsrMatrix ZeroAgglom(UnsetteledCoordinateMapping map) {
+                            int NoOfVars = map.NoOfVariables;
+                            MiniMapping rowMini = new MiniMapping(RowMap, this.Tracker.SpeciesIdS.First(), this.Tracker.Regions);
+                            var Mtx = new BlockMsrMatrix(map, map);
+
+                            for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
+
+                                CellMask cm = masks?[gamma];
+                                if(masks == null)
+                                    cm = CellMask.GetFullMask(this.Tracker.GridDat);
+
+
+                                foreach(int j in cm.ItemEnum) { // loop over cells...
+
+
+                                    int N = rowMini.NFunc(j, gamma);
+                                    long i0 = rowMini.i0Func(j, gamma);
+
+                                    for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
+                                        Mtx[i0 + n, i0 + n] = 1.0;
+                                    }
+
+                                }
+                            }
+
+                            return Mtx;
+                        }
+
+                        SetLeft(() => ZeroAgglom(RowMap));
+                    }
+
+
                 }
             }
 
@@ -449,13 +550,18 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="Matrix">the matrix that should be manipulated.</param>
         /// <param name="Rhs">the right-hand-side that should be manipulated</param>
         /// <param name="ColMap"></param>
-        /// <param name="ColMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on. </param>
         /// <param name="RowMap"></param>
-        /// <param name="RowMapAggSw">The same shit as for <paramref name="ColMapAggSw"/>, just for rows.</param>
-        public void ManipulateMatrixAndRHS<M, T>(M Matrix, T Rhs, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap, bool[] RowMapAggSw = null, bool[] ColMapAggSw = null)
+        public void ManipulateMatrixAndRHS<M, T>(M Matrix, T Rhs, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap
+            //, bool[] RowMapAggSw = null, bool[] ColMapAggSw = null
+            )
             where M : IMutableMatrixEx //
             where T : IList<double> //
         {
+        // <param name="ColMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on. </param>
+        // <param name="RowMap"></param>
+        // <param name="RowMapAggSw">The same shit as for <paramref name="ColMapAggSw"/>, just for rows.</param>
+
+
             using (var Ft = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
                 //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
@@ -468,13 +574,13 @@ namespace BoSSS.Foundation.XDG {
                     // nothing to do
                     return;
 
-                if (RowMapAggSw != null)
-                    throw new NotImplementedException();
+                bool[] RowMapAggSw = DoAgg(RowMap?.BasisS);
+                bool[] ColMapAggSw = DoAgg(ColMap?.BasisS);
 
                 // generate agglomeration sparse matrices
                 // ======================================
 
-                
+
 
                 var (LeftMul, RightMul) = GetManipulationMatrices(Matrix != null, RowMap, ColMap, RowMapAggSw, ColMapAggSw);
 
@@ -523,7 +629,7 @@ namespace BoSSS.Foundation.XDG {
             var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameVector<T>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var vec_spc = new XDifferentialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
+                var vec_spc = new XDifferentialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map, FrameBase_TraceDGhandling.Without_TraceDG);
                 ret.Add(Species, vec_spc);
             }
             return ret;
@@ -538,6 +644,14 @@ namespace BoSSS.Foundation.XDG {
             ClearAgglomerated(vec, Map);
         }
 
+        bool[] DoAgg(IEnumerable<Basis> BasisS) {
+            if(BasisS == null)
+                return null;
+            return BasisS.Select(basis => !(basis is TraceDGBasis) // || basis is TraceDGBasis
+                                                             ).ToArray();
+        }
+
+
         /// <summary>
         /// In a vector <paramref name="vec"/>, this clears all entries which correspond to agglomerated cells.
         /// </summary>
@@ -545,14 +659,14 @@ namespace BoSSS.Foundation.XDG {
             where T : IList<double> {
             var vecS = GetFrameVectors(vec, Map);
 
-            foreach (var kv in DictAgglomeration) {
+            foreach (var kv in DictAgglomeration) { // loop over agglomerators of each species...
                 var Species = kv.Key;
                 var m_Agglomerator = kv.Value;
 
 
                 if (m_Agglomerator != null) {
                     var vec_spc = vecS[Species];
-                    m_Agglomerator.ClearAgglomerated(vec_spc, vec_spc.Mapping);
+                    m_Agglomerator.ClearAgglomerated(vec_spc, vec_spc.Mapping, DoAgg(Map.BasisS));
                 }
 
             }
@@ -613,7 +727,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 if (m_Agglomerator != null) {
-                    m_Agglomerator.Extrapolate(new CoordinateMapping(SubFields));
+                    m_Agglomerator.Extrapolate(new CoordinateMapping(SubFields), DoAgg(Map.BasisS));
                 }
 
             }
@@ -631,8 +745,10 @@ namespace BoSSS.Foundation.XDG {
             DGField[] fields = new DGField[bs.Length];
             for (int i = 0; i < fields.Length; i++) {
                 var b = bs[i];
-                if (b is XDGBasis)
+                if(b is XDGBasis)
                     fields[i] = new XDGField(b as XDGBasis);
+                else if(b is TraceDGBasis)
+                    fields[i] = new TraceDGField(b as TraceDGBasis);
                 else if (b is BoSSS.Foundation.Basis)
                     fields[i] = new SinglePhaseField(b);
                 else
@@ -669,21 +785,28 @@ namespace BoSSS.Foundation.XDG {
                 var CompScheme = xqs.GetVolumeQuadScheme(Species).Compile(gdat, this.CutCellQuadratureOrder);
 
                 MultidimensionalArray CenterOfGravity = MultidimensionalArray.Create(JE, D);
+                for(int j = 0; j < JE; j++)
+                    CenterOfGravity.SetRowPt(j, gdat.iGeomCells.GetCenter(j)); // default for empty cut-cells with zero-rules that don't get touched by quadrature
 
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(new int[] { D + 1 }, gdat,
                     CompScheme,
                     delegate (int i0, int Length, QuadRule rule, MultidimensionalArray EvalResult) { // Del_Evaluate
                         var globNodes = gdat.GlobalNodes.GetValue_Cell(rule.Nodes, i0, Length);
-                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).Set(globNodes);
-                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, D }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).SetAll(1.0);
+                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).Set(globNodes); // location X
+                        EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, D }, new int[] { Length - 1, rule.NoOfNodes - 1, D - 1 }).SetAll(1.0); // cell volume
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                         for (int i = 0; i < Length; i++) {
                             for (int d = 0; d < D; d++) {
                                 CenterOfGravity[i + i0, d] = ResultsOfIntegration[i, d] / ResultsOfIntegration[i, D];
                             }
+
+                            if(CenterOfGravity.GetRowPt(i0 + i).ContainsNanOrInf())
+                                CenterOfGravity.SetRowPt(i0 + i, gdat.iGeomCells.GetCenter(i + i0));
+
                         }
                     }, cs: CoordinateSystem.Physical).Execute();
+
 
                 CenterOfGravity.Storage.MPIExchange(this.Tracker.GridDat);
 
@@ -776,7 +899,7 @@ namespace BoSSS.Foundation.XDG {
                         CellVolume.Set(this.NonAgglomeratedMetrics.CutCellVolumes[spc]);
                         for(int j = 0; j < J; j++)
                             VolumeFrac[j] = this.Tracker.GridDat.Cells.GetCellVolume(j); // we first accumulate all un-cut volumes and then convert this into volume fraction
-
+                        
 
 
                         MultidimensionalArray EdgeArea = this.NonAgglomeratedMetrics.CutEdgeAreas[spc];

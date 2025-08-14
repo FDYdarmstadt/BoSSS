@@ -47,213 +47,27 @@ using System.ComponentModel;
 
 namespace BoSSS.Application.SipPoisson {
 
-
-    static class  BoSSSmkl {
-        
-    }
-
-
     /// <summary>
     /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
 
-        
+
         /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-
-
-
-            /*
-
-            Debugger.Launch();
-            InitMPI(args);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(1);
-
-            
-            int MpiSz;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSz);
-            int Rank;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
-
-            int Nothreads = ilPSP.Environment.NumThreads;
-             
-
-            ilPSP.Environment.StdoutOnlyOnRank0 = false;
-
-            
-
-
-            //Process proc = Process.GetCurrentProcess();
-            var CPUidxs = ilPSP.Utils.CPUAffinity.GetAffinity();
-            Console.WriteLine("r" + Rank + $" Windows Affinity to {CPUidxs.Count()} cores: {CPUidxs.ToConcatString("", ", ", ";")}");
-
-            //proc.ProcessorAffinity = (IntPtr) 0xFFFFFFFFFFFF;
-            //Console.WriteLine("r" + Rank + $"  Reset Affinity {proc.ProcessorAffinity:X}");
-                        
-
-
-            ilPSP.Environment.StdoutOnlyOnRank0 = true;
-
-
-           
-
-            //SetOMPAffinity(Nothreads, Rank, MpiSz, false);
-            //ilPSP.Environment.InitThreading(false, Nothreads);
-
-
-
-            int N = 5000;
-            var A = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
-            var B = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
-            var C = Nothreads.ForLoop(ith => MultidimensionalArray.Create(N, N));
-
-            ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int ith) {
-                A[ith].Storage.FillRandom();
-                B[ith].Storage.FillRandom();
-                C[ith].Storage.FillRandom();
-            });
-
-            bool ompMkl = args.Contains("ompmkl");
-            bool tplMkl = args.Contains("tplmkl");
-            bool tpl = args.Contains("tpl");
-
-            if ((ompMkl || tpl || tplMkl) == false)
-                throw new Exception("you must turn something on");
-
-            var start = DateTime.Now;
-            var timeout = new TimeSpan(hours: 0, minutes: 50, seconds: 1);
-            Stopwatch s0 = new Stopwatch();
-            int cnt = -1;
-            while (true) {
-                var duration = DateTime.Now - start;
-                if (duration > timeout) {
-                    //FinalizeMPI();
-                    //return;
-                    break;
-                }
-
-                {
-                    cnt = (int)Math.Round(duration.TotalSeconds / 15);
-                    if (cnt < 0)
-                        cnt = 0;
-                    Console.WriteLine("count = " + cnt);
-
-                    int[] CPUs;
-                    if (duration.TotalSeconds < 1*60) {
-                        CPUs = new int[] { 4, 5, 6, 7, 8, 9, 10, 11 };
-                        //CPUs = 40.ForLoop(i => i + 4);
-                    } else if (duration.TotalSeconds < 2*60) {
-                        CPUs = new int[] { 8, 9, 10, 11, 12, 13, 14, 15 };
-                        //CPUs = 40.ForLoop(i => i + 4 + 64);
-                    } else if (duration.TotalSeconds < 3*60) {
-                        CPUs = new int[] { 0, 1, 2, 3, 4, 5, 6, 7};
-                        //CPUs = ArrayTools.Cat(42.ForLoop(i => i + 2), 42.ForLoop(i => i + 64 + 2));
-                    } else {
-                        CPUs = 4.ForLoop(i => i*2 + 4);
-                        //CPUs = new int[] { 64, 65, 66, 70, 71, 72 };
-                    }
-                    Console.WriteLine($"Binding to {CPUs.Length} CPUs/cores");
-                    ilPSP.MKLservice.BindOMPthreads(CPUs);
-                }
-
-
-                s0.Reset();
-                s0.Start();
-                var AnrmLoc = new double[A.Length];
-                var BnrmLoc = new double[B.Length];
-                var CnrmLoc = new double[C.Length];
-
-                ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
-                    AnrmLoc[iThread] = A[iThread].L2Norm();
-                    BnrmLoc[iThread] = B[iThread].L2Norm();
-                    CnrmLoc[iThread] = C[iThread].L2Norm();
-                });
-
-                s0.Stop();
-                Console.WriteLine("   dnrm time: " + s0.Elapsed.TotalSeconds);
-
-                s0.Reset();
-                s0.Start();
-                var AnrmG = AnrmLoc.MPISum().Sum();
-                var BnrmG = BnrmLoc.MPISum().Sum();
-                var CnrmG = CnrmLoc.MPISum().Sum();
-                
-                Console.WriteLine("A norm: " + AnrmG);
-                Console.WriteLine("B norm: " + BnrmG);
-                Console.WriteLine("C norm: " + CnrmG);
-                s0.Stop();
-                Console.WriteLine("   MPIsum time: " + s0.Elapsed.TotalSeconds);
-
-                if (ompMkl && Rank == 0) {
-                    Console.WriteLine($"   OMP MKL DGEMM {N}x{N}");
-                    s0.Reset();
-                    var st2 = DateTime.Now;
-                    s0.Start();
-                    A[0].GEMM(1.0, B[0], C[0], 0.1);
-                    s0.Stop();
-                    var en2 = DateTime.Now;
-                    Console.WriteLine($"   MKL time: {s0.Elapsed.TotalSeconds:0.##} ( {(en2 - st2).TotalSeconds:0.##}");
-                }
-                if (tplMkl) {
-                    Console.WriteLine($"   TPL MKL: {Nothreads}x Serial MKL-DGEMM {N}x{N}");
-                    s0.Reset();
-                    var st3 = DateTime.Now;
-                    s0.Start(); 
-                    ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
-                        A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
-                        A[iThread].Storage.ScaleV(0.01);
-
-
-                    });
-                    s0.Stop();
-                    var en3 = DateTime.Now;
-                    Console.WriteLine($"   TPL time: {s0.Elapsed.TotalSeconds:0.##} ( {(en3 - st3).TotalSeconds:0.##}");
-                }
-
-
-                if (tpl) {
-                    Console.WriteLine($"   TPL only: {Nothreads}x Serial Naive DGEMM {N}x{N}");
-                    s0.Reset();
-                    s0.Start();
-                    ilPSP.Environment.ParallelFor(0, Nothreads, delegate (int iThread) {
-                        //A[iThread].GEMM(1.0, B[iThread], C[iThread], 1.0);
-                        //A[iThread].Storage.ScaleV(0.01);
-
-                        var _A = A[iThread];
-                        var _B = B[iThread];
-                        var _C = C[iThread];
-
-
-                        for (int iRow = 0; iRow < N; iRow++) {
-                            for (int iCol = 0; iCol < N; iCol++) {
-                                double Acc = _A[iRow, iCol]*0.1;
-                                for (int k = 0; k < N; k++)
-                                    Acc += _B[iRow, k]*_C[k, iCol];
-                                _A[iRow, iCol] = Acc;
-                            }
-                        }
-                        
-                    });
-                    s0.Stop();
-                    Console.WriteLine("   TPL time: " + s0.Elapsed.TotalSeconds);
-                }
-
-            }
-
-            //*/
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
-                
+
                 return p;
             });
+
         }
 
-       
+
 
 #pragma warning disable 649
         /// <summary>
@@ -274,7 +88,7 @@ namespace BoSSS.Application.SipPoisson {
         [InstantiateFromControlFile("RHS", "T", IOListOption.ControlFileDetermined)]
         protected SinglePhaseField RHS;
 
-        
+
 #pragma warning restore 649
 
         /// <summary>
@@ -311,7 +125,7 @@ namespace BoSSS.Application.SipPoisson {
             // mg coloring
             int iLevel = 0;
             this.MGColoring.Clear();
-            foreach (var MgL in this.MultigridSequence) {
+            foreach(var MgL in this.MultigridSequence) {
                 SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
                 Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
                 this.MGColoring.Add(c);
@@ -322,45 +136,13 @@ namespace BoSSS.Application.SipPoisson {
             Console.WriteLine("Available multi-grid levels: " + this.MGColoring.Count);
         }
 
-        /*
-        unsafe static void my_dgemm(int TRANSA, int TRANSB,
-                                        int M, int N, int K,
-                                        double ALPHA,
-                                        double* A, int LDA,
-                                        double* B, int LDB,
-                                        double BETA,
-                                        double* C, int LDC) {
-            for(int m = 0; m < M; m++) {
-                for(int n = 0; n < N; n++) {
-                    double acc = 0;
-                    for(int k = 0; k < K; k++) {
-                        acc += A[m * K + k] * B[k * N + n];
-                    }
-                    C[m * N + n] = BETA * C[m * N + n] + ALPHA * acc;
-                }
-            }
-
-        }
-        */
-
-
-        /*
-#if !DEBUG
-        static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
-            Exception e = (Exception)args.ExceptionObject;
-            Console.WriteLine("MyHandler caught : " + e.Message);
-            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
-            System.Environment.Exit(-1234);
-        }
-#endif
-*/
         /// <summary>
         /// Ensures availability of <see cref="BoSSS.Solution.Statistic.ForeignGridValue"/>
         /// </summary>
         public Type EnsureReference = typeof(ForeignGridValue);
 
 
-       
+
 
         /// <summary>
         /// Sets the multigrid coloring
@@ -378,7 +160,7 @@ namespace BoSSS.Application.SipPoisson {
             */
             base.SetInitial(t);
 
-            
+
 
             //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
@@ -406,114 +188,13 @@ namespace BoSSS.Application.SipPoisson {
                 LapaceIp.Commit();
             }
         }
-     
 
-        /// <summary>
-        /// control of mesh adaptation
-        /// </summary>
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            if (this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
-
-                // compute error against fine solution
-                if (Control.ExactSolution_provided) {
-                    //Error.Clear();
-                    //Error.AccLaidBack(1.0, T);
-
-                    /*
-                    var eval = new FieldEvaluation((GridData)(TexactFine.GridDat));
-
-                    void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
-                        int L = input.GetLength(0);
-                        Debug.Assert(output.GetLength(0) == L);
-
-                        eval.Evaluate(1.0, new DGField[] { TexactFine }, input, 0.0, output.ResizeShallow(L, 1));
-                    }
-
-                    Error.ProjectField(-1.0, FineEval);
-                    */
-                    //Error.AccLaidBack(-1.0, Tex);
-                }
-
-                long oldJ = this.GridData.CellPartitioning.TotalLength;
-
-                double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
-                double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
-                double MeanNormPow2PerCell = TotNormPow2 / oldJ; //                    mean norm per cell
-
-                double maxSoFar = 0;
-                int jMax = -1;
-                for (int j = 0; j < oldJ; j++) {
-                    double CellNorm = Error.Coordinates.GetRow(j).L2NormPow2();
-
-                    if (CellNorm > maxSoFar) {
-                        jMax = j;
-                        maxSoFar = CellNorm;
-                    }
-                }
-
-
-                int MyLevelIndicator(int j, int CurrentLevel) {
-                    double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
-
-
-                    //if (j == 0)
-                    //    CurrentLevel = CurrentLevel + 1;
-
-                    //if (CellNorm > MeanNormPow2PerCell * 1.1)
-                    //    return CurrentLevel + 1;
-                    //else
-                    //    return CurrentLevel;
-                    if (j == jMax)
-                        return CurrentLevel + 1;
-                    else
-                        return CurrentLevel;
-                }
-
-                GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData,null);
-                bool AnyChange = gridRefinementController.ComputeGridChange(MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-                int NoOfCellsToRefine = 0;
-                int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
-                    int[] glb = (new int[] {
-                        CellsToRefineList.Count,
-                        Coarsening.Sum(L => L.Length),
-                        //0, 0
-                    }).MPISum();
-
-                    NoOfCellsToRefine = glb[0];
-                    NoOfCellsToCoarsen = glb[1];
-                }
-                //*/
-
-
-                // Update Grid
-                // ===========
-
-                if (AnyChange) {
-
-
-                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
-
-                    newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-
-                } else {
-
-                    newGrid = null;
-                    old2NewGrid = null;
-                }
-            } else {
-
-                newGrid = null;
-                old2NewGrid = null;
-            }
-        }
-
+ 
         /// <summary>
         /// Single run of the solver
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
 
                 int L = 1000;
                 double[] a = new double[L];
@@ -524,7 +205,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-                if (Control.ExactSolution_provided) {
+                if(Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
 
@@ -532,9 +213,9 @@ namespace BoSSS.Application.SipPoisson {
                     RHS.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
                 }
 
-                if (Control.AdaptiveMeshRefinement == false) {
+                if(Control.AdaptiveMeshRefinement == false) {
                     base.NoOfTimesteps = -1;
-                    if (TimestepNo > 1)
+                    if(TimestepNo > 1)
                         throw new ApplicationException("steady-state-equation.");
                     base.TerminationKey = true;
                 }
@@ -546,71 +227,9 @@ namespace BoSSS.Application.SipPoisson {
                 //Console.WriteLine("Remember to re-activate solver !!!!!!!");
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, verbose: true, queryHandler: base.QueryHandler);
 
-                //long J = this.GridData.CellPartitioning.TotalLength;
-                //LastMatrix.SaveToTextFileSparse($"LaplaceMtx-J{J}.txt");
-                //double condNo = LastMatrix.condest();
-                //Console.WriteLine($"Matlab condition number estimate {J} cells: " + condNo);
-
-                /*Stuff for testing OpenMP
-                {
-                    var mgOp = this.LapaceIp.GetMultigridOperator(T.Mapping, MgConfig: this.MgConfig);
-                    var rhs = new double[T.Mapping.LocalLength];
-                    rhs.FillRandom();
 
 
-                    var slvrs = new List<(int num,PARDISOSolver s)>();
-
-
-                    foreach (int numThreads in new int[] { 8, 2, 4, 8, 16, 4 }) {
-                        var _start = DateTime.Now;
-                        Console.WriteLine("First solve with " + numThreads + " threads...");
-                        var mtx = mgOp.OperatorMatrix;
-
-                        //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", numThreads.ToString());
-                        //System.Environment.SetEnvironmentVariable("MKL_NUM_THREADS", numThreads.ToString());
-                        //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
-
-                        ThreadBLAS.OMP_SET_NUM_THREADS(numThreads);
-
-                        var pardiso = new PARDISOSolver();
-                        pardiso.Parallelism = Parallelism.OMP;
-                        pardiso.CacheFactorization = false;
-                        pardiso.DefineMatrix(mtx);
-                        pardiso.Solve(new double[rhs.Length], rhs);
-
-
-                        slvrs.Add((numThreads, pardiso));
-
-                        Console.WriteLine($"done. (took {DateTime.Now - _start})");
-                    }
-
-
-                    var start = DateTime.Now;
-                    foreach(var kv in slvrs) {
-                        Console.WriteLine($"Now solving with {kv.num} threads:");
-                        ThreadBLAS.OMP_SET_NUM_THREADS(kv.num);
-
-                        int cnt = 0;
-                        while(DateTime.Now - start < new TimeSpan(hours:0, minutes:0, seconds:59)) {
-                            Console.Write($"Do run #{cnt} ... ");
-                            kv.s.Solve(new double[rhs.Length], rhs);
-                            Console.WriteLine($" done. {(DateTime.Now - start)} passed.");
-                        }
-
-                        start = DateTime.Now;
-                    }
-
-
-
-
-                    foreach (var s in slvrs)
-                        s.s.Dispose();
-                }
-                */
-
-
-
-                if (base.Control.ExactSolution_provided) {
+                if(base.Control.ExactSolution_provided) {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);
                     Error.AccLaidBack(-1.0, T);
@@ -656,7 +275,7 @@ namespace BoSSS.Application.SipPoisson {
                 int NoOfLevels = this.MultigridSequence.Length;
                 var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
 
-                for (int iLevel = 0; iLevel < NoOfLevels; iLevel++) {
+                for(int iLevel = 0; iLevel < NoOfLevels; iLevel++) {
 
                     config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
                         new MultigridOperator.ChangeOfBasisConfig() {
@@ -679,8 +298,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override void Bye() {
             object SolL2err;
-            if (this.QueryHandler != null) {
-                if (this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
+            if(this.QueryHandler != null) {
+                if(this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
                     Console.WriteLine("Value of Query 'SolL2err' " + SolL2err.ToString());
                 } else {
                     Console.WriteLine("query 'SolL2err' not found.");
@@ -691,9 +310,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Operator stability analysis
         /// </summary>
-        override public IDictionary<string,double> OperatorAnalysis(OperatorAnalysisConfig config) {
+        override public IDictionary<string, double> OperatorAnalysis(OperatorAnalysisConfig config) {
             using(new FuncTrace()) {
-                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, config, this.MgConfig); 
+                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, config, this.MgConfig);
             }
         }
 
@@ -702,9 +321,9 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
             string caseStr = "";
-            if (base.Control.Paramstudy_CaseIdentification != null) {
+            if(base.Control.Paramstudy_CaseIdentification != null) {
                 var pstudy_case = base.Control.Paramstudy_CaseIdentification.FirstOrDefault(tt => tt.Item1 == "pstudy_case");
-                if (pstudy_case != null) {
+                if(pstudy_case != null) {
                     caseStr = "." + pstudy_case.Item2;
                 }
             }
@@ -716,7 +335,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-       
+
     }
 
     /// <summary>
@@ -757,15 +376,15 @@ namespace BoSSS.Application.SipPoisson {
 
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
             BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
-            switch (edgeType) {
+            switch(edgeType) {
                 case BoundaryType.Dirichlet:
-                    return true;
+                return true;
 
                 case BoundaryType.Neumann:
-                    return false;
+                return false;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
         }
     }
@@ -793,7 +412,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
-            if(!object.ReferenceEquals(m_rhsSourceField,Parameters[0])) {
+            if(!object.ReferenceEquals(m_rhsSourceField, Parameters[0])) {
                 Parameters[0].Clear();
                 Parameters[0].Acc(1.0, m_rhsSourceField);
             }

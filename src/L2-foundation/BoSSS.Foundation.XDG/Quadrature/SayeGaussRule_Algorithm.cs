@@ -10,8 +10,7 @@ using System.Collections;
 using System.Diagnostics;
 
 
-namespace BoSSS.Foundation.XDG.Quadrature
-{
+namespace BoSSS.Foundation.XDG.Quadrature.Saye {
     interface ISayeQuadRule
     {
         IEnumerable<Tuple<MultidimensionalArray,double>> IntegrationNodes 

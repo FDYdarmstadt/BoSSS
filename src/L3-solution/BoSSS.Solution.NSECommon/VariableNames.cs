@@ -301,6 +301,8 @@ namespace BoSSS.Solution.NSECommon {
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
+
+        public const string ElectricPoissonEquation = "ElectricPoissonEq";
     }
 
 
@@ -1808,5 +1810,13 @@ namespace BoSSS.Solution.NSECommon {
         /// vector of orientation of a rigid object, used in XNSERO - y component
         /// </summary>
         public const string OrientationVectorY = "OrientationVectorY";
+
+
+        /// <summary>
+        /// Electric potential, dimensi is Voltage
+        /// </summary>
+        public const string ElectricPotential = "ElectricPotential";
+
+        public const string FreechargeDensity = "FreechargeDensity";
     }
 }

@@ -159,7 +159,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             #endregion
 
 
@@ -357,7 +357,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.AdaptiveMeshRefinement = true;
             //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 1 });
@@ -557,7 +557,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 3 });
@@ -780,9 +780,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ====================
             #region solver
             C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 0;
-            C.RefinementLevel = 0;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel  0;
+            //C.RefinementLevel = 0;
             //C.AMR_startUpSweeps = 2;
 
             //C.InitSignedDistance = false;

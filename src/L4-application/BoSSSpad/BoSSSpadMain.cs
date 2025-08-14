@@ -112,7 +112,7 @@ namespace BoSSS.Application.BoSSSpad {
         //[STAThread]
         public static int Main(string[] args) {
             int errCount = 0;
-            
+
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
            /*
@@ -777,6 +777,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
             Console.WriteLine(typeof(ZwoLevelSetSolver.ZLS).FullName);
             Console.WriteLine(typeof(XNSEC.XNSEC).FullName);
+            //Console.WriteLine(typeof(MultiphaseElectroHydroDynamic.MultiphaseElectroHydroDynamic).FullName);
         }
 
 
