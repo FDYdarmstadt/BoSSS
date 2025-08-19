@@ -77,7 +77,7 @@ namespace ZwoLevelSetSolver.Boundary {
                 viscousStressT -= 1 * solidViscosity * (_Grad_uOUT[i, d]) * inp.Normal[i];
             }
 
-            double stress = (fluidStress + fluidStressT + pIn + solidStress + solidStressT + viscousStress + viscousStressT + pOut) * 0.5;//Lacking surface tension and curvature here?
+            double stress = (fluidStress + fluidStressT + pIn + solidStress + solidStressT + viscousStress + viscousStressT + pOut) * 0.5;//Lacking surface tension and curvature here? Should be SIP form? 
 
             return  (stress ) * _vIN -  (stress) * _vOUT;
         }

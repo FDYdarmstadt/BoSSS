@@ -129,8 +129,8 @@ namespace ZwoLevelSetSolver {
             XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
             for(int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new Boundary.NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
-                opFactory.AddEquation(new Boundary.NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
+                opFactory.AddEquation(new Boundary.NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A, config.physParams.mu_A / config.physParams.betaS_A));
+                opFactory.AddEquation(new Boundary.NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B, config.physParams.mu_B / config.physParams.betaS_B));
                 //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
                 //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
             }
@@ -140,18 +140,21 @@ namespace ZwoLevelSetSolver {
             opFactory.AddEquation(new ContinuityBoundary("B", "C", D));
 
 
-            //*
             if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new EquilibriumContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
                     //opFactory.AddEquation(new EquilibriumContactLine1(d, D, config.physParams.betaL, config.physParams.theta_e));
-                    // GNBC
+                    // surface tension on IBM
+                    //if(config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine && config.physParams.Sigma != 0.0) {
+                    //    opFactory.AddEquation(new NSEimmersedBoundary_SurfaceTension("A", "B", d, D, 1));
+                    //}
+
+                    //GNBC
                     //if(config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
-                    //    opFactory.AddEquation(new NSEimmersedBoundary_GNBC("A", "B", d, D, config.getPhysParams, 1));
+                    //opFactory.AddEquation(new NSEimmersedBoundary_GNBC("A", "B", d, D, config.getPhysParams, 1));
                     //}
                 }
             }
-            //*/
             var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter(VariableNames.SolidLevelSetCG, normalsParameter);

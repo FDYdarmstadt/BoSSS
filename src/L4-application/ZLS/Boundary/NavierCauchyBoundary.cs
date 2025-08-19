@@ -16,7 +16,7 @@ namespace ZwoLevelSetSolver.Boundary {
         string codomainName;
 
         public NavierCauchyBoundary(string fluidSpecies, string solidSpecies, int d, int D, 
-            Solid material, double rho_fluid, double viscosity) {
+            Solid material, double rho_fluid, double viscosity, double sliplength) {
 
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
             this.fluidSpecies = fluidSpecies;
@@ -38,8 +38,16 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Penalty coupling
             double maxViscosity = Math.Max(viscosity, material.Viscosity);
-            AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
-            //AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2, 0.1));
+            if(sliplength == 0.0) {
+                Console.Write("using no slip. ");
+                AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
+            } else if(double.IsInfinity(sliplength)) {
+                Console.Write("using slip. ");
+                AddComponent(new SlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
+            } else {
+                Console.Write("using navier slip. ");
+                AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2, sliplength));
+            }
         }
 
         public override string FirstSpeciesName => fluidSpecies;

@@ -18,7 +18,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
     public static class Droplet {
 
-        public static ZLS_Control Aland( int p = 2, int AMRlvl = 0) {
+        public static ZLS_Control Aland( int p = 1, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
@@ -96,8 +96,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double xSize = 6;
             double yTop = (3.5 - 0.00625);
             double yBottom = (- 2.5 - 0.00625);
-            //int kelem = 12;
-            int kelem = 36;
+            int kelem = 12;
+            //int kelem = 36;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, kelem + 1);
@@ -176,7 +176,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
-            //C.PhysicalParameters.sliplength = 0.001;
+            C.PhysicalParameters.sliplength = 0.001;
 
             #endregion
 
@@ -189,10 +189,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.NonLinearSolver.MaxSolverIterations = 160;
-            C.NonLinearSolver.MinSolverIterations = 2;
+            C.NonLinearSolver.MaxSolverIterations = 1;
+            C.NonLinearSolver.MinSolverIterations = 0;
             //C.Solver_MaxIterations = 50;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.ConvergenceCriterion = 0;// 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
             C.NonLinearSolver.Globalization = BoSSS.Solution.AdvancedSolvers.Newton.GlobalizationOption.Dogleg;
@@ -207,9 +207,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
-            C.AdaptiveMeshRefinement = false;
-            //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 4});
-            //C.AMR_startUpSweeps = 3;
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 6 });
             //C.AMR_startUpSweeps = 5;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
@@ -232,7 +232,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.TimesteppingMode = compMode;
             //double dt = 5e-7;
-            double dt = 5e-3;
+            double dt = 5e-4;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;
@@ -474,7 +474,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control OnIBM(int p = 2, int AMRlvl = 0) {
+        public static ZLS_Control OnIBM(int p = 2, int AMRlvl = 2) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 2;
@@ -519,25 +519,25 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region physics
 
             double scale = 1e-4;
-            C.PhysicalParameters.rho_A = 1000.0 * scale * scale * scale;
-            C.PhysicalParameters.rho_B = C.PhysicalParameters.rho_A;// 1260 * scale * scale * scale;
-            C.PhysicalParameters.mu_A = 1000.0 * scale;
-            C.PhysicalParameters.mu_B = C.PhysicalParameters.mu_A;// 1.41 * scale;
-            double sigma = 0.1; //0.046;
+            C.PhysicalParameters.rho_A = 10.0 * scale * scale * scale;
+            C.PhysicalParameters.rho_B = 1000.0 * scale * scale * scale;
+            C.PhysicalParameters.mu_A = 100.0 * scale;
+            C.PhysicalParameters.mu_B = 1000.0 * scale;
+            double sigma = 1; //0.1; //0.046;
             C.PhysicalParameters.Sigma = sigma;
 
             C.PhysicalParameters.betaS_A = 0.00001;
             C.PhysicalParameters.betaS_B = 0.00001;
 
-            C.PhysicalParameters.betaL = 0.00001;
-            C.PhysicalParameters.theta_e =  Math.PI / 2.0;
+            C.PhysicalParameters.betaL = 0;
+            C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             C.Material = new Solid() {
                 Density = 1000 * scale * scale * scale,
-                Lame2 = 5e2 * scale,
+                Lame2 = 1e3 * scale,
                 Viscosity = 1000 * scale
                 //Viscosity = 0 0.05e-4 * scale,
             };
@@ -549,11 +549,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===============
             #region grid
 
-            double xSize = 6;
-            double yTop = 3;//(3.5 - 0.00625);
-            double yBottom = -3;// (-2.5 - 0.00625);
-            //int kelem = 12;
+            double xSize = 6 * 2;
+            double yTop = 3 * 2;//(3.5 - 0.00625);
+            double yBottom = -3 * 2;// (-2.5 - 0.00625);
             int kelem = 5;
+            //int kelem = 5 * 8;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-xSize, 0, kelem + 1);
@@ -561,8 +561,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
-                //grd.EdgeTagNames.Add(1, "NavierSlip_Linear_lower");
-                grd.EdgeTagNames.Add(2, "freeslip_upper");
+                grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
                 grd.EdgeTagNames.Add(3, "freeslip_left");
                 grd.EdgeTagNames.Add(4, "freeslip_right");
 
@@ -595,18 +594,32 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double s = 2 * R * Math.Sin(Theta_e);
             double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
 
-            double[] center = new double[] { 0.0, -2.0 };
+            double[] center = new double[] { 0.0, -1.5 };
 
             Func<double[], double> PhiFunc = Phi;
 
             //double Phi(double[] X) {
             //    //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
-            //    return (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() -  R * R;
+            //    return -((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - R * R);
             //}
-            
+
+            //double Phi(double[] X) {
+            //    //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
+            //    return -(X[0] + 3.0 - 1e-5);
+            //}
+
             double Phi(double[] X) {
-                //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
-                return -(X[0] + 3.0 - 1e-5);
+                double x = X[0];
+                double y = X[1];
+                double dx = x - center[0];
+                double dy = y - center[1];
+
+                if(y > -2) {
+                    return -((dx * dx + dy * dy) - R * R);
+                } else {
+                    double dyEdge = -2 - center[1];
+                    return -((dx * dx + dyEdge * dyEdge) - R * R);
+                }
             }
 
 
@@ -614,6 +627,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.InitialValues_Evaluators.Add("Pressure#A", X => pJump);
             C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
+            //C.AddInitialValue("GravityY#A", new Formula($"X => -9.8", false));
+            //C.AddInitialValue("GravityY#B", new Formula($"X => -9.8", false));
+            //C.AddInitialValue("GravityY#C", new Formula($"X => -9.8",false));
 
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -631,8 +647,240 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
 
             C.AddBoundaryValue("wall_lower");
-            //C.AddBoundaryValue("NavierSlip_Linear_lower");
-            C.AddBoundaryValue("freeslip_upper");
+            C.AddBoundaryValue("pressure_outlet_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
+
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
+            C.AdvancedDiscretizationOptions.IBM_BoundaryType = IBM_BoundaryType.NavierSlip;
+            C.PhysicalParameters.sliplength = 0.001;
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.NonLinearSolver.MaxSolverIterations = 160;
+            C.NonLinearSolver.MinSolverIterations = 2;
+            //C.Solver_MaxIterations = 50;
+            //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-12;
+            C.NonLinearSolver.Globalization = BoSSS.Solution.AdvancedSolvers.Newton.GlobalizationOption.Dogleg;
+
+
+            //C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            //C.fullReInit = false; 
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = AMRlvl });
+            C.AMR_startUpSweeps = AMRlvl;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl });
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
+            //C.AMR_startUpSweeps = AMRlvl;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            //C.CheckJumpConditions = true;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            //C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+
+            C.TimesteppingMode = compMode;
+            double dt = 1e-3;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000;
+            C.NoOfTimesteps = 10000;
+            C.saveperiod = 1;
+
+            #endregion
+
+            return C;
+        }
+
+        public static ZLS_Control OnIBMBug(int p = 2, int AMRlvl = 3) {
+            ZLS_Control C = new ZLS_Control(p);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 2;
+
+            C.AgglomerationThreshold = 0.3;
+            C.NoOfMultigridLevels = 1;
+
+            int D = 3;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.savetodb = false;
+            //C.DbPath = @"C:\Users\miao\Documents\Database\Droplet-EE";
+            C.ProjectName = "Droplet";
+            C.SessionName = "Droplet-check";
+            C.ProjectDescription = "Droplet running on pc";
+
+            C.ContinueOnIoError = false;
+
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.PostprocessingModules.Add(new MovingContactLineLogging());
+
+            #endregion
+
+            //if(D == 3) {
+            //    C.FieldOptions.Add("DisplacementZ", new FieldOpts() {
+            //        Degree = p,
+            //        SaveToDB = FieldOpts.SaveToDBOpt.FALSE
+            //    });
+            //}
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            double scale = 1e-4;
+            C.PhysicalParameters.rho_A = 10.0 * scale * scale * scale;
+            C.PhysicalParameters.rho_B = 1000.0 * scale * scale * scale;
+            C.PhysicalParameters.mu_A = 100.0 * scale;
+            C.PhysicalParameters.mu_B = 1000.0 * scale;
+            double sigma = 0.1; //0.046;
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.betaS_A = 0.00001;
+            C.PhysicalParameters.betaS_B = 0.00001;
+
+            C.PhysicalParameters.betaL = 0;
+            C.PhysicalParameters.theta_e = Math.PI / 2.0;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+
+            C.Material = new Solid() {
+                Density = 1000 * scale * scale * scale,
+                Lame2 = 1e3 * scale,
+                Viscosity = 1000 * scale
+                //Viscosity = 0 0.05e-4 * scale,
+            };
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double xSize = 6 * 2;
+            double yTop = 3 * 2;//(3.5 - 0.00625);
+            double yBottom = -3 * 2;// (-2.5 - 0.00625);
+            int kelem = 5;
+            //int kelem = 5 * 8;
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-xSize, 0, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(yBottom, yTop, kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
+                grd.EdgeTagNames.Add(3, "freeslip_left");
+                grd.EdgeTagNames.Add(4, "freeslip_right");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if(Math.Abs(X[1] - yBottom) <= 1.0e-8)
+                        et = 1;
+                    if(Math.Abs(X[1] - yTop) <= 1.0e-8)
+                        et = 2;
+                    if(Math.Abs(X[0] + xSize) <= 1.0e-8)
+                        et = 3;
+                    if(Math.Abs(X[0] - 0.0) <= 1.0e-8)
+                        et = 4;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double R = 1.778;
+            double Theta_e = Math.PI / 2;
+            double s = 2 * R * Math.Sin(Theta_e);
+            double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
+
+            double[] center = new double[] { 0.0, -2.0 }; //bug of quad?
+            //double[] center = new double[] { 0.0, -1.5 };
+
+            Func<double[], double> PhiFunc = Phi;
+
+            double Phi(double[] X) {
+                //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
+                return -((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - R * R);
+            }
+
+            //double Phi(double[] X) {
+            //    //return 3 *  (((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()) - R.Pow2());
+            //    return -(X[0] + 3.0 - 1e-5);
+            //}
+
+
+            double pJump = sigma / R;
+
+            C.InitialValues_Evaluators.Add("Pressure#A", X => pJump);
+            C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
+            //C.AddInitialValue("GravityY#A", new Formula($"X => -9.8", false));
+            //C.AddInitialValue("GravityY#B", new Formula($"X => -9.8", false));
+            //C.AddInitialValue("GravityY#C", new Formula($"X => -9.8",false));
+
+
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+
+            Func<double[], double> Phi1Func = (X => -(X[1] + 2.0));
+            C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("pressure_outlet_upper");
             C.AddBoundaryValue("freeslip_left");
             C.AddBoundaryValue("freeslip_right");
 
@@ -675,7 +923,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AMR_startUpSweeps = AMRlvl;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 0, maxRefinementLevel = AMRlvl });
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { levelSet = 1, maxRefinementLevel = AMRlvl });
-            C.AMR_startUpSweeps = AMRlvl;
+            //C.AMR_startUpSweeps = AMRlvl;
 
             #endregion
 
@@ -693,8 +941,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
 
             C.TimesteppingMode = compMode;
-            double dt = 10.0 * 1e-3;
-            //double dt = 5e-3;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;

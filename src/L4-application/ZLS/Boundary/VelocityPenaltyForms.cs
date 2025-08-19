@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Utils;
+using MathNet.Numerics.Distributions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -257,22 +258,120 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            Vector normalVelocityGradient = new Vector(D);
-            for(int i = 0; i < D; ++i) {
-                for(int j = 0; j < D; ++j) {
-                    normalVelocityGradient[j] += (_Grad_uIN[j, i]) * (-inp.Normal[i]);
-                }
-            }
-            double slip = normalVelocityGradient[d];
-            for(int i = 0; i < D; ++i) {
-                slip -= (inp.Normal[d]) * (inp.Normal[i]) * normalVelocityGradient[i];
-            }
+            //Vector normalVelocityGradient = new Vector(D);
+            //for(int i = 0; i < D; ++i) {
+            //    for(int j = 0; j < D; ++j) {
+            //        normalVelocityGradient[j] += (_Grad_uIN[j, i]) * (-inp.Normal[i]);
+            //        //normalVelocityGradient[j] += (_Grad_uIN[j, i] + _Grad_uIN[i, j]) * (-inp.Normal[i]);
+            //    }
+            //}
+            //double slip = normalVelocityGradient[d];
+            //for(int i = 0; i < D; ++i) {
+            //    slip -= (inp.Normal[d]) * (inp.Normal[i]) * normalVelocityGradient[i];
+            //}
+            double[] grad_u_n_tangential = ComputeGradUNormalTangentialProjection(_Grad_uIN, inp.Normal);
+            double slip = grad_u_n_tangential[d];
             slip *= slipLength;
-            double flux = (_uIN[d] - slip - _uOUT[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
-            flux *= Math.Max(viscosity, lame2);
+
+            //double uIN_tangential = _uIN[d];
+            //double uOUT_tangential = _uOUT[d];
+            //for(int i = 0; i < D; ++i) {
+            //    uIN_tangential -= (uIN_tangential * inp.Normal[i]) * inp.Normal[i];
+            //    uOUT_tangential -= (uIN_tangential * inp.Normal[i]) * inp.Normal[i];
+            //}
+            double[] uIN_tangential = ComputeTangentialVelocity(_uIN, inp.Normal);
+            double[] uOUT_tangential = ComputeTangentialVelocity(_uOUT, inp.Normal);
+
+            double flux = (uIN_tangential[d] + slip - uOUT_tangential[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
+            //double flux = (_uIN[d] - slip - _uOUT[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
+            flux *= viscosity;
+            //flux *= Math.Max(viscosity, lame2);
             //double flux = (viscosity * (_uIN[d] - _uOUT[d]) * _vIN - lame2 * (_uIN[d] - _uOUT[d]) * _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
             //double flux =  (_uIN[d] - _uOUT[d]) * (_vIN ) * Penalty(inp.jCellIn, inp.jCellOut);
+
+            //// Enforce normal velocity continuity
+            //double uIN_normal = 0.0, uOUT_normal = 0.0;
+            //for(int i = 0; i < D; ++i) {
+            //    uIN_normal += _uIN[d] * inp.Normal[i] * inp.Normal[i];
+            //    uOUT_normal += _uOUT[d] * inp.Normal[i] * inp.Normal[i];
+            //}
+            double[] uIN_normal = ComputeNormalVelocity(_uIN, inp.Normal);
+            double[] uOUT_normal = ComputeNormalVelocity(_uOUT, inp.Normal);
+
+            flux += viscosity * (uIN_normal[d] - uOUT_normal[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
+
             return flux;
+        }
+
+        double[] ComputeTangentialVelocity(double[] _uIN, double[] normal) {
+            int D = _uIN.Length;
+            double[] u_tangential = new double[D];
+
+            //  I - n ⊗ n
+            double[,] P = new double[D, D];
+
+            for(int i = 0; i < D; i++) {
+                for(int j = 0; j < D; j++) {
+                    if(i == j)
+                        P[i, j] = 1.0 - normal[i] * normal[j];
+                    else
+                        P[i, j] = -normal[i] * normal[j];
+                }
+            }
+
+            // u_tangential = P * _uIN
+            for(int i = 0; i < D; i++) {
+                u_tangential[i] = 0.0;
+                for(int j = 0; j < D; j++) {
+                    u_tangential[i] += P[i, j] * _uIN[j];
+                }
+            }
+
+            return u_tangential;
+        }
+
+        double[] ComputeNormalVelocity(double[] _uIN, double[] normal) {
+            int D = _uIN.Length;
+            double[] u_normal = new double[D];
+
+            // Compute dot product (u · n)
+            double dot = 0.0;
+            for(int i = 0; i < D; ++i) {
+                dot += _uIN[i] * normal[i];
+            }
+
+            // u_normal = (u · n) * n
+            for(int i = 0; i < D; ++i) {
+                u_normal[i] = dot * normal[i];
+            }
+
+            return u_normal;
+        }
+
+        double[] ComputeGradUNormalTangentialProjection(double[,] grad_u, double[] normal) {
+            int D = normal.Length;
+            double[] grad_u_n = new double[D];         // ∇u ⋅ n
+            double[] tangential = new double[D];       // final tangential projection
+
+            // Step 1: Compute grad_u_n = grad_u ⋅ n
+            for(int i = 0; i < D; ++i) {
+                grad_u_n[i] = 0.0;
+                for(int j = 0; j < D; ++j) {
+                    grad_u_n[i] += (grad_u[i, j] + grad_u[j, i]) * normal[j];
+                }
+            }
+
+            // Step 2: Compute tangential = (I - n⊗n) ⋅ grad_u_n
+            // Equivalent to: tangential[i] = grad_u_n[i] - (n ⋅ grad_u_n) * n[i]
+
+            double dot = 0.0;
+            for(int i = 0; i < D; ++i)
+                dot += grad_u_n[i] * normal[i];
+
+            for(int i = 0; i < D; ++i)
+                tangential[i] = grad_u_n[i] - dot * normal[i];
+
+            return tangential;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
