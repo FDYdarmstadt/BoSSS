@@ -162,6 +162,15 @@ namespace BoSSS.Solution {
                         if(!object.ReferenceEquals(lsTrk, _lsTrk))
                             throw new NotSupportedException();
                     }
+                } else if (f is TraceDGField) {
+                    LevelSetTracker _lsTrk = ((TraceDGField)f).Basis.Tracker;
+
+                    if(lsTrk == null) {
+                        lsTrk = _lsTrk;
+                    } else {
+                        if(!object.ReferenceEquals(lsTrk, _lsTrk))
+                            throw new NotSupportedException();
+                    }
                 }
             }
 
