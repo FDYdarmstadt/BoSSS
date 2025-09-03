@@ -2149,10 +2149,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			Residual(Res0, X, B); //res0 with x0
 			Array.Copy(Res0, Res, L);
 
-			if (ortho.Norm(Res0) <= 0) {
+            if ((myTask == TpTaskType.Smoother || myTask == TpTaskType.All) && ortho.Norm(Res0) <= 0) {
 				double normB = ortho.Norm(B);
 				double normX = ortho.Norm(X);
-				throw new ArithmeticException($"Residual is 0.0: |X| = {normX}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}");
+				throw new ArithmeticException($"Residual is 0.0: |X| = {normX}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}; task={myTask}");
 			}
 
 			return Res0;
