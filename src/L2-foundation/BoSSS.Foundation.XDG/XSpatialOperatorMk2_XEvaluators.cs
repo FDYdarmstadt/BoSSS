@@ -250,9 +250,9 @@ namespace BoSSS.Foundation.XDG {
                         SpeciesFrameVector<V>[] vec_spc_noTdg = new SpeciesFrameVector<V>[ReqSpecies.Length];
                         for(int i = 0; i < ReqSpecies.Length; i++) {
                             SpeciesId SpId = ReqSpecies[i];
-                            mtx_spc_incTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesDomainFrame_WithTraceDg[SpId], this.SpeciesDomainFrame_WithTraceDg[SpId]);
+                            mtx_spc_incTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame_WithTraceDg[SpId], this.SpeciesDomainFrame_WithTraceDg[SpId]);
                             vec_spc_incTdg[i] = (AffineOffset != null) ?
-                                                (new SpeciesFrameVector<V>(AffineOffset, this.SpeciesDomainFrame_WithTraceDg[SpId]))
+                                                (new SpeciesFrameVector<V>(AffineOffset, this.SpeciesCodomFrame_WithTraceDg[SpId]))
                                                 :
                                                 null;
                             mtx_spc_noTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame_WithoutTraceDg[SpId], this.SpeciesDomainFrame_WithoutTraceDg[SpId]);
@@ -286,12 +286,12 @@ namespace BoSSS.Foundation.XDG {
 
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
-                                    var builder = SpeciesBuilder[SpeciesId];
-                                    BulkIntegrator(builder, SpeciesId, _mtx, vec);
-                                }
+                                        var builder = SpeciesBuilder[SpeciesId];
+                                        BulkIntegrator(builder, SpeciesId, _mtx, vec);
+                                    }
 
+                                }
                             }
-                        }
 
                     }
                     
@@ -964,11 +964,15 @@ namespace BoSSS.Foundation.XDG {
                         var sgrd = lsTrk.Regions.GetCutCellSubGrid();
                         var cellScheme = new CellQuadratureScheme(UseDefaultFactories: true, domain: sgrd.VolumeMask);
                         var edgeScheme = new EdgeQuadratureScheme(UseDefaultFactories: true, domain: sgrd.InnerEdgesMask);
-                        foreach(var SpeciesId in ReqSpecies) {
-                            ctorTraceDGBulkIntegrator(SpeciesId, quadOrder, cellScheme, edgeScheme, TraceDgCodomFrame, TraceDgCodomFrame,
-                            TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
-                            Parameters?.ToArray(), DomainFields?.ToArray());
-                        }
+                        //foreach(var SpeciesId in ReqSpecies) {
+                        //    ctorTraceDGBulkIntegrator(SpeciesId, quadOrder, cellScheme, edgeScheme, TraceDgDomainFrame, TraceDgCodomFrame,
+                        //    TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                        //    Parameters?.ToArray(), DomainFields?.ToArray());
+                        //}
+
+                        ctorTraceDGBulkIntegrator(ReqSpecies[0], quadOrder, cellScheme, edgeScheme, TraceDgDomainFrame, TraceDgCodomFrame,
+                        TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                        Parameters?.ToArray(), DomainFields?.ToArray());
 
                     }
 
