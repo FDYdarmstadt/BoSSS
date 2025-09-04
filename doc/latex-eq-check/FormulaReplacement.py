@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+import argparse
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -243,8 +244,8 @@ def check_formulas_xml():
 
     print(f"Wrote {len(report_entries)} lines to: {report_path}")
 
-if __name__ == '__main__':
-    check_formulas_xml()
+#if __name__ == '__main__':
+   # check_formulas_xml()
 
 
 
@@ -306,11 +307,17 @@ def fix_md_equations():
 # ------------------ MAIN MENU ------------------
 
 def main():
-    print("\nChoose a mode:\n")
-    print("1 - Checking Formulas (scan .XMLDOC and save .tex report)")
-    print("2 - Markdown Equation Delimiter Conversion required for GitLab documentation rendering (fix delimiters in .md files)")
+    parser = argparse.ArgumentParser(description="Choose a mode of operation")
+    parser.add_argument("choice", nargs="?", choices=["1", "2"], help="Select 1 or 2")
+    args = parser.parse_args()
 
-    choice = input("\nEnter 1 or 2: ").strip()
+    if args.choice:
+        choice = args.choice
+    else:
+        print("\nChoose a mode:\n")
+        print("1 - Checking Formulas (scan .XMLDOC and save .tex report)")
+        print("2 - Markdown Equation Delimiter Conversion required for GitLab documentation rendering (fix delimiters in .md files)")
+        choice = input("\nEnter 1 or 2: ").strip()
 
     if choice == '1':
         check_formulas_xml()

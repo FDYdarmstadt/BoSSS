@@ -10,6 +10,7 @@ import re
 from collections import defaultdict
 from tqdm import tqdm
 from pathlib import Path  # For path handling
+import argparse
 
 # ---------------- Paths ----------------
 # Relative Path:
@@ -447,13 +448,21 @@ def save_namespace_files():  # Saves namespace-based Markdown documentation to d
             md_file.write("\n".join(entries))
         print(f"✅ Saved: {namespace_file}")
 
-# ---------------- Main ----------------
 
+# ---------------- Main ----------------
 def main():  # Entry point: loads XMLs, selects mode, processes accordingly
-    print("Select mode:")
-    print("1 - Class")
-    print("2 - Namespace")
-    mode_input = input("Enter 1 or 2: ").strip()
+    parser = argparse.ArgumentParser(description="XMLDOC to Markdown")
+    parser.add_argument("choice", nargs="?", choices=["1", "2"], help="Select 1 (Class) or 2 (Namespace)")
+    args = parser.parse_args()
+
+    if args.choice:
+        mode_input = args.choice
+    else:
+        print("Select mode:")
+        print("1 - Class")
+        print("2 - Namespace")
+        mode_input = input("Enter 1 or 2: ").strip()
+
     mode = "class" if mode_input == "1" else "namespace"
 
     all_files = [
@@ -505,6 +514,5 @@ def main():  # Entry point: loads XMLs, selects mode, processes accordingly
         for xml_file in tqdm(xml_files, desc="Processing by namespace"):
             process_by_namespace(xml_file)
         save_namespace_files()
-
 if __name__ == "__main__":
     main()
