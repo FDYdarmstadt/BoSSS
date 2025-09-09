@@ -33,9 +33,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// For a 3D setting, this class implements the hierarchical moment-fitting (HMF) strategy to compute
     /// two-dimensional volume integrals over the boundaries of cells that
     /// are intersected by the level set, i.e integrals of the form
-    /// ```math
+    /// \[
     ///   \oint_{K_j \cap \{ \vec{x}; \varphi( \vec{x} ) \lt 0 \} } f \ dS
-    /// ```
+    /// \]
     /// In other words: If the (planar) edge
     /// of a three-dimensional element is intersected by the level set, this
     /// factory applies the HMF strategy in order to create accurate quadrature
@@ -94,12 +94,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Vector-valued moment-fitting basis constructed from the
         /// 'anti-derivatives' of a standard basis. Here, the 'anti-derivative'
-        /// of a scalar polynomial \f$ p\f$  is defined as
+        /// of a scalar polynomial $p$  is defined as
         /// a vector-valued polynomial
-        /// \f$ \vec{\Lambda}\f$  such that
-        /// \f$ 
-        /// p = \nabla \cdot \vec{\Lambda}
-        /// \f$ 
+        /// $\vec{\Lambda}$  such that
+        /// $p = \nabla \cdot \vec{\Lambda}$ 
         /// </summary>
         private PolynomialList lambdaBasis;
 
@@ -747,20 +745,20 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             
 
             /// <summary>
-            /// For each face $` E $`  of each cell in
+            /// For each face $E$  of each cell in
             /// the given range and for each
-            /// $` \vec{\Lambda}\ $`  in
+            /// $\vec{\Lambda}\$  in
             /// <see cref="LevelSetEdgeVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
-            /// ```math 
+            /// \[ 
             /// \int \limits_{\partial E} \vec{\Lambda} \cdot \vec{n} H(\varphi) \;ds,
-            /// ```
-            /// where $` \vec{n} $`  denotes the outer
-            /// unit normal vector on $` \partial E $` 
-            /// (**not** $` E $`!). Moreover,
-            /// $` H $`  a weight function that depends
-            /// on the level set function $` \varphi $`.
-            /// Typically, $` H $`  is given by the
+            /// \]
+            /// where $\vec{n}$  denotes the outer
+            /// unit normal vector on $\partial E$
+            /// (**not** $E$!). Moreover,
+            /// $H$ a weight function that depends
+            /// on the level set function $\varphi$.
+            /// Typically, $H$ is given by the
             /// Heaviside function. For more details, see
             /// <see cref="CutLineQuadRuleFactory"/>
             /// </summary>
@@ -898,19 +896,19 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             /// <summary>
-            /// For each face $` E $`  of each cell in
+            /// For each face $E$ of each cell in
             /// the given range and for each
-            /// $` \vec{\Lambda} $`  in
+            /// $\vec{\Lambda}$  in
             /// <see cref="LevelSetEdgeVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
-            /// ```math 
+            /// \[ 
             /// \int_{ \{ \vec{x}; \varphi(\vec{x}) = 0 \}  \cap E} \vec{\Lambda} \cdot \vec{n}_I \;ds,
-            /// ```
-            /// where $` \varphi $`  is the level set
-            /// function and \f$ \vec{n}_I\f$  denotes the
+            /// \]
+            /// where $\varphi$ is the level set
+            /// function and $\vec{n}_I$  denotes the
             /// unit normal vector on
-            /// $` \varphi \cap E $` 
-            /// (**not** $` E $`!)
+            /// $\varphi \cap E$ 
+            /// (**not** $E$!)
             /// </summary>
             protected override void Evaluate(int i0, int Length, CellBoundaryQuadRule CBQR, MultidimensionalArray EvalResult) {
                 NodeSet QuadNodes = CBQR.Nodes;

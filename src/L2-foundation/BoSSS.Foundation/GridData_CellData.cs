@@ -514,8 +514,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             ///    }
             ///    (\partial K_j \cap \partial \Omega)} {\textrm{ Volume} (K_j)}
             /// \]
-            /// where \f$ K_j \f$ is the cell an
-            /// \f$ \Omega \f$ is the whole computational
+            /// where $K_j$ is the cell an
+            /// $\Omega$ is the whole computational
             /// domain.
             /// </summary>
             /// <remarks>

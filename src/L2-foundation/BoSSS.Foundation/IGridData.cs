@@ -305,7 +305,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Jacobian of transformation from reference to physical space, \f$ (\nabla T_j) \f$.
+        /// Jacobian of transformation from reference to physical space, $(\nabla T_j)$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs Jacobian {
             get;
@@ -313,21 +313,21 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Adjungate of the Jacobian of the reference-to-physical coordinate transformation, 
-        /// \f$ \mathrm{Adj}( \nabla T_j ) =  \determinant{ \nabla T_j } ( \nabla T_j )^{-1} \f$.
+        /// $\mathrm{Adj}( \nabla T_j ) =  \mathrm{Adj}( \nabla T_j ) ( \nabla T_j )^{-1}$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs AdjungateJacobian {
             get;
         }
 
         /// <summary>
-        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, \f$ ( \nabla T_j )^{-1} \f$.
+        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, $( \nabla T_j )^{-1}$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs InverseJacobian {
             get;
         }
 
         /// <summary>
-        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, \f$ \determinant{ \nabla T_j } \f$.
+        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, $\mathrm{Adj}( \nabla T_j )$.
         /// </summary>
         Caching.CacheLogicImplBy_CNs JacobianDeterminat {
             get;
@@ -688,9 +688,9 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Square-root of the Gramian determinant for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
-        /// if \f$ \myMatrix{M} \f$ 
+        /// if $\myMatrix{M}$ 
         /// is the matrix of the transformation, this number is 
-        /// \f$ \sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) } \f$.
+        /// $\sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) }$.
         /// </summary>
         MultidimensionalArray Edge2CellTrafos_SqrtGramian {
             get;
@@ -803,8 +803,8 @@ namespace BoSSS.Foundation.Grid {
         ///           \mathbb{R}^{D-1}
         /// \f]
         /// the mapping from the edge coordinate system to the physical coordinate system.
-        /// Then the integral of \f$  f \f$  over the edge 
-        /// \f$ \gamma(K_\textrm{ref}) \f$ 
+        /// Then the integral of $f$  over the edge 
+        /// $\gamma(K_\textrm{ref})$ 
         /// is given as 
         /// \f[ 
         ///   \int_{\vec{x} \in \gamma(K_\textrm{ref})} f(\vec{x}) \ \textrm{dS}
@@ -818,12 +818,12 @@ namespace BoSSS.Foundation.Grid {
         ///   }.
         /// \f]
         /// If the transformation 
-        /// \f$ \gamma \f$
+        /// $\gamma$
         /// of the edge to the global coordinate system 
         /// is affine-linear, the Jacobian 
-        /// \f$ \partial \gamma \f$
+        /// $\partial \gamma$
         /// is constant and 
-        /// \f$ g \f$
+        /// $g$
         /// can be precomputed.
         /// (see Analysis 2, Königsberger, Springer-Verlag 2000, pp. 343)
         /// </remarks>

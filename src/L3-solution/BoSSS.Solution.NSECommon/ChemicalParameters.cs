@@ -114,7 +114,7 @@ namespace BoSSS.Solution.NSECommon {
         public double HeatReleaseMass = 50100; //  KJ/(Kg fuel)
 
         /// <summary>
-        /// Heat release of combustion for a one-step chemistry with (`$phi &lt; 1`$), per molar unit
+        /// Heat release of combustion for a one-step chemistry with ($phi &lt; 1$), per molar unit
         /// </summary>
         [DataMember]
         public double HeatReleaseMolar = 802400; //  KJ/(kmol fuel)

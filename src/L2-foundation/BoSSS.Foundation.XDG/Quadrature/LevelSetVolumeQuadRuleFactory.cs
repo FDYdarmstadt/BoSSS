@@ -34,12 +34,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     /// <summary>
     /// This factory produces quadrature rules which are, for each cell
-    /// \f$ K\f$  in a volume mask, capable of computing
+    /// $K$  in a volume mask, capable of computing
     /// (an approximation of)
-    /// \f[ 
+    /// \[ 
     ///    \int\limits_{\{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \} \cap K}  f \ d \vec{x},
-    /// \f]
-    /// where \f$ \varphi\f$  denotes the level set function.
+    /// \]
+    /// where $\varphi$ denotes the level set function.
     /// </summary>
     public class LevelSetVolumeQuadRuleFactory : IQuadRuleFactory<QuadRule> {
 
@@ -69,12 +69,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Vector-valued moment-fitting basis constructed from the
         /// 'anti-derivatives' of a standard basis. Here, the 'anti-derivative'
-        /// of a scalar polynomial \f$ p\f$  is defined as
+        /// of a scalar polynomial $p$  is defined as
         /// a vector-valued polynomial
-        /// \f$ \vec{\Lambda}\f$  such that
-        /// \f$ 
-        /// p = \nabla \cdot \vec{\Lambda}
-        /// \f$ 
+        /// $\vec{\Lambda}$  such that
+        /// $p = \nabla \cdot \vec{\Lambda}$ 
         /// </summary>
         private PolynomialList lambdaBasis;
 
@@ -104,22 +102,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="edgeRuleFactory">
         /// Some factory that provides quadrature rules for the integration 
         /// over 
-        /// \f[ 
+        /// \[ 
         ///  \partial K \cap \{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \}.
-        /// \f]
-        /// Here, \f$ \partial K\f$  the boundary of
-        /// some cell \f$ K\f$  and 
-        /// \f$ \varphi\f$  denotes the level set function
+        /// \]
+        /// Here, $\partial K$  the boundary of
+        /// some cell $K$  and 
+        /// $\varphi$  denotes the level set function
         /// </param>
         /// <param name="surfaceRuleFactory">
         /// Some factory that provides quadrature rules for the integration 
         /// over the zero level set, i.e.
-        /// \f[ 
+        /// \[ 
         ///   \{ \vec{x}; \varphi(\vec{x}) = 0 \} \cap K.
-        /// \f]
-        /// (ere, \f$ \partial K\f$  the boundary of some
-        /// cell \f$ K\f$  and 
-        /// \f$ \varphi\f$  denotes the level set function
+        /// \]
+        /// (ere, $\partial K$  the boundary of some
+        /// cell $K$  and 
+        /// $\varphi$  denotes the level set function
         /// </param>
         /// <param name="jumpType"></param>
         public LevelSetVolumeQuadRuleFactory(
@@ -822,19 +820,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             /// <summary>
-            /// For each cell \f$ K\f$  in the given
-            /// range and for each \f$ \vec{\Lambda}\f$  
+            /// For each cell $K$  in the given
+            /// range and for each $\vec{\Lambda}$  
             /// in <see cref="LevelSetEdgeVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
-            /// \f$ 
-            /// \int \limits_{\partial K} \vec{\Lambda} \cdot \vec{n} H(\varphi) \;ds,
-            /// \f$ 
-            /// where \f$ \vec{n}\f$  denotes the outer
-            /// unit normal vector on \f$ \partial K\f$ .
-            /// Moreover, \f$ H\f$  a weight function that
+            /// $\int \limits_{\partial K} \vec{\Lambda} \cdot \vec{n} H(\varphi) \;ds,$ 
+            /// where $\vec{n}$  denotes the outer
+            /// unit normal vector on $\partial K$ .
+            /// Moreover $H$ a weight function that
             /// depends on the level set function
-            /// \f$ \varphi\f$ . Typically,
-            /// \f$ H\f$  is given by the Heaviside
+            /// $\varphi$ . Typically,
+            /// $H$  is given by the Heaviside
             /// function. For more details, see
             /// <see cref="CutLineQuadRuleFactory"/>
             /// </summary>
@@ -957,16 +953,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             /// <summary>
-            /// For each cell \f$ K\f$   in the given
-            /// range and for each \f$ \vec{\Lambda}\f$ 
+            /// For each cell $K$   in the given
+            /// range and for each $\vec{\Lambda}$ 
             /// in <see cref="LevelSetVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
-            /// \f$ 
-            /// \int \limits_{\{\vec{x}; \varphi(\vec{x}) = 0 \}  \cap K} \vec{\Lambda} \cdot \vec{n}_I \;ds,
-            /// \f$ 
-            /// where \f$ \varphi\f$  is the level set
-            /// function and \f$ \vec{n}_I\f$  denotes the
-            /// unit normal vector on \f$ \varphi\f$ 
+            /// $\int \limits_{\{\vec{x}; \varphi(\vec{x}) = 0 \}  \cap K} \vec{\Lambda} \cdot \vec{n}_I \;ds,$ 
+            /// where $\varphi$  is the level set
+            /// function and $\vec{n}_I$  denotes the
+            /// unit normal vector on $\varphi$ 
             /// </summary>
             protected override void Evaluate(int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                 NodeSet QuadNodes = QR.Nodes;

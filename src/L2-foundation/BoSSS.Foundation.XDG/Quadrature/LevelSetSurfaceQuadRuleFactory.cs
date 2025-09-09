@@ -34,12 +34,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// <summary>
     /// This factory uses the hierarchical moment-fitting (HMF) strategy in
     /// order to produce quadrature rules which are, for each cell
-    /// \f$ K\f$  in a volume mask, capable of computing
+    /// $K$  in a volume mask, capable of computing
     /// (an approximation of)
-    /// \f[ 
+    /// \[ 
     ///    \oint\limits_{\partial K \cap \{ \vec{x}; \varphi(\vec{x}) = 0 \} }  f \;dS,
-    /// \f]
-    /// where \f$ \varphi\f$  denotes the level set
+    /// \]
+    /// where $\varphi$  denotes the level set
     /// function.
     /// </summary>
     /// <remarks>
@@ -1031,15 +1031,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             /// <summary>
-            /// For each cell \f$ K\f$  and for each
+            /// For each cell $K$  and for each
             /// divergence-free basis polynomial
-            /// \f$ \vec{\Phi}\f$ : Computes the
+            /// $\vec{\Phi}$ : Computes the
             /// integral
-            /// \f$ 
-            ///     \int \limits_{\partial K} \vec{\Phi} H(\varphi) \;dS,
-            /// \f$ 
-            /// where \f$ \varphi\f$  is the level set
-            /// function and \f$ H\f$  is an indicator
+            /// $\int \limits_{\partial K} \vec{\Phi} H(\varphi) \;dS,$ 
+            /// where $\varphi$  is the level set
+            /// function and $H$  is an indicator
             /// function that restricts the integration domain to positive
             /// level set values (Heaviside) or negative level set values
             /// (One minus Heaviside). This choice is implicitly given by

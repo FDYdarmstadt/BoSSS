@@ -26,7 +26,7 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
-    /// The tetrahedral reference element \f$ K^{\textrm{tetra}}  \f$.
+    /// The tetrahedral reference element $K^{\textrm{tetra}}$.
     /// </summary>
     /// <remarks>
     /// The vertices of the tetrahedron are:

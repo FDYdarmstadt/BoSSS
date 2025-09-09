@@ -542,7 +542,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Jacobian of transformation from reference to physical space, \f$ (\nabla T_j) \f$.
+        /// Jacobian of transformation from reference to physical space, $(\nabla T_j)$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs Jacobian {
             get;
@@ -629,7 +629,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// Adjungate of the Jacobian of the reference-to-physical coordinate transformation, 
-        /// \f$ \mathrm{Adj}( \nabla T_j ) =  \determinant{ \nabla T_j } ( \nabla T_j )^{-1} \f$.
+        /// $\mathrm{Adj}( \nabla T_j ) =  \mathrm{Adj}( { \nabla T_j } ) ( \nabla T_j )^{-1}$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs AdjungateJacobian {
             get;
@@ -711,7 +711,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, \f$ ( \nabla T_j )^{-1} \f$.
+        /// Inverse of the Jacobian of the reference-to-physical coordinate transformation, $( \nabla T_j )^{-1}$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs InverseJacobian {
             get;
@@ -748,7 +748,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, \f$ \determinant{ \nabla T_j } \f$.
+        /// Determinant of the Jacobian of the reference-to-physical coordinate transformation, $\mathrm{Adj}( \nabla T_j )$.
         /// </summary>
         public Caching.CacheLogicImplBy_CNs JacobianDeterminat {
             get;

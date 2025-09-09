@@ -387,17 +387,17 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
-        /// convective part, x-component, i.e. \f$ \nabla \cdot ( u_1 \cdot \vec{u} ) \f$ 
+        /// convective part, x-component, i.e. $\nabla \cdot ( u_1 \cdot \vec{u} )$ 
         /// </summary>
         public const string ConvectiveX = "ConvectiveX";
         
         /// <summary>
-        /// convective part, y-component, i.e. \f$ \nabla \cdot ( u_2 \cdot \vec{u} ) \f$ 
+        /// convective part, y-component, i.e. $\nabla \cdot ( u_2 \cdot \vec{u} )$ 
         /// </summary>
         public const string ConvectiveY = "ConvectiveY";
 
         /// <summary>
-        /// convective part, z-component, i.e. \f$ \nabla \cdot ( u_3 \cdot \vec{u} ) \f$ 
+        /// convective part, z-component, i.e. $\nabla \cdot ( u_3 \cdot \vec{u} )$ 
         /// </summary>
         public const string ConvectiveZ = "ConvectiveZ";
 

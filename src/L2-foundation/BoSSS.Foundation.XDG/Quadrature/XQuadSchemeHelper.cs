@@ -341,7 +341,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Volume quadrature for the surface elements, i.e., a $D-1$ dimensional integral.
-        /// For each cut background-cell $ K_j $, the surface element is $ K_j \cap \mathfrak{I} $; 
+        /// For each cut background-cell $K_j$, the surface element is $K_j \cap \mathfrak{I}$; 
         /// \[
         ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
         /// \]
@@ -478,7 +478,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Edge quadrature for the surface elements, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// Edge quadrature for the surface elements, i.e. for each cut background-cell $K_j$ a quadrature to approximate
         /// \[
         ///    \oint_{\partial K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
         /// \]
@@ -950,7 +950,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Quadrature scheme for the integration over the level-set, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// Quadrature scheme for the integration over the level-set, i.e. for each cut background-cell $K_j$ a quadrature to approximate
         /// \f[
         ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
         /// \f]

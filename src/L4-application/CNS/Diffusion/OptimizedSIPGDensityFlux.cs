@@ -27,7 +27,7 @@ using System.Collections.Generic;
 namespace CNS.Diffusion {
 
     /// <summary>
-    /// Dummy Class for Diffusion density flux, i.e \f$ F_v(U_1)=0\f$  
+    /// Dummy Class for Diffusion density flux, i.e $F_v(U_1)=0$  
     /// </summary>
     class OptimizedSIPGDensityFlux : INonlinear2ndOrderForm {
 

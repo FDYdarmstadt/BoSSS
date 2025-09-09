@@ -29,12 +29,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     /// <summary>
     /// This factory produces quadrature rules which are,
-    /// for each cell \f$ K\f$  in a volume mask,
+    /// for each cell $K$  in a volume mask,
     /// capable of computing (an approximation of)
-    /// \f[ 
+    /// \[ 
     ///    \int\limits_{\{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \} \cap K}  f \ d \vec{x},
-    /// \f]
-    /// where \f$ \varphi\f$  denotes the level set function.
+    /// \]
+    /// where $\varphi$  denotes the level set function.
     /// </summary>
     abstract public class LevelSetVolumeQuadRuleFactory2 : IQuadRuleFactory<QuadRule> {
 
@@ -63,22 +63,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="edgeRuleFactory">
         /// Some factory that provides quadrature rulz for the integration 
         /// over 
-        /// \f[ 
+        /// \[ 
         ///  \partial K \cap \{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \}.
-        /// \f]
-        /// (Here, \f$ \partial K\f$   the boundary of some cell 
-        /// \f$ K\f$  and 
-        /// \f$ \varphi\f$  denotes the level set function.)
+        /// \]
+        /// (Here, $\partial K$   the boundary of some cell 
+        /// $K$  and 
+        /// $\varphi$  denotes the level set function.)
         /// </param>
         /// <param name="surfaceRuleFactory">
         /// Some factory that provides quadrature rulz for the integration 
         /// over the zero level set, i.e.
-        /// \f[ 
+        /// \[ 
         ///   \{ \vec{x}; \varphi(\vec{x}) = 0 \} \cap K.
-        ///\f]
-        /// (Here, \f$ \partial K\f$   the boundary of some cell 
-        /// \f$ K\f$  and 
-        /// \f$ \varphi\f$  denotes the level set function.)
+        /// \]
+        /// (Here, $\partial K$   the boundary of some cell 
+        /// $K$  and 
+        /// $\varphi$  denotes the level set function.)
         /// </param>
         /// <param name="simplex"></param>
         /// <param name="jumpType"></param>

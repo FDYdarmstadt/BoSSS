@@ -316,8 +316,8 @@ namespace BoSSS.Foundation {
         ///   this = this + \alpha \cdot \| \vec{vec} \|.
         /// \f]
         /// </summary>
-        /// <param name="alpha">factor \f$ \alpha \f$ </param>
-        /// <param name="vec">vector field \f$ \vec{vec} \f$ </param>
+        /// <param name="alpha">factor $\alpha$ </param>
+        /// <param name="vec">vector field $\vec{vec}$ </param>
         /// <param name="em">
         /// An optional restriction to the domain in which the projection is computed (it may, e.g.
         /// be only required in boundary cells, so a computation over the whole domain 

@@ -160,7 +160,7 @@ namespace BoSSS.Foundation.Grid {
         SortedDictionary<int, PolynomialList[]> m_PolynomialLists = new SortedDictionary<int, PolynomialList[]>();
 
         /// <summary>
-        /// Returns the orthonormal approximation polynomials \f$ \phi_n \f$ up to a specific degree.
+        /// Returns the orthonormal approximation polynomials $\phi_n$ up to a specific degree.
         /// </summary>
         /// <returns>
         /// A polynomial list for each involved reference element
@@ -193,7 +193,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Returns the 1st derivatives of the orthonormal approximation polynomials, 
-        /// i.e. \f$ \nabla_{\vec{\xi}} \phi_n \f$ up to a specific degree.
+        /// i.e. $\nabla_{\vec{\xi}} \phi_n$ up to a specific degree.
         /// </summary>
         /// <returns>
         /// - 1st index: reference element, correlates with <see cref="IGeometricalCellsData.RefElements"/>
@@ -233,7 +233,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Returns the 2nd derivatives of the orthonormal approximation polynomials, 
-        /// i.e. \f$ \nabla_{\vec{\xi}} \phi_n \f$ up to a specific degree.
+        /// i.e. $\nabla_{\vec{\xi}} \phi_n$ up to a specific degree.
         /// </summary>
         /// <returns>
         /// - 1st index: reference element, correlates with <see cref="IGeometricalCellsData.RefElements"/>
@@ -312,7 +312,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// Cached evaluation of basis polynomials \f$ \phi_n \f$ in reference space.
+        /// Cached evaluation of basis polynomials $\phi_n$ in reference space.
         /// </summary>
         public CacheLogic_NsP BasisValues {
             get;
@@ -331,7 +331,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Cached evaluation of basis polynomials gradients \f$ \nabla_{\vec{xi}} \phi_n \f$ in reference space.
+        /// Cached evaluation of basis polynomials gradients $\nabla_{\vec{xi}} \phi_n$ in reference space.
         /// </summary>
         public CacheLogic_NsP BasisGradientValues {
             get;
@@ -358,7 +358,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Cached evaluation of basis polynomials Hessian \f$ \partial_{\vec{xi}}^2 \phi_n \f$ in reference space.
+        /// Cached evaluation of basis polynomials Hessian $\partial_{\vec{xi}}^2 \phi_n$ in reference space.
         /// </summary>
         public CacheLogic_NsP BasisHessianValues {
             get;
@@ -439,7 +439,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Values of polynomials in cells,  \f$ \phi_{j n} \f$
+        /// Values of polynomials in cells,  $\phi_{j n}$
         /// </summary>
         public Caching.CacheLogicImpl_CNsP CellBasisValues {
             get;
@@ -447,7 +447,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Values of polynomials gradients in cells, \f$ \nabla_{\vec{x}} \phi_{j n} \f$
+        /// Values of polynomials gradients in cells, $\nabla_{\vec{x}} \phi_{j n}$
         /// </summary>
         public Caching.CacheLogicImpl_CNsP CellBasisGradientValues {
             get;
@@ -508,7 +508,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Values of polynomials gradients in cells, \f$ \partial^2_{\vec{x}} \phi_{j n} \f$
+        /// Values of polynomials gradients in cells, $\partial^2_{\vec{x}} \phi_{j n}$
         /// </summary>
         public Caching.CacheLogicImpl_CNsP CellBasisHessianValues {
             get;
@@ -590,7 +590,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Evaluation of the reference basis values \f$ \phi_n \f$ for edges.
+        /// Evaluation of the reference basis values $\phi_n$ for edges.
         /// </summary>
         public Caching.BasisEdgeValuesCacheLogic EdgeEval {
             get;
@@ -598,7 +598,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Evaluation of the reference basis gradient values \f$ \nabla_{\vec{xi}} \phi_n \f$ for edges.
+        /// Evaluation of the reference basis gradient values $\nabla_{\vec{xi}} \phi_n$ for edges.
         /// </summary>
         public Caching.BasisEdgeValuesCacheLogic EdgeGradientEval {
             get;

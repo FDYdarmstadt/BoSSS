@@ -55,7 +55,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Assumes a non-linear integrand where the highest term behaves like
-        /// \f$  u^{\texttt{NonLinDeg"}} \f$
+        /// $u^{\texttt{NonLinDeg"}}$
         /// </summary>
         /// <param name="NonLinDeg"></param>
         /// <returns>

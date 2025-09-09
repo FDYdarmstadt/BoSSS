@@ -22,25 +22,25 @@ using System.Runtime.Serialization;
 namespace BoSSS.Solution.XNSECommon {
 
     /// <summary>
-    /// Options of the surface stress tensor \f$ \sigma_{\Gamma} \f$ for the momentum jump condition 
-    /// \f[ 
+    /// Options of the surface stress tensor $\sigma_{\Gamma}$ for the momentum jump condition 
+    /// \[ 
     ///   \llbracket (-p \myMatrix{I} + \mu \myMatrix{D} (\vec{u}) ) \cdot \vec{n} \rrbracket = \divergence{\sigma_{\Gamma}}_{\Gamma},
-    /// \f]
+    /// \]
     /// </summary>
     public enum SurfaceSressTensor {
 
         /// <summary>
-        /// only the isotropic \f$ \sigma_{\gamma} = \sigma \myMatrix{P}_{\Gamma} \f$
+        /// only the isotropic $\sigma_{\gamma} = \sigma \myMatrix{P}_{\Gamma}$
         /// </summary>
         Isotropic,
 
         /// <summary>
-        /// \f$ \mu_I \( \myMatrix{P}_I \grad_I \vec{u} + \( \grad_I \vec{u}\)^T \myMatrix{P}_I \) \f$ (additional dynamic part, resembling the semi-implicit discretization)
+        /// $\mu_I \( \myMatrix{P}_I \grad_I \vec{u} + \( \grad_I \vec{u}\)^T \myMatrix{P}_I \)$ (additional dynamic part, resembling the semi-implicit discretization)
         /// </summary>
         SurfaceRateOfDeformation,
 
         /// <summary>
-        /// \f$ \( \lambda_I - \mu_I \) \div_I \vec{u} \myMatrix{P}_I  \f$
+        /// $\( \lambda_I - \mu_I \) \div_I \vec{u} \myMatrix{P}_I$
         /// </summary>
         SurfaceDivergence,
 
@@ -63,14 +63,14 @@ namespace BoSSS.Solution.XNSECommon {
     public enum SurfaceStressTensor_IsotropicMode {
         
         /// <summary>
-        /// Curvature is evaluated locally, i.e. the projection of $\divergence{ \nabla \varphi / | \nabla \varphi | $.
+        /// Curvature is evaluated locally, i.e. the projection of $\divergence{ \nabla \varphi / | \nabla \varphi |$.
         /// onto a DG field is used.
         /// </summary>
         Curvature_Projected,
 
         /// <summary>
         /// Curvature is evaluated locally at closest points on the level-set, i.e. 
-        /// the value of $\divergence{ \nabla \varphi / | \nabla \varphi | $ on the zero-set is extended to the domain.
+        /// the value of $\divergence{ \nabla \varphi / | \nabla \varphi |$ on the zero-set is extended to the domain.
         /// </summary>
         Curvature_ClosestPoint,
 

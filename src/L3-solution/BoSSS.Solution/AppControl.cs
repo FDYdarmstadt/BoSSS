@@ -251,7 +251,7 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// Steady-state or temporally dependent boundary values.
             /// - key: a name for the boundary value, e.g. 'VelocityX'
-            /// - value: some function that maps a space coordinate to some function value, i.e.  \f$ (\vec{x},t) \mapsto f(\vec{x},t)\f$ 
+            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\vec{x},t) \mapsto f(\vec{x},t)$ 
             /// </summary>
             /// <remarks>
             /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
@@ -275,7 +275,7 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// Steady-state or temporally dependent boundary values.
             /// - key: a name for the boundary value, e.g. 'VelocityX'<br/>
-            /// - value: some function that maps a space coordinate to some function value, i.e.  \f$ (\vec{x},t) \mapsto f(\vec{x},t)\f$ 
+            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\vec{x},t) \mapsto f(\vec{x},t)$ 
             /// </summary>
             [JsonIgnore]
             public IDictionary<string, IBoundaryAndInitialData> Values {

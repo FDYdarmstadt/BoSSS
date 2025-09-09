@@ -79,8 +79,8 @@ namespace BoSSS.Foundation.XDG {
         ///   - 1st index: cell index <em>j</em>
         ///   - 2nd index: node index <em>m</em> into nodeset <paramref name="NodeSet"/>
         /// </list>
-        /// So, the entry [j,m] = \f$ \sum_{d=1}^{D} \frac{\partial}{\partial x_d} \varphi (\vec{\xi}_m)\f$ 
-        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th vector in the <paramref name="NodeSet"/>,
+        /// So, the entry [j,m] = $\sum_{d=1}^{D} \frac{\partial}{\partial x_d} \varphi (\vec{\xi}_m)$ 
+        /// where $\vec{xi}_m$  is the <em>m</em>-th vector in the <paramref name="NodeSet"/>,
         /// in the <em>j</em>-th cell.
         /// </param>
         /// <remarks>

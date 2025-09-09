@@ -187,8 +187,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             ///           \mathbb{R}^{D-1}
             /// \f]
             /// the mapping from the edge coordinate system to the physical coordinate system.
-            /// Then the integral of \f$  f \f$  over the edge 
-            /// \f$ \gamma(K_\textrm{ref}) \f$ 
+            /// Then the integral of $f$  over the edge 
+            /// $\gamma(K_\textrm{ref})$ 
             /// is given as 
             /// \f[ 
             ///   \int_{\vec{x} \in \gamma(K_\textrm{ref})} f(\vec{x}) \ \textrm{dS}
@@ -202,12 +202,12 @@ namespace BoSSS.Foundation.Grid.Classic {
             ///   }.
             /// \f]
             /// If the transformation 
-            /// \f$ \gamma \f$
+            /// $\gamma$
             /// of the edge to the global coordinate system 
             /// is affine-linear, the Jacobian 
-            /// \f$ \partial \gamma \f$
+            /// $\partial \gamma$
             /// is constant and 
-            /// \f$ g \f$
+            /// $g$
             /// can be precomputed.
             /// (see Analysis 2, Königsberger, Springer-Verlag 2000, pp. 343)
             /// </remarks>
@@ -1057,9 +1057,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             /// <summary>
             /// Square-root of the Gramian determinat for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
-            /// if \f$ \myMatrix{M} \f$ 
+            /// if $\myMatrix{M}$ 
             /// is the matrix of the transformation, this number is 
-            /// \f$ \sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) } \f$.
+            /// $\sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) }$.
             /// </summary>
             public MultidimensionalArray Edge2CellTrafos_SqrtGramian {
                 get {

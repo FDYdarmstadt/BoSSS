@@ -219,13 +219,11 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// Let D be the spatial dimension of the simplex, then the spatial
         /// dimension of the face is D-1; but, for the transformation, the face
         /// coordinate system is embedded into
-        /// \f$ \mathbb{R}^{D}\f$  and we additionally map
+        /// $\mathbb{R}^{D}$  and we additionally map
         /// the D-th standard basis vector to
-        /// \f$ \vec{c}_e + \vec{n}_e\f$  (center of edge
-        /// \f$ e\f$  plus normal), i.e.
-        /// \f$ 
-        /// \mathbb{R}^{D} \ni (0,\ldots,0,1) \mapsto \vec{c}_e + \vec{n}_e
-        /// \f$ .
+        /// $\vec{c}_e + \vec{n}_e$  (center of edge
+        /// $e$  plus normal), i.e.
+        /// $\mathbb{R}^{D} \ni (0,\ldots,0,1) \mapsto \vec{c}_e + \vec{n}_e$ .
         /// </remarks>
         public AffineTrafo GetEmbeddedFaceTrafo(int FaceIndex) {
             if (m_EmbeddedFaceTransformation == null) {
@@ -286,13 +284,11 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// Let D be the spatial dimension of the simplex, then the spatial
         /// dimension of the face is D-1; but, for the transformation, the face
         /// coordinate system is embedded into
-        /// \f$ \mathbb{R}^{D}\f$  and we additionally map
-        /// \f$ \vec{c}_e + \vec{n}_e\f$  (center of edge
-        /// \f$ e\f$  plus normal) to the D-th standard
+        /// $\mathbb{R}^{D}$  and we additionally map
+        /// $\vec{c}_e + \vec{n}_e$  (center of edge
+        /// $e$  plus normal) to the D-th standard
         /// basis vector, i.e.
-        /// \f$ 
-        /// \vec{c}_e + \vec{n}_e \mapsto (0,\ldots,0,1) \in \mathbb{R}^{D}
-        /// \f$ .
+        /// $\vec{c}_e + \vec{n}_e \mapsto (0,\ldots,0,1) \in \mathbb{R}^{D}$ .
         /// </remarks>
         public AffineTrafo GetInverseEmbeddedFaceTrafo(int FaceIndex) {
             if (m_InverseEmbeddedFaceTransformation == null) {
@@ -1732,8 +1728,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             /// <summary>
-            /// Computes a transformation matrix \f$ A \f$, which expresses the orthonormal polynomials in the root of the subdivision tree,
-            /// \f$ \underline{\phi}^{\text{root}} \f$, in terms of the orthonormal polynomials in this leaf, \f$ \underline{\phi}^{\text{leaf}} \f$,
+            /// Computes a transformation matrix $A$, which expresses the orthonormal polynomials in the root of the subdivision tree,
+            /// $\underline{\phi}^{\text{root}}$, in terms of the orthonormal polynomials in this leaf, $\underline{\phi}^{\text{leaf}}$,
             /// i.e.
             /// \f[
             ///   \underline{\phi}^{\text{root}} = \underline{\phi}^{\text{leaf}} A .

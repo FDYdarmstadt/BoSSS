@@ -559,13 +559,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         #region Getta
 
         /// <summary>
-        /// returns a delegate \f$ (j, \gamma, \mathfrak{s}, k ) \mapsto \{ \textrm{true},\textrm{false} \} \f$,
+        /// returns a delegate $(j, \gamma, \mathfrak{s}, k ) \mapsto \{ \textrm{true},\textrm{false} \}$,
         /// which determines whether a specific cell-variable-species-mode tuple is in a mapping or not.
         /// Delegate arguments are:
-        /// - 1st argument: cell index \f$ j \f$
-        /// - 2nd argument: variable index \f$ \gamma \f$
-        /// - 3rd argument: species index \f$ \mathfrak{s} \f$
-        /// - 4th argument: DG polynomial degree \f$ k \f$
+        /// - 1st argument: cell index $j$
+        /// - 2nd argument: variable index $\gamma$
+        /// - 3rd argument: species index f$\mathfrak{s}$
+        /// - 4th argument: DG polynomial degree $k$
         /// </summary>
         public Func<int, int, int, int, bool> CombinedFilter {
             get {

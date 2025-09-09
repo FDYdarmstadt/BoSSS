@@ -29,7 +29,7 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
-    /// The triangular reference element \f$ K^{\textrm{tri}}  \f$.
+    /// The triangular reference element $K^{\textrm{tri}}$.
     /// </summary>
     /// <remarks>
     /// The vertices in the reference space are:

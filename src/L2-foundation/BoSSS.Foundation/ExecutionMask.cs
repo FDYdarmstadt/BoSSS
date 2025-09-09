@@ -358,7 +358,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \cap \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \cap \mathrm{otherMask}$ 
         /// </returns>
         public T Intersect<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType())
@@ -388,7 +388,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \setminus \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \setminus \mathrm{otherMask}$ 
         /// </returns>
         public T Except<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType()) 
@@ -460,7 +460,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// A new execution mask representing
-        /// \f$ \mathrm{this} \cup \mathrm{otherMask}\f$ 
+        /// $\mathrm{this} \cup \mathrm{otherMask}$ 
         /// </returns>
         public T Union<T>(T otherMask) where T : ExecutionMask {
             if (this.GetType() != otherMask.GetType()) 

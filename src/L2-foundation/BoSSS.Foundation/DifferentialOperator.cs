@@ -1720,7 +1720,7 @@ namespace BoSSS.Foundation {
             /// \f[
             ///    \mathcal{M} U + \mathcal{B}
             /// \f]
-            /// this computes only the vector \f$ \mathcal{B} \f$
+            /// this computes only the vector $\mathcal{B}$
             /// </summary>
             /// <param name="AffineOffset"></param>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {

@@ -80,8 +80,8 @@ namespace BoSSS.Foundation.XDG {
         ///   <item>3rd index: spatial direction of 1st derivation, <em>k</em></item>
         ///   <item>4th index: spatial direction of 2nd derivation, <em>l</em></item>
         /// </list>
-        /// So, the entry [j,m,k,l] = \f$ \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)\f$ 
-        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th vector in the nodeset <paramref name="NS"/>,
+        /// So, the entry [j,m,k,l] = $\frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)$ 
+        /// where $\vec{xi}_m$  is the <em>m</em>-th vector in the nodeset <paramref name="NS"/>,
         /// in the <em>j</em>-th cell.
         /// </param>
         /// <remarks>
@@ -92,7 +92,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Evaluates the total curvature of this field, i.e.
-        /// \f$  \mathrm{div} \left( \frac{ \varphi }{ \nabla_h \varphi } \right) \f$.
+        /// $\mathrm{div} \left( \frac{ \varphi }{ \nabla_h \varphi } \right)$.
         /// </summary>
         /// <param name="j0"></param>
         /// <param name="Len"></param>
@@ -104,8 +104,8 @@ namespace BoSSS.Foundation.XDG {
         ///   <item>3rd index: spatial direction of 1st derivation, <em>k</em></item>
         ///   <item>4th index: spatial direction of 2nd derivation, <em>l</em></item>
         /// </list>
-        /// So, the entry [j,m,k,l] = \f$ \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)\f$ 
-        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th vector in the nodeset <paramref name="NodeSet"/>,
+        /// So, the entry [j,m,k,l] = $\frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)$ 
+        /// where $\vec{xi}_m$  is the <em>m</em>-th vector in the nodeset <paramref name="NodeSet"/>,
         /// in the <em>j</em>-th cell.
         /// </param>
         /// <remarks>

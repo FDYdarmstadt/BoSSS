@@ -1652,12 +1652,12 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Tests if a species  \f$\mathfrak{s}\f$ is actually \f$ \emph{present} \f$ in some cell \f$K_{\text{\tt jCell}}\f$,
+            /// Tests if a species $\mathfrak{s}$ is actually $\emph{present}$ in some cell $K_{\text{\tt jCell}}$,
             /// i.e. if 
             /// the measure of the species in the cell is positive, i.e. 
-            /// \f[
+            /// \[
             ///   \int_{K_{\text{\tt jCell}} \cap \mathfrak{s} } 1 \dV > 0 
-            /// \f]
+            /// \]
             /// </summary>
             /// <param name="speciesId">The id of species \mathfrak{s}.</param>
             /// <param name="jCell">a cell index</param>
