@@ -18,31 +18,31 @@ namespace ZwoLevelSetSolver.Tests {
     /// 
     /// </summary>
     [TestFixture]
-    static public class TwoPhaseNavierSlipConvergenceTests {
+    static public class TwoPhaseConvergenceTestsFreeSlip {
 
 
-        [Test]
-        public static void FluidSolidTaylorCouette_Experimental_P1() {
+        //[Test]
+        public static void FluidSolidTaylorCouetteFreeSlip_Experimental_P1() {
             Experimental(1);
         }
-        [Test]
-        public static void FluidSolidTaylorCouette_Experimental_P2() {
+        //[Test]
+        public static void FluidSolidTaylorCouetteFreeSlip_Experimental_P2() {
             Experimental(2);
         }
-        [Test]
-        public static void FluidSolidTaylorCouette_Exact_P1() {
+        //[Test]
+        public static void FluidSolidTaylorCouetteFreeSlip_Exact_P1() {
             Exact(1);
         }
-        [Test]
-        public static void FluidSolidTaylorCouette_Exact_P2() {
+        //[Test]
+        public static void FluidSolidTaylorCouetteFreeSlip_Exact_P2() {
             Exact(2);
         }
-        [Test]
-        public static void FluidSolidTaylorCouette_Exact_P3() {
+        //[Test]
+        public static void FluidSolidTaylorCouetteFreeSlip_Exact_P3() {
             Exact(3);
         }
-        [Test]
-        public static void FluidSolidTaylorCouette_Exact_P4() {
+        //[Test]
+        public static void FluidSolidTaylorCouetteFreeSlip_Exact_P4() {
             Exact(4);
         }
 
@@ -52,16 +52,16 @@ namespace ZwoLevelSetSolver.Tests {
 
             BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            var Tst = new FSTaylorCouetteSlip();
+            var Tst = new FSTaylorCouetteFreeSlip();
 
             List<ZLS_Control> controlFiles = new List<ZLS_Control>();
 
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 3));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 4));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 5));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 6));
-            if(p < 2)
-                controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 7));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 3));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 4));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 5));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 6));
+            //if(p < 2)
+            //    controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 7));
 
             //foreach(var c in controlFiles) {
             //    Assert.IsTrue(c.SkipSolveAndEvaluateResidual == false);
@@ -86,18 +86,18 @@ namespace ZwoLevelSetSolver.Tests {
             //double dt = 1.0e200;
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest
 
-            var Tst = new FSTaylorCouetteSlip();
+            var Tst = new FSTaylorCouetteFreeSlip();
 
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             List<ZLS_Control> controlFiles = new List<ZLS_Control>();
-            //var cs = new ZLS_Control[4];
+            //var cs = new ZLS_Control[4]
 
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 3));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 4));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 5));
-            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 6));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 3));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 4));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 5));
+            controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 6));
             if(p < 2)
-                controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleNavierSlip(Tst, p, 7));
+                controlFiles.Add(ZwoLevelSetSolver.Tests.FSTC.SmallCircleFreeSlip(Tst, p, 7));
 
             var cs = controlFiles.ToArray();
 

@@ -18,7 +18,7 @@ namespace ZwoLevelSetSolver.Tests {
     /// Two-phase Taylor Couette flow, used also as a testscase in publication:
     /// Kummer, F. (2017). Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization. International Journal for Numerical Methods in Engineering, 109(2):259–289
     /// </summary>
-    public class FSTaylorCouetteSlip : IZLSTest {
+    public class FSTaylorCouetteFreeSlip : IZLSTest {
 
         public enum Mode {
 
@@ -36,7 +36,7 @@ namespace ZwoLevelSetSolver.Tests {
         }
 
 
-        public FSTaylorCouetteSlip() {
+        public FSTaylorCouetteFreeSlip() {
 
             double Ra = double.NaN, Ri = double.NaN, Rm = double.NaN;
             double rhoA, rhoB, muA, muB, sigma;
@@ -206,7 +206,7 @@ namespace ZwoLevelSetSolver.Tests {
                 //return _C1A * r + _C2A / r;
                 //return 0.989246814183938 * r - 1.956987256735753 / r;
                 //return 0.871863705195938 * r - 1.487454820783754 / r;
-                return 0.678809192607663 * r - 0.715236770430651 / r;
+                return 0.500000000000000 * r - 0.000000000000000 / r;
             }
 
             /// <summary>
@@ -230,7 +230,7 @@ namespace ZwoLevelSetSolver.Tests {
             public double pA(double r) {
                 //return 0.636096018592496 * r.Pow2() - 2.489369429966983 / (r.Pow2()) - 5.033452863723462 * Math.Log(r) + 1.717144755155103; //Didn't consider the pressure jump between fluid and solid. 
                 //return 0.494095108284694 * r.Pow2() - 1.438139198517339 / (r.Pow2()) - 3.371830465536219 * Math.Log(r) + 0.900495009763055; //Didn't consider the pressure jump between fluid and solid. 
-                return 0.299508247979634 * r.Pow2() - 0.332516364554444 / (r.Pow2()) - 1.262324166114291 * Math.Log(r) + 0.014910424673196; //Didn't consider the pressure jump between fluid and solid. 
+                return 0.162500000000000 * r.Pow2() - 0.000000000000000 / (r.Pow2()) - 0.000000000000000 * Math.Log(r) - 0.297717351942814; //Didn't consider the pressure jump between fluid and solid. 
             }
 
             /// <summary>
@@ -267,7 +267,7 @@ namespace ZwoLevelSetSolver.Tests {
                 //return _C1B * r + _C2B / r;
                 //return 0.150775722130773 * r - 0.037693930532693 / r;
                 //return 0.123392089093746 * r - 0.030848022273437 / r;
-                return 0.078355507813557 * r - 0.019588876953389 / r;
+                return 0.036642135623731 * r - 0.009160533905933 / r;
             }
 
 
