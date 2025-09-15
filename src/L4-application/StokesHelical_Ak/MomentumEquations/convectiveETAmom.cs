@@ -119,7 +119,13 @@ namespace StokesHelical_Ak.MomentumEquations {
             // Dritter Term aus GLeichung 4.9
             // Zusammenfassung der Teilterme
             // Vorzeichen nach Acc nicht ganz klar! += oder -= 
-            Acc += ((Flux - Influx) * V_IN - (Flux - Outflux) * V_OT) * f_function; 
+            Acc += ((Flux - Influx) * V_IN - (Flux - Outflux) * V_OT) * f_function;
+
+            if(Globals.ConcetiveTerms_Add_on_Term_2 == true) {
+                Acc -= 0.5 * (ur0_IN + ur0_OT) * (uetaVel_IN - uetaVel_OT) * 0.5 * (V_IN + V_OT) * inp.Normal[0];
+                Acc -= 0.5 * (uxi0_IN + uxi0_OT) * (uetaVel_IN - uetaVel_OT) * 0.5 * (V_IN + V_OT) * inp.Normal[1];
+            }
+
             return Acc;
         }
 
@@ -194,7 +200,10 @@ namespace StokesHelical_Ak.MomentumEquations {
                 // Dritter Term aus GLeichung 4.9
                 Acc += (Flux - Influx) * Vin;
                 // Boudary, deswegen nur die Innenwerte!
-
+                if(Globals.ConcetiveTerms_Add_on_Term_2 == true) {
+                    Acc -= 0.5 * ur0_IN   * uetaVel_IN * Vin * inp.Normal[0];
+                    Acc -= 0.5 * uxi0_IN  * uetaVel_IN * Vin * inp.Normal[1];
+                }
 
             } else if (Globals.BoundaryType(inp.X) == BoundaryTypeE.Dirichlet) {
 
@@ -214,6 +223,10 @@ namespace StokesHelical_Ak.MomentumEquations {
                 // Dritter Term aus GLeichung 4.9
                 Acc += (Flux - Influx) * Vin * f_function;
                 // Boudary, deswegen nur die Innenwerte!
+                if(Globals.ConcetiveTerms_Add_on_Term_2 == true) {
+                    Acc -= 0.5 * ur0_IN * uetaVel_IN * Vin * inp.Normal[0];
+                    Acc -= 0.5 * uxi0_IN * uetaVel_IN * Vin * inp.Normal[1];
+                }
             }
 
             return Acc;
