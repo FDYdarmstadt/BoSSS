@@ -201,8 +201,8 @@ namespace StokesHelical_Ak.MomentumEquations {
                 Acc += (Flux - Influx) * Vin;
                 // Boudary, deswegen nur die Innenwerte!
                 if(Globals.ConcetiveTerms_Add_on_Term_2 == true) {
-                    Acc -= 0.5 * ur0_IN   * uetaVel_IN * Vin * inp.Normal[0];
-                    Acc -= 0.5 * uxi0_IN  * uetaVel_IN * Vin * inp.Normal[1];
+                    Acc -= ur0_IN   * uetaVel_IN * Vin * inp.Normal[0];
+                    Acc -= uxi0_IN  * uetaVel_IN * Vin * inp.Normal[1];
                 }
 
             } else if (Globals.BoundaryType(inp.X) == BoundaryTypeE.Dirichlet) {
@@ -224,8 +224,8 @@ namespace StokesHelical_Ak.MomentumEquations {
                 Acc += (Flux - Influx) * Vin * f_function;
                 // Boudary, deswegen nur die Innenwerte!
                 if(Globals.ConcetiveTerms_Add_on_Term_2 == true) {
-                    Acc -= 0.5 * ur0_IN * uetaVel_IN * Vin * inp.Normal[0];
-                    Acc -= 0.5 * uxi0_IN * uetaVel_IN * Vin * inp.Normal[1];
+                    Acc -= ur0_IN * uetaVel_IN * Vin * inp.Normal[0];
+                    Acc -= uxi0_IN * uetaVel_IN * Vin * inp.Normal[1];
                 }
             }
 
