@@ -245,7 +245,7 @@ namespace BoSSS.Foundation {
         /// the number of degrees-of-freedom per cell, 
         /// if <see cref="MinimalLength"/>==<see cref="MaximalLength"/>; otherwise an exception.
         /// </summary>
-        public int Length {
+        public virtual int Length {
             get {
                 if (MinimalLength != MaximalLength)
                     throw new NotSupportedException("not supported on variable-length basis objects");
