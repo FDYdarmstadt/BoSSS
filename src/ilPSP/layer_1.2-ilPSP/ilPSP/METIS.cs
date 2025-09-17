@@ -98,12 +98,16 @@ namespace ilPSP.Kraypis {
         }
 
 
-        static public METIS.ReturnCodes SETDEFAULTOPTIONS(int[] options) {
+        static public METIS.ReturnCodes SETDEFAULTOPTIONS2(int[] options) {
             //return m_METIS.SetDefaultOptions(options);
             options.SetAll(-1);
             return METIS.ReturnCodes.METIS_OK;
         }
 
+
+        static public int SETDEFAULTOPTIONS(int[] options) {
+            return m_METIS.SetDefaultOptions(options);
+        }
 
     }
 
@@ -133,7 +137,7 @@ namespace ilPSP.Kraypis {
 #pragma warning disable 649
         _PartGraphKway METIS_PartGraphKway;
         _PartGraphRecursive METIS_PartGraphRecursive;
-        //_SetDefaultOptions METIS_SetDefaultOptions;
+        _SetDefaultOptions METIS_SetDefaultOptions;
 #pragma warning restore 649
 
         /// <summary>
@@ -164,17 +168,17 @@ namespace ilPSP.Kraypis {
             get { return METIS_PartGraphRecursive; }
         }
 
-        
-        // <summary>
-        // see METIS manual;
-        // </summary>
-        //public unsafe delegate int _SetDefaultOptions(int[] options);
-        /*
+
+        /// <summary>
+        /// see METIS manual;
+        /// </summary>
+        public unsafe delegate int _SetDefaultOptions(int[] options);
+
         public unsafe _SetDefaultOptions SetDefaultOptions
         {
             get { return METIS_SetDefaultOptions; }
         }
-        */
+
     }
-    
+
 }
