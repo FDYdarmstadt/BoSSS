@@ -2081,7 +2081,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 		void WriteDebug(int iter, double res, string text) {
-			CurrentTrace.StdoutOnAllRanks();
+			//CurrentTrace.StdoutOnAllRanks();
 
             int iLevel = TpLevel;			
 			if (iLevel >= 0)
