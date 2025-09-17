@@ -315,5 +315,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public override int GetMinimalLength(int p) {
             return 0;
         }
+
+        override internal bool ReqModeIndexTrafo {
+            get {
+                return true;
+            }
+        }
+
+
+        /// <summary>
+        /// for XDG, the cell mode index <paramref name="n"/> may not be equal
+        /// in the full and the aggregated grid. This method performs the transformation.
+        /// </summary>
+        internal override int N_Murks(int j, int n, int N) {
+            Debug.Assert(j >= 0 && j < this.DGBasis.GridDat.iLogicalCells.Count);
+            Debug.Assert(n >= 0 && n < this.TraceDGBasis.GetLength(j));
+
+            //int[,] sim = this.SpeciesIndexMapping[j];
+            //if(sim == null) {
+            //    Debug.Assert(this.NoOfSpecies[j] == 1);
+            //    return n;
+            //} else {
+            //    int N0 = N / this.NoOfSpecies[j];
+            //    Debug.Assert(N0 * this.NoOfSpecies[j] == N);
+            //    int iSpc = n / N0;
+            //    int nx = n - iSpc * N0;
+            //    Debug.Assert(sim.GetLength(1) == 1);
+            //    int iSpcQ = sim[iSpc, 0];
+            //    return iSpcQ * N0 + nx;
+            //}
+            return n;
+        }
     }
 }

@@ -1068,7 +1068,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
             if (DGBasis.MaximalLength == 0)
                 throw new Exception(" DGBasis.MaximalLength nee das ist 0");
-            return this.GetLength(0, p);
+
+
+            //return this.GetLength(0, p);
+            GetNp();
+            if(m_Lengths[p] == 0)
+                throw new Exception("jkfafsasf");
+            return m_Lengths[p];
         }
 
         /// <summary>
@@ -1076,7 +1082,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public virtual int GetMinimalLength(int p) {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
-            return this.GetLength(0, p);
+            
+            //return this.GetLength(0, p);
+            GetNp();
+            if(m_Lengths[p] == 0)
+                throw new Exception("jkfafsasf");
+            return m_Lengths[p];
         }
 
         /// <summary>

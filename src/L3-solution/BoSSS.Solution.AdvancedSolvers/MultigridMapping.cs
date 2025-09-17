@@ -452,8 +452,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int LocalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
             int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
             int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
-            int Np_Spec = Np_tot / NoOfSpec;
-            int n_agg=jSpec*Np_Spec + n;
+            int n_agg;
+            if(Np_tot == 0) {
+                n_agg = 0;
+            } else {
+                int Np_Spec = Np_tot / NoOfSpec;
+                n_agg = jSpec * Np_Spec + n;
+            }
+
 
             return LocalUniqueIndex(ifld, jCell, n_agg);
         }
@@ -461,8 +467,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public long GlobalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
             int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
             int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
-            int Np_Spec = Np_tot / NoOfSpec;
-            int n_agg = jSpec * Np_Spec + n;
+            //Original code
+            //int Np_Spec = Np_tot / NoOfSpec;
+            //int n_agg = jSpec * Np_Spec + n;
+
+            int n_agg;
+            if(Np_tot == 0) {
+                n_agg = 0;
+            } else {
+                int Np_Spec = Np_tot / NoOfSpec;
+                n_agg = jSpec * Np_Spec + n;
+            }
 
             return GlobalUniqueIndex(ifld, jCell, n_agg);
         }
@@ -719,7 +734,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(b is BoSSS.Foundation.XDG.XDGBasis) {
                     if(!b.IsSubBasis(((XdgAggregationBasis)(this.AggBasis[iVar])).XDGBasis))
                         throw new ArgumentException();
-                } else {
+                }else if (b is BoSSS.Foundation.XDG.TraceDGBasis) {
+                    if(!b.IsSubBasis(((TraceDGAggregationBasis)(this.AggBasis[iVar])).TraceDGBasis))
+                        throw new ArgumentException();
+                }
+                else {
                     if(!b.IsSubBasis(this.AggBasis[iVar].DGBasis))
                         throw new ArgumentException();
                 }
@@ -1076,6 +1095,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             for(int iVar = 0; iVar < NoOfVariables; iVar++) {
                 if(AggBasis[iVar] is XdgAggregationBasis xb)
                     return xb.GetNoOfSpecies(jCell);
+                if(AggBasis[iVar] is TraceDGAggregationBasis tb)
+                    return tb.GetNoOfSpecies(jCell);
             }
             return 1;
             //if(AggBasis[0] is XdgAggregationBasis xb)
