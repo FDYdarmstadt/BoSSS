@@ -602,7 +602,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 StdoutOnlyOnRank0 = false;
                 //tr.StdoutOnAllRanks();
 
@@ -806,18 +806,17 @@ namespace ilPSP {
 
                 tr.Info($"R{MPIEnv.MPI_Rank}: TPL thread pinning: {PerformTPLthreadPinning}, OMP thread pinning: {PerformOMPthreadPinning}");
 
-                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity before OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD); // wait for all ranks to finish setting up the CPU affinity
+                //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity before OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
+                //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD); // wait for all ranks to finish setting up the CPU affinity
 
                 BLAS.ActivateOMP();
                 LAPACK.ActivateOMP();
                 PinTPLThreads();
-                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
+                //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
 
                 PinOMPthreads();
-                StdoutOnlyOnRank0 = false;
-                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
                 StdoutOnlyOnRank0 = true;
+                tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
 
             }
         }
