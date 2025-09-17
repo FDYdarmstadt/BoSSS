@@ -895,6 +895,118 @@ namespace StokesHelical_Ak.TestTransient {
             }
 
         }
+
+
+        /// <summary>
+        /// Full Navier Stokes Hagen Poiseulle flow (aka. Pipe flow),
+        /// With 0,1% White Noise over laminar Solutin
+        /// Reynolds 10
+        /// </summary>
+        /// <remarks>
+        /// </remarks>
+        [Test]
+        static public void Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1([Values(3)] int pOrder = 3) {
+
+            double maxAmpitude = 40;
+            var tempDB = DatabaseInfo.CreateOrOpen("tempDB");
+            var ctrl = StokesHelical_Ak.Hagen_Poiseulle.HagenPoiseulle(degree: pOrder, noOfCellsR: 64, noOfCellsXi: 64, numOfTimesteps: 1000, deltaT: 0.0001, _DbPath: tempDB.Path, bdfOrder: 1, MaxAmp: maxAmpitude);
+
+            double a = Globals.a;
+            double b = Globals.b;
+            double nu = Globals.nu;
+            Globals.ConcetiveTerms_Add_on_Term_2 = true;
+            ctrl.savetodb = true;
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+            ctrl.ImmediatePlotPeriod = -1;
+
+
+            var random = 0.001 * maxAmpitude;
+            // Initial Values
+            // ==============
+            string InitialValue_ur_p =
+            "static class MyInitialValue_ur_p {" +
+            "static Random random = new Random(0);" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    double randomValue = (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
+            "   return randomValue;" +
+            " }" +
+            "}";
+            string InitialValue_uxi =
+            "static class MyInitialValue_uxi {" +
+            "static Random random = new Random(0);" +
+            " public static double GenerateRandomValue(double[] X, double t) {" +
+            "    double randomValue_and_lami = - " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+            "     * (" + (a * a) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (4 * " + nu + ")" +
+            "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
+            "   return randomValue_and_lami;" +
+            " }" +
+            "}";
+            string InitialValue_ueta =
+             "static class MyInitialValue_ueta {" +
+             "static Random random = new Random(0);" +
+             " public static double GenerateRandomValue(double[] X, double t) {" +
+             "    double randomValue_and_lami = " + maxAmpitude + " * (X[0] / (Math.Sqrt(" + (a * a) + " * X[0] * X[0] + " + (b * b) + ")))" +
+             "     * (" + (a * b) + " * (" + (ctrl.rMax * ctrl.rMax) + " - X[0] * X[0])) / (X[0] * 4 * " + nu + ")" +
+             "     + (random.NextDouble() - 0.5) * Math.Sin(X[1]) * Math.Sin((X[0]- " + ctrl.rMin + ") * Math.PI * 0.5 /( " + ctrl.rMax + " - " + ctrl.rMin + "));" +
+             "   return randomValue_and_lami;" +
+             " }" +
+             "}";
+
+
+            var ur0_p0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ur_p.GenerateRandomValue", true, InitialValue_ur_p);
+            var uxi0 = new BoSSS.Solution.Control.Formula("MyInitialValue_uxi.GenerateRandomValue", true, InitialValue_uxi);
+            var ueta0 = new BoSSS.Solution.Control.Formula("MyInitialValue_ueta.GenerateRandomValue", true, InitialValue_ueta);
+
+
+            ctrl.AddInitialValue("Pressure", ur0_p0);
+            ctrl.AddInitialValue("ur", ur0_p0);
+            ctrl.AddInitialValue("ueta", ueta0);
+            ctrl.AddInitialValue("uxi", uxi0);
+
+            using(var solverStat = new HelicalMain()) {
+                solverStat.Init(ctrl);
+                solverStat.RunSolverMode();
+
+                SinglePhaseField exSol_ur = solverStat.ur.CloneAs();
+                SinglePhaseField exSol_ueta = solverStat.ueta.CloneAs();
+                SinglePhaseField exSol_uxi = solverStat.uxi.CloneAs();
+                SinglePhaseField exSol_pressure = solverStat.Pressure.CloneAs();
+                SinglePhaseField pressureError = solverStat.Pressure.CloneAs();
+
+                // Exact Solution
+                Func<double[], double> uxi = (X) => -maxAmpitude * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * a * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (4 * nu);
+                Func<double[], double> ueta = (X) => maxAmpitude * (X[0] / (Math.Sqrt(a * a * X[0] * X[0] + b * b))) * (a * b * (solverStat.Control.rMax * solverStat.Control.rMax - X[0] * X[0])) / (X[0] * 4 * nu);
+                Func<double[], double> ur = (X) => 0;
+                Func<double[], double> pressure = (X) => 0;
+
+                exSol_ur.ProjectField(ur);
+                exSol_ueta.ProjectField(ueta);
+                exSol_uxi.ProjectField(uxi);
+                pressureError.ProjectField(pressure);
+                pressureError.Acc(-1, solverStat.Pressure);
+
+                double ur_L2 = solverStat.ur.L2Error(exSol_ur);
+                double uxi_L2 = solverStat.uxi.L2Error(exSol_uxi);
+                double ueta_L2 = solverStat.ueta.L2Error(exSol_ueta);
+
+                double psiErrorMean = pressureError.GetMeanValueTotal(null);
+                pressureError.AccConstant(-psiErrorMean);
+
+                double pressure_L2 = pressureError.L2Norm();
+                Console.WriteLine($"ur       L2 Error/maxAmpitude: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"uxi      L2 Error/maxAmpitude: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"ueta     L2 Error/maxAmpitude: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Console.WriteLine($"pressure L2 Error/maxAmpitude: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+
+                Assert.LessOrEqual(ur_L2 / maxAmpitude, 1.0e-5, $"ur L2 Error/maxAmpitude out of range: {ur_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(uxi_L2 / maxAmpitude, 1.0e-5, $"uxi L2 Error/maxAmpitude out of range: {uxi_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(ueta_L2 / maxAmpitude, 1.0e-4, $"ueta L2 Error/maxAmpitude out of range: {ueta_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+                Assert.LessOrEqual(pressure_L2 / maxAmpitude, 1.0e-4, $"pressure L2 Error/maxAmpitude out of range: {pressure_L2 / maxAmpitude:0.###e-00} (should be close to 0.0)");
+            }
+
+        }
+
         #endregion
 
         #region Centrifugal Flow

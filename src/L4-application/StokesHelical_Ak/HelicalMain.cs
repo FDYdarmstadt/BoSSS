@@ -67,6 +67,7 @@ namespace StokesHelical_Ak {
             //}
             //StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
             // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix(3);
+            StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1(3);
             ////c.ImmediatePlotPeriod = 1;
             ////c.NoOfTimesteps = 5;
             //var solver = new HelicalMain();
