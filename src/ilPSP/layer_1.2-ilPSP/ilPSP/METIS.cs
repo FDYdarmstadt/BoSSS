@@ -100,7 +100,7 @@ namespace ilPSP.Kraypis {
 
         static public METIS.ReturnCodes SETDEFAULTOPTIONS(int[] options) {
             //return m_METIS.SetDefaultOptions(options);
-            options.SetAll(-1);
+            options.SetAll(0);
             return METIS.ReturnCodes.METIS_OK;
         }
 
