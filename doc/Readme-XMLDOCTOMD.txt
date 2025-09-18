@@ -1,6 +1,10 @@
 File: XMLDOCTOMD.py
-
 Destination: d:\Users\monzer\Documents\BoSSS-master\public\doc
+
+To run XMLDOCTOMD from cmd line:
+cd /d/Users/monzer/Documents/BoSSS-master/public/doc
+python XMLDOCTOMD.py 1      					------------------  Based on class
+python XMLDOCTOMD.py 2      					------------------  Based on Namespace
 
 Functions: 
    Converts .XMLDOC to .md documents having 2 output options:
@@ -15,7 +19,7 @@ How it works?
       1. Class mode
       2. Namespace mode
    The tool scans the XML documentation files in:[XML_DIR = r'../src'] the directory where all the XMLDOC are placed
-   and convert all this XMLDOC to Markdown according to the selected mode and writes the results to: [OUTPUT_DIR = r'./xmldoc-to-md/Trial6]
+   and convert all this XMLDOC to Markdown according to the selected mode and writes the results to: [OUTPUT_DIR = r'./xmldoc-to-md/Trial5]
 
    If class mode (1) is chosen, conversion of XMLDOC → Markdown based on classes takes place, which is used for the gitlab documentation.
       Procedure to Publish to GitLab Wiki:

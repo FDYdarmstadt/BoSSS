@@ -15,11 +15,11 @@ import argparse
 # ---------------- Paths ----------------
 # Relative Path:
 XML_DIR = r'../src'
-OUTPUT_DIR = r'./xmldoc-to-md/Trial6'
+OUTPUT_DIR = r'./xmldoc-to-md/Trial5'
 
 # Absolute Path:
 # XML_DIR = r"d:\\Users\\monzer\\Documents\\BoSSS-master\\public\\src"
-# OUTPUT_DIR = r"d:\\Users\\monzer\\Documents\\BoSSS-master\\public\\doc\\xmldoc-to-md\\Trial2"
+# OUTPUT_DIR = r"d:\\Users\\monzer\\Documents\\BoSSS-master\\public\\doc\\xmldoc-to-md\\Trial5"
 
 # Resolve relative paths against this script
 BASE_DIR = Path(__file__).resolve().parent
@@ -191,6 +191,30 @@ def index_class_types(xml_files):  # Pass 1: one file per T:
                 summaries_text = extract_all_summaries(member)
                 if summaries_text:
                     entry.append(f"**Summary:** {summaries_text}")
+
+                t_remarks = member.find("remarks")
+                if t_remarks is not None:
+                    remarks_text = extract_text_crossref(t_remarks).lstrip().rstrip()
+                    if remarks_text:
+                        entry.append("")  # new paragraph before each remark
+                        entry.append(f"**Remark:**\n{remarks_text}")
+
+                for param in member.findall("param"):
+                    pname = param.attrib.get("name", "")
+                    ptext = extract_text_crossref(param).strip()
+                    first_line = ptext.lstrip().splitlines()[0] if ptext.strip() else ""
+                    entry.append("")  # new paragraph before each parameter
+                    if first_line.startswith("-") or first_line.startswith("1st index") or "\n- " in ptext:
+                        entry.append(f"**Parameter:** `{pname}` -\n{ptext}")
+                    else:
+                        entry.append(f"**Parameter:** `{pname}` - {ptext}")
+
+                t_returns = member.find("returns")
+                if t_returns is not None:
+                    returns_text = extract_text_crossref(t_returns).lstrip().rstrip()
+                    entry.append("")  # new paragraph before each return
+                    entry.append(f"**Returns:**\n{returns_text}")
+
                 class_data[type_full] = entry
         except Exception as e:
             print(f"❌ Error indexing types in {xml_path}: {e}")
@@ -237,6 +261,7 @@ def attach_members_to_types(xml_files):  # Pass 2: attach F/P/M to existing T: p
                         pname = param.attrib.get("name", "")
                         ptext = extract_text_crossref(param).strip()
                         first_line = ptext.lstrip().splitlines()[0] if ptext.strip() else ""
+                        section.append("")  # new paragraph before each parameter
                         if first_line.startswith("-") or first_line.startswith("1st index") or "\n- " in ptext:
                             section.append(f"**Parameter:** `{pname}` -\n{ptext}")
                         else:
@@ -244,11 +269,21 @@ def attach_members_to_types(xml_files):  # Pass 2: attach F/P/M to existing T: p
                     returns = member.find("returns")
                     if returns is not None:
                         returns_text = extract_text_crossref(returns).lstrip().rstrip()
+                        section.append("")  # new paragraph before each returns
                         section.append(f"**Returns:**\n{returns_text}")
                     remarks = member.find("remarks")
                     if remarks is not None:
                         remarks_text = extract_text_crossref(remarks).lstrip().rstrip()
-                        section.append(f"**Remark:**\n{remarks_text}")
+                        if remarks_text:
+                            section.append("")  # new paragraph before each remark
+                            section.append(f"**Remark:**\n{remarks_text}")
+                elif kind in ("F", "P"):
+                    remarks = member.find("remarks")
+                    if remarks is not None:
+                        remarks_text = extract_text_crossref(remarks).lstrip().rstrip()
+                        if remarks_text:
+                            section.append("")  # new paragraph before each remark
+                            section.append(f"**Remark:**\n{remarks_text}")
 
                 class_data[class_name].extend(section)
 

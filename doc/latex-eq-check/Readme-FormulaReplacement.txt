@@ -1,7 +1,10 @@
 File: FormulaReplacement.py
-
 Destination: d:\Users\monzer\Documents\BoSSS-master\public\doc\latex-eq-check
 
+To run FormulaReplacement from cmd line:
+cd /d/Users/monzer/Documents/BoSSS-master/public/doc/latex-eq-check
+python FormulaReplacement.py 1   		------------------  For Checking Formulas (scan .XMLDOC and save .tex report)
+python FormulaReplacement.py 2   		------------------  For Markdown Equation Delimiter Conversion required for GitLab documentation rendering (fixing delimiters in .md files)
 
 Functions: It have two options
 
@@ -21,7 +24,7 @@ Functions: It have two options
 
 (B) Markdown Equation Delimiter Conversion required for GitLab documentation rendering (Overwrites the original .md files, does not save them into different directory)
 	It is needed to convert the equation delimeters of the original .md files (extracted from the converted Markdown based on classes from the XMLDOCTOMD.py:
-	[OUTPUT_DIR = r'./xmldoc-to-md/Trial6]), to the laTeX equation delimiters required for GitLab documentation rendering.
+	[OUTPUT_DIR = r'./xmldoc-to-md/Trial5]), to the laTeX equation delimiters required for GitLab documentation rendering.
 
 	How it works? Once you run the tool, choose option 2 [Markdown Equation Delimiter Conversion required for GitLab documentation rendering]
 	1. It Process all Markdown (.md) files to fix equation delimiters.
