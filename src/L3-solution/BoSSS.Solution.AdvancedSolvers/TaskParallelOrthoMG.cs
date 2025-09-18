@@ -526,8 +526,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 50; // Maximum imbalance of 5 percent (this is the default kway clustering)
                                                                                // 3 percent seems to be to strict for some test cases
 					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
+                    options[(int)METIS.OptionCodes.METIS_OPTION_SEED] = 22; // fixed seed
 
-					int J = m_xadj.Length - 1;
+                    int J = m_xadj.Length - 1;
 					part = new int[J];
 					Debug.Assert(m_xadj.Where(idx => idx > m_adj.Length).Count() == 0);
 					Debug.Assert(m_adj.Where(j => j >= J).Count() == 0);
