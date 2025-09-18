@@ -24,14 +24,6 @@ using System.Runtime.InteropServices;
 
 namespace MPI.Wrappers.Utils {
 
-    [AttributeUsage(AttributeTargets.Field)]
-    public class NativeSymbolAttribute : Attribute {
-        public string SymbolName { get; }
-        public NativeSymbolAttribute(string symbolName) {
-            SymbolName = symbolName;
-        }
-    }
-
     /// <summary>
     /// Tries to do the impossible: platform independent loading of dynamic libraries.<br/> 
     /// </summary>
@@ -385,8 +377,7 @@ namespace MPI.Wrappers.Utils {
                     m_LoadedSymbols.Add(fld);
 
                     // get function name in DLL
-                    //string UnmanagedName = NameMangling(fld.Name);
-                    string UnmanagedName = fld.GetCustomAttribute<NativeSymbolAttribute>()?.SymbolName ?? NameMangling(fld.Name);
+                    string UnmanagedName = NameMangling(fld.Name);
                     Info("Trying to load '" + fld.Name + "' as '" + UnmanagedName + "' ...");
 
                     // get function pointer
