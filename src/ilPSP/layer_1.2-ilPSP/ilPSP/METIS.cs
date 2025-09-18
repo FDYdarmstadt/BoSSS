@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Runtime.InteropServices;
 using ilPSP.Utils;
 using MPI.Wrappers.Utils;
+using System;
+using System.Runtime.InteropServices;
+using static ilPSP.Kraypis.UnsafeMETIS;
 
 namespace ilPSP.Kraypis {
 
@@ -80,10 +81,44 @@ namespace ilPSP.Kraypis {
                                                 int[] adjwgt, ref int nparts, float[] tpwgts,
                                                 float[] ubvec, int[] options, ref int objval, int[] part)
         {
-            return (METIS.ReturnCodes) m_METIS.PartGraphKway(ref nvtxs, ref ncon, xadj,
+            return (METIS.ReturnCodes) PARTGRAPHKWAY64(ref nvtxs, ref ncon, xadj,
                                                 adjncy, vwgt, vsize,
                                                 adjwgt, ref nparts, tpwgts,
                                                 ubvec, options, ref objval, part);
+        }
+
+        public static int PARTGRAPHKWAY64(ref int nvtxs, ref int ncon, int[] xadj, int[] adjncy, int[] vwgt, int[] vsize,
+                                            int[] adjwgt, ref int nparts, float[] tpwgts, float[] ubvec,
+                                            int[] options, ref int objval, int[] part) {
+            // up-convert inputs
+            long l_nvtxs = nvtxs;
+            long l_ncon = ncon;
+
+            long[] lxadj = Array.ConvertAll(xadj, v => (long)v);
+            long[] ladjncy = Array.ConvertAll(adjncy, v => (long)v);
+            long[] lvwgt = vwgt != null ? Array.ConvertAll(vwgt, v => (long)v) : null;
+            long[] lvsize = vsize != null ? Array.ConvertAll(vsize, v => (long)v) : null;
+            long[] ladjwgt = adjwgt != null ? Array.ConvertAll(adjwgt, v => (long)v) : null;
+            long[] lopts = options != null ? Array.ConvertAll(options, v => (long)v) : new long[40];
+
+            long l_obj = 0;
+            var lpart = new long[nvtxs];
+
+            // pass null for tpwgts/ubvec unless you really need them
+            int status = m_METIS.PartGraphKway64(
+                ref l_nvtxs, ref l_ncon,
+                lxadj, ladjncy, lvwgt, lvsize, ladjwgt,
+                ref nparts,
+                tpwgts, ubvec, // keep as float[] if your METIS uses float real_t
+                lopts,
+                ref l_obj,
+                lpart);
+
+            // down-convert outputs
+            objval = checked((int)l_obj);
+            for(int i = 0; i < part.Length; i++) part[i] = checked((int)lpart[i]);
+
+            return status;
         }
 
         static public METIS.ReturnCodes PARTGRAPHRECURSIVE(ref int nvtxs, ref int ncon, int[] xadj,
@@ -91,12 +126,11 @@ namespace ilPSP.Kraypis {
                                                 int[] adjwgt, ref int nparts, double[] tpwgts,
                                                 double[] ubvec, int[] options, ref int objval, int[] part)
         {
-            return (METIS.ReturnCodes) m_METIS.PartGraphRecursive(ref nvtxs, ref ncon, xadj,
+            return (METIS.ReturnCodes)  m_METIS.PartGraphRecursive(ref nvtxs, ref ncon, xadj,
                                                 adjncy, vwgt, vsize,
                                                 adjwgt, ref nparts, tpwgts,
                                                 ubvec, options, ref objval, part);
         }
-
 
         static public METIS.ReturnCodes SETDEFAULTOPTIONS(int[] options) {
             //return m_METIS.SetDefaultOptions(options);
@@ -133,6 +167,10 @@ namespace ilPSP.Kraypis {
 #pragma warning disable 649
         _PartGraphKway METIS_PartGraphKway;
         _PartGraphRecursive METIS_PartGraphRecursive;
+
+        [NativeSymbol("BoSSS_METIS_PartGraphKway")]
+        _PartGraphKway64 METIS_PartGraphKwayLong;
+
         //_SetDefaultOptions METIS_SetDefaultOptions;
 #pragma warning restore 649
 
@@ -149,7 +187,16 @@ namespace ilPSP.Kraypis {
             get { return METIS_PartGraphKway; }
         }
 
-        
+
+        public unsafe delegate int _PartGraphKway64(ref long nvtxs, ref long ncon, long[] xadj,
+                                long[] adjncy, long[] vwgt, long[] vsize,
+                                long[] adjwgt, ref int nparts, float[] tpwgts,
+                                float[] ubvec, long[] options, ref long objval, long[] part);
+
+
+        public unsafe _PartGraphKway64 PartGraphKway64 {
+            get { return METIS_PartGraphKwayLong; }
+        }
 
         /// <summary>
         /// see METIS manual;
@@ -159,12 +206,12 @@ namespace ilPSP.Kraypis {
                                                 int[] adjwgt, ref int nparts, double[] tpwgts,
                                                 double[] ubvec, int[] options, ref int objval, int[] part);
 
-        public unsafe _PartGraphRecursive PartGraphRecursive
-        {
+
+        public unsafe _PartGraphRecursive PartGraphRecursive {
             get { return METIS_PartGraphRecursive; }
         }
 
-        
+
         // <summary>
         // see METIS manual;
         // </summary>
