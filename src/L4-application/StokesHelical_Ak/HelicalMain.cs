@@ -53,7 +53,8 @@ namespace StokesHelical_Ak {
 
             // InitMPI();
             BoSSS.Solution.Application.InitMPI(num_threads: 1);
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+
+            if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 Console.Write("rm");
                 foreach(var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
@@ -62,12 +63,13 @@ namespace StokesHelical_Ak {
                 }
                 Console.WriteLine(";");
             }
+
             //for (int i = 2; i < 6; i++) {
             //    StokesHelical_Ak.TestSpartial.TestSpatial.Steady_SpatialConv_CF_Re_100000_Stokes_with_R0fix(i);
             //}
-            //StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
+            // StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
             // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix(3);
-            StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1(3);
+            StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_2500_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1(3);
             ////c.ImmediatePlotPeriod = 1;
             ////c.NoOfTimesteps = 5;
             //var solver = new HelicalMain();
@@ -546,8 +548,8 @@ namespace StokesHelical_Ak {
                     throw new Exception("Mutiplier BSQ and rMin>10e-6");
                 }
 
-                string nameOf_Plot = "Hel__BDF_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
-                              this.Control.Resolution_R.ToString() + "_DGd_" + this.Control.dg_degree + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
+                string nameOf_Plot = "Hel_BDF_10Noise_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
+                              this.Control.Resolution_R.ToString() + "_Ak_Conv_"+ Globals.ConcetiveTerms_Add_on_Term_2.ToString() + "_DGd_" + this.Control.dg_degree + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
 
                 plt1.PlotFields(nameOf_Plot, physTime, m_IOFields);
 
