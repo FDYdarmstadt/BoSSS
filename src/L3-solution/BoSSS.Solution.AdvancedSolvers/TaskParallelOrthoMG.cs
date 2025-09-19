@@ -522,8 +522,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					METIS.SETDEFAULTOPTIONS(options);
 
 					options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
-					options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
-					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 50; // Maximum imbalance of 5 percent (this is the default kway clustering)
+					options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 5; // This is the default refinement iterations
+					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 100; // Maximum imbalance of 10 percent (this is the default kway clustering)
                                                                                // 3 percent seems to be to strict for some test cases
 					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
                     options[(int)METIS.OptionCodes.METIS_OPTION_SEED] = 22; // fixed seed
