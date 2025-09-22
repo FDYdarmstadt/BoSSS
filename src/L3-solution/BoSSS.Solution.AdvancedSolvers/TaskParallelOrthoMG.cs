@@ -537,7 +537,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							ref J, ref ncon,
 							m_xadj,
 							m_adj.ToArray(),
-                            NoOfParts < 150 ? m_NoOfSpecies : null,
+                            NoOfParts < 65 ? m_NoOfSpecies : null,
 							null,
 							null,
 							ref NoOfParts,
@@ -546,7 +546,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							options,
 							ref edgecut,
 							part);
-                    f.Info($"{MPIrnk}-rank is now broadcasting the distribution map for the level-{Level} into other ranks");
+                    f.Info($"{MPIrnk}-rank is now broadcasting the distribution map for the level-{Level} with J={J} into {NoOfParts} ranks");
                 } else {
                     f.Info($"{MPIrnk}-rank is waiting the distribution map for the level-{Level}");
                     part = null;
