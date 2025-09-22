@@ -494,10 +494,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				NoOfSpecies.SetAll(1);
 			}
 
-			// MPI gather on rank 0
-			int MPIsz = Map.MpiSize;
-			int[] rcvCount = MPIsz.ForLoop(r => Map.AggGrid.CellPartitioning.GetLocalLength(r));
-			return NoOfSpecies.MPIGatherv(rcvCount, worldMPIOffset, Map.MPI_Comm);
+            // MPI gather on rank 0
+            int[] ret = null;
+            {
+                int MPIsz = Map.MpiSize;
+                int[] rcvCount = MPIsz.ForLoop(r => Map.AggGrid.CellPartitioning.GetLocalLength(r));
+                rcvCount[rcvCount.Length - 1] += 1; // the final length which is added on the last processor
+                ret = NoOfSpecies.MPIGatherv(rcvCount, worldMPIOffset, Map.MPI_Comm);
+            }
+
+            return ret;
 		}
 
 		public (long[] cellI0s, Dictionary<long, long> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
