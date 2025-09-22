@@ -106,7 +106,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <param name="LeftChangeOfBasis"></param>
 		/// <param name="RightChangeOfBasis"></param>
 		/// <param name="IsThereACoarserSolver"></param>
-		public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int TotProcSize = 0, int CoarseProcSize = 0, IOperatorMappingPair finerLevel = null, BlockMsrMatrix LeftChangeOfBasis = null, BlockMsrMatrix RightChangeOfBasis = null, bool IsThereACoarserSolver = true) { 
+		public TaskParallelMGOperator(BlockMsrMatrix OperatorMatrix, BlockMsrMatrix ProlongationMatrix, MultigridMapping Mapping, int TotProcSize = 0, int CoarseProcSize = 0, IOperatorMappingPair finerLevel = null, BlockMsrMatrix LeftChangeOfBasis = null, BlockMsrMatrix RightChangeOfBasis = null, bool IsThereACoarserSolver = true) {
+            //Debugger.Launch();
             m_OpMtx = OperatorMatrix;
 			m_ProlMtx = ProlongationMatrix;
 			m_MultigridMapping = Mapping;
@@ -123,9 +124,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(m_MultigridMapping);
             m_NoOfSpecies = GetNoOfSpeciesList(m_MultigridMapping);
 
-            m_adj.SaveToTextFileDebugUnsteady($"lvl{Level}_adj", ".txt");
-            m_xadj.SaveToTextFileDebugUnsteady($"lvl{Level}_Xadj", ".txt");
-            m_NoOfSpecies.SaveToTextFileDebugUnsteady($"lvl{Level}_wghts", ".txt");
+            m_adj?.SaveToTextFileDebugUnsteady($"lvl{Level}_adj", ".txt");
+            m_xadj?.SaveToTextFileDebugUnsteady($"lvl{Level}_Xadj", ".txt");
+            m_NoOfSpecies?.SaveToTextFileDebugUnsteady($"lvl{Level}_specs", ".txt");
 
             //distribution at cell/block level
             (ThisCellI0s, ThisNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfThisProcs); 
@@ -419,11 +420,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		(int[] xadj, int[] adj) GetCurrentAggGridGraphForMetis(MultigridMapping Map) {
 			using (new FuncTrace()) {
 				var aggGrid = Map.AggGrid;
-				int Jloc = aggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                int Jloc = aggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 				int Jglb = checked((int)aggGrid.CellPartitioning.TotalLength);
 				long[] GlidxExt = aggGrid.iParallel.GlobalIndicesExternalCells;
 
-				var comm = Map.MPI_Comm;
+                var comm = Map.MPI_Comm;
 				int MPIrnk = Map.MpiRank;
 				int MPIsiz = Map.MpiSize;
 
@@ -494,12 +495,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				NoOfSpecies.SetAll(1);
 			}
 
-            // MPI gather on rank 0
+            // MPI gather on the responsible rank (worldMPIOffset on world and 0 on subcommunicators that are later being created)
             int[] ret = null;
             {
                 int MPIsz = Map.MpiSize;
                 int[] rcvCount = MPIsz.ForLoop(r => Map.AggGrid.CellPartitioning.GetLocalLength(r));
-                rcvCount[rcvCount.Length - 1] += 1; // the final length which is added on the last processor
+                //rcvCount[rcvCount.Length - 1] += 1; // the final length which is added on the last processor
                 ret = NoOfSpecies.MPIGatherv(rcvCount, worldMPIOffset, Map.MPI_Comm);
             }
 
@@ -526,37 +527,47 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				if (MPIrnk == worldMPIOffset) { //call metis on only the rank 0 (opComm)
                     f.Info($"{MPIrnk}-rank is calculating the re-distribution for the level-{Level} into {NoOfParts} parts");
 
-                    int ncon = 1;
-					int edgecut = 0;
-					int[] options = new int[METIS.METIS_NOPTIONS];
-					METIS.SETDEFAULTOPTIONS(options);
+                    try {
+                        int ncon = 1;
+                        int edgecut = 0;
+                        int[] options = new int[METIS.METIS_NOPTIONS];
+                        METIS.SETDEFAULTOPTIONS(options);
 
-					options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
-					options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 5; // This is the default refinement iterations
-					options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 100; // Maximum imbalance of 10 percent (this is the default kway clustering)
-                                                                               // 3 percent seems to be to strict for some test cases
-					options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
-                    options[(int)METIS.OptionCodes.METIS_OPTION_SEED] = 22; // fixed seed
+                        options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
+                        options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 2; // 
+                        options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 100; // Maximum imbalance of 10 percent (this is the default kway clustering)
+                                                                                    // 3 percent seems to be to strict for some test cases
+                        options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
+                        options[(int)METIS.OptionCodes.METIS_OPTION_SEED] = 22; // fixed seed
+                        //options[(int)METIS.OptionCodes.METIS_OPTION_CONTIG] = 1;
+                        options[(int)METIS.OptionCodes.METIS_OPTION_MINCONN] = 1;
 
-                    int J = m_xadj.Length - 1;
-					part = new int[J];
-					Debug.Assert(m_xadj.Where(idx => idx > m_adj.Length).Count() == 0);
-					Debug.Assert(m_adj.Where(j => j >= J).Count() == 0);
+                        int J = m_xadj.Length - 1;
+                        part = new int[J];
+                        Debug.Assert(m_xadj.Where(idx => idx > m_adj.Length).Count() == 0);
+                        Debug.Assert(m_adj.Where(j => j >= J).Count() == 0);
 
-					METIS.PARTGRAPHKWAY(
-							ref J, ref ncon,
-							m_xadj,
-							m_adj.ToArray(),
-                            NoOfParts < 65 ? m_NoOfSpecies : null,
-							null,
-							null,
-							ref NoOfParts,
-							null,
-							null,
-							options,
-							ref edgecut,
-							part);
-                    f.Info($"{MPIrnk}-rank is now broadcasting the distribution map for the level-{Level} with J={J} into {NoOfParts} ranks");
+                        var weights = m_NoOfSpecies.Select(i => i * 100 + 1).ToArray();
+                        weights?.SaveToTextFileDebugUnsteady($"lvl{Level}_wghts", ".txt");
+
+                        METIS.PARTGRAPHKWAY(
+                                ref J, ref ncon,
+                                m_xadj,
+                                m_adj.ToArray(),
+                                NoOfParts < 65 ? weights : null,
+                                null,
+                                null,
+                                ref NoOfParts,
+                                null,
+                                null,
+                                options,
+                                ref edgecut,
+                                part);
+                        f.Info($"{MPIrnk}-rank is now broadcasting the distribution map for the level-{Level} with J={J} into {NoOfParts} ranks");
+                    } catch (Exception e){ 
+                        throw new ApplicationException("Something went wrong with METIS: " + e.Message);
+                    }
+
                 } else {
                     f.Info($"{MPIrnk}-rank is waiting the distribution map for the level-{Level}");
                     part = null;
