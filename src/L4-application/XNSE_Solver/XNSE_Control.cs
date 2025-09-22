@@ -313,7 +313,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
             Material = true,
-            IncludeConvection = false,
+            IncludeConvection = true,
             IncludeDiffusion = true,
             mu_A = 1.0,
             mu_B = 1.0,
