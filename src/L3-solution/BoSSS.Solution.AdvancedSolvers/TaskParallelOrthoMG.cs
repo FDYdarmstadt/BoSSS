@@ -507,7 +507,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return ret;
 		}
 
-		public (long[] cellI0s, Dictionary<long, long> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
+        public static void SymmetrizeCsr(int[] xadj, int[] adjncy, out int[] xsym, out int[] asym) {
+            int n = xadj.Length - 1;
+            var edges = new List<(int u, int v)>(2 * adjncy.Length);
+
+            // 1) Collect directed edges and their back-edges; drop self-loops
+            for(int i = 0; i < n; i++) {
+                for(int p = xadj[i]; p < xadj[i + 1]; p++) {
+                    int j = adjncy[p];
+                    if(i == j) continue;
+                    edges.Add((i, j));
+                    edges.Add((j, i));
+                }
+            }
+
+            // 2) Sort lexicographically: first by u, then v
+            edges.Sort((a, b) => (a.u == b.u) ? a.v.CompareTo(b.v) : a.u.CompareTo(b.u));
+
+            // 3) Deduplicate consecutive duplicates
+            var dedup = new List<(int u, int v)>(edges.Count);
+            (int u, int v) prev = (-1, -1);
+            foreach(var e in edges) {
+                if(e.u != prev.u || e.v != prev.v) {
+                    dedup.Add(e);
+                    prev = e;
+                }
+            }
+
+            // 4) Build CSR
+            xsym = new int[n + 1];
+            foreach(var e in dedup) xsym[e.u + 1]++;
+            for(int i = 1; i <= n; i++) xsym[i] += xsym[i - 1];
+
+            asym = new int[dedup.Count];
+            var cursor = (int[])xsym.Clone();
+            foreach(var e in dedup) asym[cursor[e.u]++] = e.v;
+            // Rows are already sorted due to lexicographic sort above.
+        }
+
+        public (long[] cellI0s, Dictionary<long, long> colMapping) DistributeMapping(MultigridMapping MGMapping, int NoOfParts) {
 			using (var f = new FuncTrace()) {
 				var columnMapping = new List<(long sourceIdx, long targetIdx)>();
                 int totalLength = (int)MGMapping.AggGrid.CellPartitioning.TotalLength;
@@ -550,10 +588,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var weights = m_NoOfSpecies.Select(i => i * 100 + 1).ToArray();
                         weights?.SaveToTextFileDebugUnsteady($"lvl{Level}_wghts", ".txt");
 
+                        SymmetrizeCsr(m_xadj, m_adj, out var xadjSym, out var adjSym);
+
                         METIS.PARTGRAPHKWAY(
                                 ref J, ref ncon,
-                                m_xadj,
-                                m_adj.ToArray(),
+                                xadjSym,
+                                adjSym,
                                 NoOfParts < 65 ? weights : null,
                                 null,
                                 null,
@@ -563,6 +603,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 options,
                                 ref edgecut,
                                 part);
+
                         f.Info($"{MPIrnk}-rank is now broadcasting the distribution map for the level-{Level} with J={J} into {NoOfParts} ranks");
                     } catch (Exception e){ 
                         throw new ApplicationException("Something went wrong with METIS: " + e.Message);
