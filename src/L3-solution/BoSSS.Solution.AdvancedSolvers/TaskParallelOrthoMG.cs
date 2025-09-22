@@ -123,8 +123,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(m_MultigridMapping);
             m_NoOfSpecies = GetNoOfSpeciesList(m_MultigridMapping);
 
-			//distribution at cell/block level
-			(ThisCellI0s, ThisNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfThisProcs); 
+            m_adj.SaveToTextFileDebugUnsteady($"lvl{Level}_adj", ".txt");
+            m_xadj.SaveToTextFileDebugUnsteady($"lvl{Level}_Xadj", ".txt");
+            m_NoOfSpecies.SaveToTextFileDebugUnsteady($"lvl{Level}_wghts", ".txt");
+
+            //distribution at cell/block level
+            (ThisCellI0s, ThisNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfThisProcs); 
 			(SmootherCellI0s, SmootherNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfSmootherProcs);
 			(CoarseCellI0s, CoarseNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfCoarseProcs);
 			CalculateWorldToSubDistribution();
