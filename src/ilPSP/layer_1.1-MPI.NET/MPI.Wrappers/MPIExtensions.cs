@@ -1886,6 +1886,7 @@ namespace MPI.Wrappers {
 
             unsafe {
                 int* displs = stackalloc int[size];
+                displs[0] = 0;
                 if (rank == root) {
                     for (int i = 1; i < size; i++) {
                         displs[i] = displs[i - 1] + recvcounts[i - 1];
