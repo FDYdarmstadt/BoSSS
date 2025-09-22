@@ -537,7 +537,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							ref J, ref ncon,
 							m_xadj,
 							m_adj.ToArray(),
-							m_NoOfSpecies,
+                            NoOfParts < 150 ? m_NoOfSpecies : null,
 							null,
 							null,
 							ref NoOfParts,
