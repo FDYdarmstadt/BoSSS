@@ -6,7 +6,7 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-#-------------- Mode 1: Checking Formulas (scan .XMLDOC and save .tex report)------------------
+#--------------- Mode 1: Checking Formulas (scan .XMLDOC and save .tex report)------------------
 
 def fmt_member_header(name: str) -> str:
     return r"\texttt{\detokenize{" + name + "}}"
