@@ -1031,8 +1031,7 @@ namespace StokesHelical_Ak.TestTransient {
             ctrl.savetodb = true;
             ctrl.InitialValues.Clear();
             ctrl.InitialValues_Evaluators.Clear();
-            ctrl.ImmediatePlotPeriod = 10;
-
+            ctrl.ImmediatePlotPeriod = -1;
 
             var random = 0.1 * maxAmpitude;
             // Initial Values

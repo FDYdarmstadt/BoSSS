@@ -25,11 +25,8 @@ using System.Threading.Tasks;
 using System.Web;
 using BoSSS.Solution.AdvancedSolvers;
 
-namespace BoSSS.Application.IncompressibleNSE {
-
-    public static class DNS_Hagen_Poiseulle {
-
-
+namespace BoSSS.Application.IncompressibleNSE.Hard_Coded_Controls {
+    internal class Hagen_Poiseulle {
         /// <summary>
         /// laminar solution for a Hagen Poiseulle flow (aka. flow in a circular pipe)
         /// </summary>
@@ -44,8 +41,8 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             const double MaxAmp = 1;
 
-            if (rMin != 0) {
-                for (int i = 0; i < 9; i++)
+            if(rMin != 0) {
+                for(int i = 0; i < 9; i++)
                     Console.WriteLine($"Remember: r min = {rMin} !!!!!!");
             }
             Ctrl.maxAmpli = MaxAmp;
@@ -63,7 +60,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
             // Solver Options
             Ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            if (transient) {
+            if(transient) {
                 Ctrl.NoOfTimesteps = 1000;
                 Ctrl.TimesteppingMode = AppControl._TimesteppingMode.Transient;
                 Ctrl.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
@@ -88,10 +85,10 @@ namespace BoSSS.Application.IncompressibleNSE {
                     double r = _X[0];
                     double xi = _X[1];
 
-                    if (Math.Abs(r - Ctrl.rMax) < 1E-8)
+                    if(Math.Abs(r - Ctrl.rMax) < 1E-8)
                         // right
                         return "Dirichlet_outer_wall";
-                    else if (Ctrl.rMin >= 1E-6 && Math.Abs(r - Ctrl.rMin) < 1E-8)
+                    else if(Ctrl.rMin >= 1E-6 && Math.Abs(r - Ctrl.rMin) < 1E-8)
                         // right
                         return "Dirichlet_inner_wall";
 
@@ -103,7 +100,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             // DG degree
             // =========
             Ctrl.dg_degree = degree;
-             Ctrl.SetDGdegree(degree);
+            Ctrl.SetDGdegree(degree);
             // Initial Values
             // ==============
             double a = Globals.a;
@@ -111,7 +108,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             double nu = Globals.nu;
             Ctrl.HagenPoisseulle = true;
 
-            var random = 0.1 *MaxAmp/ 4;
+            var random = 0.1 * MaxAmp / 4;
             // Initial Values
             // ==============
             string InitialValue_ur_p =
@@ -172,12 +169,12 @@ namespace BoSSS.Application.IncompressibleNSE {
             Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_R", new Formula("(X,t) =>  0", true));
             Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_ETA", new Formula("(X,t) =>0", true));
             Ctrl.AddBoundaryValue("Dirichlet_outer_wall", "Velocity_XI", new Formula("(X,t) => 0", true));
-          
+
             Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_R", new Formula("(X,t) =>  0", true));
             Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_ETA", new Formula($"(X,t) => {MaxAmp} * (X[0] / (Math.Sqrt({a * a} * X[0] * X[0] + {b * b}))) * ({a * b} * ({Ctrl.rMax} * {Ctrl.rMax} - X[0] * X[0])) / (X[0] * 4 * {nu})", true));
             Ctrl.AddBoundaryValue("Dirichlet_inner_wall", "Velocity_XI", new Formula($"(X,t) =>- {MaxAmp} * (X[0] / (Math.Sqrt({a * a} * X[0] * X[0] + {b * b}))) * ({a * a} * ({Ctrl.rMax} * {Ctrl.rMax} - X[0] * X[0])) / (4 * {nu})", true));
 
-            if (rMin < 10e-6) {
+            if(rMin < 10e-6) {
                 Globals.activeMult = Globals.Multiplier.Bsq;
             } else {
                 Globals.activeMult = Globals.Multiplier.one;

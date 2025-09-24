@@ -69,7 +69,7 @@ namespace StokesHelical_Ak {
             //}
             // StokesHelical_Ak.TestTransient.TestTransient.Transient_CF_Re_10_White_Noise_1_ProMil_with_R0fix(3);
             // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_10_White_Noise_1_ProMil_with_R0fix(3);
-            StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_2500_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1(3);
+            // StokesHelical_Ak.TestTransient.TestTransient.Transient_HP_Re_2500_White_Noise_1_ProMil_with_R0fix_Conv_Ak_1(3);
             ////c.ImmediatePlotPeriod = 1;
             ////c.NoOfTimesteps = 5;
             //var solver = new HelicalMain();
@@ -549,7 +549,7 @@ namespace StokesHelical_Ak {
                 }
 
                 string nameOf_Plot = "Hel_BDF_10Noise_" + this.Control.GetBDFOrder() +"_"+this.Control.grid+ "_LinSol" + this.Control.LinearSolver.Shortname + "_rMin_" + this.Control.rMin.ToString() + "_Mult_" + Globals.activeMult.ToString() + "_PRP_" + Globals.pressureReferencePoint + "_" + this.Control.Resolution_R.ToString() + "_x_" +
-                              this.Control.Resolution_R.ToString() + "_Ak_Conv_"+ Globals.ConcetiveTerms_Add_on_Term_2.ToString() + "_DGd_" + this.Control.dg_degree + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
+                              this.Control.Resolution_R.ToString()  + "_DGd_" + this.Control.dg_degree + "_Ak_Conv_" + Globals.ConcetiveTerms_Add_on_Term_2.ToString() + "_Amp_" + this.Control.maxAmpli.ToString() + "_dt_" + this.Control.dtMax + "_TiStNo_" + timestepNo;
 
                 plt1.PlotFields(nameOf_Plot, physTime, m_IOFields);
 
