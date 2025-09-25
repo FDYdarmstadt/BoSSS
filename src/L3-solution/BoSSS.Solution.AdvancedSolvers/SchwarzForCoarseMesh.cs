@@ -304,11 +304,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
 
 					int NoOfParts = this.config.NoOfBlocks;
-
-					METIS.PARTGRAPHKWAY(
+                    int[] xsym, asym;
+                    TaskParallelMGOperator.SymmetrizeCsr(xadj, adjncy, out xsym, out asym);
+                    METIS.PARTGRAPHKWAY(
 							ref J, ref ncon,
-							xadj,
-							adjncy.ToArray(),
+                            xsym,
+                            asym,
 							NoOfSpecies,
 							null,
 							null,

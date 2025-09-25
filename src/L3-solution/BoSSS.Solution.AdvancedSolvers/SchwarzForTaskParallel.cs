@@ -213,14 +213,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					Debug.Assert(adjncy.Where(j => j >= J).Count() == 0);
 
                     int[] Weights = NoOfSpecies.Select(i => i * 100 + 1).ToArray(); // avoid zero weights
-
+                    int[] xsym, asym;
+                    TaskParallelMGOperator.SymmetrizeCsr(xadj,adjncy, out xsym, out asym);
                     int k = 0;
                     while (k < 3) {
 						bool ok = true;
 
 						METIS.PARTGRAPHKWAY(ref J, ref ncon,
-							                xadj, adjncy.ToArray(),
-							                Weights, null,
+                                            xsym, asym,
+							                k < 2 ? Weights : null, null,
 							                null, ref NoOfParts,
 							                null, null,
 							                options, ref edgecut,
@@ -776,11 +777,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		public void InitWithTest(StandAloneOperatorMappingPairWithGridData op, bool doTest) {
   			using (var f = new FuncTrace()) {
                 m_op = op;
-                f.StdoutOnAllRanks();
 
 				if (this.config.NoOfBlocks < thisCommSize) 
 					f.Warning($"!! Warning !! Task parallel Schwarz does not have a block per processor, with {this.config.NoOfBlocks} blocks over {thisCommSize} MPI ranks. Either you are using too many cores or your block size is too small.");
 
+                f.StdoutOnAllRanks();
                 var locBlocks = CalculateBlocks(op); //by utilizing mostly rank0, calculate blocks and get them on respective procs
                 var locDOFs = SanitizeSchwarzBlocks(locBlocks);
 
