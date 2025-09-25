@@ -277,7 +277,6 @@ namespace BoSSS.Foundation.XDG {
                     var edgeScheme = schH.GetEdgeQuadScheme(spc);
                     var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
 
-
                     BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
                     edgeRule,

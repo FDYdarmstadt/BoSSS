@@ -880,6 +880,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState.bNotTerminate) {
                         Converged = termState.bSuccess;
+                        f.Info($"termState bSuccess? {Converged}");
                         break;
                     } else {
 
@@ -910,6 +911,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 							var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                             if (!termState2.bNotTerminate) {
                                 Converged = termState2.bSuccess;
+                                f.Info($"termState2 bSuccess? {Converged}");
                                 break;
                             }
 
@@ -987,6 +989,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 					var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState3.bNotTerminate) {
                         Converged = termState3.bSuccess;
+                        f.Info($"termState3 bSuccess? {Converged}");
                         break;
                     }
                     CrseLevelTime.Stop();
@@ -1056,6 +1059,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 								var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                                 if (!termState4.bNotTerminate) {
                                     Converged = termState4.bSuccess;
+                                    f.Info($"termState4 bSuccess? {Converged}");
                                     termPost = true;
                                     break;
                                 }
@@ -1199,7 +1203,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
 
-        bool m_verbose = true;
+        bool m_verbose = false;
 
         public long UsedMemory() {
             long Memory = 0;

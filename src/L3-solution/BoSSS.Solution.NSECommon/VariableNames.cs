@@ -1818,5 +1818,37 @@ namespace BoSSS.Solution.NSECommon {
         public const string ElectricPotential = "ElectricPotential";
 
         public const string FreechargeDensity = "FreechargeDensity";
+
+        /// <summary>
+        /// used for surface advection-reaction problem.
+        /// </summary>
+        public const string SurfaceAdvectionVelocityX = "SurfaceAdvectionVelocityX";
+
+        public const string SurfaceAdvectionVelocityY = "SurfaceAdvectionVelocityY";
+
+        public const string SurfaceAdvectionVelocityZ = "SurfaceAdvectionVelocityZ";
+
+        static public string SurfaceAdvectionVelocity_d(int d) {
+            switch(d) {
+                case 0: return SurfaceAdvectionVelocityX;
+                case 1: return SurfaceAdvectionVelocityY;
+                case 2: return SurfaceAdvectionVelocityZ;
+                default: throw new NotSupportedException("unsupported names");
+            }
+        }
+
+        static public string[] SurfaceAdvectionVelocity(int D) {
+            switch(D) {
+                case 1: return new string[] { SurfaceAdvectionVelocityX };
+                case 2: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY };
+                case 3: return new string[] { SurfaceAdvectionVelocityX, SurfaceAdvectionVelocityY, SurfaceAdvectionVelocityZ };
+                default: throw new NotSupportedException("unsupported names.");
+            }
+        }
+        /// <summary>
+        /// The domain variable for any surface equation defined on the level-set based on TraceDG Solver
+        /// </summary>
+        public const string SurfaceScalar = "q";
+
     }
 }

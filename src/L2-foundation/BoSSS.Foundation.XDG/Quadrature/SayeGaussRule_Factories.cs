@@ -173,7 +173,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                     try {
                         var sayeRule = rule.Evaluate(cell);
                         ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
-                        sayePair.Rule.OrderOfPrecision = order;
+                        if (sayePair.Rule.OrderOfPrecision == 0)
+                            sayePair.Rule.OrderOfPrecision = order;
                         result.Add(sayePair);
                     } catch(Exception e) {
                         var vector = mask.GridData.iGeomCells.GetCenter(cell);
@@ -184,7 +185,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
                         Console.WriteLine("proc{2} reporting: coord of {0}:{1}", cell, String.Join(",", vector), ilPSP.Environment.MPIEnv.MPI_Rank);
                         Console.WriteLine("MaskType: " + mask.MaskType.ToString());
                         //Console.WriteLine("MaskLength: " + mask.Count());
-                        throw e;
+                        throw new Exception("Caught Exception in Saye-Rule Evaluation", e);
+                        
                     }
                     ilPSP.Environment.StdoutOnlyOnRank0 = true;
                 }

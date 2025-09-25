@@ -996,7 +996,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]
-        public string TracingNamespaces = "*";
+        public string TracingNamespaces = null;
 
         /// <summary>
         /// Activate/Deactivate memory allocation logging
@@ -1120,6 +1120,16 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int AMR_startUpSweeps = 1;
+
+
+
+        /// <summary>
+        /// List of active AMR level indicators;
+        /// One can use e.g., <see cref="AMRLevelIndicatorLibrary.AMRonBoundary"/>, <see cref="AMRLevelIndicatorLibrary.AMRInBoundingBox"/>, <see cref="AMRLevelIndicatorLibrary.AMReveryWhere"/>;
+        /// </summary>
+        [DataMember]
+        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
+
 
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,

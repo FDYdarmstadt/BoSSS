@@ -81,7 +81,7 @@ namespace BoSSS.Solution.NSECommon {
                     return (_Uot * inp.Normal) * _Uot[m_component] * m_rho;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
 
@@ -282,7 +282,7 @@ namespace BoSSS.Solution.NSECommon {
                     return (_Uot * inp.Normal) * _Uot[m_component] * m_rho;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
 
 

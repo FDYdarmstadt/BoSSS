@@ -355,7 +355,7 @@ namespace BoSSS.Solution.NSECommon {
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.NoSlipNeumann: {
                         double r = 0.0;
@@ -772,7 +772,7 @@ namespace BoSSS.Solution.NSECommon {
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
-                case IncompressibleBcType.Outflow:
+                case IncompressibleBcType.SIMPLE_Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
                 case IncompressibleBcType.NoSlipNeumann: {

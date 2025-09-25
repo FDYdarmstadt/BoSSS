@@ -149,7 +149,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 #if !DEBUG
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p2_Standard_OneStepGaussAndStokes() //1
@@ -161,7 +161,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes() //2
@@ -173,7 +173,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p2_FullySymmetric_OneStepGaussAndStokes() //3
@@ -185,7 +185,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes() //4
@@ -197,7 +197,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p2_Standard_Saye() //5
@@ -209,7 +209,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p3_Standard_Saye() //6
@@ -221,7 +221,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p2_FullySymmetric_Saye() //7
@@ -233,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         [Test]
         public static void ScalingStaticDropletTest_p3_FullySymmetric_Saye() //8
@@ -298,7 +298,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         /// <summary>
-        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletScalingTest"/>
         /// </summary>
         public static void ScalingStaticDropletTest(
             [Values(1, 2, 3)] int deg,
@@ -308,7 +308,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             double AgglomerationTreshold = 0.1;
 
-            var Tst = new StaticDropletTest();
+            var Tst = new StaticDropletScalingTest();
             var LaLa = new List<XNSE_Control>();
             foreach (var Res in new[] { 2, 4, 8 }) {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold,
@@ -920,8 +920,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 C.NonLinearSolver.ConvergenceCriterion = 1e-10;
                 C.UseSchurBlockPrec = SchurCompl;
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
                 
                 CS[i] = C;
             }
@@ -1016,6 +1016,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
 
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 2;
+
+
             XNSESolverTest(Tst, C);
 
         }
@@ -1046,8 +1050,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 2;
 
             // set to transient...
             C.dtFixed = 0.1;
@@ -1084,8 +1088,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 2;
 
             C.PhysicalParameters.IncludeConvection = false;
 

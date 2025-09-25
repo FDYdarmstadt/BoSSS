@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Solution.NSECommon;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +21,30 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             if (m_useBCMap) {
                 return base.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
             } else {
-                return 0;
+                if (base.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall) {  // redefines as slip wall
+                    //return base.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
+                    double Acc = 0.0;
+                    double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);
+
+                    double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
+                    int D = inp.D;
+
+                    for (int dN = 0; dN < D; dN++) {
+
+                        for (int dD = 0; dD < D; dD++) {
+                            // consistency
+                            Acc += muA * (inp.Normal[dN] * _Grad_uA[dN, dD] * inp.Normal[dD]) * (_vA * inp.Normal[m_iComp]) * base.m_alpha;
+                            // symmetry
+                            Acc += muA * (inp.Normal[m_iComp] * _Grad_vA[dD] * inp.Normal[dD]) * (_uA[dN] - 0.0) * inp.Normal[dN] * base.m_alpha;
+                        }
+
+                        // penalty
+                        Acc -= muA * ((_uA[dN] - 0.0) * inp.Normal[dN]) * ((_vA - 0.0) * inp.Normal[m_iComp]) * pnlty;
+                        //Acc = 0;
+                    }
+                    return Acc;
+                } else 
+                    return 0;
             }
         }
     }
@@ -39,7 +63,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             if (m_useBCMap) {
                 return base.BorderEdgeFlux(ref inp, Uin);
             } else {
-                return 0;
+                if (base.m_bcmap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall) {
+                    return base.BorderEdgeFlux(ref inp, Uin);
+                } else
+                    return 0;
             }
         }
     }
@@ -56,7 +83,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             if (m_useBCMap) {
                 base.BorderEdgeFlux_(ref inp, Uin, out FluxInCell);
             } else {
-                FluxInCell = 0;
+                if (base.bcmap.EdgeTag2Type[inp.EdgeTag] == IncompressibleBcType.Wall) {
+                    base.BorderEdgeFlux_(ref inp, Uin, out FluxInCell);
+                } else
+                    FluxInCell = 0;
             }
         }
     }
