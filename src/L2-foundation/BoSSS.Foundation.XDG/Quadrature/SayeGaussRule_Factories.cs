@@ -313,7 +313,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for $\int_{\frakA \cap K_j } \ldots \dV$ in the 2D case
+        /// Gauss rules for $\int_{\frakA \cap K_j } \ldots \textrm{dV}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume2D(
             LevelSetTracker.LevelSetData _lsData,
@@ -329,7 +329,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Saye {
         }
 
         /// <summary>
-        /// Gauss rules for $\int_{\frakA \cap K_j } \ldots \dV$ in the 2D case
+        /// Gauss rules for $\int_{\frakA \cap K_j } \ldots \textrm{dV}$ in the 2D case
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_NegativeVolume2D(
             LevelSetTracker.LevelSetData _lsData,

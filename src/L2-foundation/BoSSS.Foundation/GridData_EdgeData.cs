@@ -179,13 +179,14 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             /// <remarks>
             /// Let be 
-            /// \f[ 
+            /// \[
             ///   \mathbb{R}^{D-1} 
-            ///     \ni \vec{\xi} 
-            ///       \mapsto
-            ///         \gamma(\vec{\xi}) \in
-            ///           \mathbb{R}^{D-1}
-            /// \f]
+            ///   \ni 
+            ///      \vec{\xi} \mapsto \gamma(\vec{\xi}) 
+            ///   \in 
+            ///   \mathbb{R}^{ D - 1}
+            /// \]
+            /// 
             /// the mapping from the edge coordinate system to the physical coordinate system.
             /// Then the integral of $f$  over the edge 
             /// $\gamma(K_\textrm{ref})$ 

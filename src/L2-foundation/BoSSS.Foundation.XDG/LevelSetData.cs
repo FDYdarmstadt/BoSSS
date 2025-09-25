@@ -1656,7 +1656,7 @@ namespace BoSSS.Foundation.XDG {
             /// i.e. if 
             /// the measure of the species in the cell is positive, i.e. 
             /// \[
-            ///   \int_{K_{\text{\tt jCell}} \cap \mathfrak{s} } 1 \dV > 0 
+            ///   \int_{K_{\text{\tt jCell}} \cap \mathfrak{s} } 1 \textrm{dV} > 0 
             /// \]
             /// </summary>
             /// <param name="speciesId">The id of species \mathfrak{s}.</param>

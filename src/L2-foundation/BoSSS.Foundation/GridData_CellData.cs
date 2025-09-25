@@ -508,11 +508,10 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// An inverse length scale (dimension is one-over-length, resp. area over volume)
             /// for each cell <em>j</em> this is
-            ///  \[
-            ///  c_j = \frac{\textrm{Area}
-            ///        (\partial K_j \setminus \partial \Omega) \cdot 0.5 + \textrm{Area
-            ///    }
-            ///    (\partial K_j \cap \partial \Omega)} {\textrm{ Volume} (K_j)}
+            /// \[
+            /// c_j = \frac{\textrm{Area}(\partial K_j \setminus \partial \Omega)
+            /// \cdot 0.5 + \textrm{Area}(\partial K_j \cap \partial \Omega)}
+            /// {\textrm{ Volume} (K_j)}
             /// \]
             /// where $K_j$ is the cell an
             /// $\Omega$ is the whole computational

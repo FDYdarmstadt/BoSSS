@@ -650,8 +650,8 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="cm">optional restriction to computational domain</param>
         /// <param name="mean">
-        /// If false, the return value equals $\int_{\Omega} u \dV$, 
-        /// otherwise it equals $\frac{  \int_{\Omega} u \dV }{  \int_{\Omega} 1 \dV  }$.
+        /// If false, the return value equals $\int_{\Omega} u \textrm{dV}$, 
+        /// otherwise it equals $\frac{  \int_{\Omega} u \textrm{dV} }{  \int_{\Omega} 1 \textrm{dV}  }$.
         /// </param>
         virtual public double GetMeanValueTotal(CellMask cm, bool mean = true) {
             using (new FuncTrace()) {

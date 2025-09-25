@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// <summary>
     /// One-step rules (creating 
     /// surface rules for integrals $\oint_{\frakI \cap K_j } \ldots \dS$ and 
-    /// volume  rules for integrals $\int_{ \frakB \cap K_j } \ldots \dV$ 
+    /// volume  rules for integrals $\int_{ \frakB \cap K_j } \ldots \textrm{dV}$ 
     /// in one step), using Gauss and optionally, the Stokes theorem.
     /// Supports only 2D.
     /// </summary>
