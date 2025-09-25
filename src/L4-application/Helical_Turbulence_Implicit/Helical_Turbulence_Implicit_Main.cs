@@ -85,7 +85,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// Pressure
         /// </summary>
         [InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
-        SinglePhaseField Pressure;
+        public SinglePhaseField Pressure;
 
         /// <summary>
         /// Residual of the continuity equation
