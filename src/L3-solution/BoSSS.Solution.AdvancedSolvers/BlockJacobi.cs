@@ -135,11 +135,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ~
         /// </summary>
-        bool TerminationCriterion(int iter, double r0_l2, double r_l2) {
+        public bool DefaultTerminationCriterion(int iter, double r0_l2, double r_l2) {
             return (iter <= this.NoOfIterations);
         }
 
+        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
+            get {
+                return m_TerminationCriterion;
+            }
+            set {
+                m_TerminationCriterion = value;
+            }
+        }
 
+        Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
 
 
         /// <summary>
@@ -169,12 +178,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //}
                 }
 
-                if(!TerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
-                    m_Converged = true;
-                    return;
+                if(TerminationCriterion is null) {
+                    if(!DefaultTerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
+                        m_Converged = true;
+                        return;
+                    }
+                } else {
+                    (bool shouldContinue, bool converged) = TerminationCriterion(iIter, iter0_ResNorm, ResNorm);
+                    if (!shouldContinue) {
+                        m_Converged = converged;
+                        return;
+                    }
                 }
 
-                Diag.SpMV(1.0, xl, 1.0, ql);
+                    Diag.SpMV(1.0, xl, 1.0, ql);
 
 
                 //xl.ScaleV(1.0 - omega);
