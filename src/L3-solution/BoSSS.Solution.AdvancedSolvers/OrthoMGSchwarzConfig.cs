@@ -165,6 +165,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int TaskParallelEnforcedLevel = int.MinValue;
 
         /// <summary>
+        /// Instead of using Additive Schwarz (<see cref="Schwarz"/>), use this as an alternative smoother on all levels except the coarsest one.
+        /// A debug configuration to test other smoothers than Schwarz. 
+        /// </summary>
+        [DataMember]
+        public bool AlternateSmoother = false;
+
+        /// <summary>
         /// 
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
@@ -280,7 +287,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     else
 						tr.Info("Solver is set to Task Parallel Ortho MG w/ Schwarz with " + GlobalNoOfBlocks + " blocks " + MPIsize + " on cores");
 
-					var r = new SchwarzForTaskParallel();
+                    TaskParallelizationStarted = true;
+                    var r = new SchwarzForTaskParallel();
 					r.config.EnableOverlapScaling = true;
 					r.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
 					r.config.NoOfBlocks = GlobalNoOfBlocks;
@@ -371,11 +379,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISolverSmootherTemplate GetAlternateSmoother() {
             var altSmooth3 = new SoftGMRES();
-            altSmooth3.MaxKrylovDim = 80;
+            altSmooth3.MaxKrylovDim = 30;
             altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
-                return (iIter <= 82 && ri > 1e-7*r0, ri <= 1e-7*r0);
+                double tol = 1e-2;
+                bool notTerminate = iIter <= 32 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
+                bool success = ri <= tol * r0;
+                return (notTerminate, success);
             };
-            altSmooth3.Precond = new BlockJacobi();
+            altSmooth3.Precond = new BlockJacobi() { NoOfIterations = 1};
+
+            //BlockJacobi altSmooth = new BlockJacobi() {
+            //    //NoOfIterations = 30,
+            //    omega = 1.5,
+            //};
+
+            //altSmooth.TerminationCriterion = (iIter, r0, ri) => {
+            //    double tol = 1e-2;
+            //    bool notTerminate = iIter <= 250 && ri > tol * r0 && (r0 > MachineEpsilon || ri > MachineEpsilon);
+            //    bool success = ri <= tol * r0;
+            //    return (notTerminate, success);
+            //};
 
             return altSmooth3;
         }
@@ -496,26 +519,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         FinerLevelGlobalBlocks = glbBlk;
                         FinerLevelLocalBlocks = locBlk;
 
-                        SoftGMRES altSmooth3;
-                        {   
-                            altSmooth3 = new SoftGMRES();
-                            altSmooth3.MaxKrylovDim = 80;
-                            altSmooth3.TerminationCriterion = (iIter, r0, ri) => {
-                                return (iIter <= 82 && ri > 1e-7*r0, ri <= 1e-7*r0);
-                            };
-                            altSmooth3.Precond = new BlockJacobi();
+                        // If Schwarz smoother failed, fall back to GMRES+BlockJacobi
+                        if(smoother1 is null) {
+                            var fallback = GetAlternateSmoother();
+                                tr.Info($"KcycleMultiSchwarz: lv {iLevel}, no Schwarz smoother; using GMRES+BlockJacobi.");
+                                smoother1 = fallback;
+                        } else if(AlternateSmoother){
+                            var fallback = GetAlternateSmoother();
+                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, Alternating the smoother option is enabled. Using the alternative smoother exclusively.");
+                            smoother1 = fallback;
                         }
 
-                        if(smoother1 == null) {
-                            // failed to init Schwarz smoother 
-                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, no Schwarz smoother available; using GMRES+BlockJacobi. ");
-                            smoother1 = altSmooth3;
-                            altSmooth3 = null;
-                        }
 
-                        if (smoother1 is SchwarzForTaskParallel)
+
+                        if(TaskParallelizationStarted)
                             levelSolver = GetTaskParallelOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
-						else
+                        else
                             levelSolver = GetNormalOrthoMG(tr, iLevel, locBlk, glbBlk, maxDG, smoother1, null);
 					}
 
