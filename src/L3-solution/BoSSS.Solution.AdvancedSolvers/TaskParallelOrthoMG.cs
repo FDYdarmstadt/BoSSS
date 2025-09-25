@@ -124,10 +124,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			(m_xadj,m_adj) = GetCurrentAggGridGraphForMetis(m_MultigridMapping);
             m_NoOfSpecies = GetNoOfSpeciesList(m_MultigridMapping);
 
-            m_adj?.SaveToTextFileDebugUnsteady($"lvl{Level}_adj", ".txt");
-            m_xadj?.SaveToTextFileDebugUnsteady($"lvl{Level}_Xadj", ".txt");
-            m_NoOfSpecies?.SaveToTextFileDebugUnsteady($"lvl{Level}_specs", ".txt");
-
             //distribution at cell/block level
             (ThisCellI0s, ThisNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfThisProcs); 
 			(SmootherCellI0s, SmootherNewCellMapping) = DistributeMapping(m_MultigridMapping, NoOfSmootherProcs);
@@ -586,15 +582,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(m_adj.Where(j => j >= J).Count() == 0);
 
                         var weights = m_NoOfSpecies.Select(i => i * 100 + 1).ToArray();
-                        weights?.SaveToTextFileDebugUnsteady($"lvl{Level}_wghts", ".txt");
-
                         SymmetrizeCsr(m_xadj, m_adj, out var xadjSym, out var adjSym);
 
                         METIS.PARTGRAPHKWAY(
                                 ref J, ref ncon,
                                 xadjSym,
                                 adjSym,
-                                NoOfParts < 65 ? weights : null,
+                                weights,
                                 null,
                                 null,
                                 ref NoOfParts,
@@ -2144,8 +2138,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 		void WriteDebug(int iter, double res, string text) {
-			//CurrentTrace.StdoutOnAllRanks();
-
             int iLevel = TpLevel;			
 			if (iLevel >= 0)
 				CurrentTrace.Info($"{string.Concat(Enumerable.Repeat("-", iLevel))} OrthoMG, current level={iLevel}, " +
@@ -2622,7 +2614,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         trace.InfoToConsole = CurrentTrace.InfoToConsole;
                         trace.Info($"{string.Concat(Enumerable.Repeat("-", TpLevel))} OrthoMG, current level={TpLevel}, " +
-						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the coarse solver");
+						$"iteration={iIter} - Coarse cycled extra {k}-times while waiting the smoother");
 					}
 				}
 
