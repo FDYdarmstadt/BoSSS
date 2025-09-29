@@ -136,14 +136,15 @@ def check_formulas_xml():
 
                 report_entries.append(fmt_member_header(member_name))
                 report_entries.append("Equations:")
-                report_entries.append("")
 
                 for eq_text, kind in eqs:
-                        report_entries += [eq_text, ""]
+                    report_entries.append(eq_text)
                 report_entries.append("")
 
+
+
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(report_path, 'w', encoding='utf-8') as f:
+    with open(report_path, 'w', encoding='utf-8', newline='') as f:
         f.write("\\documentclass{article}\n"
                 "\\usepackage{amsmath, amssymb}\n"
                 "\\usepackage[T1]{fontenc}\n"
