@@ -905,9 +905,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             ActivateCaching = (int NoIter, int MgLevel) => true
                         };
                         if (BlockSolver.OperatorRestriction.DgMapping.TotalLength > 4096) {
-                            direct.config.UseDoublePrecision = false;
-                            direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
-                            direct.config.TestSolution = false;
+                            //direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
+                            //direct.config.TestSolution = false;
+
+                            var ParSolver = new SubSystemPardiso();
+                            ParSolver.UseDoublePrecision = false;
+                            ParSolver.DefineMatrix(BlockSolver.OperatorRestriction.OperatorMatrix);
+                            return ParSolver;
                         } else {
                             // Matrix is sufficiently small for direct solver
                             direct.config.WhichSolver = DirectSolver._whichSolver.Lapack;

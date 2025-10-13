@@ -196,7 +196,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Mtx = Mtx;
             }
         }
-    
+
 
         IOperatorMappingPair MatrixNMapping;
 
@@ -513,6 +513,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
     }
 
+    /// <summary>
+    /// In certain cases, it might be handy to use PardisoSolver for a subsystem without using DirectSolver class.
+    /// (.e.g, for memory reasons)
+    /// This is a wrapper around PardisoSolver which implements <see cref="ISubsystemSolver"/>.
+    /// </summary>
+    public class SubSystemPardiso : PARDISOSolver, ISubsystemSolver {
+        int ISolverSmootherTemplate.IterationsInNested => 0;
 
+        int ISolverSmootherTemplate.ThisLevelIterations => 1;
 
+        bool ISolverSmootherTemplate.Converged => true;
+
+        public void Init(IOperatorMappingPair op) {
+            var Mtx = op.OperatorMatrix;
+            var MgMap = op.DgMapping;
+            if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) { //notice that on Debug configuration Mtx may not be initialized
+                throw new ArgumentException("Row partitioning mismatch.");
+            }
+        }
+
+        object ICloneable.Clone() {
+            throw new NotImplementedException();
+        }
+
+        void ISolverSmootherTemplate.Init(MultigridOperator op) {
+            var Mtx = op.OperatorMatrix;
+            var MgMap = op.DgMapping;
+            if(!Mtx.RowPartitioning.EqualsPartition(MgMap)) { //notice that on Debug configuration Mtx may not be initialized
+                throw new ArgumentException("Row partitioning mismatch.");
+            }
+        }
+
+        void ISolverSmootherTemplate.ResetStat() {
+            throw new NotImplementedException();
+        }
+
+        void ISolverSmootherTemplate.Solve<U, V>(U X, V B) {
+            base.Solve(X, B);
+        }
+    }
 }
