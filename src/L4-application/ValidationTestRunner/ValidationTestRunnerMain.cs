@@ -129,8 +129,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "CollidingSpheres2D_condStudy",
-                "CollidingSpheres2D_condStudy",
-                "CollidingSpheres2D_condStudy",
                 new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
 			ValidationTestRunnerMain.RunWorksheet("AgglomerationTestcases/collidingSpheres2D.ipynb");
@@ -151,8 +149,6 @@ namespace ValidationTestRunner {
 			// this will cause a re-execution of all computations
 			// otherwise, i.e. if the database is not deleted, sessions from the database 
 			ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
-				"CollidingSpheres3D_condStudy",
-				"CollidingSpheres3D_condStudy",
 				"CollidingSpheres3D_condStudy",
 				new TimeSpan(days: 150, hours: 1, minutes: 0, seconds: 0));
 
@@ -414,8 +410,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "ViscousEddies",
-                "ViscousEddies*",
-                "delete_ViscousEddies",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("PrintingNip/ViscousEddies_Run.ipynb");
@@ -435,8 +429,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "CapillaryWave",
-                "CapillaryWave*",
-                "delete_CapillaryWave",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/CapillaryWave/CapillaryWave.ipynb");
@@ -456,8 +448,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PhasefieldRisingBubble",
-                "PhasefieldRisingBubble*",
-                "delete_PhasefieldRisingBubble",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldRisingBubble.ipynb");
@@ -477,8 +467,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "PhasefieldContactLine",
-                "PhasefieldContactLine*",
-                "delete_PhasefieldContactLine",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSE_Solver/Phasefield/PhasefieldContactLine.ipynb");
@@ -500,8 +488,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "TemperatureBoundaryCondition",
-                "TemperatureBoundaryCondition*",
-                "delete_TemperatureBoundaryCondition",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureBoundaryCondition.ipynb");
@@ -522,8 +508,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "TemperatureVelocityCoupling",
-                "TemperatureVelocityCoupling*",
-                "delete_TemperatureVelocityCoupling",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("TemperatureConvergence/TemperatureVelocityCoupling.ipynb");
@@ -544,8 +528,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "StefanProblem",
-                "StefanProblem*",
-                "delete_StefanProblem",
                 new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/StefanProblem_Run.ipynb");
@@ -566,8 +548,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "SuckingProblem",
-                "SuckingProblem*",
-                "delete_SuckingProblem",
                 new TimeSpan(days: 90, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/EvaporationValidation/SuckingProblem_Run.ipynb");
@@ -652,8 +632,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "SlugInChannel",
-                "SlugInChannel*",
-                "delete_SlugInChannel",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("FreeXNSE/SlugInChannel/ContactLineModelingSlugInChannel.ipynb");
@@ -673,8 +651,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "ContactAngleHysteresis",
-                "ContactAngleHysteresis*",
-                "delete_ContactAngleHysteresis",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("FreeXNSE/ContactAngleHysteresis/ContactLineModelingContactAngleHysteresis.ipynb");
@@ -694,8 +670,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "SlipConvergence_Droplet",
-                "SlipConvergence_Droplet*",
-                "delete_SlipConvergence_Droplet",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet.ipynb");
@@ -715,8 +689,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "SlipConvergence_Droplet_Zoom",
-                "SlipConvergence_Droplet_Zoom*",
-                "delete_SlipConvergence_Droplet_Zoom",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/SlipConvergence/SlipConvergence_Droplet_Zoom.ipynb");
@@ -737,8 +709,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "3PhaseDemo",
-                "3PhaseDemo*",
-                "delete_3PhaseDemo",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 0));
 
             ValidationTestRunnerMain.RunWorksheet("XNSFE_Solver/HeatedWall_Simple/HeatedWall90DegSimple_3PhaseDemo.ipynb");
@@ -843,8 +813,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "HeatedCavity_RayleighSweepStudy",
-                "HeatedCavity_RayleighSweepStudy*",
-                "delete_HeatedCavityRayleighSweep",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_RaSweep.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_RaSweepPostProc.ipynb");
@@ -862,8 +830,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "HeatedCavity_ConvergenceStudy",
-                "HeatedCavity_ConvergenceStudy*",
-                "delete_HeatedCavityConvergenceStudy",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_ConvStudy.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_ConvStudyPostProc.ipynb");
@@ -883,8 +849,6 @@ namespace ValidationTestRunner {
             //System.Diagnostics.Debugger.Launch();
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "HeatedCavity_NusseltStudy",
-                "HeatedCavity_NusseltStudy*",
-                "delete_HeatedCavityNusseltStudy",
                 new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudy.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedSquareCavity/HeatedCavity_NusseltStudyPostProc.ipynb");
@@ -929,8 +893,6 @@ namespace ValidationTestRunner {
             }
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "CounterFlowFlame",
-                "CounterFlowFlame*",
-                "delete_CoFlowDiffusionFlame",
                 new TimeSpan(days: 30, hours: 0, minutes: 0, seconds: 1));
 
 
@@ -943,17 +905,12 @@ namespace ValidationTestRunner {
 
         [Test]
         static public void Run__HeatedBackwardFacingStep() {
-
-
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "HeatedBackwardFacingStep",
-                "HeatedBackwardFacingStep*",
-                "delete_HeatedBackwardFacingStep",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
 
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/HeatedBackwardFacingStep/HeatedBackwardFacingStep_PostProc.ipynb");
-
         }
 
 
@@ -975,8 +932,6 @@ namespace ValidationTestRunner {
 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "DiffFlameConvergenceStudy",
-                "DiffFlameConvergenceStudy*",
-                "delete_DiffusionFlameConvergenceStudy",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_Calculations.ipynb");
             ValidationTestRunnerMain.RunWorksheet("LowMach/DiffusionFlames/ChamberedDiffusionFlame/ChamberFlame_ConvStudy_PostProc.ipynb");
@@ -1009,8 +964,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "OscillatingDroplet3D",
-                "OscillatingDroplet3D*",
-                "delete_Droplet3D",
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("Oscillating-Droplet/Droplet3D.ipynb");
 
@@ -1041,8 +994,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "CombustingDroplet",
-                "CombustingDroplet*",
-                "delete_CombustingDroplet",
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
             ValidationTestRunnerMain.RunWorksheet("CombustingDroplet.ipynb");
         }
@@ -1070,8 +1021,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "OscillatingDroplet3D_FirstPeriodStudy",
-                "OscillatingDroplet3D_FirstPeriodStudy*",
-                "delete_Droplet3D_FirstPeriodStudy",
                 new TimeSpan(days: 30, hours: 1, minutes: 0, seconds: 1));
 
             ValidationTestRunnerMain.RunWorksheet("Oscillating-Droplet/Droplet3D-FirstPeriodStudy.ipynb");
@@ -1083,10 +1032,10 @@ namespace ValidationTestRunner {
         /// Cooperation project with CREATOR (SLA) - Experiment from Gauthier et. al.
         /// </summary>
         [NUnitFileToCopyHack("examples/DropletImpact/DropletReboundGauthier_Run.ipynb",
-            "vonKarmanFlowSolution_HAMcoeffU.txt",
-            "vonKarmanFlowSolution_HAMcoeffV.txt",
-            "vonKarmanFlowSolution_HAMcoeffW.txt",
-            "vonKarmanFlowSolution_HAMcoeffP.txt")]
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffU.txt",
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffV.txt",
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffW.txt",
+            "examples/DropletImpact/vonKarmanFlowSolution_HAMcoeffP.txt")]
         [Test]
         static public void Run__DropletReboundGauthier() {
 
@@ -1130,8 +1079,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "KovasznayFlow_ConvStudy",
-                $"KovasznayFlow_ConvStudy*",
-                "delete_KovasznayFlow_ConvStudy",
                 new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1));
 
             //ValidationTestRunnerMain.RunWorksheet("DongBC_SteadyStateConvStudy_KovasznayFlow.ipynb");
@@ -1162,8 +1109,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "LinslvPerfPar_GridGen",
-                "LinslvPerfPar_GridGen*",
-                "delete_LinslvPerfPar_GridGen",
                 new TimeSpan(days: 60, hours: 1, minutes: 0, seconds: 1));
 
             ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_GridGen.ipynb");
@@ -1309,8 +1254,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 PROJECT_NAME,
-                $"{PROJECT_NAME}*",
-                "delete_LinslvPerfSer",
                 new TimeSpan(days: 60, hours: 0, minutes: 0, seconds: 1));
 
             ValidationTestRunnerMain.RunWorksheet("LinslvPerf_ConstPoissonMpi1.ipynb");
@@ -1521,8 +1464,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 PROJECT_NAME,
-                $"{PROJECT_NAME}*",
-                "delete_LinslvPerfPar",
                 new TimeSpan(days: 40, hours: 0, minutes: 0, seconds: 1));
 
             ValidationTestRunnerMain.RunWorksheet("ParLinslvPerf_ConstPoisson.ipynb", allowErrors: true);
@@ -1574,8 +1515,6 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 "MetaJobManager_Tutorial",
-                "MetaJobManager_Tutorial*",
-                "delete_MetaJobManager",
                 new TimeSpan(days: 5, hours: 1, minutes: 0, seconds: 1));
 
 
@@ -1586,7 +1525,6 @@ namespace ValidationTestRunner {
 
 
     }
-
 
     static class ValidationTestRunnerMain {
 
@@ -1599,8 +1537,6 @@ namespace ValidationTestRunner {
                 $"delete_{ProjectName}",
                 DeletionAge);
         }
-
-
 
         /// <summary>
         /// Deletes a database <paramref name="Directory"/> if it older than specified by <paramref name="DeletionAge"/>
