@@ -835,7 +835,7 @@ namespace BoSSS.Application.BoSSSpad {
                             this.ExitCodeCache = ExitCode;
                         } catch (Exception e) {
                            
-                            tr.Error($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}");
+                            tr.Info($"{e.GetType().Name} during Job.Deployment status evaluation: {e.Message}; Most likely reason: job was submitted a long time ago, and the job manager deleted teh respective record."); 
                             tr.Info("Exception trace: " + (e.StackTrace ?? ""));
                             bpc_status = JobStatus.Unknown;
                             ExitCode = null;
