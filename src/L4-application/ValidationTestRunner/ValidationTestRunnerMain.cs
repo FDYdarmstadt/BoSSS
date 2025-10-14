@@ -18,7 +18,7 @@ using MPI.Wrappers;
 namespace ValidationTestRunner {
 
     /// <summary>
-    /// Extends the public tests to some which are only available in the internal par of BoSSS
+    /// Extends the public tests to some which are only available in the internal part of BoSSS
     /// </summary>
     class ValidationTests : ITestTypeProvider {
 
@@ -1371,15 +1371,31 @@ namespace ValidationTestRunner {
             // otherwise, i.e. if the database is not deleted, sessions from the database 
             ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
                 PROJECT_NAME,
-                $"{PROJECT_NAME}*",
-                "delete_memprofile",
                 new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
 
-            NotebookRunner.DeleteDeployments("memprofile*");
-
             ValidationTestRunnerMain.RunWorksheet("memprofile/memprofile.ipynb");
-
         }
+
+        /// <summary> 
+        /// Testing of memory scaling.
+        /// </summary>
+        [NUnitFileToCopyHack("DropletInShearFlow/DropletInShearFlow.ipynb")]
+        [Test]
+        static public void Run__DropletInShearFlow() {
+            //--test=ValidationTestRunner.WorksheetTests_Local_long.Run__DropletInShearFlow
+
+            const string PROJECT_NAME = "DropletInShearFlow";
+
+            // delete the database if it is more than XX days old;
+            // this will cause a re-execution of all computations
+            // otherwise, i.e. if the database is not deleted, sessions from the database 
+            ValidationTestRunnerMain.DeleteDatabaseAndDeploymentsWhenOld(
+                PROJECT_NAME,
+                new TimeSpan(days: 10, hours: 0, minutes: 0, seconds: 1));
+
+            ValidationTestRunnerMain.RunWorksheet("DropletInShearFlow/DropletInShearFlow.ipynb");
+        }
+
     }
 
 
@@ -1573,6 +1589,18 @@ namespace ValidationTestRunner {
 
 
     static class ValidationTestRunnerMain {
+
+        /// <summary>
+        /// simpler version of <see cref="DeleteDatabaseAndDeploymentsWhenOld(string, string, string, TimeSpan)">
+        /// </summary>
+        public static void DeleteDatabaseAndDeploymentsWhenOld(string ProjectName, TimeSpan DeletionAge) {
+            DeleteDatabaseAndDeploymentsWhenOld(ProjectName,
+                $"{ProjectName}*",
+                $"delete_{ProjectName}",
+                DeletionAge);
+        }
+
+
 
         /// <summary>
         /// Deletes a database <paramref name="Directory"/> if it older than specified by <paramref name="DeletionAge"/>
