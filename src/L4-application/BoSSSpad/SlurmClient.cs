@@ -506,7 +506,7 @@ namespace BoSSS.Application.BoSSSpad {
                 foreach (string arg in moduleLoad) {
                     sw.WriteLine(arg);
                 }
-                sw.WriteLine($"env > {jobpath_unix}/env.txt");
+
                 // Set environment variables for Job
                 foreach (var envvar in myJob.EnvironmentVars) {
                     if (envvar.Key.ContainsWhite())
@@ -538,7 +538,6 @@ namespace BoSSS.Application.BoSSSpad {
                 //sw.WriteLine($"export COMPlus_GCHeapAffinitizeMask=0x{mask:X}");
 
                 // Set startupstring
-                sw.WriteLine($"ls");
                 string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
                 sw.WriteLine("cd " + DeploymentDirectoryAtRemote(DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
