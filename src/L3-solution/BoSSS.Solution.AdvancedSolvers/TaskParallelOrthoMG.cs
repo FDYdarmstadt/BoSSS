@@ -251,8 +251,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             m_ProlMtx = ChangeProlPartitioning(ThisTargetPartitioning, localBlocksForThisLevel, FinerLevelCoarsePartitiong, FinerLevelCoarseBlocks, "Pro"); //same processors different level of mg operator (different number of cells for row and column)
 
+            thisLevelPermutationMtx.Clear();
             thisLevelPermutationMtx = null;
-			thisLevelPermutationMtxTranspose = null;
+            thisLevelPermutationMtxTranspose.Clear();
+            thisLevelPermutationMtxTranspose = null;
 		}
 
 		BlockMsrMatrix thisLevelPermutationMtx = null;
@@ -1302,7 +1304,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// <summary>
 		/// The matrix at this level.
 		/// </summary>
-		public BlockMsrMatrix OpMatrix => thisCommOpMatrix; // m_OpMapPair.OperatorMatrix;
+		//public BlockMsrMatrix OpMatrix => thisCommOpMatrix; // m_OpMapPair.OperatorMatrix;
 		public BlockMsrMatrix WorldCommOpMatrix => m_OpMapPair.OperatorMatrix;
 
 		TaskParallelMGOperator TpMapping => m_OpMapPair as TaskParallelMGOperator;
@@ -1481,11 +1483,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			if (mtx == null)
 				return null;
 
-			// Row partitioning must be already in the desired form, otherwise, this is not only changing communicator but distributing the matrix
-
-			// Get the local row block information
-			var RowlocalBlocks = GetLocalBlocks(mtx._RowPartitioning); 
-			var newRowPartition = GetPartitioning(RowlocalBlocks, comm);
+            var newRowPartition = GetNewPartitioning(mtx, localBlocks, comm, MPIRankMapping);
 
 			// Get the local column block information
 			var newColPartition = GetPartitioning(localBlocks, comm);
@@ -1503,6 +1501,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 			return ret; // finally create a new matrix with the new Comm
 		}
+
+        IBlockPartitioning GetNewPartitioning(BlockMsrMatrix mtx, (long i0Global, int CellLen)[] localBlocks, MPI_Comm comm, int[] MPIRankMapping) {
+            if(mtx == null)
+                return null;
+
+            // Get the local row block information
+            var RowlocalBlocks = GetLocalBlocks(mtx._RowPartitioning);
+            return GetPartitioning(RowlocalBlocks, comm);
+        }
 
 		(long i0Global, int CellLen)[] GetLocalBlocks(IBlockPartitioning part) { 
 			int J = part.LocalNoOfBlocks;
@@ -1526,7 +1533,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		BlockMsrMatrix subCommLeftChangeOfBasisMatrix = null;
 		BlockMsrMatrix subCommRightChangeOfBasisMatrix = null;
 
-		BlockMsrMatrix thisCommOpMatrix = null;
+		//BlockMsrMatrix thisCommOpMatrix = null;
 		BlockMsrMatrix subCommSmootherOpMatrix = null;
 		BlockMsrMatrix subCommCoarseOpMatrix = null;
 
@@ -1681,8 +1688,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		void MigrateFromWorldToSubComms() {
 			using (var tr = new FuncTrace()) {
-				thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
-				subCommSmootherOpMatrix = ChangeCommunicator(TpMapping.m_OpMtx_smoother, TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
+				//thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
+                thisPartitioningInThisComm = GetNewPartitioning(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
+                subCommSmootherOpMatrix = ChangeCommunicator(TpMapping.m_OpMtx_smoother, TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
 
                 // In MG operator, the prolongation and restriction operators are stored at the coarse level and restriction performed by operator
                 // However, this is not the case here. The MG operator is dedicated for world level communications and key informations.
@@ -1708,7 +1716,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		(long i0Cell, int lenCell)[] smootherBlocks;
 		(long i0Cell, int lenCell)[] coarseBlocks;
 
-		IBlockPartitioning thisPartitioningInThisComm => thisCommOpMatrix._RowPartitioning; //thisCommProlongationOperator == null ? TpMapping.ThisTargetPartitioning : thisCommProlongationOperator._RowPartitioning; // if this instance is for the finest level without prolongation operator, then we can use the this Partitioning at the world level. If not, get the this partitioning from the prolongation operator (comm operator has changed).
+		IBlockPartitioning thisPartitioningInThisComm;// => thisCommOpMatrix._RowPartitioning; //thisCommProlongationOperator == null ? TpMapping.ThisTargetPartitioning : thisCommProlongationOperator._RowPartitioning; // if this instance is for the finest level without prolongation operator, then we can use the this Partitioning at the world level. If not, get the this partitioning from the prolongation operator (comm operator has changed).
 
 		/// <summary>
 		/// Permutation matrices from thisComm to subComms (to disribute vectors)
@@ -2102,20 +2110,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        /// <summary>
-        /// computes the residual on this level.
-        /// </summary>
-        /// <param name="B">input: RHS of the system</param>
-        /// <param name="X">input: solution approximation</param>
-        /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
-        public void Residual(double[] Res, double[] X, double[] B) {
-            using (new FuncTrace()) {
-                Debug.Assert(Res.Length == OpMatrix.ColPartition.LocalLength);
-                Debug.Assert(X.Length == OpMatrix.ColPartition.LocalLength);
-                Debug.Assert(B.Length == OpMatrix.ColPartition.LocalLength);
+        ///// <summary>
+        ///// computes the residual on this level.
+        ///// </summary>
+        ///// <param name="B">input: RHS of the system</param>
+        ///// <param name="X">input: solution approximation</param>
+        ///// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
+        //public void Residual(double[] Res, double[] X, double[] B) {
+        //    using (new FuncTrace()) {
+        //        Debug.Assert(Res.Length == OpMatrix.ColPartition.LocalLength);
+        //        Debug.Assert(X.Length == OpMatrix.ColPartition.LocalLength);
+        //        Debug.Assert(B.Length == OpMatrix.ColPartition.LocalLength);
+        //        int L = Res.Length;
+        //        Array.Copy(B, Res, L);
+        //        OpMatrix.SpMV(-1.0, X, 1.0, Res);
+        //    }
+        //}
+
+        ///// <summary>
+        ///// computes the residual on fine level on smoother operator matrix.
+        ///// </summary>
+        ///// <param name="B">input: RHS of the system</param>
+        ///// <param name="X">input: solution approximation</param>
+        ///// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
+        public void ResidualOnSmoother(double[] Res, double[] X, double[] B) {
+            using(new FuncTrace()) {
+                Debug.Assert(Res.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
+                Debug.Assert(X.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
+                Debug.Assert(B.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
                 int L = Res.Length;
                 Array.Copy(B, Res, L);
-                OpMatrix.SpMV(-1.0, X, 1.0, Res);
+                subCommSmootherOpMatrix.SpMV(-1.0, X, 1.0, Res);
             }
         }
 
@@ -2168,14 +2193,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				double[] Res = new double[L];
 
 				// Initialize residual
-				double[] Res0 = InitializeResidual(X, B, Res);
+				//double[] Res0 = InitializeResidual(X, B, Res);
 
                 //this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
                                 
                 // clear history of coarse solvers
                 ortho.Clear();
 
-                PerformIterations(ref X, B, Res, Res0);
+                PerformIterations(ref X, B, Res);
 
 				// solution copy
 				// =============
@@ -2198,20 +2223,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			return input.ToArray();
 		}
 
-		private double[] InitializeResidual(double[] X, double[] B, double[] Res) {
-			int L = X.Length;
-			double[] Res0 = new double[L];
-			Residual(Res0, X, B); //res0 with x0
-			Array.Copy(Res0, Res, L);
+		//private double[] InitializeResidual(double[] X, double[] B, double[] Res) {
+		//	int L = X.Length;
+		//	double[] Res0 = new double[L];
+		//	Residual(Res0, X, B); //res0 with x0
+		//	Array.Copy(Res0, Res, L);
 
-            if ((myTask == TpTaskType.Smoother || myTask == TpTaskType.All) && ortho.Norm(Res0) <= 0) {
-				double normB = ortho.Norm(B);
-				double normX = ortho.Norm(X);
-				throw new ArithmeticException($"Residual is 0.0: |X| = {normX}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}; task={myTask}");
-			}
+  //          if ((myTask == TpTaskType.Smoother || myTask == TpTaskType.All) && ortho.Norm(Res0) <= 0) {
+		//		double normB = ortho.Norm(B);
+		//		double normX = ortho.Norm(X);
+		//		throw new ArithmeticException($"Residual is 0.0: |X| = {normX}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}; task={myTask}");
+		//	}
 
-			return Res0;
-		}
+		//	return Res0;
+		//}
+
+        private double[] InitializeResidualOnSmoother(double[] X, double[] B, double[] Res) {
+            int L = X.Length;
+            double[] Res0 = new double[L];
+            ResidualOnSmoother(Res0, X, B); //res0 with x0
+            Array.Copy(Res0, Res, L);
+
+            if((myTask == TpTaskType.Smoother || myTask == TpTaskType.All) && ortho.Norm(Res0) <= 0) {
+                double normB = ortho.Norm(B);
+                double normX = ortho.Norm(X);
+                throw new ArithmeticException($"Residual is 0.0: |X| = {normX}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}; task={myTask}");
+            }
+
+            return Res0;
+        }
 
         private void DebugPrint<T>(T input, string filename, string extension) { 
            if(verbose) {
@@ -2247,9 +2287,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 DebugPrint(Res, "Res", ".txt");
 
                 // Permutation operators live on thisComm, which means that they should be called on thisComm
-                ResforSmoother = smootherPermutation.PermutateVector(Res);
+                //ResforSmoother = smootherPermutation.PermutateVector(Res);
                 XforSmoother = smootherPermutation.PermutateVector(X); // new double[smootherPermutation.LengthAfterPermutation];
+                var BforSmoother = smootherPermutation.PermutateVector(B); // new double[smootherPermutation.LengthAfterPermutation];
+                ResforSmoother = new double[smootherPermutation.LengthAfterPermutation];
+                InitializeResidualOnSmoother(XforSmoother, BforSmoother, ResforSmoother);
 
+
+                Res = smootherPermutation.PermutateVectorBack(ResforSmoother); //permutate back to the this
                 ResforCoarse = coarsePermutation.PermutateVector(Res); 
                 XforCoarse = new double[ResforCoarse.Length];  // Coarse correction will be applied to this vector
 
@@ -2333,8 +2378,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="X"></param>
         /// <param name="B"></param>
         /// <param name="Res"></param>
-        /// <param name="Res0"></param>
-        private void PerformIterations(ref double[] X, double[] B, double[] Res, double[] Res0) {
+        private void PerformIterations(ref double[] X, double[] B, double[] Res) {
 
             // Initialize task-specific data
             double[] XforCoarse, XforSmoother, ResforCoarse, ResforSmoother;
