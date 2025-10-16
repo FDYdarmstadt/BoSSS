@@ -2164,7 +2164,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="B">input: RHS of the system</param>
         /// <param name="X">input: solution approximation</param>
-        /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
+        /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="subCommSmootherOpMatrix"/>*<paramref name="X"/></param>
         public void ResidualOnSmoother(double[] Res, double[] X, double[] B) {
             using(new FuncTrace()) {
                 Debug.Assert(Res.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
@@ -2224,9 +2224,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				int L = X.Length;
 				double[] Res = new double[L];
 
-				// Initialize residual
-				double[] Res0 = InitializeResidual(X, B, Res);
-                Res0.SaveToTextFileDebug("Res0", ".txt");
 
                 //this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
 
