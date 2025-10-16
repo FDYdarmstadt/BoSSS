@@ -49,6 +49,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using ilPSP.LinSolvers.PARDISO;
 using BoSSS.Solution.AdvancedSolvers;
+using System.ComponentModel;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -577,8 +578,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.InitialValues.Clear();
             C.InitialValues_Evaluators.Clear();
 
-            C.Phi = Tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
+            C.AddExactSolution("Phi", Tst.GetPhi());
+            C.AddInitialValue("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
         }
 
         private static void XHeatSolverTest(IXHeatTest Tst, XNSFE_Control C) {
@@ -894,16 +895,15 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
-
+            
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionTemperature.Add(spc, tst.GetT(spc));
+                C.AddExactSolution( VariableNames.Temperature, spc, tst.GetT(spc));
 
-                C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetT(spc).Convert_Xt2X(0.0));
+                C.AddInitialValue(VariableNames.Temperature, spc, tst.GetT(spc).Convert_Xt2X(0.0));
             }
 
-            C.Phi = tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", tst.GetPhi().Convert_Xt2X(0.0));
+            C.AddExactSolution("Phi", tst.GetPhi());
+            C.AddInitialValue("Phi", tst.GetPhi().Convert_Xt2X(0.0));
 
             // advanced spatial discretization settings
             // ========================================
@@ -1040,20 +1040,16 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-                        
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionTemperature.Add(spc, tst.GetT(spc));
-                C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetT(spc).Convert_Xt2X(0.0));
+                C.AddExactSolution(VariableNames.Temperature, spc, tst.GetT(spc));
+                C.AddInitialValue(VariableNames.Temperature, spc, tst.GetT(spc).Convert_Xt2X(0.0));
 
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
+                C.AddExactSolution(VariableNames.Pressure, spc, tst.GetPress(spc));
+                C.AddInitialValue(VariableNames.Pressure, spc, tst.GetPress(spc).Convert_Xt2X(0.0));
 
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
                 for (int d = 0; d < D; d++) {
-                    C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
+                    C.AddExactSolution(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
+                    C.AddInitialValue(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                 }
 
                 Func<double[], double, double>[] Gravity = new Func<double[], double, double>[D];
@@ -1066,8 +1062,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 C.SetHeatSource(spc, Source);
             }
 
-            C.Phi = tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", tst.GetPhi().Convert_Xt2X(0.0));
+            C.AddExactSolution("Phi", tst.GetPhi());
+            C.AddInitialValue("Phi", tst.GetPhi().Convert_Xt2X(0.0));
 
             if (tst.TestImmersedBoundary) {
                 C.FieldOptions.Add("Phi2DG", new FieldOpts() {

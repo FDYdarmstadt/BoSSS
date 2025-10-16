@@ -200,19 +200,17 @@ namespace BoSSS.Application.XNSEC {
             // ==============
             #region exact
 
-            C.Phi = ((X, t) => PhiFunc(X));
+            C.AddExactSolution("Phi", PhiFunc);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             if(D == 2) {
-                C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-                C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
+                for(int d = 0; d < D; d++) {
+                    C.AddExactSolution(VariableNames.Velocity_d(d), "A", (X, t) => 0.0);
+                    C.AddExactSolution(VariableNames.Velocity_d(d), "B", (X, t) => 0.0);
+                }
             }
 
-
-
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => 0.0);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution(VariableNames.Pressure, "A", (X, t) => 0.0);
+            C.AddExactSolution(VariableNames.Pressure, "B", (X, t) => 0.0);
 
             #endregion
 

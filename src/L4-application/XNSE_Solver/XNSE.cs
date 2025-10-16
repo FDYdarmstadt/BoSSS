@@ -32,6 +32,8 @@ using static System.Reflection.Metadata.BlobBuilder;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.Timestepping;
 using System.Collections;
+using BoSSS.Application.XNSE_Solver.SpecificSolutions;
+using System.Globalization;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -892,25 +894,40 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 // level-set
                 // ---------
-                this.LsUpdater.LevelSets["Phi"].DGLevelSet.ProjectField(X => this.Control.Phi(X, Time));
-                //this.LsUpdater.LevelSets[0].CGLevelSet..ProjectField(X => this.Control.Phi(X, Time));
-
-                //this.LsTrk.UpdateTracker(Time, incremental: true);
+                this.LsUpdater.LevelSets["Phi"].DGLevelSet.ProjectField(this.Control.InitialValues_EvaluatorsVec["Phi"].SetTime(Time));
+                
 
                 // solution
                 // --------
                 int D = this.LsTrk.GridDat.SpatialDimension;
 
-                for(int d = 0; d < D; d++) {
-                    XDGField _u = (XDGField)St[d];
-                    _u.Clear();
-                    _u.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionVelocity["A"][d](X, Time));
-                    _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionVelocity["B"][d](X, Time)));
+
+                ScalarFunction GetInitial(string name, string species) {
+                    ScalarFunctionTimeDep res;
+                    if(this.Control.InitialValues_EvaluatorsVec.TryGetValue(name + "#" + species, out res)) {
+
+                    } else if(this.Control.InitialValues_EvaluatorsVec.TryGetValue(name, out res)) {
+                                               
+                    } else {
+                        res = delegate (MultidimensionalArray input, double time, MultidimensionalArray output) {
+                            output.Clear();
+                        };
+                    }
+
+                    return res.SetTime(Time);
                 }
-                XDGField _p = (XDGField)St[D];
-                _p.Clear();
-                _p.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionPressure["A"](X, Time));
-                _p.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionPressure["B"](X, Time)));
+
+                foreach(var f in St)
+                    f.Clear();
+
+                foreach(string spcName in this.LsTrk.SpeciesNames) {
+                    for(int d = 0; d < D; d++) {
+                        XDGField _u = (XDGField)St[d];
+                        _u.GetSpeciesShadowField(spcName).ProjectField(GetInitial(VariableNames.Velocity_d(d), spcName));
+                    }
+                    XDGField _p = (XDGField)St[D];
+                    _p.GetSpeciesShadowField(spcName).ProjectField(GetInitial(VariableNames.Pressure, spcName));
+                }
             }
         }
 

@@ -738,22 +738,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ==============
             #region exact
 
-            C.Phi = ((X, t) => PhiFunc(X));
+            C.AddExactSolution("Phi", PhiFunc);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            if(D == 2) {
-                C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-                C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
+            for(int d = 0; d < D; d++) {
+                C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d), "A", (X, t) => 0.0);
+                C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d), "B", (X, t) => 0.0);
             }
-
-            if(D == 3) {
-                C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0, (X, t) => 0.0 });
-                C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0, (X, t) => 0.0 });
-            }
-
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Pressure, "A", (X, t) => Pjump);
+            C.AddExactSolution(BoSSS.Solution.NSECommon.VariableNames.Pressure, "B", (X, t) => 0.0);
 
             #endregion
 

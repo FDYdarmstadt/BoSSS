@@ -465,13 +465,13 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double> PsiB = (X, t) => psiB(X.L2Norm());
 
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { UA1, UA2 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { UB1, UB2 });
+            C.AddExactSolution("VelocityX#A", UA1);
+            C.AddExactSolution("VelocityY#A", UA2);
+            C.AddExactSolution("VelocityX#B", UB1);
+            C.AddExactSolution("VelocityY#B", UB2);
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", PsiA);
-            C.ExactSolutionPressure.Add("B", PsiB);
+            C.AddExactSolution("Pressure#A", PsiA);
+            C.AddExactSolution("Pressure#B", PsiA);
 
 
             // Boundary condition
@@ -2461,21 +2461,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Func<double[], double, double> psi_0 = (X, t) => psi0 * X[0] + (xSize * psi0 + 1);
 
-            //Func<double, double> phi = t => t * v0;
+            C.AddExactSolution("VelocityX#A", u_A);
+            C.AddExactSolution("VelocityY#A", v_0);
+            C.AddExactSolution("VelocityX#B", u_B);
+            C.AddExactSolution("VelocityY#B", v_0);
+            C.AddExactSolution("Pressure#A", psi_0);
+            C.AddExactSolution("Pressure#B", psi_0);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { u_A, v_0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { u_B, v_0 });
-
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", psi_0);
-            C.ExactSolutionPressure.Add("B", psi_0);
-
-            //double[] X_test = new double[] {0,1};
-            //double u_B_test = u_B(X_test,0);
-            //Console.WriteLine("u_B = {0}", u_B_test);
-            //u_B_test = u_B(X_test, 1);
-            //Console.WriteLine("u_B = {0}", u_B_test);
 
             #endregion
 
@@ -3621,15 +3613,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==============
 
 
-            C.Phi = ((X, t) => ((X[0] - (center[0] + Xvel * t)).Pow2() + (X[1] - (center[1])).Pow2()).Sqrt() - radius);
+            C.AddExactSolution("Phi", (X, t) => ((X[0] - (center[0] + Xvel * t)).Pow2() + (X[1] - (center[1])).Pow2()).Sqrt() - radius);
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => Xvel, (X, t) => 0.0 });
-            C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => Xvel, (X, t) => 0.0 });
 
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionPressure.Add("A", (X, t) => 0.0);
-            C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
+            C.AddExactSolution(VariableNames.VelocityX, X => Xvel);
+            C.AddExactSolution(VariableNames.Pressure, X => 0.0);
 
 
             // Fourier Level-Set

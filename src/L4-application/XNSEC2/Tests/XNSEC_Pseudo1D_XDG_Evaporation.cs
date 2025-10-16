@@ -306,18 +306,14 @@ namespace BoSSS.Application.XNSEC {
             // =================================
             // initial values and exact solution
             // =================================
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionMassFractions = new Dictionary<string, Func<double[], double, double>[]>();
             int D = 2;
-
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionPressure.Add(spc, GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => GetU(spc, d)));
-                for (int d = 0; d < D; d++) {
+                C.AddExactSolution(VariableNames.Pressure, spc, GetPress(spc));
+                for(int d = 0; d < D; d++)
+                    C.AddExactSolution(VariableNames.Velocity_d(d), spc, GetU(spc, d));
+               
+                for(int d = 0; d < D; d++)
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, GetU(spc, d).Convert_Xt2X(0.0));
-                }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, GetPress(spc).Convert_Xt2X(0.0));
                 C.InitialValues_Evaluators.Add(VariableNames.MixtureFraction + "#" + spc, X => 0.5);

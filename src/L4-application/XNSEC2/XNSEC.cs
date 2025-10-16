@@ -953,7 +953,7 @@ namespace BoSSS.Application.XNSEC {
             Console.WriteLine("Duration of this timestep: " + overallduration);
             Console.WriteLine($"done with time step {TimestepNo}");
 
-            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || Control.ExactSolutions_Evaluators_TimeDep.Keys.Any(name => name.StartsWith("Velocity"))) {
                 CalcErrors();
             }
 
@@ -1035,7 +1035,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             // Create fields for analytical solution and errors
-            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || Control.ExactSolutions_Evaluators_TimeDep.Keys.Any(name => name.StartsWith("Velocity"))) {
                 // Errors:
                 var errFields = InstantiateErrorFields();
                 foreach (var f in errFields) {

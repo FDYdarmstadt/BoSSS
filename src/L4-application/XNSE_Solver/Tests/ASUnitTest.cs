@@ -1802,7 +1802,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.InitialValues.Clear();
             C.InitialValues_Evaluators.Clear();
 
-            C.Phi = Tst.GetPhi();
+            C.AddExactSolution("Phi", Tst.GetPhi());
             C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
 
             XNSESolverTest(Tst, C);
@@ -1945,14 +1945,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // initial values and exact solution
             // =================================
 
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-
+           
 
             foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-
+                C.AddExactSolution($"Pressure#{spc}", tst.GetPress(spc));
+                for(int d = 0; d < D; d++) {
+                    string comp = new string((char)('X' + d), 1);
+                    C.AddExactSolution($"Velocity{comp}#{spc}", tst.GetU(spc, d));
+                }
 
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
@@ -1970,7 +1970,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
 
-            C.Phi = tst.GetPhi();
+            C.AddExactSolution("Phi", tst.GetPhi());
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
 
             // advanced spatial discretization settings
