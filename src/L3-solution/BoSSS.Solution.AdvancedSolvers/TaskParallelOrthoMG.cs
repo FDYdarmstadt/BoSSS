@@ -691,11 +691,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        public void ClearMemory() { 
+        public void ClearMemory() {
+            m_OpMtx?.Clear();
 			m_OpMtx = null;
+            
+            m_OpMtx_smoother?.Clear();
+            m_OpMtx_smoother = null;
+
+            m_OpMtx?.Clear();
 			m_ProlMtx = null;
-			m_LeftChangeOfBasis = null;
-			m_RightChangeOfBasis = null;
+
+            m_LeftChangeOfBasis?.Clear();
+            m_LeftChangeOfBasis = null;
+
+            m_RightChangeOfBasis?.Clear();   
+            m_RightChangeOfBasis = null;
 		}
 	}
 
@@ -1706,7 +1716,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				if (worldCommFromCoarseRightChangeOfBasisMatrix != null)
 					subCommRightChangeOfBasisMatrix = ChangeCommunicator(worldCommFromCoarseRightChangeOfBasisMatrix,
 					TpMapping.CoarserLevel.localBlocksForThisLevel, subComm, WorldToSubCommMapping);
-
 
 
 				TpMapping.ClearMemory();
