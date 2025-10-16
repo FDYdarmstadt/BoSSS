@@ -1311,11 +1311,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-		/// <summary>
-		/// The matrix at this level.
-		/// </summary>
-		//public BlockMsrMatrix OpMatrix => thisCommOpMatrix; // m_OpMapPair.OperatorMatrix;
-		public BlockMsrMatrix WorldCommOpMatrix => m_OpMapPair.OperatorMatrix;
+#if DEBUG
+        /// <summary>
+        /// The matrix at this level.
+        /// </summary>
+        public BlockMsrMatrix OpMatrix => thisCommOpMatrix; // m_OpMapPair.OperatorMatrix;
+        BlockMsrMatrix thisCommOpMatrix = null;
+#endif
+        public BlockMsrMatrix WorldCommOpMatrix => m_OpMapPair.OperatorMatrix;
 
 		TaskParallelMGOperator TpMapping => m_OpMapPair as TaskParallelMGOperator;
 
@@ -1543,7 +1546,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		BlockMsrMatrix subCommLeftChangeOfBasisMatrix = null;
 		BlockMsrMatrix subCommRightChangeOfBasisMatrix = null;
 
-		//BlockMsrMatrix thisCommOpMatrix = null;
+		
 		BlockMsrMatrix subCommSmootherOpMatrix = null;
 		BlockMsrMatrix subCommCoarseOpMatrix = null;
 
@@ -1698,7 +1701,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 		/// </summary>
 		void MigrateFromWorldToSubComms() {
 			using (var tr = new FuncTrace()) {
-				//thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
+
+#if DEBUG
+                thisCommOpMatrix = ChangeCommunicator(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
+#endif
                 thisPartitioningInThisComm = GetNewPartitioning(WorldCommOpMatrix, TpMapping.localBlocksForThisLevel, thisComm, WorldToThisCommMapping);
                 subCommSmootherOpMatrix = ChangeCommunicator(TpMapping.m_OpMtx_smoother, TpMapping.localBlocksForSmoother, subComm, WorldToSubCommMapping);
 
@@ -2119,29 +2125,46 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        ///// <summary>
-        ///// computes the residual on this level.
-        ///// </summary>
-        ///// <param name="B">input: RHS of the system</param>
-        ///// <param name="X">input: solution approximation</param>
-        ///// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
-        //public void Residual(double[] Res, double[] X, double[] B) {
-        //    using (new FuncTrace()) {
-        //        Debug.Assert(Res.Length == OpMatrix.ColPartition.LocalLength);
-        //        Debug.Assert(X.Length == OpMatrix.ColPartition.LocalLength);
-        //        Debug.Assert(B.Length == OpMatrix.ColPartition.LocalLength);
-        //        int L = Res.Length;
-        //        Array.Copy(B, Res, L);
-        //        OpMatrix.SpMV(-1.0, X, 1.0, Res);
-        //    }
-        //}
+#if DEBUG
+        private double[] InitializeResidual(double[] X, double[] B, double[] Res) {
+            int L = X.Length;
+            double[] Res0 = new double[L];
+            Residual(Res0, X, B); //res0 with x0
+            Array.Copy(Res0, Res, L);
 
-        ///// <summary>
-        ///// computes the residual on fine level on smoother operator matrix.
-        ///// </summary>
-        ///// <param name="B">input: RHS of the system</param>
-        ///// <param name="X">input: solution approximation</param>
-        ///// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
+            if((myTask == TpTaskType.Smoother || myTask == TpTaskType.All) && ortho.Norm(Res0) <= 0) {
+                double normB = ortho.Norm(B);
+                double normX = ortho.Norm(X);
+                throw new ArithmeticException($"Residual is 0.0: |X| = {normX}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}; task={myTask}");
+            }
+
+            return Res0;
+        }
+
+        /// <summary>
+        /// computes the residual on this level.
+        /// </summary>
+        /// <param name="B">input: RHS of the system</param>
+        /// <param name="X">input: solution approximation</param>
+        /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
+        public void Residual(double[] Res, double[] X, double[] B) {
+            using(new FuncTrace()) {
+                Debug.Assert(Res.Length == OpMatrix.ColPartition.LocalLength);
+                Debug.Assert(X.Length == OpMatrix.ColPartition.LocalLength);
+                Debug.Assert(B.Length == OpMatrix.ColPartition.LocalLength);
+                int L = Res.Length;
+                Array.Copy(B, Res, L);
+                OpMatrix.SpMV(-1.0, X, 1.0, Res);
+            }
+        }
+#endif
+
+        /// <summary>
+        /// computes the residual on fine level on smoother operator matrix.
+        /// </summary>
+        /// <param name="B">input: RHS of the system</param>
+        /// <param name="X">input: solution approximation</param>
+        /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
         public void ResidualOnSmoother(double[] Res, double[] X, double[] B) {
             using(new FuncTrace()) {
                 Debug.Assert(Res.Length == subCommSmootherOpMatrix.ColPartition.LocalLength);
@@ -2202,10 +2225,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 				double[] Res = new double[L];
 
 				// Initialize residual
-				//double[] Res0 = InitializeResidual(X, B, Res);
+				double[] Res0 = InitializeResidual(X, B, Res);
+                Res0.SaveToTextFileDebug("Res0", ".txt");
 
                 //this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_OpMapPair as MultigridOperator);
-                                
+
                 // clear history of coarse solvers
                 ortho.Clear();
 
@@ -2231,21 +2255,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 			}
 			return input.ToArray();
 		}
-
-		//private double[] InitializeResidual(double[] X, double[] B, double[] Res) {
-		//	int L = X.Length;
-		//	double[] Res0 = new double[L];
-		//	Residual(Res0, X, B); //res0 with x0
-		//	Array.Copy(Res0, Res, L);
-
-  //          if ((myTask == TpTaskType.Smoother || myTask == TpTaskType.All) && ortho.Norm(Res0) <= 0) {
-		//		double normB = ortho.Norm(B);
-		//		double normX = ortho.Norm(X);
-		//		throw new ArithmeticException($"Residual is 0.0: |X| = {normX}; |B| = {normB}; |Res0| = {ortho.Norm(Res0)}; task={myTask}");
-		//	}
-
-		//	return Res0;
-		//}
 
         private double[] InitializeResidualOnSmoother(double[] X, double[] B, double[] Res) {
             int L = X.Length;
@@ -2304,7 +2313,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 Res = smootherPermutation.PermutateVectorBack(ResforSmoother); //permutate back to the this
-                ResforCoarse = coarsePermutation.PermutateVector(Res); 
+                ResforCoarse = coarsePermutation.PermutateVector(Res);
                 XforCoarse = new double[ResforCoarse.Length];  // Coarse correction will be applied to this vector
 
                 Debug.Assert(myTask != TpTaskType.Smoother || ResforCoarse.Length == 0);
