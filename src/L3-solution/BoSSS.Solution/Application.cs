@@ -3034,7 +3034,7 @@ namespace BoSSS.Solution {
 
 
 
-                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData);
                     bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
 
 

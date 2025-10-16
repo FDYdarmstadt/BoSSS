@@ -48,13 +48,15 @@ namespace BoSSS.Foundation.Grid {
         /// Current grid.
         /// </param>
         /// <param name="CutCells">
-        /// Cut cells will have always the max refinement level. Null is a valid input if no level-set is used.
+        /// If specified, all cut cells will have the same refinement level.
+        /// Cut cells will have always the max refinement level. 
+        /// Null is a valid input if no level-set is used, then cut cells can have different refinement levels
         /// </param>
         /// <param name="cellsNotOK2Coarsen">
         /// Cells which are not allowed to be coarsened. It is not necessary to include cut cells here, as they are handled by the cutCells CellMask.
         /// </param>
         /// <param name="EnsureHighestLevelAtPeriodicBoundary"></param>
-        public GridRefinementController(GridData CurrentGrid, CellMask CutCells, CellMask cellsNotOK2Coarsen = null, bool EnsureHighestLevelAtPeriodicBoundary = false) {
+        public GridRefinementController(GridData CurrentGrid, CellMask CutCells = null, CellMask cellsNotOK2Coarsen = null, bool EnsureHighestLevelAtPeriodicBoundary = false) {
             this.CurrentGrid = CurrentGrid;
             CellPartitioning = this.CurrentGrid.CellPartitioning;
             
@@ -316,10 +318,6 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
-
-
-
-
         /// <summary>
         /// Computes the global cell neighborship of all cells. 
         /// Returns an jagged array where the 
@@ -366,7 +364,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// Returns the cutcells + neighbours on a global level.
+        /// Returns the cutcells + neighbours on a global level, if <see cref="CutCells"/> was provided in the constructor
         /// </summary>
         /// <param name="globalCellNeighbourship">
         /// </param>
@@ -428,6 +426,8 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Writes the max desired level of the specified cells into an int-array (mpi global).
+        /// 
+        /// **Note**: without any effect, if <see cref="CutCells"/> was not set in the constructor, resp., is empty.
         /// </summary>
         private int[] GetGlobalDesiredLevel(BitArray cutCellsWithNeighbours, int[] CellRefinementLevel, ref int changes) {
             int LocalNumberOfCells = this.CurrentGrid.Cells.NoOfLocalUpdatedCells;
@@ -446,6 +446,10 @@ namespace BoSSS.Foundation.Grid {
                     }
 
                     if(cutCellsWithNeighbours[globalIndex]) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // setting all cut cells & neighbors to the same refinement level;
+                        // only effective, if the cut cells have been set during th constructor
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         globalDesiredLevel[globalIndex] = levelSetMaxLevel;
                     }
 

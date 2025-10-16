@@ -34,6 +34,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
+using BoSSS.Foundation.Quadrature;
 
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -102,7 +103,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        static XNSE_Control DropletOnPlate_AMRtest(int D = 2, int p = 2, int kelem = 16) {
+        static XNSE_Control DropletInBox_AMRtest(int D = 2, int p = 2, int kelem = 16) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -129,12 +130,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // DG degrees
             // ==========
-            #region degrees
-
             C.SetDGdegree(p);
-
-            #endregion
-
 
             // Physical Parameters
             // ===================
@@ -260,44 +256,9 @@ namespace BoSSS.Application.XNSE_Solver {
             #endregion
 
 
-            // boundary conditions
-            // ===================
-            #region BC
-
-            /*
-            C.AddBoundaryValue("navierslip_linear_lower");
-            C.AddBoundaryValue("navierslip_linear_upper");
-            C.AddBoundaryValue("navierslip_linear_left");
-            C.AddBoundaryValue("navierslip_linear_right");
-
-            if(D == 3) {
-                C.AddBoundaryValue("navierslip_linear_front");
-                C.AddBoundaryValue("navierslip_linear_back");
-            }
-            */
-            #endregion
-
-
-            // exact solution
-            // ==============
-
-            C.Phi = PhiFunc;
-
-            //C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            //C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-            //C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-
-            //C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            //C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
-            //C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
-
-
-
             // misc. solver options
             // ====================
             #region solver
-
-
 
             //C.ComputeEnergyProperties = false;
 
@@ -361,13 +322,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// Testing adaptive mesh refinement in a MPI-parallel environment
+        /// Testing adaptive mesh refinement in a MPI-parallel environment.
+        /// Aim of the test:
+        /// For symmetric input data, we are expecting a symmetric refined mesh, 
+        /// even if the grid partitioning is non-symmetric.
         /// </summary>
         [Test]
         public static void AMRtest_2D(
             [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert, GridPartType.none)] GridPartType gridPartType,
             [Values(7, 8)] int NumberOfElements) {
-            var C = DropletOnPlate_AMRtest(D: 2, p: 2, kelem: NumberOfElements);
+            var C = DropletInBox_AMRtest(D: 2, p: 2, kelem: NumberOfElements);
 
             C.NoOfTimesteps = 1;
             C.GridPartType = gridPartType;
@@ -386,11 +350,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// Testing adaptive mesh refinement in a MPI-parallel environment
+        /// Testing adaptive mesh refinement in a MPI-parallel environment.
+        /// Aim of the test:
+        /// For symmetric input data, we are expecting a symmetric refined mesh, 
+        /// even if the grid partitioning is non-symmetric.
         /// </summary>
         [Test]
         public static void AMRtest_3D([Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert)] GridPartType gridPartType) {
-            var C = DropletOnPlate_AMRtest(D: 3, p: 2, kelem: 8);
+            var C = DropletInBox_AMRtest(D: 3, p: 2, kelem: 8);
             C.NoOfTimesteps = 1;
             C.GridPartType = gridPartType;
 
@@ -402,6 +369,257 @@ namespace BoSSS.Application.XNSE_Solver {
                 solver.RunSolverMode();
 
                 BoSSS.Foundation.AMRtests.MeshSymmetryTest(solver.Grid);
+            }
+        }
+
+
+        static XNSE_Control Ellipsiod_AMRtest(int D = 2, int p = 2, int kelem = 16) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = null;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/Ellipsiod";
+            C.ProjectDescription = "AMR test";
+
+            C.ContinueOnIoError = false;
+
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            C.SetDGdegree(p);
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Sigma = 0.0;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+
+            double Size = 0.3;
+
+            double base_h = Size / kelem;
+            if(D == 2) {
+                C.GridFunc = delegate () {
+                    double[] Xnodes = GenericBlas.Linspace(-Size * 0.5, Size * 0.5, kelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(-Size * 0.5, Size * 0.5, kelem + 1);
+                    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        if(Math.Abs(X[1] + Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_lower";
+                        if(Math.Abs(X[1] - Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_upper";
+                        if(Math.Abs(X[0] + Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_left";
+                        if(Math.Abs(X[0] - Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_right";
+
+                        throw new ArgumentOutOfRangeException("unable to determine edge name.");
+                    });
+
+                    return grd;
+                };
+            } else if(D == 3) {
+                C.GridFunc = delegate () {
+                    double[] Xnodes = GenericBlas.Linspace(-Size * 0.5, Size * 0.5, kelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(-Size * 0.5, Size * 0.5, kelem + 1);
+                    double[] Znodes = GenericBlas.Linspace(-Size * 0.5, Size * 0.5, kelem + 1);
+                    var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+
+                    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+                    grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+                    grd.EdgeTagNames.Add(3, "navierslip_linear_left");
+                    grd.EdgeTagNames.Add(4, "navierslip_linear_right");
+                    grd.EdgeTagNames.Add(5, "navierslip_linear_front");
+                    grd.EdgeTagNames.Add(6, "navierslip_linear_back");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        if(Math.Abs(X[2] + Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_lower";
+                        if(Math.Abs(X[2] - Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_upper";
+                        if(Math.Abs(X[0] + Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_left";
+                        if(Math.Abs(X[0] - Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_right";
+                        if(Math.Abs(X[1] + Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_front";
+                        if(Math.Abs(X[1] - Size * 0.5) <= 1.0e-8)
+                            return "navierslip_linear_back";
+
+                        throw new ArgumentOutOfRangeException("unable to determine edge name.");
+                    });
+
+                    return grd;
+                };
+            } else {
+                throw new ArgumentOutOfRangeException("unsupported spatial dimension: " + D);
+            }
+
+            #endregion
+
+            // Adaptive Mesh Refinement (AMR)
+            // ==============================
+
+            #region amr_config
+
+            int maxRefine = 3;
+            C.AdaptiveMeshRefinement = true;
+            C.AMR_startUpSweeps = 3;
+            C.activeAMRlevelIndicators.Add(
+                new AMRonNarrowband() { bandwidth = 1, maxRefinementLevel = 1 }
+                );
+            C.activeAMRlevelIndicators.Add(
+                new AMRbasedOnLocalCurvature() { LocalInterfaceRadius_To_MeshWidth_Ratio = 4, maxRefinementLevel = maxRefine }
+                );
+
+            double refine_h = base_h / Math.Pow(2, maxRefine);
+
+            #endregion
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
+
+            C.TimesteppingMode = compMode;
+            C.Endtime = 1;
+
+            // since we plan to spin the ellipsoid, we need to adjust the timestep so that we don't run into a Level-Set-CFL
+            double angular_velocity = 2*Math.PI/C.Endtime;
+            double angle_per_Timestep = Math.Atan(refine_h / (Size * 0.5));
+            C.dtFixed = angle_per_Timestep / angular_velocity;
+
+            C.NoOfTimesteps = int.MaxValue; // irrelevant, terminated by end-time
+            C.saveperiod = 1;
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double R = 0.1;
+            //double Theta_e = Math.PI / 2.0;
+            //double s = 2 * R * Math.Sin(Theta_e);
+            //double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
+
+            Func<double[], double, double> PhiFunc = ((X, t) => -1.0);
+
+
+            if(D == 2) {
+                PhiFunc = ((X, t) => {
+                    // Ellipse parameters
+                    double a = 0.5*Size*0.7; // major axis
+                    double b = 0.5 * Size *0.3; // minor axis
+                    double theta = t* angular_velocity; // rotation angle in radians, depends on time t
+                    double[] center = [0.0, 0.0];
+
+                    // Shift coordinates to center
+                    double x = X[0] - center[0];
+                    double y = X[1] - center[1];
+
+                    // Rotate coordinates by theta
+                    double cosTheta = Math.Cos(theta);
+                    double sinTheta = Math.Sin(theta);
+                    double xr = x * cosTheta + y * sinTheta;
+                    double yr = -x * sinTheta + y * cosTheta;
+
+                    // Level set for ellipse: (xr/a)^2 + (yr/b)^2 - 1 = 0
+                    return (xr * xr) / (a * a) + (yr * yr) / (b * b) - 1.0;
+                });
+
+
+            } else if(D == 3) {
+                throw new NotImplementedException("3D - todo");    
+            } else {
+                throw new ArgumentOutOfRangeException("unsupported spatial dimension: " + D);
+            }
+
+            C.InitialValues_Evaluators_TimeDep.Add("Phi", PhiFunc);
+
+            C.InitialValues_Evaluators.Add("Pressure#A", X => 0.0);
+            C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.Prescribed;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.AdaptiveMeshRefinement = true;
+
+
+           
+
+          
+
+
+            return C;
+
+        }
+
+
+        /// <summary>
+        /// Testing adaptive mesh refinement in a MPI-parallel environment.
+        /// Aim of the test:
+        /// Don't crash!
+        /// </summary>
+        [Test]
+        public static void CurvatureBasedAMRTest_2D(
+            [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert, GridPartType.none)] GridPartType gridPartType,
+            [Values(7, 8)] int NumberOfElements) {
+            var C = Ellipsiod_AMRtest(D: 2, p: 2, kelem: NumberOfElements);
+
+            C.GridPartType = gridPartType;
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 0;
+
+            //C.NoOfTimesteps = 1;
+
+            using(var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                //BoSSS.Foundation.AMRtests.MeshSymmetryTest(solver.Grid);
             }
         }
 
@@ -412,7 +630,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.AMRtest_2D(GridPartType.clusterHilbert, 7);
+            Solution.Application.DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.clusterHilbert, 20);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
