@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,23 +42,28 @@ namespace BoSSS.Foundation.IO {
         /// File system path to database; must be either non existent or an empty directory.
         /// </param>
         static public void CreateDatabase(string dbDir) {
-            DirectoryInfo targetDirectory = new DirectoryInfo(dbDir);
-            if (!targetDirectory.Exists) {
-                targetDirectory.Create();
-            } else {
-                if (targetDirectory.GetFiles().Length > 0)
-                    throw new ArgumentException("Must be empty.");
-                if (targetDirectory.GetDirectories().Length > 0)
-                    throw new ArgumentException("Must be empty.");
-            }
 
-            // Create structure
-            Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "data"));
-            Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "timesteps"));
-            Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "grids"));
-            Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "sessions"));
+            if(csMPI.Rank_World == 0) {
+
+                DirectoryInfo targetDirectory = new DirectoryInfo(dbDir);
+                if(!targetDirectory.Exists) {
+                    targetDirectory.Create();
+                } else {
+                    if(targetDirectory.GetFiles().Length > 0)
+                        throw new ArgumentException("Must be empty.");
+                    if(targetDirectory.GetDirectories().Length > 0)
+                        throw new ArgumentException("Must be empty.");
+                }
+
+                // Create structure
+                Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "data"));
+                Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "timesteps"));
+                Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "grids"));
+                Directory.CreateDirectory(Path.Combine(targetDirectory.FullName, "sessions"));
+            } 
+
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
         }
-
 
         /// <summary>
         /// Checks if the given directory has the correct directory structure

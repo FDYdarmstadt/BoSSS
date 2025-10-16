@@ -28,6 +28,7 @@ using BoSSS.Solution.LevelSetTools;
 using System.Linq;
 using ilPSP.Tracing;
 using BoSSS.Platform.Utils.Geom;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -93,6 +94,7 @@ namespace BoSSS.Solution.XNSECommon {
                 int[] levels = new int[J];
                 var bb = new BoundingBox(GridData.SpatialDimension);
                 int cellsToCoarse = 0, cellsToRefine = 0;
+                levels.SetAll(-1);
                 foreach(int jLog in cutCells.ItemEnum) {
                     double maxCurv = MaxCurv_LogicalCell[jLog];
                     double minRadius = Math.Min(1.0 / maxCurv, double.MaxValue);
@@ -104,7 +106,6 @@ namespace BoSSS.Solution.XNSECommon {
                     double h_local = bb.h_min;
 
                     double ratio = minRadius / h_local;
-
 
 
                     if(ratio < LocalInterfaceRadius_To_MeshWidth_Ratio) {

@@ -35,6 +35,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.IO;
 
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -602,7 +603,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Aim of the test:
         /// Don't crash!
         /// </summary>
-        [Test]
+        //[Test]
         public static void CurvatureBasedAMRTest_2D(
             [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert, GridPartType.none)] GridPartType gridPartType,
             [Values(7, 8)] int NumberOfElements) {
@@ -610,10 +611,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.GridPartType = gridPartType;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 0;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 0;
 
             //C.NoOfTimesteps = 1;
+            C.Endtime = 0.3;
+
+            var db = DatabaseInfo.CreateOrOpen("tempdb");
+            C.SetDatabase(db);
+            C.savetodb = true;
+
 
             using(var solver = new XNSE()) {
                 solver.Init(C);
@@ -631,7 +638,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
             Solution.Application.DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.clusterHilbert, 20);
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.METIS, 20);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
