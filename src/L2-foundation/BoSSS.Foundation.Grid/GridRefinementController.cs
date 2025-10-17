@@ -607,7 +607,8 @@ namespace BoSSS.Foundation.Grid {
                 BitArray oK2Coarsen = new BitArray(checked((int)GlobalNumberOfCells));
                 int[] globalCurrentLevel = GetGlobalCurrentLevel();
 
-                for(long globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) {
+                // mark those cells for which 
+                for(long globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) { // loop over local cells...
                     int currentLevel = globalCurrentLevel[globalCellIndex];
 
                     int maxNeighbourDesiredLevel = 0;
@@ -628,33 +629,51 @@ namespace BoSSS.Foundation.Grid {
                     }
                 }
 
-                BitArray globalCellsNotOK2Coarsen = GetGlobalCellsNotOK2Coarsen();
-
-                for(int j = 0; j < globalCellsNotOK2Coarsen.Length; j++) {
-                    if(globalCellsNotOK2Coarsen[j]) {
-                        oK2Coarsen[j] = false;
+                // allow (only on this processor) coarsening for all external cells
+                // (cells which are not allowed will be cleared by the MPIand below)
+                for(long globalCellIndex = 0; globalCellIndex < GlobalNumberOfCells; globalCellIndex++) { // loop over all/global cells...
+                    if(globalCellIndex < myI0 || globalCellIndex >= (myI0 + LocalNumberOfCells)) {
+                        // some external cell
+                        oK2Coarsen[checked((int)globalCellIndex)] = true;
                     }
                 }
 
-                var oK2Coarsen_b4 = oK2Coarsen.CloneAs();
-                oK2Coarsen.MPIAnd();
-                //Console.WriteLine("Check!!!!!!!!");
 
-                bool changed = false;
-                for(int j = 0; j < oK2Coarsen.Length; j++) {
-                    if(oK2Coarsen[j] != oK2Coarsen_b4[j])
-                        changed = true;
+                // exclude those cells for which coarsening is explicitly forbidden by 'user'...
+                // =============================================================================
+                {
+                    BitArray globalCellsNotOK2Coarsen = GetGlobalCellsNotOK2Coarsen();
+
+                    for(int j = 0; j < globalCellsNotOK2Coarsen.Length; j++) {
+                        if(globalCellsNotOK2Coarsen[j]) {
+                            oK2Coarsen[j] = false;
+                        }
+                    }
                 }
-                changed = changed.MPIOr();
-                tr.Info("coarse changed " + changed);
+
+                // MPI exchange & return
+                // =====================
+                {
+                    var oK2Coarsen_b4 = oK2Coarsen.CloneAs();
+                    oK2Coarsen.MPIAnd();
+                    //Console.WriteLine("Check!!!!!!!!");
+
+                    bool changed = false;
+                    for(int j = 0; j < oK2Coarsen.Length; j++) {
+                        if(oK2Coarsen[j] != oK2Coarsen_b4[j])
+                            changed = true;
+                    }
+                    changed = changed.MPIOr();
+                    tr.Info("coarse changed " + changed);
 
 
-                return oK2Coarsen;
+                    return oK2Coarsen;
+                }
             }
         }
 
         /// <summary>
-        /// Globalize cellsNotOk2Coarsen
+        /// Gathers <see cref="CellsNotOK2Coarsen"/>> over all MPI ranks
         /// </summary>
         private BitArray GetGlobalCellsNotOK2Coarsen() {
             int LocalNumberOfCells = this.CurrentGrid.Cells.NoOfLocalUpdatedCells;
