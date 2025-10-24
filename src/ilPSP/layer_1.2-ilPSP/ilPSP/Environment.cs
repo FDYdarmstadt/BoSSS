@@ -302,11 +302,6 @@ namespace ilPSP {
         /// </summary>
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<ThreadInfo, int> body, bool enablePar = true) {
-            //if(System.Environment.OSVersion.Platform == PlatformID.Unix) { 
-            //    ParallelForWithPartitioner(fromInclusive, toExclusive, NumThreads, body);
-            //    return;
-            //}
-
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 ThreadInfo ti;
                 ti.iThread = 0;

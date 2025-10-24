@@ -107,7 +107,7 @@ namespace MultiThreadingTest {
         }
 
         static public void TestThreading3(Action<int> task, int i0 = 0, int iE = 10000) {
-            var t = task ?? SimpleTestTask;
+            task ??= SimpleTestTask;
             using(var tr = new FuncTrace("TestThreading")) {
                 tr.InfoToConsole = true;
                 tr.Info($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank}: ProcessorCount = {System.Environment.ProcessorCount} and NumThreads = {ilPSP.Environment.NumThreads}");
@@ -119,7 +119,7 @@ namespace MultiThreadingTest {
         }
 
         static public void TestThreading2(Action<int> task, int i0 = 0, int iE = 10000) {
-            var t = task ?? SimpleTestTask;
+            task ??= SimpleTestTask;
             using(var tr = new FuncTrace("TestThreading")) {
                 tr.InfoToConsole = true;
                 tr.Info($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank}: ProcessorCount = {System.Environment.ProcessorCount} and NumThreads = {ilPSP.Environment.NumThreads}");
@@ -133,7 +133,7 @@ namespace MultiThreadingTest {
         }
 
         static public void TestThreading(Action<int> task, int i0 = 0, int iE = 10000) {
-            var t = task ?? SimpleTestTask;
+            task ??= SimpleTestTask;
             using(var tr = new FuncTrace("TestThreading")) {
                 tr.InfoToConsole = true;
                 tr.Info($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank}: ProcessorCount = {System.Environment.ProcessorCount} and NumThreads = {ilPSP.Environment.NumThreads}");
