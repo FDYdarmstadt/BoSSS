@@ -2476,9 +2476,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Res = smootherPermutation.PermutateVectorBack(ResforSmoother);
                         ResforCoarse = coarsePermutation.PermutateVector(Res);
                     }
-                    int tt = 1;
-                    if (tt == 1)
-                        throw new NotImplementedException();
                 }
             }
 
