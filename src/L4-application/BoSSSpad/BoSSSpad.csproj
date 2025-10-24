@@ -63,6 +63,7 @@
     <ProjectReference Include="..\ApplicationWithIDT\ApplicationWithIDT.csproj" />
     <ProjectReference Include="..\BUIDT\BUIDT.csproj" />
     <ProjectReference Include="..\GridGen\GridGen.csproj" />
+    <ProjectReference Include="..\MultiThreadingTest\MultiThreadingTest.csproj" />
     <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj" />
     <ProjectReference Include="..\RheologySolver2\Rheology2.csproj" />
     <ProjectReference Include="..\SAIDT\SAIDT.csproj" />
