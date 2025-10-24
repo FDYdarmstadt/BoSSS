@@ -1056,9 +1056,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ===================
                 { 
                     int L = localSourceIdx.Count; // Loop over local indices
-                    for(int l = 0; l < L; l++) {
+                    //for(int l = 0; l < L; l++) {
+                    //    output[localTargetIdx[l]] = input[localSourceIdx[l]];
+                    //}
+
+                    ilPSP.Environment.ParallelFor(0, L, (l) => {
                         output[localTargetIdx[l]] = input[localSourceIdx[l]];
-                    }
+                    });
                 }
 
                 // insert received data
@@ -1102,10 +1106,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // local data exchange
                 // ===================
                 {
-                    int L = localSourceIdx.Count; // Loop over local indices
-                    for(int l = 0; l < L; l++) {
+                    //int L = localSourceIdx.Count; // Loop over local indices
+                    //for(int l = 0; l < L; l++) {
+                    //    output[localSourceIdx[l]] = input[localTargetIdx[l]];
+                    //}
+
+                    // Parallel local data exchange
+                    ilPSP.Environment.ParallelFor(0, localSourceIdx.Count, (l) => {
                         output[localSourceIdx[l]] = input[localTargetIdx[l]];
-                    }
+                    });
                 }
 
                 // insert received data
@@ -2463,11 +2472,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Converged = termState.bSuccess;
                         break;
                     }
-
                     using(var tr = new FuncTrace("InitArrays")) {
                         Res = smootherPermutation.PermutateVectorBack(ResforSmoother);
                         ResforCoarse = coarsePermutation.PermutateVector(Res);
                     }
+                    int tt = 1;
+                    if (tt == 1)
+                        throw new NotImplementedException();
                 }
             }
 
