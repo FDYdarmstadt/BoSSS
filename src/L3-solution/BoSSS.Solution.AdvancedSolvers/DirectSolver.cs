@@ -546,7 +546,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         void ISolverSmootherTemplate.ResetStat() {
-            throw new NotImplementedException();
+            Console.Error.WriteLine("ResetStat is not supported");
         }
 
         void ISolverSmootherTemplate.Solve<U, V>(U X, V B) {
