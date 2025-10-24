@@ -495,13 +495,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // + + + + + + + + + + + + + + + + +
                             // ... use direct as coarse solver
                             // + + + + + + + + + + + + + + + + +
-
-                            var _levelSolver3 = new DirectSolver();
-                            _levelSolver3.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
-                            _levelSolver3.config.UseDoublePrecision = (iLevel == 0); // only use double precision id Direct solver is top solver
-                            _levelSolver3.config.TestSolution = false;
-                            _levelSolver3.ActivateCaching = (__1, __2) => true;
+                            var _levelSolver3 = new SubSystemPardiso();
+                            _levelSolver3.UseDoublePrecision = (iLevel == 0); // only use double precision id Direct solver is top solver
+                            _levelSolver3.Parallelism = Parallelism.OMP;
+                            _levelSolver3.CacheFactorization = true;
                             levelSolver = _levelSolver3;
+                            //var _levelSolver3 = new DirectSolver();
+                            //_levelSolver3.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
+                            //_levelSolver3.config.UseDoublePrecision = (iLevel == 0); // only use double precision id Direct solver is top solver
+                            //_levelSolver3.config.TestSolution = false;
+                            //_levelSolver3.ActivateCaching = (__1, __2) => true;
+                            //levelSolver = _levelSolver3;
                         }
 
                     } else {
