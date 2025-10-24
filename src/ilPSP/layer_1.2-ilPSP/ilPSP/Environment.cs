@@ -14,7 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP.Tracing;
+using ilPSP.Utils;
+using MPI.Wrappers;
+using NUnit.Framework;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -25,10 +30,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using ilPSP.Tracing;
-using ilPSP.Utils;
-using MPI.Wrappers;
-using NUnit.Framework;
 
 namespace ilPSP {
 
@@ -301,6 +302,10 @@ namespace ilPSP {
         /// </summary>
         /// </summary>
         public static void ParallelFor(int fromInclusive, int toExclusive, Action<ThreadInfo, int> body, bool enablePar = true) {
+            //if(System.Environment.OSVersion.Platform == PlatformID.Unix) { 
+            //    ParallelForWithPartitioner(fromInclusive, toExclusive, NumThreads, body);
+            //    return;
+            //}
 
             if(InParallelSection == true || !enablePar || NumThreads <= 1) {
                 ThreadInfo ti;
@@ -363,6 +368,76 @@ namespace ilPSP {
                 }
             }
         }
+
+        public static void ParallelForWithPartitioner(int fromInclusive, int toExclusive, Action<int> body) {
+            ParallelForWithPartitioner(fromInclusive, toExclusive, NumThreads, (ThreadInfo _, int i) => body(i));
+        }
+
+        public static void ParallelForWithPartitioner(int fromInclusive, int toExclusive, int numThreads, Action<int> body) { 
+            ParallelForWithPartitioner(fromInclusive, toExclusive, numThreads, (ThreadInfo _, int i) => body(i));
+        }
+
+        public static void ParallelForWithPartitioner(int fromInclusive, int toExclusive, int numThreads, Action<ThreadInfo, int> body) {
+            if(toExclusive <= fromInclusive)
+                return;
+
+            if(InParallelSection == true || NumThreads <= 1) {
+                ThreadInfo ti;
+                ti.iThread = 0;
+                ti.NumThreads = 1;
+                for(int i = fromInclusive; i < toExclusive; i++) {
+                    body(ti, i);
+                }
+            } else {
+                try {
+                    InParallelSection = true;
+                    BLAS.ActivateSEQ();
+                    LAPACK.ActivateSEQ();
+
+                    var opts = new ParallelOptions {
+                        MaxDegreeOfParallelism = numThreads
+                    };
+
+                    int total = toExclusive - fromInclusive;
+                    int chunk = (int)Math.Ceiling(total / (double)numThreads);
+
+                    PinTPLThreadsSometimes();
+                    //try static partiting first:
+                    Parallel.For(0, numThreads, new ParallelOptions { MaxDegreeOfParallelism = numThreads }, threadId =>
+                    {
+                        var ti = new ThreadInfo { iThread = threadId, NumThreads = numThreads };
+                        int start = fromInclusive + threadId * chunk;
+                        int end = Math.Min(start + chunk, toExclusive);
+
+                        for(int i = start; i < end; i++)
+                            body(ti, i);
+                    });
+
+                    // Optionally: custom partitioner for contiguous ranges:
+                    //var rangePartitioner = Partitioner.Create(fromInclusive, toExclusive,
+                    //    rangeSize: Math.Max(1, (toExclusive - fromInclusive) / (numThreads * 4)));
+
+                    //Parallel.ForEach(rangePartitioner, opts, range => {
+                    //    // Determine thread ID (approximate) via ThreadLocal
+                    //    int threadId = Thread.CurrentThread.ManagedThreadId;
+                    //    var ti = new ThreadInfo {
+                    //        iThread = threadId,
+                    //        NumThreads = numThreads
+                    //    };
+
+                    //    for(int i = range.Item1; i < range.Item2; i++) {
+                    //        body(ti, i);
+                    //    }
+                    //});
+                } finally {
+                    InParallelSection = false;
+                    BLAS.ActivateOMP(); // restore parallel 
+                    LAPACK.ActivateOMP();
+                    PinOMPthreadsSometimes();
+                }
+            }
+        }
+
 
         /// <summary>
         /// Parallel foreach-loop, the signature of <see cref="body"/> is: `ithread, item` 
@@ -602,7 +677,7 @@ namespace ilPSP {
 
         public static void InitThreading(bool LookAtEnvVar, int? NumThreadsOverride) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = false;
+                tr.InfoToConsole = true;
                 StdoutOnlyOnRank0 = false;
                 //tr.StdoutOnAllRanks();
 
@@ -813,7 +888,6 @@ namespace ilPSP {
                 LAPACK.ActivateOMP();
                 PinTPLThreads();
                 //tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after TPL binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
-
                 PinOMPthreads();
                 StdoutOnlyOnRank0 = true;
                 tr.Info($"R{MPIEnv.MPI_Rank}: CPU affinity after OpenMP binding: " + CPUAffinity.GetCurrentThreadAffinity().ToConcatString("[", ",", "]"));
