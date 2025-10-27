@@ -49,6 +49,7 @@ namespace MultiThreadingTest {
         }
 
         static void ParSolve(List<(MsrMatrix M, double[] X, double[] B)> problem, PARDISOSolver[] solvers, int i) {
+            Console.WriteLine($"PRank {System.Environment.GetEnvironmentVariable("SLURM_PROCID")} - Task {i} on CPU {MultiThreadingTestMain.sched_getcpu()}");
             using(var tr = new FuncTrace("Solve")) {
                 solvers[i].Solve(problem[i].X, problem[i].B);
             }
@@ -59,22 +60,22 @@ namespace MultiThreadingTest {
             using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 tr.Info("############# PARDISO with Seq in TPL Test #####################");
-                tr.Info("# Special");
-                PARDISOSolver[] Solvers3 = new PARDISOSolver[count];
-                TestThreading3((i) => ParInit(Problem, Solvers3, i, Parallelism.SEQ), 0, count);
-                TestThreading3((i) => ParSolve(Problem, Solvers3, i), 0, count);
+                 tr.Info("# Foreach");
+                PARDISOSolver[] Solvers2 = new PARDISOSolver[count];
+                TestThreading4((i) => ParInit(Problem, Solvers2, i, Parallelism.SEQ), 0, count);
+                TestThreading4((i) => ParSolve(Problem, Solvers2, i), 0, count);
                 CleanCache();
-
-                //tr.Info("# TPL");
-                //PARDISOSolver[] Solvers2 = new PARDISOSolver[count];
-                //TestThreading2((i) => ParInit(Problem, Solvers2, i), 0, count);
-                //TestThreading2((i) => ParSolve(Problem, Solvers2, i), 0, count);
-                //CleanCache();
 
                 tr.Info("# BoSSS");
                 PARDISOSolver[] Solvers = new PARDISOSolver[count];
                 TestThreading((i) => ParInit(Problem, Solvers, i, Parallelism.SEQ), 0, count);
                 TestThreading((i) => ParSolve(Problem, Solvers, i), 0, count);
+                CleanCache();
+
+                tr.Info("# Special");
+                PARDISOSolver[] Solvers3 = new PARDISOSolver[count];
+                TestThreading3((i) => ParInit(Problem, Solvers3, i, Parallelism.SEQ), 0, count);
+                TestThreading3((i) => ParSolve(Problem, Solvers3, i), 0, count);
                 CleanCache();
                 tr.Info("############# Finish ####################");
             }
@@ -113,6 +114,28 @@ namespace MultiThreadingTest {
                 tr.Info($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank}: ProcessorCount = {System.Environment.ProcessorCount} and NumThreads = {ilPSP.Environment.NumThreads}");
                 var sw = Stopwatch.StartNew();
                 ilPSP.Environment.ParallelForWithPartitioner(i0, iE, ilPSP.Environment.NumThreads, (ThreadInfo _, int i) => { task(i); });
+                sw.Stop();
+                tr.Info($"Elapsed: {sw.ElapsedMilliseconds} ms");
+            }
+        }
+
+        static public void TestThreading4(Action<int> task, int i0 = 0, int iE = 10000) {
+            task ??= SimpleTestTask;
+            using(var tr = new FuncTrace("TestThreading")) {
+                tr.InfoToConsole = true;
+                tr.Info($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank}: ProcessorCount = {System.Environment.ProcessorCount} and NumThreads = {ilPSP.Environment.NumThreads}");
+
+                var sw = Stopwatch.StartNew();
+
+                // Create data range
+                var data = Enumerable.Range(i0, iE - i0);
+
+                // Use your ParallelForEach
+                ilPSP.Environment.ParallelForEach(data, (ti, i) =>
+                {
+                    task(i);
+                });
+
                 sw.Stop();
                 tr.Info($"Elapsed: {sw.ElapsedMilliseconds} ms");
             }
