@@ -618,9 +618,9 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.NoOfTimesteps = 1;
             //C.Endtime = 0.3;
 
-            var db = DatabaseInfo.CreateOrOpen("tempdb");
-            C.SetDatabase(db);
-            C.savetodb = true;
+            //var db = DatabaseInfo.CreateOrOpen("tempdb");
+            //C.SetDatabase(db);
+            //C.savetodb = true;
 
             using(var solver = new XNSE()) {
                 solver.Init(C);

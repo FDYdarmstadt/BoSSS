@@ -1802,7 +1802,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.InitialValues.Clear();
             C.InitialValues_Evaluators.Clear();
 
-            C.AddExactSolution("Phi", Tst.GetPhi());
             C.InitialValues_Evaluators.Add("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
 
             XNSESolverTest(Tst, C);
