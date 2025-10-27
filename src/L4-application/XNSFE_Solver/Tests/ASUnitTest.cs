@@ -578,7 +578,9 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.InitialValues.Clear();
             C.InitialValues_Evaluators.Clear();
 
-            C.AddExactSolution("Phi", Tst.GetPhi());
+            if(!C.ExactSolutions_Evaluators.ContainsKey("Phi"))
+                C.AddExactSolution("Phi", Tst.GetPhi());
+            
             C.AddInitialValue("Phi", Tst.GetPhi().Convert_Xt2X(0.0));
         }
 

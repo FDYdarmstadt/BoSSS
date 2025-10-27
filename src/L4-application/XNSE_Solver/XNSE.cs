@@ -81,12 +81,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
-            BoSSS.Solution.Application.InitMPI();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.InterfaceSlipTest(2, 0.0, ViscosityMode.FullySymmetric, 0.0, CutCellQuadratureMethod.Saye, NonLinearSolverCode.Newton, 1.0, 0.143);
-            throw new ApplicationException("remove me");
-
-
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
