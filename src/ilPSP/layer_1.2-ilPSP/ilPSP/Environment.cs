@@ -322,8 +322,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
 
                     // let TPL do the balancing
                     //Parallel.For(fromInclusive, toExclusive, options, body);
@@ -356,10 +355,8 @@ namespace ilPSP {
 
 
                 } finally {
-                    InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    InParallelSection = false; // restore parallel 
+                    EnableOpenMP();
                 }
             }
         }
@@ -386,8 +383,7 @@ namespace ilPSP {
             } else {
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ();
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP();
 
                     var opts = new ParallelOptions {
                         MaxDegreeOfParallelism = numThreads
@@ -426,9 +422,7 @@ namespace ilPSP {
                     //});
                 } finally {
                     InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    EnableOpenMP();  // restore parallel 
                 }
             }
         }
@@ -465,8 +459,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
 
                     // we do the balancing:
                     object padlock = new object();
@@ -513,9 +506,7 @@ namespace ilPSP {
 
                 } finally {
                     InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    EnableOpenMP(); // restore parallel 
                 }
             }
         }
@@ -558,8 +549,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ(); // within a parallel section, we don't want BLAS/LAPACK to spawn into further threads
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP();
 
                     void _body(int ithread) {
                         ThreadInfo ti;
@@ -576,9 +566,7 @@ namespace ilPSP {
                     Parallel.For(0, __Numthreads, options, _body);
                 } finally {
                     InParallelSection = false;
-                    BLAS.ActivateOMP(); // restore parallel 
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    EnableOpenMP(); // restore parallel 
                 }
             }
         }
@@ -613,8 +601,7 @@ namespace ilPSP {
 
                 try {
                     InParallelSection = true;
-                    BLAS.ActivateSEQ();
-                    LAPACK.ActivateSEQ();
+                    DisableOpenMP();
 
                     TLocal _body(int i, ParallelLoopState s, TLocal r) {
                         return body(i, r);
@@ -624,9 +611,7 @@ namespace ilPSP {
                     Parallel.For(fromInclusive, toExclusive, options, localInit, _body, localFinally);
                 } finally {
                     InParallelSection = false;
-                    BLAS.ActivateOMP();
-                    LAPACK.ActivateOMP();
-                    PinOMPthreadsSometimes();
+                    EnableOpenMP();  // restore parallel 
                 }
             }
         }
@@ -953,7 +938,7 @@ namespace ilPSP {
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
                 MKLservice.BindOMPthreads_1To1(cpus);
-            } 
+            }
 
             /*{
                 //tr.InfoToConsole = true;
