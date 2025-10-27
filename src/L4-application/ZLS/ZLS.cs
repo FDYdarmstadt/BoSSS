@@ -165,8 +165,10 @@ namespace ZwoLevelSetSolver {
 
             // check symmetry of RHS and Solution in Newton solver:
             Newton.DiagnosticFunction = delegate (DGField[] flds) {
-                double[] asymmetries = flds.FieldAsymmetry(0, new bool[] { true, false, false, true, false }); // adopt for 3D!
-                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetries.ToConcatString("(", ", ", ")")}");    
+                double[] asymmetriesX = flds.FieldAsymmetry(0, new bool[] { true, false, false, true, false }); // adopt for 3D!
+                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetries.ToConcatString("(", ", ", ")")}");
+                double[] asymmetriesY = flds.FieldAsymmetry(1, new bool[] { true, false, false, true, false }); // adopt for 3D!
+                Console.WriteLine($"   --- asymmetry of {flds.Select(f => f.Identification).ToConcatString("(", ", ", ")")} = {asymmetries.ToConcatString("(", ", ", ")")}");
             };
             Newton.DiagnosticFunction(this.CurrentStateVector.Mapping);
 

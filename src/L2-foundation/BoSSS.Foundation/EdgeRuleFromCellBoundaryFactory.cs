@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// constructor
         /// </summary>
-        public EdgeRuleFromCellBoundaryFactory(IGridData g, RefElement edgeRefElement, IEnumerable<IQuadRuleFactory<CellBoundaryQuadRule>> cellBndQF, EdgeMask maxDomain) {
+        public EdgeRuleFromCellBoundaryFactory(IGridData g, RefElement edgeRefElement, IEnumerable<IQuadRuleFactory<CellBoundaryQuadRule>> cellBndQF, EdgeMask maxEdgeDomain) {
             m_cellBndQF = new Dictionary<RefElement, IQuadRuleFactory<CellBoundaryQuadRule>>();
             foreach(var f in cellBndQF) {
                 m_cellBndQF.Add(f.RefElement, f);
@@ -53,12 +53,12 @@ namespace BoSSS.Foundation.Quadrature {
             
             RefElement = edgeRefElement;
             grd = g;
-            if (maxDomain.MaskType != MaskType.Geometrical)
-                throw new ArgumentException("expecting a geometrical mask");
-            m_maxDomain = maxDomain;
+            if (maxEdgeDomain.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("expecting a geometrical mask", nameof(maxEdgeDomain));
+            m_maxEdgeDomain = maxEdgeDomain;
 
-            if(!maxDomain.IsSubMaskOf(g.iGeomEdges.GetEdges4RefElement(edgeRefElement)))
-                throw new ArgumentException("maxDomain is not a submask of the edges of the edgeRefElement.");
+            if(!maxEdgeDomain.IsSubMaskOf(g.iGeomEdges.GetEdges4RefElement(edgeRefElement)))
+                throw new ArgumentException("maxDomain is not a submask of the edges of the edgeRefElement.", nameof(maxEdgeDomain));
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         readonly IGridData grd;
 
-        readonly EdgeMask m_maxDomain;
+        readonly EdgeMask m_maxEdgeDomain;
 
         /// <summary>
         /// If there are any cached rules, this method returns their order.
@@ -95,7 +95,7 @@ namespace BoSSS.Foundation.Quadrature {
             // init & checks
             // =============
 
-            var mask = m_maxDomain;
+            var mask = m_maxEdgeDomain;
             
            
             if (!(mask is EdgeMask))
@@ -136,7 +136,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             int[] Cells = new int[NoEdg]; // mapping: Edge Index --> Cell Index (both geometrical)
             int[] Faces = new int[NoEdg]; // mapping: Edge Index --> Face 
-            BitArray MaxDomainMask = m_maxDomain.GetBitMask();
+            //BitArray MaxDomainMask = m_maxDomain.GetBitMask();
             {
                 for (int i = 0; i < NoEdg; i++) {
 
@@ -277,7 +277,7 @@ namespace BoSSS.Foundation.Quadrature {
             var QuadRulesFromOtherProc = SerialisationMessenger.ExchangeData(QuadRulesForOtherProc, csMPI.Raw._COMM.WORLD);
 
 
-            // Step 3: re-arange the received data
+            // Step 3: re-arrange the received data
             CellBoundaryQuadRule[] RulesForExternalCells = new CellBoundaryQuadRule[iGeomCells.Count - Jgeom];
             foreach (var kv in QuadRulesFromOtherProc) {
                 int iSourceRank = kv.Key;
@@ -393,7 +393,7 @@ namespace BoSSS.Foundation.Quadrature {
             if (mask.MaskType != MaskType.Geometrical)
                 throw new ArgumentException("Expecting a geometrical mask.");
 
-            if(!mask.IsSubMaskOf(m_maxDomain))
+            if(!mask.IsSubMaskOf(m_maxEdgeDomain))
                 throw new ArgumentException("Cannot return quadrature rule for mask larger than initially specified");
 #if DEBUG
             var checkBitMask = new BitArray(grd.iGeomEdges.Count);
