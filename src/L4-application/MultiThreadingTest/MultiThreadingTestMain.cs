@@ -17,9 +17,9 @@ namespace MultiThreadingTest {
             }
 
             BoSSS.Solution.Application.InitMPI(args);
-            
-            //string logFile = $"stdout_rank{ilPSP.Environment.MPIEnv.MPI_Rank}.txt";
-            //Console.SetOut(new StreamWriter(logFile) { AutoFlush = true });
+
+            string logFile = $"stdout_rank{ilPSP.Environment.MPIEnv.MPI_Rank}.txt";
+            Console.SetOut(new StreamWriter(logFile) { AutoFlush = true });
 
             Console.WriteLine("Starting multithread tests");
             Parallel.For(0, System.Environment.ProcessorCount - 1, new ParallelOptions { MaxDegreeOfParallelism = System.Environment.ProcessorCount - 1 }, i => {
@@ -41,31 +41,31 @@ namespace MultiThreadingTest {
             if(enableTPL) {
                 // --- Switch to TPL (C#) mode ---
                 ilPSP.Environment.DisableOpenMP();
-                Environment.SetEnvironmentVariable("OMP_NUM_THREADS", "1");
-                Environment.SetEnvironmentVariable("MKL_NUM_THREADS", "1");
-                Environment.SetEnvironmentVariable("MKL_THREADING_LAYER", "SEQUENTIAL");
-                Environment.SetEnvironmentVariable("OMP_PROC_BIND", "false");
-                Environment.SetEnvironmentVariable("KMP_AFFINITY", "disabled");
+                //Environment.SetEnvironmentVariable("OMP_NUM_THREADS", "1");
+                //Environment.SetEnvironmentVariable("MKL_NUM_THREADS", "1");
+                //Environment.SetEnvironmentVariable("MKL_THREADING_LAYER", "SEQUENTIAL");
+                //Environment.SetEnvironmentVariable("OMP_PROC_BIND", "false");
+                //Environment.SetEnvironmentVariable("KMP_AFFINITY", "disabled");
 
-                //// Use all logical cores assigned by SLURM for TPL
-                //int threads = int.Parse(Environment.GetEnvironmentVariable("SLURM_CPUS_PER_TASK") ?? "1");
-                ThreadPool.SetMinThreads(NumThreads, NumThreads);
-                ThreadPool.SetMaxThreads(NumThreads, NumThreads);
+                ////// Use all logical cores assigned by SLURM for TPL
+                ////int threads = int.Parse(Environment.GetEnvironmentVariable("SLURM_CPUS_PER_TASK") ?? "1");
+                //ThreadPool.SetMinThreads(NumThreads, NumThreads);
+                //ThreadPool.SetMaxThreads(NumThreads, NumThreads);
 
                 Console.WriteLine($"[Rank {Rank}] Switched to TPL mode using {NumThreads} threads.");
             } else {
                 // --- Switch to MKL / OpenMP mode ---
                 ilPSP.Environment.EnableOpenMP();
-                Environment.SetEnvironmentVariable("OMP_NUM_THREADS", NumThreads.ToString());
-                Environment.SetEnvironmentVariable("MKL_NUM_THREADS", NumThreads.ToString());
-                Environment.SetEnvironmentVariable("MKL_THREADING_LAYER", "INTEL");
-                Environment.SetEnvironmentVariable("OMP_PROC_BIND", "true");
-                Environment.SetEnvironmentVariable("OMP_PLACES", "cores");
-                Environment.SetEnvironmentVariable("KMP_AFFINITY", "granularity=fine,compact,1,0");
+                //Environment.SetEnvironmentVariable("OMP_NUM_THREADS", NumThreads.ToString());
+                //Environment.SetEnvironmentVariable("MKL_NUM_THREADS", NumThreads.ToString());
+                //Environment.SetEnvironmentVariable("MKL_THREADING_LAYER", "INTEL");
+                //Environment.SetEnvironmentVariable("OMP_PROC_BIND", "true");
+                //Environment.SetEnvironmentVariable("OMP_PLACES", "cores");
+                //Environment.SetEnvironmentVariable("KMP_AFFINITY", "granularity=fine,compact,1,0");
 
-                // Limit TPL interference
-                ThreadPool.SetMinThreads(1, 1);
-                ThreadPool.SetMaxThreads(1, 1);
+                //// Limit TPL interference
+                //ThreadPool.SetMinThreads(1, 1);
+                //ThreadPool.SetMaxThreads(1, 1);
 
                 Console.WriteLine($"[Rank {Rank}] Switched to MKL/OpenMP mode using {NumThreads} threads.");
             }
