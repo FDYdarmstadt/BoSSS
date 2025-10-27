@@ -458,14 +458,10 @@ namespace BoSSS.Application.BoSSSpad {
                 //str.Write($"srun --export=ALL,OMP_NUM_THREADS={NumThreads} --cpu-bind=cores --cpus-per-task={NumThreads} {base.DotnetRuntime} "); // when using SLURM, `srun` is recommended instead of `mpiexec`
                 str.Write(
                 $"srun --cpu-bind=cores " +
+                $"--mem-bind=local " +
+                //"--output=rank_%t_trace.out strace -f -e clone " + // for debugging threading
                 $"bash -c 'export OMP_NUM_THREADS={NumThreads}; " + //if not used like this, srun overwrites OMP_NUM_THREADS to TotalThreadsPerRank.
                 $"{base.DotnetRuntime} ");
-
-                //if (MPIcores > 1) {
-                //    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
-                //} else {
-                //    str.Write($"{base.DotnetRuntime} ");
-                //}
 
                 str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
                 //str.Write(" ");
