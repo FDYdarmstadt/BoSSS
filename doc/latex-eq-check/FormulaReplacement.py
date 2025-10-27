@@ -25,13 +25,19 @@ def extract_equations_all(text: str):
 
     # $...$ matcher to prevent pairing a stray '$' with a far-away '$'
     DOLLAR_MAX = 600
-    dollar_body = rf"(?:(?![<>])[\s\S]){{0,{DOLLAR_MAX}}}?"  # anything except '<' or '>', up to limit
+    safe_any = r"(?:(?!<)[\s\S])"  # allow '>'
+    must_have_math = rf"(?=\s*(?:\\[A-Za-z]|[A-Za-z0-9(\\\[\{{|]))"  # some real math ahead
+    no_punct_after_open = r"(?!\s*[,.;:!?])"
+
     dollar_rx = re.compile(
-        rf"(?<!\\)\$(?![\s$])"
-        rf"{dollar_body}"   
-        rf"(?<!\s)(?<!\\)\$(?!\$)",
+        rf"(?<!\\)\$(?!\$)"          # opening $ not escaped and not $$
+        rf"{no_punct_after_open}"    # don't accept $ ,  or $ .
+        rf"\s*"                      # allow spaces after opening $
+        rf"{must_have_math}"         # require a math
+        rf"(?:{safe_any}){{1,{DOLLAR_MAX}}}?"
+        rf"\s*(?<!\\)\$(?!\$)",      # closing $ (allow spaces before)
         re.DOTALL,
-    )
+)
 
     patterns = [
         ("FENCE", re.compile(r"```[ \t]*math[^\n]*\n[\s\S]*?\n```", re.IGNORECASE)),
