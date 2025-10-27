@@ -37,7 +37,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// constructor
         /// </summary>
-        public EdgeRuleFromCellBoundaryFactory(Grid.Classic.GridData g, bool _scaleReq, IQuadRuleFactory<CellBoundaryQuadRule> cellBndQF, CellMask maxDomain) {
+        public EdgeRuleFromCellBoundaryFactory(Grid.Classic.GridData g, 
+            bool _scaleReq, 
+            IQuadRuleFactory<CellBoundaryQuadRule> cellBndQF, 
+            CellMask maxDomain) {
             if(maxDomain.MaskType != MaskType.Geometrical)
                 throw new ArgumentException("Expecting a geometrical mask.", "maxDomain");
 
@@ -209,9 +212,6 @@ namespace BoSSS.Foundation.Quadrature {
             // ==========
             {
                 for(int i = 0; i < NoEdg; i++) { // loop over edges
-                    
-
-                    //if (Cells[i] >= 0) {
                     var CellBndR = cellBndRule[iChunk[i]].Rule;
                     QuadRule qrEdge = null;
 
@@ -224,9 +224,6 @@ namespace BoSSS.Foundation.Quadrature {
                     qrEdge.Nodes.LockForever();
                     qrEdge.Weights.LockForever();
                     Ret[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), qrEdge);
-                    //} else {
-                    //    Debug.Assert(Ret[i] != null);
-                    //}
                 }
             }
 

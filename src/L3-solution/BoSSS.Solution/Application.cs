@@ -3137,7 +3137,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Default implementation (which does nothing) for the computation of the grid partitioning
+        /// Default implementation for the computation of the grid partitioning
         /// during runtime (dynamic load balancing).
         /// </summary>
         /// <param name="TimeStepNo"></param>

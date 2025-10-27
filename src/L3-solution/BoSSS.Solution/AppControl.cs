@@ -1260,7 +1260,8 @@ namespace BoSSS.Solution.Control {
         protected List<ICellCostEstimator> m_DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
 
         /// <summary>
-        /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
+        /// Number of time-steps, after which dynamic load balancing is performed; 
+        /// if negative, dynamic load balancing is turned off during the simulation, but it might happen at startup, if <see cref="DynamicLoadBalancing_On"/> is true.
         /// </summary>
         [DataMember]
         public int DynamicLoadBalancing_Period = -1;

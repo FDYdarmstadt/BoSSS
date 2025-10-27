@@ -136,7 +136,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Gets the partitioning of cells over the MPI processes;
+        /// Gets the partitioning of logical cells over the MPI processes;
         /// </summary>
         Partitioning CellPartitioning {
             get;

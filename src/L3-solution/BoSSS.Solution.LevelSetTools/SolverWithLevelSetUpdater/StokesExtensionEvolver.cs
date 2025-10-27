@@ -83,7 +83,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         // nothing to do
-        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
+        //public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
+
+        /// <summary>
+        /// re-initialization
+        /// </summary>
+        public bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            return Reinitialize(levelSet, time, dt, incremental, DomainVarFields, ParameterVarFields);
+        }
 
 
         /// <summary>

@@ -36,6 +36,7 @@ using BoSSS.Foundation.XDG;
 using System.Linq;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -374,7 +375,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        static XNSE_Control Ellipsiod_AMRtest(int D = 2, int p = 2, int kelem = 16) {
+        static XNSE_Control Ellipsiod_AMRtest(int D = 2, int p = 2, int kelem = 20, bool LoadBalancingDuringRuntime = false) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -500,6 +501,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             double refine_h = base_h / Math.Pow(2, maxRefine);
 
+            C.DynamicLoadBalancing_Period = LoadBalancingDuringRuntime ? 10 : -1;
+            
             #endregion
 
             // Timestepping
@@ -585,9 +588,6 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
-            C.AdaptiveMeshRefinement = true;
-
-
            
 
           
@@ -606,8 +606,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //[Test]
         public static void CurvatureBasedAMRTest_2D(
             [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert, GridPartType.none)] GridPartType gridPartType,
-            [Values(7, 8)] int NumberOfElements) {
-            var C = Ellipsiod_AMRtest(D: 2, p: 2, kelem: NumberOfElements);
+            [Values(7, 8)] int NumberOfElements,
+            [Values(false, true)] bool LoadBalancingDuringRuntime) {
+            var C = Ellipsiod_AMRtest(D: 2, p: 2, kelem: NumberOfElements, LoadBalancingDuringRuntime: LoadBalancingDuringRuntime);
 
             C.GridPartType = gridPartType;
 
@@ -620,7 +621,6 @@ namespace BoSSS.Application.XNSE_Solver {
             var db = DatabaseInfo.CreateOrOpen("tempdb");
             C.SetDatabase(db);
             C.savetodb = true;
-
 
             using(var solver = new XNSE()) {
                 solver.Init(C);
@@ -638,7 +638,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
             Solution.Application.DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.METIS, 20);
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.METIS, 20, true);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

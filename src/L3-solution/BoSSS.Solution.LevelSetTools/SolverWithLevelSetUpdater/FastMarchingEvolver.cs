@@ -63,7 +63,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> ParameterNames => parameters;
 
         // reinitilization
-        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
+        //public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
+
+        /// <summary>
+        /// performs re-initialization
+        /// </summary>
+        public bool AfterMovePhaseInterface(
+            DualLevelSet levelSet,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            return this.Reinitialize(levelSet, time, dt, incremental, DomainVarFields, ParameterVarFields);
+
+        }
+
+
 
         /// <summary>
         /// Provides access to the internally constructed extension velocity.
