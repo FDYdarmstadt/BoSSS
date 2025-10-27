@@ -373,59 +373,50 @@ namespace ilPSP {
             if(toExclusive <= fromInclusive)
                 return;
 
-            if(InParallelSection == true || NumThreads <= 1) {
-                ThreadInfo ti;
-                ti.iThread = 0;
-                ti.NumThreads = 1;
-                for(int i = fromInclusive; i < toExclusive; i++) {
+            if(InParallelSection || NumThreads <= 1) {
+                ThreadInfo ti = new ThreadInfo { iThread = 0, NumThreads = 1 };
+                for(int i = fromInclusive; i < toExclusive; i++)
                     body(ti, i);
-                }
-            } else {
-                try {
-                    InParallelSection = true;
-                    DisableOpenMP();
+                return;
+            }
 
-                    var opts = new ParallelOptions {
-                        MaxDegreeOfParallelism = numThreads
+            try {
+                InParallelSection = true;
+                DisableOpenMP();
+
+                PinTPLThreadsSometimes();
+
+                int total = toExclusive - fromInclusive;
+
+                // Balanced partitioning of work ranges
+                var rangePartitioner = Partitioner.Create(fromInclusive, toExclusive,
+                    Math.Max(1, total / (numThreads * 4)));
+
+                // Dedicated scheduler pair to isolate from global ThreadPool
+                var schedulerPair = new ConcurrentExclusiveSchedulerPair(TaskScheduler.Default, numThreads);
+                var opts = new ParallelOptions {
+                    TaskScheduler = schedulerPair.ConcurrentScheduler,
+                    MaxDegreeOfParallelism = numThreads
+                };
+
+                Parallel.ForEach(rangePartitioner, opts, range =>
+                {
+                    int threadId = Thread.CurrentThread.ManagedThreadId;
+                    var ti = new ThreadInfo {
+                        iThread = threadId,
+                        NumThreads = numThreads
                     };
 
-                    int total = toExclusive - fromInclusive;
-                    int chunk = (int)Math.Ceiling(total / (double)numThreads);
-
-                    PinTPLThreadsSometimes();
-                    //try static partiting first:
-                    Parallel.For(0, numThreads, new ParallelOptions { MaxDegreeOfParallelism = numThreads }, threadId =>
-                    {
-                        var ti = new ThreadInfo { iThread = threadId, NumThreads = numThreads };
-                        int start = fromInclusive + threadId * chunk;
-                        int end = Math.Min(start + chunk, toExclusive);
-
-                        for(int i = start; i < end; i++)
-                            body(ti, i);
-                    });
-
-                    // Optionally: custom partitioner for contiguous ranges:
-                    //var rangePartitioner = Partitioner.Create(fromInclusive, toExclusive,
-                    //    rangeSize: Math.Max(1, (toExclusive - fromInclusive) / (numThreads * 4)));
-
-                    //Parallel.ForEach(rangePartitioner, opts, range => {
-                    //    // Determine thread ID (approximate) via ThreadLocal
-                    //    int threadId = Thread.CurrentThread.ManagedThreadId;
-                    //    var ti = new ThreadInfo {
-                    //        iThread = threadId,
-                    //        NumThreads = numThreads
-                    //    };
-
-                    //    for(int i = range.Item1; i < range.Item2; i++) {
-                    //        body(ti, i);
-                    //    }
-                    //});
-                } finally {
-                    InParallelSection = false;
-                    EnableOpenMP();  // restore parallel 
-                }
+                    for(int i = range.Item1; i < range.Item2; i++)
+                        body(ti, i);
+                });
+            } finally {
+                InParallelSection = false;
+                EnableOpenMP();
             }
         }
+
+
 
 
         /// <summary>
