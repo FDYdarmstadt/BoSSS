@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             var species = new HashSet<string>();
 
             bool bfound = false;
-            foreach(string exSolName in Control.ExactSolutions.Keys) {
+            foreach(string exSolName in Control.ExactSolutions_Evaluators_TimeDep.Keys) {
                 if(exSolName.StartsWith(SolPrefix)) {
                     bfound = true;
 
@@ -177,6 +177,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests
                         // default value
                         exSolImpl = (X, t) => 0.0;
                     }
+
+                    VelVec[d] = exSolImpl;
                 }
                 ret.Add(s, VelVec);
             }

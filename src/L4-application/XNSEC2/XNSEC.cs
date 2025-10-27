@@ -35,30 +35,10 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            InitMPI();
-            ilPSP.Environment.NumThreads = 2;
-            BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
-            //BoSSS.Application.XNSEC.NUnitTest.ManufacturedSolutionLowMachCombustionTest();
-            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, CutCellQuadratureMethod.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //InitMPI();
+            //ilPSP.Environment.NumThreads = 2;
+            //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
 
-
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
-            //Debugger.Launch();
-
-            //NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
-            //NUnitTest.CavityNaturalConvection();
-            //NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_pseudo2dCombustion_MixtureFraction()", "--delplt" }, false, delegate () {
-            //    var p = new XNSEC_MixtureFraction();
-            //    return p;
-            //});
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //-n 8 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_DropletCombustion()"
-            //System.Environment.Exit(111);
 
             bool MixtureFractionCalculation = false;
             try {

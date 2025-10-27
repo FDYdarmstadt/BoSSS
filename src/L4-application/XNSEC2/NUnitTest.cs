@@ -858,17 +858,10 @@ namespace BoSSS.Application.XNSEC {
 
                 C.AddExactSolution(VariableNames.Temperature, spc, tst.GetTemperature(spc));
                 for(int d = 0; d < D; d++) {
-                    C.AddInitialValue(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d));
-                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
-                    C.SetGravity(spc, d, Gravity_d);
-                }
-
-
-                for(int d = 0; d < D; d++) {
                     C.AddInitialValue(VariableNames.Velocity_d(d), spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
-                    C.SetGravity(spc, d, Gravity_d);
+                    C.SetGravity(spc, d, tst.GetF(spc, d).Convert_X2Xt());
                 }
+
                 C.AddInitialValue(VariableNames.Pressure, spc, tst.GetPress(spc).Convert_Xt2X(0.0));
                 C.AddInitialValue(VariableNames.Temperature, spc, tst.GetTemperature(spc).Convert_Xt2X(0.0));
                 for (int i = 0; i < NoChemSpc; i++) {

@@ -937,11 +937,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //FlowSolverDegree: 2 modus: TestIBM (VelocityX, 3.6865441522172957, 0.855131845172898) (VelocityY, 3.686544152216214, 0.8551318451720138) (Pressure, 2.4618884145401307, -0.9380731392988562)
             //FlowSolverDegree: 3 modus: Test2Phase (VelocityX, 4.6639625753059795, 0.9897897821002215) (VelocityY, 4.6639506311723515, 0.9897856559892002) (Pressure, 3.195132673497341, 0.7451829927632292)
             //FlowSolverDegree: 3 modus: TestIBM (VelocityX, 4.453883287724354, -0.10906474316034576) (VelocityY, 4.453610133084815, -0.10508285176620813) (Pressure, 3.2604571163979905, -1.6391369361012353)
-            var RegressionBounds = new Dictionary<(int Degree, TaylorCouette.Mode mode), (string Name, double Slope, double intercept, double interceptTol)[]>();
-            RegressionBounds.Add((2, TaylorCouette.Mode.Test2Phase), new[] { ("VelocityX", 3.0, 0.740, 0.1), ("VelocityY", 3.0, 0.740, 0.1), ("Pressure", 2.0, 1.68, 0.1) });
-            RegressionBounds.Add((2, TaylorCouette.Mode.TestIBM), new[] { ("VelocityX", 3.0, 0.855, 0.1), ("VelocityY", 3.0, 0.855, 0.1), ("Pressure", 2.0, -0.938, 0.1) });
-            RegressionBounds.Add((3, TaylorCouette.Mode.Test2Phase), new[] { ("VelocityX", 4.0, 0.990, 0.1), ("VelocityY", 4.0, 0.990, 0.1), ("Pressure", 3.0, 0.745, 0.1) });
-            RegressionBounds.Add((3, TaylorCouette.Mode.TestIBM), new[] { ("VelocityX", 4.0, -0.109, 0.1), ("VelocityY", 4.0, -0.105, 0.1), ("Pressure", 3.0, -1.639, 0.1) });
+            var RegressionBounds = new Dictionary<(int Degree, TaylorCouette.Mode mode), (string Name, double Slope, double intercept, double interceptTol)[]> {
+                { (2, TaylorCouette.Mode.Test2Phase), new[] { ("VelocityX", 3.0, 0.740, 0.1), ("VelocityY", 3.0, 0.740, 0.1), ("Pressure", 2.0, 1.68, 0.1) } },
+                { (2, TaylorCouette.Mode.TestIBM),    new[] { ("VelocityX", 3.0, 0.855, 0.1), ("VelocityY", 3.0, 0.855, 0.1), ("Pressure", 2.0, -0.938, 0.1) } },
+                { (3, TaylorCouette.Mode.Test2Phase), new[] { ("VelocityX", 4.0, 0.990, 0.1), ("VelocityY", 4.0, 0.990, 0.1), ("Pressure", 3.0, 0.745, 0.1) } },
+                { (3, TaylorCouette.Mode.TestIBM),    new[] { ("VelocityX", 4.0, -0.109, 0.1), ("VelocityY", 4.0, -0.105, 0.1), ("Pressure", 3.0, -1.639, 0.1) } }
+            };
             
             XNSESolverConvergenceTest(Tst, CS, true, RegressionBounds[(FlowSolverDegree, modus)]);
             
