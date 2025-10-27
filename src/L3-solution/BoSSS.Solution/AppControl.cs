@@ -712,10 +712,10 @@ namespace BoSSS.Solution.Control {
             if(m_ExactSolutions_Evaluators == null)
                 m_ExactSolutions_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
 
-            foreach(string name in ExactSolutions.Keys) {
+            foreach(string name in m_ExactSolutions.Keys) {
                 if(!m_ExactSolutions_Evaluators.ContainsKey(name)) {
 
-                    var vv = ExactSolutions[name];
+                    var vv = m_ExactSolutions[name];
 
                     m_ExactSolutions_Evaluators.Add(name, new ValueTuple<ScalarFunctionTimeDep, Func<double[], double, double>>(
                         (MultidimensionalArray X, double time, MultidimensionalArray R) => vv.EvaluateV(X, time, R),
