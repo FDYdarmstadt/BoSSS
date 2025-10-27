@@ -944,8 +944,11 @@ namespace ilPSP {
 
 
         private static void PinOMPthreads() {
-
-
+            if(System.Environment.OSVersion.Platform == PlatformID.Unix) {
+                //MKLservice.Dynamic = true;
+                //MKLservice.SetNumThreads(NumThreads);
+                return;
+            }
 
             if(PerformOMPthreadPinning) {
                 var cpus = DedicatedCPUsForThisRank.GetSubVector(DedicatedCPUsForThisRank.Length - NumThreads, NumThreads); // use the left-over CPUs **at the beginning** for spare; I assume that background threads rather grab those.
