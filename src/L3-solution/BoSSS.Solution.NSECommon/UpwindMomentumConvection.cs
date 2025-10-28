@@ -114,9 +114,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// returns
         /// \[ 
-        ///   \vec{v} \cdot u_d,
+        ///   \underline{v} \cdot u_d,
         /// \]
-        /// where $\vec{v}$  is the linearization point.
+        /// where $\underline{v}$  is the linearization point.
         /// For variable density the result is multiplied by $\rho$ .
         /// </summary>
         void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
@@ -317,9 +317,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// returns
         /// \[ 
-        ///   \vec{v} \cdot u_d,
+        ///   \underline{v} \cdot u_d,
         /// \]
-        /// where $\vec{v}$  is the linearization point.
+        /// where $\underline{v}$  is the linearization point.
         /// For variable density the result is multiplied by $\rho$ .
         /// </summary>
         void Flux(ref CommonParamsVol inp, double[] U, double[] output) {

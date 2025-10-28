@@ -391,7 +391,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in reference coordinates: $\partial^2_{\vec{\xi}} \phi_n$.
+        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in reference coordinates: $\partial^2_{\underline{\xi}} \phi_n$.
         /// </summary>
         /// <param name="Ns"></param>
         /// <returns>
@@ -402,8 +402,8 @@ namespace BoSSS.Foundation {
         /// - 4th index: spatial direction of 2nd derivation, $l$ 
         /// 
         /// The $(m,n,k,l)$-th entry is equal to 
-        /// $\frac{\partial}{\partial \xi_k} \frac{\partial}{\partial \xi_l} \phi_n (\vec{\xi}_m)$,
-        /// where $\vec{\xi}_m$ is the $m$-th vector in the nodeset <paramref name="Ns"/>.
+        /// $\frac{\partial}{\partial \xi_k} \frac{\partial}{\partial \xi_l} \phi_n (\underline{\xi}_m)$,
+        /// where $\underline{\xi}_m$ is the $m$-th vector in the nodeset <paramref name="Ns"/>.
         /// </returns>        
         public MultidimensionalArray Evaluate2ndDeriv(NodeSet Ns) {
 
@@ -420,7 +420,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in physical coordinates: \f$ \partial^2_{\vec{x}} \phi_{j n} \f$.
+        /// A vectorized evaluation for the 2nd derivative, i.e. the Hessian, in physical coordinates: $\partial^2_{\underline{x}} \phi_{j n}$.
         /// </summary>
         /// <param name="Nodes"></param>
         /// <param name="j0">Index of first cell in the vector</param>
@@ -433,7 +433,7 @@ namespace BoSSS.Foundation {
         ///  - 5th index: spatial direction of 2nd derivation, <em>l</em>
         ///  
         /// So, the entry [m,n,k,l] =
-        /// $\frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \phi_n (\vec{x}_m)$, where $\vec{x}_m$ is the
+        /// $\frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \phi_n (\underline{x}_m)$, where $\underline{x}_m$ is the
         /// <em>m</em>-th vector in the nodeset #<paramref name="Nodes"/>.
         /// </returns>
         public MultidimensionalArray CellEval2ndDeriv(NodeSet Nodes, int j0, int Len) {

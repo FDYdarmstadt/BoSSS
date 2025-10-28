@@ -33,13 +33,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
     /// </summary>
     /// <remarks>
     /// The vertices in the reference space are:
-    ///     \f[
+    ///     \[
     ///     \left[
     ///       (0,                      \frac{4}{3}),
     ///       (-\frac{2}{3} \sqrt{3}, -\frac{2}{3}),
     ///       ( \frac{2}{3} \sqrt{3}, -\frac{2}{3}) 
     ///     \right]
-    ///     \f]
+    ///     \]
     /// </remarks>
     public class Triangle : RefElement {
 

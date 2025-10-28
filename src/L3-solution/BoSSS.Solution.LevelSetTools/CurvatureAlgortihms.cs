@@ -653,7 +653,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
                        
 
-            // \lineint \vec{s} \dl
+            // \lineint \underline{s} \dl
             // ============================
             var IntgrlOf_CurvTimesNormal = new VectorField<SinglePhaseField>(new SinglePhaseField(Bs), new SinglePhaseField(Bs));
 
@@ -674,7 +674,7 @@ namespace BoSSS.Solution.LevelSetTools {
                 mtxBuilder.ComputeAffine(IntgrlOf_CurvTimesNormal.CoordinateVector);
             }
 
-            // \oint \vec{n} \dS
+            // \oint \underline{n} \dS
             // ==================================
 
             var IntgrlOf_Normal = new VectorField<SinglePhaseField>(new SinglePhaseField(Bs), new SinglePhaseField(Bs));
@@ -1511,7 +1511,7 @@ namespace BoSSS.Solution.LevelSetTools {
             MultidimensionalArray Force = MultidimensionalArray.Create(JSub, D);
             {
                 // compute, in each cell 
-                // \oint \vec{n} \kappa \dS
+                // \oint \underline{n} \kappa \dS
                                 
 
                 CellQuadrature.GetQuadrature(new int[] { D }, lsTrk.GridDat,
@@ -1539,7 +1539,7 @@ namespace BoSSS.Solution.LevelSetTools {
             // =========
             MultidimensionalArray Tangents = MultidimensionalArray.Create(gDat.Edges.Count, D);
             {
-                // \lineint \vec{s} \dl
+                // \lineint \underline{s} \dl
                 
 
                 EdgeQuadrature.GetQuadrature(new int[] { D }, lsTrk.GridDat,

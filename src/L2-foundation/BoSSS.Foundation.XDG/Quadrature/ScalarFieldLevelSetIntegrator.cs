@@ -30,11 +30,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
     /// zero level set (given by $\Phi = 0$) I as
     /// \f{multline*}
     /// \int \limits_I g ds \\
-    /// = \int \limits_I g \vec{n}_I \vec{n}_I ds \\
-    /// = \int \limits_I g \frac{\nabla \Phi}{|\nabla \Phi|} \vec{n}_I ds
+    /// = \int \limits_I g \underline{n}_I \underline{n}_I ds \\
+    /// = \int \limits_I g \frac{\nabla \Phi}{|\nabla \Phi|} \underline{n}_I ds
     /// \f{multline*}
     /// and using Gauss' theorem on the modified integrand
-    /// $\vec{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}$ 
+    /// $\underline{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}$ 
     /// </summary>
     public class ScalarFieldLevelSetIntegrator : LevelSetIntegrator {
 
@@ -114,9 +114,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         /// <summary>
         /// Evaluates the modified integrand which is
-        /// \f$ 
-        /// \vec{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}
-        /// \f$ 
+        /// $ 
+        /// \underline{g} = g \frac{\nabla \Phi}{|\nabla \Phi|}
+        /// $ 
         /// where g represents <see cref="m_Field"/>.
         /// </summary>
         public override void EvaluateIntegrand(NodeSet N, int j0, int Length, MultidimensionalArray EvalResult) {
@@ -153,10 +153,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         /// <summary>
         /// Evaluates the divergence of the modified integrand 
-        /// $\nabla \cdot \vec{g} = \nabla \cdot (g \frac{\nabla \Phi}{|\nabla \Phi|})$ 
+        /// $\nabla \cdot \underline{g} = \nabla \cdot (g \frac{\nabla \Phi}{|\nabla \Phi|})$ 
         /// which can be expanded to
         /// $ 
-        /// \nabla \cdot \vec{g} = \nabla g \frac{\nabla \Phi}{|\nabla \Phi|} + g (
+        /// \nabla \cdot \underline{g} = \nabla g \frac{\nabla \Phi}{|\nabla \Phi|} + g (
         /// \frac{\Delta \Phi}{|\nabla \Phi|}
         /// - \frac{\nabla \Phi}{|\nabla \Phi|} \frac{H(\Phi)}{|\nabla \Phi|} \frac{\nabla \Phi}{|\nabla \Phi|})
         /// $ 

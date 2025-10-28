@@ -47,7 +47,7 @@ namespace CNS {
 
         /// <summary>
         /// The optional velocity field:
-        /// \[ \vec{u} = \frac{1}{\rho} \vec{m} \] 
+        /// \[ \underline{u} = \frac{1}{\rho} \underline{m} \] 
         /// </summary>
         public static readonly Vector<DerivedVariable> Velocity = new Vector<DerivedVariable>(
             d => new DerivedVariable(
@@ -97,7 +97,7 @@ namespace CNS {
 
         /// <summary>
         /// The optional pressure field:
-        /// \[ p = f(\rho, \vec{m}, \rho E) \], where
+        /// \[ p = f(\rho, \underline{m}, \rho E) \], where
         /// \[ f \] depends on the equation of state
         /// </summary>
         public static readonly DerivedVariable Pressure = new DerivedVariable(
@@ -260,7 +260,7 @@ namespace CNS {
         
         /// <summary>
         /// The optional vorticity field:
-        /// \[ \vec{\omega} = \nabla \times \vec{u} \]
+        /// \[ \underline{\omega} = \nabla \times \underline{u} \]
         /// </summary>
         public static readonly Vector<DerivedVariable> Vorticity = new Vector<DerivedVariable>(
             d => new DerivedVariable(

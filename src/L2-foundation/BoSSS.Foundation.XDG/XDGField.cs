@@ -317,7 +317,7 @@ namespace BoSSS.Foundation.XDG {
         /// f_A(x_i) - f_B(x_i)
         /// $ 
         /// in all nodes with spatial coordinates
-        /// $ x_i$  defined in
+        /// $x_i$  defined in
         /// <paramref name="NodeSet"/> in all cells in the range
         /// [<paramref name="j0"/>; <paramref name="j0"/> + <paramref name="Len"/>]
         /// where $f_A(x)$  and
@@ -1262,12 +1262,12 @@ namespace BoSSS.Foundation.XDG {
         /// Canonical L2 Norm in the XDG space, i.e.
         /// \[
         ///   \left( \int_{\Omega \cap \mathfrak{ s} \cap \text{ CM} }
-        ///        u(\vec{ x})
+        ///        u(\underline{ x})
         ///   \text{dV} \right)^{1/2},
         /// \]
         /// where 
         /// $\mathfrak{s}$ denotes the domain of species <paramref name="spc"/> and
-        /// $\text{ CM} }$ denotes the optional cell mask <paramref name="cm"/>. 
+        /// $\text{CM}$ denotes the optional cell mask <paramref name="cm"/>. 
         /// </summary>
         /// <remarks>
         /// The foundation for computing the L2-norm in cut cells is the following relation:

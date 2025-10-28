@@ -383,9 +383,9 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Performs a nodal projection, i.e. accumulates a DG field, defined by
-        /// \f[ 
-        ///     \textrm{in each cell } K_j: \ u(\vec{\xi}_i) = \alpha f(\vec{\xi}_i) \quad \forall \vec{\xi}_i
-        /// \f]
+        /// \[ 
+        ///     \textrm{in each cell } K_j: \ u(\underline{\xi}_i) = \alpha f(\underline{\xi}_i) \quad \forall \underline{\xi}_i
+        /// \]
         /// to this field.
         /// If the number of nodes is not equal to the degrees-of-freedom in a specific cell,
         /// a least-square projection is performed.
@@ -393,7 +393,7 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="func">function to be projected</param>
         /// <param name="NodeSet">
-        /// cell-local coordinates $(\vec{xi}_1, \ldots , \vec{xi}_M)$
+        /// cell-local coordinates $(\underline{xi}_1, \ldots , \underline{xi}_M)$
         /// </param>
         public void ProjectNodal(double alpha, ScalarFunction func, NodeSet NodeSet) {
             using (new FuncTrace()) {
@@ -438,9 +438,9 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Performs a nodal projection, i.e. accumulates a DG field, defined by
-        /// \f[ 
-        ///     \textrm{in each cell } K_j: \ u(\vec{\xi}_i) = \alpha f(\vec{\xi}_i) \quad \forall \vec{\xi}_i
-        /// \f]
+        /// \[ 
+        ///     \textrm{in each cell } K_j: \ u(\underline{\xi}_i) = \alpha f(\underline{\xi}_i) \quad \forall \underline{\xi}_i
+        /// \]
         /// to this field. If the number of nodes is not equal to the
         /// degrees-of-freedom in a specific cell, a least-square projection is
         /// performed.
@@ -448,7 +448,7 @@ namespace BoSSS.Foundation {
         /// <param name="alpha">scaling of <paramref name="func"/></param>
         /// <param name="func">function to be projected</param>
         /// <param name="NodeSet">
-        /// cell-local coordinates $(\vec{xi}_1, \ldots , \vec{xi}_M)$
+        /// cell-local coordinates $(\underline{xi}_1, \ldots , \underline{xi}_M)$
         /// </param>
         public void ProjectNodal(double alpha, ScalarFunctionEx func, NodeSet NodeSet) {
             using (new FuncTrace()) {

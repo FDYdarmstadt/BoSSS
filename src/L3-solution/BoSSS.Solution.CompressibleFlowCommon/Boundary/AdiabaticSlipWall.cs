@@ -52,9 +52,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <summary>
         /// Calculates the boundary value for an isolating slip wall according
         /// to the first variant described in VegtVen2002. The basic idea is to
-        /// impose \f$ \vec{u} \cdot \vec{n} = 0\f$  (slip wall) by
+        /// impose \f$ \underline{u} \cdot \underline{n} = 0\f$  (slip wall) by
         /// setting the edge momentum to
-        /// \f$ \vec{m}^+ = \vec{m}^- - 2((\rho \vec{u})^- \cdot \vec{n})\vec{n}\f$ 
+        /// \f$ \underline{m}^+ = \underline{m}^- - 2((\rho \underline{u})^- \cdot \underline{n})\underline{n}\f$ 
         /// which mimics a mirrored flow at the other side of the wall.
         /// </summary>
         public override StateVector GetBoundaryState(double time, Vector x, Vector normal, StateVector stateIn) {

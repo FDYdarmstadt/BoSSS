@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// two-dimensional volume integrals over the boundaries of cells that
     /// are intersected by the level set, i.e integrals of the form
     /// \[
-    ///   \oint_{K_j \cap \{ \vec{x}; \varphi( \vec{x} ) \lt 0 \} } f \ dS
+    ///   \oint_{K_j \cap \{ \underline{x}; \varphi( \underline{x} ) \textless 0 \} } f \ dS
     /// \]
     /// In other words: If the (planar) edge
     /// of a three-dimensional element is intersected by the level set, this
@@ -96,8 +96,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// 'anti-derivatives' of a standard basis. Here, the 'anti-derivative'
         /// of a scalar polynomial $p$  is defined as
         /// a vector-valued polynomial
-        /// $\vec{\Lambda}$  such that
-        /// $p = \nabla \cdot \vec{\Lambda}$ 
+        /// $\underline{\Lambda}$  such that
+        /// $p = \nabla \cdot \underline{\Lambda}$ 
         /// </summary>
         private PolynomialList lambdaBasis;
 
@@ -747,13 +747,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <summary>
             /// For each face $E$  of each cell in
             /// the given range and for each
-            /// $\vec{\Lambda}\$  in
+            /// $\underline{\Lambda}\$  in
             /// <see cref="LevelSetEdgeVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
             /// \[ 
-            /// \int \limits_{\partial E} \vec{\Lambda} \cdot \vec{n} H(\varphi) \;ds,
+            /// \int \limits_{\partial E} \underline{\Lambda} \cdot \underline{n} H(\varphi) \;ds,
             /// \]
-            /// where $\vec{n}$  denotes the outer
+            /// where $\underline{n}$  denotes the outer
             /// unit normal vector on $\partial E$
             /// (**not** $E$!). Moreover,
             /// $H$ a weight function that depends
@@ -898,14 +898,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <summary>
             /// For each face $E$ of each cell in
             /// the given range and for each
-            /// $\vec{\Lambda}$  in
+            /// $\underline{\Lambda}$  in
             /// <see cref="LevelSetEdgeVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
             /// \[ 
-            /// \int_{ \{ \vec{x}; \varphi(\vec{x}) = 0 \}  \cap E} \vec{\Lambda} \cdot \vec{n}_I \;ds,
+            /// \int_{ \{ \underline{x}; \varphi(\underline{x}) = 0 \}  \cap E} \underline{\Lambda} \cdot \underline{n}_I \;ds,
             /// \]
             /// where $\varphi$ is the level set
-            /// function and $\vec{n}_I$  denotes the
+            /// function and $\underline{n}_I$  denotes the
             /// unit normal vector on
             /// $\varphi \cap E$ 
             /// (**not** $E$!)

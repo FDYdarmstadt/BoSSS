@@ -509,9 +509,9 @@ namespace BoSSS.Foundation {
         /// <param name="Map">
         /// Arbitrary mapping applied to the values of this field and
         /// <paramref name="function"/> at some point, which is finally integrated.
-        /// E.g., the mapping for an L2-error would be $(\vec{x},a,b) => (a - b)^2$, 
-        /// where $a$ is the value of this field at some point $\vec{x}$ and
-        /// $b$ is the value of <paramref name="function"/> at $\vec{x}$.
+        /// E.g., the mapping for an L2-error would be $(\underline{x},a,b) => (a - b)^2$, 
+        /// where $a$ is the value of this field at some point $\underline{x}$ and
+        /// $b$ is the value of <paramref name="function"/> at $\underline{x}$.
         /// </param>
         /// <param name="Quadrature_ChunkDataLimitOverride">
         /// only for debugging purpose,
@@ -548,9 +548,9 @@ namespace BoSSS.Foundation {
         /// <param name="Map">
         /// Arbiter mapping applied to the values of this field and
         /// <paramref name="function"/> at some point, which is finally integrated.
-        /// E.g., the mapping for an L2-error would be $(\vec{x},a,b) => (a - b)^2$, 
-        /// where $a$ is the value of this field at some point $\vec{x}$ and
-        /// $b$ is the value of <paramref name="function"/> at $\vec{x}$.
+        /// E.g., the mapping for an L2-error would be $(\underline{x},a,b) => (a - b)^2$, 
+        /// where $a$ is the value of this field at some point $\underline{x}$ and
+        /// $b$ is the value of <paramref name="function"/> at $\underline{x}$.
         /// </param>
         /// <returns>
         /// on all invoking MPI processes, the L2 norm of
@@ -589,8 +589,8 @@ namespace BoSSS.Foundation {
         /// <paramref name="function"/> at some point, which is finally
         /// integrated. E.g., the mapping for an L2-error would be
         /// $(a,b) => (a - b)^2$, where $a$ is the value of this
-        /// field at some point $\vec{x}$ and $b$ is the value of
-        /// <paramref name="function"/> at $\vec{x}$.
+        /// field at some point $\underline{x}$ and $b$ is the value of
+        /// <paramref name="function"/> at $\underline{x}$.
         /// </param>
         /// <returns>
         /// The cell-local Lx norm of this field minus

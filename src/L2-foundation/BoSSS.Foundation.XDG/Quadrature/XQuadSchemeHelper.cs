@@ -201,7 +201,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Edge quadrature for the surface elements, i.e., a $D-2$ dimensional integral.
-        /// For each cut background-cell $ K_j $, the surface element is $ K_j \cap \mathfrak{I} $ and its boundaries is  $ \partial K_j \cap \mathfrak{I} $; 
+        /// For each cut background-cell $K_j$, the surface element is $K_j \cap \mathfrak{I}$ and its boundaries is  $\partial K_j \cap \mathfrak{I}$; 
         /// Therefore, one need to integrate over the line integrals:
         /// \[
         ///    \int_{\partial K_j \cap \mathfrak{I} } \ldots \mathrm{dl} .
@@ -951,9 +951,9 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Quadrature scheme for the integration over the level-set, i.e. for each cut background-cell $K_j$ a quadrature to approximate
-        /// \f[
+        /// \[
         ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
-        /// \f]
+        /// \]
         /// </summary>
         public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
             if (IntegrationDom.MaskType == MaskType.Logical)

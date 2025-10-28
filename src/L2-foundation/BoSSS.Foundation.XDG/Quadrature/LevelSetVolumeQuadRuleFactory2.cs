@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// for each cell $K$  in a volume mask,
     /// capable of computing (an approximation of)
     /// \[ 
-    ///    \int\limits_{\{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \} \cap K}  f \ d \vec{x},
+    ///    \int\limits_{\{ \underline{x}; \varphi(\underline{x}) {\leq \atop \geq} 0 \} \cap K}  f \ d \underline{x},
     /// \]
     /// where $\varphi$  denotes the level set function.
     /// </summary>
@@ -64,7 +64,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// Some factory that provides quadrature rulz for the integration 
         /// over 
         /// \[ 
-        ///  \partial K \cap \{ \vec{x}; \varphi(\vec{x}) {\leq \atop \geq} 0 \}.
+        ///  \partial K \cap \{ \underline{x}; \varphi(\underline{x}) {\leq \atop \geq} 0 \}.
         /// \]
         /// (Here, $\partial K$   the boundary of some cell 
         /// $K$  and 
@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// Some factory that provides quadrature rulz for the integration 
         /// over the zero level set, i.e.
         /// \[ 
-        ///   \{ \vec{x}; \varphi(\vec{x}) = 0 \} \cap K.
+        ///   \{ \underline{x}; \varphi(\underline{x}) = 0 \} \cap K.
         /// \]
         /// (Here, $\partial K$   the boundary of some cell 
         /// $K$  and 

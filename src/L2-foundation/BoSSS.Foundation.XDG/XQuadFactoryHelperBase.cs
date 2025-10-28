@@ -148,7 +148,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Returns a rule factory for the boundary of surface-elements 
-        /// (elements on the zero-level-set surface), i.e. on \f$  K \cap \mathfrak{I}\f$ .
+        /// (elements on the zero-level-set surface), i.e. on $K \cap \mathfrak{I}$ .
         /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
         /// <returns>

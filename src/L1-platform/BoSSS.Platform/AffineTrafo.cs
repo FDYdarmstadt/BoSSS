@@ -27,11 +27,11 @@ namespace BoSSS.Platform.LinAlg {
     /// represents an affine - linear transformation;
     /// </summary>
     /// <remarks> 
-    /// The transformation of some point $\vec{x}$ into it's 
-    /// image $\vec{y}$
+    /// The transformation of some point $\underline{x}$ into it's 
+    /// image $\underline{y}$
     /// is defined as
     /// 
-    /// <i>y</i> = <see cref="Matrix"/>*$\vec{x}$ + <see cref="Affine"/>
+    /// <i>y</i> = <see cref="Matrix"/>*$\underline{x}$ + <see cref="Affine"/>
     /// </remarks>
     [Serializable]
     [DataContract]

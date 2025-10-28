@@ -278,7 +278,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="v">A vector</param>
         /// <returns>
-        /// \f$ \vec{u} \times \vec{v}\f$ 
+        /// \f$ \underline{u} \times \underline{v}\f$ 
         /// Note
         /// - return value will always be a 3D vector (<see cref="Dim"/>==3)
         /// - for 2D arguments, only the <see cref="z"/> component will be unequal 0.

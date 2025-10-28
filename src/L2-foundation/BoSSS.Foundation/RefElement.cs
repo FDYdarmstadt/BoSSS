@@ -221,9 +221,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// coordinate system is embedded into
         /// $\mathbb{R}^{D}$  and we additionally map
         /// the D-th standard basis vector to
-        /// $\vec{c}_e + \vec{n}_e$  (center of edge
+        /// $\underline{c}_e + \underline{n}_e$  (center of edge
         /// $e$  plus normal), i.e.
-        /// $\mathbb{R}^{D} \ni (0,\ldots,0,1) \mapsto \vec{c}_e + \vec{n}_e$ .
+        /// $\mathbb{R}^{D} \ni (0,\ldots,0,1) \mapsto \underline{c}_e + \underline{n}_e$ .
         /// </remarks>
         public AffineTrafo GetEmbeddedFaceTrafo(int FaceIndex) {
             if (m_EmbeddedFaceTransformation == null) {
@@ -285,10 +285,10 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// dimension of the face is D-1; but, for the transformation, the face
         /// coordinate system is embedded into
         /// $\mathbb{R}^{D}$  and we additionally map
-        /// $\vec{c}_e + \vec{n}_e$  (center of edge
+        /// $\underline{c}_e + \underline{n}_e$  (center of edge
         /// $e$  plus normal) to the D-th standard
         /// basis vector, i.e.
-        /// $\vec{c}_e + \vec{n}_e \mapsto (0,\ldots,0,1) \in \mathbb{R}^{D}$ .
+        /// $\underline{c}_e + \underline{n}_e \mapsto (0,\ldots,0,1) \in \mathbb{R}^{D}$ .
         /// </remarks>
         public AffineTrafo GetInverseEmbeddedFaceTrafo(int FaceIndex) {
             if (m_InverseEmbeddedFaceTransformation == null) {
@@ -1731,9 +1731,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// Computes a transformation matrix $A$, which expresses the orthonormal polynomials in the root of the subdivision tree,
             /// $\underline{\phi}^{\text{root}}$, in terms of the orthonormal polynomials in this leaf, $\underline{\phi}^{\text{leaf}}$,
             /// i.e.
-            /// \f[
+            /// \[
             ///   \underline{\phi}^{\text{root}} = \underline{\phi}^{\text{leaf}} A .
-            /// \f]
+            /// \]
             /// </summary>
             /// <param name="p">Polynomial degree.</param>
             /// <returns>

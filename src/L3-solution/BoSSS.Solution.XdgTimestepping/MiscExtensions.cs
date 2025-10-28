@@ -239,7 +239,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// Computes cut-cell-volume as \f$ \oint_{K_{j,\frakS}} (x,0) \cdot \vec{n} dS \f$
+        /// Computes cut-cell-volume as \f$ \oint_{K_{j,\frakS}} (x,0) \cdot \underline{n} dS \f$
         /// </summary>
         static private MultidimensionalArray CellVolumeFromGauss(LevelSetTracker LsTrk, ICompositeQuadRule<QuadRule> edgeRule, ICompositeQuadRule<QuadRule> surfRule, double speciesSign) {
             var GridData = LsTrk.GridDat;

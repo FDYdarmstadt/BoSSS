@@ -267,8 +267,8 @@ namespace BoSSS.Solution.XNSECommon {
         /// onto a single-phase field.
         /// </summary>
         /// <param name="OnlyNormalComponent">
-        /// if true, the norm of $\llbracket \vec{u} \cdot \vec{n} \rrbracket =: f$  <br/>
-        /// if false, the norm of $\llbracket \vec{u} \rrbracket =: f$  <br/>
+        /// if true, the norm of $[\![ \underline{u} \cdot \underline{n} ]\!] =: f$  <br/>
+        /// if false, the norm of $[\![ \underline{u} ]\!] =: f$  <br/>
         /// </param>
         /// <param name="U">
         /// some XDG vector field
@@ -344,8 +344,8 @@ namespace BoSSS.Solution.XNSECommon {
         /// $f$ (see below) of some vector field <paramref name="U"/>.
         /// </summary>
         /// <param name="OnlyNormalComponent">
-        /// if true, the norm of $\llbracket \vec{u} \cdot \vec{n} \rrbracket =: f$  <br/>
-        /// if false, the norm of $\llbracket \vec{u} \rrbracket =: f$  <br/>
+        /// if true, the norm of $[\![ \underline{u} \cdot \underline{n} ]\!] =: f$  <br/>
+        /// if false, the norm of $[\![ \underline{u} ]\!] =: f$  <br/>
         /// </param>
         /// <param name="U">
         /// some XDG vector field

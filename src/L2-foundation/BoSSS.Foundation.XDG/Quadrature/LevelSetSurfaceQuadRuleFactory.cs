@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// $K$  in a volume mask, capable of computing
     /// (an approximation of)
     /// \[ 
-    ///    \oint\limits_{\partial K \cap \{ \vec{x}; \varphi(\vec{x}) = 0 \} }  f \;dS,
+    ///    \oint\limits_{\partial K \cap \{ \underline{x}; \varphi(\underline{x}) = 0 \} }  f \;dS,
     /// \]
     /// where $\varphi$  denotes the level set
     /// function.
@@ -159,9 +159,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// For each cell in the given <paramref name="mask"/>: Constructs a
         /// quadrature rule that can be used to evaluate
-        /// \f[ 
-        ///    \oint\limits_{\partial K \cap \{ \vec{x}; \varphi(\vec{x}) = 0 \} }  f \;dS,
-        /// \f]
+        /// \[ 
+        ///    \oint\limits_{\partial K \cap \{ \underline{x}; \varphi(\underline{x}) = 0 \} }  f \;dS,
+        /// \]
         /// with relatively high accuracy (depending on the selected integration
         /// <paramref name="order"/>)
         /// </summary>
@@ -1033,9 +1033,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <summary>
             /// For each cell $K$  and for each
             /// divergence-free basis polynomial
-            /// $\vec{\Phi}$ : Computes the
+            /// $\underline{\Phi}$ : Computes the
             /// integral
-            /// $\int \limits_{\partial K} \vec{\Phi} H(\varphi) \;dS,$ 
+            /// $\int \limits_{\partial K} \underline{\Phi} H(\varphi) \;dS,$ 
             /// where $\varphi$  is the level set
             /// function and $H$  is an indicator
             /// function that restricts the integration domain to positive

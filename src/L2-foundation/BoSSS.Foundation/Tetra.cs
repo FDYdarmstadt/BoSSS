@@ -30,14 +30,14 @@ namespace BoSSS.Foundation.Grid.RefElements {
     /// </summary>
     /// <remarks>
     /// The vertices of the tetrahedron are:
-    ///     \f[ 
+    ///     \[ 
     ///     \left[
     ///        \left( 0, 0, \sqrt{2}  \right),
     ///        \left( 0, \frac{4}{3}, -\frac{\sqrt{2}}{3}  \right),
     ///        \left( -\frac{2}{3} \sqrt(3), -\frac{2}{3}, -\frac{\sqrt{2}}{3}  \right),
     ///        \left(  \frac{2}{3} \sqrt(3), -\frac{2}{3}, -\frac{\sqrt{2}}{3}  \right)
     ///     \right]
-    ///     \f]
+    ///     \]
     /// </remarks>
     public class Tetra : RefElement {
 

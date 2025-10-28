@@ -67,9 +67,9 @@ namespace CNS.Convection {
 
         /// <summary>
         /// Computes the maximum admissible step-size according to
-        /// $\text{cfl} = \frac{1}{2N+1} \min \frac{h}{|\vec{u}| + a} $ 
+        /// $\text{cfl} = \frac{1}{2N+1} \min \frac{h}{|\underline{u}| + a} $ 
         /// where $h$  is the minimum cell diameter,
-        /// $\vec{u}$ is the nodal velocity vector
+        /// $\underline{u}$ is the nodal velocity vector
         /// and $a$  is the nodal speed of sound.
         /// Additionally, $N$  is the degree of the
         /// DG with the highest degree of approximation.

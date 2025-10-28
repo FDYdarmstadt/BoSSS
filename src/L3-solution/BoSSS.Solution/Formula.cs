@@ -31,9 +31,9 @@ namespace BoSSS.Solution.Control {
     /// <summary>
     /// This class encapsulates the representation of a mathematical formula (dependent on space and time)
     /// \[
-    ///   (\vec{x},t) \mapsto f(\vec{x},t)
+    ///   (\underline{x},t) \mapsto f(\underline{x},t)
     ///   \ \text{ resp. } \
-    ///   (\vec{x}) \mapsto f(\vec{x})
+    ///   (\underline{x}) \mapsto f(\underline{x})
     /// \]
     /// which is used to provide boundary or initial values.
     /// The mathematical expression is compiled from C#-code on the fly.
@@ -56,8 +56,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="code">
         /// C#-code which represents the mathematical formula,
-        ///  - if <paramref name="TimeDep"/> is true, a <see cref="Func{Space, Time, val}"/>, representing an expression $(\vec{x},t) \mapsto f(\vec{x},t)$
-        ///  - if <paramref name="TimeDep"/> is false, a <see cref="Func{Space, val}"/>, representing an expression $(\vec{x}) \mapsto f(\vec{x})$
+        ///  - if <paramref name="TimeDep"/> is true, a <see cref="Func{Space, Time, val}"/>, representing an expression $(\underline{x},t) \mapsto f(\underline{x},t)$
+        ///  - if <paramref name="TimeDep"/> is false, a <see cref="Func{Space, val}"/>, representing an expression $(\underline{x}) \mapsto f(\underline{x})$
         /// </param>
         /// <param name="AdditionalPrefixCode">
         /// Optional, additional C#-statements, e.g. auxiliary definitions, which is entered before <paramref name="code"/>.

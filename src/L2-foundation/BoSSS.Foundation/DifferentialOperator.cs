@@ -1717,9 +1717,9 @@ namespace BoSSS.Foundation {
 
             /// <summary>
             /// For the operator linearization 
-            /// \f[
+            /// \[
             ///    \mathcal{M} U + \mathcal{B}
-            /// \f]
+            /// \]
             /// this computes only the vector $\mathcal{B}$
             /// </summary>
             /// <param name="AffineOffset"></param>
@@ -1729,9 +1729,9 @@ namespace BoSSS.Foundation {
 
             /// <summary>
             /// computes a linearization of the operator in the form 
-            /// \f[
+            /// \[
             ///    \mathcal{M} U + \mathcal{B}.
-            /// \f]
+            /// \]
             /// </summary>
             /// <param name="Matrix">
             /// Output, the operator matrix, scaled by <paramref name="alpha"/>, is accumulated here
@@ -2550,9 +2550,9 @@ namespace BoSSS.Foundation {
 
             /// <summary>
             /// computes a approximate linearization of the operator in the form 
-            /// \f[
+            /// \[
             ///    \mathcal{M} U + \mathcal{B}.
-            /// \f]
+            /// \]
             /// </summary>
             /// <param name="Matrix">
             /// Output, the approximate Jacobian matrix of the operator, scaled by <paramref name="alpha"/>, is accumulated here

@@ -251,7 +251,7 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// Steady-state or temporally dependent boundary values.
             /// - key: a name for the boundary value, e.g. 'VelocityX'
-            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\vec{x},t) \mapsto f(\vec{x},t)$ 
+            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\underline{x},t) \mapsto f(\underline{x},t)$ 
             /// </summary>
             /// <remarks>
             /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
@@ -275,7 +275,7 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// Steady-state or temporally dependent boundary values.
             /// - key: a name for the boundary value, e.g. 'VelocityX'<br/>
-            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\vec{x},t) \mapsto f(\vec{x},t)$ 
+            /// - value: some function that maps a space coordinate to some function value, i.e.  $(\underline{x},t) \mapsto f(\underline{x},t)$ 
             /// </summary>
             [JsonIgnore]
             public IDictionary<string, IBoundaryAndInitialData> Values {
@@ -1095,9 +1095,9 @@ namespace BoSSS.Solution.Control {
 
         /// <summary>
         /// Relative value, which is compared against the relative computation imbalance
-        /// \f[ 
+        /// \[ 
         /// \frac{\text{maximum runtime difference over all MPI processors}}{\text{maximum runtime over all MPI processors}} .
-        /// \f]
+        /// \]
         /// Dynamic load balancing is suppressed if the relative computation imbalance is below this value.
         /// </summary>
         [DataMember]

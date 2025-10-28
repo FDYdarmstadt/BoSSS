@@ -688,9 +688,9 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Square-root of the Gramian determinant for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
-        /// if $\myMatrix{M}$ 
+        /// if $\boldsymbol{M}$ 
         /// is the matrix of the transformation, this number is 
-        /// $\sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) }$.
+        /// $\sqrt{ \operatorname{det} ( \boldsymbol{M}^T \cdot \boldsymbol{M} ) }$.
         /// </summary>
         MultidimensionalArray Edge2CellTrafos_SqrtGramian {
             get;
@@ -795,28 +795,28 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <remarks>
         /// Let be 
-        /// \f[ 
+        /// \[ 
         ///   \mathbb{R}^{D-1} 
-        ///     \ni \vec{\xi} 
+        ///     \ni \underline{\xi} 
         ///       \mapsto
-        ///         \gamma(\vec{\xi}) \in
+        ///         \gamma(\underline{\xi}) \in
         ///           \mathbb{R}^{D-1}
-        /// \f]
+        /// \]
         /// the mapping from the edge coordinate system to the physical coordinate system.
         /// Then the integral of $f$  over the edge 
         /// $\gamma(K_\textrm{ref})$ 
         /// is given as 
-        /// \f[ 
-        ///   \int_{\vec{x} \in \gamma(K_\textrm{ref})} f(\vec{x}) \ \textrm{dS}
+        /// \[ 
+        ///   \int_{\underline{x} \in \gamma(K_\textrm{ref})} f(\underline{x}) \ \textrm{dS}
         ///   =
-        ///   \int_{\xi \in K_\textrm{ref}} f(\gamma(\xi)) g(\vec{\xi}) \ \textrm{d} \vec{\xi}
-        /// \f]
+        ///   \int_{\xi \in K_\textrm{ref}} f(\gamma(\xi)) g(\underline{\xi}) \ \textrm{d} \underline{\xi}
+        /// \]
         /// with the square-root of the Gram determinant
-        /// \f[ 
-        ///   g(\vec{xi}) = \sqrt{ 
+        /// \[ 
+        ///   g(\underline{xi}) = \sqrt{ 
         ///      \textrm{det} ( (\partial \gamma)^T \cdot (\partial \gamma) )  
         ///   }.
-        /// \f]
+        /// \]
         /// If the transformation 
         /// $\gamma$
         /// of the edge to the global coordinate system 
