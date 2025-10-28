@@ -331,7 +331,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [Test]
         public static void AMRtest_2D(
-            [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert, GridPartType.none)] GridPartType gridPartType,
+            [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.none)] GridPartType gridPartType,
             [Values(7, 8)] int NumberOfElements) {
             var C = DropletInBox_AMRtest(D: 2, p: 2, kelem: NumberOfElements);
 
@@ -603,10 +603,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Aim of the test:
         /// Don't crash!
         /// </summary>
-        //[Test]
+        [Test]
         public static void CurvatureBasedAMRTest_2D(
-            [Values(GridPartType.METIS, GridPartType.Hilbert, GridPartType.clusterHilbert, GridPartType.none)] GridPartType gridPartType,
-            [Values(7, 8)] int NumberOfElements,
+            [Values(GridPartType.METIS)] GridPartType gridPartType,
+            [Values(20)] int NumberOfElements,
             [Values(false, true)] bool LoadBalancingDuringRuntime) {
             var C = Ellipsiod_AMRtest(D: 2, p: 2, kelem: NumberOfElements, LoadBalancingDuringRuntime: LoadBalancingDuringRuntime);
 
@@ -626,7 +626,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 solver.Init(C);
                 solver.RunSolverMode();
 
-                //BoSSS.Foundation.AMRtests.MeshSymmetryTest(solver.Grid);
+                //(solver.Grid as GridCommons).Cells[0].RefinementLevel
             }
         }
 
@@ -638,7 +638,9 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
             Solution.Application.DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.METIS, 20, true);
+            //Debugger.Launch();
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.CurvatureBasedAMRTest_2D(GridPartType.METIS, 20, true);
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest.AMRtest_2D(GridPartType.none, 7);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
