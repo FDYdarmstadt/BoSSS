@@ -1168,7 +1168,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]
-        public string TracingNamespaces = "*";
+        public string TracingNamespaces = null;
 
         /// <summary>
         /// Activate/Deactivate memory allocation logging

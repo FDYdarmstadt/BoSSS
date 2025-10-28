@@ -133,8 +133,16 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates a matrix builder
             /// </summary>
-            protected override void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+            protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
+
+                //Here so far, all the implmentations of traceDg are based on single spc. (Theoritically we don't need it) But in order to use XDG ready-to-use
+                // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
+                //Maybe i need to refactor it one day....
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, spcName, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+
 
                 TraceBulkMtxBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 TraceBulkMtxBuilder.MPITtransceive = false;
@@ -242,9 +250,9 @@ namespace BoSSS.Foundation.XDG {
                         SpeciesFrameVector<V>[] vec_spc_noTdg = new SpeciesFrameVector<V>[ReqSpecies.Length];
                         for(int i = 0; i < ReqSpecies.Length; i++) {
                             SpeciesId SpId = ReqSpecies[i];
-                            mtx_spc_incTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesDomainFrame_WithTraceDg[SpId], this.SpeciesDomainFrame_WithTraceDg[SpId]);
+                            mtx_spc_incTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame_WithTraceDg[SpId], this.SpeciesDomainFrame_WithTraceDg[SpId]);
                             vec_spc_incTdg[i] = (AffineOffset != null) ?
-                                                (new SpeciesFrameVector<V>(AffineOffset, this.SpeciesDomainFrame_WithTraceDg[SpId]))
+                                                (new SpeciesFrameVector<V>(AffineOffset, this.SpeciesCodomFrame_WithTraceDg[SpId]))
                                                 :
                                                 null;
                             mtx_spc_noTgd[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame_WithoutTraceDg[SpId], this.SpeciesDomainFrame_WithoutTraceDg[SpId]);
@@ -278,12 +286,12 @@ namespace BoSSS.Foundation.XDG {
 
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
-                                    var builder = SpeciesBuilder[SpeciesId];
-                                    BulkIntegrator(builder, SpeciesId, _mtx, vec);
-                                }
+                                        var builder = SpeciesBuilder[SpeciesId];
+                                        BulkIntegrator(builder, SpeciesId, _mtx, vec);
+                                    }
 
+                                }
                             }
-                        }
 
                     }
                     
@@ -707,8 +715,15 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates an evaluator
             /// </summary>
-            protected override void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+            protected override void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld) {
+                //Here so far, all the implmentations of traceDg are based on single spc. (Theoritically we don't need it) But in order to use XDG ready-to-use
+                // features, i need to specify the spc name. I cannot pass null to the spc name otherwise the following MatrixBuilder will cause problem.
+                //Maybe i need to refactor it one day....
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, spcName, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                //var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner, RowSwitch, this.m_lsTrk, null, quadOrder, eqs, cqs, this.TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 TraceBulkEval = tempOp.GetEvaluatorEx(DomFld, Params, CodomFrame.FrameMap);
                 TraceBulkEval.MPITtransceive = false;
@@ -950,10 +965,16 @@ namespace BoSSS.Foundation.XDG {
                         var sgrd = lsTrk.Regions.GetCutCellSubGrid();
                         var cellScheme = new CellQuadratureScheme(UseDefaultFactories: true, domain: sgrd.VolumeMask);
                         var edgeScheme = new EdgeQuadratureScheme(UseDefaultFactories: true, domain: sgrd.InnerEdgesMask);
+                        //foreach(var SpeciesId in ReqSpecies) {
+                        //    ctorTraceDGBulkIntegrator(SpeciesId, quadOrder, cellScheme, edgeScheme, TraceDgDomainFrame, TraceDgCodomFrame,
+                        //    TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                        //    Parameters?.ToArray(), DomainFields?.ToArray());
+                        //}
 
-                        ctorTraceDGBulkIntegrator(quadOrder, cellScheme, edgeScheme, TraceDgCodomFrame, TraceDgCodomFrame,
-                            TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
-                            Parameters?.ToArray(), DomainFields?.ToArray());
+                        ctorTraceDGBulkIntegrator(ReqSpecies[0], quadOrder, cellScheme, edgeScheme, TraceDgDomainFrame, TraceDgCodomFrame,
+                        TraceDgCodomFrame.FrameMap.BasisS.Select(b => b.MaximalLength > 0).ToArray(),
+                        Parameters?.ToArray(), DomainFields?.ToArray());
+
                     }
 
 
@@ -1164,7 +1185,10 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// create integrator for bulk components (stabilization components) for Trace DG
             /// </summary>
-            abstract protected void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+            //abstract protected void ctorTraceDGBulkIntegrator(int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+            abstract protected void ctorTraceDGBulkIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, bool[] RowSwitch, DGField[] Params, DGField[] DomFld);
+
+
 
             /// <summary>
             /// Create integrator for <see cref="XDifferentialOperatorMk2.GhostEdgesOperator"/>
