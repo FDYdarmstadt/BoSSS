@@ -604,15 +604,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-            ilPSP.Environment.ParallelFor(0, NoOfBlocks, (iBlock) =>
-            {
-                if(RowIndices[iBlock] == null)
-                    return;
+            //ilPSP.Environment.ParallelForWithPartitioner(0, NoOfBlocks, (iBlock) =>
+            //{
+            for(int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
+                //if(RowIndices[iBlock] == null)
+                //    return;
 
-                if(RowIndices[iBlock].Count <= 0)
-                    throw new ArgumentException("empty blocks are not allowed");
+                //if(RowIndices[iBlock].Count <= 0)
+                //    throw new ArgumentException("empty blocks are not allowed");
 
-                var blockPart = Redistributed._RowPartitioning.GetSubBlocking(RowIndices[iBlock], csMPI.Raw._COMM.SELF, -1);
+                if(RowIndices[iBlock] != null) {
+                    if(RowIndices[iBlock].Count <= 0)
+                        throw new ArgumentException("empty blocks are not allowed");
+                }
+
+                    var blockPart = Redistributed._RowPartitioning.GetSubBlocking(RowIndices[iBlock], csMPI.Raw._COMM.SELF, -1);
 
                 #if DEBUG
                     Debug.Assert(blockPart.MpiSize == 1);
@@ -661,14 +667,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 ret[iBlock] = slv_iBlk;
             }
-            );
+            //);
 
 
 
             return ret;
         }
 
-        bool threading = true;
+
         /// <summary>
         /// temporary data structure for assembling Schwarz blocks
         /// </summary>
@@ -1429,41 +1435,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 CommitInitialXandB(X, B);
                 var timer = new Stopwatch();
                 timer.Start();
-                if(threading)
-                    ilPSP.Environment.ParallelFor(0, m_BlockSolvers.Length, (iBlock) => {
-                        //Console.WriteLine($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank} Thread {System.Threading.Thread.CurrentThread.ManagedThreadId} running");
-                        var solver = m_BlockSolvers[iBlock];
-                        if(solver == null)
-                            return;
 
-                        solver.Solve(Xblocks[iBlock], RHSblocks[iBlock]);
+                ilPSP.Environment.ParallelFor(0, m_BlockSolvers.Length, (iBlock) => {
+                    //Console.WriteLine($"Rank {ilPSP.Environment.MPIEnv.MPI_Rank} Thread {System.Threading.Thread.CurrentThread.ManagedThreadId} running");
+                    var solver = m_BlockSolvers[iBlock];
+                    if(solver == null)
+                        return;
 
-                        var scale = m_OverlapScaling?[iBlock];
-                        if(scale != null) {
-                            var Xb = Xblocks[iBlock];
-                            int L = scale.Length;
-                            for(int l = 0; l < L; l++)
-                                Xb[l] *= scale[l];
-                        }
-                    });
-                else
-                    for(int iBlock = 0; iBlock < m_BlockSolvers.Length; iBlock++) {
-                        if(m_BlockSolvers[iBlock] != null) {
-                            m_BlockSolvers[iBlock].Solve(Xblocks[iBlock], RHSblocks[iBlock]);
-                            //                  Xblocks[iBlock].SaveToTextFileDebug($"XblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
-                            //RHSblocks[iBlock].SaveToTextFileDebug($"RHSblocksSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
+                    solver.Solve(Xblocks[iBlock], RHSblocks[iBlock]);
 
-                            if(m_OverlapScaling != null) {
-                                var scale = m_OverlapScaling[iBlock];
-                                //scale.SaveToTextFileDebug($"scaleSz{Mapping.TotalNoOfBlocks}_{iBlock}.txt");
-
-                                var Xb = Xblocks[iBlock];
-                                int L = scale.Length;
-                                for(int l = 0; l < L; l++)
-                                    Xb[l] *= scale[l];
-                            }
-                        }
+                    var scale = m_OverlapScaling?[iBlock];
+                    if(scale != null) {
+                        var Xb = Xblocks[iBlock];
+                        int L = scale.Length;
+                        for(int l = 0; l < L; l++)
+                            Xb[l] *= scale[l];
                     }
+                });
+
 
                 timer.Stop();
                 tr.Info($"Schwarz block solves time: {timer.ElapsedMilliseconds} ms with {ilPSP.Environment.NumThreads} threads");
